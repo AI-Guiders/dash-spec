@@ -100,7 +100,7 @@ public sealed class DashboardSessionService(
                 "Смена runtime-конфига в UI пока не поддерживается — укажи spec_path в dash-spec.toml и перезапусти Host.");
         }
 
-        _document = DashSpecParser.Parse(text);
+        _document = DashSpecParser.Parse(text, Path.GetDirectoryName(specFullPath));
         _specLibrary = LoadSpecLibrary(specFullPath, _document.DiagramLibraryPath);
         _ = SpecResolver.Resolve(_document, _specLibrary);
         _connector = connectorRegistry.Resolve(_document.ConnectorId, pluginManifest.DefaultConnectorId);

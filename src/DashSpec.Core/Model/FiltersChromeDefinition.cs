@@ -27,4 +27,5 @@ public sealed record FiltersChromeDefinition(
 public sealed record TabDefinition(
     string Id,
     string? Label,
-    IReadOnlyList<string> CardIds);
+    IReadOnlyList<string> CardIds,
+    string? DashspecPath = null);

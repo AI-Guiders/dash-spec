@@ -15,18 +15,28 @@ internal static class DashboardParser
 
     public static (string Id, string Title) ReadDashboardHeader(string text)
     {
-        var reader = CreateReader(text);
-        reader.SkipFileDirectives();
-        reader.Expect(TokenKind.At);
-        reader.ExpectKeyword("dashboard");
-        var id = reader.ReadIdent();
-        reader.SkipNewlines();
-        reader.ExpectKeyword("dashboard");
-        var title = reader.ReadString();
-        return (id, title);
+        if (DashboardComposer.IsTabRootDocument(text))
+        {
+            var reader = CreateReader(text);
+            reader.SkipFileDirectives();
+            reader.Expect(TokenKind.At);
+            reader.ExpectKeyword("tab");
+            var id = reader.ReadIdent();
+            return (id, id);
+        }
+
+        var dashboardReader = CreateReader(text);
+        dashboardReader.SkipFileDirectives();
+        dashboardReader.Expect(TokenKind.At);
+        dashboardReader.ExpectKeyword("dashboard");
+        var dashboardId = dashboardReader.ReadIdent();
+        dashboardReader.SkipNewlines();
+        dashboardReader.ExpectKeyword("dashboard");
+        var title = dashboardReader.ReadString();
+        return (dashboardId, title);
     }
 
-    public static DashboardDocument Parse(string text)
+    public static DashboardDocument ParseDashboard(string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
@@ -129,7 +139,6 @@ internal static class DashboardParser
             cards);
 
         FilterPlacementAnalyzer.Validate(document);
-        TabAnalyzer.Validate(document);
         return document;
     }
 
