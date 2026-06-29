@@ -47,7 +47,7 @@ Host bootstrap: `src/DashSpec.Host/dash-spec.toml` — **только** `[dashbo
 ### Dashboard → connector
 
 ```text
-@config "demo-soak.toml"
+@config "demo.toml"
 
 @dashboard demo_soak
 dashboard "…" {
@@ -59,7 +59,7 @@ dashboard "…" {
 - **`@config`** — **обязателен**. Путь к самодостаточному TOML **относительно `.dashspec`**. Без `@config` host не стартует.
 - **`connector sqlserver`** — id плагина из `[plugins]` в том же TOML.
 
-Пример `samples/demo-soak.toml`: `connection_string`, `plugins`, `[[plugins.load]]`.
+Пример `samples/demo/demo.toml`: `connection_string`, `plugins`, `[[plugins.load]]`.
 
 Секреты: правка TOML локально, `dash-spec.local.toml` в `.gitignore` как отдельный `@config`, или env `Connectors__SqlServer__ConnectionString`.
 
@@ -73,4 +73,4 @@ dashboard "…" {
 
 - Новый backend = новая dll в `connectors/`, строка в manifest
 - Фильтры не дублируются в connector config
-- demo dev: `samples/demo-soak.toml` через `@config` в soak spec
+- Demo sample: `samples/demo/demo.toml` через `@config` в `demo-soak.dashspec`

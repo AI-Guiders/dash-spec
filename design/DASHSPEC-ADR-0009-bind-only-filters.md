@@ -62,6 +62,6 @@ card events_detail as "Events" {
 
 ## Consequences
 
-- Samples demo: строки `where [[…]]` удалены.
+- Demo sample: строки `where [[…]]` удалены.
 - `CardDefinition.WhereTemplate` удалён из IR.
 - Документация: [FILTERS_RU.md](../docs/FILTERS_RU.md).
