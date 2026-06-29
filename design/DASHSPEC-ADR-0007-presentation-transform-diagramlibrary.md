@@ -23,7 +23,7 @@ card peak as "Peak concurrent" {
   }
   presentation { use = line_bottom_300 }
   transform series { use = top5 }
-  datasource view lus.v_daily_peak_concurrent_proxy
+  datasource view demo.v_daily_peak_concurrent_proxy
 }
 ```
 
@@ -38,9 +38,9 @@ card peak as "Peak concurrent" {
 ### `@diagramlibrary`
 
 ```text
-@config "lus-dev-soak.toml"
+@config "demo.toml"
 @sqldialect tsql
-@diagramlibrary "lus-diagram-library.toml"
+@diagramlibrary "demo-diagram-library.toml"
 ```
 
 TOML с именованными пресетами:
@@ -74,6 +74,6 @@ other = "Other"
 
 ## Consequences
 
-- Samples LUS: `@diagramlibrary` + пресеты в `lus-diagram-library.toml`.
+- Demo sample: `@diagramlibrary` + пресеты в `demo-diagram-library.toml`.
 - Именованные рецепты `[diagram.<id>]` (kind + chrome + bindings) — [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md).
 - Новые presentation-свойства — схема `PropertySchemas.Presentation`, не registry kind.

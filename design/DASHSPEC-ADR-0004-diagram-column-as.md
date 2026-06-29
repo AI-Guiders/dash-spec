@@ -27,7 +27,7 @@ diagram heatmap {
 
 - **`as` опционален** — `x = usage_date` по-прежнему валиден.
 - **Подпись** — строка в кавычках после `as`.
-- **Колонка** — identifier или qualified name (`lus.v_events_detail.user_name`).
+- **Колонка** — identifier или qualified name (`demo.v_events_detail.user_id`).
 
 ### IR (внутри `DiagramDefinition.Properties`)
 
@@ -41,15 +41,15 @@ diagram heatmap {
 ### Card
 
 ```text
-card stakeholder_peak_apps as "№2 **Peak apps** per user" {
+card peak_apps_heatmap as "Peak apps per user" {
   diagram heatmap { … }
 }
 
-tab stakeholder as "Отчёты заказчика" {
+tab analytics as "Analytics" {
   cards {
-    stakeholder_peak_by_app
-    stakeholder_peak_apps
-    stakeholder_idle
+    period_peak_by_app
+    peak_apps_heatmap
+    idle_table
   }
 }
 ```
@@ -140,6 +140,6 @@ card "№2 …" {
 
 ## Последствия
 
-- Spec №2 читается без знания Blazor-хелперов.
+- Spec heatmap в `samples/demo/` читается без знания Blazor-хелперов.
 - Host опирается на `_as`, `x_format`/`y_format`, `legend` — без `FormatUserLabel` и захардкоженных «разных ПО» / «макс.».
 - Rich text в whitelisted строках — [ADR-0005](DASHSPEC-ADR-0005-rich-text-creole-subset.md) (Creole-subset, не PlantUML engine).

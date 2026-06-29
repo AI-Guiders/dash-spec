@@ -16,7 +16,7 @@
 
 ```text
 filter date usage_date on usage_date as "Дата отчёта" default -7d..today
-filter field app_name on lus.v_daily_active_users.app_name as "Продукты" widget combobox
+filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
 filter top events_top as "Строк (TOP)" default 200
 ```
 
@@ -37,7 +37,7 @@ toolbar chrome { layout = bar, apply = auto }
 card activity_5min as "Activity 5-min" {
   filters { activity_day }
   bind dashboard
-  use lus_activity_5min
+  use demo_activity_5min
 }
 ```
 
@@ -47,15 +47,15 @@ card activity_5min as "Activity 5-min" {
 ### `[card.*]` в `@diagramlibrary`
 
 ```toml
-[card.lus_peak_concurrent]
-diagram = "lus_peak_concurrent_line"
-datasource = "lus.v_daily_peak_concurrent_proxy"
+[card.demo_peak_concurrent]
+diagram = "demo_peak_concurrent_line"
+datasource = "demo.v_daily_peak_concurrent_proxy"
 bind = "dashboard"
 ```
 
 ```text
 card peak_concurrent_proxy as "Peak concurrent (proxy)" {
-  use lus_peak_concurrent
+  use demo_peak_concurrent
 }
 ```
 
@@ -67,7 +67,7 @@ Override на card: `bind`, `diagram`, `datasource`, `legend`, …
 
 ## Consequences
 
-- Samples LUS переписаны под новый синтаксис.
+- Demo sample (`samples/demo/`) переписан под новый синтаксис.
 - `CardResolver` объединяет card preset, bind expansion, diagram preset.
 - Runtime-валидация top/table и datasource после resolve presets.
 

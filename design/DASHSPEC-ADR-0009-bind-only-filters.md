@@ -24,8 +24,8 @@ where [[usage_date]] and [[app_name]]
 ```text
 card peak as "Peak" {
   bind usage_date, app_name
-  diagram lus_peak_concurrent_line
-  datasource view lus.v_daily_peak_concurrent_proxy
+  diagram demo_peak_concurrent_line
+  datasource view demo.v_daily_peak_concurrent_proxy
 }
 ```
 
@@ -55,13 +55,13 @@ card peak as "Peak" {
 card events_detail as "Events" {
   filters { events_top }
   bind app_name, user_name, events_top
-  diagram lus_events_detail_table
-  datasource view lus.v_events_detail
+  diagram demo_events_detail_table
+  datasource view demo.v_events_detail
 }
 ```
 
 ## Consequences
 
-- Samples LUS: строки `where [[…]]` удалены.
+- Demo sample: строки `where [[…]]` удалены.
 - `CardDefinition.WhereTemplate` удалён из IR.
 - Документация: [FILTERS_RU.md](../docs/FILTERS_RU.md).

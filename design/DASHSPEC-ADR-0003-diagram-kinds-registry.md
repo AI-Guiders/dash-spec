@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), stakeholder heatmap (отчёты №2–4) |
+| **Relates to** | [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), demo heatmap cards |
 
 ## Контекст
 
@@ -14,7 +14,7 @@
 - разводить `switch` в Core, Host, QueryCompiler;
 - дублировать схему свойств (`PropertySchemas.Diagram` одна на все типы).
 
-Heatmap нужен для LUS (user × day, app × utilization). Это не «ещё один case», а **семейство matrix** с другими обязательными полями (`x`, `y`, `value`).
+Heatmap нужен для матричных отчётов (user × day, app × utilization). Это не «ещё один case», а **семейство matrix** с другими обязательными полями (`x`, `y`, `value`).
 
 Коннекторы уже вынесены в plugins ([ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md)). Viz-plugins — следующий шаг; до них нужен **декларативный registry** в Core.
 
@@ -54,7 +54,7 @@ Host и compiler смотрят на **`DataFamily`**, не на enum всех �
 - **Рендер** — matrix payload (`xLabels`, `yLabels`, `cells[][]`) + JS (Chart.js matrix / canvas).
 - **Query** — тот же `SELECT x, y, value …`; компилятор не меняется.
 
-Отчёты LUS №2/3/4: bar/table уже есть; heatmap — альтернативная карточка на тех же view.
+В demo soak: bar/table уже есть; heatmap — альтернативная карточка на тех же view.
 
 ## Отклонённые варианты
 
@@ -68,7 +68,7 @@ Host и compiler смотрят на **`DataFamily`**, не на enum всех �
 ## Следующие шаги
 
 1. ~~`BuildHeatmap` + `MatrixPayload` + renderer~~ — **✅ v0.3** (CSS grid в Host).
-2. ~~Карточки heatmap в `lus-dev-soak.dashspec` для №2~~ — **✅**; №4 — позже.
+2. ~~Карточки heatmap в `demo-soak.dashspec`~~ — **✅**; дополнительные matrix-карточки — позже.
 3. Опционально: viz-plugins (как connectors) для кастомных kind из dll.
 
 ## Последствия

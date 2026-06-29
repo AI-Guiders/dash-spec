@@ -10,7 +10,7 @@
 
 - `diagram <kind> { … }` задаёт привязку данных (registry + `DataFamily`).
 - [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) вынес `presentation` и `transform series` в отдельные блоки и пресеты `presentation.*` / `transform.series.*`.
-- На практике карточки LUS повторяют один и тот же «рецепт»: kind + bindings + render + presentation + transform.
+- На практике типовые карточки в sample повторяют один и тот же «рецепт»: kind + bindings + render + presentation + transform.
 - Host сейчас **жёстко** рендерит: line/bar → Chart.js, heatmap → CSS grid.
 - Inline `code = ...` в spec — нежелателен (безопасность, версии).
 
@@ -22,21 +22,21 @@
 
 ```text
 card peak as "Peak" {
-  diagram lus_peak_concurrent_line
-  datasource view lus.v_daily_peak_concurrent_proxy
+  diagram demo_peak_concurrent_line
+  datasource view demo.v_daily_peak_concurrent_proxy
 }
 ```
 
 Опциональный override полей (merge поверх пресета):
 
 ```text
-diagram lus_peak_concurrent_line { y = other_metric }
+diagram demo_peak_concurrent_line { y = other_metric }
 ```
 
 TOML библиотеки:
 
 ```toml
-[diagram.lus_peak_concurrent_line]
+[diagram.demo_peak_concurrent_line]
 kind = "line"
 render = "chartjs"
 presentation = "line_bottom_300"
@@ -94,6 +94,6 @@ assembly = "DashSpec.Viz.CssGrid.dll"
 
 ## Consequences
 
-- **Implemented:** `DiagramLibrary` `[diagram.*]`, `CardDiagramResolver`, samples `lus-diagram-library.toml` + упрощённые soak/stakeholder specs.
+- **Implemented:** `SpecLibrary` `[diagram.*]`, `CardDiagramResolver`, `samples/demo/demo-diagram-library.toml` + `demo-soak.dashspec`.
 - **Next:** `IVizPlugin` + honor `render` из resolved preset.
 - Пресеты `presentation.*` / `transform.series.*` остаются переиспользуемыми building blocks внутри `[diagram.*]` и для явных card-блоков.
