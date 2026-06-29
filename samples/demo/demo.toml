@@ -1,0 +1,12 @@
+# Runtime config for demo-soak.dashspec (@config)
+# Copy to demo.local.toml and set your connection_string (gitignored).
+
+[connectors.sqlserver]
+connection_string = "Server=localhost;Database=DashSpecDemo;Trusted_Connection=True;TrustServerCertificate=True"
+
+[plugins]
+default_connector_id = "sqlserver"
+
+[[plugins.load]]
+id = "sqlserver"
+assembly = "DashSpec.Connector.SqlServer.dll"

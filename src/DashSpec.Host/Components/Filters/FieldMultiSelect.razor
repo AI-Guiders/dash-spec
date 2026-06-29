@@ -1,0 +1,191 @@
+<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null)">
+    @if (Combobox)
+    {
+        @if (Compact)
+        {
+            <span class="filter-inline-label">@Label</span>
+        }
+
+        <div class="field-combobox">
+            <button type="button"
+                    class="combobox-trigger"
+                    aria-haspopup="listbox"
+                    aria-expanded="@_open"
+                    @onclick="ToggleOpen">
+                <span class="combobox-summary">@SummaryText()</span>
+                <span class="combobox-chevron" aria-hidden="true">▾</span>
+            </button>
+
+            @if (_open)
+            {
+                <div class="combobox-backdrop" @onclick="Close"></div>
+                <div class="combobox-panel" role="listbox" aria-multiselectable="true" aria-label="@Label">
+                    @if (Options.Count > 6)
+                    {
+                        <input class="combobox-search filter-search"
+                               type="search"
+                               placeholder="Поиск…"
+                               @bind="_search"
+                               @bind:event="oninput"
+                               @onclick:stopPropagation="true" />
+                    }
+
+                    <div class="combobox-options">
+                        @foreach (var option in FilteredOptions)
+                        {
+                            var active = Selected.Contains(option);
+                            <label class="combobox-option @(active ? "combobox-option-active" : null)">
+                                <input type="checkbox"
+                                       checked="@active"
+                                       @onchange="() => ToggleAsync(option)" />
+                                <span>@option</span>
+                            </label>
+                        }
+                    </div>
+
+                    <div class="combobox-actions chip-actions">
+                        <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
+                        <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        @if (!Compact)
+        {
+            <div class="filter-field-head">
+                <div>
+                    <span class="filter-label">@Label</span>
+                    @if (!string.IsNullOrWhiteSpace(Hint))
+                    {
+                        <span class="filter-scope">@Hint</span>
+                    }
+                </div>
+                <span class="muted filter-count">
+                    @if (Selected.Count == 0)
+                    {
+                        <text>все</text>
+                    }
+                    else
+                    {
+                        <text>@Selected.Count из @Options.Count</text>
+                    }
+                </span>
+            </div>
+        }
+        else
+        {
+            <span class="filter-inline-label">@Label</span>
+        }
+
+        @if (Options.Count > 8)
+        {
+            <input class="filter-search"
+                   type="search"
+                   placeholder="Поиск…"
+                   @bind="_search"
+                   @bind:event="oninput" />
+        }
+
+        <div class="chip-list" role="listbox" aria-multiselectable="true" aria-label="@Label">
+            @foreach (var option in FilteredOptions)
+            {
+                var active = Selected.Contains(option);
+                <button type="button"
+                        class="chip @(active ? "chip-active" : null)"
+                        role="option"
+                        aria-selected="@active"
+                        @onclick="() => ToggleAsync(option)">
+                    @option
+                </button>
+            }
+        </div>
+
+        <div class="chip-actions">
+            <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
+            <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    [Parameter]
+    public bool Compact { get; set; }
+
+    [Parameter]
+    public bool Combobox { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> Options { get; set; } = [];
+
+    [Parameter]
+    public HashSet<string> Selected { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter]
+    public EventCallback<HashSet<string>> SelectedChanged { get; set; }
+
+    private string _search = string.Empty;
+    private bool _open;
+
+    private IEnumerable<string> FilteredOptions =>
+        string.IsNullOrWhiteSpace(_search)
+            ? Options
+            : Options.Where(x => x.Contains(_search, StringComparison.OrdinalIgnoreCase));
+
+    private string SummaryText()
+    {
+        if (Selected.Count == 0)
+        {
+            return "Все";
+        }
+
+        var ordered = Options.Where(Selected.Contains).ToList();
+        if (ordered.Count == 1)
+        {
+            return ordered[0];
+        }
+
+        if (ordered.Count == 2)
+        {
+            return $"{ordered[0]}, {ordered[1]}";
+        }
+
+        return $"{ordered[0]}, {ordered[1]} +{ordered.Count - 2}";
+    }
+
+    private void ToggleOpen() => _open = !_open;
+
+    private void Close() => _open = false;
+
+    private async Task ToggleAsync(string option)
+    {
+        var next = new HashSet<string>(Selected, StringComparer.OrdinalIgnoreCase);
+        if (!next.Add(option))
+        {
+            next.Remove(option);
+        }
+
+        Selected = next;
+        await SelectedChanged.InvokeAsync(next);
+    }
+
+    private async Task SelectAllAsync()
+    {
+        Selected = new HashSet<string>(Options, StringComparer.OrdinalIgnoreCase);
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    private async Task ClearAsync()
+    {
+        Selected = new(StringComparer.OrdinalIgnoreCase);
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+}

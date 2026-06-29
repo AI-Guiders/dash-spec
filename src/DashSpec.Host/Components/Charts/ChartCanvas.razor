@@ -1,0 +1,66 @@
+@using DashSpec.Core.Runtime
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+<canvas id="@ChartId"></canvas>
+
+@code {
+    [Parameter, EditorRequired]
+    public string ChartId { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ChartType { get; set; } = "line";
+
+    [Parameter]
+    public string Legend { get; set; } = "bottom";
+
+    [Parameter]
+    public bool Stacked { get; set; }
+
+    [Parameter]
+    public ChartPayload? Payload { get; set; }
+
+    private ChartPayload? _previousPayload;
+    private string _previousLegend = string.Empty;
+    private bool _previousStacked;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!RendererInfo.IsInteractive || Payload is null)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(Payload, _previousPayload) &&
+            string.Equals(Legend, _previousLegend, StringComparison.OrdinalIgnoreCase) &&
+            Stacked == _previousStacked)
+        {
+            return;
+        }
+
+        _previousPayload = Payload;
+        _previousLegend = Legend;
+        _previousStacked = Stacked;
+        await Js.InvokeVoidAsync(
+            "dashSpecCharts.render",
+            ChartId,
+            ChartType,
+            Payload.Labels,
+            Payload.Series,
+            new { legend = Legend, stacked = Stacked });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (RendererInfo.IsInteractive)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("dashSpecCharts.destroy", ChartId);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}
