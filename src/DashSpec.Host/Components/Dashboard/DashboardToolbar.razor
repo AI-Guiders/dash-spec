@@ -1,0 +1,26 @@
+@namespace DashSpec.Host.Components.Dashboard
+
+<section class="dash-toolbar">
+    <label class="dash-upload-btn secondary @(Busy ? "dash-upload-btn-busy" : null)">
+        @if (Busy)
+        {
+            <span class="spinner spinner-inline" aria-hidden="true"></span>
+            <span>Загрузка…</span>
+        }
+        else
+        {
+            <span>Загрузить .dashspec</span>
+        }
+        <InputFile OnChange="OnUpload" accept=".dashspec" disabled="@Busy" />
+    </label>
+    @if (!string.IsNullOrEmpty(SpecSource))
+    {
+        <span class="badge">@SpecSource</span>
+    }
+</section>
+
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? SpecSource { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnUpload { get; set; }
+}
