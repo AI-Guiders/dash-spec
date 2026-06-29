@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+appsettings.Development.local.json
+dash-spec.local.toml
+samples/demo/demo.local.toml
+publish/
+uploads/
