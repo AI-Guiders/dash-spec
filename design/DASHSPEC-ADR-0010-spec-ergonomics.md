@@ -16,7 +16,7 @@
 
 ```text
 filter date usage_date on usage_date as "Дата отчёта" default -7d..today
-filter field app_name on demo.v_daily_active_users.app_name as "Продукты" widget combobox
+filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
 filter top events_top as "Строк (TOP)" default 200
 ```
 
@@ -67,7 +67,7 @@ Override на card: `bind`, `diagram`, `datasource`, `legend`, …
 
 ## Consequences
 
-- Samples demo переписаны под новый синтаксис.
+- Demo sample (`samples/demo/`) переписан под новый синтаксис.
 - `CardResolver` объединяет card preset, bind expansion, diagram preset.
 - Runtime-валидация top/table и datasource после resolve presets.
 

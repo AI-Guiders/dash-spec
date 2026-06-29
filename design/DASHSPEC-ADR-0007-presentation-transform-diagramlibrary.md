@@ -38,7 +38,7 @@ card peak as "Peak concurrent" {
 ### `@diagramlibrary`
 
 ```text
-@config "demo-soak.toml"
+@config "demo.toml"
 @sqldialect tsql
 @diagramlibrary "demo-diagram-library.toml"
 ```
@@ -74,6 +74,6 @@ other = "Other"
 
 ## Consequences
 
-- Samples demo: `@diagramlibrary` + пресеты в `demo-diagram-library.toml`.
+- Demo sample: `@diagramlibrary` + пресеты в `demo-diagram-library.toml`.
 - Именованные рецепты `[diagram.<id>]` (kind + chrome + bindings) — [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md).
 - Новые presentation-свойства — схема `PropertySchemas.Presentation`, не registry kind.

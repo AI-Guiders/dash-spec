@@ -8,7 +8,7 @@
 
 ## Context
 
-- **`datasource view`** — основной путь: логика в SQL views БД (demo `demo.v_*`), DashSpec только фильтры и визуал.
+- **`datasource view`** — основной путь: логика в SQL views БД (`schema.v_*`; в sample — `demo.v_*`), DashSpec только фильтры и визуал.
 - На краях нужен **native SQL** (top-N, CTE, прототип до migrate) без дублирования всей модели в views.
 - Парсер уже принимал `datasource sql "…"`, рантайм — `NotSupportedException`.
 - Разные коннекторы → разный синтаксис дат/лимитов (`DATEADD` vs `INTERVAL`).
@@ -21,12 +21,12 @@
 |---------|--------|
 | **`datasource view`** | Default. Доменные отчёты, одна правда в БД. |
 | **`datasource sql`** | Escape hatch: ad-hoc, прототип, запрос не укладывается в `SELECT … FROM view WHERE …`. |
-| **View в БД** | Если SQL в spec живёт дольше пары итераций → перенос в migrate demo. |
+| **View в БД** | Если SQL в spec живёт дольше пары итераций → перенос в migrate продукта. |
 
 ### File directives (преамбула)
 
 ```text
-@config "demo-soak.toml"
+@config "demo.toml"
 @sqldialect tsql
 
 @dashboard demo_soak
@@ -39,7 +39,7 @@ dashboard "…" { … }
 | `@sqldialect` | нет | `tsql` (default), `postgres`, `generic` |
 
 - **`@sqldialect`** задаёт диалект для **компиляции фильтров** из `bind` (date range, field `IN`, `TOP` vs `LIMIT`).
-- Default **`tsql`** — demo / SqlServer connector на dev.
+- Default **`tsql`** — SqlServer connector на dev.
 - В будущем: `default_dialect` в manifest коннектора, если `@sqldialect` опущен.
 
 ### Семантика `datasource sql`
@@ -96,10 +96,10 @@ card top_users as "Top users" {
 
 ## Consequences
 
-- demo samples: `@sqldialect tsql` явно в `.dashspec`.
-- Metabase `docs/metabase/sql/*.sql` остаётся cookbook; DashSpec sql — только где view избыточен.
+- Demo sample: `@sqldialect tsql` явно в `demo-soak.dashspec`.
+- Ad-hoc SQL в отдельном cookbook продукта остаётся вне DashSpec; `datasource sql` — только где view избыточен.
 - Новый connector Postgres → `@sqldialect postgres` + connector plugin.
 
-## Пример (demo, когда понадобится sql)
+## Пример (ad-hoc sql, когда view избыточен)
 
-Отчёт №2 top-N за период без отдельного view — допустимый кандидат на `datasource sql`; heatmap на view остаётся как есть.
+Top-N за период без отдельного view — допустимый кандидат на `datasource sql`; heatmap на view остаётся как есть.

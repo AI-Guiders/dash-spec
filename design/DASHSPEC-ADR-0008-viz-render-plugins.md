@@ -10,7 +10,7 @@
 
 - `diagram <kind> { … }` задаёт привязку данных (registry + `DataFamily`).
 - [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) вынес `presentation` и `transform series` в отдельные блоки и пресеты `presentation.*` / `transform.series.*`.
-- На практике карточки demo повторяют один и тот же «рецепт»: kind + bindings + render + presentation + transform.
+- На практике типовые карточки в sample повторяют один и тот же «рецепт»: kind + bindings + render + presentation + transform.
 - Host сейчас **жёстко** рендерит: line/bar → Chart.js, heatmap → CSS grid.
 - Inline `code = ...` в spec — нежелателен (безопасность, версии).
 
@@ -94,6 +94,6 @@ assembly = "DashSpec.Viz.CssGrid.dll"
 
 ## Consequences
 
-- **Implemented:** `DiagramLibrary` `[diagram.*]`, `CardDiagramResolver`, samples `demo-diagram-library.toml` + упрощённые soak/stakeholder specs.
+- **Implemented:** `SpecLibrary` `[diagram.*]`, `CardDiagramResolver`, `samples/demo/demo-diagram-library.toml` + `demo-soak.dashspec`.
 - **Next:** `IVizPlugin` + honor `render` из resolved preset.
 - Пресеты `presentation.*` / `transform.series.*` остаются переиспользуемыми building blocks внутри `[diagram.*]` и для явных card-блоков.
