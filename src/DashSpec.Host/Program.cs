@@ -2,6 +2,9 @@ using DashSpec.Host.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services;
+using DashSpec.Host.Services.Loading;
+using DashSpec.Host.Services.Models;
+using DashSpec.Host.Services.Rendering;
 using Microsoft.Extensions.Logging.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +40,8 @@ ConnectorPluginLoader.RegisterPlugins(
     manifest,
     NullLogger.Instance);
 
+builder.Services.AddScoped<DashboardSpecLoader>();
+builder.Services.AddScoped<CardRenderService>();
 builder.Services.AddScoped<DashboardSessionService>();
 
 var app = builder.Build();

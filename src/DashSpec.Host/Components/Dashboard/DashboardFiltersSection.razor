@@ -1,0 +1,104 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Host.Services.Presentation
+
+<section class="@SectionClass" aria-label="Фильтры дашборда">
+    <div class="@GridClass">
+        @foreach (var filterName in FilterNames)
+        {
+            var filter = FilterIndex[filterName];
+            if (filter.Kind is FilterKind.Date)
+            {
+                <div class="filter filter-date @(BarLayout ? "filter-inline" : null)">
+                    @if (!BarLayout)
+                    {
+                        <span class="filter-label">@FilterUiHelpers.DisplayLabel(filter)</span>
+                        <span class="filter-scope">@FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards)</span>
+                    }
+                    <div class="date-range @(filter.IsDayWidget ? "date-range-day" : null)">
+                        @if (BarLayout)
+                        {
+                            <span class="filter-inline-label">@FilterUiHelpers.DisplayLabel(filter)</span>
+                        }
+                        @if (filter.IsDayWidget)
+                        {
+                            <input type="date"
+                                   aria-label="@FilterUiHelpers.DisplayLabel(filter)"
+                                   @bind="DateFrom[filter.Name]"
+                                   @bind:format="yyyy-MM-dd"
+                                   @bind:after="() => OnDayChanged.InvokeAsync(filter.Name)" />
+                        }
+                        else
+                        {
+                            <input type="date"
+                                   aria-label="@($"{filter.Name} from")"
+                                   @bind="DateFrom[filter.Name]"
+                                   @bind:format="yyyy-MM-dd"
+                                   @bind:after="() => OnScheduleApply.InvokeAsync()" />
+                            <span class="date-sep">—</span>
+                            <input type="date"
+                                   aria-label="@($"{filter.Name} to")"
+                                   @bind="DateTo[filter.Name]"
+                                   @bind:format="yyyy-MM-dd"
+                                   @bind:after="() => OnScheduleApply.InvokeAsync()" />
+                        }
+                    </div>
+                </div>
+            }
+            else if (filter.Kind is FilterKind.Field)
+            {
+                <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
+                                  Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
+                                  Compact="@BarLayout"
+                                  Combobox="@filter.IsComboboxWidget"
+                                  Options="GetFieldOptions(filter.Name)"
+                                  Selected="SelectedFields[filter.Name]"
+                                  SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))" />
+            }
+        }
+    </div>
+    @if (!AutoApply)
+    {
+        <div class="filters-actions">
+            <button class="primary"
+                    disabled="@Busy"
+                    @onclick="OnApply">
+                @if (Busy)
+                {
+                    <span class="spinner spinner-inline" aria-hidden="true"></span>
+                    <span>Загрузка…</span>
+                }
+                else
+                {
+                    <span>Применить</span>
+                }
+            </button>
+        </div>
+    }
+    else if (Busy)
+    {
+        <div class="filters-actions">
+            <span class="muted filters-busy"><span class="spinner spinner-inline" aria-hidden="true"></span> обновление…</span>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
+        new Dictionary<string, FilterDefinition>();
+    [Parameter] public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
+        new Dictionary<string, IReadOnlyList<string>>();
+    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+    [Parameter] public bool BarLayout { get; set; }
+    [Parameter] public bool AutoApply { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string SectionClass { get; set; } = "filters filters-card";
+    [Parameter] public string GridClass { get; set; } = "filters-grid";
+    [Parameter] public EventCallback OnApply { get; set; }
+    [Parameter] public EventCallback OnScheduleApply { get; set; }
+    [Parameter] public EventCallback<string> OnDayChanged { get; set; }
+    [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
+}

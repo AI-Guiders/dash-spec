@@ -1,0 +1,24 @@
+@namespace DashSpec.Host.Components.Dashboard
+
+@if (Tabs is { Count: > 0 })
+{
+    <nav class="dash-tabs @(Sticky ? "dash-tabs-sticky" : null)" aria-label="Вкладки дашборда">
+        @foreach (var tab in Tabs)
+        {
+            var active = string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase);
+            <button type="button"
+                    class="dash-tab @(active ? "dash-tab-active" : null)"
+                    aria-selected="@active"
+                    @onclick="() => OnSelect.InvokeAsync(tab.Id)">
+                @(tab.Label ?? tab.Id)
+            </button>
+        }
+    </nav>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<TabDefinition> Tabs { get; set; } = [];
+    [Parameter] public string? ActiveTabId { get; set; }
+    [Parameter] public bool Sticky { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+}

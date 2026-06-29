@@ -1,35 +1,34 @@
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Abstractions.Query;
-using DashSpec.Core.Compilation;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Loading;
+using DashSpec.Host.Services.Models;
+using DashSpec.Host.Services.Rendering;
 using Microsoft.Extensions.Options;
 
 namespace DashSpec.Host.Services;
 
 public sealed class DashboardSessionService(
-    ConnectorRegistry connectorRegistry,
-    ConnectorPluginManifest pluginManifest,
+    DashboardSpecLoader specLoader,
+    CardRenderService cardRenderService,
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
-    IOptions<DashboardHostOptions> hostOptions,
-    ILogger<DashboardSessionService> logger)
+    IOptions<DashboardHostOptions> hostOptions)
 {
     private DashboardDocument? _document;
     private IDataSourceConnector? _connector;
     private IReadOnlyDictionary<string, FilterDefinition>? _filterIndex;
     private FilterState? _filters;
     private SpecLibrary? _specLibrary;
-    private readonly Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
 
     public SpecLibrary? SpecLibrary => _specLibrary;
 
     public DashboardDocument Document => _document ?? throw new InvalidOperationException("Dashboard not loaded.");
     public FilterState Filters => _filters ?? throw new InvalidOperationException("Dashboard not loaded.");
-    public string ActiveConnectorId => _connector?.Id ?? pluginManifest.DefaultConnectorId;
+    public string ActiveConnectorId => _connector?.Id ?? throw new InvalidOperationException("Dashboard not loaded.");
     public string? LoadedSpecSource { get; private set; }
 
     public IReadOnlyDictionary<string, FilterDefinition> FilterIndex =>
@@ -83,49 +82,6 @@ public sealed class DashboardSessionService(
         await LoadFromTextAsync(text, savedPath, safeName, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task LoadFromTextAsync(
-        string text,
-        string specFullPath,
-        string sourceLabel,
-        CancellationToken cancellationToken)
-    {
-        var configPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
-            specFullPath,
-            text,
-            hostContext.DefaultSpecDirectory);
-        if (!string.Equals(configPath, hostContext.StartupRuntimeConfigPath, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Этот дашборд ссылается на другой @config ({Path.GetFileName(configPath)}). " +
-                "Смена runtime-конфига в UI пока не поддерживается — укажи spec_path в dash-spec.toml и перезапусти Host.");
-        }
-
-        _document = DashSpecParser.Parse(text, Path.GetDirectoryName(specFullPath));
-        _specLibrary = LoadSpecLibrary(specFullPath, _document.DiagramLibraryPath);
-        _ = SpecResolver.Resolve(_document, _specLibrary);
-        _connector = connectorRegistry.Resolve(_document.ConnectorId, pluginManifest.DefaultConnectorId);
-        _filterIndex = DashboardBootstrap.IndexFilters(_document);
-        _filters = DashboardBootstrap.CreateInitialFilters(_document, DateOnly.FromDateTime(DateTime.UtcNow));
-        _fieldOptions.Clear();
-        LoadedSpecSource = sourceLabel;
-
-        foreach (var filter in _document.Filters.Where(x => x.Kind is FilterKind.Field))
-        {
-            try
-            {
-                var sql = QueryCompiler.BuildDistinctFieldSql(filter);
-                _fieldOptions[filter.Name] = await _connector
-                    .QueryDistinctStringsAsync(sql, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to load field options for filter {FilterName}", filter.Name);
-                _fieldOptions[filter.Name] = [];
-            }
-        }
-    }
-
     public IReadOnlyList<string> GetFieldOptions(string filterName) =>
         _fieldOptions.TryGetValue(filterName, out var values) ? values : [];
 
@@ -138,119 +94,31 @@ public sealed class DashboardSessionService(
     public void ApplyTopFilter(string name, int limit) =>
         Filters.SetTop(name, limit);
 
-    public async Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default)
+    public Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default) =>
+        cardRenderService.RenderAsync(
+            card,
+            Document,
+            Filters,
+            FilterIndex,
+            _specLibrary,
+            _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
+            cancellationToken);
+
+    private async Task LoadFromTextAsync(
+        string text,
+        string specFullPath,
+        string sourceLabel,
+        CancellationToken cancellationToken)
     {
-        var connector = _connector ?? throw new InvalidOperationException("Dashboard not loaded.");
-        var resolved = CardResolver.Resolve(card, _diagramLibrary, Document.DashboardFilters);
-        var effective = resolved.Card;
-        var query = QueryCompiler.Compile(effective, Filters, FilterIndex, Document.SqlDialect);
-        var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
-        var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
-        var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
-            ? CardChromeResolver.ResolveChartPresentation(effective, _diagramLibrary)
-            : null;
-        var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart
-            ? CardChromeResolver.ResolveSeriesTransform(effective, _diagramLibrary)
-            : null;
-        var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
-            ? MatrixPresentation.FromCard(effective, _diagramLibrary)
-            : null;
+        var loaded = await specLoader.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken)
+            .ConfigureAwait(false);
 
-        return kind.DataFamily switch
-        {
-            DiagramDataFamily.Chart =>
-                new CardRenderResult(
-                    card.Id,
-                    card.Title,
-                    effective.Diagram.Kind,
-                    kind.DataFamily,
-                    Chart: ChartDataBuilder.BuildLineOrBar(rows, effective.Diagram, seriesTransform),
-                    Placement: card.Placement,
-                    ChartPresentation: chartPresentation,
-                    BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
-            DiagramDataFamily.Table =>
-                new CardRenderResult(
-                    card.Id,
-                    card.Title,
-                    effective.Diagram.Kind,
-                    kind.DataFamily,
-                    Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
-                    Placement: card.Placement,
-                    BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
-            DiagramDataFamily.Scalar =>
-                new CardRenderResult(
-                    card.Id,
-                    card.Title,
-                    effective.Diagram.Kind,
-                    kind.DataFamily,
-                    Number: FormatNumber(rows, effective.Diagram),
-                    Placement: card.Placement,
-                    BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
-            DiagramDataFamily.Matrix =>
-                new CardRenderResult(
-                    card.Id,
-                    card.Title,
-                    effective.Diagram.Kind,
-                    kind.DataFamily,
-                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram),
-                    Placement: card.Placement,
-                    MatrixPresentation: matrixPresentation,
-                    BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
-            _ => throw new ArgumentOutOfRangeException(nameof(card)),
-        };
+        _document = loaded.Document;
+        _specLibrary = loaded.Library;
+        _connector = loaded.Connector;
+        _filterIndex = loaded.FilterIndex;
+        _filters = loaded.Filters;
+        _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        LoadedSpecSource = loaded.SourceLabel;
     }
-
-    private static string? FormatNumber(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
-        DiagramDefinition diagram)
-    {
-        if (rows.Count == 0)
-        {
-            return null;
-        }
-
-        return Convert.ToString(rows[0].GetValueOrDefault(DiagramBindings.Column(diagram, "value")));
-    }
-
-    private SpecLibrary? LoadSpecLibrary(string specFullPath, string? relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(relativePath))
-        {
-            return null;
-        }
-
-        var path = DashSpecBootstrap.ResolveSpecLibraryPath(
-            specFullPath,
-            relativePath,
-            hostContext.DefaultSpecDirectory);
-        return SpecLibrary.LoadFile(path);
-    }
-}
-
-public sealed record CardRenderResult(
-    string Id,
-    string Title,
-    string DiagramKind,
-    DiagramDataFamily DataFamily,
-    ChartPayload? Chart = null,
-    TablePayload? Table = null,
-    string? Number = null,
-    string? Error = null,
-    bool Loading = false,
-    IReadOnlyList<string>? BoundFilters = null,
-    IReadOnlyList<string>? LocalFilters = null,
-    PlacementDefinition? Placement = null,
-    ChartPresentation? ChartPresentation = null,
-    MatrixPayload? Matrix = null,
-    MatrixPresentation? MatrixPresentation = null);
-
-public sealed class DashboardHostOptions
-{
-    public const string SectionName = "Dashboard";
-
-    public string SpecPath { get; set; } = string.Empty;
 }
