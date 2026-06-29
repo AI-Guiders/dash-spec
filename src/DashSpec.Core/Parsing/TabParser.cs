@@ -7,12 +7,18 @@ internal static class TabParser
     public static TabDefinition Parse(TokenReader reader)
     {
         var id = reader.ReadIdent();
-        if (!reader.TryKeyword("as"))
+        string? label = null;
+        if (reader.TryKeyword("as"))
         {
-            throw new DashSpecParseException($"Tab '{id}' requires as \"Label\".");
+            label = reader.ReadString();
         }
 
-        var label = reader.ReadString();
+        if (reader.TryKeyword("dashspec"))
+        {
+            var path = reader.ReadString();
+            return new TabDefinition(id, label, [], path);
+        }
+
         reader.Expect(TokenKind.LBrace);
         reader.SkipNewlines();
 
@@ -41,10 +47,62 @@ internal static class TabParser
 
         if (cardIds.Count == 0)
         {
-            throw new DashSpecParseException($"Tab '{id}' requires a cards {{ }} block.");
+            throw new DashSpecParseException($"Tab '{id}' requires a cards {{ }} block or dashspec \"path\".");
         }
 
         return new TabDefinition(id, label, cardIds);
+    }
+
+    /// <summary>Tab block inside @tab module: optional label + tab-local filters only.</summary>
+    public static (string? Label, IReadOnlyList<FilterDefinition> Filters) ParseModuleLocalBlock(
+        TokenReader reader,
+        string expectedTabId,
+        bool allowFilters)
+    {
+        var id = reader.ReadIdent();
+        if (!string.Equals(id, expectedTabId, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DashSpecParseException(
+                $"Tab module declares @tab '{expectedTabId}' but tab block uses '{id}'.");
+        }
+
+        string? label = null;
+        if (reader.TryKeyword("as"))
+        {
+            label = reader.ReadString();
+        }
+
+        var filters = new List<FilterDefinition>();
+        if (!reader.IsAt(TokenKind.LBrace))
+        {
+            return (label, filters);
+        }
+
+        reader.Expect(TokenKind.LBrace);
+        reader.SkipNewlines();
+
+        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (reader.IsAt(TokenKind.RBrace))
+            {
+                break;
+            }
+
+            if (allowFilters && reader.TryKeyword("filter"))
+            {
+                filters.Add(FilterParser.Parse(reader));
+                reader.SkipNewlines();
+                continue;
+            }
+
+            var key = reader.ReadIdent();
+            throw new DashSpecParseException(
+                $"Tab module '{expectedTabId}' allows only filter declarations in tab {{ }}, not '{key}'.");
+        }
+
+        reader.Expect(TokenKind.RBrace);
+        return (label, filters);
     }
 
     public static List<CardDefinition> AssignTabs(

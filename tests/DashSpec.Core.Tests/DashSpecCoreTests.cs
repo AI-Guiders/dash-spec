@@ -436,7 +436,7 @@ public class DashSpecParserTests
             "demo-soak.dashspec"));
 
         var text = File.ReadAllText(path);
-        var doc = DashSpecParser.Parse(text);
+        var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!);
 
         Assert.Equal("demo_soak", doc.Id);
         Assert.Equal("sqlserver", doc.ConnectorId);
@@ -961,6 +961,106 @@ public class DashSpecParserTests
         Assert.Equal(1, layout["b"].Row);
         Assert.Equal(2, layout["c"].Row);
     }
+
+    [Fact]
+    public void Parse_tab_dashspec_merges_module_cards()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
+                @tab extra
+
+                card x as "X" {
+                  diagram number { value = n }
+                  datasource view dbo.x
+                }
+                """);
+
+            var doc = DashSpecParser.Parse("""
+                @dashboard t
+                dashboard "T" {
+                  tab overview as "Overview" {
+                    cards { a }
+                  }
+                  tab extra dashspec "extra.dashspec"
+                  card a as "A" {
+                    diagram number { value = n }
+                    datasource view dbo.a
+                  }
+                }
+                """, dir);
+
+            Assert.Equal(2, doc.Cards.Count);
+            Assert.Equal("extra", doc.Tabs[1].Id);
+            Assert.Equal(["x"], doc.Tabs[1].CardIds);
+            Assert.Equal("extra", doc.Cards.Single(c => c.Id == "x").TabId);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Parse_tab_dashspec_requires_spec_directory()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              tab x dashspec "x.dashspec"
+              card a as "A" {
+                diagram number { value = n }
+                datasource view dbo.a
+              }
+            }
+            """));
+
+        Assert.Contains("specDirectory", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_tab_root_standalone_document()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab soak
+
+            connector sqlserver
+            filter date usage_date on usage_date as "Date" default -7d..today
+            toolbar { usage_date }
+
+            tab soak as "Soak title"
+
+            card a as "A" {
+              bind usage_date
+              diagram number { value = n }
+              datasource view dbo.a
+            }
+            """);
+
+        Assert.Equal("soak", doc.Id);
+        Assert.Equal("Soak title", doc.Title);
+        Assert.Single(doc.Tabs);
+        Assert.Equal("sqlserver", doc.ConnectorId);
+        Assert.Single(doc.Cards);
+    }
+
+    [Fact]
+    public void ReadDashboardHeader_reads_tab_root_id()
+    {
+        const string text = """
+            @config "cfg.toml"
+            @tab stakeholder
+            connector sqlserver
+            card a as "A" {
+              diagram number { value = x }
+              datasource view dbo.t
+            }
+            """;
+
+        Assert.Equal(("stakeholder", "stakeholder"), DashSpecParser.ReadDashboardHeader(text));
+    }
 }
 
 public class FilterBindingTests
@@ -968,11 +1068,14 @@ public class FilterBindingTests
     [Fact]
     public void MapFiltersToCards_activity_day_only_on_activity_card()
     {
-        var doc = DashSpecParser.Parse(File.ReadAllText(Path.GetFullPath(Path.Combine(
+        var soakPath = Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
             "samples", "demo",
-            "demo-soak.dashspec"))));
+            "demo-soak.dashspec"));
+        var specDir = Path.GetDirectoryName(soakPath)!;
+
+        var doc = DashSpecParser.Parse(File.ReadAllText(soakPath), specDir);
 
         var library = SpecLibrary.LoadFile(Path.GetFullPath(Path.Combine(
             AppContext.BaseDirectory,
