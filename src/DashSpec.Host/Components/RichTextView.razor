@@ -1,0 +1,8 @@
+@using DashSpec.Core.Runtime
+
+<span class="rich-text">@((MarkupString)CreoleSubset.ToHtml(Text))</span>
+
+@code {
+    [Parameter]
+    public string? Text { get; set; }
+}

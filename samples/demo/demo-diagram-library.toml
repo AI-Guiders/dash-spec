@@ -1,0 +1,123 @@
+# Diagram / card presets for samples/demo (fictional demo.v_* views).
+
+[presentation.line_bottom_300]
+legend = "bottom"
+height = "300"
+
+[presentation.line_right_360]
+legend = "right"
+height = "360"
+
+[presentation.bar_bottom_300]
+legend = "bottom"
+height = "300"
+
+[presentation.bar_bottom_320]
+legend = "bottom"
+height = "320"
+
+[presentation.heatmap_tall]
+height = "420"
+
+[transform.series.top5]
+max = 5
+other = "Other"
+
+[transform.series.top6]
+max = 6
+other = "Other"
+
+[diagram.demo_peak_concurrent_line]
+kind = "line"
+render = "chartjs"
+presentation = "line_bottom_300"
+"transform.series" = "top5"
+x = "usage_date"
+y = "peak_concurrent_proxy"
+series = "app_name"
+
+[diagram.demo_activity_5min_line]
+kind = "line"
+render = "chartjs"
+presentation = "line_right_360"
+"transform.series" = "top6"
+x = "bucket_start_utc"
+y = "event_count"
+series = "app_name"
+
+[diagram.demo_dau_bar]
+kind = "bar"
+render = "chartjs"
+presentation = "bar_bottom_300"
+x = "app_name"
+y = "distinct_users"
+
+[diagram.demo_events_detail_table]
+kind = "table"
+columns = "occurred_at_utc, app_name, user_name, product_version, window_title"
+order_by = "occurred_at_utc DESC"
+
+[diagram.demo_period_peak_by_app_bar]
+kind = "bar"
+render = "chartjs"
+presentation = "bar_bottom_320"
+x = "app_name"
+y = "peak_concurrent_proxy"
+
+[diagram.demo_peak_apps_heatmap]
+kind = "heatmap"
+render = "css-grid"
+presentation = "heatmap_tall"
+x = "usage_date"
+x_as = "Day"
+y = "user_id"
+y_as = "User"
+value = "peak_concurrent_apps"
+value_as = "Apps"
+tooltip = "peak_apps"
+tooltip_as = "Peak composition"
+tooltip_format = "list"
+tooltip_split = ", "
+x_format = "date.short"
+y_format = "user.short"
+color_scale = "heat"
+
+[diagram.demo_idle_table]
+kind = "table"
+columns = "usage_date, user_id, app_name, idle_minutes"
+order_by = "idle_minutes DESC"
+
+[card.demo_peak_concurrent]
+diagram = "demo_peak_concurrent_line"
+datasource = "demo.v_daily_peak_concurrent_proxy"
+bind = "dashboard"
+
+[card.demo_activity_5min]
+diagram = "demo_activity_5min_line"
+datasource = "demo.v_five_minute_activity"
+bind = "dashboard"
+
+[card.demo_dau_bar]
+diagram = "demo_dau_bar"
+datasource = "demo.v_daily_active_users"
+bind = "dashboard"
+
+[card.demo_events_detail]
+diagram = "demo_events_detail_table"
+datasource = "demo.v_events_detail"
+bind = "app_name, user_name"
+
+[card.demo_period_peak_by_app]
+diagram = "demo_period_peak_by_app_bar"
+datasource = "demo.v_peak_concurrent_by_period"
+bind = "app_name"
+
+[card.demo_peak_apps_heatmap]
+diagram = "demo_peak_apps_heatmap"
+datasource = "demo.v_daily_peak_concurrent_apps_per_user"
+bind = "usage_date, user_name"
+
+[card.demo_idle_table]
+diagram = "demo_idle_table"
+datasource = "demo.v_daily_idle_minutes_by_user_app"
+bind = "usage_date, user_name, app_name"

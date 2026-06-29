@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+  <Project Path="src\DashSpec.Core\DashSpec.Core.csproj" />
+  <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
+  <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
+  <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
+</Solution>

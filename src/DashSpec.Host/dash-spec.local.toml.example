@@ -1,0 +1,5 @@
+# Copy to dash-spec.local.toml for personal secrets (gitignored).
+# Loaded last — перекрывает dash-spec.toml и dash-spec.dev.toml.
+
+[connectors.sqlserver]
+connection_string = "Server=YOUR_SERVER;Database=YourDatabase;Trusted_Connection=True;TrustServerCertificate=True"
