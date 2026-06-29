@@ -1,0 +1,19 @@
+@tab analytics
+
+card period_peak_by_app as "Peak by app (period)" {
+  filters { period_grain, period_start }
+  use demo_period_peak_by_app
+}
+
+card peak_apps_heatmap as "**Peak apps** per user" {
+  use demo_peak_apps_heatmap
+  legend {
+    min = "min apps"
+    max = "max **{max}**"
+  }
+}
+
+card idle_table as "Idle minutes (user × app)" {
+  filters { idle_top }
+  use demo_idle_table
+}

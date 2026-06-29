@@ -46,13 +46,7 @@ dashboard "DashSpec — Demo soak" {
     }
   }
 
-  tab analytics as "Analytics" {
-    cards {
-      period_peak_by_app
-      peak_apps_heatmap
-      idle_table
-    }
-  }
+  tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
 
   tab detail as "Detail" {
     cards { events_detail }
@@ -74,23 +68,5 @@ dashboard "DashSpec — Demo soak" {
   card events_detail as "Events detail" {
     filters { events_top }
     use demo_events_detail
-  }
-
-  card period_peak_by_app as "Peak by app (period)" {
-    filters { period_grain, period_start }
-    use demo_period_peak_by_app
-  }
-
-  card peak_apps_heatmap as "**Peak apps** per user" {
-    use demo_peak_apps_heatmap
-    legend {
-      min = "min apps"
-      max = "max **{max}**"
-    }
-  }
-
-  card idle_table as "Idle minutes (user × app)" {
-    filters { idle_top }
-    use demo_idle_table
   }
 }
