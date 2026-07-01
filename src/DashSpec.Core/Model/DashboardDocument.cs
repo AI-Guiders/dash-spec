@@ -6,6 +6,7 @@ public sealed record DashboardDocument(
     string? ConnectorId,
     SqlDialect SqlDialect,
     string? DiagramLibraryPath,
+    string? ColorPalette,
     LayoutDefinition Layout,
     FiltersChromeDefinition FiltersChrome,
     IReadOnlyList<FilterDefinition> Filters,
@@ -21,7 +22,8 @@ public sealed record FilterDefinition(
     string? Label = null,
     string? Widget = null,
     int? MinValue = null,
-    int? MaxValue = null)
+    int? MaxValue = null,
+    string? GrainFilterName = null)
 {
     public bool IsDayWidget =>
         string.Equals(Widget, "day", StringComparison.OrdinalIgnoreCase);

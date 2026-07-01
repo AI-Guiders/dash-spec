@@ -14,7 +14,7 @@ public static class DashboardBootstrap
                     state.SetDate(filter.Name, range.From, range.To);
                     break;
                 case Model.FilterKind.Field:
-                    state.SetField(filter.Name, []);
+                    state.SetField(filter.Name, FieldFilterDefaults.ResolveValues(filter.DefaultExpression));
                     break;
                 case Model.FilterKind.Top:
                     state.SetTop(filter.Name, TopLimitDefaults.Resolve(filter, null));

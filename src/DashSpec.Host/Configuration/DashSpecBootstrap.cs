@@ -5,7 +5,8 @@ public static class DashSpecBootstrap
 {
     public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment)
     {
-        var bootstrapPath = Path.Combine(environment.ContentRootPath, "dash-spec.toml");
+        var contentRoot = environment.ContentRootPath;
+        var bootstrapPath = Path.Combine(contentRoot, "dash-spec.toml");
         if (!File.Exists(bootstrapPath))
         {
             throw new InvalidOperationException(
@@ -13,6 +14,15 @@ public static class DashSpecBootstrap
         }
 
         var bootstrap = DashSpecTomlLoader.LoadFile(bootstrapPath);
+        bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
+        bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
+
+        var envSpecPath = Environment.GetEnvironmentVariable("DASHSPEC_SPEC_PATH");
+        if (!string.IsNullOrWhiteSpace(envSpecPath))
+        {
+            bootstrap.Dashboard.SpecPath = envSpecPath;
+        }
+
         if (string.IsNullOrWhiteSpace(bootstrap.Dashboard.SpecPath))
         {
             throw new InvalidOperationException(
@@ -20,6 +30,16 @@ public static class DashSpecBootstrap
         }
 
         return bootstrap;
+    }
+
+    private static DashSpecTomlRoot OverlayOptionalToml(DashSpecTomlRoot root, string path)
+    {
+        if (!File.Exists(path))
+        {
+            return root;
+        }
+
+        return DashSpecTomlLoader.Merge(root, DashSpecTomlLoader.LoadFile(path));
     }
 
     public static DashSpecTomlRoot Load(IHostEnvironment environment)

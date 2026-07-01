@@ -5,6 +5,8 @@ using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Loading;
 
@@ -12,17 +14,8 @@ public sealed class DashboardSpecLoader(
     ConnectorRegistry connectorRegistry,
     ConnectorPluginManifest pluginManifest,
     DashSpecHostContext hostContext,
-    ILogger<DashboardSpecLoader> logger)
+    ILogger<DashboardSpecLoader> logger) : IDashboardSpecLoader
 {
-    public sealed record LoadedDashboard(
-        DashboardDocument Document,
-        SpecLibrary? Library,
-        IDataSourceConnector Connector,
-        IReadOnlyDictionary<string, FilterDefinition> FilterIndex,
-        FilterState Filters,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> FieldOptions,
-        string SourceLabel);
-
     public async Task<LoadedDashboard> LoadFromTextAsync(
         string text,
         string specFullPath,

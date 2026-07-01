@@ -30,7 +30,8 @@
 | `DashboardFiltersSection` | toolbar filters |
 | `DashboardCardView` | карточка + local filters |
 | `CardVisualization` | chart / table / scalar / heatmap body |
-| `Home.razor` + `Home.razor.cs` | page controller |
+| `Home.razor` + `Home.razor.cs` | page shell (~20 lines code-behind) |
+| `DashboardPageController` | filter UI state, refresh orchestration ([ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md)) |
 
 ### Core payloads
 

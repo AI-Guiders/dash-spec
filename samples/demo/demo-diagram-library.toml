@@ -16,6 +16,11 @@ height = "300"
 legend = "bottom"
 height = "320"
 
+[presentation.bar_horizontal_320]
+legend = "bottom"
+height = "320"
+orientation = "horizontal"
+
 [presentation.heatmap_tall]
 height = "420"
 
@@ -27,13 +32,21 @@ other = "Other"
 max = 6
 other = "Other"
 
+[palette.demo_apps]
+colors = "#60a5fa,#34d399,#fbbf24,#f472b6,#a78bfa"
+default = "#94a3b8"
+Other = "#94a3b8"
+
 [diagram.demo_peak_concurrent_line]
 kind = "line"
 render = "chartjs"
 presentation = "line_bottom_300"
 "transform.series" = "top5"
+color_palette = "demo_apps"
 x = "usage_date"
+x_format = "date.short"
 y = "peak_concurrent_proxy"
+scale_y = "integer"
 series = "app_name"
 
 [diagram.demo_activity_5min_line]
@@ -41,16 +54,22 @@ kind = "line"
 render = "chartjs"
 presentation = "line_right_360"
 "transform.series" = "top6"
+color_palette = "demo_apps"
 x = "bucket_start_utc"
+x_format = "time.short"
+x_step = "5m"
 y = "event_count"
+scale_y = "integer"
 series = "app_name"
 
 [diagram.demo_dau_bar]
 kind = "bar"
 render = "chartjs"
 presentation = "bar_bottom_300"
-x = "app_name"
-y = "distinct_users"
+color_palette = "demo_apps"
+category = "app_name"
+value = "distinct_users"
+scale_value = "integer"
 
 [diagram.demo_events_detail_table]
 kind = "table"
@@ -60,9 +79,12 @@ order_by = "occurred_at_utc DESC"
 [diagram.demo_period_peak_by_app_bar]
 kind = "bar"
 render = "chartjs"
-presentation = "bar_bottom_320"
-x = "app_name"
-y = "peak_concurrent_proxy"
+presentation = "bar_horizontal_320"
+orientation = "horizontal"
+category = "app_name"
+value = "peak_concurrent_proxy"
+scale_value = "integer"
+order_by = "peak_concurrent_proxy DESC, app_name"
 
 [diagram.demo_peak_apps_heatmap]
 kind = "heatmap"
@@ -110,7 +132,7 @@ bind = "app_name, user_name"
 [card.demo_period_peak_by_app]
 diagram = "demo_period_peak_by_app_bar"
 datasource = "demo.v_peak_concurrent_by_period"
-bind = "app_name"
+bind = "period_grain, period_start, app_name"
 
 [card.demo_peak_apps_heatmap]
 diagram = "demo_peak_apps_heatmap"

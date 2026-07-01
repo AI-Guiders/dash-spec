@@ -1,4 +1,5 @@
 @namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Abstractions.Viz
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Services.Presentation
 
@@ -12,76 +13,86 @@ else if (!string.IsNullOrEmpty(Card.Error))
 {
     <div class="card-error">@Card.Error</div>
 }
-else if (Card.DataFamily is DiagramDataFamily.Chart)
+else
 {
-    @if (Card.Chart is null || Card.Chart.Labels.Count == 0)
+    @switch (Card.RenderPluginId)
     {
-        <p class="empty-state">Нет данных за выбранный период</p>
-    }
-    else
-    {
-        <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Card)">
-            <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Card.Id)"
-                         ChartType="@(string.Equals(Card.DiagramKind, "bar", StringComparison.OrdinalIgnoreCase) ? "bar" : "line")"
-                         Payload="Card.Chart"
-                         Legend="@(Card.ChartPresentation?.Legend ?? "bottom")"
-                         Stacked="@(Card.ChartPresentation?.Stacked ?? false)" />
-        </div>
-    }
-}
-else if (Card.DataFamily is DiagramDataFamily.Table && Card.Table is not null)
-{
-    @if (Card.Table.Rows.Count == 0)
-    {
-        <p class="empty-state">Нет строк</p>
-    }
-    else
-    {
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        @foreach (var column in Card.Table.Columns)
-                        {
-                            <th>@column</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in Card.Table.Rows)
-                    {
-                        <tr>
-                            @foreach (var cell in row)
+        case VizPluginIds.ChartJs:
+            @if (Card.Chart is null || Card.Chart.Labels.Count == 0)
+            {
+                <p class="empty-state">Нет данных за выбранный период</p>
+            }
+            else
+            {
+                <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Card)">
+                    <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Card.Id)"
+                                 ChartType="@(string.Equals(Card.DiagramKind, "bar", StringComparison.OrdinalIgnoreCase) ? "bar" : "line")"
+                                 Payload="Card.Chart"
+                                 Legend="@(Card.ChartPresentation?.Legend ?? "bottom")"
+                                 Stacked="@(Card.ChartPresentation?.Stacked ?? false)"
+                                 Orientation="@(Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
+                                 ValueAxisScale="@(Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)" />
+                </div>
+            }
+            break;
+        case VizPluginIds.TableHtml:
+            @if (Card.Table is null || Card.Table.Rows.Count == 0)
+            {
+                <p class="empty-state">Нет строк</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                @foreach (var column in Card.Table.Columns)
+                                {
+                                    <th>@column</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Card.Table.Rows)
                             {
-                                <td>@cell</td>
+                                <tr>
+                                    @foreach (var cell in row)
+                                    {
+                                        <td>@cell</td>
+                                    }
+                                </tr>
                             }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-        <p class="table-foot muted">Показано @Card.Table.Rows.Count строк</p>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="table-foot muted">Показано @Card.Table.Rows.Count строк</p>
+            }
+            break;
+        case VizPluginIds.ScalarHtml:
+            <div class="number">@(Card.Number ?? "—")</div>
+            break;
+        case VizPluginIds.CssGrid:
+            @if (Card.Matrix is not null)
+            {
+                <HeatmapView Payload="Card.Matrix"
+                             HeightPx="@(Card.MatrixPresentation?.HeightPx ?? 320)"
+                             XAxisLabel="@Card.MatrixPresentation?.XLabel"
+                             YAxisLabel="@Card.MatrixPresentation?.YLabel"
+                             ValueLabel="@Card.MatrixPresentation?.ValueLabel"
+                             TooltipLabel="@Card.MatrixPresentation?.TooltipLabel"
+                             TooltipFormat="@(Card.MatrixPresentation?.TooltipFormat ?? TooltipFormat.Inline)"
+                             TooltipSplit="@(Card.MatrixPresentation?.TooltipSplit ?? ", ")"
+                             XFormat="@(Card.MatrixPresentation?.XFormat ?? "date.short")"
+                             YFormat="@(Card.MatrixPresentation?.YFormat ?? "user.short")"
+                             ColorScale="@(Card.MatrixPresentation?.ColorScale ?? "heat")"
+                             LegendMinText="@Card.MatrixPresentation?.FormatLegendMin(MatrixMin, MatrixMax)"
+                             LegendMaxText="@Card.MatrixPresentation?.FormatLegendMax(MatrixMin, MatrixMax)" />
+            }
+            break;
+        default:
+            <div class="card-error">Неизвестный viz plugin: @Card.RenderPluginId</div>
+            break;
     }
-}
-else if (Card.DataFamily is DiagramDataFamily.Scalar)
-{
-    <div class="number">@(Card.Number ?? "—")</div>
-}
-else if (Card.DataFamily is DiagramDataFamily.Matrix && Card.Matrix is not null)
-{
-    <HeatmapView Payload="Card.Matrix"
-                 HeightPx="@(Card.MatrixPresentation?.HeightPx ?? 320)"
-                 XAxisLabel="@Card.MatrixPresentation?.XLabel"
-                 YAxisLabel="@Card.MatrixPresentation?.YLabel"
-                 ValueLabel="@Card.MatrixPresentation?.ValueLabel"
-                 TooltipLabel="@Card.MatrixPresentation?.TooltipLabel"
-                 TooltipFormat="@(Card.MatrixPresentation?.TooltipFormat ?? TooltipFormat.Inline)"
-                 TooltipSplit="@(Card.MatrixPresentation?.TooltipSplit ?? ", ")"
-                 XFormat="@(Card.MatrixPresentation?.XFormat ?? "date.short")"
-                 YFormat="@(Card.MatrixPresentation?.YFormat ?? "user.short")"
-                 ColorScale="@(Card.MatrixPresentation?.ColorScale ?? "heat")"
-                 LegendMinText="@Card.MatrixPresentation?.FormatLegendMin(MatrixMin, MatrixMax)"
-                 LegendMaxText="@Card.MatrixPresentation?.FormatLegendMax(MatrixMin, MatrixMax)" />
 }
 
 @code {
