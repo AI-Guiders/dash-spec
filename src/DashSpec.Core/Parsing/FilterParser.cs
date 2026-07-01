@@ -37,12 +37,22 @@ internal static class FilterParser
         props.TryGetValue("default", out var defaultExpression);
         var label = ResolveFilterLabel(name, kind, props, declarationLabel, labelFromOn ?? trailingLabel);
         props.TryGetValue("widget", out var widget);
+        props.TryGetValue("grain_filter", out var grainFilterName);
         int? minValue = null;
         int? maxValue = null;
 
         ValidateSemantics(kind, name, ref defaultExpression, widget, columnReference, props, ref minValue, ref maxValue);
 
-        return new FilterDefinition(kind, name, defaultExpression, columnReference, label, widget, minValue, maxValue);
+        return new FilterDefinition(
+            kind,
+            name,
+            defaultExpression,
+            columnReference,
+            label,
+            widget,
+            minValue,
+            maxValue,
+            grainFilterName);
     }
 
     private static FilterKind ParseFilterKind(TokenReader reader) =>

@@ -60,6 +60,7 @@ internal static class DashboardParser
         var tabs = new List<TabDefinition>();
         var cards = new List<CardDefinition>();
         string? connectorId = null;
+        string? colorPalette = null;
         LayoutDefinition layout = LayoutDefinition.Default;
         FiltersChromeDefinition filtersChrome = FiltersChromeDefinition.Default;
 
@@ -75,6 +76,13 @@ internal static class DashboardParser
             if (reader.TryKeyword("layout"))
             {
                 layout = LayoutParser.ParseGrid(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("palette"))
+            {
+                colorPalette = ReadPaletteReference(reader);
                 reader.SkipNewlines();
                 continue;
             }
@@ -131,6 +139,7 @@ internal static class DashboardParser
             connectorId,
             sqlDialect,
             diagramLibraryPath,
+            colorPalette,
             layout,
             filtersChrome,
             filters,
@@ -164,5 +173,15 @@ internal static class DashboardParser
         }
 
         return reader.ReadCommaListInline();
+    }
+
+    private static string ReadPaletteReference(TokenReader reader)
+    {
+        if (reader.RawKind is TokenKind.Eq)
+        {
+            reader.Advance();
+        }
+
+        return reader.ReadScalarValue();
     }
 }

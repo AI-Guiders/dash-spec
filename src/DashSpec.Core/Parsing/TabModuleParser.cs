@@ -68,8 +68,10 @@ internal static class TabModuleParser
 
             if (reader.TryKeyword("filter"))
             {
-                throw new DashSpecParseException(
-                    $"Tab module '{tabId}': declare filters inside tab {{ }} or only on parent dashboard.");
+                // Standalone shell: top-level filters are for spec_path on module only; parent owns globals when embedded.
+                _ = FilterParser.Parse(reader);
+                reader.SkipNewlines();
+                continue;
             }
 
             if (reader.TryKeyword("tab"))
@@ -203,6 +205,7 @@ internal static class TabModuleParser
             connectorId,
             sqlDialect,
             diagramLibraryPath,
+            null,
             layout,
             filtersChrome,
             filters,

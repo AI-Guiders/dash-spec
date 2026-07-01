@@ -4,20 +4,20 @@
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 
-<PageTitle>@(_loaded ? Dashboard.Document.Title : "DashSpec")</PageTitle>
+<PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
 
-<DashboardToolbar Busy="_switching"
-                  SpecSource="_loadedSpecSource"
-                  OnUpload="OnSpecUploadedAsync" />
+<DashboardToolbar Busy="Page.Switching"
+                  SpecSource="Page.LoadedSpecSource"
+                  OnUpload="Page.OnSpecUploadedAsync" />
 
-@if (!string.IsNullOrEmpty(_error))
+@if (!string.IsNullOrEmpty(Page.Error))
 {
     <div class="alert" role="alert">
         <strong>Не удалось загрузить dashboard</strong>
-        <p>@_error</p>
+        <p>@Page.Error</p>
     </div>
 }
-else if (!_loaded)
+else if (!Page.Loaded)
 {
     <div class="page-loading">
         <div class="spinner" aria-hidden="true"></div>
@@ -28,55 +28,55 @@ else
 {
     <header class="dash-header">
         <div>
-            <h1>@Dashboard.Document.Title</h1>
+            <h1>@Page.Session.Document.Title</h1>
             <p class="muted dash-meta">
-                <span class="badge">@Dashboard.Document.Id</span>
-                <span class="badge">@Dashboard.ActiveConnectorId</span>
+                <span class="badge">@Page.Session.Document.Id</span>
+                <span class="badge">@Page.Session.ActiveConnectorId</span>
             </p>
         </div>
     </header>
 
-  var chrome = Dashboard.Document.FiltersChrome;
+  var chrome = Page.Session.Document.FiltersChrome;
 
-    <DashboardTabBar Tabs="Dashboard.Document.Tabs"
-                     ActiveTabId="_activeTabId"
+    <DashboardTabBar Tabs="Page.Session.Document.Tabs"
+                     ActiveTabId="Page.ActiveTabId"
                      Sticky="chrome.IsSticky"
-                     OnSelect="SelectTab" />
+                     OnSelect="Page.SelectTab" />
 
-    <DashboardFiltersSection FilterNames="Dashboard.Document.DashboardFilters"
-                             FilterIndex="Dashboard.FilterIndex"
-                             FiltersToCards="_filtersToCards"
-                             DateFrom="_dateFrom"
-                             DateTo="_dateTo"
-                             SelectedFields="_selectedFields"
-                             GetFieldOptions="Dashboard.GetFieldOptions"
+    <DashboardFiltersSection FilterNames="Page.Session.Document.DashboardFilters"
+                             FilterIndex="Page.Session.FilterIndex"
+                             FiltersToCards="Page.FiltersToCards"
+                             DateFrom="Page.DateFrom"
+                             DateTo="Page.DateTo"
+                             SelectedFields="Page.SelectedFields"
+                             GetFieldOptions="Page.Session.GetFieldOptions"
                              BarLayout="chrome.IsBarLayout"
                              AutoApply="chrome.IsAutoApply"
-                             Busy="_busy"
-                             SectionClass="@FiltersSectionClass()"
-                             GridClass="@FiltersGridClass()"
-                             OnApply="ApplyFiltersAsync"
-                             OnScheduleApply="ScheduleDashboardApplyAsync"
-                             OnDayChanged="OnDashboardDayChanged"
-                             OnFieldChanged="OnDashboardFieldChanged" />
+                             Busy="Page.Busy"
+                             SectionClass="@Page.FiltersSectionClass()"
+                             GridClass="@Page.FiltersGridClass()"
+                             OnApply="Page.ApplyFiltersAsync"
+                             OnScheduleApply="Page.ScheduleDashboardApplyAsync"
+                             OnDayChanged="Page.OnDashboardDayChanged"
+                             OnFieldChanged="Page.OnDashboardFieldChanged" />
 
-    <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Dashboard.Document.Layout)" aria-live="polite">
-        @foreach (var card in VisibleCards())
+    <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
+        @foreach (var card in Page.VisibleCards())
         {
             <DashboardCardView Card="card"
-                               PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Dashboard.Document.Layout, _tabPlacements)"
-                               DashboardBoundFilters="DashboardBoundForCard(card)"
-                               FilterIndex="Dashboard.FilterIndex"
-                               DateFrom="_dateFrom"
-                               DateTo="_dateTo"
-                               SelectedFields="_selectedFields"
-                               TopLimits="_topLimits"
-                               GetFieldOptions="Dashboard.GetFieldOptions"
+                               PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)"
+                               DashboardBoundFilters="Page.DashboardBoundForCard(card)"
+                               FilterIndex="Page.Session.FilterIndex"
+                               DateFrom="Page.DateFrom"
+                               DateTo="Page.DateTo"
+                               SelectedFields="Page.SelectedFields"
+                               TopLimits="Page.TopLimits"
+                               GetFieldOptions="Page.Session.GetFieldOptions"
                                AutoApply="chrome.IsAutoApply"
-                               OnApplyCard="ApplyCardFiltersAsync"
-                               OnScheduleCardApply="ScheduleCardApplyAsync"
-                               OnCardDayChanged="OnCardDayChanged"
-                               OnCardFieldChanged="OnCardFieldChanged" />
+                               OnApplyCard="Page.ApplyCardFiltersAsync"
+                               OnScheduleCardApply="Page.ScheduleCardApplyAsync"
+                               OnCardDayChanged="Page.OnCardDayChanged"
+                               OnCardFieldChanged="Page.OnCardFieldChanged" />
         }
     </section>
 }

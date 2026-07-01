@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · diagram presets **implemented**; `render` plugins **proposed** |
+| **Status** | Accepted · diagram presets **implemented**; built-in `IVizPlugin` registry **implemented**; external `[[viz.load]]` DLL **proposed** |
 | **Date** | 2026-06-29 |
 | **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) |
 
@@ -84,7 +84,7 @@ id = "css-grid"
 assembly = "DashSpec.Viz.CssGrid.dll"
 ```
 
-До появления `IVizPlugin` host использует текущие встроенные рендереры по `DataFamily`; поле `render` парсится и хранится, но не переключает backend.
+До появления внешних DLL host регистрирует built-in plugins в DI; `VizPluginRegistry` honor `render` из resolved preset (см. [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md)).
 
 ## Non-goals
 
@@ -95,5 +95,6 @@ assembly = "DashSpec.Viz.CssGrid.dll"
 ## Consequences
 
 - **Implemented:** `SpecLibrary` `[diagram.*]`, `CardDiagramResolver`, `samples/demo/demo-diagram-library.toml` + `demo-soak.dashspec`.
-- **Next:** `IVizPlugin` + honor `render` из resolved preset.
+- **Implemented:** `IVizPlugin`, built-in registry, `render` → `CardRenderResult.RenderPluginId` ([ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md)).
+- **Next:** `[[viz.load]]` DLL loader для внешних viz plugins.
 - Пресеты `presentation.*` / `transform.series.*` остаются переиспользуемыми building blocks внутри `[diagram.*]` и для явных card-блоков.

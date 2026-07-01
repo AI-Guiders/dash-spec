@@ -38,6 +38,17 @@ internal static class PayloadRowFormatters
         return string.IsNullOrEmpty(raw) ? raw : LabelFormat.Format(raw, format);
     }
 
+    public static string FormatChartAxisLabel(object? value, string? format)
+    {
+        var raw = FormatValue(value);
+        if (string.IsNullOrEmpty(raw))
+        {
+            return raw;
+        }
+
+        return string.IsNullOrWhiteSpace(format) ? raw : LabelFormat.Format(raw, format);
+    }
+
     public static DateOnly? TryParseHeatmapDate(string label) =>
         DateOnly.TryParse(label, out var date) ? date : null;
 

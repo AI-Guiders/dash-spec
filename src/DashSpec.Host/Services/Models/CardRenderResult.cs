@@ -8,6 +8,7 @@ public sealed record CardRenderResult(
     string Title,
     string DiagramKind,
     DiagramDataFamily DataFamily,
+    string RenderPluginId,
     ChartPayload? Chart = null,
     TablePayload? Table = null,
     string? Number = null,

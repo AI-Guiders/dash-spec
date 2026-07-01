@@ -1,0 +1,349 @@
+@page "/dev/spec"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment HostEnvironment
+@using System.Net.Http.Json
+@using System.Text
+@using DashSpec.Core.Resolution
+
+<PageTitle>DashSpec — resolved spec</PageTitle>
+
+@if (!HostEnvironment.IsDevelopment())
+{
+    <p class="empty-state">Spec inspector доступен только в Development.</p>
+}
+else if (_loading)
+{
+    <div class="page-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Resolve…</span>
+    </div>
+}
+else if (!string.IsNullOrEmpty(_error))
+{
+    <div class="alert" role="alert">
+        <strong>Не удалось resolve spec</strong>
+        <p>@_error</p>
+    </div>
+}
+else if (_export is not null)
+{
+    <header class="dash-header">
+        <div>
+            <h1>Resolved spec</h1>
+            <p class="muted dash-meta">
+                <span class="badge">@_export.Id</span>
+                <span class="badge">@_export.Title</span>
+                @if (!string.IsNullOrWhiteSpace(_export.ColorPalette))
+                {
+                    <span class="badge">palette: @_export.ColorPalette</span>
+                }
+                <span class="badge">@_export.Cards.Count cards</span>
+            </p>
+        </div>
+        <button type="button" class="secondary" @onclick="LoadAsync">Обновить</button>
+    </header>
+
+    <p class="muted spec-inspector-note">
+        Effective properties после merge library + dashboard. ▼ на строке карточки — вложенные параметры. Save <code>.dashspec</code> / <code>.toml</code> → auto-reload дашборда.
+    </p>
+
+    <div class="spec-table-panel catalog-panel">
+        <table class="catalog-table spec-cards-table">
+            <thead>
+                <tr>
+                    <th class="col-id">Card</th>
+                    <th class="col-title">Title</th>
+                    <th class="col-tab">Tab</th>
+                    <th class="col-kind">Kind</th>
+                    <th class="col-source">Datasource</th>
+                    <th class="col-bind">Bind</th>
+                    <th class="col-palette">Palette</th>
+                    <th class="col-props">Diagram</th>
+                    <th class="col-props">Presentation</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var card in _export.Cards)
+                {
+                    var collapsed = _collapsedCards.Contains(card.Id);
+                    var details = DetailRows(card).ToList();
+
+                    <tr class="family-row spec-card-row" data-card="@card.Id">
+                        <td class="col-id">
+                            <button type="button"
+                                    class="fold-btn"
+                                    aria-expanded="@(!collapsed)"
+                                    title="@(collapsed ? "Развернуть параметры" : "Свернуть параметры")"
+                                    @onclick="() => ToggleCollapse(card.Id)"
+                                    @onclick:stopPropagation="true">
+                                @(collapsed ? "▶" : "▼")
+                            </button>
+                            <code class="family-name">@card.Id</code>
+                            @if (details.Count > 0)
+                            {
+                                <span class="muted family-count">@details.Count param.</span>
+                            }
+                        </td>
+                        <td class="col-title">@card.Title</td>
+                        <td class="col-tab muted">@(card.TabId ?? "—")</td>
+                        <td class="col-kind"><span class="badge">@card.DiagramKind</span></td>
+                        <td class="col-source"><code>@card.DataSourceKind:@ShortSource(card.DataSource)</code></td>
+                        <td class="col-bind muted">@FormatCsv(card.BoundFilters)</td>
+                        <td class="col-palette muted">@(card.EffectiveColorPalette ?? "—")</td>
+                        <td class="col-props muted" title="@FormatPropsTitle(card.Diagram)">@CompactProps(card.Diagram)</td>
+                        <td class="col-props muted" title="@FormatPresentationTitle(card)">@CompactPresentation(card)</td>
+                    </tr>
+
+                    @if (!collapsed)
+                    {
+                        <tr class="rule-row spec-detail-expand" data-parent="@card.Id">
+                            <td colspan="9" class="spec-detail-cell">
+                                <table class="catalog-table spec-kv-table spec-kv-nested">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-param">Параметр</th>
+                                            <th class="col-value">Значение</th>
+                                            <th class="col-hint">Группа</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in details)
+                                        {
+                                            <tr class="spec-kv-row">
+                                                <td class="col-param indent"><code>@row.Key</code></td>
+                                                <td class="col-value">@row.Value</td>
+                                                <td class="col-hint muted">@row.Group</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private ResolvedSpecExport? _export;
+    private string? _error;
+    private bool _loading = true;
+    private HashSet<string> _collapsedCards = new(StringComparer.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        var wasLoaded = _export is not null;
+        var previousCollapsed = _collapsedCards.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var previousIds = _export?.Cards.Select(c => c.Id).ToHashSet(StringComparer.OrdinalIgnoreCase)
+            ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var http = HttpFactory.CreateClient();
+            http.BaseAddress = new Uri(Navigation.BaseUri);
+            _export = await http.GetFromJsonAsync<ResolvedSpecExport>("/dev/resolve");
+            ApplyCollapseState(wasLoaded, previousCollapsed, previousIds);
+        }
+        catch (Exception ex)
+        {
+            _export = null;
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ApplyCollapseState(
+        bool wasLoaded,
+        HashSet<string> previousCollapsed,
+        HashSet<string> previousIds)
+    {
+        if (_export is null || _export.Cards.Count == 0)
+        {
+            _collapsedCards = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return;
+        }
+
+        var currentIds = _export.Cards.Select(c => c.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!wasLoaded)
+        {
+            _collapsedCards = currentIds;
+            _collapsedCards.Remove(_export.Cards[0].Id);
+            return;
+        }
+
+        _collapsedCards = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var id in currentIds)
+        {
+            if (previousCollapsed.Contains(id))
+            {
+                _collapsedCards.Add(id);
+            }
+            else if (!previousIds.Contains(id))
+            {
+                _collapsedCards.Add(id);
+            }
+        }
+    }
+
+    private void ToggleCollapse(string cardId)
+    {
+        if (_collapsedCards.Contains(cardId))
+        {
+            _collapsedCards.Remove(cardId);
+        }
+        else
+        {
+            _collapsedCards.Add(cardId);
+        }
+    }
+
+    private static string ShortSource(string value)
+    {
+        const int max = 36;
+        return value.Length <= max ? value : value[..(max - 1)] + "…";
+    }
+
+    private static string FormatCsv(IReadOnlyList<string> items) =>
+        items.Count == 0 ? "—" : string.Join(", ", items);
+
+    private static string CompactProps(IReadOnlyDictionary<string, string> props)
+    {
+        if (props.Count == 0)
+        {
+            return "—";
+        }
+
+        var parts = props
+            .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+            .Take(4)
+            .Select(x => $"{x.Key}={x.Value}");
+        var text = string.Join(" · ", parts);
+        return props.Count > 4 ? text + " …" : text;
+    }
+
+    private static string FormatPropsTitle(IReadOnlyDictionary<string, string> props) =>
+        string.Join('\n', props.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(x => $"{x.Key} = {x.Value}"));
+
+    private static string CompactPresentation(ResolvedCardExport card)
+    {
+        var chunks = new List<string>();
+        if (card.ChartPresentation is not null)
+        {
+            chunks.AddRange(card.ChartPresentation.Select(x => $"{x.Key}={x.Value}"));
+        }
+
+        if (card.MatrixPresentation is not null)
+        {
+            chunks.AddRange(card.MatrixPresentation.Select(x => $"{x.Key}={x.Value}"));
+        }
+
+        if (card.SeriesTransform is not null)
+        {
+            chunks.Add($"top={card.SeriesTransform["max"]}");
+        }
+
+        if (card.RenderPluginId is not null)
+        {
+            chunks.Add($"render={card.RenderPluginId}");
+        }
+
+        return chunks.Count == 0 ? "—" : string.Join(" · ", chunks.Take(5));
+    }
+
+    private static string FormatPresentationTitle(ResolvedCardExport card)
+    {
+        var sb = new StringBuilder();
+        AppendGroup(sb, "chart", card.ChartPresentation);
+        AppendGroup(sb, "matrix", card.MatrixPresentation);
+        AppendGroup(sb, "transform", card.SeriesTransform);
+        if (card.RenderPluginId is not null)
+        {
+            sb.AppendLine($"render = {card.RenderPluginId}");
+        }
+
+        return sb.ToString().TrimEnd();
+    }
+
+    private static void AppendGroup(
+        StringBuilder sb,
+        string name,
+        IReadOnlyDictionary<string, string>? props)
+    {
+        if (props is null || props.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var (key, value) in props.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            sb.Append('[').Append(name).Append("] ").Append(key).Append(" = ").AppendLine(value);
+        }
+    }
+
+    private static IEnumerable<(string Group, string Key, string Value)> DetailRows(ResolvedCardExport card)
+    {
+        yield return ("card", "datasource", $"{card.DataSourceKind}: {card.DataSource}");
+        yield return ("card", "bind", FormatCsv(card.BoundFilters));
+        if (card.LocalFilters.Count > 0)
+        {
+            yield return ("card", "local_filters", FormatCsv(card.LocalFilters));
+        }
+
+        if (!string.IsNullOrWhiteSpace(card.EffectiveColorPalette))
+        {
+            yield return ("card", "color_palette", card.EffectiveColorPalette);
+        }
+
+        foreach (var row in PropRows("diagram", card.Diagram))
+        {
+            yield return row;
+        }
+
+        foreach (var row in PropRows("chart", card.ChartPresentation))
+        {
+            yield return row;
+        }
+
+        foreach (var row in PropRows("matrix", card.MatrixPresentation))
+        {
+            yield return row;
+        }
+
+        foreach (var row in PropRows("transform", card.SeriesTransform))
+        {
+            yield return row;
+        }
+
+        if (card.RenderPluginId is not null)
+        {
+            yield return ("render", "plugin", card.RenderPluginId);
+        }
+    }
+
+    private static IEnumerable<(string Group, string Key, string Value)> PropRows(
+        string group,
+        IReadOnlyDictionary<string, string>? props)
+    {
+        if (props is null)
+        {
+            yield break;
+        }
+
+        foreach (var (key, value) in props.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            yield return (group, key, value);
+        }
+    }
+}
