@@ -1,5 +1,14 @@
-# Copy to dash-spec.local.toml for personal secrets (gitignored).
-# Loaded last — перекрывает dash-spec.toml и dash-spec.dev.toml.
+# Copy to dash-spec.local.toml for personal dev (gitignored).
+# Loaded after dash-spec.toml and optional dash-spec.dev.toml.
 
-[connectors.sqlserver]
-connection_string = "Server=YOUR_SERVER;Database=YourDatabase;Trusted_Connection=True;TrustServerCertificate=True"
+[dashboard]
+# Product specs live outside OSS — URSA License Usage:
+spec_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/lus-dev-soak.dashspec"
+# Stakeholder tab only:
+# spec_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/lus-dev-stakeholder.dashspec"
+
+# Or env: DASHSPEC_SPEC_PATH
+
+# Optional: override connector if not using @config in .dashspec
+# [connectors.sqlserver]
+# connection_string = "Server=localhost;Database=UrsaLicenseUsage;Trusted_Connection=True;TrustServerCertificate=True"

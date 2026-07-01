@@ -3,19 +3,18 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
-using DashSpec.Host.Services.Loading;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
-using DashSpec.Host.Services.Rendering;
 using Microsoft.Extensions.Options;
 
 namespace DashSpec.Host.Services;
 
 public sealed class DashboardSessionService(
-    DashboardSpecLoader specLoader,
-    CardRenderService cardRenderService,
+    IDashboardSpecLoader specLoader,
+    ICardRenderer cardRenderService,
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
-    IOptions<DashboardHostOptions> hostOptions)
+    IOptions<DashboardHostOptions> hostOptions) : IDashboardSession
 {
     private DashboardDocument? _document;
     private IDataSourceConnector? _connector;

@@ -36,7 +36,6 @@ else
                     var active = _activeCell is { Yi: var ay, Xi: var ax } && ay == yi && ax == xi;
                     <div class="heatmap-cell @(filled ? "heatmap-cell-filled" : "heatmap-cell-empty") @(active ? "heatmap-cell-active" : null)"
                          style="@(filled ? $"background:{HeatmapColorScale.CellBackground(ColorScale, value!.Value, Payload.Min, Payload.Max)};color:{HeatmapColorScale.CellText(ColorScale, value!.Value, Payload.Min, Payload.Max)}" : null)"
-                         title="@(filled ? CellTitle(yi, xi, yLabel, xLabel, value) : null)"
                          @onmouseenter="() => ShowPopover(yi, xi)"
                          @onmouseleave="HidePopover"
                          @onfocus="() => ShowPopover(yi, xi)"
@@ -46,37 +45,33 @@ else
                         {
                             <span class="heatmap-cell-value">@FormatValue(value)</span>
                         }
+                        @if (active && filled)
+                        {
+                            <div class="heatmap-popover" role="tooltip">
+                                <p class="heatmap-popover-head">@PopoverHeader(yLabel, xLabel, value)</p>
+                                @if (TooltipFormat is TooltipFormat.List && HasTooltipItems(yi, xi))
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(TooltipLabel))
+                                    {
+                                        <p class="heatmap-popover-section"><RichTextView Text="@TooltipLabel" /></p>
+                                    }
+                                    <ul class="heatmap-popover-list">
+                                        @foreach (var item in TooltipItems(yi, xi))
+                                        {
+                                            <li>@item</li>
+                                        }
+                                    </ul>
+                                }
+                                else if (HasTooltipItems(yi, xi))
+                                {
+                                    <p class="heatmap-popover-body">@InlineTooltipBody(yi, xi)</p>
+                                }
+                            </div>
+                        }
                     </div>
                 }
             }
         </div>
-        @if (_activeCell is { Yi: var detailYi, Xi: var detailXi }
-             && Payload.Cells[detailYi][detailXi] is not null)
-        {
-            var detailY = Payload.YLabels[detailYi];
-            var detailX = Payload.XLabels[detailXi];
-            var detailValue = Payload.Cells[detailYi][detailXi];
-            <div class="heatmap-hover-detail" role="status" aria-live="polite">
-                <p class="heatmap-hover-detail-head">@PopoverHeader(detailY, detailX, detailValue)</p>
-                @if (TooltipFormat is TooltipFormat.List && HasTooltipItems(detailYi, detailXi))
-                {
-                    @if (!string.IsNullOrWhiteSpace(TooltipLabel))
-                    {
-                        <p class="heatmap-hover-detail-section"><RichTextView Text="@TooltipLabel" /></p>
-                    }
-                    <ul class="heatmap-hover-detail-list">
-                        @foreach (var item in TooltipItems(detailYi, detailXi))
-                        {
-                            <li>@item</li>
-                        }
-                    </ul>
-                }
-                else if (HasTooltipItems(detailYi, detailXi))
-                {
-                    <p class="heatmap-hover-detail-body">@InlineTooltipBody(detailYi, detailXi)</p>
-                }
-            </div>
-        }
         @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
         {
             <div class="heatmap-legend" aria-hidden="true">
@@ -146,25 +141,7 @@ else
 
     private void HidePopover()
     {
-        if (_activeCell is not null)
-        {
-            _activeCell = null;
-        }
-    }
-
-    private string? CellTitle(int yi, int xi, string yLabel, string xLabel, double? value)
-    {
-        if (!HasTooltipItems(yi, xi))
-        {
-            return PopoverHeader(yLabel, xLabel, value);
-        }
-
-        if (TooltipFormat is TooltipFormat.List)
-        {
-            return $"{PopoverHeader(yLabel, xLabel, value)} — {string.Join(", ", TooltipItems(yi, xi))}";
-        }
-
-        return $"{PopoverHeader(yLabel, xLabel, value)} — {InlineTooltipBody(yi, xi)}";
+        _activeCell = null;
     }
 
     private static string FormatValue(double? value) =>

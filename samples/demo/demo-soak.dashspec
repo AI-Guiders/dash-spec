@@ -18,10 +18,15 @@ dashboard "DashSpec — Demo soak" {
     default = today
     widget = day
   }
-  filter date period_start on period_start as "Period start" default -7d..today
+  filter date period_start {
+    column = period_start as "Period start"
+    default = today
+    widget = day
+    grain_filter = period_grain
+  }
   filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
   filter field user_name on demo.v_events_detail.user_id as "User" widget combobox
-  filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year"
+  filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year" default day
   filter top events_top as "Rows (TOP)" default 200
   filter top idle_top as "Rows (TOP)" default 100
 

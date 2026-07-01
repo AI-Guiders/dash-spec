@@ -3,6 +3,7 @@ using DashSpec.Core.Compilation;
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using Xunit;
 
@@ -306,6 +307,194 @@ public class DashSpecParserTests
     }
 
     [Fact]
+    public void ChartPresentation_reads_orientation_from_diagram_and_presentation()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[presentation.bar_horizontal_320]",
+            "legend = \"bottom\"",
+            "height = \"320\"",
+            "orientation = \"horizontal\"",
+        ]);
+
+        var fromDiagram = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["orientation"] = "horizontal",
+            });
+        Assert.True(fromDiagram.IsHorizontal);
+
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card c as "C" {
+                diagram bar { x = a y = b orientation = vertical }
+                presentation { use = bar_horizontal_320 }
+                datasource view dbo.t
+              }
+            }
+            """).Cards[0];
+
+        var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
+        Assert.True(presentation.IsHorizontal);
+
+        var verticalCard = card with
+        {
+            Presentation = new PresentationBlock(
+                "bar_horizontal_320",
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["orientation"] = "vertical",
+                }),
+        };
+        var verticalPresentation = CardChromeResolver.ResolveChartPresentation(verticalCard, library);
+        Assert.False(verticalPresentation.IsHorizontal);
+    }
+
+    [Fact]
+    public void DiagramBindings_bar_category_value_aliases()
+    {
+        var diagram = new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "app_name",
+            ["value"] = "distinct_users",
+        });
+
+        Assert.Equal("app_name", DiagramBindings.Column(diagram, "x"));
+        Assert.Equal("distinct_users", DiagramBindings.Column(diagram, "y"));
+        Assert.Equal(["app_name", "distinct_users"], DiagramBindings.SelectedSqlColumns(diagram).OrderBy(x => x).ToList());
+    }
+
+    [Fact]
+    public void ChartPresentation_reads_scale_value_from_diagram()
+    {
+        var presentation = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["scale_value"] = "integer",
+            });
+        Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
+
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card c as "C" {
+                diagram bar { category = app_name value = distinct_users scale_value = integer }
+                datasource view dbo.t
+              }
+            }
+            """).Cards[0];
+
+        var resolved = CardChromeResolver.ResolveChartPresentation(card, null);
+        Assert.Equal(ChartAxisScale.Integer, resolved.ValueAxisScale);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_builds_category_bar_with_category_value_bindings()
+    {
+        var diagram = new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "app_name",
+            ["value"] = "peak_concurrent_proxy",
+            ["orientation"] = "horizontal",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Tekla Structures",
+                ["peak_concurrent_proxy"] = 12d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["Tekla Structures"], payload.Labels);
+        Assert.Equal(12d, payload.Series[0].Values[0]);
+    }
+
+    [Fact]
+    public void ChartPresentation_reads_scale_y_from_diagram()
+    {
+        var fromDiagram = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["scale_y"] = "integer",
+            });
+        Assert.Equal(ChartAxisScale.Integer, fromDiagram.ValueAxisScale);
+
+        var decimalDefault = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+        Assert.Equal(ChartAxisScale.Decimal, decimalDefault.ValueAxisScale);
+
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card c as "C" {
+                diagram bar { x = app_name y = distinct_users scale_y = integer }
+                datasource view dbo.t
+              }
+            }
+            """).Cards[0];
+
+        var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
+        Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
+    }
+
+    [Fact]
+    public void ChartPresentation_scale_x_fallback_when_scale_y_absent()
+    {
+        var presentation = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["scale_x"] = "integer",
+            });
+        Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
+    }
+
+    [Fact]
+    public void ChartPresentation_deprecated_value_scale_and_y_format_integer_aliases()
+    {
+        var fromValueScale = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["value_scale"] = "integer",
+            });
+        Assert.Equal(ChartAxisScale.Integer, fromValueScale.ValueAxisScale);
+
+        var fromYFormat = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["y_format"] = "integer",
+            });
+        Assert.Equal(ChartAxisScale.Integer, fromYFormat.ValueAxisScale);
+
+        var labelFormatIgnored = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["y_format"] = "user.short",
+            });
+        Assert.Equal(ChartAxisScale.Decimal, labelFormatIgnored.ValueAxisScale);
+    }
+
+    [Fact]
+    public void ChartOrientationParser_accepts_aliases()
+    {
+        Assert.Equal(ChartOrientation.Horizontal, ChartOrientationParser.Parse("barh"));
+        Assert.Equal(ChartOrientation.Vertical, ChartOrientationParser.Parse("vertical"));
+        Assert.Equal(ChartOrientation.Vertical, ChartOrientationParser.Parse("unknown", ChartOrientation.Vertical));
+    }
+
+    [Fact]
     public void SpecLibrary_loads_presentation_and_transform_sections()
     {
         var library = SpecLibrary.Parse(
@@ -346,6 +535,190 @@ public class DashSpecParserTests
         Assert.Equal("line_bottom_300", preset.PresentationPreset);
         Assert.Equal("top5", preset.SeriesTransformPreset);
         Assert.Equal("usage_date", preset.Properties["x"]);
+    }
+
+    [Fact]
+    public void SpecLibrary_loads_palette_sections()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[palette.brand]",
+            "colors = \"#111111,#222222\"",
+            "default = \"#999999\"",
+            "Tekla = \"#e11d48\"",
+        ]);
+
+        var palette = library.TryGetPalette("brand");
+        Assert.NotNull(palette);
+        Assert.Equal("#111111,#222222", palette!["colors"]);
+        Assert.Equal("#e11d48", palette["Tekla"]);
+    }
+
+    [Fact]
+    public void ChartColorResolver_maps_palette_and_series_overrides()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[palette.brand]",
+            "colors = \"#111111,#222222\"",
+            "default = \"#999999\"",
+            "Tekla = \"#e11d48\"",
+        ]);
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["color_palette"] = "brand",
+                ["series_colors"] = "AVEVA:#2563eb",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            [],
+            null,
+            null,
+            null,
+            null);
+
+        var series = new[]
+        {
+            new ChartSeries("Tekla", [1d]),
+            new ChartSeries("AVEVA", [2d]),
+            new ChartSeries("Other", [3d]),
+            new ChartSeries("Unknown", [4d]),
+        };
+
+        var colored = ChartColorResolver.ApplySeriesColors(series, card, library);
+        Assert.Equal("#e11d48", colored[0].Color);
+        Assert.Equal("#2563eb", colored[1].Color);
+        Assert.Equal("#999999", colored[2].Color);
+        Assert.NotNull(colored[3].Color);
+
+        var orderA = ChartColorResolver.ApplySeriesColors(
+        [
+            new ChartSeries("Beta", [1d]),
+            new ChartSeries("Alpha", [2d]),
+        ], card, library);
+        var orderB = ChartColorResolver.ApplySeriesColors(
+        [
+            new ChartSeries("Alpha", [1d]),
+            new ChartSeries("Beta", [2d]),
+        ], card, library);
+        Assert.Equal(
+            orderA.First(x => x.Name == "Alpha").Color,
+            orderB.First(x => x.Name == "Alpha").Color);
+        Assert.Equal(
+            orderA.First(x => x.Name == "Beta").Color,
+            orderB.First(x => x.Name == "Beta").Color);
+    }
+
+    [Fact]
+    public void ChartColorResolver_prefix_matches_palette_keys()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[palette.brand]",
+            "colors = \"#111111,#222222\"",
+            "default = \"#999999\"",
+            "Cursor = \"#8b5cf6\"",
+        ]);
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["color_palette"] = "brand",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var colored = ChartColorResolver.ApplySeriesColors(
+            [new ChartSeries("Cursor IDE", [1d])],
+            card,
+            library);
+        Assert.Equal("#8b5cf6", colored[0].Color);
+    }
+
+    [Fact]
+    public void ChartColorResolver_applies_dashboard_palette_when_diagram_has_none()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[palette.brand]",
+            "colors = \"#111111,#222222\"",
+            "default = \"#999999\"",
+            "Tekla = \"#e11d48\"",
+        ]);
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["series"] = "app_name",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var series = new[] { new ChartSeries("Tekla", [1d]) };
+        var colored = ChartColorResolver.ApplySeriesColors(series, card, library, dashboardColorPalette: "brand");
+        Assert.Equal("#e11d48", colored[0].Color);
+    }
+
+    [Fact]
+    public void SpecResolveExporter_includes_dashboard_palette_and_effective_card()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[palette.lus]",
+            "default = \"#999999\"",
+            "Tekla = \"#e11d48\"",
+            "[diagram.d1]",
+            "kind = \"line\"",
+            "x = \"usage_date\"",
+            "y = \"peak\"",
+            "[card.c1]",
+            "diagram = \"d1\"",
+            "datasource = \"dbo.t\"",
+        ]);
+
+        var document = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              palette lus
+              card c as "C" {
+                use c1
+              }
+            }
+            """);
+
+        var export = SpecResolveExporter.Export(document, library);
+        Assert.Equal("lus", export.ColorPalette);
+        Assert.Single(export.Cards);
+        Assert.Equal("line", export.Cards[0].DiagramKind);
+        Assert.Equal("lus", export.Cards[0].EffectiveColorPalette);
+        Assert.Equal("usage_date", export.Cards[0].Diagram["x"]);
+    }
+
+    [Fact]
+    public void Parse_dashboard_palette_directive()
+    {
+        var document = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              palette = "lus_apps"
+              card c as "C" {
+                diagram number { value = x }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        Assert.Equal("lus_apps", document.ColorPalette);
     }
 
     [Fact]
@@ -824,6 +1197,8 @@ public class DashSpecParserTests
 
     [Theory]
     [InlineData("2024-06-15", "date.short", "15.06")]
+    [InlineData("2024-06-15 14:05:00", "time.short", "14:05")]
+    [InlineData("2024-06-15 14:05:00", "datetime.short", "15.06 14:05")]
     [InlineData("DOMAIN\\alice.longname", "user.short", "alice.longname")]
     public void LabelFormat_formats_axis_labels(string raw, string format, string expected) =>
         Assert.Equal(expected, LabelFormat.Format(raw, format));
@@ -960,6 +1335,53 @@ public class DashSpecParserTests
         Assert.Equal(1, layout["a"].Row);
         Assert.Equal(1, layout["b"].Row);
         Assert.Equal(2, layout["c"].Row);
+    }
+
+    [Fact]
+    public void Parse_tab_dashspec_ignores_module_shell_filters_when_embedded()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
+                @tab extra
+
+                filter field app_name on dbo.apps.name as "Apps"
+
+                tab extra as "Extra" {
+                  filter top n as "Top" default 5
+                }
+
+                card x as "X" {
+                  diagram number { value = n }
+                  datasource view dbo.x
+                }
+                """);
+
+            var doc = DashSpecParser.Parse("""
+                @dashboard t
+                dashboard "T" {
+                  filter field app_name on dbo.apps.name as "Apps"
+                  tab overview as "Overview" {
+                    cards { a }
+                  }
+                  tab extra dashspec "extra.dashspec"
+                  card a as "A" {
+                    diagram number { value = n }
+                    datasource view dbo.a
+                  }
+                }
+                """, dir);
+
+            Assert.Single(doc.Filters, f => f.Name == "app_name");
+            Assert.Single(doc.Filters, f => f.Name == "n");
+            Assert.Equal(2, doc.Cards.Count);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
@@ -1401,5 +1823,167 @@ public class ChartDataBuilderTests
         Assert.Equal(10, matrix.Cells[0][1]);
         Assert.Equal(6, matrix.Cells[0][2]);
         Assert.Equal("AutoCAD, Revit, Tekla", matrix.Tooltips![0][1]);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_fills_five_minute_grid_when_x_step_set()
+    {
+        var diagram = new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "bucket",
+            ["y"] = "n",
+            ["x_step"] = "5m",
+            ["x_format"] = "time.short",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket"] = new DateTime(2026, 6, 24, 7, 40, 0),
+                ["n"] = 1d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket"] = new DateTime(2026, 6, 24, 8, 5, 0),
+                ["n"] = 2d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(6, payload.Labels.Count);
+        Assert.Equal("07:40", payload.Labels[0]);
+        Assert.Equal("07:45", payload.Labels[1]);
+        Assert.Equal("08:00", payload.Labels[4]);
+        Assert.Equal("08:05", payload.Labels[5]);
+        Assert.Equal(1d, payload.Series[0].Values[0]);
+        Assert.Null(payload.Series[0].Values[1]);
+        Assert.Equal(2d, payload.Series[0].Values[5]);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_honors_arbitrary_x_step_from_spec()
+    {
+        var diagram = new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "bucket",
+            ["y"] = "n",
+            ["x_step"] = "10m",
+            ["x_format"] = "time.short",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket"] = new DateTime(2026, 6, 24, 7, 0, 0),
+                ["n"] = 1d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket"] = new DateTime(2026, 6, 24, 7, 25, 0),
+                ["n"] = 2d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["07:00", "07:10", "07:20"], payload.Labels);
+        Assert.Equal(2d, payload.Series[0].Values[2]);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_builds_category_bar_for_app_name_axis()
+    {
+        var diagram = new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "app_name",
+            ["y"] = "peak_concurrent_proxy",
+            ["orientation"] = "horizontal",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Tekla Structures",
+                ["peak_concurrent_proxy"] = 12d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "AutoCAD",
+                ["peak_concurrent_proxy"] = 8d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["Tekla Structures", "AutoCAD"], payload.Labels);
+        Assert.Equal(12d, payload.Series[0].Values[0]);
+        Assert.Equal(8d, payload.Series[0].Values[1]);
+        Assert.NotNull(payload.Series[0].PointColors);
+        Assert.Equal(2, payload.Series[0].PointColors!.Count);
+    }
+
+    [Fact]
+    public void Compile_period_start_with_grain_filter_uses_period_anchor()
+    {
+        var card = new CardDefinition(
+            "peak",
+            "Peak",
+            new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "app_name",
+                ["y"] = "peak_concurrent_proxy",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_peak_concurrent_by_period"),
+            ["period_grain", "period_start", "app_name"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetField("period_grain", ["month"]);
+        filters.SetDate("period_start", new DateOnly(2026, 6, 24), new DateOnly(2026, 6, 24));
+
+        var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["period_grain"] = new(FilterKind.Field, "period_grain", "day", "lus.v_peak.period_grain"),
+            ["period_start"] = new(
+                FilterKind.Date,
+                "period_start",
+                "today..today",
+                "period_start",
+                GrainFilterName: "period_grain"),
+            ["app_name"] = new(FilterKind.Field, "app_name", null, "lus.v_peak.app_name"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, filterIndex);
+
+        Assert.Contains("period_start = @period_start_anchor", query.Sql);
+        Assert.Contains("period_grain = @period_grain_0", query.Sql);
+        Assert.Equal(new DateOnly(2026, 6, 1), query.Parameters.Single(p => p.Name == "@period_start_anchor").Value);
     }
 }

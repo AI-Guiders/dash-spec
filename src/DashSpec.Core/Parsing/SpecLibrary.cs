@@ -34,6 +34,9 @@ public sealed class SpecLibrary
     private readonly Dictionary<string, CardPreset> _cards =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, IReadOnlyDictionary<string, string>> _palettes =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyDictionary<string, string>? TryGetPresentation(string name) =>
         _presentations.TryGetValue(name, out var preset) ? preset : null;
 
@@ -45,6 +48,9 @@ public sealed class SpecLibrary
 
     public CardPreset? TryGetCard(string name) =>
         _cards.TryGetValue(name, out var preset) ? preset : null;
+
+    public IReadOnlyDictionary<string, string>? TryGetPalette(string name) =>
+        _palettes.TryGetValue(name, out var preset) ? preset : null;
 
     public static SpecLibrary LoadFile(string path)
     {
@@ -126,7 +132,7 @@ public sealed class SpecLibrary
         var parts = path.Split('.');
         return parts.Length switch
         {
-            2 when parts[0] is "presentation" or "diagram" or "card" => true,
+            2 when parts[0] is "presentation" or "diagram" or "card" or "palette" => true,
             3 when parts[0] == "transform" && parts[1] == "series" => true,
             _ => false,
         };
@@ -162,6 +168,13 @@ public sealed class SpecLibrary
         {
             var id = section["card.".Length..];
             library._cards[id] = ParseCardPreset(props, id);
+            return;
+        }
+
+        if (section.StartsWith("palette.", StringComparison.OrdinalIgnoreCase))
+        {
+            var id = section["palette.".Length..];
+            library._palettes[id] = new Dictionary<string, string>(props, StringComparer.OrdinalIgnoreCase);
             return;
         }
 
