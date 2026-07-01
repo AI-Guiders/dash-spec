@@ -733,10 +733,11 @@ button.secondary:disabled {
 }
 
 .heatmap-wrap {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
-  overflow: auto;
+  overflow: visible;
   flex: 1;
 }
 
@@ -1054,4 +1055,189 @@ code {
   background: var(--bg);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.topbar-nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.topbar-nav a:hover {
+  color: var(--text);
+}
+
+.spec-inspector-note {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.spec-table-panel {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 1rem;
+}
+
+.catalog-panel {
+  padding: 0;
+}
+
+.catalog-panel .catalog-table,
+.spec-table-panel > .catalog-table {
+  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+.family-row {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.family-row td {
+  border-bottom-color: var(--border);
+  vertical-align: middle;
+}
+
+.family-name {
+  font-weight: 600;
+}
+
+.family-count {
+  font-size: 0.75rem;
+  margin-left: 0.35rem;
+}
+
+.fold-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 0.35rem 0 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.fold-btn:hover {
+  color: var(--text);
+}
+
+.rule-row td {
+  vertical-align: middle;
+}
+
+.indent {
+  padding-left: 1.5rem !important;
+}
+
+.spec-detail-expand td {
+  padding: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.spec-detail-cell {
+  padding: 0.35rem 0.65rem 0.65rem 1.25rem !important;
+}
+
+.spec-kv-nested {
+  width: fit-content;
+  max-width: min(52rem, 100%);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--surface-2);
+  table-layout: auto;
+}
+
+.spec-kv-nested th,
+.spec-kv-nested td {
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+}
+
+.spec-kv-nested tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.catalog-table th,
+.catalog-table td {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.catalog-table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.catalog-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.spec-cards-table .col-id { white-space: nowrap; width: 1%; }
+.spec-cards-table .col-title { min-width: 8rem; max-width: 14rem; }
+.spec-cards-table .col-tab { white-space: nowrap; width: 1%; }
+.spec-cards-table .col-kind { white-space: nowrap; width: 1%; }
+.spec-cards-table .col-source { white-space: nowrap; width: 1%; }
+.spec-cards-table .col-source code { font-size: 0.78rem; }
+.spec-cards-table .col-bind {
+  white-space: nowrap;
+  max-width: 14rem;
+  font-size: 0.78rem;
+}
+.spec-cards-table .col-palette { white-space: nowrap; width: 1%; font-size: 0.78rem; }
+.spec-cards-table .col-props {
+  max-width: 14rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.spec-card-row {
+  transition: background 0.1s ease;
+}
+
+.spec-card-row:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.spec-kv-table .col-param {
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 0.85rem;
+}
+.spec-kv-table .col-value {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.78rem;
+  word-break: break-word;
+  max-width: 36rem;
+}
+.spec-kv-table .col-hint {
+  white-space: nowrap;
+  width: 1%;
+  padding-left: 0.85rem;
+  font-size: 0.75rem;
+}
+
+.spec-kv-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
 }

@@ -1,15 +1,15 @@
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Abstractions.Query;
 using DashSpec.Core.Compilation;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
+using DashSpec.Host.Plugins;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Rendering;
 
-public sealed class CardRenderService
+public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRenderer
 {
     public async Task<CardRenderResult> RenderAsync(
         CardDefinition card,
@@ -40,6 +40,7 @@ public sealed class CardRenderService
         var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
             ? MatrixPresentation.FromCard(effective, library)
             : null;
+        var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
 
         return kind.DataFamily switch
         {
@@ -49,7 +50,8 @@ public sealed class CardRenderService
                     card.Title,
                     effective.Diagram.Kind,
                     kind.DataFamily,
-                    Chart: ChartDataBuilder.BuildLineOrBar(rows, effective.Diagram, seriesTransform),
+                    renderPluginId,
+                    Chart: ChartDataBuilder.BuildLineOrBar(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
                     Placement: card.Placement,
                     ChartPresentation: chartPresentation,
                     BoundFilters: card.BoundFilters,
@@ -60,6 +62,7 @@ public sealed class CardRenderService
                     card.Title,
                     effective.Diagram.Kind,
                     kind.DataFamily,
+                    renderPluginId,
                     Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
                     Placement: card.Placement,
                     BoundFilters: card.BoundFilters,
@@ -70,6 +73,7 @@ public sealed class CardRenderService
                     card.Title,
                     effective.Diagram.Kind,
                     kind.DataFamily,
+                    renderPluginId,
                     Number: FormatNumber(rows, effective.Diagram),
                     Placement: card.Placement,
                     BoundFilters: card.BoundFilters,
@@ -80,6 +84,7 @@ public sealed class CardRenderService
                     card.Title,
                     effective.Diagram.Kind,
                     kind.DataFamily,
+                    renderPluginId,
                     Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram),
                     Placement: card.Placement,
                     MatrixPresentation: matrixPresentation,

@@ -23,6 +23,40 @@ public static class DashSpecTomlLoader
             ?? new DashSpecTomlRoot();
     }
 
+    public static DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
+    {
+        if (!string.IsNullOrWhiteSpace(overlay.Dashboard.SpecPath))
+        {
+            root.Dashboard.SpecPath = overlay.Dashboard.SpecPath;
+        }
+
+        foreach (var (connectorId, section) in overlay.Connectors)
+        {
+            if (!root.Connectors.TryGetValue(connectorId, out var existing))
+            {
+                root.Connectors[connectorId] = section;
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(section.ConnectionString))
+            {
+                existing.ConnectionString = section.ConnectionString;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Plugins.DefaultConnectorId))
+        {
+            root.Plugins.DefaultConnectorId = overlay.Plugins.DefaultConnectorId;
+        }
+
+        if (overlay.Plugins.Load.Count > 0)
+        {
+            root.Plugins.Load = overlay.Plugins.Load;
+        }
+
+        return root;
+    }
+
     public static IEnumerable<KeyValuePair<string, string?>> Flatten(DashSpecTomlRoot root)
     {
         if (!string.IsNullOrWhiteSpace(root.Dashboard.SpecPath))

@@ -10,23 +10,7 @@ public static class CardChromeResolver
         SpecLibrary? library)
     {
         var props = MergePresentationProperties(card, library);
-
-        var legend = props.TryGetValue("legend", out var rawLegend)
-            ? rawLegend.ToLowerInvariant()
-            : "bottom";
-
-        var height = 280;
-        if (props.TryGetValue("height", out var rawHeight) &&
-            int.TryParse(rawHeight, out var parsedHeight) &&
-            parsedHeight is >= 120 and <= 800)
-        {
-            height = parsedHeight;
-        }
-
-        var stacked = props.TryGetValue("stacked", out var rawStacked) &&
-                      rawStacked is "true" or "yes" or "1";
-
-        return new ChartPresentation(legend, height, null, stacked);
+        return ChartPresentation.FromProperties(props);
     }
 
     public static int ResolveMatrixHeightPx(CardDefinition card, SpecLibrary? library)
@@ -95,7 +79,11 @@ public static class CardChromeResolver
             }
         }
 
-        foreach (var legacyKey in new[] { "legend", "height", "stacked" })
+        foreach (var legacyKey in new[]
+        {
+            "legend", "height", "stacked", "orientation",
+            "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
+        })
         {
             if (!merged.ContainsKey(legacyKey) &&
                 card.Diagram.Properties.TryGetValue(legacyKey, out var legacyValue))

@@ -18,11 +18,19 @@
     public bool Stacked { get; set; }
 
     [Parameter]
+    public ChartOrientation Orientation { get; set; } = ChartOrientation.Vertical;
+
+    [Parameter]
+    public ChartAxisScale ValueAxisScale { get; set; } = ChartAxisScale.Decimal;
+
+    [Parameter]
     public ChartPayload? Payload { get; set; }
 
     private ChartPayload? _previousPayload;
     private string _previousLegend = string.Empty;
     private bool _previousStacked;
+    private ChartOrientation _previousOrientation;
+    private ChartAxisScale _previousValueAxisScale;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -33,7 +41,9 @@
 
         if (ReferenceEquals(Payload, _previousPayload) &&
             string.Equals(Legend, _previousLegend, StringComparison.OrdinalIgnoreCase) &&
-            Stacked == _previousStacked)
+            Stacked == _previousStacked &&
+            Orientation == _previousOrientation &&
+            ValueAxisScale == _previousValueAxisScale)
         {
             return;
         }
@@ -41,13 +51,25 @@
         _previousPayload = Payload;
         _previousLegend = Legend;
         _previousStacked = Stacked;
+        _previousOrientation = Orientation;
+        _previousValueAxisScale = ValueAxisScale;
         await Js.InvokeVoidAsync(
             "dashSpecCharts.render",
             ChartId,
             ChartType,
             Payload.Labels,
             Payload.Series,
-            new { legend = Legend, stacked = Stacked });
+            new
+            {
+                legend = Legend,
+                stacked = Stacked,
+                horizontal = Orientation is ChartOrientation.Horizontal,
+                valueAxisScale = ValueAxisScale switch
+                {
+                    ChartAxisScale.Integer => "integer",
+                    _ => "decimal",
+                },
+            });
     }
 
     public async ValueTask DisposeAsync()

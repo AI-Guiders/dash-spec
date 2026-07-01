@@ -224,12 +224,14 @@ internal static class PropertySchemas
         new("column", PropertyValueType.ColumnBinding),
         new("default", PropertyValueType.DateRange),
         new("widget", PropertyValueType.Scalar),
+        new("grain_filter", PropertyValueType.Scalar),
     ];
 
     public static IReadOnlyList<PropertySpec> FilterField { get; } =
     [
         new("column", PropertyValueType.ColumnBinding),
         new("widget", PropertyValueType.Scalar),
+        new("default", PropertyValueType.Scalar),
     ];
 
     public static IReadOnlyList<PropertySpec> FilterTop { get; } =

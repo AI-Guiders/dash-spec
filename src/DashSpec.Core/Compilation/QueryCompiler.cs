@@ -98,12 +98,9 @@ public static class QueryCompiler
         }
 
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var key in new[] { "x", "y", "series", "value", "tooltip" })
+        foreach (var column in DiagramBindings.SelectedSqlColumns(card.Diagram))
         {
-            if (card.Diagram.Properties.TryGetValue(key, out var value))
-            {
-                names.Add(value);
-            }
+            names.Add(column);
         }
 
         if (names.Count == 0)
@@ -189,7 +186,7 @@ public static class QueryCompiler
     {
         return definition.Kind switch
         {
-            FilterKind.Date => BuildDateClause(filters.GetDate(definition.Name), definition, parameters, sqlDialect),
+            FilterKind.Date => BuildDateClause(filters.GetDate(definition.Name), definition, filters, parameters, sqlDialect),
             FilterKind.Field => BuildFieldClause(filters.GetField(definition.Name), definition, parameters),
             _ => null,
         };
@@ -209,6 +206,7 @@ public static class QueryCompiler
     private static string? BuildDateClause(
         DateRangeValue? range,
         FilterDefinition definition,
+        FilterState filters,
         List<QueryParameter> parameters,
         SqlDialect sqlDialect)
     {
@@ -219,6 +217,23 @@ public static class QueryCompiler
 
         var variable = definition.Name;
         var column = ResolveColumnName(definition.ColumnReference, variable);
+
+        if (!string.IsNullOrWhiteSpace(definition.GrainFilterName))
+        {
+            var grain = PeriodAnchorResolver.TryReadGrain(filters, definition.GrainFilterName);
+            var anchor = PeriodAnchorResolver.ResolveAnchor(range.Value.From, grain);
+            var param = $"@{variable}_anchor";
+            parameters.Add(new QueryParameter(param, anchor));
+            return $"{column} = {param}";
+        }
+
+        if (definition.IsDayWidget && range.Value.From == range.Value.To)
+        {
+            var param = $"@{variable}_day";
+            parameters.Add(new QueryParameter(param, range.Value.From));
+            return $"{column} = {param}";
+        }
+
         var fromParam = $"@{variable}_from";
         var toParam = $"@{variable}_to";
         parameters.Add(new QueryParameter(fromParam, range.Value.From));

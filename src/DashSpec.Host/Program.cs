@@ -1,9 +1,15 @@
+using DashSpec.Abstractions.Viz;
 using DashSpec.Host.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
+using DashSpec.Host.Plugins.Builtins;
 using DashSpec.Host.Services;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Models;
+using DashSpec.Host.Endpoints;
+using DashSpec.Host.Services.Dev;
+using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -40,9 +46,24 @@ ConnectorPluginLoader.RegisterPlugins(
     manifest,
     NullLogger.Instance);
 
-builder.Services.AddScoped<DashboardSpecLoader>();
-builder.Services.AddScoped<CardRenderService>();
-builder.Services.AddScoped<DashboardSessionService>();
+builder.Services.AddSingleton<IVizPlugin, ChartJsVizPlugin>();
+builder.Services.AddSingleton<IVizPlugin, CssGridVizPlugin>();
+builder.Services.AddSingleton<IVizPlugin, TableHtmlVizPlugin>();
+builder.Services.AddSingleton<IVizPlugin, ScalarHtmlVizPlugin>();
+builder.Services.AddSingleton<VizPluginRegistry>();
+
+builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
+builder.Services.AddScoped<ICardRenderer, CardRenderService>();
+builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
+builder.Services.AddScoped<DashboardPageController>();
+builder.Services.AddSingleton<DevSpecReloadNotifier>();
+builder.Services.AddHttpClient();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<DevSpecResolveService>();
+    builder.Services.AddHostedService<DevSpecFileWatcherService>();
+}
 
 var app = builder.Build();
 
@@ -58,5 +79,7 @@ app.UseStaticFiles();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapDevEndpoints();
 
 app.Run();
