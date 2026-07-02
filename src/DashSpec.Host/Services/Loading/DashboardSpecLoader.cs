@@ -29,12 +29,16 @@ public sealed class DashboardSpecLoader(
         if (!string.Equals(configPath, hostContext.StartupRuntimeConfigPath, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                $"Этот дашборд ссылается на другой @config ({Path.GetFileName(configPath)}). " +
+                $"Этот дашборд ссылается на другой @runtime ({Path.GetFileName(configPath)}). " +
                 "Смена runtime-конфига в UI пока не поддерживается — укажи spec_path в dash-spec.toml и перезапусти Host.");
         }
 
         var document = DashSpecParser.Parse(text, Path.GetDirectoryName(specFullPath));
-        var library = LoadSpecLibrary(specFullPath, document.DiagramLibraryPath);
+        var library = SpecLibraryComposer.Load(
+            specFullPath,
+            document.DiagramLibraryPath,
+            document.PalettePath,
+            hostContext.DefaultSpecDirectory);
         _ = SpecResolver.Resolve(document, library);
         var connector = connectorRegistry.Resolve(document.ConnectorId, pluginManifest.DefaultConnectorId);
         var filterIndex = DashboardBootstrap.IndexFilters(document);
@@ -48,7 +52,8 @@ public sealed class DashboardSpecLoader(
             filterIndex,
             filters,
             fieldOptions,
-            sourceLabel);
+            sourceLabel,
+            Path.GetDirectoryName(specFullPath));
     }
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
@@ -74,19 +79,5 @@ public sealed class DashboardSpecLoader(
         }
 
         return fieldOptions;
-    }
-
-    private SpecLibrary? LoadSpecLibrary(string specFullPath, string? relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(relativePath))
-        {
-            return null;
-        }
-
-        var path = DashSpecBootstrap.ResolveSpecLibraryPath(
-            specFullPath,
-            relativePath,
-            hostContext.DefaultSpecDirectory);
-        return SpecLibrary.LoadFile(path);
     }
 }

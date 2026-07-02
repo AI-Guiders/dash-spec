@@ -31,15 +31,11 @@ public sealed class DevSpecResolveService(
 
             var text = File.ReadAllText(specFullPath);
             var document = DashSpecParser.Parse(text, Path.GetDirectoryName(specFullPath));
-            SpecLibrary? library = null;
-            if (!string.IsNullOrWhiteSpace(document.DiagramLibraryPath))
-            {
-                var libraryPath = DashSpecBootstrap.ResolveSpecLibraryPath(
-                    specFullPath,
-                    document.DiagramLibraryPath,
-                    hostContext.DefaultSpecDirectory);
-                library = SpecLibrary.LoadFile(libraryPath);
-            }
+            var library = SpecLibraryComposer.Load(
+                specFullPath,
+                document.DiagramLibraryPath,
+                document.PalettePath,
+                hostContext.DefaultSpecDirectory);
 
             var export = SpecResolveExporter.Export(document, library);
             return DevSpecResolveResult.Ok(export, specFullPath, document.DiagramLibraryPath);

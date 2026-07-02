@@ -23,13 +23,22 @@ window.dashSpecCharts = {
     const categoryAxis = horizontal ? "y" : "x";
     const valueAxis = horizontal ? "x" : "y";
     const longCategoryLabels = categoryLabels.some((l) => String(l).length > 6);
+    const referenceValues = (options && options.referenceValues) || null;
+    const referenceLabel = (options && options.referenceLabel) || "Куплено";
+    const categoryAxisLabel = (options && options.categoryAxisLabel) || "";
+    const valueAxisLabel = (options && options.valueAxisLabel) || "";
+    const defaultSeriesLabel = valueAxisLabel || "value";
+    const hasReference =
+      horizontal &&
+      Array.isArray(referenceValues) &&
+      referenceValues.some((v) => v !== null && v !== undefined && !Number.isNaN(Number(v)));
 
     const datasets = (series || []).map((item, index) => {
       const color = item.color || palette[index % palette.length];
       const pointColors = item.pointColors;
       const barFill = (c) => c + (isBar ? "cc" : "55");
       return {
-        label: item.name === "default" ? "value" : item.name,
+        label: item.name === "default" ? defaultSeriesLabel : item.name,
         data: item.values,
         borderColor: pointColors || color,
         backgroundColor: pointColors ? pointColors.map(barFill) : barFill(color),
@@ -52,9 +61,63 @@ window.dashSpecCharts = {
         ? { stepSize: 1, precision: 0 }
         : {};
 
+    const valueMax = Math.max(
+      0,
+      ...datasets.flatMap((d) => (d.data || []).map((v) => (v == null ? 0 : Number(v)))),
+      ...(hasReference ? referenceValues.map((v) => (v == null ? 0 : Number(v))) : []),
+    );
+    const paddedMax = valueMax > 0 ? Math.ceil(valueMax * 1.12) : undefined;
+
+    const axisTitle = (text) =>
+      text
+        ? {
+            display: true,
+            text,
+            font: { size: 11 },
+            color: "#94a3b8",
+          }
+        : { display: false };
+
+    const referencePlugin = {
+      id: "dashSpecReferenceMarkers",
+      afterDatasetsDraw(chart) {
+        if (!hasReference) {
+          return;
+        }
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) {
+          return;
+        }
+        const xScale = chart.scales.x;
+        ctx.save();
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 4]);
+        for (let i = 0; i < referenceValues.length; i++) {
+          const ref = referenceValues[i];
+          if (ref == null || Number.isNaN(Number(ref))) {
+            continue;
+          }
+          const bar = meta.data[i];
+          if (!bar) {
+            continue;
+          }
+          const x = xScale.getPixelForValue(Number(ref));
+          const half = (bar.height || 12) / 2;
+          ctx.beginPath();
+          ctx.moveTo(x, bar.y - half);
+          ctx.lineTo(x, bar.y + half);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+
     this._instances[canvasId] = new Chart(canvas, {
       type: chartType || "line",
       data: { labels: categoryLabels, datasets },
+      plugins: [referencePlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -73,17 +136,54 @@ window.dashSpecCharts = {
               boxWidth: 10,
               padding: 10,
               font: { size: 11 },
+              generateLabels(chart) {
+                const defaults = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                if (!hasReference) {
+                  return defaults;
+                }
+                return defaults.concat([
+                  {
+                    text: referenceLabel,
+                    fillStyle: "transparent",
+                    strokeStyle: "#f97316",
+                    lineWidth: 2.5,
+                    lineDash: [5, 4],
+                    pointStyle: "line",
+                  },
+                ]);
+              },
             },
           },
           tooltip: {
             mode: stacked ? "index" : "nearest",
             intersect: false,
+            callbacks: {
+              afterBody(items) {
+                if (!hasReference || !items || !items.length) {
+                  return [];
+                }
+                const idx = items[0].dataIndex;
+                const ref = referenceValues[idx];
+                if (ref == null || Number.isNaN(Number(ref))) {
+                  return [];
+                }
+                const peak = items[0].parsed && horizontal ? items[0].parsed.x : items[0].parsed?.y;
+                const lines = [`${referenceLabel}: ${ref}`];
+                if (peak != null && Number(ref) > 0) {
+                  const pct = ((Number(peak) / Number(ref)) * 100).toFixed(0);
+                  lines.push(`Утилизация: ${pct}%`);
+                }
+                return lines;
+              },
+            },
           },
         },
         scales: {
           x: {
             stacked,
             beginAtZero: horizontal,
+            suggestedMax: horizontal ? paddedMax : undefined,
+            title: horizontal ? axisTitle(valueAxisLabel) : axisTitle(categoryAxisLabel),
             ticks: {
               maxRotation: !horizontal && longCategoryLabels ? 45 : 0,
               minRotation: 0,
@@ -104,6 +204,8 @@ window.dashSpecCharts = {
           y: {
             stacked,
             beginAtZero: !horizontal,
+            suggestedMax: !horizontal ? paddedMax : undefined,
+            title: horizontal ? axisTitle(categoryAxisLabel) : axisTitle(valueAxisLabel),
             ticks: {
               maxRotation: horizontal && longCategoryLabels ? 0 : 0,
               minRotation: 0,

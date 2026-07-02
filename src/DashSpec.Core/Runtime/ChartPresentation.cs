@@ -8,7 +8,9 @@ public sealed record ChartPresentation(
     int? MaxSeries = null,
     bool Stacked = false,
     ChartOrientation Orientation = ChartOrientation.Vertical,
-    ChartAxisScale ValueAxisScale = ChartAxisScale.Decimal)
+    ChartAxisScale ValueAxisScale = ChartAxisScale.Decimal,
+    string? CategoryAxisLabel = null,
+    string? ValueAxisLabel = null)
 {
     public bool IsHorizontal => Orientation is ChartOrientation.Horizontal;
 

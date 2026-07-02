@@ -31,7 +31,9 @@ else
                                  Legend="@(Card.ChartPresentation?.Legend ?? "bottom")"
                                  Stacked="@(Card.ChartPresentation?.Stacked ?? false)"
                                  Orientation="@(Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
-                                 ValueAxisScale="@(Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)" />
+                                 ValueAxisScale="@(Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
+                                 CategoryAxisLabel="@Card.ChartPresentation?.CategoryAxisLabel"
+                                 ValueAxisLabel="@Card.ChartPresentation?.ValueAxisLabel" />
                 </div>
             }
             break;

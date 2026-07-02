@@ -1,0 +1,14 @@
+@palette demo_apps
+
+const default = "#94a3b8"
+const blue = "blue"
+const green = "green"
+const amber = "gold"
+const pink = "pink"
+const violet = "purple"
+
+palette {
+  default = default
+  Other = default
+  colors = [blue, green, amber, pink, violet]
+}

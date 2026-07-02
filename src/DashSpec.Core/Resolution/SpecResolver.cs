@@ -1,3 +1,4 @@
+using DashSpec.Core.Analysis;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
@@ -46,11 +47,17 @@ internal static class CardSemanticValidator
             {
                 var filter = document.Filters.Single(f =>
                     string.Equals(f.Name, filterName, StringComparison.OrdinalIgnoreCase));
-                if (filter.Kind is FilterKind.Top &&
-                    !DiagramKindRegistry.SupportsTopLimit(effective.Diagram.Kind))
+                if (filter.Kind is FilterKind.Top)
                 {
-                    throw new InvalidOperationException(
-                        $"Top filter '{filterName}' can only be placed on table cards; card '{card.Id}' uses diagram {effective.Diagram.Kind}.");
+                    var violation = TopFilterPlacementRules.GetViolation(
+                        filterName,
+                        card.Id,
+                        effective.Diagram.Kind,
+                        hasUnresolvedPreset: false);
+                    if (violation is not null)
+                    {
+                        throw new InvalidOperationException(violation);
+                    }
                 }
             }
 

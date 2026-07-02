@@ -6,13 +6,15 @@ public sealed record DashboardDocument(
     string? ConnectorId,
     SqlDialect SqlDialect,
     string? DiagramLibraryPath,
+    string? PalettePath,
     string? ColorPalette,
     LayoutDefinition Layout,
     FiltersChromeDefinition FiltersChrome,
     IReadOnlyList<FilterDefinition> Filters,
     IReadOnlyList<string> DashboardFilters,
     IReadOnlyList<TabDefinition> Tabs,
-    IReadOnlyList<CardDefinition> Cards);
+    IReadOnlyList<CardDefinition> Cards,
+    LayoutBoardDefinition? ToolbarBoard = null);
 
 public sealed record FilterDefinition(
     FilterKind Kind,
@@ -23,13 +25,21 @@ public sealed record FilterDefinition(
     string? Widget = null,
     int? MinValue = null,
     int? MaxValue = null,
-    string? GrainFilterName = null)
+    string? GrainFilterName = null,
+    bool SingleSelect = false,
+    string? LayoutRef = null)
 {
     public bool IsDayWidget =>
         string.Equals(Widget, "day", StringComparison.OrdinalIgnoreCase);
 
     public bool IsComboboxWidget =>
         string.Equals(Widget, "combobox", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsSelectWidget =>
+        string.Equals(Widget, "select", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsSingleSelectField =>
+        SingleSelect || IsSelectWidget;
 }
 
 public enum FilterKind
@@ -48,6 +58,7 @@ public sealed record CardDefinition(
     IReadOnlyList<string> LocalFilters,
     PlacementDefinition? Placement = null,
     string? TabId = null,
+    string? LayoutRef = null,
     string? UseCardPreset = null,
     LegendDefinition? Legend = null,
     PresentationBlock? Presentation = null,
@@ -60,10 +71,17 @@ public sealed record DiagramDefinition(
 
 public sealed record DataSourceDefinition(
     DataSourceKind Kind,
-    string Value);
+    string Value,
+    DataSourceSqlCarrier? SqlCarrier = null);
 
 public enum DataSourceKind
 {
     View,
     Sql,
+}
+
+public enum DataSourceSqlCarrier
+{
+    Query,
+    File,
 }

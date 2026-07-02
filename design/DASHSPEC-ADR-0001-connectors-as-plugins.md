@@ -40,14 +40,14 @@ public interface IDataSourceConnector
 }
 ```
 
-Manifest: TOML из `@config` в `.dashspec` — секции `[connectors]`, `[plugins]`, `[[plugins.load]]`.
+Manifest: TOML из **`@runtime`** в `.dashspec` (alias `@config` deprecated) — секции `[connectors]`, `[plugins]`, `[[plugins.load]]`.
 
 Host bootstrap: `src/DashSpec.Host/dash-spec.toml` — **только** `[dashboard] spec_path` (где лежит `.dashspec`).
 
 ### Dashboard → connector
 
 ```text
-@config "demo.toml"
+@runtime "demo.toml"
 
 @dashboard demo_soak
 dashboard "…" {
@@ -56,12 +56,12 @@ dashboard "…" {
 }
 ```
 
-- **`@config`** — **обязателен**. Путь к самодостаточному TOML **относительно `.dashspec`**. Без `@config` host не стартует.
+- **`@runtime`** — **обязателен**. Путь к TOML manifest **относительно `.dashspec`**. Без `@runtime` host не стартует. (`@config` — deprecated alias, см. [ADR-0019](DASHSPEC-ADR-0019-runtime-directive.md).)
 - **`connector sqlserver`** — id плагина из `[plugins]` в том же TOML.
 
 Пример `samples/demo/demo.toml`: `connection_string`, `plugins`, `[[plugins.load]]`.
 
-Секреты: правка TOML локально, `dash-spec.local.toml` в `.gitignore` как отдельный `@config`, или env `Connectors__SqlServer__ConnectionString`.
+Секреты: правка TOML локально, `dash-spec.local.toml` в `.gitignore` как отдельный `@runtime`, или env `Connectors__SqlServer__ConnectionString`.
 
 ## Non-goals v0.2
 
@@ -73,4 +73,4 @@ dashboard "…" {
 
 - Новый backend = новая dll в `connectors/`, строка в manifest
 - Фильтры не дублируются в connector config
-- Demo sample: `samples/demo/demo.toml` через `@config` в `demo-soak.dashspec`
+- Demo sample: `samples/demo/demo.toml` через `@runtime` в `demo-soak.dashspec`

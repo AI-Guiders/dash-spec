@@ -1,0 +1,16 @@
+@diagram demo_peak_apps_heatmap
+
+include presentation "<presentation/heatmap_tall>"
+
+diagram heatmap {
+  render = "css-grid"
+  x = usage_date as "Day"
+  y = user_id as "User"
+  value = peak_concurrent_apps as "Apps"
+  tooltip = peak_apps as "Peak composition"
+  tooltip_format = list
+  tooltip_split = ", "
+  x_format = date.short
+  y_format = user.short
+  color_scale = heat
+}

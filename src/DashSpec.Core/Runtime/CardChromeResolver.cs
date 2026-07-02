@@ -10,7 +10,12 @@ public static class CardChromeResolver
         SpecLibrary? library)
     {
         var props = MergePresentationProperties(card, library);
-        return ChartPresentation.FromProperties(props);
+        var presentation = ChartPresentation.FromProperties(props);
+        return presentation with
+        {
+            CategoryAxisLabel = DiagramBindings.Label(card.Diagram, "x"),
+            ValueAxisLabel = DiagramBindings.Label(card.Diagram, "y"),
+        };
     }
 
     public static int ResolveMatrixHeightPx(CardDefinition card, SpecLibrary? library)
