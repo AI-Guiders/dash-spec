@@ -20,8 +20,8 @@ dotnet run --project src/DashSpec.Host
 ### Bootstrap
 
 1. Host `dash-spec.toml` — только путь к `.dashspec`
-2. `.dashspec` — `@config` (обязательно), опционально `@sqldialect`, `@diagramlibrary`
-3. TOML из `@config` — connectors + plugins (самодостаточный)
+2. `.dashspec` — `@runtime` (обязательно), опционально `@sqldialect`, `@palette`, file includes
+3. TOML из `@runtime` — connectors + plugins (deployment manifest, не DSL)
 
 `samples/demo/demo.toml` рядом с demo spec:
 
@@ -37,9 +37,9 @@ id = "sqlserver"
 assembly = "DashSpec.Connector.SqlServer.dll"
 ```
 
-Без `@config` в spec host выдаст понятную ошибку.
+Без `@runtime` в spec host выдаст понятную ошибку. `@config` — deprecated alias.
 
-Reference sample: [`samples/demo/`](samples/demo/) — вымышленная схема `demo.v_*`.
+Reference sample: [`samples/demo/`](samples/demo/) — вымышленная схема `demo.v_*`, файловые `diagrams/` / `palettes/`.
 
 ## Структура (v0.2)
 
@@ -49,7 +49,7 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 | `DashSpec.Core` | parser, **фильтры**, `QueryCompiler`, chart payloads |
 | `DashSpec.Connector.SqlServer` | plugin dll |
 | `DashSpec.Host` | loader + Blazor UI |
-| `samples/demo/` | reference `.dashspec` + diagram library |
+| `samples/demo/` | reference `.dashspec` + `diagrams/` / `palettes/` |
 
 ## Где живут фильтры
 
@@ -70,15 +70,16 @@ dashboard "Title" {
 
   card peak as "Peak" {
     bind usage_date, app_name
-    use demo_peak_concurrent
+    include diagram "diagrams/peak-concurrent-line.dashdiagram"
+    datasource view demo.v_daily_peak_concurrent_proxy
   }
 }
 ```
 
 - `default -7d..today` — диапазон **в spec**; см. [FILTERS_RU.md](docs/FILTERS_RU.md)
 - `bind` на card — фильтры карточки; Core строит `WHERE` / `TOP` ([ADR-0009](design/DASHSPEC-ADR-0009-bind-only-filters.md))
-- `datasource view` — default; `datasource sql "…"` — escape hatch ([ADR-0006](design/DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md))
-- `presentation { }` / `transform series { }` + `@diagramlibrary` — chrome и top-N ([ADR-0007](design/DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md))
+- `datasource view` — default; `datasource sql query` / `datasource sql file` ([ADR-0018](design/DASHSPEC-ADR-0018-sql-datasource-carriers.md))
+- `include diagram` / `@palette` — файловые модули ([ADR-0017](design/DASHSPEC-ADR-0017-file-includes-and-stdlib.md))
 
 ## Design
 

@@ -23,9 +23,11 @@ internal static class FilterParser
         var name = reader.ReadIdent();
         var declarationLabel = TryParseTopLabel(reader, kind);
         var (columnFromOn, labelFromOn) = TryParseOnBinding(reader, kind);
-        var trailingLabel = labelFromOn is null && kind is FilterKind.Date or FilterKind.Field && reader.TryKeyword("as")
+        var trailingLabel = labelFromOn is null && kind is FilterKind.Date or FilterKind.Field && reader.TryKeywordSameLine("as")
             ? reader.ReadString()
             : null;
+        var layoutRef = ParserUtilities.TryReadLayoutRef(reader);
+
         var props = ParseFilterBody(reader, kind, name, columnFromOn is not null);
 
         var columnReference = columnFromOn;
@@ -41,7 +43,8 @@ internal static class FilterParser
         int? minValue = null;
         int? maxValue = null;
 
-        ValidateSemantics(kind, name, ref defaultExpression, widget, columnReference, props, ref minValue, ref maxValue);
+        var singleSelect = ResolveSingleSelect(widget, props);
+        ValidateSemantics(kind, name, ref defaultExpression, widget, columnReference, props, ref minValue, ref maxValue, singleSelect);
 
         return new FilterDefinition(
             kind,
@@ -52,7 +55,22 @@ internal static class FilterParser
             widget,
             minValue,
             maxValue,
-            grainFilterName);
+            grainFilterName,
+            singleSelect,
+            layoutRef);
+    }
+
+    private static bool ResolveSingleSelect(string? widget, IReadOnlyDictionary<string, string> props)
+    {
+        if (string.Equals(widget, "select", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return props.TryGetValue("single", out var raw) &&
+               (string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(raw, "1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(raw, "yes", StringComparison.OrdinalIgnoreCase));
     }
 
     private static FilterKind ParseFilterKind(TokenReader reader) =>
@@ -115,9 +133,14 @@ internal static class FilterParser
 
     private static bool HasInlineProperties(TokenReader reader)
     {
+        if (reader.IsOnNewline())
+        {
+            return false;
+        }
+
         return reader.RawKind switch
         {
-            TokenKind.Newline or TokenKind.Eof or TokenKind.RBrace or TokenKind.LBrace => false,
+            TokenKind.Eof or TokenKind.RBrace or TokenKind.LBrace => false,
             TokenKind.Ident => true,
             _ => false,
         };
@@ -130,6 +153,13 @@ internal static class FilterParser
         while (HasInlineProperties(reader))
         {
             var key = reader.ReadIdent();
+            if (string.Equals(key, "single", StringComparison.OrdinalIgnoreCase) &&
+                reader.RawKind is not TokenKind.Eq)
+            {
+                props[key] = "true";
+                continue;
+            }
+
             if (reader.RawKind is TokenKind.Eq)
             {
                 reader.Advance();
@@ -215,7 +245,8 @@ internal static class FilterParser
         string? columnReference,
         IReadOnlyDictionary<string, string> props,
         ref int? minValue,
-        ref int? maxValue)
+        ref int? maxValue,
+        bool singleSelect)
     {
         if (kind is FilterKind.Date)
         {
@@ -258,10 +289,19 @@ internal static class FilterParser
         {
             if (!string.IsNullOrWhiteSpace(widget) &&
                 !string.Equals(widget, "combobox", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(widget, "chips", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(widget, "chips", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(widget, "select", StringComparison.OrdinalIgnoreCase))
             {
                 throw new DashSpecParseException(
-                    $"Field filter '{name}' widget must be 'combobox' or 'chips', got '{widget}'.");
+                    $"Field filter '{name}' widget must be 'combobox', 'chips', or 'select', got '{widget}'.");
+            }
+
+            if (singleSelect &&
+                !string.IsNullOrWhiteSpace(defaultExpression) &&
+                defaultExpression.Contains(',', StringComparison.Ordinal))
+            {
+                throw new DashSpecParseException(
+                    $"Field filter '{name}' is single-select; default must be one value, got '{defaultExpression}'.");
             }
 
             if (string.IsNullOrWhiteSpace(columnReference))

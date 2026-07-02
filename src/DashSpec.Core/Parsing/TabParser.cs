@@ -1,3 +1,4 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Core.Parsing;
@@ -23,6 +24,7 @@ internal static class TabParser
         reader.SkipNewlines();
 
         IReadOnlyList<string> cardIds = [];
+        LayoutBoardDefinition? layoutBoard = null;
 
         while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
         {
@@ -39,6 +41,13 @@ internal static class TabParser
                 continue;
             }
 
+            if (reader.TryKeyword("layout"))
+            {
+                layoutBoard = LayoutParser.ParseBoard(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
             var key = reader.ReadIdent();
             throw new DashSpecParseException($"Unknown property '{key}' in tab {id} block.");
         }
@@ -50,11 +59,12 @@ internal static class TabParser
             throw new DashSpecParseException($"Tab '{id}' requires a cards {{ }} block or dashspec \"path\".");
         }
 
-        return new TabDefinition(id, label, cardIds);
+        return new TabDefinition(id, label, cardIds, LayoutBoard: layoutBoard);
     }
 
-    /// <summary>Tab block inside @tab module: optional label + tab-local filters only.</summary>
-    public static (string? Label, IReadOnlyList<FilterDefinition> Filters) ParseModuleLocalBlock(
+    /// <summary>Tab block inside @tab module: optional label, layout board, tab-local filters.</summary>
+    public static (string? Label, IReadOnlyList<FilterDefinition> Filters, LayoutBoardDefinition? LayoutBoard)
+        ParseModuleLocalBlock(
         TokenReader reader,
         string expectedTabId,
         bool allowFilters)
@@ -73,9 +83,10 @@ internal static class TabParser
         }
 
         var filters = new List<FilterDefinition>();
+        LayoutBoardDefinition? layoutBoard = null;
         if (!reader.IsAt(TokenKind.LBrace))
         {
-            return (label, filters);
+            return (label, filters, layoutBoard);
         }
 
         reader.Expect(TokenKind.LBrace);
@@ -89,6 +100,13 @@ internal static class TabParser
                 break;
             }
 
+            if (reader.TryKeyword("layout"))
+            {
+                layoutBoard = LayoutParser.ParseBoard(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (allowFilters && reader.TryKeyword("filter"))
             {
                 filters.Add(FilterParser.Parse(reader));
@@ -98,11 +116,11 @@ internal static class TabParser
 
             var key = reader.ReadIdent();
             throw new DashSpecParseException(
-                $"Tab module '{expectedTabId}' allows only filter declarations in tab {{ }}, not '{key}'.");
+                $"Tab module '{expectedTabId}' allows only layout and filter declarations in tab {{ }}, not '{key}'.");
         }
 
         reader.Expect(TokenKind.RBrace);
-        return (label, filters);
+        return (label, filters, layoutBoard);
     }
 
     public static List<CardDefinition> AssignTabs(
@@ -117,8 +135,12 @@ internal static class TabParser
         var idToTab = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var tab in tabs)
         {
-            foreach (var cardId in tab.CardIds)
+            foreach (var token in tab.CardIds)
             {
+                var cardId = CardLayoutRefResolver.Resolve(
+                    token,
+                    cards,
+                    $"Tab '{tab.Id}' cards");
                 idToTab[cardId] = tab.Id;
             }
         }
@@ -126,50 +148,5 @@ internal static class TabParser
         return cards
             .Select(card => card with { TabId = idToTab.GetValueOrDefault(card.Id) })
             .ToList();
-    }
-}
-
-internal static class FiltersChromeParser
-{
-    public static FiltersChromeDefinition Parse(TokenReader reader)
-    {
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.FiltersChrome, "filters chrome");
-
-        var layout = "card";
-        var sticky = FiltersChromeDefinition.StickyNone;
-        var apply = "manual";
-        var debounceMs = 400;
-
-        if (props.TryGetValue("layout", out var layoutRaw))
-        {
-            layout = layoutRaw.ToLowerInvariant() switch
-            {
-                "card" or "bar" => layoutRaw.ToLowerInvariant(),
-                _ => throw new DashSpecParseException("filters chrome layout must be 'card' or 'bar'."),
-            };
-        }
-
-        if (props.TryGetValue("sticky", out var stickyRaw))
-        {
-            sticky = FiltersChromeStickyParser.Parse(stickyRaw);
-        }
-
-        if (props.TryGetValue("apply", out var applyRaw))
-        {
-            apply = applyRaw.ToLowerInvariant() switch
-            {
-                "manual" or "auto" => applyRaw.ToLowerInvariant(),
-                _ => throw new DashSpecParseException("filters chrome apply must be 'manual' or 'auto'."),
-            };
-        }
-
-        if (props.TryGetValue("debounce_ms", out var debounceRaw) &&
-            int.TryParse(debounceRaw, out var parsedDebounce) &&
-            parsedDebounce >= 0)
-        {
-            debounceMs = parsedDebounce;
-        }
-
-        return new FiltersChromeDefinition(layout, sticky, apply, debounceMs);
     }
 }

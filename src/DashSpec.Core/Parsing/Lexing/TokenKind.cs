@@ -9,6 +9,8 @@ internal enum TokenKind
     DotDot,
     RelativeDay,
     Comma,
+    LBracket,
+    RBracket,
     Ident,
     String,
     Raw,

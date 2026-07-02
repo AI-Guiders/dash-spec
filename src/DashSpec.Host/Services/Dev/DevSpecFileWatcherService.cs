@@ -31,7 +31,7 @@ public sealed class DevSpecFileWatcherService(
         var specDir = Path.GetDirectoryName(specPath)!;
         var watcher = new FileSystemWatcher(specDir)
         {
-            IncludeSubdirectories = false,
+            IncludeSubdirectories = true,
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
         };
 
@@ -59,7 +59,13 @@ public sealed class DevSpecFileWatcherService(
 
         var ext = Path.GetExtension(fullPath);
         if (!ext.Equals(".dashspec", StringComparison.OrdinalIgnoreCase) &&
-            !ext.Equals(".toml", StringComparison.OrdinalIgnoreCase))
+            !ext.Equals(".toml", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashdiagram", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashpresentation", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashtransform", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashpalette", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashlayout", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".sql", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

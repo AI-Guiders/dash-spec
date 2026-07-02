@@ -15,7 +15,10 @@ public static class DiagramKindRegistry
     [
         new("x", PropertyValueType.ColumnBinding),
         new("y", PropertyValueType.ColumnBinding),
+        new("category", PropertyValueType.ColumnBinding),
+        new("value", PropertyValueType.ColumnBinding),
         new("series", PropertyValueType.ColumnBinding),
+        new("reference", PropertyValueType.ColumnBinding),
         new("legend", PropertyValueType.Scalar),
         new("max_series", PropertyValueType.Scalar),
         new("stacked", PropertyValueType.Scalar),

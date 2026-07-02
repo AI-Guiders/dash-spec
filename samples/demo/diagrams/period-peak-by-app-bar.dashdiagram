@@ -1,0 +1,12 @@
+@diagram demo_period_peak_by_app_bar
+
+include presentation "../presentations/bar-horizontal-320.dashpresentation"
+
+diagram bar {
+  render = "chartjs"
+  orientation = horizontal
+  category = app_name
+  value = peak_concurrent_proxy
+  scale_value = integer
+  order_by = "peak_concurrent_proxy DESC, app_name"
+}

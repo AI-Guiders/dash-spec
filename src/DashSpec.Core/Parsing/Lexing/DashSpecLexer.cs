@@ -135,20 +135,39 @@ internal static class DashSpecLexer
 
             if (text[i] is '[')
             {
-                var j = i;
-                while (j < text.Length && text[j] is not '\r' and not '\n')
+                if (i + 1 < text.Length && text[i + 1] is '[')
                 {
-                    if (text[j] is ']' && j + 1 < text.Length && text[j + 1] is ']')
+                    var j = i + 2;
+                    while (j < text.Length)
                     {
-                        j += 2;
-                        break;
+                        if (text[j] is ']' && j + 1 < text.Length && text[j + 1] is ']')
+                        {
+                            j += 2;
+                            break;
+                        }
+
+                        j++;
                     }
 
-                    j++;
+                    if (j >= text.Length)
+                    {
+                        throw new DashSpecParseException("Unterminated [[ raw block.");
+                    }
+
+                    tokens.Add(new Token(TokenKind.Raw, text[start..j].Trim(), start, j - start));
+                    i = j;
+                    continue;
                 }
 
-                tokens.Add(new Token(TokenKind.Raw, text[start..j].Trim(), start, j - start));
-                i = j;
+                tokens.Add(new Token(TokenKind.LBracket, "[", start, 1));
+                i++;
+                continue;
+            }
+
+            if (text[i] is ']')
+            {
+                tokens.Add(new Token(TokenKind.RBracket, "]", start, 1));
+                i++;
                 continue;
             }
 

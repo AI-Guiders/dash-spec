@@ -23,9 +23,3 @@ public sealed record FiltersChromeDefinition(
 
     public bool IsStickyCard => string.Equals(Sticky, StickyCard, StringComparison.OrdinalIgnoreCase);
 }
-
-public sealed record TabDefinition(
-    string Id,
-    string? Label,
-    IReadOnlyList<string> CardIds,
-    string? DashspecPath = null);

@@ -302,6 +302,17 @@ body {
   flex: 1;
 }
 
+.filters-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: end;
+}
+
+.filter-field-cell {
+  min-width: 0;
+}
+
 .filters-actions {
   flex-shrink: 0;
 }
@@ -529,6 +540,27 @@ body {
 
 .combobox-option-active {
   background: #1e3a5f33;
+}
+
+.combobox-option-single {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.field-select {
+  min-width: 6.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border, #334155);
+  background: var(--surface, #0f172a);
+  color: inherit;
+}
+
+.filters-bar .field-select {
+  min-height: 2rem;
 }
 
 .combobox-option input {

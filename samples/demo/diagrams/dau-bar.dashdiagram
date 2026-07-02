@@ -1,0 +1,10 @@
+@diagram demo_dau_bar
+
+include presentation "../presentations/bar-bottom-300.dashpresentation"
+
+diagram bar {
+  render = "chartjs"
+  category = app_name
+  value = distinct_users
+  scale_value = integer
+}

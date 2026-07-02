@@ -131,10 +131,10 @@ public class DashSpecParserTests
     }
 
     [Fact]
-    public void ReadConfigPath_returns_relative_toml_path()
+    public void ReadRuntimePath_returns_relative_toml_path()
     {
         const string text = """
-            @config "demo.toml"
+            @runtime "demo.toml"
 
             @dashboard t
             dashboard "T" {
@@ -145,16 +145,35 @@ public class DashSpecParserTests
             }
             """;
 
+        Assert.Equal("demo.toml", DashSpecParser.ReadRuntimePath(text));
         Assert.Equal("demo.toml", DashSpecParser.ReadConfigPath(text));
         Assert.Equal(("t", "T"), DashSpecParser.ReadDashboardHeader(text));
         Assert.Equal("t", DashSpecParser.Parse(text).Id);
     }
 
     [Fact]
+    public void ReadConfigPath_accepts_deprecated_alias()
+    {
+        const string text = """
+            @config "legacy.toml"
+
+            @dashboard t
+            dashboard "T" {
+              card a as "A" {
+                diagram number { value = x }
+                datasource view dbo.t
+              }
+            }
+            """;
+
+        Assert.Equal("legacy.toml", DashSpecParser.ReadRuntimePath(text));
+    }
+
+    [Fact]
     public void ReadSqlDialect_parses_file_directive()
     {
         const string text = """
-            @config "cfg.toml"
+            @runtime "cfg.toml"
             @sqldialect postgres
 
             @dashboard t
@@ -184,13 +203,14 @@ public class DashSpecParserTests
               card a as "A" {
                 bind usage_date
                 diagram bar { x = user_sam y = peak }
-                datasource sql "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
+                datasource sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
               }
             }
             """);
 
         var card = doc.Cards[0];
         Assert.Equal(DataSourceKind.Sql, card.DataSource.Kind);
+        Assert.Equal(DataSourceSqlCarrier.Query, card.DataSource.SqlCarrier);
         Assert.Contains("GROUP BY", card.DataSource.Value);
     }
 
@@ -213,7 +233,7 @@ public class DashSpecParserTests
               card a as "A" {
                 bind usage_date
                 diagram bar { x = a y = b }
-                datasource sql "{{sqlBody.Replace("\"", "\\\"")}}"
+                datasource sql query "{{sqlBody.Replace("\"", "\\\"")}}"
               }
             }
             """;
@@ -236,12 +256,80 @@ public class DashSpecParserTests
               card a as "A" {
                 bind usage_date
                 diagram bar { x = title y = n }
-                datasource sql "SELECT title FROM t WHERE title = 'DELETE is ok'"
+                datasource sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
               }
             }
             """);
 
         Assert.Equal(DataSourceKind.Sql, doc.Cards[0].DataSource.Kind);
+        Assert.Equal(DataSourceSqlCarrier.Query, doc.Cards[0].DataSource.SqlCarrier);
+    }
+
+    [Fact]
+    public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card a as "A" {
+                diagram bar { x = a y = b }
+                datasource sql "SELECT 1"
+              }
+            }
+            """));
+
+        Assert.Contains("query' or 'file'", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_sql_datasource_file_and_block_query()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-sql-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var sqlPath = Path.Combine(dir, "queries", "top.sql");
+        Directory.CreateDirectory(Path.GetDirectoryName(sqlPath)!);
+        File.WriteAllText(sqlPath, "SELECT user_sam, MAX(n) AS peak FROM t GROUP BY user_sam");
+
+        try
+        {
+            var fileDoc = DashSpecParser.Parse("""
+                @dashboard t
+                dashboard "T" {
+                  card a as "A" {
+                    diagram bar { x = user_sam y = peak }
+                    datasource sql file "queries/top.sql"
+                  }
+                }
+                """, dir);
+
+            var fileCard = fileDoc.Cards[0];
+            Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
+            Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
+
+            var blockDoc = DashSpecParser.Parse("""
+                @dashboard t
+                dashboard "T" {
+                  card b as "B" {
+                    diagram bar { x = user_sam y = peak }
+                    datasource sql {
+                      from query [[
+                        SELECT user_sam, COUNT(*) AS peak
+                        FROM t
+                        GROUP BY user_sam
+                      ]]
+                    }
+                  }
+                }
+                """, dir);
+
+            var blockCard = blockDoc.Cards[0];
+            Assert.Equal(DataSourceSqlCarrier.Query, blockCard.DataSource.SqlCarrier);
+            Assert.Contains("COUNT(*)", blockCard.DataSource.Value);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
@@ -277,13 +365,16 @@ public class DashSpecParserTests
     [Fact]
     public void CardChromeResolver_merges_library_presets()
     {
-        var libraryPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
-            "samples", "demo",
-            "demo-diagram-library.toml"));
+        var library = SpecLibrary.Parse(
+        [
+            "[presentation.line_bottom_300]",
+            "legend = \"bottom\"",
+            "height = \"300\"",
+            "[transform.series.top5]",
+            "max = 5",
+            "other = \"Other\"",
+        ]);
 
-        var library = SpecLibrary.LoadFile(libraryPath);
         var card = DashSpecParser.Parse("""
             @dashboard t
             dashboard "T" {
@@ -420,6 +511,55 @@ public class DashSpecParserTests
 
         Assert.Equal(["Tekla Structures"], payload.Labels);
         Assert.Equal(12d, payload.Series[0].Values[0]);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_builds_category_bar_with_reference_bindings()
+    {
+        var diagram = new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "app_name",
+            ["value"] = "peak_concurrent_proxy",
+            ["reference"] = "purchased_seats",
+            ["reference_as"] = "Куплено",
+            ["orientation"] = "horizontal",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Cursor IDE",
+                ["peak_concurrent_proxy"] = 6d,
+                ["purchased_seats"] = 5d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Tekla Structures",
+                ["peak_concurrent_proxy"] = 3d,
+                ["purchased_seats"] = 50d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["Cursor IDE", "Tekla Structures"], payload.Labels);
+        Assert.Equal(6d, payload.Series[0].Values[0]);
+        Assert.Equal(3d, payload.Series[0].Values[1]);
+        Assert.NotNull(payload.ReferenceValues);
+        Assert.Equal(5d, payload.ReferenceValues![0]);
+        Assert.Equal(50d, payload.ReferenceValues[1]);
+        Assert.Equal("Куплено", payload.ReferenceLabel);
+        Assert.Equal("#ef4444", payload.Series[0].PointColors![0]);
+        Assert.Contains("purchased_seats", DiagramBindings.SelectedSqlColumns(diagram));
     }
 
     [Fact]
@@ -722,6 +862,133 @@ public class DashSpecParserTests
     }
 
     [Fact]
+    public void Parse_palette_file_directive()
+    {
+        var document = DashSpecParser.Parse("""
+            @palette "palettes/brand.dashpalette"
+            @dashboard t
+            dashboard "T" {
+              palette brand
+              card c as "C" {
+                diagram number { value = x }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        Assert.Equal("palettes/brand.dashpalette", document.PalettePath);
+        Assert.Equal("brand", document.ColorPalette);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_loads_quoted_series_keys()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette lus_apps
+
+            palette {
+              colors = "#111111,#222222"
+              default = "#999999"
+              Tekla = "#e11d48"
+              "Cursor IDE" = "#8b5cf6"
+            }
+            """));
+
+        var palette = library.TryGetPalette("lus_apps");
+        Assert.NotNull(palette);
+        Assert.Equal("#111111,#222222", palette!["colors"]);
+        Assert.Equal("#e11d48", palette["Tekla"]);
+        Assert.Equal("#8b5cf6", palette["Cursor IDE"]);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_resolves_const_refs_css_names_and_color_list()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette brand
+
+            const default = "#999999"
+            const tekla = "#e11d48"
+            const accent = blue
+
+            palette {
+              default = default
+              Tekla = tekla
+              Other = default
+              colors = [tekla, accent, green, orange]
+            }
+            """));
+
+        var palette = library.TryGetPalette("brand");
+        Assert.NotNull(palette);
+        Assert.Equal("#999999", palette!["default"]);
+        Assert.Equal("#e11d48", palette["Tekla"]);
+        Assert.Equal("#e11d48,#0000ff,#008000,#ffa500", palette["colors"]);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_keeps_legacy_colors_string()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette legacy
+            palette {
+              colors = "#111111,#222222"
+              default = "#999999"
+            }
+            """));
+
+        Assert.Equal("#111111,#222222", library.TryGetPalette("legacy")!["colors"]);
+    }
+
+    [Fact]
+    public void SpecLibraryComposer_merges_palette_with_diagram_library()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var specPath = Path.Combine(dir, "t.dashspec");
+        File.WriteAllText(specPath, "@dashboard t\ndashboard \"T\" { }");
+        File.WriteAllText(Path.Combine(dir, "lib.toml"), "[diagram.d1]\nkind = \"line\"\n");
+        File.WriteAllText(Path.Combine(dir, "brand.dashpalette"), """
+            @palette brand
+            palette { default = "#999999" }
+            """);
+
+        var library = SpecLibraryComposer.Load(specPath, "lib.toml", "brand.dashpalette");
+        Assert.NotNull(library);
+        Assert.NotNull(library!.TryGetDiagram("d1"));
+        Assert.Equal("#999999", library.TryGetPalette("brand")!["default"]);
+    }
+
+    [Fact]
+    public void Parse_lus_palette_specs_when_repo_present()
+    {
+        var dir = @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec";
+        var soakPath = Path.Combine(dir, "lus-dev-soak.dashspec");
+        if (!File.Exists(soakPath))
+        {
+            return;
+        }
+
+        var soak = DashSpecParser.Parse(File.ReadAllText(soakPath), dir);
+        Assert.Equal("palettes/lus-apps.dashpalette", soak.PalettePath);
+        Assert.Equal("lus_apps", soak.ColorPalette);
+
+        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, soak.PalettePath, dir);
+        Assert.Equal("#e11d48", library!.TryGetPalette("lus_apps")!["Tekla"]);
+
+        var stakePath = Path.Combine(dir, "lus-dev-stakeholder.dashspec");
+        var stake = DashSpecParser.Parse(File.ReadAllText(stakePath), dir);
+        Assert.Equal("lus_apps", stake.ColorPalette);
+    }
+
+    private static string WriteTempPalette(string text)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "dashpalette-" + Guid.NewGuid().ToString("N") + ".dashpalette");
+        File.WriteAllText(path, text);
+        return path;
+    }
+
+    [Fact]
     public void Parse_diagram_library_preset_reference()
     {
         var doc = DashSpecParser.Parse("""
@@ -785,7 +1052,7 @@ public class DashSpecParserTests
     public void ReadDashboardHeader_reads_id_and_title()
     {
         const string text = """
-            @config "cfg.toml"
+            @runtime "cfg.toml"
 
             @dashboard soak_id
             dashboard "My **Title**" {
@@ -814,7 +1081,9 @@ public class DashSpecParserTests
         Assert.Equal("demo_soak", doc.Id);
         Assert.Equal("sqlserver", doc.ConnectorId);
         Assert.Equal(SqlDialect.TSql, doc.SqlDialect);
-        Assert.Equal("demo-diagram-library.toml", doc.DiagramLibraryPath);
+        Assert.Null(doc.DiagramLibraryPath);
+        Assert.Equal("palettes/demo-apps.dashpalette", doc.PalettePath);
+        Assert.Equal("demo_apps", doc.ColorPalette);
         Assert.Equal(7, doc.Cards.Count);
         Assert.Equal(8, doc.Filters.Count);
         Assert.Equal(["usage_date", "user_name", "app_name"], doc.DashboardFilters);
@@ -827,6 +1096,8 @@ public class DashSpecParserTests
         Assert.Equal(12, doc.Layout.Columns);
         Assert.Equal("Report date", doc.Filters.Single(f => f.Name == "usage_date").Label);
         Assert.Equal("peak_apps_heatmap", doc.Cards.Single(c => c.Id == "peak_apps_heatmap").Id);
+        Assert.Equal("line", doc.Cards.Single(c => c.Id == "peak_concurrent_proxy").Diagram.Kind);
+        Assert.Null(doc.Cards.Single(c => c.Id == "peak_concurrent_proxy").UseCardPreset);
     }
 
     [Fact]
@@ -1109,6 +1380,207 @@ public class DashSpecParserTests
         Assert.Equal("Разных ПО", diagram.Properties["value_as"]);
         Assert.Equal("peak_apps", diagram.Properties["tooltip"]);
         Assert.Equal("Состав в пике", diagram.Properties["tooltip_as"]);
+    }
+
+    [Fact]
+    public void Parse_bar_reference_column_as_label()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card peak as "Peak" {
+                diagram bar {
+                  category = app_name
+                  value = peak_concurrent_proxy
+                  reference = purchased_seats as "Куплено"
+                }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        var diagram = doc.Cards[0].Diagram;
+        Assert.Equal("purchased_seats", diagram.Properties["reference"]);
+        Assert.Equal("Куплено", diagram.Properties["reference_as"]);
+    }
+
+    [Fact]
+    public void Parse_date_filter_inline_widget_day_and_grain_filter()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
+              filter date activity_slot on bucket_start_utc as "День" default today widget day
+              card c as "C" {
+                diagram table { columns = a }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        var period = doc.Filters.Single(f => f.Name == "period_start");
+        Assert.Equal("Период", period.Label);
+        Assert.Equal("day", period.Widget);
+        Assert.Equal("period_grain", period.GrainFilterName);
+        Assert.Equal("today..today", period.DefaultExpression);
+
+        var slot = doc.Filters.Single(f => f.Name == "activity_slot");
+        Assert.Equal("bucket_start_utc", slot.ColumnReference);
+        Assert.Equal("День", slot.Label);
+    }
+
+    [Fact]
+    public void Parse_date_filter_inline_range_without_widget_does_not_bleed_into_next_line()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter date activity_slot on bucket_start_utc as "День" default today..today
+              filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
+              card c as "C" {
+                diagram table { columns = a }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        Assert.Equal(2, doc.Filters.Count);
+        Assert.Equal("today..today", doc.Filters.Single(f => f.Name == "activity_slot").DefaultExpression);
+        Assert.Null(doc.Filters.Single(f => f.Name == "activity_slot").Widget);
+    }
+
+    [Fact]
+    public void Compile_day_widget_uses_half_open_day_range_not_equality()
+    {
+        var card = new CardDefinition(
+            "activity",
+            "Activity",
+            new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "bucket_start_utc",
+                ["y"] = "event_count",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_hourly_activity"),
+            ["activity_slot"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetDate("activity_slot", new DateOnly(2026, 6, 30), new DateOnly(2026, 6, 30));
+
+        var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["activity_slot"] = new(
+                FilterKind.Date,
+                "activity_slot",
+                "today..today",
+                "bucket_start_utc",
+                Widget: "day"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, filterIndex, SqlDialect.TSql);
+
+        Assert.Contains("bucket_start_utc >= @activity_slot_from", query.Sql);
+        Assert.Contains("bucket_start_utc < DATEADD(day, 1, @activity_slot_to)", query.Sql);
+        Assert.DoesNotContain("@activity_slot_day", query.Sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_card_include_diagram_file_and_stdlib_presentation()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-include-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "diagrams"));
+        var stdlib = Path.Combine(dir, "stdlib", "presentation");
+        Directory.CreateDirectory(stdlib);
+        try
+        {
+            File.WriteAllText(Path.Combine(stdlib, "heatmap_tall.dashpresentation"), """
+                @presentation heatmap_tall
+
+                presentation {
+                  height = 420
+                }
+                """);
+
+            File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
+                @diagram activity
+
+                include presentation "<presentation/heatmap_tall>"
+
+                diagram heatmap {
+                  x = bucket_start_utc
+                  y = app_name
+                  value = event_count
+                  x_format = time.short
+                  x_step = 1h
+                }
+                """);
+
+            SpecIncludeResolver.SetStdlibRootForTests(Path.Combine(dir, "stdlib"));
+
+            var doc = DashSpecParser.Parse("""
+                @dashboard t
+                dashboard "T" {
+                  card c as "C" {
+                    include diagram "diagrams/activity.dashdiagram"
+                    datasource view dbo.t
+                  }
+                }
+                """, dir);
+
+            var card = doc.Cards.Single();
+            Assert.Equal("heatmap", card.Diagram.Kind);
+            Assert.Equal("bucket_start_utc", card.Diagram.Properties["x"]);
+            Assert.Equal("420", card.Presentation!.Properties["height"]);
+        }
+        finally
+        {
+            SpecIncludeResolver.SetStdlibRootForTests(null);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Parse_field_filter_single_select_combobox()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter field period_grain on demo.v_peak.period_grain as "Grain" default day widget combobox single
+              card c as "C" {
+                diagram table { columns = a }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        var grain = doc.Filters.Single(f => f.Name == "period_grain");
+        Assert.Equal("combobox", grain.Widget);
+        Assert.True(grain.SingleSelect);
+        Assert.True(grain.IsSingleSelectField);
+        Assert.Equal("day", grain.DefaultExpression);
+    }
+
+    [Fact]
+    public void ResolveChartPresentation_reads_category_value_axis_labels_from_bar_diagram()
+    {
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              card peak as "Peak" {
+                diagram bar {
+                  category = app_name as "Продукт"
+                  value = peak_concurrent_proxy as "Пик (proxy)"
+                  orientation = horizontal
+                }
+                datasource view dbo.t
+              }
+            }
+            """).Cards[0];
+
+        var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
+        Assert.Equal("Продукт", presentation.CategoryAxisLabel);
+        Assert.Equal("Пик (proxy)", presentation.ValueAxisLabel);
     }
 
     [Fact]
@@ -1472,7 +1944,7 @@ public class DashSpecParserTests
     public void ReadDashboardHeader_reads_tab_root_id()
     {
         const string text = """
-            @config "cfg.toml"
+            @runtime "cfg.toml"
             @tab stakeholder
             connector sqlserver
             card a as "A" {
@@ -1482,6 +1954,253 @@ public class DashSpecParserTests
             """;
 
         Assert.Equal(("stakeholder", "stakeholder"), DashSpecParser.ReadDashboardHeader(text));
+    }
+
+    [Fact]
+    public void Parse_card_ref_and_tab_layout_board()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab demo
+
+            tab demo as "Demo" {
+              layout {
+                [ Q E ]
+                [ T F ]
+              }
+            }
+
+            card peak_by_app as "Peak" ref Q {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card peak_apps as "Apps" ref E {
+              diagram heatmap { x = a y = b value = c }
+              datasource view dbo.t
+            }
+            card idle as "Idle" ref T {
+              diagram heatmap { x = a y = b value = c }
+              datasource view dbo.t
+            }
+            card utilization as "Util" ref F {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            """);
+
+        Assert.Equal("Q", doc.Cards[0].LayoutRef);
+        Assert.NotNull(doc.Tabs[0].LayoutBoard);
+        Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
+        Assert.Equal(2, doc.Tabs[0].LayoutBoard.ColumnCount);
+    }
+
+    [Fact]
+    public void TabLayoutBoardResolver_places_2x2_grid()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab demo
+
+            tab demo {
+              layout {
+                [ Q E ]
+                [ T F ]
+              }
+            }
+
+            card a as "A" ref Q {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card b as "B" ref E {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card c as "C" ref T {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card d as "D" ref F {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            """);
+
+        var layout = TabLayoutCompactor.Compact(doc, "demo");
+
+        Assert.Equal(new PlacementDefinition(1, 1, 6), layout["a"]);
+        Assert.Equal(new PlacementDefinition(1, 7, 6), layout["b"]);
+        Assert.Equal(new PlacementDefinition(2, 1, 6), layout["c"]);
+        Assert.Equal(new PlacementDefinition(2, 7, 6), layout["d"]);
+    }
+
+    [Fact]
+    public void TabLayoutBoardResolver_single_cell_row_is_full_width()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab demo
+
+            tab demo {
+              layout {
+                [ Q W ]
+                [ E ]
+              }
+            }
+
+            card a as "A" ref Q {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card b as "B" ref W {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card c as "C" ref E {
+              diagram heatmap { x = a y = b value = c }
+              datasource view dbo.t
+            }
+            """);
+
+        var layout = TabLayoutCompactor.Compact(doc, "demo");
+
+        Assert.Equal(6, layout["a"].Span);
+        Assert.Equal(6, layout["b"].Span);
+        Assert.Equal(12, layout["c"].Span);
+        Assert.Equal(2, layout["c"].Row);
+    }
+
+    [Fact]
+    public void TabLayoutBoardResolver_uneven_rows_distribute_per_row()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab demo
+
+            tab demo {
+              layout {
+                [ Q E ]
+                [ R T Y ]
+                [ F ]
+              }
+            }
+
+            card q as "Q" ref Q {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card e as "E" ref E {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card r as "R" ref R {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card t as "T" ref T {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card y as "Y" ref Y {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            card f as "F" ref F {
+              diagram bar { x = a y = b }
+              datasource view dbo.t
+            }
+            """);
+
+        Assert.Equal(3, doc.Tabs[0].LayoutBoard!.RowCount);
+        Assert.Equal(3, doc.Tabs[0].LayoutBoard.ColumnCount);
+
+        var layout = TabLayoutCompactor.Compact(doc, "demo");
+
+        Assert.Equal(new PlacementDefinition(1, 1, 6), layout["q"]);
+        Assert.Equal(new PlacementDefinition(1, 7, 6), layout["e"]);
+        Assert.Equal(new PlacementDefinition(2, 1, 4), layout["r"]);
+        Assert.Equal(new PlacementDefinition(2, 5, 4), layout["t"]);
+        Assert.Equal(new PlacementDefinition(2, 9, 4), layout["y"]);
+        Assert.Equal(new PlacementDefinition(3, 1, 12), layout["f"]);
+    }
+
+    [Fact]
+    public void Parse_include_layout_at_tab_module_shell()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+                @layout g
+
+                [ Q E ]
+                [ T F ]
+                """);
+
+            var doc = DashSpecParser.Parse("""
+                @tab demo
+
+                include layout "layouts/grid.dashlayout"
+
+                card a as "A" ref Q {
+                  diagram bar { x = a y = b }
+                  datasource view dbo.t
+                }
+                card b as "B" ref E {
+                  diagram bar { x = a y = b }
+                  datasource view dbo.t
+                }
+                card c as "C" ref T {
+                  diagram bar { x = a y = b }
+                  datasource view dbo.t
+                }
+                card d as "D" ref F {
+                  diagram bar { x = a y = b }
+                  datasource view dbo.t
+                }
+                """, dir);
+
+            Assert.NotNull(doc.Tabs[0].LayoutBoard);
+            Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
+            var layout = TabLayoutCompactor.Compact(doc, "demo");
+            Assert.Equal(6, layout["a"].Span);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Parse_include_layout_conflicts_with_inline_tab_layout()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+                @layout g
+                [ Q ]
+                """);
+
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+                @tab demo
+
+                include layout "layouts/grid.dashlayout"
+
+                tab demo {
+                  layout { [ Q ] }
+                }
+
+                card a as "A" ref Q {
+                  diagram bar { x = a y = b }
+                  datasource view dbo.t
+                }
+                """, dir));
+
+            Assert.Contains("twice", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 }
 
@@ -1499,11 +2218,7 @@ public class FilterBindingTests
 
         var doc = DashSpecParser.Parse(File.ReadAllText(soakPath), specDir);
 
-        var library = SpecLibrary.LoadFile(Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..",
-            "samples", "demo",
-            "demo-diagram-library.toml")));
+        SpecLibrary? library = null;
 
         var map = FilterBinding.MapFiltersToCards(doc, library);
 
@@ -1579,7 +2294,7 @@ public class QueryCompilerTests
               card top as "Top" {
                 bind usage_date
                 diagram bar { x = user_sam y = peak_concurrent_apps }
-                datasource sql "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
+                datasource sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
               }
             }
             """).Cards[0];
@@ -1826,6 +2541,81 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_formats_x_axis_with_time_short()
+    {
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "bucket_start_utc",
+            ["y"] = "app_name",
+            ["value"] = "event_count",
+            ["x_format"] = "time.short",
+            ["y_format"] = "raw",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket_start_utc"] = new DateTime(2026, 6, 30, 14, 0, 0),
+                ["app_name"] = "Cursor IDE",
+                ["event_count"] = 120d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket_start_utc"] = new DateTime(2026, 6, 30, 8, 0, 0),
+                ["app_name"] = "Cursor IDE",
+                ["event_count"] = 40d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket_start_utc"] = new DateTime(2026, 6, 30, 14, 0, 0),
+                ["app_name"] = "Google Chrome",
+                ["event_count"] = 15d,
+            },
+        ];
+
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+        Assert.Equal(["08:00", "14:00"], matrix.XLabels);
+        Assert.Equal(["Cursor IDE", "Google Chrome"], matrix.YLabels);
+        Assert.Equal(40, matrix.Cells[0][0]);
+        Assert.Equal(120, matrix.Cells[0][1]);
+        Assert.Equal(15, matrix.Cells[1][1]);
+    }
+
+    [Fact]
+    public void BuildHeatmap_with_x_step_fills_full_day_hour_grid()
+    {
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "bucket_start_utc",
+            ["y"] = "app_name",
+            ["value"] = "event_count",
+            ["x_format"] = "time.short",
+            ["x_step"] = "1h",
+            ["y_format"] = "raw",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket_start_utc"] = new DateTime(2026, 6, 30, 0, 0, 0),
+                ["app_name"] = "Cursor IDE",
+                ["event_count"] = 81d,
+            },
+        ];
+
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+        Assert.Equal(24, matrix.XLabels.Count);
+        Assert.Equal("00:00", matrix.XLabels[0]);
+        Assert.Equal("23:00", matrix.XLabels[23]);
+        Assert.Equal(81, matrix.Cells[0][0]);
+        Assert.Null(matrix.Cells[0][1]);
+    }
+
+    [Fact]
     public void BuildLineOrBar_fills_five_minute_grid_when_x_step_set()
     {
         var diagram = new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -1985,5 +2775,136 @@ public class ChartDataBuilderTests
         Assert.Contains("period_start = @period_start_anchor", query.Sql);
         Assert.Contains("period_grain = @period_grain_0", query.Sql);
         Assert.Equal(new DateOnly(2026, 6, 1), query.Parameters.Single(p => p.Name == "@period_start_anchor").Value);
+    }
+
+    [Fact]
+    public void Parse_filter_ref_does_not_consume_next_line_filter()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter field period_grain on demo.v_peak.period_grain as "Grain"
+              filter top events_top as "Строк (TOP)" default 200
+            }
+            """);
+
+        Assert.Equal(2, doc.Filters.Count);
+        Assert.Equal("events_top", doc.Filters[1].Name);
+    }
+
+    [Fact]
+    public void Parse_filter_ref_and_toolbar_layout_board()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter date usage_date on usage_date as "Date" ref D default -7d..today
+              filter field app_name on dbo.t.app as "App" ref A widget combobox
+              filter field user_name on dbo.t.user as "User" ref U widget combobox
+              toolbar {
+                [ D A ]
+                [ U ]
+              }
+              card c as "C" {
+                bind usage_date
+                diagram number { value = n }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        Assert.Equal("D", doc.Filters[0].LayoutRef);
+        Assert.NotNull(doc.ToolbarBoard);
+        Assert.Equal(2, doc.ToolbarBoard!.RowCount);
+        Assert.Equal(["usage_date", "app_name", "user_name"], doc.DashboardFilters);
+    }
+
+    [Fact]
+    public void ToolbarLayoutCompactor_places_board_on_grid()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              layout grid { columns = 12 }
+              filter date d1 on c1 as "D1" ref D default -7d..today
+              filter field f1 on c2 as "F1" ref A widget combobox
+              filter field f2 on c3 as "F2" ref U widget combobox
+              toolbar {
+                [ D A ]
+                [ U ]
+              }
+              card c as "C" {
+                bind d1
+                diagram number { value = n }
+                datasource view dbo.t
+              }
+            }
+            """);
+
+        var layout = ToolbarLayoutCompactor.Compact(doc);
+
+        Assert.Equal(new PlacementDefinition(1, 1, 6), layout["d1"]);
+        Assert.Equal(new PlacementDefinition(1, 7, 6), layout["f1"]);
+        Assert.Equal(new PlacementDefinition(2, 1, 12), layout["f2"]);
+    }
+
+    [Fact]
+    public void Parse_include_toolbar_dashlayout()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
+                @layout tb
+
+                [ D A ]
+                [ U ]
+                """);
+            File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
+                @dashboard t
+                dashboard "T" {
+                  include toolbar "layouts/tb.dashlayout"
+                  filter date d1 on c1 as "D1" ref D default -7d..today
+                  filter field f1 on c2 as "F1" ref A widget combobox
+                  filter field f2 on c3 as "F2" ref U widget combobox
+                  card c as "C" {
+                    bind d1
+                    diagram number { value = n }
+                    datasource view dbo.t
+                  }
+                }
+                """);
+
+            var doc = DashSpecParser.Parse(File.ReadAllText(Path.Combine(dir, "root.dashspec")), dir);
+
+            Assert.NotNull(doc.ToolbarBoard);
+            Assert.Equal(["d1", "f1", "f2"], doc.DashboardFilters);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Parse_toolbar_board_rejects_flat_list_combo()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            @dashboard t
+            dashboard "T" {
+              filter date d1 on c1 as "D1" ref D default -7d..today
+              toolbar { d1 }
+              toolbar { [ D ] }
+              card c as "C" {
+                bind d1
+                diagram number { value = n }
+                datasource view dbo.t
+              }
+            }
+            """));
+
+        Assert.Contains("cannot combine a layout board with a flat filter list", ex.Message);
     }
 }

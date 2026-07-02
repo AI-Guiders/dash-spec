@@ -15,5 +15,6 @@ public interface ICardRenderer
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         SpecLibrary? library,
         IDataSourceConnector connector,
+        string? specDirectory = null,
         CancellationToken cancellationToken = default);
 }

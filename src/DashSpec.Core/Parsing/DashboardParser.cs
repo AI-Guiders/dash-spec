@@ -1,14 +1,20 @@
-using DashSpec.Core.Analysis;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Core.Parsing;
 
 internal static class DashboardParser
 {
-    public static string? ReadConfigPath(string text) => ReadDirective(text, reader => reader.ConsumedConfigPath);
+    public static string? ReadRuntimePath(string text) =>
+        ReadDirective(text, reader => reader.ConsumedRuntimePath);
+
+    [Obsolete("Use ReadRuntimePath. @config is a deprecated alias for @runtime.")]
+    public static string? ReadConfigPath(string text) => ReadRuntimePath(text);
 
     public static string? ReadDiagramLibraryPath(string text) =>
         ReadDirective(text, reader => reader.ConsumedDiagramLibraryPath);
+
+    public static string? ReadPalettePath(string text) =>
+        ReadDirective(text, reader => reader.ConsumedPalettePath);
 
     public static SqlDialect ReadSqlDialect(string text) =>
         ReadDirective(text, reader => reader.ConsumedSqlDialect);
@@ -17,7 +23,7 @@ internal static class DashboardParser
     {
         if (DashboardComposer.IsTabRootDocument(text))
         {
-            var reader = CreateReader(text);
+            var reader = ParserUtilities.CreateReader(text);
             reader.SkipFileDirectives();
             reader.Expect(TokenKind.At);
             reader.ExpectKeyword("tab");
@@ -25,7 +31,7 @@ internal static class DashboardParser
             return (id, id);
         }
 
-        var dashboardReader = CreateReader(text);
+        var dashboardReader = ParserUtilities.CreateReader(text);
         dashboardReader.SkipFileDirectives();
         dashboardReader.Expect(TokenKind.At);
         dashboardReader.ExpectKeyword("dashboard");
@@ -36,14 +42,15 @@ internal static class DashboardParser
         return (dashboardId, title);
     }
 
-    public static DashboardDocument ParseDashboard(string text)
+    public static DashboardDocument ParseDashboard(string text, string? specDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
-        var reader = CreateReader(text);
+        var reader = ParserUtilities.CreateReader(text);
         reader.SkipFileDirectives();
         var sqlDialect = reader.ConsumedSqlDialect;
         var diagramLibraryPath = reader.ConsumedDiagramLibraryPath;
+        var palettePath = reader.ConsumedPalettePath;
 
         reader.Expect(TokenKind.At);
         reader.ExpectKeyword("dashboard");
@@ -55,127 +62,53 @@ internal static class DashboardParser
         reader.Expect(TokenKind.LBrace);
         reader.SkipNewlines();
 
-        var filters = new List<FilterDefinition>();
-        var dashboardFilters = new List<string>();
-        var tabs = new List<TabDefinition>();
-        var cards = new List<CardDefinition>();
-        string? connectorId = null;
-        string? colorPalette = null;
-        LayoutDefinition layout = LayoutDefinition.Default;
-        FiltersChromeDefinition filtersChrome = FiltersChromeDefinition.Default;
+        var shell = new DashboardShellContext
+        {
+            Mode = DashboardShellMode.DashboardBody,
+            SpecDirectory = specDirectory,
+        };
 
         while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
         {
-            if (reader.TryKeyword("connector"))
+            if (!DashboardShellParser.TryParseStatement(reader, shell))
             {
-                connectorId = reader.ReadIdent();
-                reader.SkipNewlines();
-                continue;
+                throw reader.Unexpected();
             }
-
-            if (reader.TryKeyword("layout"))
-            {
-                layout = LayoutParser.ParseGrid(reader);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("palette"))
-            {
-                colorPalette = ReadPaletteReference(reader);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("filters") || reader.TryKeyword("toolbar"))
-            {
-                if (reader.TryKeyword("dashboard"))
-                {
-                    dashboardFilters.AddRange(ParseFilterPlacementList(reader, "filters dashboard"));
-                }
-                else if (reader.TryKeyword("chrome"))
-                {
-                    filtersChrome = FiltersChromeParser.Parse(reader);
-                }
-                else
-                {
-                    dashboardFilters.AddRange(ParseFilterPlacementList(reader, "toolbar"));
-                }
-
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("filter"))
-            {
-                filters.Add(FilterParser.Parse(reader));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("tab"))
-            {
-                tabs.Add(TabParser.Parse(reader));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("card"))
-            {
-                cards.Add(CardParser.Parse(reader, filters));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            throw reader.Unexpected();
         }
 
         reader.Expect(TokenKind.RBrace);
 
-        cards = TabParser.AssignTabs(cards, tabs);
-        var document = new DashboardDocument(
+        var cards = TabParser.AssignTabs(shell.Cards, shell.Tabs);
+        var dashboardFilters = ToolbarPlacementResolver.ResolveFilterNames(
+            shell.Filters,
+            shell.DashboardFilters,
+            shell.ToolbarBoard);
+        return new DashboardDocument(
             id,
             title,
-            connectorId,
+            shell.ConnectorId,
             sqlDialect,
             diagramLibraryPath,
-            colorPalette,
-            layout,
-            filtersChrome,
-            filters,
+            palettePath,
+            shell.ColorPalette,
+            shell.Layout,
+            shell.FiltersChrome,
+            shell.Filters,
             dashboardFilters,
-            tabs,
-            cards);
-
-        FilterPlacementAnalyzer.Validate(document);
-        return document;
+            shell.Tabs,
+            cards,
+            shell.ToolbarBoard);
     }
 
     private static T ReadDirective<T>(string text, Func<TokenReader, T> select)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        var reader = CreateReader(text);
+        var reader = ParserUtilities.CreateReader(text);
         reader.SkipFileDirectives();
         return select(reader);
     }
 
-    private static TokenReader CreateReader(string text)
-    {
-        var tokens = DashSpecLexer.Tokenize(text);
-        return new TokenReader(tokens);
-    }
-
-    private static IReadOnlyList<string> ParseFilterPlacementList(TokenReader reader, string blockName)
-    {
-        if (reader.IsAt(TokenKind.LBrace))
-        {
-            return PropertyBlockParser.ParseCommaListBlock(reader, blockName);
-        }
-
-        return reader.ReadCommaListInline();
-    }
-
-    private static string ReadPaletteReference(TokenReader reader)
+    internal static string ReadPaletteReference(TokenReader reader)
     {
         if (reader.RawKind is TokenKind.Eq)
         {

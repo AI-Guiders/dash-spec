@@ -9,6 +9,6 @@ spec_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/lus-dev-soak.dashspec"
 
 # Or env: DASHSPEC_SPEC_PATH
 
-# Optional: override connector if not using @config in .dashspec
+# Optional: override connector if not using @runtime in .dashspec
 # [connectors.sqlserver]
 # connection_string = "Server=localhost;Database=UrsaLicenseUsage;Trusted_Connection=True;TrustServerCertificate=True"

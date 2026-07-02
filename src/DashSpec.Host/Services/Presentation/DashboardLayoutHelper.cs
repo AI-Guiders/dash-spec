@@ -1,3 +1,4 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Host.Services.Models;
 
@@ -27,6 +28,22 @@ internal static class DashboardLayoutHelper
     public static string ChartHeightStyle(CardRenderResult card) =>
         $"height:{card.ChartPresentation?.HeightPx ?? 280}px;";
 
+    public static string FilterPlacementStyle(
+        string filterName,
+        LayoutDefinition layout,
+        IReadOnlyDictionary<string, PlacementDefinition> toolbarPlacements)
+    {
+        if (!toolbarPlacements.TryGetValue(filterName, out var placement))
+        {
+            return string.Empty;
+        }
+
+        var span = Math.Min(placement.Span, layout.Columns);
+        return placement.Row > 0
+            ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
+            : $"grid-column:span {span};";
+    }
+
     public static PlacementDefinition ResolvePlacement(
         CardRenderResult card,
         int layoutColumns,
@@ -37,11 +54,6 @@ internal static class DashboardLayoutHelper
             return compact;
         }
 
-        return card.Placement ?? DefaultPlacement(card.DataFamily, layoutColumns);
+        return card.Placement ?? PlacementDefaults.ForFamily(card.DataFamily, layoutColumns);
     }
-
-    public static PlacementDefinition DefaultPlacement(DiagramDataFamily family, int columns) =>
-        family is DiagramDataFamily.Table or DiagramDataFamily.Matrix
-            ? new PlacementDefinition(Row: 1, Col: 1, Span: columns)
-            : new PlacementDefinition(Span: columns / 2);
 }

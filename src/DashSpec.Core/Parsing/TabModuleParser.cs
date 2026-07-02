@@ -7,16 +7,21 @@ internal sealed record TabModuleContent(
     string TabId,
     string? Label,
     IReadOnlyList<FilterDefinition> Filters,
-    IReadOnlyList<CardDefinition> Cards);
+    IReadOnlyList<CardDefinition> Cards,
+    LayoutBoardDefinition? LayoutBoard = null);
 
 internal static class TabModuleParser
 {
-    public static TabModuleContent ParseEmbedded(string text, string expectedTabId)
+    public static TabModuleContent ParseEmbedded(
+        string text,
+        string expectedTabId,
+        string? specDirectory = null,
+        IReadOnlyList<FilterDefinition>? parentFilters = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
         ArgumentException.ThrowIfNullOrWhiteSpace(expectedTabId);
 
-        var reader = CreateReader(text);
+        var reader = ParserUtilities.CreateReader(text);
         reader.SkipFileDirectives();
 
         var tabId = ReadTabDirective(reader);
@@ -26,195 +31,101 @@ internal static class TabModuleParser
                 $"Tab dashspec for '{expectedTabId}' must declare @tab '{expectedTabId}', found '{tabId}'.");
         }
 
-        string? label = null;
-        var filters = new List<FilterDefinition>();
-        var cards = new List<CardDefinition>();
+        var shell = new DashboardShellContext
+        {
+            Mode = DashboardShellMode.TabModuleEmbedded,
+            SpecDirectory = specDirectory,
+            TabModuleId = tabId,
+            ParentFilters = parentFilters,
+        };
 
         reader.SkipNewlines();
         while (!reader.IsEof)
         {
-            if (reader.TryKeyword("connector"))
+            if (!DashboardShellParser.TryParseStatement(reader, shell))
             {
-                reader.ReadIdent();
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("layout"))
-            {
-                LayoutParser.ParseGrid(reader);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("filters") || reader.TryKeyword("toolbar"))
-            {
-                if (reader.TryKeyword("dashboard"))
+                if (reader.IsEof)
                 {
-                    _ = ParseFilterPlacementList(reader, "filters dashboard");
-                }
-                else if (reader.TryKeyword("chrome"))
-                {
-                    FiltersChromeParser.Parse(reader);
-                }
-                else
-                {
-                    _ = ParseFilterPlacementList(reader, "toolbar");
+                    break;
                 }
 
-                reader.SkipNewlines();
-                continue;
+                throw reader.Unexpected();
             }
-
-            if (reader.TryKeyword("filter"))
-            {
-                // Standalone shell: top-level filters are for spec_path on module only; parent owns globals when embedded.
-                _ = FilterParser.Parse(reader);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("tab"))
-            {
-                var (moduleLabel, moduleFilters) = TabParser.ParseModuleLocalBlock(reader, tabId, allowFilters: true);
-                label ??= moduleLabel;
-                filters.AddRange(moduleFilters);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("card"))
-            {
-                cards.Add(CardParser.Parse(reader, filters));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.IsEof)
-            {
-                break;
-            }
-
-            throw reader.Unexpected();
         }
 
-        if (cards.Count == 0)
+        if (shell.Cards.Count == 0)
         {
             throw new DashSpecParseException($"Tab module '{tabId}' must declare at least one card.");
         }
 
-        return new TabModuleContent(tabId, label, filters, cards);
+        return new TabModuleContent(
+            tabId,
+            shell.TabModuleLabel,
+            shell.ExportedTabLocalFilters,
+            shell.Cards,
+            shell.LayoutBoard);
     }
 
-    public static DashboardDocument ComposeStandalone(string text)
+    public static DashboardDocument ComposeStandalone(string text, string? specDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
-        var reader = CreateReader(text);
+        var reader = ParserUtilities.CreateReader(text);
         reader.SkipFileDirectives();
         var sqlDialect = reader.ConsumedSqlDialect;
         var diagramLibraryPath = reader.ConsumedDiagramLibraryPath;
+        var palettePath = reader.ConsumedPalettePath;
 
         var tabId = ReadTabDirective(reader);
-
-        var filters = new List<FilterDefinition>();
-        var dashboardFilters = new List<string>();
-        var cards = new List<CardDefinition>();
-        string? connectorId = null;
-        LayoutDefinition layout = LayoutDefinition.Default;
-        FiltersChromeDefinition filtersChrome = FiltersChromeDefinition.Default;
-        string? label = null;
+        var shell = new DashboardShellContext
+        {
+            Mode = DashboardShellMode.TabModuleStandalone,
+            SpecDirectory = specDirectory,
+            TabModuleId = tabId,
+        };
 
         reader.SkipNewlines();
         while (!reader.IsEof)
         {
-            if (reader.TryKeyword("connector"))
+            if (!DashboardShellParser.TryParseStatement(reader, shell))
             {
-                connectorId = reader.ReadIdent();
-                reader.SkipNewlines();
-                continue;
+                throw reader.Unexpected();
             }
-
-            if (reader.TryKeyword("layout"))
-            {
-                layout = LayoutParser.ParseGrid(reader);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("filters") || reader.TryKeyword("toolbar"))
-            {
-                if (reader.TryKeyword("dashboard"))
-                {
-                    dashboardFilters.AddRange(ParseFilterPlacementList(reader, "filters dashboard"));
-                }
-                else if (reader.TryKeyword("chrome"))
-                {
-                    filtersChrome = FiltersChromeParser.Parse(reader);
-                }
-                else
-                {
-                    dashboardFilters.AddRange(ParseFilterPlacementList(reader, "toolbar"));
-                }
-
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("filter"))
-            {
-                filters.Add(FilterParser.Parse(reader));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("tab"))
-            {
-                var (moduleLabel, moduleFilters) = TabParser.ParseModuleLocalBlock(reader, tabId, allowFilters: true);
-                label ??= moduleLabel;
-                filters.AddRange(moduleFilters);
-                reader.SkipNewlines();
-                continue;
-            }
-
-            if (reader.TryKeyword("card"))
-            {
-                cards.Add(CardParser.Parse(reader, filters));
-                reader.SkipNewlines();
-                continue;
-            }
-
-            throw reader.Unexpected();
         }
 
-        if (cards.Count == 0)
+        if (shell.Cards.Count == 0)
         {
             throw new DashSpecParseException($"Standalone @tab '{tabId}' must declare at least one card.");
         }
 
-        var title = label ?? tabId;
+        var title = shell.TabModuleLabel ?? tabId;
         var tabs = new List<TabDefinition>
         {
-            new(tabId, title, cards.Select(c => c.Id).ToList()),
+            new(tabId, title, shell.Cards.Select(c => c.Id).ToList(), LayoutBoard: shell.LayoutBoard),
         };
 
-        cards = TabParser.AssignTabs(cards, tabs);
+        var cards = TabParser.AssignTabs(shell.Cards, tabs);
+        var dashboardFilters = ToolbarPlacementResolver.ResolveFilterNames(
+            shell.Filters,
+            shell.DashboardFilters,
+            shell.ToolbarBoard);
         var document = new DashboardDocument(
             tabId,
             title,
-            connectorId,
+            shell.ConnectorId,
             sqlDialect,
             diagramLibraryPath,
-            null,
-            layout,
-            filtersChrome,
-            filters,
+            palettePath,
+            shell.ColorPalette,
+            shell.Layout,
+            shell.FiltersChrome,
+            shell.Filters,
             dashboardFilters,
             tabs,
-            cards);
+            cards,
+            shell.ToolbarBoard);
 
-        FilterPlacementAnalyzer.Validate(document);
-        TabAnalyzer.Validate(document);
+        DashboardValidator.Validate(document);
         return document;
     }
 
@@ -223,21 +134,5 @@ internal static class TabModuleParser
         reader.Expect(TokenKind.At);
         reader.ExpectKeyword("tab");
         return reader.ReadIdent();
-    }
-
-    private static TokenReader CreateReader(string text)
-    {
-        var tokens = DashSpecLexer.Tokenize(text);
-        return new TokenReader(tokens);
-    }
-
-    private static IReadOnlyList<string> ParseFilterPlacementList(TokenReader reader, string blockName)
-    {
-        if (reader.IsAt(TokenKind.LBrace))
-        {
-            return PropertyBlockParser.ParseCommaListBlock(reader, blockName);
-        }
-
-        return reader.ReadCommaListInline();
     }
 }

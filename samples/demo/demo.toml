@@ -1,4 +1,4 @@
-# Runtime config for demo-soak.dashspec (@config)
+# Runtime manifest for demo-soak.dashspec (@runtime)
 # Copy to demo.local.toml and set your connection_string (gitignored).
 
 [connectors.sqlserver]

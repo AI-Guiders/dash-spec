@@ -69,13 +69,20 @@ internal static class FilterPlacementAnalyzer
                         $"Filter '{filterName}' is already placed on card '{owner}'; card-local filters must be unique.");
                 }
 
-                if (registry[filterName].Kind is FilterKind.Top &&
-                    card.Diagram.UsePreset is null &&
-                    string.IsNullOrWhiteSpace(card.UseCardPreset) &&
-                    !DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind))
+                if (registry[filterName].Kind is FilterKind.Top)
                 {
-                    throw new DashSpecParseException(
-                        $"Top filter '{filterName}' can only be placed on table cards; card '{card.Id}' uses diagram {card.Diagram.Kind}.");
+                    var hasUnresolvedPreset =
+                        !string.IsNullOrWhiteSpace(card.UseCardPreset) ||
+                        !string.IsNullOrWhiteSpace(card.Diagram.UsePreset);
+                    var violation = TopFilterPlacementRules.GetViolation(
+                        filterName,
+                        card.Id,
+                        card.Diagram.Kind,
+                        hasUnresolvedPreset);
+                    if (violation is not null)
+                    {
+                        throw new DashSpecParseException(violation);
+                    }
                 }
 
                 cardLocalOwners[filterName] = card.Id;
