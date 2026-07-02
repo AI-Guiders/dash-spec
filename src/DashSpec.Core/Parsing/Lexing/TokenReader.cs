@@ -9,11 +9,16 @@ internal sealed class TokenReader
 
     public TokenReader(IReadOnlyList<Token> tokens) => _tokens = tokens;
 
-    public string? ConsumedConfigPath { get; private set; }
+    public string? ConsumedRuntimePath { get; private set; }
+
+    /// <summary>Deprecated alias; use <see cref="ConsumedRuntimePath"/>.</summary>
+    public string? ConsumedConfigPath => ConsumedRuntimePath;
 
     public SqlDialect ConsumedSqlDialect { get; private set; } = SqlDialect.TSql;
 
     public string? ConsumedDiagramLibraryPath { get; private set; }
+
+    public string? ConsumedPalettePath { get; private set; }
 
     public void SkipFileDirectives()
     {
@@ -21,14 +26,15 @@ internal sealed class TokenReader
         while (IsAt(TokenKind.At))
         {
             Advance();
-            if (TryKeyword("config"))
+            if (TryKeyword("runtime") || TryKeyword("config"))
             {
-                if (ConsumedConfigPath is not null)
+                if (ConsumedRuntimePath is not null)
                 {
-                    throw new DashSpecParseException("Only one @config directive is allowed per .dashspec file.");
+                    throw new DashSpecParseException(
+                        "Only one @runtime directive is allowed per .dashspec file.");
                 }
 
-                ConsumedConfigPath = ReadString();
+                ConsumedRuntimePath = ReadString();
                 SkipNewlines();
                 continue;
             }
@@ -53,9 +59,40 @@ internal sealed class TokenReader
                 continue;
             }
 
+            if (TryKeyword("palette"))
+            {
+                SkipNewlines();
+                if (Current.Kind is TokenKind.String)
+                {
+                    if (ConsumedPalettePath is not null)
+                    {
+                        throw new DashSpecParseException(
+                            "Only one @palette file directive is allowed per .dashspec file.");
+                    }
+
+                    ConsumedPalettePath = ReadString();
+                    SkipNewlines();
+                    continue;
+                }
+
+                _index -= 2;
+                break;
+            }
+
             _index--;
             break;
         }
+    }
+
+    public string ReadPropertyKey(bool allowQuoted = false)
+    {
+        SkipNewlines();
+        if (allowQuoted && Current.Kind is TokenKind.String)
+        {
+            return ReadString();
+        }
+
+        return ReadIdent();
     }
 
     public bool IsEof => Current.Kind is TokenKind.Eof;
@@ -114,6 +151,39 @@ internal sealed class TokenReader
 
         _index++;
         return true;
+    }
+
+    /// <summary>
+    /// Optional postfix keyword on the current line only (does not cross <see cref="TokenKind.Newline"/>).
+    /// Use for <c>ref</c>, optional trailing <c>as</c>, etc. — never for statement-start keywords.
+    /// </summary>
+    public bool TryKeywordSameLine(string keyword)
+    {
+        if (Current.Kind is TokenKind.Newline or TokenKind.Eof)
+        {
+            return false;
+        }
+
+        if (Current.Kind is not TokenKind.Ident ||
+            !string.Equals(Current.Value, keyword, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        _index++;
+        return true;
+    }
+
+    public string ReadIdentSameLine()
+    {
+        if (Current.Kind is not TokenKind.Ident)
+        {
+            throw Unexpected("identifier on the same line");
+        }
+
+        var value = Current.Value;
+        _index++;
+        return value;
     }
 
     public void ExpectKeyword(string keyword)
@@ -176,6 +246,19 @@ internal sealed class TokenReader
         };
     }
 
+    public string ReadRawBlock()
+    {
+        SkipNewlines();
+        if (Current.Kind is not TokenKind.Raw)
+        {
+            throw Unexpected("[[ … ]] raw block");
+        }
+
+        var value = Current.Value;
+        _index++;
+        return value;
+    }
+
     public ColumnBindingValue ReadColumnBinding()
     {
         var column = ReadQualifiedName();
@@ -214,7 +297,7 @@ internal sealed class TokenReader
     public string ReadDateDefaultValue()
     {
         var from = ReadDateBoundToken();
-        if (CurrentKind is not TokenKind.DotDot)
+        if (RawKind is not TokenKind.DotDot)
         {
             return from;
         }

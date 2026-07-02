@@ -34,7 +34,13 @@ internal static class PayloadRowFormatters
 
     public static string FormatHeatmapAxisLabel(object? value, string? format)
     {
-        var raw = FormatHeatmapLabel(value);
+        var raw = value switch
+        {
+            null => string.Empty,
+            DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
+            DateOnly d => d.ToString("yyyy-MM-dd"),
+            _ => Convert.ToString(value) ?? string.Empty,
+        };
         return string.IsNullOrEmpty(raw) ? raw : LabelFormat.Format(raw, format);
     }
 

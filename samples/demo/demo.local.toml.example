@@ -1,5 +1,5 @@
 # Local override for demo-soak.dashspec — copy and set your server.
-# Save as demo.local.toml (gitignored) or point @config in .dashspec to this file.
+# Save as demo.local.toml (gitignored) or point @runtime in .dashspec to this file.
 
 [connectors.sqlserver]
 connection_string = "Server=YOUR_SERVER;Database=DashSpecDemo;Trusted_Connection=True;TrustServerCertificate=True"

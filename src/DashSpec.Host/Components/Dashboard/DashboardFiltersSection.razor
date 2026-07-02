@@ -1,14 +1,16 @@
 @namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Core.Model
 @using DashSpec.Host.Services.Presentation
 
 <section class="@SectionClass" aria-label="Фильтры дашборда">
-    <div class="@GridClass">
+    <div class="@GridClass" style="@GridStyle">
         @foreach (var filterName in FilterNames)
         {
             var filter = FilterIndex[filterName];
+            var placementStyle = DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
             if (filter.Kind is FilterKind.Date)
             {
-                <div class="filter filter-date @(BarLayout ? "filter-inline" : null)">
+                <div class="filter filter-date @(BarLayout ? "filter-inline" : null)" style="@placementStyle">
                     @if (!BarLayout)
                     {
                         <span class="filter-label">@FilterUiHelpers.DisplayLabel(filter)</span>
@@ -46,13 +48,17 @@
             }
             else if (filter.Kind is FilterKind.Field)
             {
-                <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
-                                  Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
-                                  Compact="@BarLayout"
-                                  Combobox="@filter.IsComboboxWidget"
-                                  Options="GetFieldOptions(filter.Name)"
-                                  Selected="SelectedFields[filter.Name]"
-                                  SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))" />
+                <div class="filter-field-cell" style="@placementStyle">
+                    <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
+                                      Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
+                                      Compact="@BarLayout"
+                                      Combobox="@filter.IsComboboxWidget"
+                                      NativeSelect="@filter.IsSelectWidget"
+                                      SingleSelect="@filter.IsSingleSelectField"
+                                      Options="GetFieldOptions(filter.Name)"
+                                      Selected="SelectedFields[filter.Name]"
+                                      SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))" />
+                </div>
             }
         }
     </div>
@@ -92,11 +98,15 @@
     [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+    [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
+    [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
+        new Dictionary<string, PlacementDefinition>();
     [Parameter] public bool BarLayout { get; set; }
     [Parameter] public bool AutoApply { get; set; }
     [Parameter] public bool Busy { get; set; }
     [Parameter] public string SectionClass { get; set; } = "filters filters-card";
     [Parameter] public string GridClass { get; set; } = "filters-grid";
+    [Parameter] public string GridStyle { get; set; } = string.Empty;
     [Parameter] public EventCallback OnApply { get; set; }
     [Parameter] public EventCallback OnScheduleApply { get; set; }
     [Parameter] public EventCallback<string> OnDayChanged { get; set; }

@@ -21,6 +21,7 @@ public sealed class DashboardSessionService(
     private IReadOnlyDictionary<string, FilterDefinition>? _filterIndex;
     private FilterState? _filters;
     private SpecLibrary? _specLibrary;
+    private string? _specDirectory;
     private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
 
     public SpecLibrary? SpecLibrary => _specLibrary;
@@ -101,6 +102,7 @@ public sealed class DashboardSessionService(
             FilterIndex,
             _specLibrary,
             _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
+            _specDirectory,
             cancellationToken);
 
     private async Task LoadFromTextAsync(
@@ -118,6 +120,7 @@ public sealed class DashboardSessionService(
         _filterIndex = loaded.FilterIndex;
         _filters = loaded.Filters;
         _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        _specDirectory = loaded.SpecDirectory;
         LoadedSpecSource = loaded.SourceLabel;
     }
 }

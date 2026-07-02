@@ -11,13 +11,13 @@ internal static class DashboardComposer
 
         if (IsTabRootDocument(text))
         {
-            return TabModuleParser.ComposeStandalone(text);
+            return TabModuleParser.ComposeStandalone(text, specDirectory);
         }
 
-        var document = DashboardParser.ParseDashboard(text);
+        var document = DashboardParser.ParseDashboard(text, specDirectory);
         if (document.Tabs.All(t => string.IsNullOrWhiteSpace(t.DashspecPath)))
         {
-            TabAnalyzer.Validate(document);
+            DashboardValidator.Validate(document);
             return document;
         }
 
@@ -32,7 +32,7 @@ internal static class DashboardComposer
 
     public static bool IsTabRootDocument(string text)
     {
-        var reader = CreateReader(text);
+        var reader = ParserUtilities.CreateReader(text);
         reader.SkipFileDirectives();
         reader.SkipNewlines();
         if (!reader.IsAt(TokenKind.At))
@@ -66,7 +66,7 @@ internal static class DashboardComposer
                     modulePath);
             }
 
-            var module = TabModuleParser.ParseEmbedded(File.ReadAllText(modulePath), tab.Id);
+            var module = TabModuleParser.ParseEmbedded(File.ReadAllText(modulePath), tab.Id, specDirectory, filters);
             foreach (var filter in module.Filters)
             {
                 if (filters.Any(f => string.Equals(f.Name, filter.Name, StringComparison.OrdinalIgnoreCase)))
@@ -93,7 +93,8 @@ internal static class DashboardComposer
             mergedTabs.Add(new TabDefinition(
                 tab.Id,
                 label,
-                module.Cards.Select(c => c.Id).ToList()));
+                module.Cards.Select(c => c.Id).ToList(),
+                LayoutBoard: module.LayoutBoard));
         }
 
         cards = TabParser.AssignTabs(cards, mergedTabs);
@@ -104,14 +105,7 @@ internal static class DashboardComposer
             Tabs = mergedTabs,
         };
 
-        FilterPlacementAnalyzer.Validate(merged);
-        TabAnalyzer.Validate(merged);
+        DashboardValidator.Validate(merged);
         return merged;
-    }
-
-    private static TokenReader CreateReader(string text)
-    {
-        var tokens = DashSpecLexer.Tokenize(text);
-        return new TokenReader(tokens);
     }
 }

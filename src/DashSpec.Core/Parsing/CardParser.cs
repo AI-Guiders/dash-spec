@@ -5,7 +5,7 @@ namespace DashSpec.Core.Parsing;
 
 internal static class CardParser
 {
-    public static CardDefinition Parse(TokenReader reader, IReadOnlyList<FilterDefinition> filters)
+    public static CardDefinition Parse(TokenReader reader, IReadOnlyList<FilterDefinition> filters, string? specDirectory = null)
     {
         var id = reader.ReadIdent();
         if (!reader.TryKeyword("as"))
@@ -14,6 +14,8 @@ internal static class CardParser
         }
 
         var title = reader.ReadString();
+        var layoutRef = ParserUtilities.TryReadLayoutRef(reader);
+
         reader.Expect(TokenKind.LBrace);
         reader.SkipNewlines();
 
@@ -26,9 +28,26 @@ internal static class CardParser
         LegendDefinition? legend = null;
         PresentationBlock? presentation = null;
         SeriesTransformBlock? seriesTransform = null;
+        var includeFragment = new SpecIncludeFragment(null, null, null);
 
         while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
         {
+            if (reader.TryKeyword("include"))
+            {
+                if (string.IsNullOrWhiteSpace(specDirectory))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{id}': include requires spec directory when parsing (path to the .dashspec folder).");
+                }
+
+                var (kind, reference) = DiagramModuleParser.ReadIncludeReference(reader);
+                includeFragment = SpecIncludeResolver.Merge(
+                    includeFragment,
+                    SpecIncludeResolver.Load(kind, reference, specDirectory));
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("use"))
             {
                 useCardPreset = reader.ReadIdent();
@@ -66,7 +85,7 @@ internal static class CardParser
 
             if (reader.TryKeyword("datasource"))
             {
-                dataSource = DataSourceParser.Parse(reader);
+                dataSource = DataSourceParser.Parse(reader, specDirectory);
                 reader.SkipNewlines();
                 continue;
             }
@@ -109,6 +128,33 @@ internal static class CardParser
 
         reader.Expect(TokenKind.RBrace);
 
+        if (includeFragment.Diagram is not null)
+        {
+            diagram = diagram is null
+                ? includeFragment.Diagram
+                : SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(diagram, null, null),
+                    new SpecIncludeFragment(includeFragment.Diagram, null, null)).Diagram;
+        }
+
+        if (includeFragment.Presentation is not null)
+        {
+            presentation = presentation is null
+                ? includeFragment.Presentation
+                : SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(null, presentation, null),
+                    new SpecIncludeFragment(null, includeFragment.Presentation, null)).Presentation;
+        }
+
+        if (includeFragment.SeriesTransform is not null)
+        {
+            seriesTransform = seriesTransform is null
+                ? includeFragment.SeriesTransform
+                : SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(null, null, seriesTransform),
+                    new SpecIncludeFragment(null, null, includeFragment.SeriesTransform)).SeriesTransform;
+        }
+
         if (diagram is null && useCardPreset is null)
         {
             throw new DashSpecParseException("Card requires a diagram block or use <card-preset>.");
@@ -129,6 +175,7 @@ internal static class CardParser
             boundFilters,
             localFilters,
             placement,
+            LayoutRef: layoutRef,
             UseCardPreset: useCardPreset,
             Legend: legend,
             Presentation: presentation,

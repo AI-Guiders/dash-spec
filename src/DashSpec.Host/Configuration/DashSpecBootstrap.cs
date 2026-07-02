@@ -1,6 +1,8 @@
+using DashSpec.Core.Parsing;
+
 namespace DashSpec.Host.Configuration;
 
-/// <summary>Host bootstrap: dash-spec.toml → spec → обязательный @config TOML.</summary>
+/// <summary>Host bootstrap: dash-spec.toml → spec → обязательный @runtime TOML.</summary>
 public static class DashSpecBootstrap
 {
     public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment)
@@ -69,25 +71,7 @@ public static class DashSpecBootstrap
             return string.Empty;
         }
 
-        var searchDirs = new List<string> { Path.GetDirectoryName(specFullPath)! };
-        if (!string.IsNullOrWhiteSpace(libraryFallbackDirectory))
-        {
-            searchDirs.Add(libraryFallbackDirectory);
-        }
-
-        foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var libraryPath = Path.GetFullPath(Path.Combine(dir, libraryRelative));
-            if (File.Exists(libraryPath))
-            {
-                return libraryPath;
-            }
-        }
-
-        var primary = Path.GetFullPath(Path.Combine(searchDirs[0], libraryRelative));
-        throw new FileNotFoundException(
-            $"DashSpec @diagramlibrary not found: '{libraryRelative}' (resolved: {primary}).",
-            primary);
+        return SpecPathResolver.ResolveNearSpec(specFullPath, libraryRelative, libraryFallbackDirectory);
     }
 
     public static string ResolveRuntimeConfigPath(
@@ -95,36 +79,18 @@ public static class DashSpecBootstrap
         string specText,
         string? configFallbackDirectory = null)
     {
-        var configRelative = DashSpec.Core.Parsing.DashSpecParser.ReadConfigPath(specText);
+        var configRelative = DashSpecParser.ReadRuntimePath(specText);
         if (string.IsNullOrWhiteSpace(configRelative))
         {
             throw new InvalidOperationException(
                 """
-                В .dashspec нет @config — укажите в начале файла, например:
-                  @config "demo.toml"
-                Файл конфига должен содержать [connectors.*] и [plugins].
+                В .dashspec нет @runtime — укажите в начале файла, например:
+                  @runtime "demo.toml"
+                Файл runtime (TOML) должен содержать [connectors.*] и [plugins].
                 """);
         }
 
-        var searchDirs = new List<string> { Path.GetDirectoryName(specFullPath)! };
-        if (!string.IsNullOrWhiteSpace(configFallbackDirectory))
-        {
-            searchDirs.Add(configFallbackDirectory);
-        }
-
-        foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var configPath = Path.GetFullPath(Path.Combine(dir, configRelative));
-            if (File.Exists(configPath))
-            {
-                return configPath;
-            }
-        }
-
-        var primary = Path.GetFullPath(Path.Combine(searchDirs[0], configRelative));
-        throw new FileNotFoundException(
-            $"DashSpec @config not found: '{configRelative}' (resolved: {primary}).",
-            primary);
+        return SpecPathResolver.ResolveNearSpec(specFullPath, configRelative, configFallbackDirectory);
     }
 
     private static void ValidateRuntimeConfig(DashSpecTomlRoot root, string configPath)
@@ -143,7 +109,5 @@ public static class DashSpecBootstrap
     }
 
     public static string ResolveSpecPath(string contentRoot, string specPath) =>
-        Path.IsPathRooted(specPath)
-            ? specPath
-            : Path.GetFullPath(Path.Combine(contentRoot, specPath));
+        SpecPathResolver.ResolveFromContentRoot(contentRoot, specPath);
 }

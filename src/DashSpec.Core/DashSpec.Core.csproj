@@ -21,4 +21,8 @@
     <PackageReference Include="Tomlyn" Version="2.9.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="stdlib\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="stdlib" />
+  </ItemGroup>
+
 </Project>

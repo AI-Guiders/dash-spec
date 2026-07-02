@@ -46,6 +46,8 @@
                         {
                             <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
                                               Combobox="@filter.IsComboboxWidget"
+                                              NativeSelect="@filter.IsSelectWidget"
+                                              SingleSelect="@filter.IsSingleSelectField"
                                               Options="GetFieldOptions(filter.Name)"
                                               Selected="SelectedFields[filter.Name]"
                                               SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))" />
