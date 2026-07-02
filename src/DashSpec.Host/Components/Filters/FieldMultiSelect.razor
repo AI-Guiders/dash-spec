@@ -1,5 +1,26 @@
-<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null)">
-    @if (Combobox)
+<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null)">
+    @if (NativeSelect)
+    {
+        @if (Compact)
+        {
+            <span class="filter-inline-label">@Label</span>
+        }
+        else if (!string.IsNullOrWhiteSpace(Hint))
+        {
+            <span class="filter-scope">@Hint</span>
+        }
+
+        <select class="field-select"
+                aria-label="@Label"
+                value="@SelectedValue()"
+                @onchange="OnNativeSelectChanged">
+            @foreach (var option in Options)
+            {
+                <option value="@option">@option</option>
+            }
+        </select>
+    }
+    else if (Combobox)
     {
         @if (Compact)
         {
@@ -19,8 +40,8 @@
             @if (_open)
             {
                 <div class="combobox-backdrop" @onclick="Close"></div>
-                <div class="combobox-panel" role="listbox" aria-multiselectable="true" aria-label="@Label">
-                    @if (Options.Count > 6)
+                <div class="combobox-panel" role="listbox" aria-multiselectable="@(!SingleSelect)" aria-label="@Label">
+                    @if (!SingleSelect && Options.Count > 6)
                     {
                         <input class="combobox-search filter-search"
                                type="search"
@@ -34,19 +55,33 @@
                         @foreach (var option in FilteredOptions)
                         {
                             var active = Selected.Contains(option);
-                            <label class="combobox-option @(active ? "combobox-option-active" : null)">
-                                <input type="checkbox"
-                                       checked="@active"
-                                       @onchange="() => ToggleAsync(option)" />
-                                <span>@option</span>
-                            </label>
+                            if (SingleSelect)
+                            {
+                                <button type="button"
+                                        class="combobox-option combobox-option-single @(active ? "combobox-option-active" : null)"
+                                        @onclick="() => SelectSingleAsync(option)">
+                                    @option
+                                </button>
+                            }
+                            else
+                            {
+                                <label class="combobox-option @(active ? "combobox-option-active" : null)">
+                                    <input type="checkbox"
+                                           checked="@active"
+                                           @onchange="() => ToggleAsync(option)" />
+                                    <span>@option</span>
+                                </label>
+                            }
                         }
                     </div>
 
-                    <div class="combobox-actions chip-actions">
-                        <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
-                        <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
-                    </div>
+                    @if (!SingleSelect)
+                    {
+                        <div class="combobox-actions chip-actions">
+                            <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
+                            <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+                        </div>
+                    }
                 </div>
             }
         </div>
@@ -63,16 +98,19 @@
                         <span class="filter-scope">@Hint</span>
                     }
                 </div>
-                <span class="muted filter-count">
-                    @if (Selected.Count == 0)
-                    {
-                        <text>все</text>
-                    }
-                    else
-                    {
-                        <text>@Selected.Count из @Options.Count</text>
-                    }
-                </span>
+                @if (!SingleSelect)
+                {
+                    <span class="muted filter-count">
+                        @if (Selected.Count == 0)
+                        {
+                            <text>все</text>
+                        }
+                        else
+                        {
+                            <text>@Selected.Count из @Options.Count</text>
+                        }
+                    </span>
+                }
             </div>
         }
         else
@@ -80,7 +118,7 @@
             <span class="filter-inline-label">@Label</span>
         }
 
-        @if (Options.Count > 8)
+        @if (!SingleSelect && Options.Count > 8)
         {
             <input class="filter-search"
                    type="search"
@@ -89,7 +127,7 @@
                    @bind:event="oninput" />
         }
 
-        <div class="chip-list" role="listbox" aria-multiselectable="true" aria-label="@Label">
+        <div class="chip-list" role="listbox" aria-multiselectable="@(!SingleSelect)" aria-label="@Label">
             @foreach (var option in FilteredOptions)
             {
                 var active = Selected.Contains(option);
@@ -97,16 +135,19 @@
                         class="chip @(active ? "chip-active" : null)"
                         role="option"
                         aria-selected="@active"
-                        @onclick="() => ToggleAsync(option)">
+                        @onclick="() => OnChipClickAsync(option)">
                     @option
                 </button>
             }
         </div>
 
-        <div class="chip-actions">
-            <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
-            <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
-        </div>
+        @if (!SingleSelect)
+        {
+            <div class="chip-actions">
+                <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
+                <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+            </div>
+        }
     }
 </div>
 
@@ -122,6 +163,12 @@
 
     [Parameter]
     public bool Combobox { get; set; }
+
+    [Parameter]
+    public bool NativeSelect { get; set; }
+
+    [Parameter]
+    public bool SingleSelect { get; set; }
 
     [Parameter]
     public IReadOnlyList<string> Options { get; set; } = [];
@@ -140,8 +187,19 @@
             ? Options
             : Options.Where(x => x.Contains(_search, StringComparison.OrdinalIgnoreCase));
 
+    private string SelectedValue()
+    {
+        var value = Options.FirstOrDefault(Selected.Contains);
+        return value ?? Options.FirstOrDefault() ?? string.Empty;
+    }
+
     private string SummaryText()
     {
+        if (SingleSelect)
+        {
+            return SelectedValue();
+        }
+
         if (Selected.Count == 0)
         {
             return "Все";
@@ -165,6 +223,17 @@
 
     private void Close() => _open = false;
 
+    private async Task OnChipClickAsync(string option)
+    {
+        if (SingleSelect)
+        {
+            await SelectSingleAsync(option);
+            return;
+        }
+
+        await ToggleAsync(option);
+    }
+
     private async Task ToggleAsync(string option)
     {
         var next = new HashSet<string>(Selected, StringComparer.OrdinalIgnoreCase);
@@ -175,6 +244,24 @@
 
         Selected = next;
         await SelectedChanged.InvokeAsync(next);
+    }
+
+    private async Task SelectSingleAsync(string option)
+    {
+        Selected = new HashSet<string>([option], StringComparer.OrdinalIgnoreCase);
+        _open = false;
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    private async Task OnNativeSelectChanged(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        await SelectSingleAsync(value);
     }
 
     private async Task SelectAllAsync()

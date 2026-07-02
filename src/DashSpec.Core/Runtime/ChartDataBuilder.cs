@@ -55,7 +55,11 @@ public static class ChartDataBuilder
         MatrixPayloadBuilder.Build(rows, diagram);
 }
 
-public sealed record ChartPayload(IReadOnlyList<string> Labels, IReadOnlyList<ChartSeries> Series);
+public sealed record ChartPayload(
+    IReadOnlyList<string> Labels,
+    IReadOnlyList<ChartSeries> Series,
+    IReadOnlyList<double?>? ReferenceValues = null,
+    string? ReferenceLabel = null);
 
 public sealed record ChartSeries(
     string Name,

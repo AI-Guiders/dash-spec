@@ -77,6 +77,8 @@ Override на card: `bind`, `diagram`, `datasource`, `legend`, …
 
 Ключевое правило: **inline-свойства только на той же физической строке**, что и заголовок `filter …`; `{` на следующей строке — всегда `propertyBlock`. Пустое тело (`on … as "…"` + newline) — ε, без «перетекания» на следующий `filter`.
 
+**Опциональные postfix-токены** (`ref`, trailing `as` после имени без `on`) — только на текущей строке: `TokenReader.TryKeywordSameLine` / `ParserUtilities.TryReadLayoutRef`. Обычный `TryKeyword` перед проверкой делает `SkipNewlines()` и ломает границу строк (следующий `filter` съедается как inline-свойство).
+
 Слои после рефакторинга:
 
 | Слой | Каталог |

@@ -100,7 +100,7 @@ public static class SpecResolveExporter
             view.RenderPluginId,
             card.Diagram.Properties,
             card.DataSource.Kind.ToString().ToLowerInvariant(),
-            card.DataSource.Value,
+            FormatDataSource(card.DataSource),
             card.BoundFilters,
             card.LocalFilters,
             chartPresentation,
@@ -108,6 +108,15 @@ public static class SpecResolveExporter
             seriesTransform,
             effectivePalette);
     }
+
+    private static string FormatDataSource(DataSourceDefinition source) =>
+        source.Kind switch
+        {
+            DataSourceKind.View => source.Value,
+            DataSourceKind.Sql when source.SqlCarrier is DataSourceSqlCarrier.File => $"file:{source.Value}",
+            DataSourceKind.Sql => source.Value,
+            _ => source.Value,
+        };
 
     private static string? ResolveEffectiveColorPalette(
         string? dashboardPalette,

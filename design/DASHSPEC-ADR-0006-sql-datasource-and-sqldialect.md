@@ -1,16 +1,15 @@
-# DASHSPEC-ADR-0006: `datasource sql` и `@sqldialect`
+# DASHSPEC-ADR-0006: `@sqldialect` и семантика SQL-источников
 
 | | |
 |---|---|
-| **Status** | Accepted · v0.3 (partial) |
+| **Status** | Accepted · v0.3 — **синтаксис объявления `datasource sql`** см. [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) |
 | **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [FILTERS_RU.md](../docs/FILTERS_RU.md) |
+| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) |
 
 ## Context
 
 - **`datasource view`** — основной путь: логика в SQL views БД (`schema.v_*`; в sample — `demo.v_*`), DashSpec только фильтры и визуал.
 - На краях нужен **native SQL** (top-N, CTE, прототип до migrate) без дублирования всей модели в views.
-- Парсер уже принимал `datasource sql "…"`, рантайм — `NotSupportedException`.
 - Разные коннекторы → разный синтаксис дат/лимитов (`DATEADD` vs `INTERVAL`).
 
 ## Decision
@@ -26,7 +25,7 @@
 ### File directives (преамбула)
 
 ```text
-@config "demo.toml"
+@runtime "demo.toml"
 @sqldialect tsql
 
 @dashboard demo_soak
@@ -35,35 +34,33 @@ dashboard "…" { … }
 
 | Директива | Обязательность | Значения |
 |-----------|----------------|----------|
-| `@config` | **да** | путь к TOML (как ADR-0001) |
+| `@runtime` | **да** | путь к TOML manifest (как [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0019](DASHSPEC-ADR-0019-runtime-directive.md)) |
 | `@sqldialect` | нет | `tsql` (default), `postgres`, `generic` |
 
 - **`@sqldialect`** задаёт диалект для **компиляции фильтров** из `bind` (date range, field `IN`, `TOP` vs `LIMIT`).
 - Default **`tsql`** — SqlServer connector на dev.
 - В будущем: `default_dialect` в manifest коннектора, если `@sqldialect` опущен.
 
-### Семантика `datasource sql`
+### Семантика `datasource sql` (compile)
+
+**Грамматика на card** — только [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md): `datasource sql query …`, `datasource sql file …`.
 
 ```text
 card top_users as "Top users" {
   bind usage_date, user_name
   diagram bar { x = user_sam y = peak_concurrent_apps }
-  datasource sql """
-    SELECT user_sam, MAX(peak_concurrent_apps) AS peak_concurrent_apps
-    FROM demo.v_daily_peak_concurrent_apps_per_user
-    GROUP BY user_sam
-  """
+  datasource sql file "sql/top-users.sql"
 }
 ```
 
-Компилятор:
+Компилятор (одинаково для `query` и `file` после resolve тела):
 
 1. Оборачивает тело SQL: `( <user sql> ) AS _dashspec_q`
 2. Снаружи: `SELECT <cols> FROM (…) AS _dashspec_q WHERE 1=1 AND …` — фильтры из `bind` (date/field), как у view.
 3. `order_by` / `TOP` (table) — как для view.
 4. Запрещено: `;`, несколько statements (валидация v0.3+).
 
-**Фильтры внутри SQL-строки** — **не в v0.3**; только `bind` на card ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md)).
+**Фильтры внутри SQL-тела** — **не в v0.3**; только `bind` на card ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md)).
 
 ### Диалект и фильтры
 
@@ -77,9 +74,8 @@ card top_users as "Top users" {
 
 ## Non-goals v0.3
 
-- `sql file "queries/foo.sql"` (отдельный файл) — отдельный ADR
-- Подстановка `[[filters]]` внутрь heredoc
 - Hot reload `@sqldialect`
+- Подстановка имён фильтров внутрь SQL-тела (только `bind` снаружи, [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md))
 
 ## Безопасность SQL (текст spec)
 

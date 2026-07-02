@@ -18,6 +18,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         SpecLibrary? library,
         IDataSourceConnector connector,
+        string? specDirectory = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(card);
@@ -28,7 +29,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
 
         var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
         var effective = resolved.Card;
-        var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect);
+        var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect, specDirectory);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart

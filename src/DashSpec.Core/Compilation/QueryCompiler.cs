@@ -12,7 +12,8 @@ public static class QueryCompiler
         CardDefinition card,
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
-        SqlDialect sqlDialect = SqlDialect.TSql)
+        SqlDialect sqlDialect = SqlDialect.TSql,
+        string? specDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -22,7 +23,8 @@ public static class QueryCompiler
         var fromClause = card.DataSource.Kind switch
         {
             DataSourceKind.View => card.DataSource.Value,
-            DataSourceKind.Sql => WrapSqlDataSource(card.DataSource.Value),
+            DataSourceKind.Sql => WrapSqlDataSource(
+                SqlDataSourceResolver.ResolveSqlBody(card.DataSource, specDirectory)),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
 
@@ -224,13 +226,6 @@ public static class QueryCompiler
             var anchor = PeriodAnchorResolver.ResolveAnchor(range.Value.From, grain);
             var param = $"@{variable}_anchor";
             parameters.Add(new QueryParameter(param, anchor));
-            return $"{column} = {param}";
-        }
-
-        if (definition.IsDayWidget && range.Value.From == range.Value.To)
-        {
-            var param = $"@{variable}_day";
-            parameters.Add(new QueryParameter(param, range.Value.From));
             return $"{column} = {param}";
         }
 

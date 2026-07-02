@@ -27,7 +27,8 @@ internal static class PropertyBlockParser
         TokenReader reader,
         IReadOnlyList<PropertySpec> schema,
         string blockName,
-        bool allowExtensionProperties = false)
+        bool allowExtensionProperties = false,
+        bool allowQuotedPropertyKeys = false)
     {
         reader.Expect(TokenKind.LBrace);
         reader.SkipNewlines();
@@ -45,7 +46,7 @@ internal static class PropertyBlockParser
 
             while (!reader.IsAt(TokenKind.Newline) && !reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
             {
-                var key = reader.ReadIdent();
+                var key = reader.ReadPropertyKey(allowQuotedPropertyKeys);
                 if (!specs.TryGetValue(key, out var spec))
                 {
                     if (!allowExtensionProperties || key.EndsWith("_as", StringComparison.OrdinalIgnoreCase))
@@ -232,6 +233,7 @@ internal static class PropertySchemas
         new("column", PropertyValueType.ColumnBinding),
         new("widget", PropertyValueType.Scalar),
         new("default", PropertyValueType.Scalar),
+        new("single", PropertyValueType.Scalar),
     ];
 
     public static IReadOnlyList<PropertySpec> FilterTop { get; } =
@@ -269,5 +271,11 @@ internal static class PropertySchemas
         new("use", PropertyValueType.Scalar),
         new("max", PropertyValueType.Scalar),
         new("other", PropertyValueType.String),
+    ];
+
+    public static IReadOnlyList<PropertySpec> Palette { get; } =
+    [
+        new("colors", PropertyValueType.String),
+        new("default", PropertyValueType.String),
     ];
 }

@@ -85,6 +85,62 @@ public sealed class SpecLibrary
     public static SpecLibrary Parse(IReadOnlyList<string> lines) =>
         Parse(string.Join('\n', lines));
 
+    public static SpecLibrary FromPalette(string id, IReadOnlyDictionary<string, string> properties)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(properties);
+
+        var library = new SpecLibrary();
+        library._palettes[id] = new Dictionary<string, string>(properties, StringComparer.OrdinalIgnoreCase);
+        return library;
+    }
+
+    public static SpecLibrary? Merge(SpecLibrary? left, SpecLibrary? right)
+    {
+        if (left is null)
+        {
+            return right;
+        }
+
+        if (right is null)
+        {
+            return left;
+        }
+
+        var merged = new SpecLibrary();
+        merged.ImportFrom(left);
+        merged.ImportFrom(right);
+        return merged;
+    }
+
+    private void ImportFrom(SpecLibrary other)
+    {
+        foreach (var (key, value) in other._palettes)
+        {
+            _palettes[key] = value;
+        }
+
+        foreach (var (key, value) in other._presentations)
+        {
+            _presentations[key] = value;
+        }
+
+        foreach (var (key, value) in other._seriesTransforms)
+        {
+            _seriesTransforms[key] = value;
+        }
+
+        foreach (var (key, value) in other._diagrams)
+        {
+            _diagrams[key] = value;
+        }
+
+        foreach (var (key, value) in other._cards)
+        {
+            _cards[key] = value;
+        }
+    }
+
     private static void VisitTable(TomlTable table, string path, SpecLibrary library)
     {
         var props = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

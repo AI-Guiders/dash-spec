@@ -55,6 +55,8 @@ public sealed class DashboardPageController : IDisposable
         new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, PlacementDefinition> TabPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, PlacementDefinition> ToolbarPlacements { get; private set; } =
+        new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
 
     public IDashboardSession Session => _session;
@@ -279,8 +281,11 @@ public sealed class DashboardPageController : IDisposable
 
     public string FiltersGridClass() =>
         _session.Document.FiltersChrome.IsStickyLine
-            ? "filters-grid filters-grid-sticky"
-            : "filters-grid";
+            ? "filters-grid filters-grid-sticky filters-grid-layout"
+            : "filters-grid filters-grid-layout";
+
+    public string FiltersGridStyle() =>
+        DashboardLayoutHelper.CardsGridStyle(_session.Document.Layout);
 
     public void Dispose()
     {
@@ -332,6 +337,7 @@ public sealed class DashboardPageController : IDisposable
     {
         ActiveTabId = _session.Document.Tabs.FirstOrDefault()?.Id;
         RecomputeTabPlacements();
+        RecomputeToolbarPlacements();
         FiltersToCards = FilterBinding.MapFiltersToCards(_session.Document, _session.SpecLibrary)
             .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 
@@ -367,6 +373,13 @@ public sealed class DashboardPageController : IDisposable
         await Task.CompletedTask;
     }
 
+    private void RecomputeToolbarPlacements()
+    {
+        ToolbarPlacements = new Dictionary<string, PlacementDefinition>(
+            ToolbarLayoutCompactor.Compact(_session.Document),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
     private void RecomputeTabPlacements()
     {
         TabPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -398,6 +411,7 @@ public sealed class DashboardPageController : IDisposable
 
     private async Task RefreshCardsAsync()
     {
+        SyncFiltersFromUi();
         Busy = true;
         var dashboardFilters = _session.Document.DashboardFilters;
         _cards = _session.Document.Cards
@@ -450,6 +464,34 @@ public sealed class DashboardPageController : IDisposable
         _session.Document.DashboardFilters
             .Concat(_session.Document.Cards.SelectMany(c => c.LocalFilters))
             .Distinct(StringComparer.OrdinalIgnoreCase);
+
+    private void SyncFiltersFromUi()
+    {
+        foreach (var filterName in PlacedFilterNames())
+        {
+            if (!_session.FilterIndex.TryGetValue(filterName, out var filter))
+            {
+                continue;
+            }
+
+            if (filter.Kind is FilterKind.Date &&
+                DateFrom.TryGetValue(filter.Name, out var from) &&
+                DateTo.TryGetValue(filter.Name, out var to))
+            {
+                _session.ApplyDateFilter(filter.Name, from, to);
+            }
+            else if (filter.Kind is FilterKind.Field &&
+                     SelectedFields.TryGetValue(filter.Name, out var selected))
+            {
+                _session.ApplyFieldFilter(filter.Name, selected);
+            }
+            else if (filter.Kind is FilterKind.Top &&
+                     TopLimits.TryGetValue(filter.Name, out var topLimit))
+            {
+                _session.ApplyTopFilter(filter.Name, TopLimitDefaults.Resolve(filter, topLimit));
+            }
+        }
+    }
 
     private void Notify() => Changed?.Invoke();
 }

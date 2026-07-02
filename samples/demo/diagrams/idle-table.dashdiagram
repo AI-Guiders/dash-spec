@@ -1,0 +1,6 @@
+@diagram demo_idle_table
+
+diagram table {
+  columns = usage_date, user_id, app_name, idle_minutes
+  order_by = idle_minutes DESC
+}

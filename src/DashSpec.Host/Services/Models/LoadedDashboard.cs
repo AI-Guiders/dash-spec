@@ -12,4 +12,5 @@ public sealed record LoadedDashboard(
     IReadOnlyDictionary<string, FilterDefinition> FilterIndex,
     FilterState Filters,
     IReadOnlyDictionary<string, IReadOnlyList<string>> FieldOptions,
-    string SourceLabel);
+    string SourceLabel,
+    string? SpecDirectory);

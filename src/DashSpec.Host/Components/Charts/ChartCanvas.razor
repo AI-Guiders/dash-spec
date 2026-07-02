@@ -24,6 +24,12 @@
     public ChartAxisScale ValueAxisScale { get; set; } = ChartAxisScale.Decimal;
 
     [Parameter]
+    public string? CategoryAxisLabel { get; set; }
+
+    [Parameter]
+    public string? ValueAxisLabel { get; set; }
+
+    [Parameter]
     public ChartPayload? Payload { get; set; }
 
     private ChartPayload? _previousPayload;
@@ -31,6 +37,8 @@
     private bool _previousStacked;
     private ChartOrientation _previousOrientation;
     private ChartAxisScale _previousValueAxisScale;
+    private string? _previousCategoryAxisLabel;
+    private string? _previousValueAxisLabel;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -43,7 +51,9 @@
             string.Equals(Legend, _previousLegend, StringComparison.OrdinalIgnoreCase) &&
             Stacked == _previousStacked &&
             Orientation == _previousOrientation &&
-            ValueAxisScale == _previousValueAxisScale)
+            ValueAxisScale == _previousValueAxisScale &&
+            string.Equals(CategoryAxisLabel, _previousCategoryAxisLabel, StringComparison.Ordinal) &&
+            string.Equals(ValueAxisLabel, _previousValueAxisLabel, StringComparison.Ordinal))
         {
             return;
         }
@@ -53,6 +63,8 @@
         _previousStacked = Stacked;
         _previousOrientation = Orientation;
         _previousValueAxisScale = ValueAxisScale;
+        _previousCategoryAxisLabel = CategoryAxisLabel;
+        _previousValueAxisLabel = ValueAxisLabel;
         await Js.InvokeVoidAsync(
             "dashSpecCharts.render",
             ChartId,
@@ -69,6 +81,10 @@
                     ChartAxisScale.Integer => "integer",
                     _ => "decimal",
                 },
+                referenceValues = Payload.ReferenceValues,
+                referenceLabel = Payload.ReferenceLabel,
+                categoryAxisLabel = CategoryAxisLabel,
+                valueAxisLabel = ValueAxisLabel,
             });
     }
 

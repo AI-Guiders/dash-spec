@@ -1,4 +1,4 @@
-# Host bootstrap — только где лежит .dashspec. Runtime-конфиг — @config в spec.
+# Host bootstrap — только где лежит .dashspec. Runtime manifest — @runtime в spec.
 
 [dashboard]
 spec_path = "../../samples/demo/demo-soak.dashspec"
