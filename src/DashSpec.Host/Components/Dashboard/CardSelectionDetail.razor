@@ -1,0 +1,57 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Core.Model
+@using DashSpec.Core.Runtime
+@using DashSpec.Host.Services.Presentation
+
+@if (Effect is not null && Context is not null)
+{
+    <section class="card-selection-detail @(Effect.CopyFriendly ? "copy-friendly" : null)" aria-live="polite">
+        @switch (Effect.Format)
+        {
+            case ShowFormat.List:
+            {
+                var (headline, items) = CardSelectionPresenter.BuildListParts(Effect, Context, Presentation);
+                if (items.Count == 0)
+                {
+                    <p class="muted">Нет данных для выбранной ячейки</p>
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(headline))
+                    {
+                        <p class="card-selection-head">@headline</p>
+                    }
+                    <ul class="card-selection-list">
+                        @foreach (var item in items)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+                break;
+            }
+            case ShowFormat.Plain:
+            {
+                <pre class="card-selection-plain">@CardSelectionPresenter.BuildPlainText(Effect, Context, Presentation)</pre>
+                break;
+            }
+            case ShowFormat.Kv:
+            {
+                <dl class="card-selection-kv">
+                    @foreach (var (key, value) in CardSelectionPresenter.BuildKeyValueRows(Context, Presentation))
+                    {
+                        <dt>@key</dt>
+                        <dd>@value</dd>
+                    }
+                </dl>
+                break;
+            }
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public ShowSelectionEffect? Effect { get; set; }
+    [Parameter] public HeatmapCellContext? Context { get; set; }
+    [Parameter] public MatrixPresentation? Presentation { get; set; }
+}

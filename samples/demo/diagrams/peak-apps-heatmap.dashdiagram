@@ -2,7 +2,7 @@
 
 include presentation "<presentation/heatmap_tall>"
 
-diagram heatmap {
+heatmap {
   render = "css-grid"
   x = usage_date as "Day"
   y = user_id as "User"

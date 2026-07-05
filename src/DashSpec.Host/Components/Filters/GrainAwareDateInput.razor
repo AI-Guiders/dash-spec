@@ -1,0 +1,210 @@
+@namespace DashSpec.Host.Components.Filters
+@using DashSpec.Core.Model
+@using DashSpec.Core.Runtime
+@using DashSpec.Host.Services.Presentation
+
+@if (Filter.IsDayWidget)
+{
+    @if (ShowLabel)
+    {
+        <span class="@LabelClass">@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)</span>
+    }
+    <div class="date-range date-range-day">
+        @if (HasGrainFilter)
+        {
+            @switch (Grain)
+            {
+                case "month":
+                    <input type="month"
+                           class="date-input-grain"
+                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           disabled="@Disabled"
+                           value="@MonthValue"
+                           @onchange="OnMonthChanged" />
+                    break;
+                case "year":
+                    <input type="number"
+                           class="date-input-grain date-input-year"
+                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           disabled="@Disabled"
+                           min="1970"
+                           max="2100"
+                           step="1"
+                           value="@YearValue"
+                           @onchange="OnYearChanged" />
+                    break;
+                default:
+                    <input type="date"
+                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           disabled="@Disabled"
+                           value="@DayValue"
+                           @onchange="OnDayInputChanged" />
+                    break;
+            }
+        }
+        else
+        {
+            <input type="date"
+                   aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                   disabled="@Disabled"
+                   value="@DayValue"
+                   @onchange="OnDayInputChanged" />
+        }
+    </div>
+}
+else
+{
+    @if (ShowLabel)
+    {
+        <span class="@LabelClass">@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)</span>
+    }
+    <div class="date-range">
+        <input type="date"
+               aria-label="@($"{Filter.Name} from")"
+               disabled="@Disabled"
+               value="@DayValue"
+               @onchange="OnRangeFromChanged" />
+        <span class="date-sep">—</span>
+        <input type="date"
+               aria-label="@($"{Filter.Name} to")"
+               disabled="@Disabled"
+               value="@RangeToValue"
+               @onchange="OnRangeToChanged" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public FilterDefinition Filter { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> DateFrom { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> DateTo { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = default!;
+    [Parameter] public bool ShowLabel { get; set; } = true;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string LabelClass { get; set; } = "filter-inline-label";
+    [Parameter] public EventCallback OnRangeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnDayChanged { get; set; }
+
+    private bool HasGrainFilter => !string.IsNullOrWhiteSpace(Filter.GrainFilterName);
+
+    private string? Grain => HasGrainFilter
+        ? GrainFilterPresentation.ResolveGrain(Filter, FilterIndex, SelectedFields)
+        : null;
+
+    private string DayValue => FormatDay(DateFrom[Filter.Name]);
+
+    private string RangeToValue => FormatDay(DateTo[Filter.Name]);
+
+    private string MonthValue => $"{DateFrom[Filter.Name]:yyyy-MM}";
+
+    private int YearValue => DateFrom[Filter.Name].Year;
+
+    private static string FormatDay(DateOnly day) => day.ToString("yyyy-MM-dd");
+
+    private async Task OnDayInputChanged(ChangeEventArgs args)
+    {
+        if (!TryParseDay(args.Value?.ToString(), out var parsed))
+        {
+            return;
+        }
+
+        if (HasGrainFilter)
+        {
+            ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, Grain));
+        }
+        else
+        {
+            ApplyDay(parsed);
+        }
+
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnRangeFromChanged(ChangeEventArgs args)
+    {
+        if (TryParseDay(args.Value?.ToString(), out var parsed))
+        {
+            DateFrom[Filter.Name] = parsed;
+        }
+
+        await OnRangeChangedAsync();
+    }
+
+    private async Task OnRangeToChanged(ChangeEventArgs args)
+    {
+        if (TryParseDay(args.Value?.ToString(), out var parsed))
+        {
+            DateTo[Filter.Name] = parsed;
+        }
+
+        await OnRangeChangedAsync();
+    }
+
+    private async Task OnRangeChangedAsync()
+    {
+        if (OnRangeChanged.HasDelegate)
+        {
+            await OnRangeChanged.InvokeAsync();
+        }
+    }
+
+    private async Task OnMonthChanged(ChangeEventArgs args)
+    {
+        var raw = args.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(raw) &&
+            DateOnly.TryParse($"{raw}-01", out var parsed) &&
+            SqlDateTimeRange.IsQueryable(parsed))
+        {
+            ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "month"));
+        }
+
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnYearChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var year) && year is >= 1970 and <= 2100)
+        {
+            var parsed = new DateOnly(year, 1, 1);
+            if (SqlDateTimeRange.IsQueryable(parsed))
+            {
+                ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "year"));
+            }
+        }
+
+        await NotifyChangedAsync();
+    }
+
+    private void ApplyDay(DateOnly day)
+    {
+        DateFrom[Filter.Name] = day;
+        DateTo[Filter.Name] = day;
+    }
+
+    private void ApplyAnchor(DateOnly anchor)
+    {
+        DateFrom[Filter.Name] = anchor;
+        DateTo[Filter.Name] = anchor;
+    }
+
+    private async Task NotifyChangedAsync()
+    {
+        if (OnDayChanged.HasDelegate)
+        {
+            await OnDayChanged.InvokeAsync(Filter.Name);
+        }
+        else if (OnRangeChanged.HasDelegate)
+        {
+            await OnRangeChanged.InvokeAsync();
+        }
+    }
+
+    private static bool TryParseDay(string? raw, out DateOnly day)
+    {
+        day = default;
+        return !string.IsNullOrWhiteSpace(raw) &&
+               DateOnly.TryParse(raw, out day) &&
+               SqlDateTimeRange.IsQueryable(day);
+    }
+}
+

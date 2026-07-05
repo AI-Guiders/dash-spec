@@ -14,10 +14,30 @@ internal static class TransformModuleParser
         reader.ExpectKeyword("transform");
         _ = reader.ReadIdent();
         reader.SkipNewlines();
-        reader.ExpectKeyword("transform");
-        reader.ExpectKeyword("series");
 
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.SeriesTransform, "transform series");
+        Dictionary<string, string> props;
+        if (reader.TryKeyword("transform"))
+        {
+            if (!reader.TryKeyword("series"))
+            {
+                throw new DashSpecParseException("Expected 'series' after transform.");
+            }
+
+            props = PropertyBlockParser.Parse(reader, PropertySchemas.SeriesTransform, "transform series");
+        }
+        else
+        {
+            props = PropertyBlockParser.ParseFlatProperties(
+                reader,
+                PropertySchemas.SeriesTransform,
+                "@transform module");
+        }
+
+        if (props.Count == 0)
+        {
+            throw new DashSpecParseException("@transform module requires at least one property.");
+        }
+
         props.TryGetValue("use", out var usePreset);
         int? max = null;
         if (props.TryGetValue("max", out var rawMax) &&

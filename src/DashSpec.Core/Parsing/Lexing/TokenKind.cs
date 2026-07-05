@@ -3,6 +3,7 @@ namespace DashSpec.Core.Parsing;
 internal enum TokenKind
 {
     At,
+    Bang,
     LBrace,
     RBrace,
     Eq,
@@ -11,6 +12,8 @@ internal enum TokenKind
     Comma,
     LBracket,
     RBracket,
+    LParen,
+    RParen,
     Ident,
     String,
     Raw,

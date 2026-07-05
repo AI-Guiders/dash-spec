@@ -20,6 +20,7 @@ Tab layout board (`[ Q W ]` rows) в inline `tab { layout { … } }` работ�
 
 ```text
 @layout stakeholder_grid
+scope tab
 
 [ Q W ]
 [ E ]
@@ -30,6 +31,7 @@ Tab layout board (`[ Q W ]` rows) в inline `tab { layout { … } }` работ�
 | Элемент | Смысл |
 |---------|--------|
 | `@layout <id>` | идентификатор модуля (как `@diagram`, `@palette`) |
+| `scope toolbar \| tab \| card` | обязательный scope модуля ([ADR-0026](DASHSPEC-ADR-0026-layout-module-scope.md)) |
 | тело | строки `[ ref … ]` — та же грамматика, что inline board (ADR-0020) |
 
 **Не в файле:** `layout grid { columns gap }` — остаётся на dashboard / shell `@tab`.

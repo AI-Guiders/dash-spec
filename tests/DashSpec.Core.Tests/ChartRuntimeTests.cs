@@ -15,9 +15,10 @@ public class ChartRuntimeTests
     public void Parse_presentation_and_transform_blocks()
     {
         var doc = DashSpecParser.Parse("""
-            @diagramlibrary "lib.toml"
-            @dashboard t
-            dashboard "T" {
+
+            @dashboard t {
+              configuration { diagramlibrary = "lib.toml" }
+              report "T" {
               card c as "C" {
                 diagram line {
                   x = usage_date
@@ -29,7 +30,8 @@ public class ChartRuntimeTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var card = doc.Cards[0];
         Assert.Equal("lib.toml", doc.DiagramLibraryPath);
@@ -55,8 +57,8 @@ public class ChartRuntimeTests
         ]);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card c as "C" {
                 diagram line { x = a y = b series = s }
                 presentation { use = line_bottom_300 }
@@ -64,7 +66,8 @@ public class ChartRuntimeTests
                 datasource view dbo.t
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
         Assert.Equal("bottom", presentation.Legend);
@@ -95,15 +98,16 @@ public class ChartRuntimeTests
         Assert.True(fromDiagram.IsHorizontal);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card c as "C" {
                 diagram bar { x = a y = b orientation = vertical }
                 presentation { use = bar_horizontal_320 }
                 datasource view dbo.t
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
         Assert.True(presentation.IsHorizontal);
@@ -146,14 +150,15 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card c as "C" {
                 diagram bar { category = app_name value = distinct_users scale_value = integer }
                 datasource view dbo.t
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var resolved = CardChromeResolver.ResolveChartPresentation(card, null);
         Assert.Equal(ChartAxisScale.Integer, resolved.ValueAxisScale);
@@ -256,14 +261,15 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Decimal, decimalDefault.ValueAxisScale);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card c as "C" {
                 diagram bar { x = app_name y = distinct_users scale_y = integer }
                 datasource view dbo.t
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
         Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
@@ -309,8 +315,8 @@ public class ChartRuntimeTests
     public void ResolveChartPresentation_reads_category_value_axis_labels_from_bar_diagram()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card peak as "Peak" {
                 diagram bar {
                   category = app_name as "Продукт"
@@ -320,7 +326,8 @@ public class ChartRuntimeTests
                 datasource view dbo.t
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
         Assert.Equal("Продукт", presentation.CategoryAxisLabel);

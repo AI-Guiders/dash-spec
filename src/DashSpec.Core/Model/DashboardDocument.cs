@@ -14,7 +14,16 @@ public sealed record DashboardDocument(
     IReadOnlyList<string> DashboardFilters,
     IReadOnlyList<TabDefinition> Tabs,
     IReadOnlyList<CardDefinition> Cards,
-    LayoutBoardDefinition? ToolbarBoard = null);
+    LayoutBoardDefinition? ToolbarBoard = null,
+    ModuleExtensionsDefinition? ModuleExtensions = null,
+    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null)
+{
+    public static IReadOnlyDictionary<string, ModuleDiagramDefinition> EmptyModuleDiagrams { get; } =
+        new Dictionary<string, ModuleDiagramDefinition>(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, ModuleDiagramDefinition> ResolvedModuleDiagrams =>
+        ModuleDiagrams ?? EmptyModuleDiagrams;
+}
 
 public sealed record FilterDefinition(
     FilterKind Kind,
@@ -27,7 +36,8 @@ public sealed record FilterDefinition(
     int? MaxValue = null,
     string? GrainFilterName = null,
     bool SingleSelect = false,
-    string? LayoutRef = null)
+    string? LayoutRef = null,
+    IReadOnlyDictionary<string, string>? GrainLabels = null)
 {
     public bool IsDayWidget =>
         string.Equals(Widget, "day", StringComparison.OrdinalIgnoreCase);
@@ -62,8 +72,14 @@ public sealed record CardDefinition(
     string? UseCardPreset = null,
     LegendDefinition? Legend = null,
     PresentationBlock? Presentation = null,
-    SeriesTransformBlock? SeriesTransform = null);
-
+    SeriesTransformBlock? SeriesTransform = null,
+    string? FilterHostCardId = null,
+    IReadOnlyList<string>? HostedFilters = null,
+    LayoutBoardDefinition? InteriorBoard = null,
+    string? DiagramSlotRef = null,
+    CardClickBehaviour? ClickBehaviour = null,
+    IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
+    bool LocalFiltersManualApply = false);
 public sealed record DiagramDefinition(
     string Kind,
     IReadOnlyDictionary<string, string> Properties,

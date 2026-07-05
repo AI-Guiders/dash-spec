@@ -1,0 +1,27 @@
+@namespace DashSpec.Host.Components.Dashboard.Viz
+@using DashSpec.Abstractions.Viz
+@using DashSpec.Host.Services.Models
+@using DashSpec.Host.Services.Presentation
+
+@if (Context.Card.Chart is null || Context.Card.Chart.Labels.Count == 0)
+{
+    <p class="empty-state">Нет данных за выбранный период</p>
+}
+else
+{
+    <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Context.Card)">
+        <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Context.Card.Id)"
+                     ChartType="@(string.Equals(Context.Card.DiagramKind, "bar", StringComparison.OrdinalIgnoreCase) ? "bar" : "line")"
+                     Payload="Context.Card.Chart"
+                     Legend="@(Context.Card.ChartPresentation?.Legend ?? "bottom")"
+                     Stacked="@(Context.Card.ChartPresentation?.Stacked ?? false)"
+                     Orientation="@(Context.Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
+                     ValueAxisScale="@(Context.Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
+                     CategoryAxisLabel="@Context.Card.ChartPresentation?.CategoryAxisLabel"
+                     ValueAxisLabel="@Context.Card.ChartPresentation?.ValueAxisLabel" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+}

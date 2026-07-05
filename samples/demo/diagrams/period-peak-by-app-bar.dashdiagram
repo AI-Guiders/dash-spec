@@ -2,7 +2,7 @@
 
 include presentation "../presentations/bar-horizontal-320.dashpresentation"
 
-diagram bar {
+bar {
   render = "chartjs"
   orientation = horizontal
   category = app_name

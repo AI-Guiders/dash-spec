@@ -1,6 +1,4 @@
 @presentation bar_bottom_320
 
-presentation {
   legend = bottom
   height = 320
-}

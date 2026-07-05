@@ -1,13 +1,21 @@
 using DashSpec.Core.Model;
+using DashSpec.Core.Runtime;
 
 namespace DashSpec.Host.Services.Presentation;
 
 internal static class FilterUiHelpers
 {
+    public static string DisplayLabel(
+        FilterDefinition filter,
+        IReadOnlyDictionary<string, FilterDefinition> filterIndex,
+        IReadOnlyDictionary<string, HashSet<string>> selectedFields) =>
+        GrainFilterPresentation.DisplayLabel(filter, filterIndex, selectedFields);
+
     public static string DisplayLabel(FilterDefinition filter) =>
-        !string.IsNullOrWhiteSpace(filter.Label)
-            ? filter.Label
-            : filter.Name.Replace('_', ' ');
+        GrainFilterPresentation.DisplayLabel(
+            filter,
+            new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase),
+            new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase));
 
     public static string ScopeHint(
         string filterName,
@@ -33,12 +41,14 @@ internal static class FilterUiHelpers
             return filterName;
         }
 
-        var label = DisplayLabel(filter);
+        var label = DisplayLabel(filter, filterIndex, selectedFields);
         if (filter.Kind is FilterKind.Date &&
             dateFrom.TryGetValue(filterName, out var from) &&
             dateTo.TryGetValue(filterName, out var to))
         {
-            return $"{label}: {from:yyyy-MM-dd}…{to:yyyy-MM-dd}";
+            var grain = GrainFilterPresentation.ResolveGrain(filter, filterIndex, selectedFields);
+            var value = GrainFilterPresentation.FormatChipValue(from, to, grain);
+            return $"{label}: {value}";
         }
 
         if (filter.Kind is FilterKind.Field &&
@@ -50,5 +60,33 @@ internal static class FilterUiHelpers
         }
 
         return label;
+    }
+
+    public static int ResolveTopValue(
+        FilterDefinition filter,
+        IReadOnlyDictionary<string, int> topLimits)
+    {
+        if (filter.Kind is not FilterKind.Top)
+        {
+            return 0;
+        }
+
+        return TopLimitDefaults.Resolve(
+            filter,
+            topLimits.TryGetValue(filter.Name, out var current) ? current : null);
+    }
+
+    public static HashSet<string> SelectedFieldValues(
+        FilterDefinition filter,
+        IReadOnlyDictionary<string, HashSet<string>> selectedFields)
+    {
+        if (filter.Kind is not FilterKind.Field)
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return selectedFields.TryGetValue(filter.Name, out var selected)
+            ? selected
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
 }

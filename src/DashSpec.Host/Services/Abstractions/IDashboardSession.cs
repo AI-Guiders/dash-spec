@@ -1,6 +1,7 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
+using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Abstractions;
@@ -12,11 +13,27 @@ public interface IDashboardSession
     FilterState Filters { get; }
     string ActiveConnectorId { get; }
     string? LoadedSpecSource { get; }
+    string? ActiveCatalogEntryId { get; }
+    string? CurrentSpecReference { get; }
     IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; }
 
-    Task LoadAsync(string? specRelativePath = null, CancellationToken cancellationToken = default);
+    Task LoadAsync(
+        string? specRelativePath = null,
+        CancellationToken cancellationToken = default,
+        SpecLoadOptions? options = null);
 
-    Task LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken = default);
+    Task LoadCatalogEntryAsync(
+        string entryId,
+        CancellationToken cancellationToken = default,
+        SpecLoadOptions? options = null);
+
+    Task LoadFromUploadAsync(
+        Stream stream,
+        string fileName,
+        CancellationToken cancellationToken = default,
+        SpecLoadOptions? options = null);
+
+    Task RefreshFieldOptionsAsync(CancellationToken cancellationToken = default);
 
     IReadOnlyList<string> GetFieldOptions(string filterName);
 

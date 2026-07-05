@@ -14,9 +14,25 @@ internal static class PresentationModuleParser
         reader.ExpectKeyword("presentation");
         _ = reader.ReadIdent();
         reader.SkipNewlines();
-        reader.ExpectKeyword("presentation");
 
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.Presentation, "presentation");
+        Dictionary<string, string> props;
+        if (reader.TryKeyword("presentation"))
+        {
+            props = PropertyBlockParser.Parse(reader, PropertySchemas.Presentation, "presentation");
+        }
+        else
+        {
+            props = PropertyBlockParser.ParseFlatProperties(
+                reader,
+                PropertySchemas.Presentation,
+                "@presentation module");
+        }
+
+        if (props.Count == 0)
+        {
+            throw new DashSpecParseException("@presentation module requires at least one property.");
+        }
+
         props.TryGetValue("use", out var usePreset);
         var inline = props
             .Where(x => !string.Equals(x.Key, "use", StringComparison.OrdinalIgnoreCase))

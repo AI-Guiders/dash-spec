@@ -82,6 +82,62 @@ internal static class PropertyBlockParser
         return values;
     }
 
+    /// <summary>Flat key = value lines until EOF (fragment files without inner keyword wrapper).</summary>
+    public static Dictionary<string, string> ParseFlatProperties(
+        TokenReader reader,
+        IReadOnlyList<PropertySpec> schema,
+        string context,
+        bool allowExtensionProperties = false,
+        bool allowQuotedPropertyKeys = false)
+    {
+        var specs = schema.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        while (!reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (reader.IsEof)
+            {
+                break;
+            }
+
+            while (!reader.IsAt(TokenKind.Newline) && !reader.IsEof)
+            {
+                var key = reader.ReadPropertyKey(allowQuotedPropertyKeys);
+                if (!specs.TryGetValue(key, out var spec))
+                {
+                    if (!allowExtensionProperties)
+                    {
+                        throw new DashSpecParseException($"Unknown property '{key}' in {context}.");
+                    }
+
+                    reader.Expect(TokenKind.Eq);
+                    values[key] = reader.ReadScalarValue();
+                    continue;
+                }
+
+                reader.Expect(TokenKind.Eq);
+                if (spec.ValueType is PropertyValueType.ColumnBinding)
+                {
+                    var binding = reader.ReadColumnBinding();
+                    values[key] = binding.Column;
+                    if (binding.Alias is not null)
+                    {
+                        values[$"{key}_as"] = binding.Alias;
+                    }
+                }
+                else
+                {
+                    values[key] = ReadTypedValue(reader, spec.ValueType);
+                }
+            }
+
+            reader.SkipNewlines();
+        }
+
+        return values;
+    }
+
     public static IReadOnlyList<string> ParseCommaListBlock(
         TokenReader reader,
         string blockName)
@@ -148,6 +204,40 @@ internal static class PropertyBlockParser
         }
 
         return names;
+    }
+
+    public static Dictionary<string, string> ParseStringMapBlock(TokenReader reader, string blockName)
+    {
+        reader.Expect(TokenKind.LBrace);
+        reader.SkipNewlines();
+
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (reader.IsAt(TokenKind.RBrace))
+            {
+                break;
+            }
+
+            var key = reader.ReadIdent();
+            reader.Expect(TokenKind.Eq);
+            var value = reader.ReadString();
+            if (!values.TryAdd(key, value))
+            {
+                throw new DashSpecParseException($"{blockName}: duplicate key '{key}'.");
+            }
+
+            reader.SkipNewlines();
+        }
+
+        reader.Expect(TokenKind.RBrace);
+        if (values.Count == 0)
+        {
+            throw new DashSpecParseException($"{blockName} requires at least one entry.");
+        }
+
+        return values;
     }
 
     public static IReadOnlyList<string> ParseTitleListBlock(
@@ -271,6 +361,18 @@ internal static class PropertySchemas
         new("use", PropertyValueType.Scalar),
         new("max", PropertyValueType.Scalar),
         new("other", PropertyValueType.String),
+    ];
+
+    public static IReadOnlyList<PropertySpec> Runtime { get; } =
+    [
+        new("manifest", PropertyValueType.String),
+    ];
+
+    public static IReadOnlyList<PropertySpec> Configuration { get; } =
+    [
+        new("sqldialect", PropertyValueType.Scalar),
+        new("palette", PropertyValueType.String),
+        new("diagramlibrary", PropertyValueType.String),
     ];
 
     public static IReadOnlyList<PropertySpec> Palette { get; } =

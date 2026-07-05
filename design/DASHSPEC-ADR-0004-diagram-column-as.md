@@ -143,3 +143,9 @@ card "№2 …" {
 - Spec heatmap в `samples/demo/` читается без знания Blazor-хелперов.
 - Host опирается на `_as`, `x_format`/`y_format`, `legend` — без `FormatUserLabel` и захардкоженных «разных ПО» / «макс.».
 - Rich text в whitelisted строках — [ADR-0005](DASHSPEC-ADR-0005-rich-text-creole-subset.md) (Creole-subset, не PlantUML engine).
+
+## Amendment (ADR-0031, proposed)
+
+- **`as "Label"` deprecated** → `{key}_label` / `label =` on filter blocks ([ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md)).
+- **`card id as "Title"`** → `card id { title = "…" }`.
+- IR: prefer `x_label` over `x_as`; one release alias for migration.

@@ -1,0 +1,111 @@
+@namespace DashSpec.Host.Components.Filters
+@using DashSpec.Core.Model
+@using DashSpec.Core.Runtime
+@using DashSpec.Host.Plugins
+@using DashSpec.Host.Services.Presentation
+@inject FilterWidgetRegistry WidgetRegistry
+
+@if (_renderer?.WidgetId is "combobox" or "select")
+{
+    <FieldMultiSelect Label="@Label"
+                      Hint="@Hint"
+                      Compact="@Compact"
+                      Disabled="@Disabled"
+                      Combobox="@(filter!.IsComboboxWidget && _renderer.WidgetId == "combobox")"
+                      NativeSelect="@(filter.IsSelectWidget || _renderer.WidgetId == "select")"
+                      SingleSelect="@filter.IsSingleSelectField"
+                      Options="Options"
+                      Selected="Selected"
+                      SelectedChanged="SelectedChanged" />
+}
+else if (_renderer?.WidgetId == "chips")
+{
+    <FieldChipsSelect Label="@Label"
+                      Hint="@Hint"
+                      Compact="@Compact"
+                      Disabled="@Disabled"
+                      SingleSelect="@filter!.IsSingleSelectField"
+                      Options="Options"
+                      Selected="Selected"
+                      SelectedChanged="SelectedChanged" />
+}
+else if (_renderer?.WidgetId is "day" or "range")
+{
+    <div class="@DateWrapperClass" style="@PlacementStyle">
+        <GrainAwareDateInput Filter="filter!"
+                             Disabled="@Disabled"
+                             DateFrom="DateFrom"
+                             DateTo="DateTo"
+                             FilterIndex="FilterIndex"
+                             SelectedFields="SelectedFields"
+                             ShowLabel="@ShowDateLabel"
+                             LabelClass="@DateLabelClass"
+                             OnDayChanged="OnDayChanged"
+                             OnRangeChanged="OnRangeChanged" />
+    </div>
+}
+else if (_renderer?.WidgetId == "top")
+{
+    <div class="@TopWrapperClass" style="@PlacementStyle">
+        <TopFilterInput Label="@Label"
+                        Disabled="@Disabled"
+                        Min="@(filter!.MinValue ?? 1)"
+                        Max="@(filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
+                        Value="TopValue"
+                        ValueChanged="TopValueChanged" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public FilterDefinition Filter { get; set; } = default!;
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? Hint { get; set; }
+
+    [Parameter] public bool Compact { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string? PlacementStyle { get; set; }
+
+    [Parameter] public bool ShowDateLabel { get; set; }
+
+    [Parameter] public string DateLabelClass { get; set; } = "filter-label";
+
+    [Parameter] public IReadOnlyList<string> Options { get; set; } = [];
+
+    [Parameter] public HashSet<string> Selected { get; set; } = [];
+
+    [Parameter] public EventCallback<HashSet<string>> SelectedChanged { get; set; }
+
+    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
+        new Dictionary<string, FilterDefinition>();
+
+    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public EventCallback<string> OnDayChanged { get; set; }
+
+    [Parameter] public EventCallback OnRangeChanged { get; set; }
+
+    [Parameter] public int TopValue { get; set; }
+
+    [Parameter] public EventCallback<int> TopValueChanged { get; set; }
+
+    private FilterDefinition? filter;
+    private IFilterWidgetRenderer? _renderer;
+
+    private string DateWrapperClass => Compact ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
+
+    private string TopWrapperClass => Compact ? "filter filter-top filter-inline" : "filter filter-top filter-compact";
+
+    protected override void OnParametersSet()
+    {
+        filter = Filter;
+        _renderer = WidgetRegistry.Resolve(Filter);
+    }
+}

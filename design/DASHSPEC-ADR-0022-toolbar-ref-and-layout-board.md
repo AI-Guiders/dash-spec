@@ -71,6 +71,7 @@ include toolbar "layouts/soak-toolbar.dashlayout"
 
 ```text
 @layout soak_toolbar
+scope toolbar
 
 [ D P G ]
 [ U A ]

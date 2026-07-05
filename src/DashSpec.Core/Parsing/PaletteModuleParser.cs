@@ -18,12 +18,23 @@ internal static class PaletteModuleParser
 
         reader.SkipNewlines();
         var constants = ParseConstants(reader);
-        reader.ExpectKeyword("palette");
 
-        var props = ParsePaletteBlock(reader, constants);
+        Dictionary<string, string> props;
+        if (reader.TryKeyword("palette"))
+        {
+            reader.Expect(TokenKind.LBrace);
+            reader.SkipNewlines();
+            props = ParsePaletteMappings(reader, constants, wrapped: true);
+            reader.Expect(TokenKind.RBrace);
+        }
+        else
+        {
+            props = ParsePaletteMappings(reader, constants, wrapped: false);
+        }
+
         if (props.Count == 0)
         {
-            throw new DashSpecParseException($"Palette '{id}' requires a palette {{ }} block with at least one entry.");
+            throw new DashSpecParseException($"Palette '{id}' requires at least one mapping entry.");
         }
 
         return (id, props);
@@ -65,24 +76,30 @@ internal static class PaletteModuleParser
         return constants;
     }
 
-    private static Dictionary<string, string> ParsePaletteBlock(
+    private static Dictionary<string, string> ParsePaletteMappings(
         TokenReader reader,
-        IReadOnlyDictionary<string, string> constants)
+        IReadOnlyDictionary<string, string> constants,
+        bool wrapped)
     {
-        reader.Expect(TokenKind.LBrace);
-        reader.SkipNewlines();
-
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while ((!wrapped && !reader.IsEof) ||
+               (wrapped && !reader.IsAt(TokenKind.RBrace) && !reader.IsEof))
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (wrapped && reader.IsAt(TokenKind.RBrace))
             {
                 break;
             }
 
-            while (!reader.IsAt(TokenKind.Newline) && !reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+            if (!wrapped && reader.IsEof)
+            {
+                break;
+            }
+
+            while (!reader.IsAt(TokenKind.Newline) &&
+                   !reader.IsEof &&
+                   (!wrapped || !reader.IsAt(TokenKind.RBrace)))
             {
                 var key = reader.ReadPropertyKey(allowQuoted: true);
                 reader.Expect(TokenKind.Eq);
@@ -103,7 +120,6 @@ internal static class PaletteModuleParser
             reader.SkipNewlines();
         }
 
-        reader.Expect(TokenKind.RBrace);
         return values;
     }
 

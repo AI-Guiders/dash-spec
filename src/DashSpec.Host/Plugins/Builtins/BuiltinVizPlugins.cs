@@ -9,6 +9,13 @@ public sealed class ChartJsVizPlugin : IVizPlugin
     public string DataFamily => "chart";
 }
 
+public sealed class MatrixCanvasVizPlugin : IVizPlugin
+{
+    public string Id => VizPluginIds.MatrixCanvas;
+
+    public string DataFamily => "matrix";
+}
+
 public sealed class CssGridVizPlugin : IVizPlugin
 {
     public string Id => VizPluginIds.CssGrid;

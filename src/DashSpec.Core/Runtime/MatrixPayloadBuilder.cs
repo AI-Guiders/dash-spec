@@ -6,12 +6,14 @@ internal static class MatrixPayloadBuilder
 {
     public static MatrixPayload Build(
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
-        DiagramDefinition diagram)
+        DiagramDefinition diagram,
+        SeriesTransformSettings? seriesTransform = null)
     {
         var xColumn = DiagramBindings.Column(diagram, "x");
         var yColumn = DiagramBindings.Column(diagram, "y");
         var valueColumn = DiagramBindings.Column(diagram, "value");
         diagram.Properties.TryGetValue("tooltip", out var tooltipColumn);
+        diagram.Properties.TryGetValue("tooltip_time", out var tooltipTimeColumn);
         diagram.Properties.TryGetValue("x_format", out var xFormat);
         diagram.Properties.TryGetValue("y_format", out var yFormat);
         diagram.Properties.TryGetValue("x_step", out var xStepRaw);
@@ -21,7 +23,7 @@ internal static class MatrixPayloadBuilder
         if (TimeSeriesGrid.TryParseStep(xStepRaw, out var xStep) &&
             string.Equals(xFormat, "time.short", StringComparison.OrdinalIgnoreCase))
         {
-            return BuildHourGrid(rows, diagram, xColumn, yColumn, valueColumn, tooltipColumn, xFormat, yFormat, xStep, tooltipSplit);
+            return BuildHourGrid(rows, diagram, xColumn, yColumn, valueColumn, tooltipColumn, tooltipTimeColumn, xFormat, yFormat, xStep, tooltipSplit, seriesTransform);
         }
 
         var xLabels = new List<string>();
@@ -56,6 +58,7 @@ internal static class MatrixPayloadBuilder
         }
 
         yLabels.Sort((a, b) => yTotals.GetValueOrDefault(b).CompareTo(yTotals.GetValueOrDefault(a)));
+        TruncateYLabels(yLabels, seriesTransform);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
@@ -106,7 +109,7 @@ internal static class MatrixPayloadBuilder
             string? tip = null;
             if (tooltips is not null && tooltipColumn is not null)
             {
-                tip = PayloadRowFormatters.FormatHeatmapLabel(row.GetValueOrDefault(tooltipColumn));
+                tip = FormatCellTooltip(row, tooltipColumn, tooltipTimeColumn);
                 if (string.IsNullOrWhiteSpace(tip))
                 {
                     tip = null;
@@ -159,10 +162,12 @@ internal static class MatrixPayloadBuilder
         string yColumn,
         string valueColumn,
         string? tooltipColumn,
+        string? tooltipTimeColumn,
         string? xFormat,
         string? yFormat,
         TimeSpan xStep,
-        string tooltipSplit)
+        string tooltipSplit,
+        SeriesTransformSettings? seriesTransform)
     {
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
         var yLabels = new List<string>();
@@ -202,6 +207,7 @@ internal static class MatrixPayloadBuilder
         }
 
         yLabels.Sort((a, b) => yTotals.GetValueOrDefault(b).CompareTo(yTotals.GetValueOrDefault(a)));
+        TruncateYLabels(yLabels, seriesTransform);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
@@ -285,5 +291,37 @@ internal static class MatrixPayloadBuilder
 
             return string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    private static void TruncateYLabels(List<string> yLabels, SeriesTransformSettings? seriesTransform)
+    {
+        if (seriesTransform is null || yLabels.Count <= seriesTransform.Max)
+        {
+            return;
+        }
+
+        yLabels.RemoveRange(seriesTransform.Max, yLabels.Count - seriesTransform.Max);
+    }
+
+    private static string? FormatCellTooltip(
+        IReadOnlyDictionary<string, object?> row,
+        string tooltipColumn,
+        string? tooltipTimeColumn)
+    {
+        var body = PayloadRowFormatters.FormatHeatmapLabel(row.GetValueOrDefault(tooltipColumn));
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(tooltipTimeColumn) ||
+            !row.TryGetValue(tooltipTimeColumn, out var rawTime) ||
+            rawTime is null)
+        {
+            return body;
+        }
+
+        var time = PayloadRowFormatters.FormatHeatmapLabel(rawTime);
+        return string.IsNullOrWhiteSpace(time) ? body : $"{time}\n{body}";
     }
 }

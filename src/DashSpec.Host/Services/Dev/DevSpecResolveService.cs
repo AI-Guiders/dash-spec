@@ -1,12 +1,14 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
+using DashSpec.Host.Plugins;
 using DashSpec.Host.Configuration;
 
 namespace DashSpec.Host.Services.Dev;
 
 public sealed class DevSpecResolveService(
     DashSpecHostContext hostContext,
-    IWebHostEnvironment environment)
+    IWebHostEnvironment environment,
+    DashSpecParseOptionsProvider parseOptionsProvider)
 {
     public DevSpecResolveResult ResolveConfiguredSpec()
     {
@@ -30,12 +32,16 @@ public sealed class DevSpecResolveService(
             }
 
             var text = File.ReadAllText(specFullPath);
-            var document = DashSpecParser.Parse(text, Path.GetDirectoryName(specFullPath));
+            var document = DashSpecParser.Parse(
+                text,
+                Path.GetDirectoryName(specFullPath),
+                parseOptionsProvider.CreateOptions());
             var library = SpecLibraryComposer.Load(
                 specFullPath,
                 document.DiagramLibraryPath,
                 document.PalettePath,
-                hostContext.DefaultSpecDirectory);
+                hostContext.DefaultSpecDirectory,
+                document);
 
             var export = SpecResolveExporter.Export(document, library);
             return DevSpecResolveResult.Ok(export, specFullPath, document.DiagramLibraryPath);

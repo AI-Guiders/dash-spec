@@ -1,87 +1,94 @@
-@runtime "demo.toml"
-@sqldialect tsql
-@palette "palettes/demo-apps.dashpalette"
-
-@dashboard demo_soak
-
-dashboard "DashSpec — Demo soak" {
-  connector sqlserver
-
-  palette demo_apps
-
-  layout grid {
-    columns = 12
-    gap = 16
+@dashboard demo_soak {
+  runtime {
+    manifest = "demo.toml"
   }
 
-  filter date usage_date on usage_date as "Report date" default -7d..today
-  filter date activity_slot {
-    column = bucket_start_utc as "Day"
-    default = today
-    widget = day
-  }
-  filter date period_start {
-    column = period_start as "Period start"
-    default = today
-    widget = day
-    grain_filter = period_grain
-  }
-  filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
-  filter field user_name on demo.v_events_detail.user_id as "User" widget combobox
-  filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year" default day widget combobox single
-  filter top events_top as "Rows (TOP)" default 200
-  filter top idle_top as "Rows (TOP)" default 100
-
-  toolbar chrome {
-    layout = bar
-    sticky = line
-    apply = auto
-    debounce_ms = 400
+  configuration {
+    sqldialect = tsql
+    palette = "palettes/demo-apps.dashpalette"
   }
 
-  toolbar {
-    usage_date
-    user_name
-    app_name
-  }
+  !include "diagrams/*.dashdiagram"
 
-  tab overview as "Overview" {
-    cards {
-      peak_concurrent_proxy
-      activity_5min
-      dau_by_product
+  wiring {
+    use connector sqlserver
+    use palette demo_apps
+    layout grid {
+      columns = 12
+      gap = 16
     }
   }
 
-  tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
+  report "DashSpec — Demo soak" {
+    filter date usage_date on usage_date as "Report date" default -7d..today
+    filter date activity_slot {
+      column = bucket_start_utc as "Day"
+      default = today
+      widget = day
+    }
+    filter date period_start {
+      column = period_start as "Period start"
+      default = today
+      widget = day
+      grain_filter = period_grain
+    }
+    filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
+    filter field user_name on demo.v_events_detail.user_id as "User" widget combobox
+    filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year" default day widget combobox single
+    filter top events_top as "Rows (TOP)" default 200
+    filter top idle_top as "Rows (TOP)" default 100
 
-  tab detail as "Detail" {
-    cards { events_detail }
-  }
+    toolbar chrome {
+      layout = bar
+      sticky = line
+      apply = auto
+      debounce_ms = 400
+    }
 
-  card peak_concurrent_proxy as "Peak concurrent (proxy)" {
-    include diagram "diagrams/peak-concurrent-line.dashdiagram"
-    datasource view demo.v_daily_peak_concurrent_proxy
-    bind usage_date, user_name, app_name
-  }
+    toolbar {
+      usage_date
+      user_name
+      app_name
+    }
 
-  card activity_5min as "Activity 5-min" {
-    filters { activity_slot }
-    include diagram "diagrams/activity-5min-line.dashdiagram"
-    datasource view demo.v_five_minute_activity
-    bind usage_date, user_name, app_name
-  }
+    tab overview as "Overview" {
+      cards {
+        peak_concurrent_proxy
+        activity_5min
+        dau_by_product
+      }
+    }
 
-  card dau_by_product as "DAU by product" {
-    include diagram "diagrams/dau-bar.dashdiagram"
-    datasource view demo.v_daily_active_users
-    bind usage_date, user_name, app_name
-  }
+    tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
 
-  card events_detail as "Events detail" {
-    filters { events_top }
-    include diagram "diagrams/events-detail-table.dashdiagram"
-    datasource view demo.v_events_detail
-    bind app_name, user_name
+    tab detail as "Detail" {
+      cards { events_detail }
+    }
+
+    card peak_concurrent_proxy as "Peak concurrent (proxy)" {
+      diagram demo_peak_concurrent_line
+      datasource view demo.v_daily_peak_concurrent_proxy
+      bind usage_date, user_name, app_name
+    }
+
+    card activity_5min as "Activity 5-min" {
+      filters { activity_slot }
+      diagram demo_activity_5min_line
+      datasource view demo.v_five_minute_activity
+      bind usage_date, user_name, app_name
+    }
+
+    card dau_by_product as "DAU by product" {
+      diagram demo_dau_bar
+      datasource view demo.v_daily_active_users
+      bind usage_date, user_name, app_name
+    }
+
+    card events_detail as "Events detail" {
+      filters { events_top }
+      diagram demo_events_detail_table
+      datasource view demo.v_events_detail
+      bind app_name, user_name
+    }
   }
 }

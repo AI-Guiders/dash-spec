@@ -19,7 +19,35 @@ internal static class LayoutModuleParser
         }
 
         reader.SkipNewlines();
-        return LayoutParser.ParseBoardRows(reader);
+        var scope = ParseMandatoryScope(reader);
+        reader.SkipNewlines();
+        var board = LayoutParser.ParseBoardRows(reader);
+        return board with { ModuleScope = scope };
+    }
+
+    private static LayoutScope ParseMandatoryScope(TokenReader reader)
+    {
+        if (!reader.TryKeyword("scope"))
+        {
+            throw new DashSpecParseException(
+                "Layout module requires scope toolbar|tab|card after @layout <id>.");
+        }
+
+        var kind = reader.ReadIdent();
+        if (string.IsNullOrWhiteSpace(kind))
+        {
+            throw new DashSpecParseException(
+                "Layout module requires scope toolbar|tab|card after @layout <id>.");
+        }
+
+        return kind.ToLowerInvariant() switch
+        {
+            "toolbar" => LayoutScope.Toolbar,
+            "tab" => LayoutScope.Tab,
+            "card" => LayoutScope.Card,
+            _ => throw new DashSpecParseException(
+                $"Layout module scope must be toolbar, tab, or card; got '{kind}'."),
+        };
     }
 
     public static LayoutBoardDefinition Load(string reference, string specDirectory)

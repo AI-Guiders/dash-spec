@@ -55,11 +55,6 @@ window.dashSpecCharts = {
     const legendPosition = legend === "hidden" ? "bottom" : legend;
     const valueAxisScale = (options && options.valueAxisScale) || "decimal";
     const forceIntegerAxis = valueAxisScale === "integer";
-    const valueTicks = forceIntegerAxis
-      ? { stepSize: 1, precision: 0 }
-      : stacked
-        ? { stepSize: 1, precision: 0 }
-        : {};
 
     const valueMax = Math.max(
       0,
@@ -67,6 +62,28 @@ window.dashSpecCharts = {
       ...(hasReference ? referenceValues.map((v) => (v == null ? 0 : Number(v))) : []),
     );
     const paddedMax = valueMax > 0 ? Math.ceil(valueMax * 1.12) : undefined;
+
+    const integerAxisStep = (max) => {
+      if (max <= 10) {
+        return 1;
+      }
+      if (max <= 25) {
+        return 2;
+      }
+      if (max <= 60) {
+        return 5;
+      }
+      if (max <= 150) {
+        return 10;
+      }
+      return Math.max(10, Math.ceil(max / 12));
+    };
+
+    const valueTicks = forceIntegerAxis
+      ? { stepSize: integerAxisStep(valueMax), precision: 0, maxTicksLimit: 12 }
+      : stacked
+        ? { stepSize: 1, precision: 0 }
+        : {};
 
     const axisTitle = (text) =>
       text

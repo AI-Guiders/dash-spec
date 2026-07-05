@@ -6,15 +6,18 @@ namespace DashSpec.Host.Plugins;
 public sealed class VizPluginRegistry
 {
     private readonly IReadOnlyDictionary<string, IVizPlugin> _byId;
-    private readonly IReadOnlyDictionary<DiagramDataFamily, string> _defaults;
+    private static readonly IReadOnlyDictionary<DiagramDataFamily, string> DefaultPluginIds =
+        new Dictionary<DiagramDataFamily, string>
+        {
+            [DiagramDataFamily.Chart] = VizPluginIds.ChartJs,
+            [DiagramDataFamily.Table] = VizPluginIds.TableHtml,
+            [DiagramDataFamily.Scalar] = VizPluginIds.ScalarHtml,
+            [DiagramDataFamily.Matrix] = VizPluginIds.MatrixCanvas,
+        };
 
     public VizPluginRegistry(IEnumerable<IVizPlugin> plugins)
     {
-        var list = plugins.ToList();
-        _byId = list.ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
-        _defaults = list.ToDictionary(
-            x => ParseFamily(x.DataFamily),
-            x => x.Id);
+        _byId = plugins.ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
     }
 
     public string Resolve(string? requestedPluginId, DiagramDataFamily family)
@@ -25,18 +28,8 @@ public sealed class VizPluginRegistry
             return requestedPluginId;
         }
 
-        return _defaults.TryGetValue(family, out var fallback)
+        return DefaultPluginIds.TryGetValue(family, out var fallback)
             ? fallback
             : throw new InvalidOperationException($"No viz plugin registered for data family {family}.");
     }
-
-    private static DiagramDataFamily ParseFamily(string value) =>
-        value.ToLowerInvariant() switch
-        {
-            "chart" => DiagramDataFamily.Chart,
-            "table" => DiagramDataFamily.Table,
-            "scalar" => DiagramDataFamily.Scalar,
-            "matrix" => DiagramDataFamily.Matrix,
-            _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown viz data family."),
-        };
 }

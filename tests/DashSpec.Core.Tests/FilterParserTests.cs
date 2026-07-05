@@ -23,15 +23,16 @@ public class FilterParserTests
     public void Parse_filter_date_block_with_underscore_name()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date activity_slot {
                 column = bucket_start_utc as "Day"
                 default = today
                 widget = day
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal("activity_slot", doc.Filters.Single().Name);
         Assert.True(doc.Filters.Single().IsDayWidget);
@@ -41,8 +42,8 @@ public class FilterParserTests
     public void Parse_on_syntax_filter_followed_by_block_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date on usage_date as "Дата отчёта" default -7d..today
               filter date activity_slot {
                 column = bucket_start_utc as "День"
@@ -50,7 +51,8 @@ public class FilterParserTests
                 widget = day
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal(2, doc.Filters.Count);
         Assert.Equal("activity_slot", doc.Filters.Last().Name);
@@ -60,11 +62,12 @@ public class FilterParserTests
     public void Parse_top_filter_inline_default()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter top events_top as "Строк (TOP)" default 200
             }
-            """);
+            }
+""");
 
         Assert.Equal("events_top", doc.Filters.Single().Name);
         Assert.Equal("200", doc.Filters.Single().DefaultExpression);
@@ -74,12 +77,13 @@ public class FilterParserTests
     public void Parse_period_grain_then_top_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
               filter top events_top as "Строк (TOP)" default 200
             }
-            """);
+            }
+""");
 
         Assert.Equal(2, doc.Filters.Count);
     }
@@ -88,8 +92,8 @@ public class FilterParserTests
     public void Parse_soak_filters_up_to_period_grain()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date on usage_date as "Дата отчёта" default -7d..today
               filter date activity_slot {
                 column = bucket_start_utc as "День"
@@ -101,7 +105,8 @@ public class FilterParserTests
               filter field user_name on demo.v_events_detail.user_sam as "Пользователь" widget combobox
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
             }
-            """);
+            }
+""");
 
         Assert.Equal(6, doc.Filters.Count);
     }
@@ -110,8 +115,8 @@ public class FilterParserTests
     public void Parse_soak_filters_section()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date on usage_date as "Дата отчёта" default -7d..today
               filter date activity_slot {
                 column = bucket_start_utc as "День"
@@ -125,7 +130,8 @@ public class FilterParserTests
               filter top events_top as "Строк (TOP)" default 200
               filter top idle_top as "Строк (TOP)" default 100
             }
-            """);
+            }
+""");
 
         Assert.Equal(8, doc.Filters.Count);
     }
@@ -133,13 +139,14 @@ public class FilterParserTests
     public void Parse_filter_top_as_on_declaration()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter top events_top as "Строк (TOP)" {
                 default = 200
               }
             }
-            """);
+            }
+""");
 
         var filter = doc.Filters.Single();
         Assert.Equal("Строк (TOP)", filter.Label);
@@ -150,14 +157,15 @@ public class FilterParserTests
     public void Parse_filter_column_as_label()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Дата отчёта"
                 default = -7d..today
               }
             }
-            """);
+            }
+""");
 
         var filter = doc.Filters.Single();
         Assert.Equal("usage_date", filter.ColumnReference);
@@ -168,13 +176,14 @@ public class FilterParserTests
     public void Parse_filter_default_does_not_swallow_label_on_same_line()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Daily" default = -7d..today
               }
             }
-            """);
+            }
+""");
 
         var filter = doc.Filters.Single();
         Assert.Equal("-7d..today", filter.DefaultExpression);
@@ -186,14 +195,15 @@ public class FilterParserTests
     public void Parse_filter_block_multiline()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date activity_range {
                 column = bucket_start_utc as "Activity 5-min"
                 default = -1d..today
               }
             }
-            """);
+            }
+""");
 
         var filter = doc.Filters.Single();
         Assert.Equal("-1d..today", filter.DefaultExpression);
@@ -204,8 +214,8 @@ public class FilterParserTests
     public void Parse_date_filter_inline_widget_day_and_grain_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
               filter date activity_slot on bucket_start_utc as "День" default today widget day
               card c as "C" {
@@ -213,7 +223,8 @@ public class FilterParserTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var period = doc.Filters.Single(f => f.Name == "period_start");
         Assert.Equal("Период", period.Label);
@@ -230,8 +241,8 @@ public class FilterParserTests
     public void Parse_date_filter_inline_range_without_widget_does_not_bleed_into_next_line()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date activity_slot on bucket_start_utc as "День" default today..today
               filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
               card c as "C" {
@@ -239,7 +250,8 @@ public class FilterParserTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal(2, doc.Filters.Count);
         Assert.Equal("today..today", doc.Filters.Single(f => f.Name == "activity_slot").DefaultExpression);
@@ -250,15 +262,16 @@ public class FilterParserTests
     public void Parse_field_filter_single_select_combobox()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter field period_grain on demo.v_peak.period_grain as "Grain" default day widget combobox single
               card c as "C" {
                 diagram table { columns = a }
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var grain = doc.Filters.Single(f => f.Name == "period_grain");
         Assert.Equal("combobox", grain.Widget);
@@ -271,12 +284,13 @@ public class FilterParserTests
     public void Parse_filter_ref_does_not_consume_next_line_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter field period_grain on demo.v_peak.period_grain as "Grain"
               filter top events_top as "Строк (TOP)" default 200
             }
-            """);
+            }
+""");
 
         Assert.Equal(2, doc.Filters.Count);
         Assert.Equal("events_top", doc.Filters[1].Name);

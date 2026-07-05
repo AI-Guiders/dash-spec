@@ -15,8 +15,8 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_reads_inline_select()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Дата"
                 default = -7d..today
@@ -28,7 +28,8 @@ public class SqlDataSourceParserTests
                 datasource sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
               }
             }
-            """);
+            }
+""");
 
         var card = doc.Cards[0];
         Assert.Equal(DataSourceKind.Sql, card.DataSource.Kind);
@@ -45,17 +46,18 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_rejects_non_readonly(string sqlBody)
     {
         var spec = $$"""
-            @dashboard t
-            dashboard "T" {
-              filter date usage_date {
-                column = usage_date as "Дата"
-                default = -7d..today
-              }
-              filters dashboard { usage_date }
-              card a as "A" {
-                bind usage_date
-                diagram bar { x = a y = b }
-                datasource sql query "{{sqlBody.Replace("\"", "\\\"")}}"
+            @dashboard t {
+              report "T" {
+                filter date usage_date {
+                  column = usage_date as "Дата"
+                  default = -7d..today
+                }
+                filters dashboard { usage_date }
+                card a as "A" {
+                  bind usage_date
+                  diagram bar { x = a y = b }
+                  datasource sql query "{{sqlBody.Replace("\"", "\\\"")}}"
+                }
               }
             }
             """;
@@ -68,8 +70,8 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_allows_keyword_inside_string_literal()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Дата"
                 default = -7d..today
@@ -81,7 +83,8 @@ public class SqlDataSourceParserTests
                 datasource sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal(DataSourceKind.Sql, doc.Cards[0].DataSource.Kind);
         Assert.Equal(DataSourceSqlCarrier.Query, doc.Cards[0].DataSource.SqlCarrier);
@@ -91,14 +94,15 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card a as "A" {
                 diagram bar { x = a y = b }
                 datasource sql "SELECT 1"
               }
             }
-            """));
+            }
+"""));
 
         Assert.Contains("query' or 'file'", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -115,22 +119,23 @@ public class SqlDataSourceParserTests
         try
         {
             var fileDoc = DashSpecParser.Parse("""
-                @dashboard t
-                dashboard "T" {
+                @dashboard t {
+                  report "T" {
                   card a as "A" {
                     diagram bar { x = user_sam y = peak }
                     datasource sql file "queries/top.sql"
                   }
                 }
-                """, dir);
+                }
+""", dir);
 
             var fileCard = fileDoc.Cards[0];
             Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
             Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
 
             var blockDoc = DashSpecParser.Parse("""
-                @dashboard t
-                dashboard "T" {
+                @dashboard t {
+                  report "T" {
                   card b as "B" {
                     diagram bar { x = user_sam y = peak }
                     datasource sql {
@@ -142,7 +147,8 @@ public class SqlDataSourceParserTests
                     }
                   }
                 }
-                """, dir);
+                }
+""", dir);
 
             var blockCard = blockDoc.Cards[0];
             Assert.Equal(DataSourceSqlCarrier.Query, blockCard.DataSource.SqlCarrier);

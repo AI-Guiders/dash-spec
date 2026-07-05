@@ -1,0 +1,58 @@
+# Tab module template — see design/DASHSPEC-ADR-0024-document-authoring-layers.md
+#
+# Standalone: catalog entry → this file (@tab root).
+# Embedded: parent dashboard → tab my_tab dashspec "path/to/this.dashspec"
+#   (runtime/configuration/wiring below is ignored on embed — parent wins.)
+
+@tab my_tab {
+  runtime {
+    manifest = "demo.toml"
+  }
+
+  configuration {
+    sqldialect = tsql
+    palette = "palettes/demo-apps.dashpalette"
+  }
+
+  !include "layouts/my-tab-grid.dashlayout"
+  !include "diagrams/my-tab/*.dashdiagram"
+  # optional bundle: !include "imports/my-tab.dashinclude"
+
+  wiring {
+    use connector sqlserver
+    use palette demo_apps
+    layout grid {
+      columns = 12
+      gap = 16
+    }
+  }
+
+  report "My tab label" {
+    standalone {
+      filter date usage_date on usage_date as "Report date" default -7d..today
+      filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
+
+      toolbar chrome {
+        layout = bar
+        sticky = line
+        apply = auto
+        debounce_ms = 400
+      }
+
+      toolbar {
+        usage_date
+        app_name
+      }
+    }
+
+    filters {
+      filter top rows_top as "Rows (TOP)" default 100
+    }
+
+    card my_card as "Example card" ref Q {
+      diagram my_diagram
+      datasource view demo.v_example
+      bind usage_date, app_name
+    }
+  }
+}

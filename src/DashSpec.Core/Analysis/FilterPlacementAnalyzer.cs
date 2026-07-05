@@ -1,3 +1,4 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
@@ -29,6 +30,7 @@ internal static class FilterPlacementAnalyzer
         foreach (var card in document.Cards)
         {
             var localSet = new HashSet<string>(card.LocalFilters, StringComparer.OrdinalIgnoreCase);
+            var hostedSet = new HashSet<string>(card.HostedFilters ?? [], StringComparer.OrdinalIgnoreCase);
 
             if (string.IsNullOrWhiteSpace(card.UseCardPreset))
             {
@@ -41,10 +43,11 @@ internal static class FilterPlacementAnalyzer
                 {
                     var onDashboard = document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase);
                     var onCard = localSet.Contains(filterName);
-                    if (!onDashboard && !onCard)
+                    var onHosted = IsHostedOnCard(document, card, filterName);
+                    if (!onDashboard && !onCard && !onHosted)
                     {
                         throw new DashSpecParseException(
-                            $"Card '{card.Id}': bound filter '{filterName}' must be placed in toolbar {{ }} or this card's filters {{ }}.");
+                            $"Card '{card.Id}': bound filter '{filterName}' must be placed in toolbar {{ }}, this card's filters {{ }}, or filters host <card> {{ }}.");
                     }
                 }
             }
@@ -61,6 +64,12 @@ internal static class FilterPlacementAnalyzer
                 {
                     throw new DashSpecParseException(
                         $"Filter '{filterName}' cannot be placed on dashboard and card '{card.Id}' at the same time.");
+                }
+
+                if (hostedSet.Contains(filterName))
+                {
+                    throw new DashSpecParseException(
+                        $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
                 if (cardLocalOwners.TryGetValue(filterName, out var owner))
@@ -87,6 +96,71 @@ internal static class FilterPlacementAnalyzer
 
                 cardLocalOwners[filterName] = card.Id;
             }
+
+            foreach (var filterName in card.HostedFilters ?? [])
+            {
+                if (!registry.ContainsKey(filterName))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{card.Id}' filters host block references unknown filter '{filterName}'.");
+                }
+
+                if (document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new DashSpecParseException(
+                        $"Filter '{filterName}' cannot be placed on dashboard and hosted on card '{card.Id}' at the same time.");
+                }
+
+                if (localSet.Contains(filterName))
+                {
+                    throw new DashSpecParseException(
+                        $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(card.FilterHostCardId))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{card.Id}' declares hosted filters without filters host <card>.");
+                }
+
+                var host = document.Cards.FirstOrDefault(other =>
+                    string.Equals(other.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
+                if (host is null)
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{card.Id}' filters host '{card.FilterHostCardId}' was not found.");
+                }
+
+                if (!host.LocalFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{card.Id}' hosts filter '{filterName}' from '{host.Id}', but that card does not declare filters {{ {filterName} }}.");
+                }
+            }
+
+            if (card.InteriorBoard is not null)
+            {
+                _ = CardInteriorLayoutCompactor.Compact(
+                    card,
+                    document.Filters,
+                    document.Layout.Columns);
+            }
         }
+    }
+
+    private static bool IsHostedOnCard(
+        DashboardDocument document,
+        CardDefinition card,
+        string filterName)
+    {
+        if (!(card.HostedFilters ?? []).Contains(filterName, StringComparer.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(card.FilterHostCardId))
+        {
+            return false;
+        }
+
+        var host = document.Cards.FirstOrDefault(other =>
+            string.Equals(other.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
+        return host?.LocalFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase) == true;
     }
 }

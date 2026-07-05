@@ -36,4 +36,83 @@ public static class ToolbarLayoutCompactor
 
         return result;
     }
+
+    /// <summary>Toolbar placement for a subset of filters; empty board rows are omitted.</summary>
+    public static IReadOnlyDictionary<string, PlacementDefinition> CompactVisible(
+        DashboardDocument document,
+        IReadOnlySet<string> visibleFilterNames)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(visibleFilterNames);
+
+        if (visibleFilterNames.Count == 0)
+        {
+            return new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var columns = document.Layout.Columns;
+        if (document.ToolbarBoard is not null)
+        {
+            return CompactVisibleBoard(
+                document.ToolbarBoard,
+                columns,
+                document.Filters,
+                visibleFilterNames);
+        }
+
+        var result = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        var visible = document.DashboardFilters
+            .Where(visibleFilterNames.Contains)
+            .ToList();
+        if (visible.Count == 0)
+        {
+            return result;
+        }
+
+        var span = visible.Count == 1 ? columns : columns / visible.Count;
+        for (var i = 0; i < visible.Count; i++)
+        {
+            result[visible[i]] = new PlacementDefinition(1, 1 + i * span, span);
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, PlacementDefinition> CompactVisibleBoard(
+        LayoutBoardDefinition board,
+        int columns,
+        IReadOnlyList<FilterDefinition> filters,
+        IReadOnlySet<string> visibleFilterNames)
+    {
+        var result = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        var compactedRow = 0;
+
+        foreach (var row in board.Rows)
+        {
+            var visibleInRow = new List<string>();
+            foreach (var token in row)
+            {
+                var filterName = FilterLayoutRefResolver.Resolve(token, filters, "Toolbar");
+                if (visibleFilterNames.Contains(filterName))
+                {
+                    visibleInRow.Add(filterName);
+                }
+            }
+
+            if (visibleInRow.Count == 0)
+            {
+                continue;
+            }
+
+            compactedRow++;
+            var span = visibleInRow.Count == 1 ? columns : columns / visibleInRow.Count;
+            for (var cellIndex = 0; cellIndex < visibleInRow.Count; cellIndex++)
+            {
+                result[visibleInRow[cellIndex]] =
+                    new PlacementDefinition(compactedRow, 1 + cellIndex * span, span);
+            }
+        }
+
+        return result;
+    }
 }
