@@ -1,7 +1,8 @@
 @namespace DashSpec.Host.Components.Dashboard
-@using DashSpec.Abstractions.Viz
+@using DashSpec.Core.Model
+@using DashSpec.Host.Plugins
 @using DashSpec.Host.Services.Models
-@using DashSpec.Host.Services.Presentation
+@using Microsoft.AspNetCore.Components
 
 @if (Card.Loading)
 {
@@ -13,92 +14,39 @@ else if (!string.IsNullOrEmpty(Card.Error))
 {
     <div class="card-error">@Card.Error</div>
 }
+else if (_componentType is null)
+{
+    <div class="card-error">Неизвестный viz plugin: @Card.RenderPluginId</div>
+}
 else
 {
-    @switch (Card.RenderPluginId)
-    {
-        case VizPluginIds.ChartJs:
-            @if (Card.Chart is null || Card.Chart.Labels.Count == 0)
-            {
-                <p class="empty-state">Нет данных за выбранный период</p>
-            }
-            else
-            {
-                <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Card)">
-                    <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Card.Id)"
-                                 ChartType="@(string.Equals(Card.DiagramKind, "bar", StringComparison.OrdinalIgnoreCase) ? "bar" : "line")"
-                                 Payload="Card.Chart"
-                                 Legend="@(Card.ChartPresentation?.Legend ?? "bottom")"
-                                 Stacked="@(Card.ChartPresentation?.Stacked ?? false)"
-                                 Orientation="@(Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
-                                 ValueAxisScale="@(Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
-                                 CategoryAxisLabel="@Card.ChartPresentation?.CategoryAxisLabel"
-                                 ValueAxisLabel="@Card.ChartPresentation?.ValueAxisLabel" />
-                </div>
-            }
-            break;
-        case VizPluginIds.TableHtml:
-            @if (Card.Table is null || Card.Table.Rows.Count == 0)
-            {
-                <p class="empty-state">Нет строк</p>
-            }
-            else
-            {
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                @foreach (var column in Card.Table.Columns)
-                                {
-                                    <th>@column</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in Card.Table.Rows)
-                            {
-                                <tr>
-                                    @foreach (var cell in row)
-                                    {
-                                        <td>@cell</td>
-                                    }
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <p class="table-foot muted">Показано @Card.Table.Rows.Count строк</p>
-            }
-            break;
-        case VizPluginIds.ScalarHtml:
-            <div class="number">@(Card.Number ?? "—")</div>
-            break;
-        case VizPluginIds.CssGrid:
-            @if (Card.Matrix is not null)
-            {
-                <HeatmapView Payload="Card.Matrix"
-                             HeightPx="@(Card.MatrixPresentation?.HeightPx ?? 320)"
-                             XAxisLabel="@Card.MatrixPresentation?.XLabel"
-                             YAxisLabel="@Card.MatrixPresentation?.YLabel"
-                             ValueLabel="@Card.MatrixPresentation?.ValueLabel"
-                             TooltipLabel="@Card.MatrixPresentation?.TooltipLabel"
-                             TooltipFormat="@(Card.MatrixPresentation?.TooltipFormat ?? TooltipFormat.Inline)"
-                             TooltipSplit="@(Card.MatrixPresentation?.TooltipSplit ?? ", ")"
-                             XFormat="@(Card.MatrixPresentation?.XFormat ?? "date.short")"
-                             YFormat="@(Card.MatrixPresentation?.YFormat ?? "user.short")"
-                             ColorScale="@(Card.MatrixPresentation?.ColorScale ?? "heat")"
-                             LegendMinText="@Card.MatrixPresentation?.FormatLegendMin(MatrixMin, MatrixMax)"
-                             LegendMaxText="@Card.MatrixPresentation?.FormatLegendMax(MatrixMin, MatrixMax)" />
-            }
-            break;
-        default:
-            <div class="card-error">Неизвестный viz plugin: @Card.RenderPluginId</div>
-            break;
-    }
+    <DynamicComponent Type="_componentType" Parameters="_parameters" />
 }
 
 @code {
     [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
     [Parameter] public double MatrixMin { get; set; }
     [Parameter] public double MatrixMax { get; set; }
+    [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
+
+    [Inject] private CardVizComponentRegistry VizComponents { get; set; } = default!;
+
+    private Type? _componentType;
+
+    private Dictionary<string, object?> _parameters = new();
+
+    protected override void OnParametersSet()
+    {
+        _componentType = VizComponents.TryGet(Card.RenderPluginId);
+        _parameters = new Dictionary<string, object?>
+        {
+            ["Context"] = new CardVizRenderContext
+            {
+                Card = Card,
+                MatrixMin = MatrixMin,
+                MatrixMax = MatrixMax,
+                OnHeatmapCellSelected = OnHeatmapCellSelected,
+            },
+        };
+    }
 }

@@ -15,13 +15,13 @@ public class DirectiveParserTests
     public void ReadRuntimePath_returns_relative_toml_path()
     {
         const string text = """
-            @runtime "demo.toml"
-
-            @dashboard t
-            dashboard "T" {
-              card a as "A" {
-                diagram number { value = x }
-                datasource view dbo.t
+            @dashboard t {
+              runtime { manifest = "demo.toml" }
+              report "T" {
+                card a as "A" {
+                  diagram number { value = x }
+                  datasource view dbo.t
+                }
               }
             }
             """;
@@ -36,13 +36,13 @@ public class DirectiveParserTests
     public void ReadConfigPath_accepts_deprecated_alias()
     {
         const string text = """
-            @config "legacy.toml"
-
-            @dashboard t
-            dashboard "T" {
-              card a as "A" {
-                diagram number { value = x }
-                datasource view dbo.t
+            @dashboard t {
+              runtime { manifest = "legacy.toml" }
+              report "T" {
+                card a as "A" {
+                  diagram number { value = x }
+                  datasource view dbo.t
+                }
               }
             }
             """;
@@ -54,14 +54,14 @@ public class DirectiveParserTests
     public void ReadSqlDialect_parses_file_directive()
     {
         const string text = """
-            @runtime "cfg.toml"
-            @sqldialect postgres
-
-            @dashboard t
-            dashboard "T" {
-              card a as "A" {
-                diagram number { value = x }
-                datasource view dbo.t
+            @dashboard t {
+              runtime { manifest = "cfg.toml" }
+              configuration { sqldialect = postgres }
+              report "T" {
+                card a as "A" {
+                  diagram number { value = x }
+                  datasource view dbo.t
+                }
               }
             }
             """;

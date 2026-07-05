@@ -25,9 +25,14 @@ public static class DashSpecTomlLoader
 
     public static DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
     {
-        if (!string.IsNullOrWhiteSpace(overlay.Dashboard.SpecPath))
+        if (!string.IsNullOrWhiteSpace(overlay.Dashboard.CatalogPath))
         {
-            root.Dashboard.SpecPath = overlay.Dashboard.SpecPath;
+            root.Dashboard.CatalogPath = overlay.Dashboard.CatalogPath;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Access.ApiKey))
+        {
+            root.Access.ApiKey = overlay.Access.ApiKey;
         }
 
         foreach (var (connectorId, section) in overlay.Connectors)
@@ -54,14 +59,24 @@ public static class DashSpecTomlLoader
             root.Plugins.Load = overlay.Plugins.Load;
         }
 
+        if (overlay.Plugins.Bundles.Count > 0)
+        {
+            root.Plugins.Bundles = overlay.Plugins.Bundles;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Plugins.ActiveBundle))
+        {
+            root.Plugins.ActiveBundle = overlay.Plugins.ActiveBundle;
+        }
+
         return root;
     }
 
     public static IEnumerable<KeyValuePair<string, string?>> Flatten(DashSpecTomlRoot root)
     {
-        if (!string.IsNullOrWhiteSpace(root.Dashboard.SpecPath))
+        if (!string.IsNullOrWhiteSpace(root.Dashboard.CatalogPath))
         {
-            yield return new KeyValuePair<string, string?>("Dashboard:SpecPath", root.Dashboard.SpecPath);
+            yield return new KeyValuePair<string, string?>("Dashboard:CatalogPath", root.Dashboard.CatalogPath);
         }
 
         foreach (var (connectorId, section) in root.Connectors)

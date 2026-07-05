@@ -2,7 +2,7 @@
 
 include presentation "../presentations/bar-bottom-300.dashpresentation"
 
-diagram bar {
+bar {
   render = "chartjs"
   category = app_name
   value = distinct_users

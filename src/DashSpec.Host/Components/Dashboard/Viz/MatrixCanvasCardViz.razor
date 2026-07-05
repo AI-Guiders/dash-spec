@@ -1,0 +1,25 @@
+@namespace DashSpec.Host.Components.Dashboard.Viz
+@using DashSpec.Core.Model
+@using DashSpec.Host.Services.Models
+@using DashSpec.Host.Services.Presentation
+
+@if (Context.Card.Matrix is not null)
+{
+    <MatrixCanvasView HostId="@DashboardLayoutHelper.MatrixHostDomId(Context.Card.Id)"
+                      CanvasId="@DashboardLayoutHelper.MatrixCanvasDomId(Context.Card.Id)"
+                      Payload="Context.Card.Matrix"
+                      HeightPx="@(Context.Card.MatrixPresentation?.HeightPx ?? 320)"
+                      XAxisLabel="@Context.Card.MatrixPresentation?.XLabel"
+                      YAxisLabel="@Context.Card.MatrixPresentation?.YLabel"
+                      ValueLabel="@Context.Card.MatrixPresentation?.ValueLabel"
+                      XFormat="@(Context.Card.MatrixPresentation?.XFormat ?? "date.short")"
+                      YFormat="@(Context.Card.MatrixPresentation?.YFormat ?? "user.short")"
+                      ColorScale="@(Context.Card.MatrixPresentation?.ColorScale ?? "heat")"
+                      LegendMinText="@Context.Card.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
+                      LegendMaxText="@Context.Card.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                      OnCellSelected="Context.OnHeatmapCellSelected" />
+}
+
+@code {
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+}

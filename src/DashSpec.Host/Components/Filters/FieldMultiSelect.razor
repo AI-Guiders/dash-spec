@@ -12,6 +12,7 @@
 
         <select class="field-select"
                 aria-label="@Label"
+                disabled="@Disabled"
                 value="@SelectedValue()"
                 @onchange="OnNativeSelectChanged">
             @foreach (var option in Options)
@@ -32,6 +33,7 @@
                     class="combobox-trigger"
                     aria-haspopup="listbox"
                     aria-expanded="@_open"
+                    disabled="@Disabled"
                     @onclick="ToggleOpen">
                 <span class="combobox-summary">@SummaryText()</span>
                 <span class="combobox-chevron" aria-hidden="true">▾</span>
@@ -135,6 +137,7 @@
                         class="chip @(active ? "chip-active" : null)"
                         role="option"
                         aria-selected="@active"
+                        disabled="@Disabled"
                         @onclick="() => OnChipClickAsync(option)">
                     @option
                 </button>
@@ -160,6 +163,9 @@
 
     [Parameter]
     public bool Compact { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
 
     [Parameter]
     public bool Combobox { get; set; }
@@ -219,12 +225,25 @@
         return $"{ordered[0]}, {ordered[1]} +{ordered.Count - 2}";
     }
 
-    private void ToggleOpen() => _open = !_open;
+    private void ToggleOpen()
+    {
+        if (Disabled)
+        {
+            return;
+        }
+
+        _open = !_open;
+    }
 
     private void Close() => _open = false;
 
     private async Task OnChipClickAsync(string option)
     {
+        if (Disabled)
+        {
+            return;
+        }
+
         if (SingleSelect)
         {
             await SelectSingleAsync(option);
@@ -255,6 +274,11 @@
 
     private async Task OnNativeSelectChanged(ChangeEventArgs args)
     {
+        if (Disabled)
+        {
+            return;
+        }
+
         var value = args.Value?.ToString();
         if (string.IsNullOrWhiteSpace(value))
         {

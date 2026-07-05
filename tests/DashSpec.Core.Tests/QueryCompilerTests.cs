@@ -15,8 +15,8 @@ public class QueryCompilerTests
     public void Compile_applies_optional_date_and_field_filters()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Usage"
                 default = -7d..today
@@ -33,7 +33,8 @@ public class QueryCompilerTests
                 datasource view demo.v_daily_peak_concurrent_proxy
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -56,9 +57,10 @@ public class QueryCompilerTests
     public void Compile_sql_datasource_wraps_subquery_and_applies_filters()
     {
         var card = DashSpecParser.Parse("""
-            @sqldialect tsql
-            @dashboard t
-            dashboard "T" {
+
+            @dashboard t {
+              configuration { sqldialect = tsql }
+              report "T" {
               filter date usage_date { column = usage_date as "Дата" default = -7d..today }
               filters dashboard { usage_date }
               card top as "Top" {
@@ -67,7 +69,8 @@ public class QueryCompilerTests
                 datasource sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -87,9 +90,10 @@ public class QueryCompilerTests
     public void Compile_postgres_dialect_uses_interval_for_date_upper_bound()
     {
         var card = DashSpecParser.Parse("""
-            @sqldialect postgres
-            @dashboard t
-            dashboard "T" {
+
+            @dashboard t {
+              configuration { sqldialect = postgres }
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Дата"
                 default = -7d..today
@@ -101,7 +105,8 @@ public class QueryCompilerTests
                 datasource view public.metrics
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -120,8 +125,8 @@ public class QueryCompilerTests
     public void Compile_table_uses_top_limit()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card events as "Events" {
                 diagram table {
                   columns = id, name
@@ -130,7 +135,8 @@ public class QueryCompilerTests
                 datasource view dbo.events
               }
             }
-            """).Cards[0];
+            }
+""").Cards[0];
 
         var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>());
 
@@ -141,8 +147,8 @@ public class QueryCompilerTests
     public void Compile_table_uses_bound_top_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter top row_limit as "Limit" {
                 default = 250
               }
@@ -155,7 +161,8 @@ public class QueryCompilerTests
                 datasource view dbo.events
               }
             }
-            """);
+            }
+""");
 
         var card = doc.Cards[0];
         var index = DashboardBootstrap.IndexFilters(doc);
@@ -210,8 +217,8 @@ public class QueryCompilerTests
     public void Compile_bound_top_filter_does_not_add_where_clause()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Дата"
                 default = -7d..today
@@ -225,7 +232,8 @@ public class QueryCompilerTests
                 datasource view dbo.events
               }
             }
-            """);
+            }
+""");
 
         var card = doc.Cards[0];
         var index = DashboardBootstrap.IndexFilters(doc);

@@ -7,6 +7,11 @@ internal static class DiagramParser
     public static DiagramDefinition Parse(TokenReader reader)
     {
         var name = reader.ReadIdent();
+        return ParseAfterKindIdent(reader, name);
+    }
+
+    public static DiagramDefinition ParseAfterKindIdent(TokenReader reader, string name)
+    {
         if (DiagramKindRegistry.TryResolve(name, out var spec))
         {
             var properties = PropertyBlockParser.Parse(

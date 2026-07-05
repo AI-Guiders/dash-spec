@@ -18,6 +18,24 @@ internal static class DiagramModuleParser
         return ParseFragmentBody(reader, baseDirectory);
     }
 
+    public static (string Id, SpecIncludeFragment Fragment) ParseDiagramFileWithId(string text, string baseDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+
+        var reader = ParserUtilities.CreateReader(text);
+        reader.SkipFileDirectives();
+        reader.Expect(TokenKind.At);
+        reader.ExpectKeyword("diagram");
+        var id = reader.ReadIdent();
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw new DashSpecParseException("Diagram module requires @diagram <id>.");
+        }
+
+        reader.SkipNewlines();
+        return (id, ParseFragmentBody(reader, baseDirectory));
+    }
+
     internal static SpecIncludeFragment ParseFragmentBody(TokenReader reader, string baseDirectory)
     {
         var fragment = new SpecIncludeFragment(null, null, null);
@@ -32,11 +50,11 @@ internal static class DiagramModuleParser
                 continue;
             }
 
-            if (reader.TryKeyword("diagram"))
+            if (TryParseDiagramKindBlock(reader, out var diagram))
             {
                 fragment = SpecIncludeResolver.Merge(
                     fragment,
-                    new SpecIncludeFragment(DiagramParser.Parse(reader), null, null));
+                    new SpecIncludeFragment(diagram, null, null));
                 reader.SkipNewlines();
                 continue;
             }
@@ -50,16 +68,11 @@ internal static class DiagramModuleParser
                 continue;
             }
 
-            if (reader.TryKeyword("transform"))
+            if (TryParseSeriesTransform(reader, out var transform))
             {
-                if (!reader.TryKeyword("series"))
-                {
-                    throw new DashSpecParseException("Expected 'series' after transform.");
-                }
-
                 fragment = SpecIncludeResolver.Merge(
                     fragment,
-                    new SpecIncludeFragment(null, null, ParseSeriesTransform(reader)));
+                    new SpecIncludeFragment(null, null, transform));
                 reader.SkipNewlines();
                 continue;
             }
@@ -74,10 +87,57 @@ internal static class DiagramModuleParser
 
         if (fragment.Diagram is null)
         {
-            throw new DashSpecParseException("Diagram module requires a diagram { } block.");
+            throw new DashSpecParseException("Diagram module requires a chart kind block (e.g. heatmap { }).");
         }
 
         return fragment;
+    }
+
+    private static bool TryParseDiagramKindBlock(TokenReader reader, out DiagramDefinition diagram)
+    {
+        diagram = null!;
+        reader.SkipNewlines();
+        if (reader.IsEof || reader.IsAt(TokenKind.RBrace))
+        {
+            return false;
+        }
+
+        if (reader.TryKeyword("diagram"))
+        {
+            diagram = DiagramParser.Parse(reader);
+            return true;
+        }
+
+        if (!reader.TryPeekIdent(out var kind) || !DiagramKindRegistry.TryResolve(kind, out _))
+        {
+            return false;
+        }
+
+        diagram = DiagramParser.Parse(reader);
+        return true;
+    }
+
+    private static bool TryParseSeriesTransform(TokenReader reader, out SeriesTransformBlock transform)
+    {
+        transform = null!;
+        if (reader.TryKeyword("series"))
+        {
+            transform = ParseSeriesTransform(reader);
+            return true;
+        }
+
+        if (!reader.TryKeyword("transform"))
+        {
+            return false;
+        }
+
+        if (!reader.TryKeyword("series"))
+        {
+            throw new DashSpecParseException("Expected 'series' after transform.");
+        }
+
+        transform = ParseSeriesTransform(reader);
+        return true;
     }
 
     internal static (string Kind, string Reference) ReadIncludeReference(TokenReader reader)
@@ -99,7 +159,7 @@ internal static class DiagramModuleParser
 
     private static SeriesTransformBlock ParseSeriesTransform(TokenReader reader)
     {
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.SeriesTransform, "transform series");
+        var props = PropertyBlockParser.Parse(reader, PropertySchemas.SeriesTransform, "series");
         props.TryGetValue("use", out var usePreset);
         int? max = null;
         if (props.TryGetValue("max", out var rawMax) &&

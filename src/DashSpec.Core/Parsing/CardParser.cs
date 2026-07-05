@@ -5,8 +5,14 @@ namespace DashSpec.Core.Parsing;
 
 internal static class CardParser
 {
-    public static CardDefinition Parse(TokenReader reader, IReadOnlyList<FilterDefinition> filters, string? specDirectory = null)
+    public static CardDefinition Parse(
+        TokenReader reader,
+        IReadOnlyList<FilterDefinition> filters,
+        string? specDirectory = null,
+        ModuleIncludeState? includes = null,
+        DashSpecParseOptions? parseOptions = null)
     {
+        parseOptions ??= DashSpecParseOptions.Default;
         var id = reader.ReadIdent();
         if (!reader.TryKeyword("as"))
         {
@@ -25,13 +31,38 @@ internal static class CardParser
         string? useCardPreset = null;
         var boundFilters = new List<string>();
         var localFilters = new List<string>();
+        string? filterHostCardId = null;
+        var hostedFilters = new List<string>();
         LegendDefinition? legend = null;
         PresentationBlock? presentation = null;
         SeriesTransformBlock? seriesTransform = null;
+        LayoutBoardDefinition? interiorBoard = null;
+        string? diagramSlotRef = null;
+        CardClickBehaviour? clickBehaviour = null;
+        var extensionBlocks = new List<ExtensionBlockNode>();
+        var localFiltersManualApply = false;
         var includeFragment = new SpecIncludeFragment(null, null, null);
 
         while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
         {
+            if (reader.TryKeyword("on"))
+            {
+                if (!reader.TryKeyword("click"))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{id}': only 'on click' is supported in v1.");
+                }
+
+                if (clickBehaviour is not null)
+                {
+                    throw new DashSpecParseException($"Card '{id}': duplicate on click block.");
+                }
+
+                clickBehaviour = CardClickParser.ParseClickBlock(reader, id, parseOptions);
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("include"))
             {
                 if (string.IsNullOrWhiteSpace(specDirectory))
@@ -64,14 +95,59 @@ internal static class CardParser
 
             if (reader.TryKeyword("filters"))
             {
-                localFilters.AddRange(ParseFilterPlacementList(reader, "filters"));
+                if (reader.TryKeyword("host"))
+                {
+                    var hostCardId = reader.ReadIdent();
+                    if (filterHostCardId is not null)
+                    {
+                        throw new DashSpecParseException(
+                            $"Card '{id}' declares more than one filters host block.");
+                    }
+
+                    filterHostCardId = hostCardId;
+                    hostedFilters.AddRange(ParseFilterPlacementList(reader, "filters host"));
+                }
+                else if (reader.IsAt(TokenKind.LBrace))
+                {
+                    var parsed = ParseLocalFiltersBlock(reader, id);
+                    localFilters.AddRange(parsed.FilterNames);
+                    localFiltersManualApply = parsed.ManualApply;
+                }
+                else
+                {
+                    localFilters.AddRange(reader.ReadCommaListInline());
+                }
+
                 reader.SkipNewlines();
                 continue;
             }
 
             if (reader.TryKeyword("diagram"))
             {
-                diagram = DiagramParser.Parse(reader);
+                diagramSlotRef ??= ParserUtilities.TryReadLayoutRef(reader);
+                if (!reader.TryPeekIdent(out var diagramName))
+                {
+                    throw reader.Unexpected("diagram kind, preset id, or registry id");
+                }
+
+                _ = reader.ReadIdent();
+                reader.SkipNewlines();
+                if (reader.IsAt(TokenKind.LBrace))
+                {
+                    diagram = DiagramParser.ParseAfterKindIdent(reader, diagramName);
+                }
+                else if (includes is not null && includes.TryGetDiagram(diagramName, out var registered))
+                {
+                    includeFragment = SpecIncludeResolver.Merge(includeFragment, registered);
+                }
+                else
+                {
+                    diagram = new DiagramDefinition(
+                        string.Empty,
+                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                        diagramName);
+                }
+
                 reader.SkipNewlines();
                 continue;
             }
@@ -79,6 +155,20 @@ internal static class CardParser
             if (reader.TryKeyword("place"))
             {
                 placement = LayoutParser.ParsePlacement(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("layout"))
+            {
+                if (reader.TryPeekIdent(out var layoutNext) &&
+                    string.Equals(layoutNext, "grid", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{id}': use dashboard wiring for layout grid; card layout is a bracket board only.");
+                }
+
+                interiorBoard = LayoutParser.ParseBoard(reader);
                 reader.SkipNewlines();
                 continue;
             }
@@ -121,6 +211,16 @@ internal static class CardParser
                 throw new DashSpecParseException(
                     $"Card '{id}': 'where' is no longer used — list filters in bind …; " +
                     "Core compiles WHERE from bind (date/field → AND …, top → TOP/LIMIT).");
+            }
+
+            if (reader.TryPeekIdent(out var extensionKeyword) &&
+                parseOptions.ExtensionBlockKeywords.Contains(extensionKeyword))
+            {
+                extensionBlocks.Add(
+                    ExtensionBlockParser.Parse(reader, extensionKeyword, parseOptions.ExtensionBlockKeywords));
+                ValidateExtensionBlock(extensionBlocks[^1], id, parseOptions);
+                reader.SkipNewlines();
+                continue;
             }
 
             throw reader.Unexpected();
@@ -179,7 +279,64 @@ internal static class CardParser
             UseCardPreset: useCardPreset,
             Legend: legend,
             Presentation: presentation,
-            SeriesTransform: seriesTransform);
+            SeriesTransform: seriesTransform,
+            FilterHostCardId: filterHostCardId,
+            HostedFilters: hostedFilters,
+            InteriorBoard: interiorBoard,
+            DiagramSlotRef: diagramSlotRef,
+            ClickBehaviour: clickBehaviour,
+            ExtensionBlocks: extensionBlocks,
+            LocalFiltersManualApply: localFiltersManualApply);
+    }
+
+    private static (IReadOnlyList<string> FilterNames, bool ManualApply) ParseLocalFiltersBlock(
+        TokenReader reader,
+        string cardId)
+    {
+        reader.Expect(TokenKind.LBrace);
+        reader.SkipNewlines();
+
+        var names = new List<string>();
+        var manualApply = false;
+        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (reader.IsAt(TokenKind.RBrace))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("apply"))
+            {
+                reader.Expect(TokenKind.Eq);
+                var mode = reader.ReadIdent();
+                if (!string.Equals(mode, "manual", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{cardId}': filters apply must be 'manual', got '{mode}'.");
+                }
+
+                manualApply = true;
+                reader.SkipNewlines();
+                continue;
+            }
+
+            names.Add(reader.ReadIdent());
+            reader.SkipNewlines();
+            if (reader.CurrentKind is TokenKind.Comma)
+            {
+                reader.Advance();
+            }
+        }
+
+        reader.SkipNewlines();
+        reader.Expect(TokenKind.RBrace);
+        if (names.Count == 0)
+        {
+            throw new DashSpecParseException($"Card '{cardId}': filters block requires at least one filter name.");
+        }
+
+        return (names, manualApply);
     }
 
     private static PresentationBlock ParsePresentation(TokenReader reader)
@@ -261,6 +418,25 @@ internal static class CardParser
                 throw new DashSpecParseException(
                     $"Card '{cardId}': bind references unknown filter '{name}'.");
             }
+        }
+    }
+
+    private static void ValidateExtensionBlock(
+        ExtensionBlockNode block,
+        string cardId,
+        DashSpecParseOptions parseOptions)
+    {
+        if (parseOptions.KnownActionHandlers.Count > 0 &&
+            block.Properties.TryGetValue("action", out var action) &&
+            !parseOptions.KnownActionHandlers.Contains(action))
+        {
+            throw new DashSpecParseException(
+                $"Card '{cardId}': unknown action handler '{action}'.");
+        }
+
+        foreach (var nested in block.Nested)
+        {
+            ValidateExtensionBlock(nested, cardId, parseOptions);
         }
     }
 }

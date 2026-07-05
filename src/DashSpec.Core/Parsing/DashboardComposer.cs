@@ -5,35 +5,33 @@ namespace DashSpec.Core.Parsing;
 
 internal static class DashboardComposer
 {
-    public static DashboardDocument Parse(string text, string? specDirectory = null)
+    public static DashboardDocument Parse(string text, string? specDirectory = null) =>
+        Parse(text, specDirectory, DashSpecParseOptions.Default);
+
+    public static DashboardDocument Parse(
+        string text,
+        string? specDirectory,
+        DashSpecParseOptions parseOptions)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
 
-        if (IsTabRootDocument(text))
-        {
-            return TabModuleParser.ComposeStandalone(text, specDirectory);
-        }
-
-        var document = DashboardParser.ParseDashboard(text, specDirectory);
-        if (document.Tabs.All(t => string.IsNullOrWhiteSpace(t.DashspecPath)))
-        {
-            DashboardValidator.Validate(document);
-            return document;
-        }
-
-        if (string.IsNullOrWhiteSpace(specDirectory))
+        if (!DocumentModuleParser.IsBlockModuleFormat(text))
         {
             throw new DashSpecParseException(
-                "Tab dashspec references require specDirectory when parsing (path to the root .dashspec file directory).");
+                "DashSpec requires block module format: @dashboard id { … } or @tab id { … }. " +
+                "See ADR-0024 and docs/dashspec/templates/.");
         }
 
-        return MergeTabModules(document, specDirectory);
+        return DocumentModuleParser.ParseDocument(text, specDirectory, parseOptions);
     }
 
-    public static bool IsTabRootDocument(string text)
+    public static bool IsTabRootDocument(string text) =>
+        DocumentModuleParser.IsBlockModuleFormat(text) &&
+        IsTabBlockRoot(text);
+
+    private static bool IsTabBlockRoot(string text)
     {
         var reader = ParserUtilities.CreateReader(text);
-        reader.SkipFileDirectives();
         reader.SkipNewlines();
         if (!reader.IsAt(TokenKind.At))
         {
@@ -44,11 +42,18 @@ internal static class DashboardComposer
         return reader.TryKeyword("tab");
     }
 
-    private static DashboardDocument MergeTabModules(DashboardDocument document, string specDirectory)
+    internal static DashboardDocument MergeTabModules(
+        DashboardDocument document,
+        string specDirectory,
+        DashSpecParseOptions parseOptions)
     {
         var filters = document.Filters.ToList();
+        var dashboardFilters = document.DashboardFilters.ToList();
         var cards = document.Cards.ToList();
         var mergedTabs = new List<TabDefinition>();
+        var moduleDiagrams = new Dictionary<string, ModuleDiagramDefinition>(
+            document.ResolvedModuleDiagrams,
+            StringComparer.OrdinalIgnoreCase);
 
         foreach (var tab in document.Tabs)
         {
@@ -66,7 +71,14 @@ internal static class DashboardComposer
                     modulePath);
             }
 
-            var module = TabModuleParser.ParseEmbedded(File.ReadAllText(modulePath), tab.Id, specDirectory, filters);
+            var moduleText = File.ReadAllText(modulePath);
+            if (!DocumentModuleParser.IsBlockModuleFormat(moduleText))
+            {
+                throw new DashSpecParseException(
+                    $"Tab module '{tab.DashspecPath}' must use block format @tab id {{ … }}.");
+            }
+
+            var module = DocumentModuleParser.ParseTabEmbedded(moduleText, tab.Id, specDirectory, filters, parseOptions);
             foreach (var filter in module.Filters)
             {
                 if (filters.Any(f => string.Equals(f.Name, filter.Name, StringComparison.OrdinalIgnoreCase)))
@@ -76,6 +88,11 @@ internal static class DashboardComposer
                 }
 
                 filters.Add(filter);
+                if (filter.Kind is not FilterKind.Top &&
+                    !dashboardFilters.Contains(filter.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    InsertTabModuleDashboardFilter(dashboardFilters, filter.Name);
+                }
             }
 
             foreach (var card in module.Cards)
@@ -89,6 +106,17 @@ internal static class DashboardComposer
                 cards.Add(card);
             }
 
+            foreach (var (diagramId, definition) in module.ModuleDiagrams ?? DashboardDocument.EmptyModuleDiagrams)
+            {
+                if (moduleDiagrams.ContainsKey(diagramId))
+                {
+                    throw new DashSpecParseException(
+                        $"Tab module '{tab.Id}' redeclares module diagram preset '{diagramId}'.");
+                }
+
+                moduleDiagrams[diagramId] = definition;
+            }
+
             var label = tab.Label ?? module.Label;
             mergedTabs.Add(new TabDefinition(
                 tab.Id,
@@ -98,14 +126,33 @@ internal static class DashboardComposer
         }
 
         cards = TabParser.AssignTabs(cards, mergedTabs);
+
         var merged = document with
         {
             Filters = filters,
+            DashboardFilters = dashboardFilters,
             Cards = cards,
             Tabs = mergedTabs,
+            ModuleDiagrams = moduleDiagrams,
         };
 
         DashboardValidator.Validate(merged);
         return merged;
+    }
+
+    private static void InsertTabModuleDashboardFilter(List<string> dashboardFilters, string filterName)
+    {
+        if (string.Equals(filterName, "period_start", StringComparison.OrdinalIgnoreCase))
+        {
+            var grainIndex = dashboardFilters.FindIndex(name =>
+                string.Equals(name, "period_grain", StringComparison.OrdinalIgnoreCase));
+            if (grainIndex >= 0)
+            {
+                dashboardFilters.Insert(grainIndex + 1, filterName);
+                return;
+            }
+        }
+
+        dashboardFilters.Add(filterName);
     }
 }

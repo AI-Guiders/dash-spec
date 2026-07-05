@@ -1,0 +1,123 @@
+.matrix-canvas-host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.matrix-canvas-scroll {
+  overflow: auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: var(--matrix-max-height, 420px);
+}
+
+.matrix-canvas-layout {
+  display: grid;
+  grid-template-columns: 9rem max-content;
+  grid-template-rows: auto max-content;
+  gap: 4px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.matrix-canvas-corner {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.matrix-canvas-x-labels {
+  display: flex;
+  gap: 2px;
+  align-items: end;
+  padding-bottom: 0.15rem;
+}
+
+.matrix-canvas-x-label {
+  flex: 0 0 auto;
+  width: var(--matrix-cell-w, 26px);
+  min-width: var(--matrix-cell-w, 26px);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.matrix-canvas-x-label-sparse {
+  visibility: hidden;
+}
+
+.matrix-canvas-y-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+
+.matrix-canvas-y-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: var(--matrix-cell-h, 22px);
+  padding-right: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matrix-canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.matrix-canvas-host[data-color-scale="heat"] .heatmap-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(215, 55%, 32%) 0%,
+    hsl(145, 60%, 42%) 35%,
+    hsl(45, 90%, 52%) 68%,
+    hsl(0, 75%, 50%) 100%
+  );
+}
+
+.matrix-canvas-host[data-color-scale="mono"] .heatmap-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(210, 65%, 28%) 0%,
+    hsl(210, 65%, 52%) 100%
+  );
+}
+
+.card-viz-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.card-viz-stack .card-selection-detail {
+  margin-top: 0;
+}
+
+.card-diagram-slot .matrix-canvas-host {
+  flex: 0 0 auto;
+}

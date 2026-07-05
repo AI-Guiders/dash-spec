@@ -1,72 +1,23 @@
 @namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Core.Layout
+@using DashSpec.Core.Model
+@using DashSpec.Host.Components.Filters
 @using DashSpec.Host.Services.Models
+@using DashSpec.Host.Plugins.Builtins
 @using DashSpec.Host.Services.Presentation
 
 <article class="card" style="@PlacementStyle">
     <div class="card-head">
         <div>
             <h2><RichTextView Text="@Card.Title" /></h2>
-            @if (Card.LocalFilters is { Count: > 0 })
+            @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
             {
                 <div class="card-filters card-filters-local">
                     @foreach (var filterName in Card.LocalFilters)
                     {
-                        var filter = FilterIndex[filterName];
-                        if (filter.Kind is FilterKind.Date)
-                        {
-                            <div class="filter filter-date filter-compact">
-                                <span class="filter-label">@FilterUiHelpers.DisplayLabel(filter)</span>
-                                <div class="date-range @(filter.IsDayWidget ? "date-range-day" : null)">
-                                    @if (filter.IsDayWidget)
-                                    {
-                                        <input type="date"
-                                               aria-label="@FilterUiHelpers.DisplayLabel(filter)"
-                                               @bind="DateFrom[filter.Name]"
-                                               @bind:format="yyyy-MM-dd"
-                                               @bind:after="() => OnCardDayChanged.InvokeAsync((Card.Id, filter.Name))" />
-                                    }
-                                    else
-                                    {
-                                        <input type="date"
-                                               aria-label="@($"{filter.Name} from")"
-                                               @bind="DateFrom[filter.Name]"
-                                               @bind:format="yyyy-MM-dd"
-                                               @bind:after="() => OnScheduleCardApply.InvokeAsync(Card.Id)" />
-                                        <span class="date-sep">—</span>
-                                        <input type="date"
-                                               aria-label="@($"{filter.Name} to")"
-                                               @bind="DateTo[filter.Name]"
-                                               @bind:format="yyyy-MM-dd"
-                                               @bind:after="() => OnScheduleCardApply.InvokeAsync(Card.Id)" />
-                                    }
-                                </div>
-                            </div>
-                        }
-                        else if (filter.Kind is FilterKind.Field)
-                        {
-                            <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
-                                              Combobox="@filter.IsComboboxWidget"
-                                              NativeSelect="@filter.IsSelectWidget"
-                                              SingleSelect="@filter.IsSingleSelectField"
-                                              Options="GetFieldOptions(filter.Name)"
-                                              Selected="SelectedFields[filter.Name]"
-                                              SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))" />
-                        }
-                        else if (filter.Kind is FilterKind.Top)
-                        {
-                            <div class="filter filter-top filter-compact">
-                                <span class="filter-label">@FilterUiHelpers.DisplayLabel(filter)</span>
-                                <input type="number"
-                                       class="filter-number"
-                                       aria-label="@FilterUiHelpers.DisplayLabel(filter)"
-                                       min="@(filter.MinValue ?? 1)"
-                                       max="@(filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
-                                       @bind="TopLimits[filter.Name]"
-                                       @bind:after="() => OnScheduleCardApply.InvokeAsync(Card.Id)" />
-                            </div>
-                        }
+                        @RenderLocalFilter(filterName, placementStyle: null)
                     }
-                    @if (!AutoApply)
+                    @if (ShowLocalApplyButton)
                     {
                         <button class="secondary card-filter-apply"
                                 disabled="@Card.Loading"
@@ -86,6 +37,10 @@
                 </div>
             }
         </div>
+        <CardExtensionChrome Blocks="Card.ExtensionBlocks"
+                               Card="Card"
+                               ActiveViewId="@ActiveViewId"
+                               OnAction="OnCardAction" />
         @if (Card.Loading)
         {
             <span class="card-status muted">загрузка…</span>
@@ -96,14 +51,52 @@
         }
     </div>
 
-    <CardVisualization Card="Card"
-                       MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                       MatrixMax="@(Card.Matrix?.Max ?? 0)" />
+    @if (UsesInteriorLayout)
+    {
+        <div class="card-interior-grid" style="@InteriorGridStyle">
+            @foreach (var filterName in OrderedLocalFilters)
+            {
+                <div class="card-interior-filter-slot" style="@InteriorSlotStyle(filterName)">
+                    @RenderLocalFilter(filterName, placementStyle: null)
+                </div>
+            }
+            @if (ShowLocalApplyButton)
+            {
+                <div class="card-interior-filter-slot card-interior-apply">
+                    <button class="secondary card-filter-apply"
+                            disabled="@Card.Loading"
+                            @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                        Применить
+                    </button>
+                </div>
+            }
+            <div class="card-diagram-slot" style="@DiagramSlotStyle">
+                <div class="card-viz-stack">
+                    <CardVisualization Card="Card"
+                                       MatrixMin="@(Card.Matrix?.Min ?? 0)"
+                                       MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                                       OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+                    @RenderSelectionDetail()
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card-viz-stack">
+            <CardVisualization Card="Card"
+                               MatrixMin="@(Card.Matrix?.Min ?? 0)"
+                               MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                               OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+            @RenderSelectionDetail()
+        </div>
+    }
 </article>
 
 @code {
     [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
     [Parameter] public string PlacementStyle { get; set; } = string.Empty;
+    [Parameter] public int GridColumns { get; set; } = 12;
     [Parameter] public IReadOnlyList<string> DashboardBoundFilters { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
         new Dictionary<string, FilterDefinition>();
@@ -113,8 +106,124 @@
     [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public bool AutoApply { get; set; }
+    [Parameter] public string? ActiveViewId { get; set; }
     [Parameter] public EventCallback<string> OnApplyCard { get; set; }
     [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
+    [Parameter] public EventCallback<(CardRenderResult Card, HeatmapCellContext Context)> OnCellClickNavigate { get; set; }
+    [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
+
+    private HeatmapCellContext? _selection;
+
+    protected override void OnParametersSet()
+    {
+        if (Card.Loading)
+        {
+            _selection = null;
+        }
+    }
+
+    private bool UsesInteriorLayout => DashboardLayoutHelper.UsesInteriorLayout(Card);
+
+    [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
+
+    private ShowSelectionEffect? ShowSelection =>
+        Interactions.ResolveShowEffect(Card.ClickBehaviour);
+
+    private ShowSelectionEffect? EffectiveShowSelection =>
+        ShowSelection ?? (Card.Matrix is not null ? MatrixDefaultShowSelection : null);
+
+    private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
+        new(ShowPlacement.Below, ShowFormat.Kv, ShowSource.Cell, CopyFriendly: true);
+
+    private async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
+    {
+        if (EffectiveShowSelection is not null)
+        {
+            _selection = context;
+        }
+
+        if (Card.ClickBehaviour is not null &&
+            Interactions.HasNavigationEffects(Card.ClickBehaviour) &&
+            OnCellClickNavigate.HasDelegate)
+        {
+            await OnCellClickNavigate.InvokeAsync((Card, context));
+        }
+    }
+
+    private RenderFragment RenderSelectionDetail() => __builder =>
+    {
+        if (EffectiveShowSelection is null || _selection is null)
+        {
+            return;
+        }
+
+        <CardSelectionDetail Effect="EffectiveShowSelection"
+                             Context="_selection"
+                             Presentation="Card.MatrixPresentation" />;
+    };
+
+    private string InteriorGridStyle => DashboardLayoutHelper.CardInteriorGridStyle(
+        new LayoutDefinition(GridColumns, 0));
+
+    private string DiagramSlotStyle => InteriorSlotStyle(CardInteriorSlots.Diagram);
+
+    private IEnumerable<string> OrderedLocalFilters =>
+        Card.LocalFilters is null or { Count: 0 }
+            ? []
+            : UsesInteriorLayout && Card.InteriorPlacements is not null
+                ? Card.LocalFilters
+                    .OrderBy(name => Card.InteriorPlacements!.GetValueOrDefault(name)?.Row ?? 0)
+                    .ThenBy(name => Card.InteriorPlacements!.GetValueOrDefault(name)?.Col ?? 0)
+                : Card.LocalFilters;
+
+    private string InteriorSlotStyle(string slotKey)
+    {
+        if (Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) != true)
+        {
+            return string.Empty;
+        }
+
+        return DashboardLayoutHelper.CardInteriorSlotStyle(placement, GridColumns);
+    }
+
+    private bool ShowLocalApplyButton =>
+        Card.LocalFilters is { Count: > 0 } && (!AutoApply || Card.LocalFiltersManualApply);
+
+    private bool LocalFiltersAutoApply =>
+        AutoApply && !Card.LocalFiltersManualApply;
+
+    private Task OnLocalTopChanged(FilterDefinition filter, int value)
+    {
+        if (filter.Kind is not FilterKind.Top)
+        {
+            return Task.CompletedTask;
+        }
+
+        TopLimits[filter.Name] = value;
+        return LocalFiltersAutoApply
+            ? OnScheduleCardApply.InvokeAsync(Card.Id)
+            : Task.CompletedTask;
+    }
+
+    private RenderFragment RenderLocalFilter(string filterName, string? placementStyle) => __builder =>
+    {
+        var filter = FilterIndex[filterName];
+        <FilterWidgetHost Filter="filter"
+                          Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
+                          PlacementStyle="@placementStyle"
+                          Disabled="@Card.Loading"
+                          Options="GetFieldOptions(filter.Name)"
+                          Selected="@FilterUiHelpers.SelectedFieldValues(filter, SelectedFields)"
+                          SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
+                          DateFrom="DateFrom"
+                          DateTo="DateTo"
+                          FilterIndex="FilterIndex"
+                          SelectedFields="SelectedFields"
+                          OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
+                          OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
+                          TopValue="@FilterUiHelpers.ResolveTopValue(filter, TopLimits)"
+                          TopValueChanged="value => OnLocalTopChanged(filter, value)" />
+    };
 }

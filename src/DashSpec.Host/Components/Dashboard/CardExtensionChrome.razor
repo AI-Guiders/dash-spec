@@ -1,0 +1,132 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Abstractions.Plugins
+@using DashSpec.Core.Model
+@using DashSpec.Host.Plugins
+@using DashSpec.Host.Services.Models
+@inject DashSpecContributorRegistry Contributors
+
+@if (Blocks is { Count: > 0 })
+{
+    @foreach (var block in Blocks)
+    {
+        if (!Contributors.CardChromeBlocks.TryGetValue(block.Keyword, out var chrome))
+        {
+            continue;
+        }
+
+        @switch (chrome.RenderKind)
+        {
+            case CardChromeRenderKind.ViewSwitch:
+                if (IsViewSwitchCombobox(block))
+                {
+                    <label class="card-view-switch card-view-switch-combobox">
+                        <select class="card-view-select field-select"
+                                aria-label="Представление"
+                                disabled="@Card?.Loading"
+                                value="@(ActiveViewId ?? string.Empty)"
+                                @onchange="OnViewSelectChangedAsync">
+                            @foreach (var view in block.Nested)
+                            {
+                                var label = view.Properties.GetValueOrDefault("label") ?? view.Keyword;
+                                <option value="@view.Keyword">@label</option>
+                            }
+                        </select>
+                    </label>
+                }
+                else
+                {
+                    <div class="card-extension-chrome card-view-switch" role="group" aria-label="Представление">
+                        @foreach (var view in block.Nested)
+                        {
+                            var label = view.Properties.GetValueOrDefault("label") ?? view.Keyword;
+                            var active = string.Equals(ActiveViewId, view.Keyword, StringComparison.OrdinalIgnoreCase);
+                            <button type="button"
+                                    class="card-view-switch-btn @(active ? "card-view-switch-btn-active" : null)"
+                                    aria-pressed="@active"
+                                    disabled="@Card?.Loading"
+                                    @onclick="() => SwitchViewAsync(view.Keyword)">
+                                @label
+                            </button>
+                        }
+                    </div>
+                }
+                break;
+            case CardChromeRenderKind.Buttons:
+                <div class="card-extension-chrome">
+                    @foreach (var button in block.Nested)
+                    {
+                        var label = button.Properties.GetValueOrDefault("label") ?? button.Keyword;
+                        var action = ResolveAction(button);
+                        <button type="button"
+                                class="secondary card-export-btn"
+                                disabled="@(string.IsNullOrWhiteSpace(action) || Card?.Loading == true)"
+                                @onclick="() => InvokeActionAsync(action)">
+                            @label
+                        </button>
+                    }
+                </div>
+                break;
+        }
+    }
+}
+
+@code {
+    [Parameter] public IReadOnlyList<ExtensionBlockNode> Blocks { get; set; } = [];
+
+    [Parameter] public CardRenderResult? Card { get; set; }
+
+    [Parameter] public string? ActiveViewId { get; set; }
+
+    [Parameter] public EventCallback<CardActionRequest> OnAction { get; set; }
+
+    private async Task SwitchViewAsync(string viewId)
+    {
+        if (Card is null || string.IsNullOrWhiteSpace(viewId))
+        {
+            return;
+        }
+
+        await OnAction.InvokeAsync(new CardActionRequest(Card.Id, "switch_view", new Dictionary<string, string>
+        {
+            ["view"] = viewId,
+        }));
+    }
+
+    private Task OnViewSelectChangedAsync(ChangeEventArgs args) =>
+        SwitchViewAsync(args.Value?.ToString() ?? string.Empty);
+
+    private static bool IsViewSwitchCombobox(ExtensionBlockNode block)
+    {
+        if (!block.Properties.TryGetValue("widget", out var widget) ||
+            string.IsNullOrWhiteSpace(widget))
+        {
+            return false;
+        }
+
+        return string.Equals(widget, "combobox", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(widget, "select", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private Task InvokeActionAsync(string actionId) =>
+        Card is null || string.IsNullOrWhiteSpace(actionId)
+            ? Task.CompletedTask
+            : OnAction.InvokeAsync(new CardActionRequest(Card.Id, actionId, new Dictionary<string, string>()));
+
+    private static string ResolveAction(ExtensionBlockNode button)
+    {
+        if (button.Properties.TryGetValue("action", out var action) &&
+            !string.IsNullOrWhiteSpace(action))
+        {
+            return action;
+        }
+
+        if (button.Properties.TryGetValue("on", out var onLine) &&
+            onLine.Contains("run ", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = onLine.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return parts.Length >= 3 ? parts[^1] : string.Empty;
+        }
+
+        return string.Empty;
+    }
+}

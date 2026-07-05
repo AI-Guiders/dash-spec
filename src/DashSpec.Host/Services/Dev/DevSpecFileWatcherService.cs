@@ -21,14 +21,7 @@ public sealed class DevSpecFileWatcherService(
             return Task.CompletedTask;
         }
 
-        var specPath = DashSpecBootstrap.ResolveSpecPath(environment.ContentRootPath, relative);
-        if (!File.Exists(specPath))
-        {
-            logger.LogWarning("Dev file watcher: spec not found at {SpecPath}", specPath);
-            return Task.CompletedTask;
-        }
-
-        var specDir = Path.GetDirectoryName(specPath)!;
+        var specDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(hostContext.Catalog.FullPath)!, ".."));
         var watcher = new FileSystemWatcher(specDir)
         {
             IncludeSubdirectories = true,
@@ -65,6 +58,7 @@ public sealed class DevSpecFileWatcherService(
             !ext.Equals(".dashtransform", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".dashpalette", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".dashlayout", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashcatalog", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".sql", StringComparison.OrdinalIgnoreCase))
         {
             return;

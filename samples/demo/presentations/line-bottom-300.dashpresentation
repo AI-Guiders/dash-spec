@@ -1,6 +1,4 @@
 @presentation line_bottom_300
 
-presentation {
   legend = bottom
   height = 300
-}

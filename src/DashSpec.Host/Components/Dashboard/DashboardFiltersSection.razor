@@ -1,65 +1,57 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using DashSpec.Core.Model
+@using DashSpec.Core.Runtime
+@using DashSpec.Host.Components.Filters
 @using DashSpec.Host.Services.Presentation
 
 <section class="@SectionClass" aria-label="Фильтры дашборда">
     <div class="@GridClass" style="@GridStyle">
+        @{
+            var lastPlacementRow = 0;
+        }
         @foreach (var filterName in FilterNames)
         {
+            if (BarLayout && GroupBreakBefore?.Invoke(filterName) == true)
+            {
+                <div class="toolbar-filter-row-break" aria-hidden="true"></div>
+            }
+            else if (BarLayout &&
+                FilterPlacements.TryGetValue(filterName, out var placement) &&
+                lastPlacementRow > 0 &&
+                placement.Row > lastPlacementRow)
+            {
+                <div class="toolbar-filter-row-break" aria-hidden="true"></div>
+            }
+
+            if (BarLayout && FilterPlacements.TryGetValue(filterName, out var currentPlacement))
+            {
+                lastPlacementRow = currentPlacement.Row;
+            }
+
             var filter = FilterIndex[filterName];
-            var placementStyle = DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
-            if (filter.Kind is FilterKind.Date)
-            {
-                <div class="filter filter-date @(BarLayout ? "filter-inline" : null)" style="@placementStyle">
-                    @if (!BarLayout)
-                    {
-                        <span class="filter-label">@FilterUiHelpers.DisplayLabel(filter)</span>
-                        <span class="filter-scope">@FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards)</span>
-                    }
-                    <div class="date-range @(filter.IsDayWidget ? "date-range-day" : null)">
-                        @if (BarLayout)
-                        {
-                            <span class="filter-inline-label">@FilterUiHelpers.DisplayLabel(filter)</span>
-                        }
-                        @if (filter.IsDayWidget)
-                        {
-                            <input type="date"
-                                   aria-label="@FilterUiHelpers.DisplayLabel(filter)"
-                                   @bind="DateFrom[filter.Name]"
-                                   @bind:format="yyyy-MM-dd"
-                                   @bind:after="() => OnDayChanged.InvokeAsync(filter.Name)" />
-                        }
-                        else
-                        {
-                            <input type="date"
-                                   aria-label="@($"{filter.Name} from")"
-                                   @bind="DateFrom[filter.Name]"
-                                   @bind:format="yyyy-MM-dd"
-                                   @bind:after="() => OnScheduleApply.InvokeAsync()" />
-                            <span class="date-sep">—</span>
-                            <input type="date"
-                                   aria-label="@($"{filter.Name} to")"
-                                   @bind="DateTo[filter.Name]"
-                                   @bind:format="yyyy-MM-dd"
-                                   @bind:after="() => OnScheduleApply.InvokeAsync()" />
-                        }
-                    </div>
-                </div>
-            }
-            else if (filter.Kind is FilterKind.Field)
-            {
-                <div class="filter-field-cell" style="@placementStyle">
-                    <FieldMultiSelect Label="@FilterUiHelpers.DisplayLabel(filter)"
-                                      Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
-                                      Compact="@BarLayout"
-                                      Combobox="@filter.IsComboboxWidget"
-                                      NativeSelect="@filter.IsSelectWidget"
-                                      SingleSelect="@filter.IsSingleSelectField"
-                                      Options="GetFieldOptions(filter.Name)"
-                                      Selected="SelectedFields[filter.Name]"
-                                      SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))" />
-                </div>
-            }
+            var placementStyle = BarLayout
+                ? string.Empty
+                : DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
+            <div class="@FilterCellClass(filter)" style="@placementStyle">
+                <FilterWidgetHost Filter="filter"
+                                  Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
+                                  Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
+                                  Compact="@BarLayout"
+                                  Disabled="@Busy"
+                                  ShowDateLabel="true"
+                                  DateLabelClass="@(BarLayout ? "filter-inline-label" : "filter-label")"
+                                  Options="GetFieldOptions(filter.Name)"
+                                  Selected="@FilterUiHelpers.SelectedFieldValues(filter, SelectedFields)"
+                                  SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))"
+                                  DateFrom="DateFrom"
+                                  DateTo="DateTo"
+                                  FilterIndex="FilterIndex"
+                                  SelectedFields="SelectedFields"
+                                  OnDayChanged="OnDayChanged"
+                                  OnRangeChanged="OnScheduleApply"
+                                  TopValue="@FilterUiHelpers.ResolveTopValue(filter, TopLimits)"
+                                  TopValueChanged="value => OnTopChangedForFilter(filter, value)" />
+            </div>
         }
     </div>
     @if (!AutoApply)
@@ -97,6 +89,7 @@
     [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
     [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
@@ -111,4 +104,18 @@
     [Parameter] public EventCallback OnScheduleApply { get; set; }
     [Parameter] public EventCallback<string> OnDayChanged { get; set; }
     [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
+    [Parameter] public EventCallback<(string Name, int Value)> OnTopChanged { get; set; }
+    [Parameter] public Func<string, bool>? GroupBreakBefore { get; set; }
+
+    private string FilterCellClass(FilterDefinition filter) =>
+        BarLayout
+            ? filter.Kind is FilterKind.Date && !filter.IsDayWidget
+                ? "toolbar-filter-cell toolbar-filter-date"
+                : "toolbar-filter-cell"
+            : filter.Kind is FilterKind.Field ? "filter-field-cell" : string.Empty;
+
+    private Task OnTopChangedForFilter(FilterDefinition filter, int value) =>
+        filter.Kind is FilterKind.Top
+            ? OnTopChanged.InvokeAsync((filter.Name, value))
+            : Task.CompletedTask;
 }
