@@ -46,6 +46,13 @@ internal static class DashSpecLexer
                 continue;
             }
 
+            if (text[i] is '!')
+            {
+                tokens.Add(new Token(TokenKind.Bang, "!", start, 1));
+                i++;
+                continue;
+            }
+
             if (text[i] is '{')
             {
                 tokens.Add(new Token(TokenKind.LBrace, "{", start, 1));
@@ -167,6 +174,20 @@ internal static class DashSpecLexer
             if (text[i] is ']')
             {
                 tokens.Add(new Token(TokenKind.RBracket, "]", start, 1));
+                i++;
+                continue;
+            }
+
+            if (text[i] is '(')
+            {
+                tokens.Add(new Token(TokenKind.LParen, "(", start, 1));
+                i++;
+                continue;
+            }
+
+            if (text[i] is ')')
+            {
+                tokens.Add(new Token(TokenKind.RParen, ")", start, 1));
                 i++;
                 continue;
             }

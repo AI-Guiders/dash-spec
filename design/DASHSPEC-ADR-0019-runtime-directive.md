@@ -5,7 +5,7 @@
 | **Status** | Accepted · v0.6 |
 | **Date** | 2026-07-02 |
 | **Supersedes** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md) § «`@config`» (имя) |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) |
+| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) (блочный `runtime { manifest = … }` — канон surface) |
 
 ## Context
 
@@ -15,21 +15,19 @@ PlantUML-подобный authoring: `.dashspec` + файловые include — 
 
 ## Decision
 
-### `@runtime` вместо `@config`
+### `@runtime` → `runtime { manifest = … }`
 
 ```text
-@runtime "demo.toml"
-@sqldialect tsql
-@palette "palettes/demo-apps.dashpalette"
-
-@dashboard demo_soak
-dashboard "…" { … }
+runtime {
+  manifest = "demo.toml"
+}
 ```
 
-| Директива | Назначение |
-|-----------|------------|
-| `@runtime "…"` | **обязателен** — путь к TOML manifest (относительно `.dashspec`): `[connectors.*]`, `[plugins]`, `[[plugins.load]]` |
-| `@config "…"` | **deprecated alias** для `@runtime` (парсится, одна директива на файл) |
+| Ключ | Назначение |
+|------|------------|
+| `manifest` | **обязателен** в `runtime { }` — путь к TOML (относительно `.dashspec`): `[connectors.*]`, `[plugins]`, `[[plugins.load]]` |
+
+Surface `@runtime "…"` и `@config "…"` **удалены** — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md).
 
 Содержимое manifest **не** DashSpec DSL — только infra. Секреты: `*.local.toml`, env `Connectors__*`.
 

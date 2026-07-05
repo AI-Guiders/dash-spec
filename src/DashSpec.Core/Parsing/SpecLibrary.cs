@@ -113,6 +113,117 @@ public sealed class SpecLibrary
         return merged;
     }
 
+    public static SpecLibrary FromModuleDefinitions(IReadOnlyDictionary<string, ModuleDiagramDefinition> definitions)
+    {
+        ArgumentNullException.ThrowIfNull(definitions);
+
+        var library = new SpecLibrary();
+        foreach (var (id, definition) in definitions)
+        {
+            library.ImportModuleDefinition(id, definition);
+        }
+
+        return library;
+    }
+
+    public void ImportModuleDefinition(string id, ModuleDiagramDefinition definition)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(definition);
+
+        var diagram = definition.Diagram;
+        if (string.IsNullOrWhiteSpace(diagram.Kind))
+        {
+            throw new DashSpecParseException($"Module diagram '{id}' has no chart kind.");
+        }
+
+        diagram.Properties.TryGetValue("render", out var render);
+        var diagramProps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in diagram.Properties)
+        {
+            if (!string.Equals(key, "render", StringComparison.OrdinalIgnoreCase))
+            {
+                diagramProps[key] = value;
+            }
+        }
+
+        string? presentationPreset = null;
+        if (definition.Presentation is { } presentation)
+        {
+            if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
+            {
+                presentationPreset = presentation.UsePreset;
+                EnsureStdlibPresentation(presentation.UsePreset);
+            }
+
+            if (presentation.Properties.Count > 0)
+            {
+                var inlineId = $"{id}__presentation";
+                _presentations[inlineId] = new Dictionary<string, string>(
+                    presentation.Properties,
+                    StringComparer.OrdinalIgnoreCase);
+                presentationPreset ??= inlineId;
+            }
+        }
+
+        string? seriesTransformPreset = null;
+        if (definition.SeriesTransform is { } seriesTransform)
+        {
+            if (!string.IsNullOrWhiteSpace(seriesTransform.UsePreset))
+            {
+                seriesTransformPreset = seriesTransform.UsePreset;
+            }
+            else if (seriesTransform.Max is int max && max > 0)
+            {
+                seriesTransformPreset = $"{id}__series";
+                _seriesTransforms[seriesTransformPreset] = new SeriesTransformPreset(
+                    max,
+                    seriesTransform.OtherLabel ?? "Other");
+            }
+        }
+
+        if (_diagrams.ContainsKey(id))
+        {
+            throw new DashSpecParseException($"Duplicate module diagram preset '{id}'.");
+        }
+
+        _diagrams[id] = new DiagramPreset(
+            diagram.Kind,
+            string.IsNullOrWhiteSpace(render) ? null : render,
+            presentationPreset,
+            seriesTransformPreset,
+            diagramProps);
+    }
+
+    private void EnsureStdlibPresentation(string name)
+    {
+        if (_presentations.ContainsKey(name))
+        {
+            return;
+        }
+
+        var fragment = SpecIncludeResolver.Load("presentation", $"<presentation/{name}>", ".");
+        RegisterPresentationBlock(name, fragment.Presentation);
+    }
+
+    private void RegisterPresentationBlock(string name, PresentationBlock? block)
+    {
+        if (block is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(block.UsePreset))
+        {
+            EnsureStdlibPresentation(block.UsePreset);
+        }
+
+        if (block.Properties.Count > 0)
+        {
+            _presentations[name] = new Dictionary<string, string>(block.Properties, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
     private void ImportFrom(SpecLibrary other)
     {
         foreach (var (key, value) in other._palettes)

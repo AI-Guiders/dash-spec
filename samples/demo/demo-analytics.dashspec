@@ -1,31 +1,44 @@
-@runtime "demo.toml"
-@sqldialect tsql
-@palette "palettes/demo-apps.dashpalette"
-
-@tab analytics
-
-palette demo_apps
-
-card period_peak_by_app as "Peak by app (period)" {
-  filters { period_grain, period_start }
-  include diagram "diagrams/period-peak-by-app-bar.dashdiagram"
-  datasource view demo.v_peak_concurrent_by_period
-  bind period_grain, period_start, app_name
-}
-
-card peak_apps_heatmap as "**Peak apps** per user" {
-  include diagram "diagrams/peak-apps-heatmap.dashdiagram"
-  datasource view demo.v_daily_peak_concurrent_apps_per_user
-  bind usage_date, user_name
-  legend {
-    min = "min apps"
-    max = "max **{max}**"
+@tab analytics {
+  runtime {
+    manifest = "demo.toml"
   }
-}
 
-card idle_table as "Idle minutes (user × app)" {
-  filters { idle_top }
-  include diagram "diagrams/idle-table.dashdiagram"
-  datasource view demo.v_daily_idle_minutes_by_user_app
-  bind usage_date, user_name, app_name
+  configuration {
+    sqldialect = tsql
+    palette = "palettes/demo-apps.dashpalette"
+  }
+
+  !include "diagrams/period-peak-by-app-bar.dashdiagram"
+  !include "diagrams/peak-apps-heatmap.dashdiagram"
+  !include "diagrams/idle-table.dashdiagram"
+
+  wiring {
+    use palette demo_apps
+  }
+
+  report "Analytics" {
+    card period_peak_by_app as "Peak by app (period)" {
+      filters { period_grain, period_start }
+      diagram demo_period_peak_by_app_bar
+      datasource view demo.v_peak_concurrent_by_period
+      bind period_grain, period_start, app_name
+    }
+
+    card peak_apps_heatmap as "**Peak apps** per user" {
+      diagram demo_peak_apps_heatmap
+      datasource view demo.v_daily_peak_concurrent_apps_per_user
+      bind usage_date, user_name
+      legend {
+        min = "min apps"
+        max = "max **{max}**"
+      }
+    }
+
+    card idle_table as "Idle minutes (user × app)" {
+      filters { idle_top }
+      diagram demo_idle_table
+      datasource view demo.v_daily_idle_minutes_by_user_app
+      bind usage_date, user_name, app_name
+    }
+  }
 }

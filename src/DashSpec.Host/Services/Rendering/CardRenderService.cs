@@ -6,6 +6,7 @@ using DashSpec.Core.Runtime;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
+using DashSpec.Host.Services.Presentation;
 
 namespace DashSpec.Host.Services.Rendering;
 
@@ -35,13 +36,16 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
             ? CardChromeResolver.ResolveChartPresentation(effective, library)
             : null;
-        var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart
+        var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix
             ? CardChromeResolver.ResolveSeriesTransform(effective, library)
             : null;
         var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
             ? MatrixPresentation.FromCard(effective, library)
             : null;
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+        var interiorPlacements = card.InteriorBoard is null
+            ? null
+            : DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
 
         return kind.DataFamily switch
         {
@@ -54,9 +58,13 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     renderPluginId,
                     Chart: ChartDataBuilder.BuildLineOrBar(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
                     Placement: card.Placement,
+                    InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
                     BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
+                    LocalFilters: card.LocalFilters,
+                    ClickBehaviour: card.ClickBehaviour,
+                    ExtensionBlocks: card.ExtensionBlocks,
+                    LocalFiltersManualApply: card.LocalFiltersManualApply),
             DiagramDataFamily.Table =>
                 new CardRenderResult(
                     card.Id,
@@ -66,8 +74,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     renderPluginId,
                     Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
                     Placement: card.Placement,
+                    InteriorPlacements: interiorPlacements,
                     BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
+                    LocalFilters: card.LocalFilters,
+                    ClickBehaviour: card.ClickBehaviour,
+                    ExtensionBlocks: card.ExtensionBlocks,
+                    LocalFiltersManualApply: card.LocalFiltersManualApply),
             DiagramDataFamily.Scalar =>
                 new CardRenderResult(
                     card.Id,
@@ -77,8 +89,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     renderPluginId,
                     Number: FormatNumber(rows, effective.Diagram),
                     Placement: card.Placement,
+                    InteriorPlacements: interiorPlacements,
                     BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
+                    LocalFilters: card.LocalFilters,
+                    ClickBehaviour: card.ClickBehaviour,
+                    ExtensionBlocks: card.ExtensionBlocks,
+                    LocalFiltersManualApply: card.LocalFiltersManualApply),
             DiagramDataFamily.Matrix =>
                 new CardRenderResult(
                     card.Id,
@@ -86,11 +102,15 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram),
+                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform),
                     Placement: card.Placement,
+                    InteriorPlacements: interiorPlacements,
                     MatrixPresentation: matrixPresentation,
                     BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters),
+                    LocalFilters: card.LocalFilters,
+                    ClickBehaviour: card.ClickBehaviour,
+                    ExtensionBlocks: card.ExtensionBlocks,
+                    LocalFiltersManualApply: card.LocalFiltersManualApply),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
     }

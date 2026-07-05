@@ -28,7 +28,7 @@ internal static class FilterParser
             : null;
         var layoutRef = ParserUtilities.TryReadLayoutRef(reader);
 
-        var props = ParseFilterBody(reader, kind, name, columnFromOn is not null);
+        var props = ParseFilterBody(reader, kind, name, columnFromOn is not null, out var grainLabels);
 
         var columnReference = columnFromOn;
         if (columnReference is null)
@@ -57,7 +57,8 @@ internal static class FilterParser
             maxValue,
             grainFilterName,
             singleSelect,
-            layoutRef);
+            layoutRef,
+            grainLabels);
     }
 
     private static bool ResolveSingleSelect(string? widget, IReadOnlyDictionary<string, string> props)
@@ -107,16 +108,28 @@ internal static class FilterParser
         TokenReader reader,
         FilterKind kind,
         string name,
-        bool columnProvidedByOn)
+        bool columnProvidedByOn,
+        out IReadOnlyDictionary<string, string>? grainLabels)
     {
+        grainLabels = null;
         if (reader.RawKind is TokenKind.LBrace)
         {
-            return ParsePropertyBlock(reader, kind, name, columnProvidedByOn);
+            return ParsePropertyBlock(reader, kind, name, columnProvidedByOn, out grainLabels);
         }
 
         if (HasInlineProperties(reader))
         {
-            return ParseInlineProperties(reader, kind);
+            var props = ParseInlineProperties(reader, kind);
+            if (reader.IsAt(TokenKind.LBrace))
+            {
+                var blockProps = ParsePropertyBlock(reader, kind, name, columnProvidedByOn, out grainLabels);
+                foreach (var (key, value) in blockProps)
+                {
+                    props[key] = value;
+                }
+            }
+
+            return props;
         }
 
         if (reader.IsOnNewline())
@@ -124,7 +137,7 @@ internal static class FilterParser
             reader.SkipNewlines();
             if (reader.IsAt(TokenKind.LBrace))
             {
-                return ParsePropertyBlock(reader, kind, name, columnProvidedByOn);
+                return ParsePropertyBlock(reader, kind, name, columnProvidedByOn, out grainLabels);
             }
         }
 
@@ -179,8 +192,10 @@ internal static class FilterParser
         TokenReader reader,
         FilterKind kind,
         string name,
-        bool columnProvidedByOn)
+        bool columnProvidedByOn,
+        out IReadOnlyDictionary<string, string>? grainLabels)
     {
+        grainLabels = null;
         var schema = kind switch
         {
             FilterKind.Date => PropertySchemas.FilterDate,
@@ -190,15 +205,85 @@ internal static class FilterParser
         };
 
         var blockName = $"filter {kind} {name}";
-        var props = PropertyBlockParser.Parse(reader, schema, blockName);
-        if (columnProvidedByOn)
+        reader.Expect(TokenKind.LBrace);
+        reader.SkipNewlines();
+
+        var specs = schema.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
         {
-            props.Remove("column");
-            props.Remove("column_as");
+            reader.SkipNewlines();
+            if (reader.IsAt(TokenKind.RBrace))
+            {
+                break;
+            }
+
+            while (!reader.IsAt(TokenKind.Newline) && !reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+            {
+                var key = reader.ReadPropertyKey(allowQuoted: false);
+                if (string.Equals(key, "labels", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (kind is not FilterKind.Date)
+                    {
+                        throw new DashSpecParseException(
+                            $"{blockName}: labels {{ }} is allowed only on date filters.");
+                    }
+
+                    if (grainLabels is not null)
+                    {
+                        throw new DashSpecParseException($"{blockName}: duplicate labels block.");
+                    }
+
+                    grainLabels = PropertyBlockParser.ParseStringMapBlock(reader, $"{blockName} labels");
+                    continue;
+                }
+
+                if (!specs.TryGetValue(key, out var spec))
+                {
+                    throw new DashSpecParseException($"Unknown property '{key}' in {blockName} block.");
+                }
+
+                reader.Expect(TokenKind.Eq);
+                if (spec.ValueType is PropertyValueType.ColumnBinding)
+                {
+                    var binding = reader.ReadColumnBinding();
+                    values[key] = binding.Column;
+                    if (binding.Alias is not null)
+                    {
+                        values[$"{key}_as"] = binding.Alias;
+                    }
+                }
+                else
+                {
+                    values[key] = ReadTypedValue(reader, spec.ValueType);
+                }
+            }
+
+            reader.SkipNewlines();
         }
 
-        return props;
+        reader.Expect(TokenKind.RBrace);
+        if (columnProvidedByOn)
+        {
+            values.Remove("column");
+            values.Remove("column_as");
+        }
+
+        return values;
     }
+
+    private static string ReadTypedValue(TokenReader reader, PropertyValueType type) =>
+        type switch
+        {
+            PropertyValueType.Scalar => reader.ReadScalarValue(),
+            PropertyValueType.String => reader.ReadString(),
+            PropertyValueType.DateRange => reader.ReadDateDefaultValue(),
+            PropertyValueType.QualifiedName => reader.ReadQualifiedName(),
+            PropertyValueType.CommaList => reader.ReadCommaSeparatedValues(),
+            PropertyValueType.RestOfLine => reader.ReadRestOfLine(),
+            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        };
 
     private static string ResolveFilterLabel(
         string name,

@@ -1,0 +1,25 @@
+@namespace DashSpec.Host.Components.Dashboard.Viz
+@using DashSpec.Core.Model
+@using DashSpec.Host.Services.Models
+
+@if (Context.Card.Matrix is not null)
+{
+    <HeatmapView Payload="Context.Card.Matrix"
+                 HeightPx="@(Context.Card.MatrixPresentation?.HeightPx ?? 320)"
+                 XAxisLabel="@Context.Card.MatrixPresentation?.XLabel"
+                 YAxisLabel="@Context.Card.MatrixPresentation?.YLabel"
+                 ValueLabel="@Context.Card.MatrixPresentation?.ValueLabel"
+                 TooltipLabel="@Context.Card.MatrixPresentation?.TooltipLabel"
+                 TooltipFormat="@(Context.Card.MatrixPresentation?.TooltipFormat ?? TooltipFormat.Inline)"
+                 TooltipSplit="@(Context.Card.MatrixPresentation?.TooltipSplit ?? ", ")"
+                 XFormat="@(Context.Card.MatrixPresentation?.XFormat ?? "date.short")"
+                 YFormat="@(Context.Card.MatrixPresentation?.YFormat ?? "user.short")"
+                 ColorScale="@(Context.Card.MatrixPresentation?.ColorScale ?? "heat")"
+                 LegendMinText="@Context.Card.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
+                 LegendMaxText="@Context.Card.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                 OnCellSelected="Context.OnHeatmapCellSelected" />
+}
+
+@code {
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+}

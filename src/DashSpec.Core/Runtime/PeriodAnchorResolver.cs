@@ -1,6 +1,6 @@
 namespace DashSpec.Core.Runtime;
 
-internal static class PeriodAnchorResolver
+public static class PeriodAnchorResolver
 {
     public static DateOnly ResolveAnchor(DateOnly selected, string? grain) =>
         grain?.Trim().ToLowerInvariant() switch

@@ -15,16 +15,15 @@ public class LayoutBoardTests
     public void Parse_card_ref_and_tab_layout_board()
     {
         var doc = DashSpecParser.Parse("""
-            @tab demo
-
-            tab demo as "Demo" {
-              layout {
+@tab demo {
+  wiring {
+    layout board {
                 [ Q E ]
                 [ T F ]
               }
-            }
-
-            card peak_by_app as "Peak" ref Q {
+  }
+  report "Demo" {
+                        card peak_by_app as "Peak" ref Q {
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
@@ -40,7 +39,9 @@ public class LayoutBoardTests
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
-            """);
+  }
+}
+""");
 
         Assert.Equal("Q", doc.Cards[0].LayoutRef);
         Assert.NotNull(doc.Tabs[0].LayoutBoard);
@@ -52,16 +53,15 @@ public class LayoutBoardTests
     public void TabLayoutBoardResolver_places_2x2_grid()
     {
         var doc = DashSpecParser.Parse("""
-            @tab demo
-
-            tab demo {
-              layout {
+@tab demo {
+  wiring {
+    layout board {
                 [ Q E ]
                 [ T F ]
               }
-            }
-
-            card a as "A" ref Q {
+  }
+  report "demo" {
+                        card a as "A" ref Q {
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
@@ -77,7 +77,9 @@ public class LayoutBoardTests
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
-            """);
+  }
+}
+""");
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
 
@@ -91,16 +93,15 @@ public class LayoutBoardTests
     public void TabLayoutBoardResolver_single_cell_row_is_full_width()
     {
         var doc = DashSpecParser.Parse("""
-            @tab demo
-
-            tab demo {
-              layout {
+@tab demo {
+  wiring {
+    layout board {
                 [ Q W ]
                 [ E ]
               }
-            }
-
-            card a as "A" ref Q {
+  }
+  report "demo" {
+                        card a as "A" ref Q {
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
@@ -112,7 +113,9 @@ public class LayoutBoardTests
               diagram heatmap { x = a y = b value = c }
               datasource view dbo.t
             }
-            """);
+  }
+}
+""");
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
 
@@ -126,17 +129,16 @@ public class LayoutBoardTests
     public void TabLayoutBoardResolver_uneven_rows_distribute_per_row()
     {
         var doc = DashSpecParser.Parse("""
-            @tab demo
-
-            tab demo {
-              layout {
+@tab demo {
+  wiring {
+    layout board {
                 [ Q E ]
                 [ R T Y ]
                 [ F ]
               }
-            }
-
-            card q as "Q" ref Q {
+  }
+  report "demo" {
+                        card q as "Q" ref Q {
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
@@ -160,7 +162,9 @@ public class LayoutBoardTests
               diagram bar { x = a y = b }
               datasource view dbo.t
             }
-            """);
+  }
+}
+""");
 
         Assert.Equal(3, doc.Tabs[0].LayoutBoard!.RowCount);
         Assert.Equal(3, doc.Tabs[0].LayoutBoard.ColumnCount);
@@ -184,15 +188,16 @@ public class LayoutBoardTests
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
                 @layout g
+                scope tab
 
                 [ Q E ]
                 [ T F ]
                 """);
 
             var doc = DashSpecParser.Parse("""
-                @tab demo
-
-                include layout "layouts/grid.dashlayout"
+@tab demo {
+  report "demo" {
+                                include layout "layouts/grid.dashlayout"
 
                 card a as "A" ref Q {
                   diagram bar { x = a y = b }
@@ -210,7 +215,9 @@ public class LayoutBoardTests
                   diagram bar { x = a y = b }
                   datasource view dbo.t
                 }
-                """, dir);
+  }
+}
+""", dir);
 
             Assert.NotNull(doc.Tabs[0].LayoutBoard);
             Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
@@ -232,25 +239,26 @@ public class LayoutBoardTests
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
                 @layout g
+                scope tab
                 [ Q ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-                @tab demo
-
-                include layout "layouts/grid.dashlayout"
-
-                tab demo {
-                  layout { [ Q ] }
-                }
-
-                card a as "A" ref Q {
-                  diagram bar { x = a y = b }
-                  datasource view dbo.t
+                @tab demo {
+                  !include "layouts/grid.dashlayout"
+                  wiring {
+                    layout board { [ Q ] }
+                  }
+                  report "demo" {
+                    card a as "A" ref Q {
+                      diagram bar { x = a y = b }
+                      datasource view dbo.t
+                    }
+                  }
                 }
                 """, dir));
 
-            Assert.Contains("twice", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("layout board", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -262,8 +270,8 @@ public class LayoutBoardTests
     public void Parse_filter_ref_and_toolbar_layout_board()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date on usage_date as "Date" ref D default -7d..today
               filter field app_name on dbo.t.app as "App" ref A widget combobox
               filter field user_name on dbo.t.user as "User" ref U widget combobox
@@ -277,7 +285,8 @@ public class LayoutBoardTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal("D", doc.Filters[0].LayoutRef);
         Assert.NotNull(doc.ToolbarBoard);
@@ -289,8 +298,8 @@ public class LayoutBoardTests
     public void ToolbarLayoutCompactor_places_board_on_grid()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               layout grid { columns = 12 }
               filter date d1 on c1 as "D1" ref D default -7d..today
               filter field f1 on c2 as "F1" ref A widget combobox
@@ -305,7 +314,8 @@ public class LayoutBoardTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var layout = ToolbarLayoutCompactor.Compact(doc);
 
@@ -324,21 +334,23 @@ public class LayoutBoardTests
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
                 @layout tb
+                scope toolbar
 
                 [ D A ]
                 [ U ]
                 """);
             File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
-                @dashboard t
-                dashboard "T" {
-                  include toolbar "layouts/tb.dashlayout"
-                  filter date d1 on c1 as "D1" ref D default -7d..today
-                  filter field f1 on c2 as "F1" ref A widget combobox
-                  filter field f2 on c3 as "F2" ref U widget combobox
-                  card c as "C" {
-                    bind d1
-                    diagram number { value = n }
-                    datasource view dbo.t
+                @dashboard t {
+                  !include "layouts/tb.dashlayout"
+                  report "T" {
+                    filter date d1 on c1 as "D1" ref D default -7d..today
+                    filter field f1 on c2 as "F1" ref A widget combobox
+                    filter field f2 on c3 as "F2" ref U widget combobox
+                    card c as "C" {
+                      bind d1
+                      diagram number { value = n }
+                      datasource view dbo.t
+                    }
                   }
                 }
                 """);
@@ -358,8 +370,8 @@ public class LayoutBoardTests
     public void Parse_toolbar_board_rejects_flat_list_combo()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date d1 on c1 as "D1" ref D default -7d..today
               toolbar { d1 }
               toolbar { [ D ] }
@@ -369,8 +381,92 @@ public class LayoutBoardTests
                 datasource view dbo.t
               }
             }
-            """));
+            }
+"""));
 
         Assert.Contains("cannot combine a layout board with a flat filter list", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_layout_module_requires_scope()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            LayoutModuleParser.ParseLayoutFile("""
+                @layout g
+
+                [ Q ]
+                """));
+
+        Assert.Contains("scope toolbar|tab|card", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_include_tab_layout_rejects_toolbar_scope()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
+                @layout tb
+                scope toolbar
+                [ D ]
+                """);
+
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+                @tab demo {
+                  !include "layouts/tb.dashlayout"
+                  report "demo" {
+                    card a as "A" ref D {
+                      diagram bar { x = a y = b }
+                      datasource view dbo.t
+                    }
+                  }
+                }
+                """, dir));
+
+            Assert.Contains("scope toolbar", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("tab", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Parse_include_toolbar_rejects_tab_scope()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+                @layout g
+                scope tab
+                [ Q ]
+                """);
+
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+                @dashboard t {
+                  !include "layouts/grid.dashlayout"
+                  report "T" {
+                    filter date d1 on c1 as "D1" ref Q default -7d..today
+                    card c as "C" {
+                      bind d1
+                      diagram number { value = n }
+                      datasource view dbo.t
+                    }
+                  }
+                }
+                """, dir));
+
+            Assert.Contains("scope tab", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("toolbar", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 }

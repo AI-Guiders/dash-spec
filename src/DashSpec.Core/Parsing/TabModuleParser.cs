@@ -8,7 +8,8 @@ internal sealed record TabModuleContent(
     string? Label,
     IReadOnlyList<FilterDefinition> Filters,
     IReadOnlyList<CardDefinition> Cards,
-    LayoutBoardDefinition? LayoutBoard = null);
+    LayoutBoardDefinition? LayoutBoard = null,
+    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null);
 
 internal static class TabModuleParser
 {

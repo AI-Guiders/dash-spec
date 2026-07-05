@@ -17,13 +17,10 @@ public sealed record CardRenderResult(
     IReadOnlyList<string>? BoundFilters = null,
     IReadOnlyList<string>? LocalFilters = null,
     PlacementDefinition? Placement = null,
+    IReadOnlyDictionary<string, PlacementDefinition>? InteriorPlacements = null,
     ChartPresentation? ChartPresentation = null,
     MatrixPayload? Matrix = null,
-    MatrixPresentation? MatrixPresentation = null);
-
-public sealed class DashboardHostOptions
-{
-    public const string SectionName = "Dashboard";
-
-    public string SpecPath { get; set; } = string.Empty;
-}
+    MatrixPresentation? MatrixPresentation = null,
+    CardClickBehaviour? ClickBehaviour = null,
+    IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
+    bool LocalFiltersManualApply = false);

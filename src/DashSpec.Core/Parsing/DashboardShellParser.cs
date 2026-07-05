@@ -45,6 +45,12 @@ internal sealed class DashboardShellContext
 
     public string? TabModuleLabel { get; set; }
 
+    public ModuleIncludeState Includes { get; init; } = new();
+
+    public DashSpecParseOptions ParseOptions { get; init; } = DashSpecParseOptions.Default;
+
+    public ModuleExtensionsDefinition ModuleExtensions { get; set; } = ModuleExtensionsDefinition.Empty;
+
     public IReadOnlyList<FilterDefinition> CardBindValidationFilters =>
         MergeFilterScopes(ParentFilters, ShellFilters, TabLocalFilters, Filters);
 
@@ -88,7 +94,19 @@ internal sealed class DashboardShellContext
             throw new DashSpecParseException($"{context} declares more than one toolbar layout board.");
         }
 
+        LayoutModuleScopeValidator.EnsureMatchesIncludeSite(board, LayoutScope.Toolbar, context);
         ToolbarBoard = board;
+    }
+
+    public void AssignTabLayoutBoard(LayoutBoardDefinition board, string context)
+    {
+        if (LayoutBoard is not null)
+        {
+            throw new DashSpecParseException($"{context} declares more than one card layout board.");
+        }
+
+        LayoutModuleScopeValidator.EnsureMatchesIncludeSite(board, LayoutScope.Tab, context);
+        LayoutBoard = board;
     }
 }
 
@@ -180,7 +198,12 @@ internal static class DashboardShellParser
 
         if (reader.TryKeyword("card"))
         {
-            ctx.Cards.Add(CardParser.Parse(reader, ctx.CardBindValidationFilters, ctx.SpecDirectory));
+            ctx.Cards.Add(CardParser.Parse(
+                reader,
+                ctx.CardBindValidationFilters,
+                ctx.SpecDirectory,
+                ctx.Includes,
+                ctx.ParseOptions));
             reader.SkipNewlines();
             return true;
         }
@@ -190,11 +213,19 @@ internal static class DashboardShellParser
 
     private static void ParseFiltersChrome(TokenReader reader, DashboardShellContext ctx)
     {
-        var assign = ctx.Mode is DashboardShellMode.DashboardBody or DashboardShellMode.TabModuleStandalone;
+        ParseFiltersChrome(reader, ctx, assign: ctx.Mode is DashboardShellMode.DashboardBody or DashboardShellMode.TabModuleStandalone);
+    }
+
+    internal static void ParseFiltersChromePublic(TokenReader reader, DashboardShellContext ctx, bool assign) =>
+        ParseFiltersChrome(reader, ctx, assign);
+
+    private static void ParseFiltersChrome(TokenReader reader, DashboardShellContext ctx, bool assign)
+    {
+        var assignChrome = assign;
 
         if (reader.TryKeyword("dashboard"))
         {
-            if (assign)
+            if (assignChrome)
             {
                 ToolbarPlacementParser.Parse(reader, ctx, "filters dashboard");
             }
@@ -209,7 +240,7 @@ internal static class DashboardShellParser
         if (reader.TryKeyword("chrome"))
         {
             var chrome = FiltersChromeParser.Parse(reader);
-            if (assign)
+            if (assignChrome)
             {
                 ctx.FiltersChrome = chrome;
             }
@@ -217,7 +248,7 @@ internal static class DashboardShellParser
             return;
         }
 
-        if (assign)
+        if (assignChrome)
         {
             ToolbarPlacementParser.Parse(reader, ctx, "toolbar");
         }
@@ -328,7 +359,7 @@ internal static class DashboardShellParser
             throw new DashSpecParseException("Tab module declares more than one layout board.");
         }
 
-        ctx.LayoutBoard = LayoutModuleParser.Load(reference, ctx.SpecDirectory);
+        ctx.AssignTabLayoutBoard(LayoutModuleParser.Load(reference, ctx.SpecDirectory), "include layout");
         reader.SkipNewlines();
         return true;
     }

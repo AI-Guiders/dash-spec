@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "DashSpec",
+  "classifications": [ "DashSpec", "Plugin" ],
+  "identity": "DashSpec.ExtensionPlugin",
+  "name": "DashSpec extension plugin",
+  "shortName": "dashspec-extension",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "MyProduct.DashSpec",
+  "preferNameDirectory": true
+}

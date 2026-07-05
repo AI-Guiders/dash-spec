@@ -2,12 +2,12 @@
 
 include presentation "../presentations/line-right-360.dashpresentation"
 
-transform series {
+series {
   max = 6
   other = "Other"
 }
 
-diagram line {
+line {
   render = "chartjs"
   x = bucket_start_utc
   x_format = time.short

@@ -1,4 +1,23 @@
-# Host bootstrap — только где лежит .dashspec. Runtime manifest — @runtime в spec.
+# Host bootstrap — [dashboard] catalog_path → .dashcatalog whitelist.
 
 [dashboard]
-spec_path = "../../samples/demo/demo-soak.dashspec"
+catalog_path = "../../samples/demo/demo-catalog.dashcatalog"
+
+[plugins]
+default_connector_id = "sqlserver"
+active_bundle = "standard"
+
+[[plugins.bundles]]
+name = "standard"
+plugins = ["diagram_builtin", "on_click_default", "viz_builtin", "filter_widgets_builtin", "card_export", "card_views", "dashspec_diagnostics"]
+
+[[plugins.load]]
+id = "sqlserver"
+assembly = "DashSpec.Connector.SqlServer.dll"
+tier = "core"
+is_connector = true
+
+[[plugins.load]]
+id = "card_export"
+assembly = "DashSpec.Plugin.Export.dll"
+tier = "extended"

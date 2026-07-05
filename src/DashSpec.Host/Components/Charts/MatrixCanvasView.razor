@@ -1,0 +1,306 @@
+@namespace DashSpec.Host.Components.Charts
+@using DashSpec.Core.Model
+@using DashSpec.Core.Runtime
+@using Microsoft.JSInterop
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+@if (Payload is null || Payload.XLabels.Count == 0 || Payload.YLabels.Count == 0)
+{
+    <p class="empty-state">Нет данных за выбранный период</p>
+}
+else if (MatrixRenderLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
+{
+    <div class="heatmap-oversized" role="alert">
+        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @MatrixRenderLimits.MaxCells).</p>
+        <p class="muted">Сузьте фильтры, используйте top-N или перейдите на detail tab / table.</p>
+    </div>
+}
+else
+{
+    <div id="@HostId"
+         class="matrix-canvas-host"
+         style="@HostStyle"
+         data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
+        <div class="matrix-canvas-scroll">
+            <div class="matrix-canvas-layout">
+                <div class="matrix-canvas-corner">
+                    @if (!string.IsNullOrWhiteSpace(YAxisLabel))
+                    {
+                        <span class="heatmap-axis-y"><RichTextView Text="@YAxisLabel" /></span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(XAxisLabel))
+                    {
+                        <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
+                    }
+                </div>
+                <div class="matrix-canvas-x-labels">
+                    @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
+                    {
+                        var show = ShouldShowXLabel(xi);
+                        <span class="matrix-canvas-x-label @(show ? null : "matrix-canvas-x-label-sparse")"
+                              title="@FormatXLabel(Payload.XLabels[xi])">
+                            @(show ? FormatXLabel(Payload.XLabels[xi]) : "")
+                        </span>
+                    }
+                </div>
+                <div class="matrix-canvas-y-labels">
+                    @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
+                    {
+                        var yLabel = Payload.YLabels[yi];
+                        <div class="matrix-canvas-y-label" title="@yLabel">@FormatYLabel(yLabel)</div>
+                    }
+                </div>
+                <canvas id="@CanvasId"
+                        class="matrix-canvas"
+                        width="1"
+                        height="1"
+                        @onclick="HandleCanvasClickAsync"
+                        @onmousemove="HandleCanvasMoveAsync"
+                        @onmouseleave="ClearHover"></canvas>
+            </div>
+        </div>
+        @if (_hoverCell is { } hover && hover.Value is not null)
+        {
+            <div class="heatmap-hover-detail" role="status">
+                <p class="heatmap-hover-detail-head">@PopoverHeader(hover.Yi, hover.Xi, hover.Value)</p>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
+        {
+            <div class="heatmap-legend">
+                @if (!string.IsNullOrWhiteSpace(LegendMinText))
+                {
+                    <span><RichTextView Text="@LegendMinText" /></span>
+                }
+                <span class="heatmap-legend-bar" aria-hidden="true"></span>
+                @if (!string.IsNullOrWhiteSpace(LegendMaxText))
+                {
+                    <span><RichTextView Text="@LegendMaxText" /></span>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public MatrixPayload Payload { get; set; } = default!;
+
+    [Parameter, EditorRequired] public string HostId { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string CanvasId { get; set; } = string.Empty;
+
+    [Parameter] public int HeightPx { get; set; } = 320;
+
+    [Parameter] public string? XAxisLabel { get; set; }
+
+    [Parameter] public string? YAxisLabel { get; set; }
+
+    [Parameter] public string? ValueLabel { get; set; }
+
+    [Parameter] public string XFormat { get; set; } = "date.short";
+
+    [Parameter] public string YFormat { get; set; } = "user.short";
+
+    [Parameter] public string ColorScale { get; set; } = "heat";
+
+    [Parameter] public string? LegendMinText { get; set; }
+
+    [Parameter] public string? LegendMaxText { get; set; }
+
+    [Parameter] public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
+    private string? _mountedPayloadKey;
+    private (int Yi, int Xi, double? Value)? _hoverCell;
+    private long _lastHoverTick;
+    private const int TargetVisibleXLabels = 14;
+
+    private string HostStyle => $"--matrix-max-height:{HeightPx}px";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!RendererInfo.IsInteractive || Payload is null)
+        {
+            return;
+        }
+
+        if (Payload.XLabels.Count == 0 ||
+            Payload.YLabels.Count == 0 ||
+            MatrixRenderLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
+        {
+            await UnmountIfMountedAsync();
+            return;
+        }
+
+        var payloadKey = BuildPayloadKey();
+        var cellCount = Payload.XLabels.Count * Payload.YLabels.Count;
+        var payloadObj = new
+        {
+            xCount = Payload.XLabels.Count,
+            yCount = Payload.YLabels.Count,
+            cells = Payload.Cells,
+            min = Payload.Min,
+            max = Payload.Max,
+            colorScale = ColorScale,
+            maxHeight = HeightPx,
+            showValues = cellCount <= 200,
+        };
+
+        if (_mountedPayloadKey is not null &&
+            !firstRender &&
+            !string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal))
+        {
+            _mountedPayloadKey = payloadKey;
+            await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
+            return;
+        }
+
+        if (string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal) && !firstRender)
+        {
+            return;
+        }
+
+        _mountedPayloadKey = payloadKey;
+        await Js.InvokeVoidAsync(
+            "dashSpecMatrix.mount",
+            HostId,
+            CanvasId,
+            payloadObj);
+    }
+
+    private string BuildPayloadKey() =>
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{ComputeCellHash()}:{ColorScale}:{HeightPx}";
+
+    private int ComputeCellHash()
+    {
+        unchecked
+        {
+            var hash = 17;
+            foreach (var row in Payload.Cells)
+            {
+                foreach (var cell in row)
+                {
+                    hash = (hash * 31) + (cell?.GetHashCode() ?? 0);
+                }
+            }
+
+            return hash;
+        }
+    }
+
+    private async Task HandleCanvasClickAsync(MouseEventArgs args)
+    {
+        if (!OnCellSelected.HasDelegate)
+        {
+            return;
+        }
+
+        var hit = await Js.InvokeAsync<CanvasHit?>("dashSpecMatrix.hitTest", CanvasId, args.OffsetX, args.OffsetY);
+        if (hit is null || hit.Value is null)
+        {
+            return;
+        }
+
+        var context = new HeatmapCellContext(
+            hit.Yi,
+            hit.Xi,
+            Payload.XLabels[hit.Xi],
+            Payload.YLabels[hit.Yi],
+            hit.Value,
+            Payload.Tooltips?[hit.Yi][hit.Xi]);
+
+        await OnCellSelected.InvokeAsync(context);
+        _hoverCell = null;
+        StateHasChanged();
+    }
+
+    private async Task HandleCanvasMoveAsync(MouseEventArgs args)
+    {
+        var now = Environment.TickCount64;
+        if (now - _lastHoverTick < 48)
+        {
+            return;
+        }
+
+        _lastHoverTick = now;
+        var hit = await Js.InvokeAsync<CanvasHit?>("dashSpecMatrix.hitTest", CanvasId, args.OffsetX, args.OffsetY);
+        var next = hit is null ? null : ((int Yi, int Xi, double? Value)?)(hit.Yi, hit.Xi, hit.Value);
+        if (next == _hoverCell)
+        {
+            return;
+        }
+
+        _hoverCell = next;
+        StateHasChanged();
+    }
+
+    private void ClearHover()
+    {
+        if (_hoverCell is null)
+        {
+            return;
+        }
+
+        _hoverCell = null;
+        StateHasChanged();
+    }
+
+    private bool ShouldShowXLabel(int index)
+    {
+        var count = Payload.XLabels.Count;
+        var target = string.Equals(XFormat, "time.short", StringComparison.OrdinalIgnoreCase) && count <= 24
+            ? count
+            : TargetVisibleXLabels;
+        if (count <= target)
+        {
+            return true;
+        }
+
+        var step = (int)Math.Ceiling(count / (double)target);
+        return index == 0 || index == count - 1 || index % step == 0;
+    }
+
+    private string FormatXLabel(string label) => LabelFormat.Format(label, XFormat);
+
+    private string FormatYLabel(string label) => LabelFormat.Format(label, YFormat);
+
+    private string PopoverHeader(int yi, int xi, double? value)
+    {
+        var yLabel = Payload.YLabels[yi];
+        var xLabel = Payload.XLabels[xi];
+        var head = $"{FormatYLabel(yLabel)} · {FormatXLabel(xLabel)}: {FormatValue(value)}";
+        return string.IsNullOrWhiteSpace(ValueLabel) ? head : $"{head} {ValueLabel}";
+    }
+
+    private static string FormatValue(double? value) =>
+        value is null ? "—" : value.Value.ToString("0");
+
+    private async Task UnmountIfMountedAsync()
+    {
+        if (_mountedPayloadKey is null)
+        {
+            return;
+        }
+
+        _mountedPayloadKey = null;
+        try
+        {
+            await Js.InvokeVoidAsync("dashSpecMatrix.unmount", HostId);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!RendererInfo.IsInteractive)
+        {
+            return;
+        }
+
+        await UnmountIfMountedAsync();
+    }
+
+    private sealed record CanvasHit(int Xi, int Yi, double? Value);
+}
