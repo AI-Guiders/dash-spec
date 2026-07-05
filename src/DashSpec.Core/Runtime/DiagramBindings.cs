@@ -30,7 +30,7 @@ public static class DiagramBindings
         {
             "bar" => ["x", "y", "reference"],
             "line" => ["x", "y", "series"],
-            "heatmap" => ["x", "y", "value", "tooltip"],
+            "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
         };
 

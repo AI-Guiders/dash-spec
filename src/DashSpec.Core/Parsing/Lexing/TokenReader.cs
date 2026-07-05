@@ -153,6 +153,48 @@ internal sealed class TokenReader
         return true;
     }
 
+    public bool TryPeekIdent(out string ident)
+    {
+        SkipNewlines();
+        if (Current.Kind is not TokenKind.Ident)
+        {
+            ident = string.Empty;
+            return false;
+        }
+
+        ident = Current.Value;
+        return true;
+    }
+
+    public readonly struct Mark
+    {
+        internal Mark(int index) => Index = index;
+        internal int Index { get; }
+    }
+
+    public Mark CreateMark() => new(_index);
+
+    public void Rewind(Mark mark) => _index = mark.Index;
+
+    public bool TryModuleInclude(out string reference)
+    {
+        SkipNewlines();
+        if (!IsAt(TokenKind.Bang))
+        {
+            reference = string.Empty;
+            return false;
+        }
+
+        Advance();
+        if (!TryKeyword("include"))
+        {
+            throw new DashSpecParseException("Expected 'include' after '!'.");
+        }
+
+        reference = ReadString();
+        return true;
+    }
+
     /// <summary>
     /// Optional postfix keyword on the current line only (does not cross <see cref="TokenKind.Newline"/>).
     /// Use for <c>ref</c>, optional trailing <c>as</c>, etc. — never for statement-start keywords.

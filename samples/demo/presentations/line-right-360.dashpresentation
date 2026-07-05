@@ -1,6 +1,4 @@
 @presentation line_right_360
 
-presentation {
   legend = right
   height = 360
-}

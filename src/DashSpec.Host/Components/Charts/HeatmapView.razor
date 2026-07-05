@@ -1,14 +1,23 @@
 @using DashSpec.Core.Runtime
+@using DashSpec.Core.Model
 
 @if (Payload is null || Payload.XLabels.Count == 0 || Payload.YLabels.Count == 0)
 {
     <p class="empty-state">Нет данных за выбранный период</p>
+}
+else if (MatrixRenderLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
+{
+    <div class="heatmap-oversized" role="alert">
+        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @MatrixRenderLimits.MaxCells).</p>
+        <p class="muted">Сузьте фильтры, используйте top-N или перейдите на detail tab / table. Overview + drill рекомендуется для больших срезов.</p>
+    </div>
 }
 else
 {
     <div class="heatmap-wrap"
          style="@($"min-height:{HeightPx}px")"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
+        <div class="heatmap-scroll" style="@($"max-height:{HeightPx}px")">
         <div class="heatmap-grid" style="@GridStyle()">
             <div class="heatmap-corner">
                 @if (!string.IsNullOrWhiteSpace(YAxisLabel))
@@ -20,9 +29,13 @@ else
                     <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
                 }
             </div>
-            @foreach (var xLabel in Payload.XLabels)
+            @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
             {
-                <div class="heatmap-x-label" title="@xLabel">@FormatXLabel(xLabel)</div>
+                var xLabel = Payload.XLabels[xi];
+                var showXLabel = ShouldShowXLabel(xi);
+                <div class="heatmap-x-label @(showXLabel ? null : "heatmap-x-label-sparse")" title="@FormatXLabel(xLabel)">
+                    @(showXLabel ? FormatXLabel(xLabel) : "")
+                </div>
             }
             @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
             {
@@ -38,6 +51,8 @@ else
                          style="@(filled ? $"background:{HeatmapColorScale.CellBackground(ColorScale, value!.Value, Payload.Min, Payload.Max)};color:{HeatmapColorScale.CellText(ColorScale, value!.Value, Payload.Min, Payload.Max)}" : null)"
                          @onmouseenter="() => ShowPopover(yi, xi)"
                          @onmouseleave="HidePopover"
+                         @onclick="() => SelectCell(yi, xi)"
+                         @onclick:stopPropagation="true"
                          @onfocus="() => ShowPopover(yi, xi)"
                          @onblur="HidePopover"
                          tabindex="@(filled ? 0 : -1)">
@@ -71,6 +86,7 @@ else
                     </div>
                 }
             }
+        </div>
         </div>
         @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
         {
@@ -129,10 +145,31 @@ else
     [Parameter]
     public string? LegendMaxText { get; set; }
 
+    [Parameter]
+    public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
     private (int Yi, int Xi)? _activeCell;
 
-    private string GridStyle() =>
-        $"grid-template-columns: 10rem repeat({Payload.XLabels.Count}, minmax(2.5rem, 1fr));";
+    private const double ColumnWidthRem = 2.75;
+    private const int TargetVisibleXLabels = 14;
+
+    private string GridStyle()
+    {
+        var columns = Payload.XLabels.Count;
+        return $"grid-template-columns: 10rem repeat({columns}, {ColumnWidthRem}rem);";
+    }
+
+    private bool ShouldShowXLabel(int index)
+    {
+        var count = Payload.XLabels.Count;
+        if (count <= TargetVisibleXLabels)
+        {
+            return true;
+        }
+
+        var step = (int)Math.Ceiling(count / (double)TargetVisibleXLabels);
+        return index == 0 || index == count - 1 || index % step == 0;
+    }
 
     private void ShowPopover(int yi, int xi)
     {
@@ -142,6 +179,25 @@ else
     private void HidePopover()
     {
         _activeCell = null;
+    }
+
+    private async Task SelectCell(int yi, int xi)
+    {
+        if (!OnCellSelected.HasDelegate || Payload.Cells[yi][xi] is null)
+        {
+            return;
+        }
+
+        var value = Payload.Cells[yi][xi];
+        var context = new HeatmapCellContext(
+            yi,
+            xi,
+            Payload.XLabels[xi],
+            Payload.YLabels[yi],
+            value,
+            Payload.Tooltips?[yi][xi]);
+
+        await OnCellSelected.InvokeAsync(context);
     }
 
     private static string FormatValue(double? value) =>

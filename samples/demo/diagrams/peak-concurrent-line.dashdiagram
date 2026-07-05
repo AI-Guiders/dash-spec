@@ -2,12 +2,12 @@
 
 include presentation "../presentations/line-bottom-300.dashpresentation"
 
-transform series {
+series {
   max = 5
   other = "Other"
 }
 
-diagram line {
+line {
   render = "chartjs"
   x = usage_date
   x_format = date.short

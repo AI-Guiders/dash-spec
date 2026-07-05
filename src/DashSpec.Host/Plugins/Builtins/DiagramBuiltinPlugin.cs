@@ -1,0 +1,43 @@
+using DashSpec.Abstractions.Plugins;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace DashSpec.Host.Plugins.Builtins;
+
+public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
+{
+    public string Id => "diagram_builtin";
+
+    public string DisplayName => "Built-in diagram kinds";
+
+    public PluginTier Tier => PluginTier.Core;
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    {
+    }
+
+    public void RegisterContributors(IDashSpecContributorRegistry registry)
+    {
+        RegisterKind(registry, Id, "line", "Chart", ["x", "y", "series", "reference"]);
+        RegisterKind(registry, Id, "bar", "Chart", ["x", "y", "series", "reference", "category", "value"]);
+        RegisterKind(registry, Id, "table", "Table", ["columns", "order_by", "limit"], supportsTopLimit: true);
+        RegisterKind(registry, Id, "number", "Scalar", ["value"]);
+        RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value", "tooltip"]);
+    }
+
+    private static void RegisterKind(
+        IDashSpecContributorRegistry registry,
+        string pluginId,
+        string kindId,
+        string family,
+        IReadOnlyList<string> bindings,
+        bool supportsTopLimit = false)
+    {
+        registry.AddDiagramKind(new DiagramKindContributorDescriptor(
+            pluginId,
+            kindId,
+            family,
+            supportsTopLimit,
+            bindings));
+    }
+}

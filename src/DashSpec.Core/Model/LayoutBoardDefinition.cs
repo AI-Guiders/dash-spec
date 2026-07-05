@@ -1,7 +1,9 @@
 namespace DashSpec.Core.Model;
 
-/// <summary>Tab-level bracket layout: each row is a list of card ref or id tokens.</summary>
-public sealed record LayoutBoardDefinition(IReadOnlyList<IReadOnlyList<string>> Rows)
+/// <summary>Bracket layout board; optional <see cref="ModuleScope"/> when loaded from <c>.dashlayout</c>.</summary>
+public sealed record LayoutBoardDefinition(
+    IReadOnlyList<IReadOnlyList<string>> Rows,
+    LayoutScope? ModuleScope = null)
 {
     public int RowCount => Rows.Count;
 

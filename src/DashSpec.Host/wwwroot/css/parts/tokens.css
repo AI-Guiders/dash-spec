@@ -1,0 +1,25 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --bg: #0b0f14;
+  --surface: #121820;
+  --surface-2: #171f2a;
+  --border: #2a3544;
+  --text: #e8edf3;
+  --muted: #8fa0b3;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --danger: #f87171;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+}

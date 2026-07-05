@@ -37,7 +37,7 @@ internal static class PayloadRowFormatters
         var raw = value switch
         {
             null => string.Empty,
-            DateTime dt => dt.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
+            DateTime dt => dt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             DateOnly d => d.ToString("yyyy-MM-dd"),
             _ => Convert.ToString(value) ?? string.Empty,
         };

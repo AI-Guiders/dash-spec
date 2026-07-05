@@ -1,0 +1,9 @@
+@catalog demo
+
+default demo_soak
+
+entry demo_soak as "DashSpec — Demo soak"
+  dashspec "demo-soak.dashspec"
+
+entry demo_analytics as "Analytics"
+  dashspec "demo-analytics.dashspec"

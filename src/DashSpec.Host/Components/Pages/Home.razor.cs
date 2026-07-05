@@ -12,6 +12,7 @@ public partial class Home : IDisposable
         Page.UiDispatcher = InvokeAsync;
         Page.Changed += OnPageChanged;
         await Page.InitializeAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private void OnPageChanged() => _ = InvokeAsync(StateHasChanged);

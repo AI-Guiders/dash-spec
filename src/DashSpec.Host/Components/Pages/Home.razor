@@ -3,10 +3,12 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
+@inject IWebHostEnvironment HostEnvironment
 
 <PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
 
 <DashboardToolbar Busy="Page.Switching"
+                  ShowUpload="HostEnvironment.IsDevelopment()"
                   SpecSource="Page.LoadedSpecSource"
                   OnUpload="Page.OnSpecUploadedAsync" />
 
@@ -34,6 +36,13 @@ else
                 <span class="badge">@Page.Session.ActiveConnectorId</span>
             </p>
         </div>
+        @if (Page.HasCatalog)
+        {
+            <DashboardCatalogPicker Entries="Page.CatalogEntries"
+                                    ActiveEntryId="Page.ActiveCatalogEntryId"
+                                    Busy="Page.Switching"
+                                    OnSelect="Page.SelectCatalogEntryAsync" />
+        }
     </header>
 
   var chrome = Page.Session.Document.FiltersChrome;
@@ -43,12 +52,13 @@ else
                      Sticky="chrome.IsSticky"
                      OnSelect="Page.SelectTab" />
 
-    <DashboardFiltersSection FilterNames="Page.Session.Document.DashboardFilters"
+    <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
                              FilterIndex="Page.Session.FilterIndex"
                              FiltersToCards="Page.FiltersToCards"
                              DateFrom="Page.DateFrom"
                              DateTo="Page.DateTo"
                              SelectedFields="Page.SelectedFields"
+                             TopLimits="Page.TopLimits"
                              GetFieldOptions="Page.Session.GetFieldOptions"
                              Layout="Page.Session.Document.Layout"
                              FilterPlacements="Page.ToolbarPlacements"
@@ -59,15 +69,18 @@ else
                              GridClass="@Page.FiltersGridClass()"
                              GridStyle="@Page.FiltersGridStyle()"
                              OnApply="Page.ApplyFiltersAsync"
-                             OnScheduleApply="Page.ScheduleDashboardApplyAsync"
+                             OnScheduleApply="Page.OnDashboardRangeChanged"
                              OnDayChanged="Page.OnDashboardDayChanged"
-                             OnFieldChanged="Page.OnDashboardFieldChanged" />
+                             OnFieldChanged="Page.OnDashboardFieldChanged"
+                             OnTopChanged="Page.OnDashboardTopChanged"
+                             GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
 
     <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
         @foreach (var card in Page.VisibleCards())
         {
             <DashboardCardView Card="card"
                                PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)"
+                               GridColumns="@Page.Session.Document.Layout.Columns"
                                DashboardBoundFilters="Page.DashboardBoundForCard(card)"
                                FilterIndex="Page.Session.FilterIndex"
                                DateFrom="Page.DateFrom"
@@ -76,10 +89,13 @@ else
                                TopLimits="Page.TopLimits"
                                GetFieldOptions="Page.Session.GetFieldOptions"
                                AutoApply="chrome.IsAutoApply"
+                               ActiveViewId="@Page.GetCardActiveView(card.Id)"
                                OnApplyCard="Page.ApplyCardFiltersAsync"
                                OnScheduleCardApply="Page.ScheduleCardApplyAsync"
                                OnCardDayChanged="Page.OnCardDayChanged"
-                               OnCardFieldChanged="Page.OnCardFieldChanged" />
+                               OnCardFieldChanged="Page.OnCardFieldChanged"
+                               OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
+                               OnCardAction="Page.ExecuteCardActionAsync" />
         }
     </section>
 }

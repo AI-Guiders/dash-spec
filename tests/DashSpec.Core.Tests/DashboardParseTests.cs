@@ -15,13 +15,13 @@ public class DashboardParseTests
     public void ReadDashboardHeader_reads_id_and_title()
     {
         const string text = """
-            @runtime "cfg.toml"
-
-            @dashboard soak_id
-            dashboard "My **Title**" {
-              card a as "A" {
-                diagram number { value = x }
-                datasource view dbo.t
+            @dashboard soak_id {
+              runtime { manifest = "cfg.toml" }
+              report "My **Title**" {
+                card a as "A" {
+                  diagram number { value = x }
+                  datasource view dbo.t
+                }
               }
             }
             """;
@@ -67,8 +67,8 @@ public class DashboardParseTests
     public void Parse_layout_and_place()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               layout grid { columns = 12 gap = 8 }
               card a as "A" {
                 place { row = 1 col = 1 span = half }
@@ -76,7 +76,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal(8, doc.Layout.GapPx);
         Assert.Equal(6, doc.Cards[0].Placement?.Span);
@@ -87,8 +88,8 @@ public class DashboardParseTests
     public void Parse_bind_block_syntax()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter field app_name { column = app_name as "App" }
               filters dashboard { app_name }
               card a as "A" {
@@ -97,7 +98,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal(["app_name"], doc.Cards[0].BoundFilters);
     }
@@ -106,8 +108,8 @@ public class DashboardParseTests
     public void Parse_card_local_filters_placement()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Usage"
                 default = -7d..today
@@ -126,7 +128,8 @@ public class DashboardParseTests
                 datasource view dbo.activity
               }
             }
-            """);
+            }
+""");
 
         var card = doc.Cards.Single();
         Assert.Equal(["activity_day"], card.LocalFilters);
@@ -138,8 +141,8 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecParser.Parse("""
-                @dashboard t
-                dashboard "T" {
+                @dashboard t {
+                  report "T" {
                   filter date usage_date {
                     column = usage_date as "Usage"
                     default = -7d..today
@@ -150,7 +153,8 @@ public class DashboardParseTests
                     datasource view dbo.t
                   }
                 }
-                """));
+                }
+"""));
 
         Assert.Contains("toolbar", ex.Message);
     }
@@ -159,8 +163,8 @@ public class DashboardParseTests
     public void Parse_filters_chrome_and_tabs()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filter date usage_date {
                 column = usage_date as "Usage"
                 default = -7d..today
@@ -181,7 +185,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.True(doc.FiltersChrome.IsBarLayout);
         Assert.True(doc.FiltersChrome.IsStickyLine);
@@ -198,27 +203,30 @@ public class DashboardParseTests
     public void Parse_filters_chrome_sticky_modes()
     {
         var line = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filters chrome { sticky = line }
             }
-            """);
+            }
+""");
         Assert.True(line.FiltersChrome.IsStickyLine);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filters chrome { sticky = card }
             }
-            """);
+            }
+""");
         Assert.True(card.FiltersChrome.IsStickyCard);
 
         var none = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               filters chrome { sticky = false }
             }
-            """);
+            }
+""");
         Assert.False(none.FiltersChrome.IsSticky);
         Assert.Equal(FiltersChromeDefinition.StickyNone, none.FiltersChrome.Sticky);
     }
@@ -227,8 +235,8 @@ public class DashboardParseTests
     public void Parse_heatmap_diagram_kind()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card h as "H" {
                 diagram heatmap {
                   x = usage_date
@@ -239,7 +247,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         Assert.Equal("heatmap", doc.Cards[0].Diagram.Kind);
         Assert.Equal(DiagramDataFamily.Matrix, DiagramKindRegistry.Resolve("heatmap").DataFamily);
@@ -249,8 +258,8 @@ public class DashboardParseTests
     public void Parse_heatmap_column_as_labels()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card h as "H" {
                 diagram heatmap {
                   x = usage_date as "День"
@@ -261,7 +270,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var diagram = doc.Cards[0].Diagram;
         Assert.Equal("usage_date", diagram.Properties["x"]);
@@ -278,8 +288,8 @@ public class DashboardParseTests
     public void Parse_bar_reference_column_as_label()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card peak as "Peak" {
                 diagram bar {
                   category = app_name
@@ -289,7 +299,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var diagram = doc.Cards[0].Diagram;
         Assert.Equal("purchased_seats", diagram.Properties["reference"]);
@@ -300,8 +311,8 @@ public class DashboardParseTests
     public void Parse_heatmap_allows_extension_presentation_properties()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card h as "H" {
                 diagram heatmap {
                   x = usage_date
@@ -314,7 +325,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var props = doc.Cards[0].Diagram.Properties;
         Assert.Equal("list", props["tooltip_format"]);
@@ -344,8 +356,8 @@ public class DashboardParseTests
     public void Parse_card_legend_block()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               card h as "H" {
                 diagram heatmap { x = a y = b value = c }
                 legend {
@@ -355,7 +367,8 @@ public class DashboardParseTests
                 datasource view dbo.t
               }
             }
-            """);
+            }
+""");
 
         var legend = doc.Cards[0].Legend;
         Assert.NotNull(legend);
@@ -402,8 +415,8 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecParser.Parse("""
-                @dashboard t
-                dashboard "T" {
+                @dashboard t {
+                  report "T" {
                   filter date usage_date {
                     column = usage_date as "Дата"
                     default = -7d..today
@@ -415,7 +428,8 @@ public class DashboardParseTests
                     where [[usage_date]]
                   }
                 }
-                """));
+                }
+"""));
 
         Assert.Contains("'where' is no longer used", ex.Message);
     }
@@ -423,8 +437,8 @@ public class DashboardParseTests
     public void TabLayoutCompactor_bumps_full_width_table_below_same_row_charts()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t
-            dashboard "T" {
+            @dashboard t {
+              report "T" {
               tab s as "S" { cards { a b c } }
               card a as "A" {
                 place { row = 1 col = 1 span = 6 }
@@ -442,7 +456,8 @@ public class DashboardParseTests
                 datasource view dbo.c
               }
             }
-            """);
+            }
+""");
 
         var layout = TabLayoutCompactor.Compact(doc, "s");
 

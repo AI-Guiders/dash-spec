@@ -7,8 +7,6 @@ const amber = "gold"
 const pink = "pink"
 const violet = "purple"
 
-palette {
   default = default
   Other = default
   colors = [blue, green, amber, pink, violet]
-}

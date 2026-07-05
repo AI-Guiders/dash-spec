@@ -18,6 +18,8 @@
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,16 +34,29 @@
     </None>
   </ItemGroup>
 
-  <Target Name="StageConnectorPlugins" AfterTargets="Build">
+  <Target Name="StageConnectorPlugins" AfterTargets="Build;Publish">
     <PropertyGroup>
       <_ConnectorOutDir>..\..\connectors\DashSpec.Connector.SqlServer\bin\$(Configuration)\$(TargetFramework)\</_ConnectorOutDir>
       <_ConnectorPluginDll>$(_ConnectorOutDir)DashSpec.Connector.SqlServer.dll</_ConnectorPluginDll>
+      <_ExportOutDir>..\..\plugins\DashSpec.Plugin.Export\bin\$(Configuration)\$(TargetFramework)\</_ExportOutDir>
+      <_ExportPluginDll>$(_ExportOutDir)DashSpec.Plugin.Export.dll</_ExportPluginDll>
+      <_ViewSwitchOutDir>..\..\plugins\DashSpec.Plugin.ViewSwitch\bin\$(Configuration)\$(TargetFramework)\</_ViewSwitchOutDir>
+      <_ViewSwitchPluginDll>$(_ViewSwitchOutDir)DashSpec.Plugin.ViewSwitch.dll</_ViewSwitchPluginDll>
     </PropertyGroup>
     <MakeDir Directories="$(OutputPath)connectors" />
+    <MakeDir Directories="$(OutputPath)plugins" />
     <Copy SourceFiles="$(_ConnectorPluginDll)"
           DestinationFolder="$(OutputPath)connectors\"
           SkipUnchangedFiles="true"
           Condition="Exists('$(_ConnectorPluginDll)')" />
+    <Copy SourceFiles="$(_ExportPluginDll)"
+          DestinationFolder="$(OutputPath)plugins\"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(_ExportPluginDll)')" />
+    <Copy SourceFiles="$(_ViewSwitchPluginDll)"
+          DestinationFolder="$(OutputPath)plugins\"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(_ViewSwitchPluginDll)')" />
   </Target>
 
 </Project>

@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted · v0.5 |
 | **Date** | 2026-07-01 |
-| **Relates to** | [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md) |
+| **Relates to** | [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
 
 ## Context
 
@@ -18,28 +18,36 @@
 
 | Расширение | Корень | Содержимое |
 |------------|--------|------------|
-| `.dashspec` | `@dashboard` / `@tab` | dashboard, filters, cards |
-| `.dashdiagram` | `@diagram <id>` | `diagram { }`, опционально `presentation`, `transform series` |
-| `.dashpresentation` | `@presentation <id>` | `presentation { }` |
-| `.dashtransform` | `@transform <id>` | `transform series { }` |
-| `.dashpalette` | `@palette <id>` | `palette { }` (цвета серий, quoted keys для имён с пробелами) |
-| `.dashlayout` | `@layout <id>` | bracket board `[ Q W ]` — см. [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md) |
+| `.dashspec` | `@dashboard` / `@tab` | `runtime`, `configuration`, `wiring`, `report` — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
+| `.dashinclude` | `@include` | `layout`, `toolbar`, `diagram` registry (file-level) |
+| `.dashdiagram` | `@diagram <id>` | `!include`, `<kind> { }`, optional `presentation { }` / `series { }` — без inner `diagram` ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)) |
+| `.dashpresentation` | `@presentation <id>` | properties inline — **без** `presentation { }` |
+| `.dashtransform` | `@transform <id>` | properties inline — **без** `transform series { }` |
+| `.dashpalette` | `@palette <id>` | `const` + mappings — **без** `palette { }` |
+| `.dashlayout` | `@layout <id>` | board rows `[ Q W ]` |
+| `.dashcatalog` | `@catalog <id>` | `default`, `entry …` — flat, без `catalog { }` |
 
-Парсер тот же, что inline-блоки в card.
-
-### Include в card (и во fragment-файлах)
-
-```text
-card activity as "Activity" {
-  include diagram "diagrams/activity-hour.dashdiagram"
-  datasource view lus.v_hourly_activity
-  bind activity_slot, app_name
-}
-```
+### File-level `.dashinclude` ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md))
 
 ```text
-include presentation "<presentation/heatmap_tall>"
+@include stakeholder_shell
+
+layout "layouts/stakeholder-grid.dashlayout"
+diagram "diagrams/stakeholder-peak-apps-heatmap.dashdiagram"
 ```
+
+В `.dashspec` module:
+
+```text
+!include "imports/stakeholder.dashinclude"
+!include "diagrams/stakeholder/*.dashdiagram"
+```
+
+Glob — см. [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) Layer 2: `*` в одном каталоге, sorted expand, explicit only (не auto-discovery).
+
+На **card** — `diagram <id>` (modular) **или** inline `diagram <kind> { … }` (monolith). См. [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) authoring profiles.
+
+### Include во fragment-файлах (`.dashdiagram`)
 
 | Ссылка | Резолв |
 |--------|--------|
@@ -52,12 +60,12 @@ include presentation "<presentation/heatmap_tall>"
 
 | Слой | Где живёт |
 |------|-----------|
-| **diagram** | `.dashdiagram` или inline |
-| **presentation / transform** | inline, include, или stdlib |
-| **datasource + bind** | **всегда в card** в `.dashspec` (явная проводка данных) |
-| **palette** | `@palette "palettes/*.dashpalette"` + `palette <id>` на dashboard/tab; `[palette.*]` TOML — **deprecated** |
+| **diagram** | `.dashdiagram`; на card — `diagram <id>` |
+| **presentation / transform** | `.dashdiagram` / stdlib via `!include` |
+| **datasource + bind** | **card** в `report { }` |
+| **palette** | `configuration.palette` + `wiring { use palette … }` |
 
-`use <card-preset>` и `@diagramlibrary` **deprecated**; новый authoring — `include` + явный `datasource` / `@palette`.
+`@diagramlibrary`, `use <card-preset>`, card-level `include diagram` — **удалены** ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)).
 
 ### Stdlib
 
@@ -67,15 +75,13 @@ include presentation "<presentation/heatmap_tall>"
 
 ### Dev watcher
 
-Перезагрузка при изменении `.dashspec`, `.dashdiagram`, `.dashpresentation`, `.dashtransform`, `.dashpalette`, `.dashlayout`, `.sql` в каталоге spec (TOML `@runtime` — по необходимости).
+Перезагрузка при изменении `.dashspec`, `.dashinclude`, `.dashdiagram`, …; TOML из `runtime.manifest` — по необходимости.
 
 ## Non-goals v0.5
 
 - `include_once` / zip `!import`
-- Полное удаление парсера `@diagramlibrary` / TOML presets (deprecated, но пока в Core)
 
 ## Consequences
 
-- LUS: `docs/dashspec/diagrams/*.dashdiagram`, `palettes/*.dashpalette`; cards с явным `datasource`/`bind`.
-- Core: `SpecIncludeResolver`, module parsers, тесты include + stdlib.
-- `@diagramlibrary` / TOML presets — только для обратной совместимости; новые продукты — файловые модули.
+- LUS: `.dashinclude` + `diagram <id>` на card; `datasource`/`bind` в `report { }`.
+- Core: `DashIncludeParser`, diagram registry в resolve; flat/card `include` удалён ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)).

@@ -16,7 +16,10 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         await using var connection = new SqlConnection(options.Value.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var command = new SqlCommand(query.Sql, connection);
+        await using var command = new SqlCommand(query.Sql, connection)
+        {
+            CommandTimeout = 30,
+        };
         foreach (var parameter in query.Parameters)
         {
             command.Parameters.AddWithValue(NormalizeParameterName(parameter.Name), CoerceValue(parameter.Value));
@@ -45,7 +48,10 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         await using var connection = new SqlConnection(options.Value.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var command = new SqlCommand(sql, connection);
+        await using var command = new SqlCommand(sql, connection)
+        {
+            CommandTimeout = 30,
+        };
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 
         var values = new List<string>();

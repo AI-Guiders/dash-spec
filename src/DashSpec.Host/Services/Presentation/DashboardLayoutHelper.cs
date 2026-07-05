@@ -7,8 +7,17 @@ namespace DashSpec.Host.Services.Presentation;
 internal static class DashboardLayoutHelper
 {
     public static string ChartDomId(string cardId) =>
-        "chart-" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(cardId)))[..12];
+        "chart-" + DomIdHash(cardId);
+
+    public static string MatrixHostDomId(string cardId) =>
+        "matrix-host-" + DomIdHash(cardId);
+
+    public static string MatrixCanvasDomId(string cardId) =>
+        "matrix-canvas-" + DomIdHash(cardId);
+
+    private static string DomIdHash(string value) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(value)))[..12];
 
     public static string CardsGridStyle(LayoutDefinition layout) =>
         $"--grid-columns:{layout.Columns};--grid-gap:{layout.GapPx}px;";
@@ -56,4 +65,25 @@ internal static class DashboardLayoutHelper
 
         return card.Placement ?? PlacementDefaults.ForFamily(card.DataFamily, layoutColumns);
     }
+
+    public static bool UsesInteriorLayout(CardRenderResult card) =>
+        card.InteriorPlacements is { Count: > 0 };
+
+    public static string CardInteriorGridStyle(LayoutDefinition layout) =>
+        $"--card-grid-columns:{layout.Columns};";
+
+    public static string CardInteriorSlotStyle(
+        PlacementDefinition placement,
+        int columns)
+    {
+        var span = Math.Min(placement.Span, columns);
+        return placement.Row > 0
+            ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
+            : $"grid-column:span {span};";
+    }
+
+    public static IReadOnlyDictionary<string, PlacementDefinition> ResolveInteriorPlacements(
+        CardDefinition card,
+        DashboardDocument document) =>
+        CardInteriorLayoutCompactor.Compact(card, document.Filters, document.Layout.Columns);
 }

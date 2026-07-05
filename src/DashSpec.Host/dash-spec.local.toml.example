@@ -2,13 +2,16 @@
 # Loaded after dash-spec.toml and optional dash-spec.dev.toml.
 
 [dashboard]
-# Product specs live outside OSS — URSA License Usage:
-spec_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/lus-dev-soak.dashspec"
-# Stakeholder tab only:
-# spec_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/lus-dev-stakeholder.dashspec"
+catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.dashcatalog"
+# Stakeholder-only catalog: point catalog_path at a smaller .dashcatalog if needed.
 
-# Or env: DASHSPEC_SPEC_PATH
+# Or env: DASHSPEC_CATALOG_PATH
 
 # Optional: override connector if not using @runtime in .dashspec
 # [connectors.sqlserver]
 # connection_string = "Server=localhost;Database=UrsaLicenseUsage;Trusted_Connection=True;TrustServerCertificate=True"
+
+# Prod: require X-Api-Key (or cookie after /access login). Dev: leave empty = open host.
+# [access]
+# api_key = "CHANGE_ME"
+# Or env: DASHSPEC_API_KEY
