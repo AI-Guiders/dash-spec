@@ -28,8 +28,15 @@ public static class ChartColorResolver
         SpecLibrary? library,
         string? dashboardColorPalette = null)
     {
-        var scheme = ResolveScheme(card, library, dashboardColorPalette);
-        return labels.Select(scheme.Resolve).ToList();
+        if (IsSingleColorMode(card, library))
+        {
+            var scheme = ResolveScheme(card, library, dashboardColorPalette: null);
+            var fill = scheme.Resolve("default");
+            return labels.Select(_ => fill).ToList();
+        }
+
+        var paletteScheme = ResolveScheme(card, library, dashboardColorPalette);
+        return labels.Select(paletteScheme.Resolve).ToList();
     }
 
     private static ChartColorScheme ResolveScheme(
@@ -40,6 +47,7 @@ public static class ChartColorResolver
         var ordered = new List<string>();
         var bySeries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         string? defaultColor = null;
+        var singleColorMode = IsSingleColorMode(card, library);
 
         void Absorb(IReadOnlyDictionary<string, string> props)
         {
@@ -69,7 +77,7 @@ public static class ChartColorResolver
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(dashboardColorPalette))
+        if (!singleColorMode && !string.IsNullOrWhiteSpace(dashboardColorPalette))
         {
             ApplyPaletteReference(dashboardColorPalette, library, ordered, bySeries, ref defaultColor);
         }
@@ -94,6 +102,27 @@ public static class ChartColorResolver
 
         return new ChartColorScheme(ordered, bySeries, defaultColor ?? ordered[^1]);
     }
+
+    private static bool IsSingleColorMode(CardDefinition card, SpecLibrary? library)
+    {
+        if (HasSingleColorMode(card.Diagram.Properties))
+        {
+            return true;
+        }
+
+        if (card.Presentation?.UsePreset is { } presetName &&
+            library?.TryGetPresentation(presetName) is { } preset &&
+            HasSingleColorMode(preset))
+        {
+            return true;
+        }
+
+        return card.Presentation is not null && HasSingleColorMode(card.Presentation.Properties);
+    }
+
+    private static bool HasSingleColorMode(IReadOnlyDictionary<string, string> props) =>
+        props.TryGetValue("color_mode", out var mode) &&
+        string.Equals(mode.Trim(), "single", StringComparison.OrdinalIgnoreCase);
 
     private static void ApplyPaletteReference(
         string paletteName,

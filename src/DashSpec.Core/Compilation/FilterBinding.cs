@@ -18,22 +18,19 @@ public static class FilterBinding
         DashboardDocument document,
         SpecLibrary? library = null)
     {
-        var result = document.DashboardFilters.ToDictionary(
-            filterName => filterName,
-            _ => new List<string>(),
-            StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var card in document.Cards)
         {
             foreach (var filterName in ResolveBoundFilters(card, document, library))
             {
-                if (!document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
+                if (!result.TryGetValue(filterName, out var cards))
                 {
-                    continue;
+                    cards = [];
+                    result[filterName] = cards;
                 }
 
-                if (result.TryGetValue(filterName, out var cards) &&
-                    !cards.Contains(card.Id, StringComparer.OrdinalIgnoreCase))
+                if (!cards.Contains(card.Id, StringComparer.OrdinalIgnoreCase))
                 {
                     cards.Add(card.Id);
                 }

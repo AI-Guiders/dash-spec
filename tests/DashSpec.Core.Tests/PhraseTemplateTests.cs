@@ -11,17 +11,21 @@ public sealed class PhraseTemplateTests
     public void Parse_on_click_invoke_with_call_args()
     {
         var doc = DashSpecParser.Parse("""
-            @tab t {
-              report "T" {
-                card c as "C" {
-                  on click {
-                    invoke drill_down(from = y, target = user_name)
-                  }
-                  diagram heatmap { x = a y = b value = c }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @tab t
+              report
+              title = "T"
+              card c as "C"
+              on click
+              from = y, target
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end tab
             """);
 
         var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
@@ -50,17 +54,22 @@ public sealed class PhraseTemplateTests
         };
 
         var doc = DashSpecParser.Parse("""
-            @tab t {
-              report "T" {
-                card c as "C" {
-                  on click {
-                    export card as csv with delimiter ";"
-                  }
-                  diagram heatmap { x = a y = b value = c }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @tab t
+              report
+              title = "T"
+              card c as "C"
+              on click
+              export card as csv with delimiter "
+              "
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end tab
             """, specDirectory: null, options);
 
         var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);

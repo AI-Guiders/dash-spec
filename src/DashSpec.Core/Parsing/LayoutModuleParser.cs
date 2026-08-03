@@ -30,23 +30,24 @@ internal static class LayoutModuleParser
         if (!reader.TryKeyword("scope"))
         {
             throw new DashSpecParseException(
-                "Layout module requires scope toolbar|tab|card after @layout <id>.");
+                "Layout module requires scope toolbar|tab|page|card after @layout <id>.");
         }
 
         var kind = reader.ReadIdent();
         if (string.IsNullOrWhiteSpace(kind))
         {
             throw new DashSpecParseException(
-                "Layout module requires scope toolbar|tab|card after @layout <id>.");
+                "Layout module requires scope toolbar|tab|page|card after @layout <id>.");
         }
 
         return kind.ToLowerInvariant() switch
         {
             "toolbar" => LayoutScope.Toolbar,
             "tab" => LayoutScope.Tab,
+            "page" => LayoutScope.Page,
             "card" => LayoutScope.Card,
             _ => throw new DashSpecParseException(
-                $"Layout module scope must be toolbar, tab, or card; got '{kind}'."),
+                $"Layout module scope must be toolbar, tab, page, or card; got '{kind}'."),
         };
     }
 

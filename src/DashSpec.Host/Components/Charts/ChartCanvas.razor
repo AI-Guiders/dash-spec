@@ -1,4 +1,5 @@
 @using DashSpec.Core.Runtime
+@using Microsoft.JSInterop
 @inject IJSRuntime Js
 @implements IAsyncDisposable
 
@@ -30,8 +31,18 @@
     public string? ValueAxisLabel { get; set; }
 
     [Parameter]
+    public double? ValueAxisMax { get; set; }
+
+    [Parameter]
     public ChartPayload? Payload { get; set; }
 
+    [Parameter]
+    public bool CategoryClickEnabled { get; set; }
+
+    [Parameter]
+    public EventCallback<(int Index, string Label)> OnCategorySelected { get; set; }
+
+    private DotNetObjectReference<ChartCanvas>? _dotNetRef;
     private ChartPayload? _previousPayload;
     private string _previousLegend = string.Empty;
     private bool _previousStacked;
@@ -39,6 +50,8 @@
     private ChartAxisScale _previousValueAxisScale;
     private string? _previousCategoryAxisLabel;
     private string? _previousValueAxisLabel;
+    private double? _previousValueAxisMax;
+    private bool _previousCategoryClickEnabled;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -47,13 +60,20 @@
             return;
         }
 
+        if (CategoryClickEnabled && _dotNetRef is null)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+        }
+
         if (ReferenceEquals(Payload, _previousPayload) &&
             string.Equals(Legend, _previousLegend, StringComparison.OrdinalIgnoreCase) &&
             Stacked == _previousStacked &&
             Orientation == _previousOrientation &&
             ValueAxisScale == _previousValueAxisScale &&
             string.Equals(CategoryAxisLabel, _previousCategoryAxisLabel, StringComparison.Ordinal) &&
-            string.Equals(ValueAxisLabel, _previousValueAxisLabel, StringComparison.Ordinal))
+            string.Equals(ValueAxisLabel, _previousValueAxisLabel, StringComparison.Ordinal) &&
+            ValueAxisMax == _previousValueAxisMax &&
+            CategoryClickEnabled == _previousCategoryClickEnabled)
         {
             return;
         }
@@ -65,6 +85,8 @@
         _previousValueAxisScale = ValueAxisScale;
         _previousCategoryAxisLabel = CategoryAxisLabel;
         _previousValueAxisLabel = ValueAxisLabel;
+        _previousValueAxisMax = ValueAxisMax;
+        _previousCategoryClickEnabled = CategoryClickEnabled;
         await Js.InvokeVoidAsync(
             "dashSpecCharts.render",
             ChartId,
@@ -79,17 +101,26 @@
                 valueAxisScale = ValueAxisScale switch
                 {
                     ChartAxisScale.Integer => "integer",
+                    ChartAxisScale.Percent => "percent",
                     _ => "decimal",
                 },
                 referenceValues = Payload.ReferenceValues,
                 referenceLabel = Payload.ReferenceLabel,
                 categoryAxisLabel = CategoryAxisLabel,
                 valueAxisLabel = ValueAxisLabel,
+                valueAxisMax = ValueAxisMax,
+                categoryClickEnabled = CategoryClickEnabled,
+                dotNetRef = CategoryClickEnabled ? _dotNetRef : null,
             });
     }
 
+    [JSInvokable]
+    public Task OnCategoryClick(int index, string label) =>
+        OnCategorySelected.InvokeAsync((index, label));
+
     public async ValueTask DisposeAsync()
     {
+        _dotNetRef?.Dispose();
         if (RendererInfo.IsInteractive)
         {
             try

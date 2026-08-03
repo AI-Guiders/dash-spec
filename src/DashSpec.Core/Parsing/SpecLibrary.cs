@@ -126,6 +126,35 @@ public sealed class SpecLibrary
         return library;
     }
 
+    public static SpecLibrary FromChartChromePresets(IReadOnlyDictionary<string, PresentationBlock> presets)
+    {
+        ArgumentNullException.ThrowIfNull(presets);
+
+        var library = new SpecLibrary();
+        foreach (var (id, block) in presets)
+        {
+            library.RegisterPresentationBlock(id, block);
+        }
+
+        return library;
+    }
+
+    public static SpecLibrary FromModuleDocument(
+        IReadOnlyDictionary<string, PresentationBlock> chartChromePresets,
+        IReadOnlyDictionary<string, ModuleDiagramDefinition> definitions)
+    {
+        ArgumentNullException.ThrowIfNull(chartChromePresets);
+        ArgumentNullException.ThrowIfNull(definitions);
+
+        var library = FromChartChromePresets(chartChromePresets);
+        foreach (var (id, definition) in definitions)
+        {
+            library.ImportModuleDefinition(id, definition);
+        }
+
+        return library;
+    }
+
     public void ImportModuleDefinition(string id, ModuleDiagramDefinition definition)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
@@ -150,19 +179,36 @@ public sealed class SpecLibrary
         string? presentationPreset = null;
         if (definition.Presentation is { } presentation)
         {
+            var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
             {
-                presentationPreset = presentation.UsePreset;
                 EnsureStdlibPresentation(presentation.UsePreset);
+                if (_presentations.TryGetValue(presentation.UsePreset, out var parent))
+                {
+                    foreach (var (key, value) in parent)
+                    {
+                        merged[key] = value;
+                    }
+                }
             }
 
-            if (presentation.Properties.Count > 0)
+            foreach (var (key, value) in presentation.Properties)
             {
-                var inlineId = $"{id}__presentation";
-                _presentations[inlineId] = new Dictionary<string, string>(
-                    presentation.Properties,
-                    StringComparer.OrdinalIgnoreCase);
-                presentationPreset ??= inlineId;
+                if (!string.Equals(key, "use", StringComparison.OrdinalIgnoreCase))
+                {
+                    merged[key] = value;
+                }
+            }
+
+            if (merged.Count > 0)
+            {
+                var presetId = $"{id}__presentation";
+                _presentations[presetId] = merged;
+                presentationPreset = presetId;
+            }
+            else if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
+            {
+                presentationPreset = presentation.UsePreset;
             }
         }
 
@@ -213,14 +259,30 @@ public sealed class SpecLibrary
             return;
         }
 
+        var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(block.UsePreset))
         {
             EnsureStdlibPresentation(block.UsePreset);
+            if (_presentations.TryGetValue(block.UsePreset, out var parent))
+            {
+                foreach (var (key, value) in parent)
+                {
+                    merged[key] = value;
+                }
+            }
         }
 
-        if (block.Properties.Count > 0)
+        foreach (var (key, value) in block.Properties)
         {
-            _presentations[name] = new Dictionary<string, string>(block.Properties, StringComparer.OrdinalIgnoreCase);
+            if (!string.Equals(key, "use", StringComparison.OrdinalIgnoreCase))
+            {
+                merged[key] = value;
+            }
+        }
+
+        if (merged.Count > 0)
+        {
+            _presentations[name] = merged;
         }
     }
 

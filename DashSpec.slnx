@@ -3,5 +3,7 @@
   <Project Path="src\DashSpec.Core\DashSpec.Core.csproj" />
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
+  <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
+  <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
   <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
 </Solution>

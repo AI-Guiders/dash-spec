@@ -18,10 +18,9 @@ internal static class AccessEndpoints
             return Results.Content(BuildLoginHtml(safeReturn, error), "text/html; charset=utf-8");
         });
 
-        app.MapPost("/access", async (
+        app.MapPost("/access", (
             HttpContext ctx,
             DashSpecAccessValidator validator,
-            IHostEnvironment environment,
             [FromForm] string? api_key,
             [FromForm] string? returnUrl) =>
         {
@@ -45,7 +44,8 @@ internal static class AccessEndpoints
                 new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = !environment.IsDevelopment(),
+                    // Secure only when request is HTTPS — Production over HTTP (пилот :5295) must keep cookie.
+                    Secure = ctx.Request.IsHttps,
                     SameSite = SameSiteMode.Lax,
                     MaxAge = TimeSpan.FromDays(30),
                     Path = "/",

@@ -21,6 +21,6 @@ internal static class TopFilterPlacementRules
         }
 
         var kindLabel = string.IsNullOrWhiteSpace(diagramKind) ? "(preset)" : diagramKind;
-        return $"Top filter '{filterName}' can only be placed on table cards; card '{cardId}' uses diagram {kindLabel}.";
+        return $"Top filter '{filterName}' can only be placed on table or bar cards; card '{cardId}' uses diagram {kindLabel}.";
     }
 }

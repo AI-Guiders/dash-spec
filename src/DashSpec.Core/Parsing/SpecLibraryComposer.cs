@@ -26,9 +26,14 @@ public static class SpecLibraryComposer
             library = SpecLibrary.Merge(library, PaletteModuleParser.LoadPaletteFile(path));
         }
 
-        if (document is not null && document.ResolvedModuleDiagrams.Count > 0)
+        if (document is not null &&
+            (document.ResolvedChartChromePresets.Count > 0 || document.ResolvedModuleDiagrams.Count > 0))
         {
-            library = SpecLibrary.Merge(library, SpecLibrary.FromModuleDefinitions(document.ResolvedModuleDiagrams));
+            library = SpecLibrary.Merge(
+                library,
+                SpecLibrary.FromModuleDocument(
+                    document.ResolvedChartChromePresets,
+                    document.ResolvedModuleDiagrams));
         }
 
         return library;

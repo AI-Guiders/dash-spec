@@ -1,13 +1,11 @@
 @diagram demo_activity_5min_line
 
-include presentation "../presentations/line-right-360.dashpresentation"
-
-series {
+series
   max = 6
   other = "Other"
-}
+end series
 
-line {
+line
   render = "chartjs"
   x = bucket_start_utc
   x_format = time.short
@@ -15,4 +13,4 @@ line {
   y = event_count
   scale_y = integer
   series = app_name
-}
+end line

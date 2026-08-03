@@ -15,18 +15,25 @@ public class DashboardParseTests
     public void ReadDashboardHeader_reads_id_and_title()
     {
         const string text = """
-            @dashboard soak_id {
-              runtime { manifest = "cfg.toml" }
-              report "My **Title**" {
-                card a as "A" {
-                  diagram number { value = x }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard soak_id
+              runtime
+              manifest = "cfg.toml"
+              end runtime
+              report
+              title = "My **Title**"
+              card a as "A"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """;
 
-        Assert.Equal(("soak_id", "My **Title**"), DashSpecParser.ReadDashboardHeader(text));
+        var doc = DashSpecParser.Parse(text);
+        Assert.Equal("soak_id", doc.Id);
+        Assert.Equal("My **Title**", doc.Title);
     }
 
     [Fact]
@@ -67,16 +74,24 @@ public class DashboardParseTests
     public void Parse_layout_and_place()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              layout grid { columns = 12 gap = 8 }
-              card a as "A" {
-                place { row = 1 col = 1 span = half }
-                diagram number { value = x }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              layout grid
+              columns = 12 gap
+              end grid
+              card a as "A"
+              place
+              row = 1 col
+              span = half
+              end place
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal(8, doc.Layout.GapPx);
@@ -88,17 +103,25 @@ public class DashboardParseTests
     public void Parse_bind_block_syntax()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter field app_name { column = app_name as "App" }
-              filters dashboard { app_name }
-              card a as "A" {
-                bind { app_name }
-                diagram number { value = x }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter field app_name on app_name as "App"
+              end filter
+              filters dashboard
+              app_name
+              end dashboard
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal(["app_name"], doc.Cards[0].BoundFilters);
@@ -108,27 +131,35 @@ public class DashboardParseTests
     public void Parse_card_local_filters_placement()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Usage"
-                default = -7d..today
-              }
-              filter date activity_day {
-                column = bucket_start_utc as "Day"
-                default = today
-                widget = day
-              }
-              filter field app_name { column = app_name as "App" }
-              filters dashboard { usage_date, app_name }
-              card activity as "Activity" {
-                filters { activity_day }
-                bind activity_day, app_name
-                diagram line { x = bucket_start_utc y = event_count }
-                datasource view dbo.activity
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Usage" default -7d..today
+              filter date activity_day
+              column = bucket_start_utc as "Day"
+              default = today
+              widget = day
+              end filter
+              filter field app_name on app_name as "App"
+              end filter
+              filters dashboard
+              usage_date
+              app_name
+              end dashboard
+              card activity as "Activity"
+              filters
+              activity_day
+              end filters
+              bind
+                activity_day, app_name
+              end bind
+              diagram line
+              x = bucket_start_utc y
+              end line
+              datasource view dbo.activity
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards.Single();
@@ -141,19 +172,21 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                  filter date usage_date {
-                    column = usage_date as "Usage"
-                    default = -7d..today
-                  }
-                  card a as "A" {
-                    bind usage_date
-                    diagram number { value = x }
-                    datasource view dbo.t
-                  }
-                }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  filter date usage_date on usage_date as "Usage" default -7d..today
+                  card a as "A"
+                  bind
+                    usage_date
+                  end bind
+                  diagram number
+                  value = x
+                  end number
+                  datasource view dbo.t
+                  end card
+                  end report
+                end dashboard
 """));
 
         Assert.Contains("toolbar", ex.Message);
@@ -163,29 +196,35 @@ public class DashboardParseTests
     public void Parse_filters_chrome_and_tabs()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Usage"
-                default = -7d..today
-              }
-              filters chrome {
-                layout = bar
-                sticky = true
-                apply = auto
-                debounce_ms = 250
-              }
-              filters dashboard { usage_date }
-              tab main as "Main" {
-                cards { a }
-              }
-              card a as "A" {
-                bind usage_date
-                diagram number { value = x }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Usage" default -7d..today
+              filters chrome
+              layout = bar
+              sticky = true
+              apply = auto
+              debounce_ms = 250
+              end chrome
+              filters dashboard
+              usage_date
+              end dashboard
+              tab main as "Main"
+              cards
+              a
+              end cards
+              end tab
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.True(doc.FiltersChrome.IsBarLayout);
@@ -203,29 +242,38 @@ public class DashboardParseTests
     public void Parse_filters_chrome_sticky_modes()
     {
         var line = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filters chrome { sticky = line }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filters chrome
+              sticky = line
+              end chrome
+              end report
+            end dashboard
 """);
         Assert.True(line.FiltersChrome.IsStickyLine);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filters chrome { sticky = card }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filters chrome
+              sticky = card
+              end chrome
+              end report
+            end dashboard
 """);
         Assert.True(card.FiltersChrome.IsStickyCard);
 
         var none = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filters chrome { sticky = false }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filters chrome
+              sticky = false
+              end chrome
+              end report
+            end dashboard
 """);
         Assert.False(none.FiltersChrome.IsSticky);
         Assert.Equal(FiltersChromeDefinition.StickyNone, none.FiltersChrome.Sticky);
@@ -235,19 +283,20 @@ public class DashboardParseTests
     public void Parse_heatmap_diagram_kind()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card h as "H" {
-                diagram heatmap {
-                  x = usage_date
-                  y = user_name
-                  value = peak_concurrent_apps
-                  height = 360
-                }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card h as "H"
+              diagram heatmap
+              x = usage_date
+              y = user_name
+              value = peak_concurrent_apps
+              height = 360
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal("heatmap", doc.Cards[0].Diagram.Kind);
@@ -258,19 +307,20 @@ public class DashboardParseTests
     public void Parse_heatmap_column_as_labels()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card h as "H" {
-                diagram heatmap {
-                  x = usage_date as "День"
-                  y = user_name as "Пользователь"
-                  value = peak_concurrent_apps as "Разных ПО"
-                  tooltip = peak_apps as "Состав в пике"
-                }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card h as "H"
+              diagram heatmap
+              x = usage_date as "День"
+              y = user_name as "Пользователь"
+              value = peak_concurrent_apps as "Разных ПО"
+              tooltip = peak_apps as "Состав в пике"
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         var diagram = doc.Cards[0].Diagram;
@@ -288,18 +338,19 @@ public class DashboardParseTests
     public void Parse_bar_reference_column_as_label()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card peak as "Peak" {
-                diagram bar {
-                  category = app_name
-                  value = peak_concurrent_proxy
-                  reference = purchased_seats as "Куплено"
-                }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card peak as "Peak"
+              diagram bar
+              category = app_name
+              value = peak_concurrent_proxy
+              reference = purchased_seats as "Куплено"
+              end bar
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         var diagram = doc.Cards[0].Diagram;
@@ -311,21 +362,22 @@ public class DashboardParseTests
     public void Parse_heatmap_allows_extension_presentation_properties()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card h as "H" {
-                diagram heatmap {
-                  x = usage_date
-                  y = user_name
-                  value = peak_concurrent_apps
-                  tooltip_format = list
-                  tooltip_split = ", "
-                  color_scale = viridis
-                }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card h as "H"
+              diagram heatmap
+              x = usage_date
+              y = user_name
+              value = peak_concurrent_apps
+              tooltip_format = list
+              tooltip_split = ", "
+              color_scale = viridis
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         var props = doc.Cards[0].Diagram.Properties;
@@ -356,18 +408,26 @@ public class DashboardParseTests
     public void Parse_card_legend_block()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card h as "H" {
-                diagram heatmap { x = a y = b value = c }
-                legend {
+            @dashboard t
+              report
+                title = "T"
+              card h as "H"
+                diagram heatmap
+                  x = a y
+                  value = c
+                end heatmap
+                legend
                   min = "мин. {min}"
                   max = "макс. {max}"
-                }
+                
+                end legend
                 datasource view dbo.t
-              }
-            }
-            }
+              
+              end card
+            
+              end report
+            
+            end dashboard
 """);
 
         var legend = doc.Cards[0].Legend;
@@ -415,20 +475,22 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                  filter date usage_date {
-                    column = usage_date as "Дата"
-                    default = -7d..today
-                  }
-                  card a as "A" {
-                    bind usage_date
-                    diagram line { x = usage_date y = n }
-                    datasource view dbo.t
-                    where [[usage_date]]
-                  }
-                }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  filter date usage_date on usage_date as "Дата" default -7d..today
+                  card a as "A"
+                  bind
+                    usage_date
+                  end bind
+                  diagram line
+                  x = usage_date y
+                  end line
+                  datasource view dbo.t
+                  where [[usage_date]]
+                  end card
+                  end report
+                end dashboard
 """));
 
         Assert.Contains("'where' is no longer used", ex.Message);
@@ -437,26 +499,48 @@ public class DashboardParseTests
     public void TabLayoutCompactor_bumps_full_width_table_below_same_row_charts()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              tab s as "S" { cards { a b c } }
-              card a as "A" {
-                place { row = 1 col = 1 span = 6 }
-                diagram bar { x = a y = b }
-                datasource view dbo.a
-              }
-              card b as "B" {
-                place { row = 1 col = 7 span = 6 }
-                diagram bar { x = a y = b }
-                datasource view dbo.b
-              }
-              card c as "C" {
-                place { row = 1 col = 1 span = full }
-                diagram table { columns = a, b }
-                datasource view dbo.c
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              tab s as "S"
+              cards
+              a
+              b
+              c
+              end cards
+              end tab
+              card a as "A"
+              place
+              row = 1 col
+              span = 6
+              end place
+              diagram bar
+              x = a y
+              end bar
+              datasource view dbo.a
+              end card
+              card b as "B"
+              place
+              row = 1 col
+              span = 6
+              end place
+              diagram bar
+              x = a y
+              end bar
+              datasource view dbo.b
+              end card
+              card c as "C"
+              place
+              row = 1 col
+              span = full
+              end place
+              diagram table
+              columns = a, b
+              end table
+              datasource view dbo.c
+              end card
+              end report
+            end dashboard
 """);
 
         var layout = TabLayoutCompactor.Compact(doc, "s");

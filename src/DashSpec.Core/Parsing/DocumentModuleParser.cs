@@ -31,7 +31,10 @@ internal static class DocumentModuleParser
 
         _ = reader.ReadIdent();
         reader.SkipNewlines();
-        return reader.IsAt(TokenKind.LBrace);
+        return reader.IsAt(TokenKind.LBrace)
+            ? throw new DashSpecParseException(
+                "Brace module format removed; use @dashboard id or @tab id with end-block body.")
+            : !reader.IsEof;
     }
 
     public static DashboardDocument ParseDocument(string text, string? specDirectory = null) =>
@@ -68,7 +71,13 @@ internal static class DocumentModuleParser
                     "Tab dashspec references require specDirectory when parsing.");
             }
 
-            return DashboardComposer.MergeTabModules(document, specDirectory, parseOptions);
+            if (parseOptions.MergeReferencedTabModules)
+            {
+                return DashboardComposer.MergeTabModules(document, specDirectory, parseOptions);
+            }
+
+            DashboardValidator.Validate(document);
+            return document;
         }
 
         throw new DashSpecParseException("Block module must start with @dashboard or @tab.");
@@ -116,7 +125,9 @@ internal static class DocumentModuleParser
             result.Shell.ExportedTabLocalFilters,
             result.Shell.Cards,
             result.Shell.LayoutBoard,
-            result.Shell.Includes.ExportDefinitions());
+            result.Shell.Includes.ExportDefinitions(),
+            result.Shell.Includes.ExportChartChromePresets(),
+            result.Shell.Pages);
     }
 
     public static string? ReadRuntimeManifest(string text)
@@ -129,14 +140,25 @@ internal static class DocumentModuleParser
         var reader = ParserUtilities.CreateReader(text);
         reader.SkipNewlines();
         reader.Expect(TokenKind.At);
-        _ = reader.TryKeyword("dashboard") || reader.TryKeyword("tab");
-        _ = reader.ReadIdent();
-        reader.Expect(TokenKind.LBrace);
+        var isDashboard = reader.TryKeyword("dashboard");
+        if (!isDashboard)
+        {
+            _ = reader.TryKeyword("tab");
+        }
+
+        var moduleId = reader.ReadIdent();
+        var moduleKind = isDashboard ? "dashboard" : "tab";
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!reader.IsEof && !BlockSyntax.IsBlockEnd(reader, moduleKind, moduleId))
         {
             reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, moduleKind, moduleId))
+            {
+                break;
+            }
+
             if (reader.TryKeyword("runtime"))
             {
                 var props = PropertyBlockParser.Parse(reader, PropertySchemas.Runtime, "runtime");
@@ -148,6 +170,12 @@ internal static class DocumentModuleParser
                 reader.TryKeyword("report"))
             {
                 return null;
+            }
+
+            if (reader.TryKeyword("extensions"))
+            {
+                SkipTopLevelSection(reader, "extensions");
+                continue;
             }
 
             if (reader.TryModuleInclude(out _))
@@ -172,29 +200,52 @@ internal static class DocumentModuleParser
         var reader = ParserUtilities.CreateReader(text);
         reader.SkipNewlines();
         reader.Expect(TokenKind.At);
-        _ = reader.TryKeyword("dashboard") || reader.TryKeyword("tab");
-        _ = reader.ReadIdent();
-        reader.Expect(TokenKind.LBrace);
+        var isDashboard = reader.TryKeyword("dashboard");
+        if (!isDashboard)
+        {
+            _ = reader.TryKeyword("tab");
+        }
+
+        var moduleId = reader.ReadIdent();
+        var moduleKind = isDashboard ? "dashboard" : "tab";
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!reader.IsEof && !BlockSyntax.IsBlockEnd(reader, moduleKind, moduleId))
         {
             reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, moduleKind, moduleId))
+            {
+                break;
+            }
+
             if (reader.TryKeyword("configuration"))
             {
                 var props = PropertyBlockParser.Parse(reader, PropertySchemas.Configuration, "configuration");
                 return props.GetValueOrDefault(key);
             }
 
-            if (reader.TryKeyword("runtime") || reader.TryKeyword("wiring"))
+            if (reader.TryKeyword("runtime"))
             {
-                SkipBlock(reader);
+                SkipTopLevelSection(reader, "runtime");
+                continue;
+            }
+
+            if (reader.TryKeyword("wiring"))
+            {
+                SkipTopLevelSection(reader, "wiring");
                 continue;
             }
 
             if (reader.TryKeyword("report"))
             {
                 return null;
+            }
+
+            if (reader.TryKeyword("extensions"))
+            {
+                SkipTopLevelSection(reader, "extensions");
+                continue;
             }
 
             if (reader.TryModuleInclude(out _))
@@ -264,7 +315,9 @@ internal static class DocumentModuleParser
             cards,
             result.Shell.ToolbarBoard,
             result.Shell.ModuleExtensions,
-            result.Shell.Includes.ExportDefinitions());
+            result.Shell.Includes.ExportDefinitions(),
+            result.Shell.Includes.ExportChartChromePresets(),
+            result.Shell.Pages);
 
         DashboardValidator.Validate(document);
         return document;
@@ -277,7 +330,7 @@ internal static class DocumentModuleParser
     {
         var dashboardId = reader.ReadIdent();
         var (shell, sqlDialect, palettePath, diagramLibraryPath, reportTitle) =
-            ParseDashboardShell(reader, specDirectory, parseOptions);
+            ParseDashboardShell(reader, dashboardId, specDirectory, parseOptions);
 
         if (string.IsNullOrWhiteSpace(reportTitle))
         {
@@ -306,11 +359,17 @@ internal static class DocumentModuleParser
             cards,
             shell.ToolbarBoard,
             shell.ModuleExtensions,
-            shell.Includes.ExportDefinitions());
+            shell.Includes.ExportDefinitions(),
+            shell.Includes.ExportChartChromePresets(),
+            shell.Pages);
     }
 
     private static (DashboardShellContext Shell, SqlDialect SqlDialect, string? PalettePath, string? DiagramLibraryPath, string? ReportTitle)
-        ParseDashboardShell(TokenReader reader, string? specDirectory, DashSpecParseOptions parseOptions)
+        ParseDashboardShell(
+            TokenReader reader,
+            string dashboardId,
+            string? specDirectory,
+            DashSpecParseOptions parseOptions)
     {
         var includes = new ModuleIncludeState();
         var moduleExtensions = ModuleExtensionsDefinition.Empty;
@@ -323,16 +382,16 @@ internal static class DocumentModuleParser
         LayoutBoardDefinition? wiringLayoutBoard = null;
         LayoutBoardDefinition? wiringToolbarBoard = null;
 
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         DashboardShellContext? shell = null;
         string? reportTitle = null;
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (reader.IsEof || BlockSyntax.IsBlockEnd(reader, "dashboard", dashboardId))
             {
                 break;
             }
@@ -342,6 +401,7 @@ internal static class DocumentModuleParser
                     DocumentModuleKind.Dashboard,
                     specDirectory,
                     includes,
+                    parseOptions,
                     ref sqlDialect,
                     ref palettePath,
                     ref diagramLibraryPath,
@@ -382,14 +442,19 @@ internal static class DocumentModuleParser
                     moduleExtensions);
 
                 reportTitle = ReadOptionalReportTitle(reader);
-                ParseReportBlock(reader, shell, ReportBodyMode.DashboardRoot, out _);
+                ParseReportBlock(reader, shell, ReportBodyMode.DashboardRoot, out var moduleLabel);
+                reportTitle ??= moduleLabel;
                 continue;
             }
 
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        if (!reader.IsEof)
+        {
+            BlockSyntax.ExpectBlockEnd(reader, "dashboard", dashboardId);
+        }
+
         if (shell is null)
         {
             throw new DashSpecParseException("@dashboard module body is empty.");
@@ -418,16 +483,16 @@ internal static class DocumentModuleParser
         LayoutBoardDefinition? wiringLayoutBoard = null;
         LayoutBoardDefinition? wiringToolbarBoard = null;
 
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         DashboardShellContext? shell = null;
         string? reportTitle = null;
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (reader.IsEof || BlockSyntax.IsBlockEnd(reader, "tab", tabId))
             {
                 break;
             }
@@ -437,6 +502,7 @@ internal static class DocumentModuleParser
                     DocumentModuleKind.Tab,
                     specDirectory,
                     includes,
+                    parseOptions,
                     ref sqlDialect,
                     ref palettePath,
                     ref diagramLibraryPath,
@@ -479,13 +545,18 @@ internal static class DocumentModuleParser
                 reportTitle = ReadOptionalReportTitle(reader);
                 ParseReportBlock(reader, shell, reportMode, out var moduleLabel);
                 shell.TabModuleLabel ??= moduleLabel;
+                reportTitle ??= moduleLabel;
                 continue;
             }
 
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        if (!reader.IsEof)
+        {
+            BlockSyntax.ExpectBlockEnd(reader, "tab", tabId);
+        }
+
         if (shell is null)
         {
             throw new DashSpecParseException($"@tab '{tabId}' module body is empty.");
@@ -499,6 +570,7 @@ internal static class DocumentModuleParser
         DocumentModuleKind moduleKind,
         string? specDirectory,
         ModuleIncludeState includes,
+        DashSpecParseOptions parseOptions,
         ref SqlDialect sqlDialect,
         ref string? palettePath,
         ref string? diagramLibraryPath,
@@ -541,7 +613,12 @@ internal static class DocumentModuleParser
                 throw new DashSpecParseException("!include requires specDirectory when parsing.");
             }
 
-            IncludeExpander.Expand(includeReference, specDirectory, moduleKind, includes);
+            IncludeExpander.Expand(
+                includeReference,
+                specDirectory,
+                moduleKind,
+                includes,
+                parseOptions.TolerateIncompleteIncludes);
             reader.SkipNewlines();
             return true;
         }
@@ -592,13 +669,13 @@ internal static class DocumentModuleParser
         layoutBoard = null;
         toolbarBoard = null;
 
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "wiring") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "wiring"))
             {
                 break;
             }
@@ -646,7 +723,7 @@ internal static class DocumentModuleParser
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "wiring");
     }
 
     private static void ParseReportBlock(
@@ -656,26 +733,46 @@ internal static class DocumentModuleParser
         out string? moduleLabel)
     {
         moduleLabel = null;
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "report") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "report"))
             {
                 break;
+            }
+
+            if (reader.TryKeyword("title"))
+            {
+                reader.Expect(TokenKind.Eq);
+                moduleLabel = reader.ReadString();
+                reader.SkipNewlines();
+                continue;
             }
 
             if (reader.TryKeyword("standalone"))
             {
                 if (mode is ReportBodyMode.TabEmbedded)
                 {
-                    SkipBlock(reader);
+                    SkipStandaloneBlock(reader);
                     continue;
                 }
 
                 ParseStandaloneBlock(reader, shell);
+                continue;
+            }
+
+            if (reader.TryKeyword("page"))
+            {
+                var pageId = reader.ReadIdent();
+                if (string.IsNullOrWhiteSpace(pageId))
+                {
+                    throw new DashSpecParseException("page requires id.");
+                }
+
+                ParsePageBlock(reader, shell, pageId);
                 continue;
             }
 
@@ -709,18 +806,142 @@ internal static class DocumentModuleParser
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "report");
+    }
+
+    private static void ParsePageBlock(TokenReader reader, DashboardShellContext shell, string pageId)
+    {
+        if (shell.Pages.Any(page => string.Equals(page.Id, pageId, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new DashSpecParseException($"Report declares duplicate page id '{pageId}'.");
+        }
+
+        string? pageTitle = null;
+        LayoutBoardDefinition? pageLayout = null;
+        LayoutBoardDefinition? pageToolbar = null;
+        FilterDeriveDefinition? usageDateDerive = null;
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        var previousPageId = shell.CurrentPageId;
+        shell.CurrentPageId = pageId;
+
+        while (!BlockSyntax.IsBlockEnd(reader, "page", pageId) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "page", pageId))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("title"))
+            {
+                reader.Expect(TokenKind.Eq);
+                pageTitle = reader.ReadString();
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("toolbar"))
+            {
+                if (reader.TryPeekIdent(out var next) &&
+                    string.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase))
+                {
+                    DashboardShellParser.ParseFiltersChromePublic(reader, shell, assign: false);
+                }
+                else
+                {
+                    pageToolbar = ToolbarBoardFactory.FromFilterNames(reader.ReadCommaListInline());
+                }
+
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("derive"))
+            {
+                usageDateDerive = FilterDeriveParser.Parse(reader, pageId);
+                continue;
+            }
+
+            if (reader.TryModuleInclude(out var includeReference))
+            {
+                pageLayout = LoadPageLayoutInclude(includeReference, shell.SpecDirectory);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("include"))
+            {
+                var (kind, reference) = DiagramModuleParser.ReadIncludeReference(reader);
+                if (!string.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new DashSpecParseException(
+                        $"Page '{pageId}' allows include layout only, got include {kind}.");
+                }
+
+                if (string.IsNullOrWhiteSpace(shell.SpecDirectory))
+                {
+                    throw new DashSpecParseException(
+                        "include layout requires spec directory when parsing (path to the .dashspec folder).");
+                }
+
+                pageLayout = LayoutModuleParser.Load(reference, shell.SpecDirectory);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (DashboardShellParser.TryParseStatement(reader, shell))
+            {
+                continue;
+            }
+
+            throw reader.Unexpected();
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, "page", pageId);
+        shell.CurrentPageId = previousPageId;
+        shell.Pages.Add(new ReportPageDefinition(
+            pageId,
+            pageTitle,
+            pageLayout,
+            shell.TabModuleId,
+            pageToolbar,
+            usageDateDerive));
+        reader.SkipNewlines();
+    }
+
+    private static LayoutBoardDefinition LoadPageLayoutInclude(string reference, string? specDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(specDirectory))
+        {
+            throw new DashSpecParseException(
+                "!include layout requires spec directory when parsing (path to the .dashspec folder).");
+        }
+
+        var path = SpecIncludeResolver.ResolvePath(reference, specDirectory);
+        if (!path.EndsWith(".dashlayout", StringComparison.OrdinalIgnoreCase))
+        {
+            path = Path.ChangeExtension(path, ".dashlayout");
+        }
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"!include not found: '{reference}'.", path);
+        }
+
+        return LayoutModuleParser.ParseLayoutFile(File.ReadAllText(path));
     }
 
     private static void ParseStandaloneBlock(TokenReader reader, DashboardShellContext shell)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "standalone") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "standalone"))
             {
                 break;
             }
@@ -742,18 +963,63 @@ internal static class DocumentModuleParser
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "standalone");
+    }
+
+    private static void SkipStandaloneBlock(TokenReader reader)
+    {
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        while (!BlockSyntax.IsBlockEnd(reader, "standalone") && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "standalone"))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("filter"))
+            {
+                _ = FilterParser.Parse(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("toolbar") || reader.TryKeyword("filters"))
+            {
+                if (reader.TryKeyword("dashboard"))
+                {
+                    ToolbarPlacementParser.Discard(reader, "filters dashboard");
+                }
+                else if (reader.TryKeyword("chrome"))
+                {
+                    _ = FiltersChromeParser.Parse(reader);
+                }
+                else
+                {
+                    ToolbarPlacementParser.Discard(reader, "toolbar");
+                }
+
+                reader.SkipNewlines();
+                continue;
+            }
+
+            throw reader.Unexpected();
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, "standalone");
     }
 
     private static void ParseFiltersBlock(TokenReader reader, DashboardShellContext shell, ReportBodyMode mode)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "filters") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "filters"))
             {
                 break;
             }
@@ -776,7 +1042,35 @@ internal static class DocumentModuleParser
             reader.SkipNewlines();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "filters");
+    }
+
+    private static void SkipTopLevelSection(TokenReader reader, string endKind)
+    {
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
+            {
+                break;
+            }
+
+            if (reader.IsAt(TokenKind.LBrace))
+            {
+                SkipBlock(reader);
+                continue;
+            }
+
+            while (!reader.IsOnNewline() && !reader.IsEof)
+            {
+                reader.Advance();
+            }
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
     }
 
     private static void SkipBlock(TokenReader reader)
@@ -856,12 +1150,14 @@ internal static class DocumentModuleParser
         var allowed = moduleExtensions.EnabledPluginIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var keywords = options.ExtensionBlockKeywords
             .Where(keyword =>
-                options.ExtensionBlockPluginIds.TryGetValue(keyword, out var pluginId) &&
+                !options.ExtensionBlockPluginIds.TryGetValue(keyword, out var pluginId) ||
                 allowed.Contains(pluginId))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return new DashSpecParseOptions
         {
+            MergeReferencedTabModules = options.MergeReferencedTabModules,
+            TolerateIncompleteIncludes = options.TolerateIncompleteIncludes,
             ExtensionBlockKeywords = keywords,
             ExtensionBlockPluginIds = options.ExtensionBlockPluginIds,
             PhraseTemplates = options.PhraseTemplates,

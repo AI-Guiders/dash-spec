@@ -1,44 +1,60 @@
-@tab analytics {
-  runtime {
+@tab analytics
+  runtime
     manifest = "demo.toml"
-  }
+  end runtime
 
-  configuration {
+  configuration
     sqldialect = tsql
     palette = "palettes/demo-apps.dashpalette"
-  }
+  end configuration
 
   !include "diagrams/period-peak-by-app-bar.dashdiagram"
   !include "diagrams/peak-apps-heatmap.dashdiagram"
   !include "diagrams/idle-table.dashdiagram"
 
-  wiring {
+  wiring
     use palette demo_apps
-  }
+  end wiring
 
-  report "Analytics" {
-    card period_peak_by_app as "Peak by app (period)" {
-      filters { period_grain, period_start }
+  report
+    title = "Analytics"
+    card period_peak_by_app as "Peak by app (period)"
+      filters
+        period_grain
+        period_start
+      end filters
       diagram demo_period_peak_by_app_bar
       datasource view demo.v_peak_concurrent_by_period
-      bind period_grain, period_start, app_name
-    }
+      bind
+        period_grain, period_start, app_name
+      end bind
+    end card
 
-    card peak_apps_heatmap as "**Peak apps** per user" {
+    card peak_apps_heatmap as "**Peak apps** per user"
       diagram demo_peak_apps_heatmap
       datasource view demo.v_daily_peak_concurrent_apps_per_user
-      bind usage_date, user_name
-      legend {
+      bind
+        usage_date, user_name
+      end bind
+      legend
         min = "min apps"
         max = "max **{max}**"
-      }
-    }
+      
+      end legend
+    
+    end card
 
-    card idle_table as "Idle minutes (user × app)" {
-      filters { idle_top }
+    card idle_table as "Idle minutes (user × app)"
+      filters
+        idle_top
+      end filters
       diagram demo_idle_table
       datasource view demo.v_daily_idle_minutes_by_user_app
-      bind usage_date, user_name, app_name
-    }
-  }
-}
+      bind
+        usage_date, user_name, app_name
+      end bind
+    end card
+  
+  end report
+
+end tab

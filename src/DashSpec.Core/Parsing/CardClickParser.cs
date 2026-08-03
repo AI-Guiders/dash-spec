@@ -10,7 +10,7 @@ internal static class CardClickParser
         string cardId,
         DashSpecParseOptions parseOptions)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var effects = new List<CardClickEffect>();
@@ -18,8 +18,14 @@ internal static class CardClickParser
             .Where(x => string.Equals(x.Scope, PhraseScopes.OnClick, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "click") && !reader.IsEof)
         {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "click"))
+            {
+                break;
+            }
+
             if (reader.TryKeyword("show"))
             {
                 effects.Add(ParseShowEffect(reader, cardId));
@@ -41,6 +47,13 @@ internal static class CardClickParser
                 continue;
             }
 
+            if (reader.TryKeyword("focus"))
+            {
+                effects.Add(ParseFocusEffect(reader, cardId));
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("invoke") || reader.TryKeyword("run"))
             {
                 effects.Add(ParseInvokeEffect(reader, cardId, parseOptions));
@@ -58,7 +71,7 @@ internal static class CardClickParser
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "click");
 
         if (effects.Count == 0)
         {
@@ -253,19 +266,81 @@ internal static class CardClickParser
         return new SetFilterFromFieldEffect(filterName, field.ToLowerInvariant());
     }
 
-    private static GotoTabEffect ParseGotoEffect(TokenReader reader, string cardId)
+    private static CardClickEffect ParseGotoEffect(TokenReader reader, string cardId)
     {
-        if (!reader.TryKeyword("tab"))
+        if (reader.TryKeyword("tab"))
         {
-            throw new DashSpecParseException($"Card '{cardId}': goto requires 'tab <id>'.");
+            var tabId = reader.ReadIdent();
+            if (string.IsNullOrWhiteSpace(tabId))
+            {
+                throw new DashSpecParseException($"Card '{cardId}': goto tab requires tab id.");
+            }
+
+            return new GotoTabEffect(tabId);
         }
 
-        var tabId = reader.ReadIdent();
-        if (string.IsNullOrWhiteSpace(tabId))
+        if (reader.TryKeyword("page"))
         {
-            throw new DashSpecParseException($"Card '{cardId}': goto tab requires tab id.");
+            var pageId = reader.ReadIdent();
+            if (string.IsNullOrWhiteSpace(pageId))
+            {
+                throw new DashSpecParseException($"Card '{cardId}': goto page requires page id.");
+            }
+
+            return new GotoPageEffect(pageId);
         }
 
-        return new GotoTabEffect(tabId);
+        if (reader.TryKeyword("entry"))
+        {
+            var entryId = reader.ReadIdent();
+            if (string.IsNullOrWhiteSpace(entryId))
+            {
+                throw new DashSpecParseException($"Card '{cardId}': goto entry requires catalog entry id.");
+            }
+
+            IReadOnlyList<string>? preserveFilterNames = null;
+            if (reader.TryKeyword("preserving"))
+            {
+                if (!reader.TryKeyword("filters"))
+                {
+                    throw new DashSpecParseException(
+                        $"Card '{cardId}': goto entry preserving requires 'filters' keyword.");
+                }
+
+                preserveFilterNames = ParsePreserveFilterList(reader);
+            }
+
+            return new GotoCatalogEntryEffect(entryId, preserveFilterNames);
+        }
+
+        throw new DashSpecParseException($"Card '{cardId}': goto requires tab, page, or entry.");
+    }
+
+    private static IReadOnlyList<string> ParsePreserveFilterList(TokenReader reader)
+    {
+        reader.SkipNewlines();
+        if (reader.IsEof)
+        {
+            return [];
+        }
+
+        if (reader.TryPeekIdent(out var next) &&
+            string.Equals(next, "end", StringComparison.OrdinalIgnoreCase))
+        {
+            return [];
+        }
+
+        return reader.ReadCommaListInline();
+    }
+
+    private static FocusPhaseEffect ParseFocusEffect(TokenReader reader, string cardId)
+    {
+        var phaseId = reader.ReadIdent();
+        if (string.IsNullOrWhiteSpace(phaseId))
+        {
+            throw new DashSpecParseException($"Card '{cardId}': focus requires phase id.");
+        }
+
+        return new FocusPhaseEffect(phaseId);
     }
 }

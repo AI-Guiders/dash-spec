@@ -6,16 +6,16 @@ internal static class ModuleExtensionsParser
 {
     public static ModuleExtensionsDefinition Parse(TokenReader reader)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var enabled = new List<string>();
         var imports = new List<ModuleExtensionImport>();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "extensions") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "extensions"))
             {
                 break;
             }
@@ -52,7 +52,7 @@ internal static class ModuleExtensionsParser
             throw reader.Unexpected("use, import, or extension");
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "extensions");
         return new ModuleExtensionsDefinition(enabled, imports);
     }
 }

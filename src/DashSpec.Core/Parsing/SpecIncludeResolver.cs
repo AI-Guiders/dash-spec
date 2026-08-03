@@ -50,10 +50,13 @@ internal static class SpecIncludeResolver
         return includeKind.ToLowerInvariant() switch
         {
             "diagram" => DiagramModuleParser.ParseDiagramFile(text, baseDirectory),
-            "presentation" => new SpecIncludeFragment(null, PresentationModuleParser.ParsePresentationFile(text), null),
+            "presentation" or "chrome" => new SpecIncludeFragment(
+                null,
+                PresentationModuleParser.ParsePresentationFile(text, baseDirectory),
+                null),
             "transform" => new SpecIncludeFragment(null, null, TransformModuleParser.ParseTransformFile(text)),
             _ => throw new DashSpecParseException(
-                $"Include kind must be diagram, presentation, or transform, got '{includeKind}'."),
+                $"Include kind must be diagram, presentation, chrome, or transform, got '{includeKind}'."),
         };
     }
 
@@ -116,7 +119,7 @@ internal static class SpecIncludeResolver
         var extensions = includeKind.ToLowerInvariant() switch
         {
             "diagram" => new[] { ".dashdiagram" },
-            "presentation" => new[] { ".dashpresentation" },
+            "presentation" or "chrome" => new[] { ".dashpresentation" },
             "transform" => new[] { ".dashtransform" },
             _ => Array.Empty<string>(),
         };

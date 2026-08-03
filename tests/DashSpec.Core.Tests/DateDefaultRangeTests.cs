@@ -36,14 +36,12 @@ public class DateDefaultRangeTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                  filter date usage_date {
-                    column = usage_date as "Usage"
-                    default = last_7_days
-                  }
-                }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  filter date usage_date on usage_date as "Usage" last_7_days
+                  end report
+                end dashboard
 """));
         Assert.Contains("..", ex.Message);
     }

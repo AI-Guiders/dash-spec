@@ -49,6 +49,12 @@ internal sealed class DashboardShellContext
 
     public DashSpecParseOptions ParseOptions { get; init; } = DashSpecParseOptions.Default;
 
+    public string? CurrentPhaseId { get; set; }
+
+    public string? CurrentPageId { get; set; }
+
+    public List<ReportPageDefinition> Pages { get; } = [];
+
     public ModuleExtensionsDefinition ModuleExtensions { get; set; } = ModuleExtensionsDefinition.Empty;
 
     public IReadOnlyList<FilterDefinition> CardBindValidationFilters =>
@@ -196,6 +202,38 @@ internal static class DashboardShellParser
             return true;
         }
 
+        if (reader.TryKeyword("phase"))
+        {
+            var phaseId = reader.ReadIdent();
+            if (string.IsNullOrWhiteSpace(phaseId))
+            {
+                throw new DashSpecParseException("phase requires id.");
+            }
+
+            BlockSyntax.BeginBlock(reader);
+            reader.SkipNewlines();
+            var previousPhase = ctx.CurrentPhaseId;
+            ctx.CurrentPhaseId = phaseId;
+            while (!BlockSyntax.IsBlockEnd(reader, "phase", phaseId) && !reader.IsEof)
+            {
+                reader.SkipNewlines();
+                if (BlockSyntax.IsBlockEnd(reader, "phase", phaseId))
+                {
+                    break;
+                }
+
+                if (!TryParseStatement(reader, ctx))
+                {
+                    throw reader.Unexpected();
+                }
+            }
+
+            BlockSyntax.ExpectBlockEnd(reader, "phase", phaseId);
+            ctx.CurrentPhaseId = previousPhase;
+            reader.SkipNewlines();
+            return true;
+        }
+
         if (reader.TryKeyword("card"))
         {
             ctx.Cards.Add(CardParser.Parse(
@@ -203,7 +241,9 @@ internal static class DashboardShellParser
                 ctx.CardBindValidationFilters,
                 ctx.SpecDirectory,
                 ctx.Includes,
-                ctx.ParseOptions));
+                ctx.ParseOptions,
+                ctx.CurrentPhaseId,
+                ctx.CurrentPageId));
             reader.SkipNewlines();
             return true;
         }

@@ -1,35 +1,93 @@
 @namespace DashSpec.Host.Components.Dashboard
+
 @using DashSpec.Core.Model
 
+
+
 @if (Entries.Count > 1)
+
 {
+
     <label class="dash-catalog">
+
         <span class="filter-inline-label">Отчёт</span>
+
         <select class="dash-catalog-select"
+
                 aria-label="Выбор отчёта"
+
                 disabled="@Busy"
+
                 value="@ActiveEntryId"
+
                 @onchange="OnChanged">
-            @foreach (var entry in Entries)
+
+            @foreach (var group in Groups)
+
             {
-                <option value="@entry.Id">@entry.Title</option>
+
+                <optgroup label="@group.Title">
+
+                    @foreach (var entry in Entries.Where(entry =>
+
+                        string.Equals(entry.GroupId, group.Id, StringComparison.OrdinalIgnoreCase)))
+
+                    {
+
+                        <option value="@entry.Id">@entry.Title</option>
+
+                    }
+
+                </optgroup>
+
             }
+
+            @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId)))
+
+            {
+
+                <option value="@entry.Id">@entry.Title</option>
+
+            }
+
         </select>
+
     </label>
+
 }
+
+
 
 @code {
+
     [Parameter] public IReadOnlyList<CatalogEntryDefinition> Entries { get; set; } = [];
+
+    [Parameter] public IReadOnlyList<CatalogGroupDefinition> Groups { get; set; } = [];
+
     [Parameter] public string? ActiveEntryId { get; set; }
+
     [Parameter] public bool Busy { get; set; }
+
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 
+
+
     private async Task OnChanged(ChangeEventArgs e)
+
     {
+
         var entryId = e.Value?.ToString();
+
         if (!string.IsNullOrWhiteSpace(entryId))
+
         {
+
             await OnSelect.InvokeAsync(entryId);
+
         }
+
     }
+
 }
+
+

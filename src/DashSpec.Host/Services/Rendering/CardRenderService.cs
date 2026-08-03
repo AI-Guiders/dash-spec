@@ -47,6 +47,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             ? null
             : DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
 
+        var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
+        var topFilterScopeHint = CardFilterScopeHints.ResolveTopFilterScope(card, document);
+
         return kind.DataFamily switch
         {
             DiagramDataFamily.Chart =>
@@ -64,7 +67,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
-                    LocalFiltersManualApply: card.LocalFiltersManualApply),
+                    LocalFiltersManualApply: card.LocalFiltersManualApply,
+                    MatrixLimits: card.MatrixLimits,
+                    OversizeMessage: card.OversizeMessage,
+                    FilterLinkHint: filterLinkHint,
+                    FilterLinkCssClass: filterLinkCssClass,
+                    TopFilterScopeHint: topFilterScopeHint),
             DiagramDataFamily.Table =>
                 new CardRenderResult(
                     card.Id,
@@ -79,7 +87,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
-                    LocalFiltersManualApply: card.LocalFiltersManualApply),
+                    LocalFiltersManualApply: card.LocalFiltersManualApply,
+                    MatrixLimits: card.MatrixLimits,
+                    OversizeMessage: card.OversizeMessage,
+                    FilterLinkHint: filterLinkHint,
+                    FilterLinkCssClass: filterLinkCssClass,
+                    TopFilterScopeHint: topFilterScopeHint),
             DiagramDataFamily.Scalar =>
                 new CardRenderResult(
                     card.Id,
@@ -94,7 +107,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
-                    LocalFiltersManualApply: card.LocalFiltersManualApply),
+                    LocalFiltersManualApply: card.LocalFiltersManualApply,
+                    MatrixLimits: card.MatrixLimits,
+                    OversizeMessage: card.OversizeMessage),
             DiagramDataFamily.Matrix =>
                 new CardRenderResult(
                     card.Id,
@@ -110,7 +125,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
-                    LocalFiltersManualApply: card.LocalFiltersManualApply),
+                    LocalFiltersManualApply: card.LocalFiltersManualApply,
+                    MatrixLimits: card.MatrixLimits,
+                    OversizeMessage: card.OversizeMessage,
+                    FilterLinkHint: filterLinkHint,
+                    FilterLinkCssClass: filterLinkCssClass,
+                    TopFilterScopeHint: topFilterScopeHint),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
     }
@@ -124,6 +144,15 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             return null;
         }
 
-        return Convert.ToString(rows[0].GetValueOrDefault(DiagramBindings.Column(diagram, "value")));
+        var value = rows[0].GetValueOrDefault(DiagramBindings.Column(diagram, "value"));
+        return value switch
+        {
+            null => null,
+            DateOnly d => d.ToString("dd.MM.yyyy"),
+            DateTime dt => dt.TimeOfDay == TimeSpan.Zero
+                ? dt.ToString("dd.MM.yyyy")
+                : dt.ToString("dd.MM.yyyy HH:mm"),
+            _ => Convert.ToString(value),
+        };
     }
 }

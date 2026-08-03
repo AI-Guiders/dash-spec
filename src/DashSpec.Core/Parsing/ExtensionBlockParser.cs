@@ -25,16 +25,16 @@ internal static class ExtensionBlockParser
 
     internal static ExtensionBlockNode ParseBlock(TokenReader reader, string keyword)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var properties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var nested = new List<ExtensionBlockNode>();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, keyword) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, keyword))
             {
                 break;
             }
@@ -51,7 +51,7 @@ internal static class ExtensionBlockParser
                 continue;
             }
 
-            if (reader.IsAt(TokenKind.LBrace))
+            if (!BlockSyntax.IsBlockEnd(reader, keyword))
             {
                 reader.Rewind(mark);
                 var childKeyword = reader.ReadIdent();
@@ -65,7 +65,7 @@ internal static class ExtensionBlockParser
             reader.SkipNewlines();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, keyword);
         return new ExtensionBlockNode(keyword, properties, nested);
     }
 }

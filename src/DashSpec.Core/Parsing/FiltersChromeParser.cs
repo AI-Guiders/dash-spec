@@ -6,7 +6,11 @@ internal static class FiltersChromeParser
 {
     public static FiltersChromeDefinition Parse(TokenReader reader)
     {
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.FiltersChrome, "filters chrome");
+        var props = PropertyBlockParser.ParseContainer(
+            reader,
+            PropertySchemas.FiltersChrome,
+            "filters chrome",
+            "chrome");
 
         var layout = "card";
         var sticky = FiltersChromeDefinition.StickyNone;

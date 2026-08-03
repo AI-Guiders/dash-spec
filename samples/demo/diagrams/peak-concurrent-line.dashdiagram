@@ -1,17 +1,15 @@
 @diagram demo_peak_concurrent_line
 
-include presentation "../presentations/line-bottom-300.dashpresentation"
-
-series {
+series
   max = 5
   other = "Other"
-}
+end series
 
-line {
+line
   render = "chartjs"
   x = usage_date
   x_format = date.short
   y = peak_concurrent_proxy
   scale_y = integer
   series = app_name
-}
+end line

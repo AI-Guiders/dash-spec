@@ -23,4 +23,11 @@ public sealed record CardRenderResult(
     MatrixPresentation? MatrixPresentation = null,
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
-    bool LocalFiltersManualApply = false);
+    bool LocalFiltersManualApply = false,
+    bool IsVisibilityPlaceholder = false,
+    string? VisibilityMessage = null,
+    MatrixRenderLimitsDefinition? MatrixLimits = null,
+    string? OversizeMessage = null,
+    string? FilterLinkHint = null,
+    string? FilterLinkCssClass = null,
+    string? TopFilterScopeHint = null);

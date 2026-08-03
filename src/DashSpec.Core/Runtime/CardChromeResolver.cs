@@ -9,18 +9,22 @@ public static class CardChromeResolver
         CardDefinition card,
         SpecLibrary? library)
     {
-        var props = MergePresentationProperties(card, library);
+        var props = ChartChromeProperties.Merge(card, library);
         var presentation = ChartPresentation.FromProperties(props);
+        var valueAxisLabel = DiagramBindings.TryGetColumn(card.Diagram, "value", out _)
+            ? DiagramBindings.Label(card.Diagram, "value") ?? DiagramBindings.Label(card.Diagram, "y")
+            : DiagramBindings.Label(card.Diagram, "y");
+
         return presentation with
         {
             CategoryAxisLabel = DiagramBindings.Label(card.Diagram, "x"),
-            ValueAxisLabel = DiagramBindings.Label(card.Diagram, "y"),
+            ValueAxisLabel = valueAxisLabel,
         };
     }
 
     public static int ResolveMatrixHeightPx(CardDefinition card, SpecLibrary? library)
     {
-        var props = MergePresentationProperties(card, library);
+        var props = ChartChromeProperties.Merge(card, library);
         if (props.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
             parsedHeight is >= 160 and <= 800)
@@ -56,48 +60,6 @@ public static class CardChromeResolver
         }
 
         return null;
-    }
-
-    private static Dictionary<string, string> MergePresentationProperties(
-        CardDefinition card,
-        SpecLibrary? library)
-    {
-        var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        if (card.Presentation?.UsePreset is { } presetName &&
-            library?.TryGetPresentation(presetName) is { } preset)
-        {
-            foreach (var (key, value) in preset)
-            {
-                merged[key] = value;
-            }
-        }
-
-        if (card.Presentation is not null)
-        {
-            foreach (var (key, value) in card.Presentation.Properties)
-            {
-                if (!string.Equals(key, "use", StringComparison.OrdinalIgnoreCase))
-                {
-                    merged[key] = value;
-                }
-            }
-        }
-
-        foreach (var legacyKey in new[]
-        {
-            "legend", "height", "stacked", "orientation",
-            "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
-        })
-        {
-            if (!merged.ContainsKey(legacyKey) &&
-                card.Diagram.Properties.TryGetValue(legacyKey, out var legacyValue))
-            {
-                merged[legacyKey] = legacyValue;
-            }
-        }
-
-        return merged;
     }
 
     private static SeriesTransformSettings? ResolveSeriesTransformFromBlock(
