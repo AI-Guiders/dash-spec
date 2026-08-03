@@ -1,0 +1,25 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Core.Model
+
+@if (Pages is { Count: > 1 })
+{
+    <nav class="dash-tabs dash-pages" aria-label="Страницы отчёта">
+        @foreach (var page in Pages)
+        {
+            var active = string.Equals(page.Id, ActivePageId, StringComparison.OrdinalIgnoreCase);
+            <button type="button"
+                    class="dash-tab @(active ? "dash-tab-active" : null)"
+                    aria-selected="@active"
+                    @onclick="() => OnSelect.InvokeAsync(page.Id)">
+                @(page.Title ?? page.Id)
+            </button>
+        }
+    </nav>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<ReportPageDefinition> Pages { get; set; } = [];
+    [Parameter] public string? ActivePageId { get; set; }
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+}
+

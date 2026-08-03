@@ -29,6 +29,7 @@ internal static class LayoutModuleScopeValidator
         {
             LayoutScope.Toolbar => "toolbar",
             LayoutScope.Tab => "tab",
+            LayoutScope.Page => "page",
             LayoutScope.Card => "card",
             _ => scope.ToString(),
         };

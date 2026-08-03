@@ -5,5 +5,6 @@ public enum LayoutScope
 {
     Toolbar,
     Tab,
+    Page,
     Card,
 }

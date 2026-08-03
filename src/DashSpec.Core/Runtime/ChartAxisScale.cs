@@ -10,6 +10,7 @@ public enum ChartAxisScale
 {
     Decimal,
     Integer,
+    Percent,
 }
 
 public static class ChartAxisScaleParser
@@ -18,10 +19,11 @@ public static class ChartAxisScaleParser
         raw?.Trim().ToLowerInvariant() switch
         {
             "integer" or "int" or "count" => ChartAxisScale.Integer,
+            "percent" or "pct" or "percentage" or "%" => ChartAxisScale.Percent,
             "decimal" or "number" or "float" or "auto" => ChartAxisScale.Decimal,
             null or "" => ChartAxisScale.Decimal,
             _ => throw new DashSpecParseException(
-                $"Unknown axis scale '{raw}'. Use integer or decimal."),
+                $"Unknown axis scale '{raw}'. Use integer, decimal, or percent."),
         };
 
     /// <summary>Scale for the numeric measure binding (<c>value</c> / <c>y</c>).</summary>

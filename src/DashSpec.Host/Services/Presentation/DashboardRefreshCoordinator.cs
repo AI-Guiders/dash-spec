@@ -1,3 +1,4 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
@@ -32,6 +33,8 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     public Func<Func<Task>, Task>? UiDispatcher { get; set; }
 
     public bool Busy { get; private set; }
+
+    public string ActivePhaseId { get; set; } = "browse";
 
     public List<CardRenderResult> Cards { get; } = [];
 
@@ -161,6 +164,32 @@ public sealed class DashboardRefreshCoordinator : IDisposable
             var rendered = await Task.WhenAll(cardDefs.Select(async card =>
             {
                 token.ThrowIfCancellationRequested();
+                var visibility = CardVisibilityEvaluator.Evaluate(
+                    card,
+                    _filters.SelectedFields,
+                    ActivePhaseId);
+                if (visibility is CardVisibilityOutcome.Hidden)
+                {
+                    return (card.Id, CardRenderSkeletonFactory.CreateLoading(
+                        card,
+                        _session.SpecLibrary,
+                        _vizPlugins,
+                        dashboardFilters,
+                        _session.Document) with { Loading = false });
+                }
+
+                if (visibility is CardVisibilityOutcome.Placeholder &&
+                    !string.IsNullOrWhiteSpace(card.Visibility?.Message))
+                {
+                    return (card.Id, CardRenderSkeletonFactory.CreatePlaceholder(
+                        card,
+                        _session.SpecLibrary,
+                        _vizPlugins,
+                        dashboardFilters,
+                        card.Visibility.Message,
+                        _session.Document));
+                }
+
                 try
                 {
                     var result = await _session.RenderCardAsync(card, token).ConfigureAwait(false);
@@ -291,8 +320,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
     private IReadOnlyList<string> ResolveCardsForDashboardRefresh()
     {
-        var cardIds = _session.Document.DashboardFilters
-            .Where(FiltersToCards.ContainsKey)
+        var cardIds = FiltersToCards.Keys
             .SelectMany(filterName => FiltersToCards[filterName])
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -331,9 +359,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     }
 
     private IEnumerable<string> PlacedFilterNames() =>
-        _session.Document.DashboardFilters
-            .Concat(_session.Document.Cards.SelectMany(c => c.LocalFilters))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+        PlacedFilterCollector.Collect(_session.Document);
 
     private async Task DispatchUiAsync(Func<Task> action)
     {

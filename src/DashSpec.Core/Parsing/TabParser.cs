@@ -20,23 +20,29 @@ internal static class TabParser
             return new TabDefinition(id, label, [], path);
         }
 
-        reader.Expect(TokenKind.LBrace);
+        if (!reader.IsOnNewline())
+        {
+            throw new DashSpecParseException(
+                $"Tab '{id}' requires dashspec \"path\" or a body closed with end tab.");
+        }
+
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         IReadOnlyList<string> cardIds = [];
         LayoutBoardDefinition? layoutBoard = null;
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "tab", id) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "tab", id))
             {
                 break;
             }
 
             if (reader.TryKeyword("cards"))
             {
-                cardIds = PropertyBlockParser.ParseIdentListBlock(reader, $"tab {id} cards");
+                cardIds = PropertyBlockParser.ParseIdentListBlock(reader, "cards", $"tab {id} cards");
                 reader.SkipNewlines();
                 continue;
             }
@@ -52,11 +58,11 @@ internal static class TabParser
             throw new DashSpecParseException($"Unknown property '{key}' in tab {id} block.");
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "tab", id);
 
         if (cardIds.Count == 0)
         {
-            throw new DashSpecParseException($"Tab '{id}' requires a cards {{ }} block or dashspec \"path\".");
+            throw new DashSpecParseException($"Tab '{id}' requires a cards block or dashspec \"path\".");
         }
 
         return new TabDefinition(id, label, cardIds, LayoutBoard: layoutBoard);
@@ -84,18 +90,23 @@ internal static class TabParser
 
         var filters = new List<FilterDefinition>();
         LayoutBoardDefinition? layoutBoard = null;
-        if (!reader.IsAt(TokenKind.LBrace))
+        if (reader.IsOnNewline())
+        {
+            reader.SkipNewlines();
+        }
+
+        if (reader.IsEof || BlockSyntax.IsBlockEnd(reader, "tab", expectedTabId))
         {
             return (label, filters, layoutBoard);
         }
 
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "tab", expectedTabId) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "tab", expectedTabId))
             {
                 break;
             }
@@ -116,10 +127,10 @@ internal static class TabParser
 
             var key = reader.ReadIdent();
             throw new DashSpecParseException(
-                $"Tab module '{expectedTabId}' allows only layout and filter declarations in tab {{ }}, not '{key}'.");
+                $"Tab module '{expectedTabId}' allows only layout and filter declarations in tab block, not '{key}'.");
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "tab", expectedTabId);
         return (label, filters, layoutBoard);
     }
 

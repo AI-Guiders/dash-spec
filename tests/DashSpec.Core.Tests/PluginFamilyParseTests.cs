@@ -9,21 +9,28 @@ public sealed class PluginFamilyParseTests
     public void Parse_module_extensions_use()
     {
         var text = """
-            @tab soak {
-              runtime { manifest = "demo.toml" }
-              extensions {
-                use card_export
-              }
-              report "Soak" {
-                filter date usage_date on usage_date as "Date" default -7d..today
-                toolbar { usage_date }
-                card peak as "Peak" {
-                  bind usage_date
-                  diagram line { x = usage_date y = peak }
-                  datasource view demo.v_peak
-                }
-              }
-            }
+            @tab soak
+              runtime
+              manifest = "demo.toml"
+              end runtime
+              extensions
+              use card_export
+              end extensions
+              report
+              title = "Soak"
+              filter date usage_date on usage_date as "Date" default -7d..today
+              toolbar usage_date
+              card peak as "Peak"
+              bind
+                usage_date
+              end bind
+              diagram line
+              x = usage_date y
+              end line
+              datasource view demo.v_peak
+              end card
+              end report
+            end tab
             """;
 
         var document = DashSpecParser.Parse(text);
@@ -40,24 +47,31 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            @tab soak {
-              runtime { manifest = "demo.toml" }
-              report "Soak" {
-                filter date usage_date on usage_date as "Date" default -7d..today
-                toolbar { usage_date }
-                card peak as "Peak" {
-                  buttons {
-                    export {
-                      label = "Export"
-                      action = csv_export
-                    }
-                  }
-                  bind usage_date
-                  diagram line { x = usage_date y = peak }
-                  datasource view demo.v_peak
-                }
-              }
-            }
+            @tab soak
+              runtime
+              manifest = "demo.toml"
+              end runtime
+              report
+              title = "Soak"
+              filter date usage_date on usage_date as "Date" default -7d..today
+              toolbar usage_date
+              card peak as "Peak"
+              buttons
+              export
+              label = "Export"
+              action = csv_export
+              end export
+              end buttons
+              bind
+                usage_date
+              end bind
+              diagram line
+              x = usage_date y
+              end line
+              datasource view demo.v_peak
+              end card
+              end report
+            end tab
             """;
 
         var document = DashSpecParser.Parse(text, specDirectory: null, options);
@@ -77,29 +91,34 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            @tab soak {
-              runtime { manifest = "demo.toml" }
-              report "Soak" {
-                filter date usage_date on usage_date as "Date" default -7d..today
-                toolbar { usage_date }
-                card peak as "Peak" {
-                  views {
-                    default = heatmap
-                    line {
-                      label = "Line"
-                      diagram = demo_peak_line
-                    }
-                    heatmap {
-                      label = "Heatmap"
-                      diagram = demo_peak_heatmap
-                    }
-                  }
-                  bind usage_date
-                  diagram demo_peak_heatmap
-                  datasource view demo.v_peak
-                }
-              }
-            }
+            @tab soak
+              runtime
+              manifest = "demo.toml"
+              end runtime
+              report
+              title = "Soak"
+              filter date usage_date on usage_date as "Date" default -7d..today
+              toolbar usage_date
+              card peak as "Peak"
+              views
+              default = heatmap
+              line
+              label = "Line"
+              diagram = demo_peak_line
+              end line
+              heatmap
+              label = "Heatmap"
+              diagram = demo_peak_heatmap
+              end heatmap
+              end views
+              bind
+                usage_date
+              end bind
+              diagram demo_peak_heatmap
+              datasource view demo.v_peak
+              end card
+              end report
+            end tab
             """;
 
         var document = DashSpecParser.Parse(text, specDirectory: null, options);

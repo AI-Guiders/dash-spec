@@ -10,7 +10,8 @@ public sealed record ChartPresentation(
     ChartOrientation Orientation = ChartOrientation.Vertical,
     ChartAxisScale ValueAxisScale = ChartAxisScale.Decimal,
     string? CategoryAxisLabel = null,
-    string? ValueAxisLabel = null)
+    string? ValueAxisLabel = null,
+    double? ValueAxisMax = null)
 {
     public bool IsHorizontal => Orientation is ChartOrientation.Horizontal;
 
@@ -48,7 +49,40 @@ public sealed record ChartPresentation(
 
         var valueAxisScale = ChartAxisScaleParser.ResolveValueAxis(properties);
 
-        return new ChartPresentation(legend, height, resolvedMaxSeries, stacked, orientation, valueAxisScale);
+        double? valueAxisMax = null;
+        if (TryReadAxisMax(properties, "y_max", out var yMax) ||
+            TryReadAxisMax(properties, "value_axis_max", out yMax))
+        {
+            valueAxisMax = yMax;
+        }
+        else if (valueAxisScale is ChartAxisScale.Percent)
+        {
+            valueAxisMax = 100;
+        }
+
+        return new ChartPresentation(
+            legend,
+            height,
+            resolvedMaxSeries,
+            stacked,
+            orientation,
+            valueAxisScale,
+            ValueAxisMax: valueAxisMax);
+    }
+
+    private static bool TryReadAxisMax(
+        IReadOnlyDictionary<string, string> properties,
+        string key,
+        out double value)
+    {
+        value = 0;
+        if (!properties.TryGetValue(key, out var raw) ||
+            !double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out value))
+        {
+            return false;
+        }
+
+        return value > 0;
     }
 
     public static ChartPresentation FromDiagram(DiagramDefinition diagram) =>

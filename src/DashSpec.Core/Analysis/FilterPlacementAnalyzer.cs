@@ -42,12 +42,13 @@ internal static class FilterPlacementAnalyzer
                 foreach (var filterName in effectiveBind)
                 {
                     var onDashboard = document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase);
+                    var onPageToolbar = IsOnPageToolbar(document, card, filterName);
                     var onCard = localSet.Contains(filterName);
                     var onHosted = IsHostedOnCard(document, card, filterName);
-                    if (!onDashboard && !onCard && !onHosted)
+                    if (!onDashboard && !onPageToolbar && !onCard && !onHosted)
                     {
                         throw new DashSpecParseException(
-                            $"Card '{card.Id}': bound filter '{filterName}' must be placed in toolbar {{ }}, this card's filters {{ }}, or filters host <card> {{ }}.");
+                            $"Card '{card.Id}': bound filter '{filterName}' must be placed in toolbar {{ }}, page toolbar, this card's filters {{ }}, or filters host <card> {{ }}.");
                     }
                 }
             }
@@ -146,6 +147,28 @@ internal static class FilterPlacementAnalyzer
                     document.Layout.Columns);
             }
         }
+    }
+
+    private static bool IsOnPageToolbar(DashboardDocument document, CardDefinition card, string filterName)
+    {
+        if (string.IsNullOrWhiteSpace(card.PageId) || document.Pages is null)
+        {
+            return false;
+        }
+
+        var page = document.Pages.FirstOrDefault(p =>
+            string.Equals(p.Id, card.PageId, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(p.TabId ?? "", card.TabId ?? "", StringComparison.OrdinalIgnoreCase));
+        if (page?.ToolbarBoard is null)
+        {
+            return false;
+        }
+
+        return ToolbarPlacementResolver.ResolveFilterNames(
+                document.Filters,
+                [],
+                page.ToolbarBoard)
+            .Contains(filterName, StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool IsHostedOnCard(

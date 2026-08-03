@@ -5,11 +5,18 @@
 {
     <p class="empty-state">Нет данных за выбранный период</p>
 }
-else if (MatrixRenderLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
+else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
 {
     <div class="heatmap-oversized" role="alert">
-        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @MatrixRenderLimits.MaxCells).</p>
-        <p class="muted">Сузьте фильтры, используйте top-N или перейдите на detail tab / table. Overview + drill рекомендуется для больших срезов.</p>
+        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @EffectiveLimits.EffectiveMaxCells, ось @EffectiveLimits.EffectiveMaxAxisLabels).</p>
+        @if (!string.IsNullOrWhiteSpace(OversizeMessage))
+        {
+            <p class="muted"><RichTextView Text="@OversizeMessage" /></p>
+        }
+        else
+        {
+            <p class="muted">Сузьте период или выберите одного пользователя в toolbar.</p>
+        }
     </div>
 }
 else
@@ -147,6 +154,14 @@ else
 
     [Parameter]
     public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
+    [Parameter]
+    public MatrixRenderLimitsDefinition? Limits { get; set; }
+
+    [Parameter]
+    public string? OversizeMessage { get; set; }
+
+    private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
 
     private (int Yi, int Xi)? _activeCell;
 

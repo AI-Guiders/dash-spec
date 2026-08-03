@@ -1,5 +1,7 @@
 @namespace DashSpec.Host.Components.Dashboard.Viz
 @using DashSpec.Abstractions.Viz
+@using DashSpec.Core.Model
+@using DashSpec.Host.Plugins.Builtins
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Services.Presentation
 
@@ -18,10 +20,34 @@ else
                      Orientation="@(Context.Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
                      ValueAxisScale="@(Context.Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
                      CategoryAxisLabel="@Context.Card.ChartPresentation?.CategoryAxisLabel"
-                     ValueAxisLabel="@Context.Card.ChartPresentation?.ValueAxisLabel" />
+                     ValueAxisLabel="@Context.Card.ChartPresentation?.ValueAxisLabel"
+                     ValueAxisMax="@Context.Card.ChartPresentation?.ValueAxisMax"
+                     CategoryClickEnabled="@CategoryClickEnabled"
+                     OnCategorySelected="HandleCategorySelectedAsync" />
     </div>
 }
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
+
+    private bool CategoryClickEnabled =>
+        Context.Card.ClickBehaviour is not null &&
+        Interactions.HasNavigationEffects(Context.Card.ClickBehaviour);
+
+    private Task HandleCategorySelectedAsync((int Index, string Label) args)
+    {
+        if (!CategoryClickEnabled || !Context.OnHeatmapCellSelected.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        var horizontal = Context.Card.ChartPresentation?.Orientation is ChartOrientation.Horizontal;
+        var context = horizontal
+            ? new HeatmapCellContext(args.Index, 0, string.Empty, args.Label, null, null)
+            : new HeatmapCellContext(0, args.Index, args.Label, string.Empty, null, null);
+
+        return Context.OnHeatmapCellSelected.InvokeAsync(context);
+    }
 }

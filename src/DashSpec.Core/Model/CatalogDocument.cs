@@ -4,9 +4,11 @@ namespace DashSpec.Core.Model;
 public sealed record CatalogDocument(
     string Id,
     string DefaultEntryId,
-    IReadOnlyList<CatalogEntryDefinition> Entries);
+    IReadOnlyList<CatalogEntryDefinition> Entries,
+    IReadOnlyList<CatalogGroupDefinition>? Groups = null);
 
 public sealed record CatalogEntryDefinition(
     string Id,
     string Title,
-    string DashspecPath);
+    string DashspecPath,
+    string? GroupId = null);

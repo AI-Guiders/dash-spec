@@ -195,6 +195,11 @@
 
     private string SelectedValue()
     {
+        if (Options.Count == 0)
+        {
+            return Selected.FirstOrDefault() ?? string.Empty;
+        }
+
         var value = Options.FirstOrDefault(Selected.Contains);
         return value ?? Options.FirstOrDefault() ?? string.Empty;
     }
@@ -212,6 +217,11 @@
         }
 
         var ordered = Options.Where(Selected.Contains).ToList();
+        if (ordered.Count == 0)
+        {
+            return string.Join(", ", Selected);
+        }
+
         if (ordered.Count == 1)
         {
             return ordered[0];

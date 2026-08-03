@@ -1,4 +1,5 @@
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Validation;
 using DashSpec.Host.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Endpoints;
@@ -14,7 +15,40 @@ using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using Microsoft.Extensions.Logging.Abstractions;
 
+if (args is ["validate", var validatePath, ..])
+{
+    try
+    {
+        var fullPath = Path.GetFullPath(validatePath);
+        if (fullPath.EndsWith(".dashcatalog", StringComparison.OrdinalIgnoreCase))
+        {
+            DashSpecValidator.ValidateCatalog(fullPath);
+        }
+        else
+        {
+            var registry = DashSpecBuiltinContributorRegistrar.RegisterBuiltins();
+            var parseOptions = new DashSpecParseOptionsProvider(registry).CreateOptions();
+            var specDirectory = Path.GetDirectoryName(fullPath)!;
+            DashSpecValidator.ValidateSpec(fullPath, specDirectory, parseOptions);
+        }
+
+        Console.WriteLine($"OK: {fullPath}");
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        Environment.ExitCode = 1;
+        return;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
+
+if (OperatingSystem.IsWindows())
+{
+    builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
+}
 
 var bootstrap = DashSpecBootstrap.LoadBootstrap(builder.Environment);
 var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
@@ -73,6 +107,8 @@ ConnectorPluginLoader.RegisterPlugins(
     connectorManifest,
     NullLogger.Instance);
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
 builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
@@ -94,10 +130,16 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// HTTP-only prod (ASPNETCORE_URLS=http://*:5295): no HSTS / HTTPS redirect — otherwise login cookie Secure=true is dropped by browsers.
+var urlsEnv = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? string.Empty;
+if (urlsEnv.Contains("https://", StringComparison.OrdinalIgnoreCase))
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
 app.UseMiddleware<DashSpecAccessMiddleware>();
 app.UseAntiforgery();
 app.UseStaticFiles();

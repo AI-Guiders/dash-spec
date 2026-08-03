@@ -13,6 +13,9 @@ internal sealed class ModuleIncludeState
     private readonly Dictionary<string, SpecIncludeFragment> _diagrams =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, PresentationBlock> _chartChromePresets =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public LayoutBoardDefinition? LayoutBoard { get; private set; }
 
     public LayoutBoardDefinition? ToolbarBoard { get; private set; }
@@ -29,6 +32,28 @@ internal sealed class ModuleIncludeState
         }
 
         _diagrams[id] = fragment;
+    }
+
+    public void RegisterChartChromePreset(string id, PresentationBlock block)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentNullException.ThrowIfNull(block);
+        if (_chartChromePresets.ContainsKey(id))
+        {
+            throw new DashSpecParseException($"Duplicate chart chrome preset '{id}' in module includes.");
+        }
+
+        _chartChromePresets[id] = block;
+    }
+
+    public IReadOnlyDictionary<string, PresentationBlock> ExportChartChromePresets()
+    {
+        if (_chartChromePresets.Count == 0)
+        {
+            return DashboardDocument.EmptyModuleChartChromePresets;
+        }
+
+        return new Dictionary<string, PresentationBlock>(_chartChromePresets, StringComparer.OrdinalIgnoreCase);
     }
 
     public IReadOnlyDictionary<string, ModuleDiagramDefinition> ExportDefinitions()

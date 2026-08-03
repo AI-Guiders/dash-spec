@@ -19,33 +19,40 @@ public class TabModuleTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
-                @tab extra {
-                  report {
-                    filters {
-                      filter top n as "Top" default 5
-                    }
-                    card x as "X" {
-                      diagram number { value = n }
-                      datasource view dbo.x
-                    }
-                  }
-                }
+                @tab extra
+                  report
+                  filters
+                  filter top n as "Top" default 5
+                  end filters
+                  card x as "X"
+                  diagram number
+                  value = n
+                  end number
+                  datasource view dbo.x
+                  end card
+                  end report
+                end tab
                 """);
 
             var doc = DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                    filter field app_name on dbo.apps.name as "Apps"
-                    tab overview as "Overview" {
-                      cards { a }
-                    }
-                    tab extra dashspec "extra.dashspec"
-                    card a as "A" {
-                      diagram number { value = n }
-                      datasource view dbo.a
-                    }
-                  }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  filter field app_name on dbo.apps.name as "Apps"
+                  tab overview as "Overview"
+                  cards
+                  a
+                  end cards
+                  end tab
+                  tab extra dashspec "extra.dashspec"
+                  card a as "A"
+                  diagram number
+                  value = n
+                  end number
+                  datasource view dbo.a
+                  end card
+                  end report
+                end dashboard
                 """, dir);
 
             Assert.Single(doc.Filters, f => f.Name == "app_name");
@@ -62,23 +69,36 @@ public class TabModuleTests
     public void Validate_allows_binding_filter_hosted_on_another_card()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                filter date period_start on p as "Period" default today widget day
-                card host as "Host" {
-                  filters { period_start }
-                  bind period_start
-                  diagram number { value = n }
-                  datasource view dbo.t
-                }
-                card guest as "Guest" {
-                  filters host host { period_start }
-                  bind period_start
-                  diagram number { value = n }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date period_start on p as "Period" default today widget day
+              card host as "Host"
+              filters
+              period_start
+              end filters
+              bind
+                period_start
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              card guest as "Guest"
+              filters host host
+              period_start
+              end filters
+              bind
+                period_start
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """);
 
         Assert.Equal("host", doc.Cards.Single(c => c.Id == "guest").FilterHostCardId);
@@ -89,22 +109,33 @@ public class TabModuleTests
     public void Validate_rejects_binding_filter_without_explicit_host()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                filter date period_start on p as "Period" default today widget day
-                card host as "Host" {
-                  filters { period_start }
-                  bind period_start
-                  diagram number { value = n }
-                  datasource view dbo.t
-                }
-                card guest as "Guest" {
-                  bind period_start
-                  diagram number { value = n }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date period_start on p as "Period" default today widget day
+              card host as "Host"
+              filters
+              period_start
+              end filters
+              bind
+                period_start
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              card guest as "Guest"
+              bind
+                period_start
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """));
 
         Assert.Contains("filters host", ex.Message);
@@ -118,29 +149,36 @@ public class TabModuleTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
-                @tab extra {
-                  report {
-                    card x as "X" {
-                      diagram number { value = n }
-                      datasource view dbo.x
-                    }
-                  }
-                }
+                @tab extra
+                  report
+                  card x as "X"
+                  diagram number
+                  value = n
+                  end number
+                  datasource view dbo.x
+                  end card
+                  end report
+                end tab
                 """);
 
             var doc = DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                    tab overview as "Overview" {
-                      cards { a }
-                    }
-                    tab extra dashspec "extra.dashspec"
-                    card a as "A" {
-                      diagram number { value = n }
-                      datasource view dbo.a
-                    }
-                  }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  tab overview as "Overview"
+                  cards
+                  a
+                  end cards
+                  end tab
+                  tab extra dashspec "extra.dashspec"
+                  card a as "A"
+                  diagram number
+                  value = n
+                  end number
+                  datasource view dbo.a
+                  end card
+                  end report
+                end dashboard
                 """, dir);
 
             Assert.Equal(2, doc.Cards.Count);
@@ -158,15 +196,18 @@ public class TabModuleTests
     public void Parse_tab_dashspec_requires_spec_directory()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                tab x dashspec "x.dashspec"
-                card a as "A" {
-                  diagram number { value = n }
-                  datasource view dbo.a
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              tab x dashspec "x.dashspec"
+              card a as "A"
+              diagram number
+              value = n
+              end number
+              datasource view dbo.a
+              end card
+              end report
+            end dashboard
             """));
 
         Assert.Contains("specDirectory", ex.Message);
@@ -176,20 +217,27 @@ public class TabModuleTests
     public void Parse_tab_root_standalone_document()
     {
         var doc = DashSpecParser.Parse("""
-            @tab soak {
-              wiring { use connector sqlserver }
-              report "Soak title" {
-                standalone {
-                  filter date usage_date on usage_date as "Date" default -7d..today
-                  toolbar { usage_date }
-                }
-                card a as "A" {
-                  bind usage_date
-                  diagram number { value = n }
-                  datasource view dbo.a
-                }
-              }
-            }
+            @tab soak
+              wiring
+              use connector sqlserver
+              end wiring
+              report
+              title = "Soak title"
+              standalone
+              filter date usage_date on usage_date as "Date" default -7d..today
+              toolbar usage_date
+              end standalone
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.a
+              end card
+              end report
+            end tab
             """);
 
         Assert.Equal("soak", doc.Id);
@@ -203,16 +251,22 @@ public class TabModuleTests
     public void ReadDashboardHeader_reads_tab_root_id()
     {
         const string text = """
-            @tab stakeholder {
-              runtime { manifest = "cfg.toml" }
-              wiring { use connector sqlserver }
-              report {
-                card a as "A" {
-                  diagram number { value = x }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @tab stakeholder
+              runtime
+              manifest = "cfg.toml"
+              end runtime
+              wiring
+              use connector sqlserver
+              end wiring
+              report
+              card a as "A"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end tab
             """;
 
         Assert.Equal(("stakeholder", "stakeholder"), DashSpecParser.ReadDashboardHeader(text));
