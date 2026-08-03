@@ -1,0 +1,113 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "DashSpec",
+  "scopeName": "source.dashspec",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#stdlib-ref" },
+    { "include": "#at-directive" },
+    { "include": "#bang-include" },
+    { "include": "#end-block" },
+    { "include": "#keywords" },
+    { "include": "#numbers" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.dashspec",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.dashspec",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.dashspec",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "stdlib-ref": {
+      "patterns": [
+        {
+          "name": "string.other.stdlib.dashspec",
+          "match": "<[^>]+>"
+        }
+      ]
+    },
+    "at-directive": {
+      "patterns": [
+        {
+          "name": "keyword.control.at.dashspec",
+          "match": "@(dashboard|tab|catalog|diagram|presentation)\\b[ \\t]*\\w*"
+        }
+      ]
+    },
+    "bang-include": {
+      "patterns": [
+        {
+          "name": "keyword.control.include.dashspec",
+          "match": "!include\\b"
+        }
+      ]
+    },
+    "end-block": {
+      "patterns": [
+        {
+          "name": "keyword.control.end.dashspec",
+          "match": "\\bend\\s+\\w+"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.dashspec",
+          "match": "\\b(?:runtime|configuration|wiring|report|extensions|connector|palette|manifest|sqldialect|diagramlibrary|toolbar|filters|filter|bind|show|card|data|view|layout|chrome|presentation|transform|series|diagram|phase|page|group|entry|default|standalone|limits|export|legend|oversize|when|focus|preserve|drill|invoke|buttons|views|widget|ref|include|use|render|orientation|category|value|order_by|message|label|action|sticky|apply|debounce_ms|columns|gap|grid|place|datasource|bind|single|max|other|color_mode|scale_value|y_max|height|stacked|legend|min|max_series)\\b"
+        },
+        {
+          "name": "keyword.control.click.dashspec",
+          "match": "\\bon\\s+click\\b"
+        },
+        {
+          "name": "keyword.control.goto.dashspec",
+          "match": "\\bgoto\\b"
+        },
+        {
+          "name": "keyword.control.diagram-kind.dashspec",
+          "match": "\\b(?:bar|line|heatmap|table|scalar)\\b"
+        },
+        {
+          "name": "storage.type.dashspec",
+          "match": "\\b(?:view|sql|tsql|chartjs|percent|integer|chips|combobox|select|day|range|top|bar|card|line|none|bottom|single|manual|auto)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.dashspec",
+          "match": "\\b\\d+(?:\\.\\d+)?(?:%|[hdwmys])?\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.dashspec",
+          "match": "="
+        }
+      ]
+    }
+  }
+}

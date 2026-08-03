@@ -1,0 +1,134 @@
+{
+  "Tab module shell": {
+    "prefix": "dstab",
+    "body": [
+      "@tab ${1:my_tab}",
+      "",
+      "runtime",
+      "  manifest = \"${2:lus-runtime.toml}\"",
+      "end runtime",
+      "",
+      "configuration",
+      "  sqldialect = tsql",
+      "  palette = \"palettes/${3:apps}.dashpalette\"",
+      "end configuration",
+      "",
+      "!include \"presentations/*.dashpresentation\"",
+      "!include \"diagrams/${1:my_tab}/*.dashdiagram\"",
+      "",
+      "wiring",
+      "  use connector sqlserver",
+      "  use palette ${4:lus_apps}",
+      "end wiring",
+      "",
+      "report",
+      "  title = \"${5:Title}\"",
+      "  $0",
+      "end report"
+    ],
+    "description": "DashSpec @tab module skeleton (end-block syntax)"
+  },
+  "Card with data and view": {
+    "prefix": "dscard",
+    "body": [
+      "card ${1:id} as \"${2:Title}\" ref ${1:id}",
+      "  data",
+      "    datasource view ${3:lus.v_example}",
+      "    bind ${4:usage_date}",
+      "  end data",
+      "",
+      "  view",
+      "    diagram ${5:diagram_id}",
+      "  end view",
+      "end card"
+    ],
+    "description": "Structured card (data + view)"
+  },
+  "Diagram module": {
+    "prefix": "dsdiagram",
+    "body": [
+      "@diagram ${1:id}",
+      "",
+      "chrome",
+      "  use ${2:bar_horizontal_320}",
+      "end chrome",
+      "",
+      "bar",
+      "  category = ${3:col}",
+      "  value = ${4:metric}",
+      "end bar"
+    ],
+    "description": ".dashdiagram module with chrome preset"
+  },
+  "Filter bind field": {
+    "prefix": "dsfilter",
+    "body": [
+      "filter ${1:name}",
+      "  bind field",
+      "    column = ${2:column}",
+      "  end bind",
+      "  show",
+      "    label = \"${3:Label}\"",
+      "    widget = ${4|combobox,chips,select,day|}",
+      "  end show",
+      "end filter"
+    ],
+    "description": "Filter with bind + show"
+  },
+  "Phase browse detail": {
+    "prefix": "dsphase",
+    "body": [
+      "phase browse",
+      "  card ${1:browse} as \"${2:Browse}\" ref ${1:browse}",
+      "    when ${3:user_name} empty",
+      "    on click",
+      "      set ${3:user_name} from y",
+      "      focus detail",
+      "    end click",
+      "    data",
+      "      datasource view ${4:lus.v_example}",
+      "      bind ${5:usage_date}",
+      "    end data",
+      "    view",
+      "      diagram ${6:diagram_id}",
+      "    end view",
+      "  end card",
+      "end browse",
+      "",
+      "phase detail",
+      "  card ${7:detail} as \"${8:Detail}\" ref ${7:detail}",
+      "    when ${3:user_name}",
+      "      message = \"${9:Select user first.}\"",
+      "    end when",
+      "    data",
+      "      datasource view ${4:lus.v_example}",
+      "      bind ${5:usage_date}, ${3:user_name}",
+      "    end data",
+      "    view",
+      "      diagram ${10:diagram_id}",
+      "    end view",
+      "  end card",
+      "end detail"
+    ],
+    "description": "Browse/detail phases (end-block syntax)"
+  },
+  "Chrome use preset": {
+    "prefix": "dschrome",
+    "body": [
+      "chrome",
+      "  use ${1:preset_id}",
+      "end chrome"
+    ],
+    "description": "Chart chrome block with use preset"
+  },
+  "Presentation preset": {
+    "prefix": "dspresentation",
+    "body": [
+      "@presentation ${1:id}",
+      "",
+      "legend = ${2|bottom,top,none|}",
+      "height = ${3:320}"
+    ],
+    "description": ".dashpresentation module"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "name": "dashspec",
+  "displayName": "DashSpec",
+  "description": "Syntax highlighting, LSP (diagnostics, completion, go-to-definition), snippets for DashSpec",
+  "version": "0.2.4",
+  "publisher": "ai-guiders",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:dashspec"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "dashspec",
+        "aliases": [
+          "DashSpec",
+          "DSPEC"
+        ],
+        "extensions": [
+          ".dashspec",
+          ".dashdiagram",
+          ".dashpresentation",
+          ".dashlayout",
+          ".dashcatalog",
+          ".dashpalette",
+          ".dashinclude"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dashspec",
+        "scopeName": "source.dashspec",
+        "path": "./syntaxes/dashspec.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "dashspec",
+        "path": "./snippets/dashspec.code-snippets"
+      }
+    ],
+    "commands": [
+      {
+        "command": "dashspec.validate",
+        "title": "DashSpec: Validate Current File (CLI)"
+      },
+      {
+        "command": "dashspec.validateWorkspace",
+        "title": "DashSpec: Validate All Spec Files in Workspace (CLI)"
+      },
+      {
+        "command": "dashspec.restartLanguageServer",
+        "title": "DashSpec: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "DashSpec",
+      "properties": {
+        "dashspec.dotnetPath": {
+          "type": "string",
+          "default": "dotnet",
+          "description": "Path to dotnet executable (language server and CLI validate)."
+        },
+        "dashspec.languageServerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to DashSpec.LanguageServer.dll. Empty = bundled server/ in extension."
+        },
+        "dashspec.languageServerEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable DashSpec language server (diagnostics, completion, go-to-definition)."
+        },
+        "dashspec.hostDll": {
+          "type": "string",
+          "default": "",
+          "description": "Path to DashSpec.Host.dll for CLI validate commands only."
+        },
+        "dashspec.validateOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also run Host CLI validate on save (redundant when LSP is enabled)."
+        }
+      }
+    }
+  }
+}
