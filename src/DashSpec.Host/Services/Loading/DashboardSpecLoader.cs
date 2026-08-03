@@ -16,6 +16,7 @@ public sealed class DashboardSpecLoader(
     ConnectorPluginManifest pluginManifest,
     DashSpecHostContext hostContext,
     DashSpecParseOptionsProvider parseOptionsProvider,
+    IFieldOptionsCache fieldOptionsCache,
     ILogger<DashboardSpecLoader> logger) : IDashboardSpecLoader
 {
     public async Task<LoadedDashboard> LoadFromTextAsync(
@@ -89,42 +90,59 @@ public sealed class DashboardSpecLoader(
         CancellationToken cancellationToken,
         TimeSpan timeout)
     {
-        var fieldOptions = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var filter in document.Filters.Where(x => x.Kind is FilterKind.Field))
+        var fieldFilters = document.Filters.Where(x => x.Kind is FilterKind.Field).ToList();
+        if (fieldFilters.Count == 0)
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            try
-            {
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(timeout);
-                var sql = QueryCompiler.BuildDistinctFieldSql(filter);
-                fieldOptions[filter.Name] = await connector
-                    .QueryDistinctStringsAsync(sql, cts.Token)
-                    .ConfigureAwait(false);
-                sw.Stop();
-                logger.LogInformation(
-                    "Loaded {Count} field options for filter {FilterName} in {ElapsedMs}ms",
-                    fieldOptions[filter.Name].Count,
-                    filter.Name,
-                    sw.ElapsedMilliseconds);
-            }
-            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-            {
-                sw.Stop();
-                logger.LogWarning(
-                    "Timed out loading field options for filter {FilterName} after {TimeoutSeconds}s",
-                    filter.Name,
-                    timeout.TotalSeconds);
-                fieldOptions[filter.Name] = [];
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                logger.LogWarning(ex, "Failed to load field options for filter {FilterName}", filter.Name);
-                fieldOptions[filter.Name] = [];
-            }
+            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         }
 
-        return fieldOptions;
+        var tasks = fieldFilters.Select(filter => LoadOneFieldOptionsAsync(filter, connector, timeout, cancellationToken));
+        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+        return results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<(string Name, IReadOnlyList<string> Values)> LoadOneFieldOptionsAsync(
+        FilterDefinition filter,
+        IDataSourceConnector connector,
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var sql = QueryCompiler.BuildDistinctFieldSql(filter);
+        var cacheKey = $"{connector.Id}:{sql}";
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(timeout);
+            var values = await fieldOptionsCache
+                .GetOrLoadAsync(
+                    cacheKey,
+                    token => connector.QueryDistinctStringsAsync(sql, token),
+                    cts.Token)
+                .ConfigureAwait(false);
+            sw.Stop();
+            logger.LogInformation(
+                "Loaded {Count} field options for filter {FilterName} in {ElapsedMs}ms",
+                values.Count,
+                filter.Name,
+                sw.ElapsedMilliseconds);
+            return (filter.Name, values);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            sw.Stop();
+            logger.LogWarning(
+                "Timed out loading field options for filter {FilterName} after {TimeoutSeconds}s",
+                filter.Name,
+                timeout.TotalSeconds);
+            return (filter.Name, []);
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            logger.LogWarning(ex, "Failed to load field options for filter {FilterName}", filter.Name);
+            return (filter.Name, []);
+        }
     }
 }

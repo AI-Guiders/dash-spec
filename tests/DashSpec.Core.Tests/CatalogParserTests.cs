@@ -10,12 +10,12 @@ public sealed class CatalogParserTests
     {
         const string text = """
             @catalog lus_dev
-
+            
             default soak
-
+            
             entry soak as "Dev Soak"
               dashspec "lus-dev-soak.dashspec"
-
+            
             entry stakeholder as "Stakeholder"
               dashspec "lus-dev-stakeholder.dashspec"
             """;

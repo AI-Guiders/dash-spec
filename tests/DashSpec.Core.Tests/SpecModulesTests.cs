@@ -212,14 +212,15 @@ public class SpecModulesTests
         ]);
 
         var document = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
+            @dashboard t
+              report
+              title = "T"
               palette lus
-              card c as "C" {
-                use c1
-              }
-            }
-            }
+              card c as "C"
+              use c1
+              end card
+              end report
+            end dashboard
 """);
 
         var export = SpecResolveExporter.Export(document, library);
@@ -234,15 +235,18 @@ public class SpecModulesTests
     public void Parse_dashboard_palette_directive()
     {
         var document = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
+            @dashboard t
+              report
+              title = "T"
               palette = "lus_apps"
-              card c as "C" {
-                diagram number { value = x }
-                datasource view dbo.t
-              }
-            }
-            }
+              card c as "C"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal("lus_apps", document.ColorPalette);
@@ -253,16 +257,21 @@ public class SpecModulesTests
     {
         var document = DashSpecParser.Parse("""
 
-            @dashboard t {
-              configuration { palette = "palettes/brand.dashpalette" }
-              report "T" {
+            @dashboard t
+              configuration
+              palette = "palettes/brand.dashpalette"
+              end configuration
+              report
+              title = "T"
               palette brand
-              card c as "C" {
-                diagram number { value = x }
-                datasource view dbo.t
-              }
-            }
-            }
+              card c as "C"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal("palettes/brand.dashpalette", document.PalettePath);
@@ -274,13 +283,13 @@ public class SpecModulesTests
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette lus_apps
-
-            palette {
+            
+            palette
               colors = "#111111,#222222"
               default = "#999999"
               Tekla = "#e11d48"
               "Cursor IDE" = "#8b5cf6"
-            }
+            end palette
             """));
 
         var palette = library.TryGetPalette("lus_apps");
@@ -295,17 +304,17 @@ public class SpecModulesTests
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette brand
-
+            
             const default = "#999999"
             const tekla = "#e11d48"
             const accent = blue
-
-            palette {
+            
+            palette
               default = default
               Tekla = tekla
               Other = default
               colors = [tekla, accent, green, orange]
-            }
+            end palette
             """));
 
         var palette = library.TryGetPalette("brand");
@@ -320,10 +329,10 @@ public class SpecModulesTests
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette legacy
-            palette {
+            palette
               colors = "#111111,#222222"
               default = "#999999"
-            }
+            end palette
             """));
 
         Assert.Equal("#111111,#222222", library.TryGetPalette("legacy")!["colors"]);
@@ -335,11 +344,13 @@ public class SpecModulesTests
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var specPath = Path.Combine(dir, "t.dashspec");
-        File.WriteAllText(specPath, "@dashboard t {\n  report \"T\" {\n  }\n}");
+        File.WriteAllText(specPath, "@dashboard t\n  report\n  title = \"T\"\n  end report\nend dashboard");
         File.WriteAllText(Path.Combine(dir, "lib.toml"), "[diagram.d1]\nkind = \"line\"\n");
         File.WriteAllText(Path.Combine(dir, "brand.dashpalette"), """
             @palette brand
-            palette { default = "#999999" }
+            palette
+              default = "#999999"
+            end palette
             """);
 
         var library = SpecLibraryComposer.Load(specPath, "lib.toml", "brand.dashpalette");
@@ -427,36 +438,37 @@ public class SpecModulesTests
         {
             File.WriteAllText(Path.Combine(stdlib, "heatmap_tall.dashpresentation"), """
                 @presentation heatmap_tall
-
+                
                 height = 420
                 """);
 
             File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
                 @diagram activity
-
+                
                 include presentation "<presentation/heatmap_tall>"
-
-                heatmap {
+                
+                heatmap
                   x = bucket_start_utc
                   y = app_name
                   value = event_count
                   x_format = time.short
                   x_step = 1h
-                }
+                end heatmap
                 """);
 
             SpecIncludeResolver.SetStdlibRootForTests(Path.Combine(dir, "stdlib"));
 
             var doc = DashSpecParser.Parse("""
-                @dashboard t {
+                @dashboard t
                   !include "diagrams/activity.dashdiagram"
-                  report "T" {
-                    card c as "C" {
-                      diagram activity
-                      datasource view dbo.t
-                    }
-                  }
-                }
+                  report
+                  title = "T"
+                  card c as "C"
+                  diagram activity
+                  datasource view dbo.t
+                  end card
+                  end report
+                end dashboard
                 """, dir);
 
             var card = doc.Cards.Single();
@@ -472,17 +484,83 @@ public class SpecModulesTests
     }
 
     [Fact]
+    public void Parse_diagram_chrome_use_registers_module_presentation_presets()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-chrome-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "presentations"));
+        Directory.CreateDirectory(Path.Combine(dir, "diagrams"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "presentations", "bar-tall.dashpresentation"), """
+                @presentation bar_tall
+
+                legend = bottom
+                height = 320
+                y_max = 100
+                """);
+
+            File.WriteAllText(Path.Combine(dir, "diagrams", "util.dashdiagram"), """
+                @diagram util
+
+                chrome
+                  use bar_tall
+                  scale_value = percent
+                end chrome
+
+                bar
+                  category = app_name
+                  value = utilization_pct
+                end bar
+                """);
+
+            var doc = DashSpecParser.Parse("""
+                @dashboard t
+                  !include "presentations/bar-tall.dashpresentation"
+                  !include "diagrams/util.dashdiagram"
+                  report
+                  title = "T"
+                  card c as "C"
+                  diagram util
+                  datasource view dbo.t
+                  end card
+                  end report
+                end dashboard
+                """, dir);
+
+            Assert.Single(doc.ResolvedChartChromePresets);
+            Assert.True(doc.ResolvedChartChromePresets.ContainsKey("bar_tall"));
+
+            var library = SpecLibraryComposer.Load("spec.dashspec", null, null, dir, doc);
+            var card = doc.Cards.Single();
+            var resolved = CardDiagramResolver.Resolve(card, library).Card;
+            var presentation = CardChromeResolver.ResolveChartPresentation(resolved, library);
+
+            Assert.Equal(320, presentation.HeightPx);
+            Assert.Equal(100, presentation.ValueAxisMax);
+            Assert.Equal(ChartAxisScale.Percent, presentation.ValueAxisScale);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Parse_treats_unknown_diagram_ident_as_library_preset()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card a as "A" {
-                diagram demo_custom_heatmap { x = a y = b value = c }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card a as "A"
+              diagram demo_custom_heatmap
+              x = a y
+              value = c
+              end demo_custom_heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         Assert.Equal("demo_custom_heatmap", card.Diagram.UsePreset);
@@ -494,14 +572,15 @@ public class SpecModulesTests
     public void CardDiagramResolver_throws_when_preset_missing()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card a as "A" {
-                diagram missing_preset
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card a as "A"
+              diagram missing_preset
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
@@ -515,14 +594,15 @@ public class SpecModulesTests
     public void Parse_diagram_library_preset_reference()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram demo_peak_line
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram demo_peak_line
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards[0];
@@ -552,14 +632,15 @@ public class SpecModulesTests
         ]);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram demo_peak_line
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram demo_peak_line
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var resolved = CardDiagramResolver.Resolve(card, library);

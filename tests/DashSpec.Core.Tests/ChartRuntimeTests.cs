@@ -16,21 +16,28 @@ public class ChartRuntimeTests
     {
         var doc = DashSpecParser.Parse("""
 
-            @dashboard t {
-              configuration { diagramlibrary = "lib.toml" }
-              report "T" {
-              card c as "C" {
-                diagram line {
-                  x = usage_date
-                  y = value
-                  series = app_name
-                }
-                presentation { use = line_bottom legend = right }
-                transform series { max = 4 other = "Прочее" }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              configuration
+              diagramlibrary = "lib.toml"
+              end configuration
+              report
+              title = "T"
+              card c as "C"
+              diagram line
+              x = usage_date
+              y = value
+              series = app_name
+              end line
+              presentation
+              use = line_bottom legend
+              end presentation
+              transform series
+              max = 4 other
+              end transform
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards[0];
@@ -57,16 +64,24 @@ public class ChartRuntimeTests
         ]);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram line { x = a y = b series = s }
-                presentation { use = line_bottom_300 }
-                transform series { use = top5 }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram line
+              x = a y
+              series = s
+              end line
+              presentation
+              use = line_bottom_300
+              end presentation
+              transform series
+              use = top5
+              end transform
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
@@ -98,15 +113,21 @@ public class ChartRuntimeTests
         Assert.True(fromDiagram.IsHorizontal);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram bar { x = a y = b orientation = vertical }
-                presentation { use = bar_horizontal_320 }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram bar
+              x = a y
+              orientation = vertical
+              end bar
+              presentation
+              use = bar_horizontal_320
+              end presentation
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
@@ -150,14 +171,18 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram bar { category = app_name value = distinct_users scale_value = integer }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram bar
+              category = app_name value
+              scale_value = integer
+              end bar
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var resolved = CardChromeResolver.ResolveChartPresentation(card, null);
@@ -261,14 +286,18 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Decimal, decimalDefault.ValueAxisScale);
 
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card c as "C" {
-                diagram bar { x = app_name y = distinct_users scale_y = integer }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram bar
+              x = app_name y
+              scale_y = integer
+              end bar
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
@@ -315,22 +344,112 @@ public class ChartRuntimeTests
     public void ResolveChartPresentation_reads_category_value_axis_labels_from_bar_diagram()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card peak as "Peak" {
-                diagram bar {
-                  category = app_name as "Продукт"
-                  value = peak_concurrent_proxy as "Пик (proxy)"
-                  orientation = horizontal
-                }
-                datasource view dbo.t
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card peak as "Peak"
+              diagram bar
+              category = app_name as "Продукт"
+              value = peak_concurrent_proxy as "Пик (proxy)"
+              orientation = horizontal
+              end bar
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var presentation = CardChromeResolver.ResolveChartPresentation(card, null);
         Assert.Equal("Продукт", presentation.CategoryAxisLabel);
         Assert.Equal("Пик (proxy)", presentation.ValueAxisLabel);
+    }
+
+    [Fact]
+    public void ChartPresentation_percent_scale_defaults_axis_max_to_100()
+    {
+        var presentation = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["scale_value"] = "percent",
+            });
+
+        Assert.Equal(ChartAxisScale.Percent, presentation.ValueAxisScale);
+        Assert.Equal(100, presentation.ValueAxisMax);
+    }
+
+    [Fact]
+    public void ResolveChartPresentation_merges_nested_presentation_y_max_for_utilization_bar()
+    {
+        var baseDir = @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec";
+        var specPath = Path.Combine(baseDir, "lus-dev-stakeholder.dashspec");
+        if (!File.Exists(specPath))
+        {
+            return;
+        }
+
+        var doc = DashSpecParser.Parse(File.ReadAllText(specPath), baseDir);
+        var library = SpecLibraryComposer.Load(specPath, doc.DiagramLibraryPath, doc.PalettePath, baseDir, doc);
+        var card = doc.Cards.Single(c => c.Id == "stakeholder_utilization");
+        var resolved = CardDiagramResolver.Resolve(card, library);
+        var presentation = CardChromeResolver.ResolveChartPresentation(resolved.Card, library);
+
+        Assert.Equal(ChartAxisScale.Percent, presentation.ValueAxisScale);
+        Assert.Equal(100, presentation.ValueAxisMax);
+    }
+
+    [Fact]
+    public void CategoryChartPayloadBuilder_marks_bars_over_percent_cap_red()
+    {
+        var library = SpecLibrary.Parse(
+        [
+            "[presentation.bar_utilization_percent]",
+            "color_mode = \"single\"",
+            "default = \"#60a5fa\"",
+            "y_max = \"100\"",
+        ]);
+
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+              configuration
+              diagramlibrary = "lib.toml"
+              end configuration
+              report
+              title = "T"
+              card c as "C"
+              diagram bar
+              category = app_name
+              value = utilization_pct
+              scale_value = percent
+              end bar
+              presentation
+              use = bar_utilization_percent
+              end presentation
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+""").Cards[0];
+
+        var resolved = CardDiagramResolver.Resolve(card, library).Card;
+        var payload = ChartDataBuilder.BuildLineOrBar(
+            [
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["app_name"] = "AutoCAD",
+                    ["utilization_pct"] = 104d,
+                },
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["app_name"] = "Revit",
+                    ["utilization_pct"] = 80d,
+                },
+            ],
+            resolved.Diagram,
+            seriesTransform: null,
+            resolved,
+            library);
+
+        Assert.Equal("#ef4444", payload.Series[0].PointColors![0]);
+        Assert.Equal("#60a5fa", payload.Series[0].PointColors![1]);
     }
 }

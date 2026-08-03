@@ -54,7 +54,14 @@ internal static class CategoryChartPayloadBuilder
         var references = hasReference
             ? ordered.Select(x => x.Reference).ToList()
             : null;
-        var pointColors = ResolveBarPointColors(labels, values, references, card, library, dashboardColorPalette);
+        var pointColors = ResolveBarPointColors(
+            labels,
+            values,
+            references,
+            diagram,
+            card,
+            library,
+            dashboardColorPalette);
 
         var payload = ApplyMaxSeries(
             new ChartPayload(
@@ -71,33 +78,57 @@ internal static class CategoryChartPayloadBuilder
         IReadOnlyList<string> labels,
         IReadOnlyList<double?> values,
         IReadOnlyList<double?>? references,
+        DiagramDefinition diagram,
         CardDefinition card,
         SpecLibrary? library,
         string? dashboardColorPalette)
     {
+        const string calmBar = "#60a5fa";
+        const string overPercentBar = "#ef4444";
+        var percentCap = ChartChromeProperties.TryGetPercentCap(card, library, out var cap)
+            ? cap
+            : TryReadPercentCap(diagram.Properties);
         var paletteColors = ChartColorResolver.ResolveLabelColors(labels, card, library, dashboardColorPalette);
-        if (references is null || references.Count != values.Count)
-        {
-            return paletteColors;
-        }
-
         var colors = new string[labels.Count];
+
         for (var i = 0; i < labels.Count; i++)
         {
             var value = values[i];
-            var limit = references[i];
-            if (value is not null && limit is > 0 && value > limit)
+
+            if (references is not null && references.Count == values.Count)
             {
-                colors[i] = "#ef4444";
+                colors[i] = calmBar;
+                continue;
+            }
+
+            if (percentCap.HasValue && value is { } v && v > percentCap.Value)
+            {
+                colors[i] = overPercentBar;
                 continue;
             }
 
             colors[i] = paletteColors is not null && i < paletteColors.Count
                 ? paletteColors[i]
-                : "#60a5fa";
+                : calmBar;
         }
 
         return colors;
+    }
+
+    private static double? TryReadPercentCap(IReadOnlyDictionary<string, string> properties)
+    {
+        if (properties.TryGetValue("y_max", out var raw) &&
+            double.TryParse(
+                raw,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsed) &&
+            parsed > 0)
+        {
+            return parsed;
+        }
+
+        return null;
     }
 
     private static ChartPayload ApplyMaxSeries(ChartPayload payload, SeriesTransformSettings? transform)

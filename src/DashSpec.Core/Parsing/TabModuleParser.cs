@@ -9,7 +9,9 @@ internal sealed record TabModuleContent(
     IReadOnlyList<FilterDefinition> Filters,
     IReadOnlyList<CardDefinition> Cards,
     LayoutBoardDefinition? LayoutBoard = null,
-    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null);
+    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null,
+    IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
+    IReadOnlyList<ReportPageDefinition>? Pages = null);
 
 internal static class TabModuleParser
 {
@@ -124,7 +126,8 @@ internal static class TabModuleParser
             dashboardFilters,
             tabs,
             cards,
-            shell.ToolbarBoard);
+            shell.ToolbarBoard,
+            Pages: shell.Pages);
 
         DashboardValidator.Validate(document);
         return document;

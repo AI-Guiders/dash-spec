@@ -8,6 +8,7 @@ internal static class DashboardValidator
     {
         ToolbarAnalyzer.Validate(document);
         FilterPlacementAnalyzer.Validate(document);
+        PageAnalyzer.Validate(document);
         TabAnalyzer.Validate(document);
     }
 }

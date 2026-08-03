@@ -18,8 +18,8 @@ internal static class DashboardComposer
         if (!DocumentModuleParser.IsBlockModuleFormat(text))
         {
             throw new DashSpecParseException(
-                "DashSpec requires block module format: @dashboard id { … } or @tab id { … }. " +
-                "See ADR-0024 and docs/dashspec/templates/.");
+                "DashSpec requires block module format: @dashboard id { … }, @tab id { … }, or @tab id with end-block body. " +
+                "See ADR-0024 and ADR-0036.");
         }
 
         return DocumentModuleParser.ParseDocument(text, specDirectory, parseOptions);
@@ -51,8 +51,12 @@ internal static class DashboardComposer
         var dashboardFilters = document.DashboardFilters.ToList();
         var cards = document.Cards.ToList();
         var mergedTabs = new List<TabDefinition>();
+        var pages = (document.Pages ?? []).ToList();
         var moduleDiagrams = new Dictionary<string, ModuleDiagramDefinition>(
             document.ResolvedModuleDiagrams,
+            StringComparer.OrdinalIgnoreCase);
+        var moduleChartChromePresets = new Dictionary<string, PresentationBlock>(
+            document.ResolvedChartChromePresets,
             StringComparer.OrdinalIgnoreCase);
 
         foreach (var tab in document.Tabs)
@@ -75,7 +79,7 @@ internal static class DashboardComposer
             if (!DocumentModuleParser.IsBlockModuleFormat(moduleText))
             {
                 throw new DashSpecParseException(
-                    $"Tab module '{tab.DashspecPath}' must use block format @tab id {{ … }}.");
+                    $"Tab module '{tab.DashspecPath}' must use block format (@tab id {{ … }} or end-block @tab id).");
             }
 
             var module = DocumentModuleParser.ParseTabEmbedded(moduleText, tab.Id, specDirectory, filters, parseOptions);
@@ -106,6 +110,22 @@ internal static class DashboardComposer
                 cards.Add(card);
             }
 
+            foreach (var page in module.Pages ?? [])
+            {
+                var pageWithTab = string.IsNullOrWhiteSpace(page.TabId)
+                    ? page with { TabId = tab.Id }
+                    : page;
+                if (pages.Any(p =>
+                        string.Equals(p.Id, pageWithTab.Id, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(p.TabId ?? "", pageWithTab.TabId ?? "", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new DashSpecParseException(
+                        $"Tab module '{tab.Id}' redeclares page '{pageWithTab.Id}' already on parent dashboard.");
+                }
+
+                pages.Add(pageWithTab);
+            }
+
             foreach (var (diagramId, definition) in module.ModuleDiagrams ?? DashboardDocument.EmptyModuleDiagrams)
             {
                 if (moduleDiagrams.ContainsKey(diagramId))
@@ -115,6 +135,17 @@ internal static class DashboardComposer
                 }
 
                 moduleDiagrams[diagramId] = definition;
+            }
+
+            foreach (var (presetId, preset) in module.ModuleChartChromePresets ?? DashboardDocument.EmptyModuleChartChromePresets)
+            {
+                if (moduleChartChromePresets.ContainsKey(presetId))
+                {
+                    throw new DashSpecParseException(
+                        $"Tab module '{tab.Id}' redeclares chart chrome preset '{presetId}'.");
+                }
+
+                moduleChartChromePresets[presetId] = preset;
             }
 
             var label = tab.Label ?? module.Label;
@@ -134,6 +165,8 @@ internal static class DashboardComposer
             Cards = cards,
             Tabs = mergedTabs,
             ModuleDiagrams = moduleDiagrams,
+            ModuleChartChromePresets = moduleChartChromePresets,
+            Pages = pages,
         };
 
         DashboardValidator.Validate(merged);

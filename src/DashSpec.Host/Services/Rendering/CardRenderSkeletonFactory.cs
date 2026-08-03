@@ -42,7 +42,26 @@ public static class CardRenderSkeletonFactory
                 : null,
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,
-            LocalFiltersManualApply: card.LocalFiltersManualApply);
+            LocalFiltersManualApply: card.LocalFiltersManualApply,
+            MatrixLimits: card.MatrixLimits,
+            OversizeMessage: card.OversizeMessage);
+    }
+
+    public static CardRenderResult CreatePlaceholder(
+        CardDefinition card,
+        SpecLibrary? library,
+        VizPluginRegistry vizPlugins,
+        IReadOnlyList<string> dashboardFilters,
+        string message,
+        DashboardDocument? document = null)
+    {
+        var loading = CreateLoading(card, library, vizPlugins, dashboardFilters, document);
+        return loading with
+        {
+            Loading = false,
+            IsVisibilityPlaceholder = true,
+            VisibilityMessage = message,
+        };
     }
 
     public static CardRenderResult CreateError(
@@ -79,6 +98,8 @@ public static class CardRenderSkeletonFactory
                 : null,
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,
-            LocalFiltersManualApply: card.LocalFiltersManualApply);
+            LocalFiltersManualApply: card.LocalFiltersManualApply,
+            MatrixLimits: card.MatrixLimits,
+            OversizeMessage: card.OversizeMessage);
     }
 }

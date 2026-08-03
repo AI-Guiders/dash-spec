@@ -363,6 +363,19 @@
   min-width: 0;
 }
 
+.card-filters-local .filter-top {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.filter-scope-hint {
+  display: block;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  max-width: 36rem;
+}
+
 .card-filters-local .filter-label {
   font-size: 0.68rem;
   white-space: nowrap;

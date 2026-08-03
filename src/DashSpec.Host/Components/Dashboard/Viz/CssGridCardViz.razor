@@ -17,6 +17,8 @@
                  ColorScale="@(Context.Card.MatrixPresentation?.ColorScale ?? "heat")"
                  LegendMinText="@Context.Card.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
                  LegendMaxText="@Context.Card.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                 Limits="Context.Card.MatrixLimits"
+                 OversizeMessage="Context.Card.OversizeMessage"
                  OnCellSelected="Context.OnHeatmapCellSelected" />
 }
 

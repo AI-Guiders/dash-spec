@@ -40,17 +40,21 @@ public sealed class DrillDownPhraseTests
         };
 
         var doc = DashSpecParser.Parse("""
-            @tab t {
-              report "T" {
-                card c as "C" {
-                  on click {
-                    drill to detail with user_name from y
-                  }
-                  diagram heatmap { x = a y = b value = c }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @tab t
+              report
+              title = "T"
+              card c as "C"
+              on click
+              drill to detail with user_name from y
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end tab
             """, specDirectory: null, options);
 
         var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);

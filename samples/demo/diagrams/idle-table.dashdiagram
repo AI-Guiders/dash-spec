@@ -1,6 +1,5 @@
 @diagram demo_idle_table
 
-table {
-  columns = usage_date, user_id, app_name, idle_minutes
-  order_by = idle_minutes DESC
-}
+table
+columns = usage_date
+end table

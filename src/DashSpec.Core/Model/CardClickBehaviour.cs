@@ -21,6 +21,14 @@ public sealed record InvokeHandlerEffect(
 
 public sealed record GotoTabEffect(string TabId) : CardClickEffect;
 
+public sealed record FocusPhaseEffect(string PhaseId) : CardClickEffect;
+
+public sealed record GotoPageEffect(string PageId) : CardClickEffect;
+
+public sealed record GotoCatalogEntryEffect(
+    string EntryId,
+    IReadOnlyList<string>? PreserveFilterNames = null) : CardClickEffect;
+
 public enum ShowPlacement
 {
     Below,

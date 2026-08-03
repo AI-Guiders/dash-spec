@@ -10,19 +10,22 @@ internal static class CardParser
         IReadOnlyList<FilterDefinition> filters,
         string? specDirectory = null,
         ModuleIncludeState? includes = null,
-        DashSpecParseOptions? parseOptions = null)
+        DashSpecParseOptions? parseOptions = null,
+        string? phaseId = null,
+        string? pageId = null)
     {
         parseOptions ??= DashSpecParseOptions.Default;
         var id = reader.ReadIdent();
-        if (!reader.TryKeyword("as"))
+        string? title = null;
+
+        if (reader.TryKeywordSameLine("as"))
         {
-            throw new DashSpecParseException($"Card '{id}' requires as \"Title\".");
+            title = reader.ReadString();
         }
 
-        var title = reader.ReadString();
         var layoutRef = ParserUtilities.TryReadLayoutRef(reader);
 
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         DiagramDefinition? diagram = null;
@@ -39,12 +42,80 @@ internal static class CardParser
         LayoutBoardDefinition? interiorBoard = null;
         string? diagramSlotRef = null;
         CardClickBehaviour? clickBehaviour = null;
+        CardVisibilityRule? visibility = null;
+        MatrixRenderLimitsDefinition? matrixLimits = null;
+        string? oversizeMessage = null;
+        CardChromeDefinition? chrome = null;
         var extensionBlocks = new List<ExtensionBlockNode>();
         var localFiltersManualApply = false;
         var includeFragment = new SpecIncludeFragment(null, null, null);
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "card", id) && !reader.IsEof)
         {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "card", id))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("title"))
+            {
+                reader.Expect(TokenKind.Eq);
+                title = reader.ReadString();
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("chrome"))
+            {
+                if (chrome is not null)
+                {
+                    throw new DashSpecParseException($"Card '{id}': duplicate chrome block.");
+                }
+
+                chrome = CardChromeParser.Parse(reader, id);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("when"))
+            {
+                var whenTarget = reader.ReadIdent();
+                if (string.Equals(whenTarget, "oversize", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (oversizeMessage is not null)
+                    {
+                        throw new DashSpecParseException($"Card '{id}': duplicate when oversize block.");
+                    }
+
+                    oversizeMessage = CardVisibilityParser.ParseOversizeWhen(reader, id);
+                }
+                else
+                {
+                    if (visibility is not null)
+                    {
+                        throw new DashSpecParseException($"Card '{id}': duplicate when block.");
+                    }
+
+                    visibility = CardVisibilityParser.ParseFilterWhen(reader, id, whenTarget);
+                }
+
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("limits"))
+            {
+                if (matrixLimits is not null)
+                {
+                    throw new DashSpecParseException($"Card '{id}': duplicate limits block.");
+                }
+
+                matrixLimits = CardLimitsParser.Parse(reader, id);
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("on"))
             {
                 if (!reader.TryKeyword("click"))
@@ -86,6 +157,59 @@ internal static class CardParser
                 continue;
             }
 
+            if (reader.TryKeyword("data"))
+            {
+                ParseDataBlock(reader, id, specDirectory, ref dataSource, ref boundFilters);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("view"))
+            {
+                ParseViewBlock(
+                    reader,
+                    id,
+                    specDirectory,
+                    includes,
+                    parseOptions,
+                    ref diagram,
+                    ref diagramSlotRef,
+                    ref legend,
+                    ref presentation,
+                    ref seriesTransform,
+                    ref includeFragment);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("override"))
+            {
+                CardDiagramOverrideParser.ParseOverridesBlock(
+                    reader,
+                    id,
+                    plural: false,
+                    ref diagram,
+                    ref legend,
+                    ref presentation,
+                    ref seriesTransform);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("overrides"))
+            {
+                CardDiagramOverrideParser.ParseOverridesBlock(
+                    reader,
+                    id,
+                    plural: true,
+                    ref diagram,
+                    ref legend,
+                    ref presentation,
+                    ref seriesTransform);
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("bind"))
             {
                 boundFilters.AddRange(ParseBind(reader));
@@ -105,9 +229,11 @@ internal static class CardParser
                     }
 
                     filterHostCardId = hostCardId;
-                    hostedFilters.AddRange(ParseFilterPlacementList(reader, "filters host"));
+                    hostedFilters.AddRange(ParseFilterPlacementList(reader, "filters", "filters host"));
                 }
-                else if (reader.IsAt(TokenKind.LBrace))
+                else if (reader.IsOnNewline() ||
+                         (reader.TryPeekIdent(out var afterFilters) &&
+                          string.Equals(afterFilters, "apply", StringComparison.OrdinalIgnoreCase)))
                 {
                     var parsed = ParseLocalFiltersBlock(reader, id);
                     localFilters.AddRange(parsed.FilterNames);
@@ -124,30 +250,18 @@ internal static class CardParser
 
             if (reader.TryKeyword("diagram"))
             {
-                diagramSlotRef ??= ParserUtilities.TryReadLayoutRef(reader);
-                if (!reader.TryPeekIdent(out var diagramName))
-                {
-                    throw reader.Unexpected("diagram kind, preset id, or registry id");
-                }
-
-                _ = reader.ReadIdent();
-                reader.SkipNewlines();
-                if (reader.IsAt(TokenKind.LBrace))
-                {
-                    diagram = DiagramParser.ParseAfterKindIdent(reader, diagramName);
-                }
-                else if (includes is not null && includes.TryGetDiagram(diagramName, out var registered))
-                {
-                    includeFragment = SpecIncludeResolver.Merge(includeFragment, registered);
-                }
-                else
-                {
-                    diagram = new DiagramDefinition(
-                        string.Empty,
-                        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
-                        diagramName);
-                }
-
+                ParseDiagramStatement(
+                    reader,
+                    id,
+                    includes,
+                    parentEndKind: "card",
+                    parentEndId: id,
+                    ref diagramSlotRef,
+                    ref diagram,
+                    ref legend,
+                    ref presentation,
+                    ref seriesTransform,
+                    ref includeFragment);
                 reader.SkipNewlines();
                 continue;
             }
@@ -168,7 +282,9 @@ internal static class CardParser
                         $"Card '{id}': use dashboard wiring for layout grid; card layout is a bracket board only.");
                 }
 
-                interiorBoard = LayoutParser.ParseBoard(reader);
+                var (parsedPlacement, parsedBoard) = ParseCardLayoutContainer(reader, id);
+                placement ??= parsedPlacement;
+                interiorBoard = parsedBoard ?? interiorBoard;
                 reader.SkipNewlines();
                 continue;
             }
@@ -201,7 +317,22 @@ internal static class CardParser
                     throw new DashSpecParseException("Expected 'series' after transform.");
                 }
 
-                seriesTransform = ParseSeriesTransform(reader);
+                if (reader.TryKeyword("max"))
+                {
+                    reader.Expect(TokenKind.Eq);
+                    if (!int.TryParse(reader.ReadScalarValue(), out var max) || max <= 0)
+                    {
+                        throw new DashSpecParseException($"Card '{id}': transform series max must be a positive integer.");
+                    }
+
+                    seriesTransform = new SeriesTransformBlock(null, max, null);
+                }
+                else
+                {
+                    reader.SkipNewlines();
+                    seriesTransform = ParseSeriesTransform(reader);
+                }
+
                 reader.SkipNewlines();
                 continue;
             }
@@ -226,7 +357,12 @@ internal static class CardParser
             throw reader.Unexpected();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "card", id);
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new DashSpecParseException($"Card '{id}' requires title (as \"…\" or title = \"…\").");
+        }
 
         if (includeFragment.Diagram is not null)
         {
@@ -251,8 +387,8 @@ internal static class CardParser
             seriesTransform = seriesTransform is null
                 ? includeFragment.SeriesTransform
                 : SpecIncludeResolver.Merge(
-                    new SpecIncludeFragment(null, null, seriesTransform),
-                    new SpecIncludeFragment(null, null, includeFragment.SeriesTransform)).SeriesTransform;
+                    new SpecIncludeFragment(null, null, includeFragment.SeriesTransform),
+                    new SpecIncludeFragment(null, null, seriesTransform)).SeriesTransform;
         }
 
         if (diagram is null && useCardPreset is null)
@@ -286,22 +422,257 @@ internal static class CardParser
             DiagramSlotRef: diagramSlotRef,
             ClickBehaviour: clickBehaviour,
             ExtensionBlocks: extensionBlocks,
-            LocalFiltersManualApply: localFiltersManualApply);
+            LocalFiltersManualApply: localFiltersManualApply,
+            Visibility: visibility,
+            PhaseId: phaseId,
+            PageId: pageId,
+            MatrixLimits: matrixLimits,
+            OversizeMessage: oversizeMessage,
+            Chrome: chrome);
+    }
+
+    private static void ParseDataBlock(
+        TokenReader reader,
+        string cardId,
+        string? specDirectory,
+        ref DataSourceDefinition? dataSource,
+        ref List<string> boundFilters)
+    {
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        while (!BlockSyntax.IsBlockEnd(reader, "data") && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "data"))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("datasource"))
+            {
+                dataSource = DataSourceParser.Parse(reader, specDirectory);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("bind"))
+            {
+                boundFilters.AddRange(ParseBind(reader));
+                reader.SkipNewlines();
+                continue;
+            }
+
+            throw reader.Unexpected("datasource or bind");
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, "data");
+    }
+
+    private static void ParseViewBlock(
+        TokenReader reader,
+        string cardId,
+        string? specDirectory,
+        ModuleIncludeState? includes,
+        DashSpecParseOptions parseOptions,
+        ref DiagramDefinition? diagram,
+        ref string? diagramSlotRef,
+        ref LegendDefinition? legend,
+        ref PresentationBlock? presentation,
+        ref SeriesTransformBlock? seriesTransform,
+        ref SpecIncludeFragment includeFragment)
+    {
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        while (!BlockSyntax.IsBlockEnd(reader, "view") && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "view"))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("diagram"))
+            {
+                ParseDiagramStatement(
+                    reader,
+                    cardId,
+                    includes,
+                    parentEndKind: "view",
+                    parentEndId: null,
+                    ref diagramSlotRef,
+                    ref diagram,
+                    ref legend,
+                    ref presentation,
+                    ref seriesTransform,
+                    ref includeFragment);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("legend"))
+            {
+                legend = ParseLegend(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            throw reader.Unexpected("diagram or legend");
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, "view");
+    }
+
+    private static (PlacementDefinition? Placement, LayoutBoardDefinition? Board) ParseCardLayoutContainer(
+        TokenReader reader,
+        string cardId)
+    {
+        BlockSyntax.BeginBlock(reader);
+        reader.SkipNewlines();
+
+        PlacementDefinition? placement = null;
+        LayoutBoardDefinition? board = null;
+
+        while (!BlockSyntax.IsBlockEnd(reader, "layout") && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "layout"))
+            {
+                break;
+            }
+
+            if (reader.TryKeyword("place"))
+            {
+                placement = LayoutParser.ParsePlacement(reader);
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.IsAt(TokenKind.LBracket))
+            {
+                board = LayoutParser.ParseBoardRows(reader, "layout");
+                break;
+            }
+
+            throw reader.Unexpected("place or [");
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, "layout");
+        return (placement, board);
+    }
+
+    private static void ParseDiagramStatement(
+        TokenReader reader,
+        string cardId,
+        ModuleIncludeState? includes,
+        string parentEndKind,
+        string? parentEndId,
+        ref string? diagramSlotRef,
+        ref DiagramDefinition? diagram,
+        ref LegendDefinition? legend,
+        ref PresentationBlock? presentation,
+        ref SeriesTransformBlock? seriesTransform,
+        ref SpecIncludeFragment includeFragment)
+    {
+        diagramSlotRef ??= ParserUtilities.TryReadLayoutRef(reader);
+        if (!reader.TryPeekIdent(out var diagramName))
+        {
+            throw reader.Unexpected("diagram kind, preset id, or registry id");
+        }
+
+        _ = reader.ReadIdent();
+        reader.SkipNewlines();
+        if (reader.IsAt(TokenKind.LBrace))
+        {
+            throw new DashSpecParseException(
+                $"Card '{cardId}': brace diagram blocks removed; use diagram {diagramName} … end diagram.");
+        }
+
+        if (includes is not null && includes.TryGetDiagram(diagramName, out var registered))
+        {
+            includeFragment = SpecIncludeResolver.Merge(includeFragment, registered);
+        }
+        else if (DiagramKindRegistry.TryResolve(diagramName, out _))
+        {
+            diagram = DiagramParser.ParseAfterKindIdent(reader, diagramName);
+            return;
+        }
+        else
+        {
+            diagram = new DiagramDefinition(
+                string.Empty,
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                diagramName);
+        }
+
+        var inlineDelta = CardDiagramOverrideParser.TryParseDiagramInlineBody(
+            reader,
+            diagramName,
+            cardId,
+            parentEndKind);
+
+        if (inlineDelta is null)
+        {
+            return;
+        }
+
+        if (inlineDelta.Diagram is not null)
+        {
+            diagram = SpecIncludeResolver.Merge(
+                new SpecIncludeFragment(diagram, null, null),
+                new SpecIncludeFragment(inlineDelta.Diagram, null, null)).Diagram;
+        }
+
+        if (inlineDelta.Legend is not null)
+        {
+            legend = inlineDelta.Legend;
+        }
+
+        if (inlineDelta.Presentation is not null)
+        {
+            presentation = presentation is null
+                ? inlineDelta.Presentation
+                : SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(null, inlineDelta.Presentation, null),
+                    new SpecIncludeFragment(null, presentation, null)).Presentation;
+        }
+
+        if (inlineDelta.SeriesTransform is not null)
+        {
+            seriesTransform = seriesTransform is null
+                ? inlineDelta.SeriesTransform
+                : SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(null, null, inlineDelta.SeriesTransform),
+                    new SpecIncludeFragment(null, null, seriesTransform)).SeriesTransform;
+        }
+    }
+
+    private static SeriesTransformBlock ParseSeriesTransformInline(TokenReader reader, string cardId)
+    {
+        reader.ExpectKeyword("max");
+        reader.Expect(TokenKind.Eq);
+        if (!int.TryParse(reader.ReadScalarValue(), out var max) || max <= 0)
+        {
+            throw new DashSpecParseException($"Card '{cardId}': transform series max must be a positive integer.");
+        }
+
+        return new SeriesTransformBlock(null, max, null);
     }
 
     private static (IReadOnlyList<string> FilterNames, bool ManualApply) ParseLocalFiltersBlock(
         TokenReader reader,
         string cardId)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var names = new List<string>();
         var manualApply = false;
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, "filters") && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, "filters"))
             {
                 break;
             }
@@ -330,7 +701,7 @@ internal static class CardParser
         }
 
         reader.SkipNewlines();
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, "filters");
         if (names.Count == 0)
         {
             throw new DashSpecParseException($"Card '{cardId}': filters block requires at least one filter name.");
@@ -374,11 +745,18 @@ internal static class CardParser
             props.GetValueOrDefault("title"));
     }
 
-    private static IReadOnlyList<string> ParseFilterPlacementList(TokenReader reader, string blockName)
+    private static IReadOnlyList<string> ParseFilterPlacementList(TokenReader reader, string endKind, string blockName)
     {
-        if (reader.IsAt(TokenKind.LBrace))
+        if (reader.IsOnNewline())
         {
-            return PropertyBlockParser.ParseCommaListBlock(reader, blockName);
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
+            {
+                BlockSyntax.ExpectBlockEnd(reader, endKind);
+                return [];
+            }
+
+            return PropertyBlockParser.ParseCommaListBlock(reader, endKind, blockName);
         }
 
         return reader.ReadCommaListInline();
@@ -386,9 +764,16 @@ internal static class CardParser
 
     private static IReadOnlyList<string> ParseBind(TokenReader reader)
     {
-        if (reader.IsAt(TokenKind.LBrace))
+        if (reader.IsOnNewline())
         {
-            return PropertyBlockParser.ParseCommaListBlock(reader, "bind");
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, "bind"))
+            {
+                BlockSyntax.ExpectBlockEnd(reader, "bind");
+                return [];
+            }
+
+            return PropertyBlockParser.ParseCommaListBlock(reader, "bind", "bind");
         }
 
         return reader.ReadCommaListInline();

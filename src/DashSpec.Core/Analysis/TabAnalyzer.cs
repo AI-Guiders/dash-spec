@@ -44,9 +44,32 @@ internal static class TabAnalyzer
 
             ValidateLayoutRefs(tab, tabCards);
 
-            if (tab.LayoutBoard is not null)
+            var tabPages = PageTabScope.FilterForTab(document.Pages, tab.Id);
+            if (PageTabScope.TabDeclaresPages(document.Pages, tab.Id, document.Tabs.Count))
             {
-                ValidateLayoutBoard(tab, tabCards, document.Layout.Columns);
+                if (tabPages.Any(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase)))
+                {
+                    tabPages = tabPages
+                        .Where(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                foreach (var page in tabPages)
+                {
+                    var pageCards = tabCards
+                        .Where(card => string.Equals(card.PageId, page.Id, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (pageCards.Count == 0 || page.LayoutBoard is null)
+                    {
+                        continue;
+                    }
+
+                    ValidateLayoutBoard(tab, pageCards, page.LayoutBoard, document.Layout.Columns);
+                }
+            }
+            else if (tab.LayoutBoard is not null)
+            {
+                ValidateLayoutBoard(tab, tabCards, tab.LayoutBoard, document.Layout.Columns);
             }
         }
 
@@ -82,9 +105,9 @@ internal static class TabAnalyzer
     private static void ValidateLayoutBoard(
         TabDefinition tab,
         IReadOnlyList<CardDefinition> tabCards,
+        LayoutBoardDefinition board,
         int columns)
     {
-        var board = tab.LayoutBoard!;
         var placed = TabLayoutBoardResolver.Resolve(board, tabCards, columns, tab.Id);
 
         if (placed.Count != tabCards.Count)

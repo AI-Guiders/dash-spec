@@ -8,14 +8,20 @@ internal static class IncludeExpander
         string reference,
         string specDirectory,
         DocumentModuleKind moduleKind,
-        ModuleIncludeState state)
+        ModuleIncludeState state,
+        bool tolerateIncompleteIncludes = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reference);
         ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
 
+        if (tolerateIncompleteIncludes && IncludeReferenceHeuristics.IsIncomplete(reference))
+        {
+            return;
+        }
+
         foreach (var path in ResolvePaths(reference, specDirectory))
         {
-            ExpandFile(path, specDirectory, moduleKind, state);
+            ExpandFile(path, specDirectory, moduleKind, state, tolerateIncompleteIncludes);
         }
     }
 
@@ -23,7 +29,8 @@ internal static class IncludeExpander
         string path,
         string specDirectory,
         DocumentModuleKind moduleKind,
-        ModuleIncludeState state)
+        ModuleIncludeState state,
+        bool tolerateIncompleteIncludes)
     {
         if (!File.Exists(path))
         {
@@ -42,13 +49,16 @@ internal static class IncludeExpander
                 return;
 
             case ".dashinclude":
-                ExpandDashInclude(path, specDirectory, moduleKind, state);
+                ExpandDashInclude(path, specDirectory, moduleKind, state, tolerateIncompleteIncludes);
                 return;
 
             case ".dashpresentation":
+                RegisterPresentationFile(path, specDirectory, state);
+                return;
+
             case ".dashtransform":
                 throw new DashSpecParseException(
-                    $"!include '{path}': register presentation/transform via .dashdiagram or card block, not module include.");
+                    $"!include '{path}': register transform via .dashdiagram or card block, not module include.");
 
             default:
                 throw new DashSpecParseException(
@@ -60,7 +70,8 @@ internal static class IncludeExpander
         string path,
         string specDirectory,
         DocumentModuleKind moduleKind,
-        ModuleIncludeState state)
+        ModuleIncludeState state,
+        bool tolerateIncompleteIncludes)
     {
         var reader = ParserUtilities.CreateReader(File.ReadAllText(path));
         reader.SkipNewlines();
@@ -78,7 +89,7 @@ internal static class IncludeExpander
         {
             if (reader.TryModuleInclude(out var nested))
             {
-                Expand(nested, Path.GetDirectoryName(path) ?? specDirectory, moduleKind, state);
+                Expand(nested, Path.GetDirectoryName(path) ?? specDirectory, moduleKind, state, tolerateIncompleteIncludes);
                 reader.SkipNewlines();
                 continue;
             }
@@ -115,6 +126,15 @@ internal static class IncludeExpander
         var baseDirectory = Path.GetDirectoryName(path) ?? specDirectory;
         var (id, fragment) = DiagramModuleParser.ParseDiagramFileWithId(File.ReadAllText(path), baseDirectory);
         state.RegisterDiagram(id, fragment);
+    }
+
+    private static void RegisterPresentationFile(string path, string specDirectory, ModuleIncludeState state)
+    {
+        var baseDirectory = Path.GetDirectoryName(path) ?? specDirectory;
+        var (id, block) = PresentationModuleParser.ParsePresentationFileWithId(
+            File.ReadAllText(path),
+            baseDirectory);
+        state.RegisterChartChromePreset(id, block);
     }
 
     private static void AssignLayoutBoard(
@@ -165,7 +185,7 @@ internal static class IncludeExpander
             return path;
         }
 
-        foreach (var ext in new[] { ".dashlayout", ".dashdiagram", ".dashinclude" })
+        foreach (var ext in new[] { ".dashlayout", ".dashdiagram", ".dashinclude", ".dashpresentation" })
         {
             var withExt = path.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? path : path + ext;
             if (File.Exists(withExt))

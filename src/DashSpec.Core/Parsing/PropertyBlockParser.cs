@@ -28,23 +28,57 @@ internal static class PropertyBlockParser
         IReadOnlyList<PropertySpec> schema,
         string blockName,
         bool allowExtensionProperties = false,
+        bool allowQuotedPropertyKeys = false,
+        string? endKind = null) =>
+        ParseContainer(reader, schema, blockName, endKind ?? ResolveEndKind(blockName), allowExtensionProperties, allowQuotedPropertyKeys);
+
+    private static string ResolveEndKind(string blockName)
+    {
+        var parts = blockName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return blockName;
+        }
+
+        return parts[0] switch
+        {
+            "transform" => "transform",
+            "filters" when parts.Length > 1 && parts[1] is "chrome" => "chrome",
+            "filter" => "filter",
+            "bind" => "bind",
+            "diagram" => parts[^1],
+            "layout" when parts.Length > 1 && parts[1] is "grid" => "grid",
+            "layout" => "layout",
+            "place" => "place",
+            "series" => "series",
+            "toolbar" => parts[^1],
+            _ => parts.Length > 1 ? parts[^1] : blockName,
+        };
+    }
+
+    public static Dictionary<string, string> ParseContainer(
+        TokenReader reader,
+        IReadOnlyList<PropertySpec> schema,
+        string blockName,
+        string endKind,
+        bool allowExtensionProperties = false,
         bool allowQuotedPropertyKeys = false)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var specs = schema.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
             {
                 break;
             }
 
-            while (!reader.IsAt(TokenKind.Newline) && !reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+            while (!reader.IsOnNewline() && !BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
             {
                 var key = reader.ReadPropertyKey(allowQuotedPropertyKeys);
                 if (!specs.TryGetValue(key, out var spec))
@@ -56,6 +90,14 @@ internal static class PropertyBlockParser
 
                     reader.Expect(TokenKind.Eq);
                     values[key] = reader.ReadScalarValue();
+                    continue;
+                }
+
+                if (string.Equals(key, "use", StringComparison.OrdinalIgnoreCase) &&
+                    !reader.IsAt(TokenKind.Eq) &&
+                    reader.TryPeekIdent(out _))
+                {
+                    values[key] = reader.ReadIdent();
                     continue;
                 }
 
@@ -78,7 +120,7 @@ internal static class PropertyBlockParser
             reader.SkipNewlines();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         return values;
     }
 
@@ -140,16 +182,17 @@ internal static class PropertyBlockParser
 
     public static IReadOnlyList<string> ParseCommaListBlock(
         TokenReader reader,
+        string endKind,
         string blockName)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var names = new List<string>();
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
             {
                 break;
             }
@@ -163,7 +206,7 @@ internal static class PropertyBlockParser
         }
 
         reader.SkipNewlines();
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         if (names.Count == 0)
         {
             throw new DashSpecParseException($"{blockName} block requires at least one name.");
@@ -174,16 +217,17 @@ internal static class PropertyBlockParser
 
     public static IReadOnlyList<string> ParseIdentListBlock(
         TokenReader reader,
+        string endKind,
         string blockName)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var names = new List<string>();
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
             {
                 break;
             }
@@ -197,7 +241,7 @@ internal static class PropertyBlockParser
         }
 
         reader.SkipNewlines();
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         if (names.Count == 0)
         {
             throw new DashSpecParseException($"{blockName} block requires at least one identifier.");
@@ -206,16 +250,16 @@ internal static class PropertyBlockParser
         return names;
     }
 
-    public static Dictionary<string, string> ParseStringMapBlock(TokenReader reader, string blockName)
+    public static Dictionary<string, string> ParseStringMapBlock(TokenReader reader, string endKind, string blockName)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
             {
                 break;
             }
@@ -231,7 +275,7 @@ internal static class PropertyBlockParser
             reader.SkipNewlines();
         }
 
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         if (values.Count == 0)
         {
             throw new DashSpecParseException($"{blockName} requires at least one entry.");
@@ -242,16 +286,17 @@ internal static class PropertyBlockParser
 
     public static IReadOnlyList<string> ParseTitleListBlock(
         TokenReader reader,
+        string endKind,
         string blockName)
     {
-        reader.Expect(TokenKind.LBrace);
+        BlockSyntax.BeginBlock(reader);
         reader.SkipNewlines();
 
         var titles = new List<string>();
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
             {
                 break;
             }
@@ -265,7 +310,7 @@ internal static class PropertyBlockParser
         }
 
         reader.SkipNewlines();
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         if (titles.Count == 0)
         {
             throw new DashSpecParseException($"{blockName} block requires at least one title.");
@@ -310,6 +355,12 @@ internal static class PropertySchemas
         new("span", PropertyValueType.Scalar),
     ];
 
+    public static IReadOnlyList<PropertySpec> CardLimits { get; } =
+    [
+        new("cells", PropertyValueType.Scalar),
+        new("axis", PropertyValueType.Scalar),
+    ];
+
     public static IReadOnlyList<PropertySpec> FilterDate { get; } =
     [
         new("column", PropertyValueType.ColumnBinding),
@@ -333,6 +384,27 @@ internal static class PropertySchemas
         new("max", PropertyValueType.Scalar),
     ];
 
+    public static IReadOnlyList<PropertySpec> FilterBindDate { get; } =
+    [
+        new("column", PropertyValueType.ColumnBinding),
+        new("default", PropertyValueType.DateRange),
+        new("grain_filter", PropertyValueType.Scalar),
+    ];
+
+    public static IReadOnlyList<PropertySpec> FilterBindField { get; } =
+    [
+        new("column", PropertyValueType.ColumnBinding),
+        new("default", PropertyValueType.Scalar),
+        new("single", PropertyValueType.Scalar),
+    ];
+
+    public static IReadOnlyList<PropertySpec> FilterShow { get; } =
+    [
+        new("label", PropertyValueType.String),
+        new("widget", PropertyValueType.Scalar),
+        new("ref", PropertyValueType.Scalar),
+    ];
+
     public static IReadOnlyList<PropertySpec> FiltersChrome { get; } =
     [
         new("layout", PropertyValueType.Scalar),
@@ -354,6 +426,11 @@ internal static class PropertySchemas
         new("legend", PropertyValueType.Scalar),
         new("height", PropertyValueType.Scalar),
         new("stacked", PropertyValueType.Scalar),
+        new("color_mode", PropertyValueType.Scalar),
+        new("scale_value", PropertyValueType.Scalar),
+        new("y_max", PropertyValueType.Scalar),
+        new("default", PropertyValueType.Scalar),
+        new("colors", PropertyValueType.Scalar),
     ];
 
     public static IReadOnlyList<PropertySpec> SeriesTransform { get; } =

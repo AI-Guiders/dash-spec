@@ -39,6 +39,7 @@ else
         @if (Page.HasCatalog)
         {
             <DashboardCatalogPicker Entries="Page.CatalogEntries"
+                                    Groups="Page.CatalogGroups"
                                     ActiveEntryId="Page.ActiveCatalogEntryId"
                                     Busy="Page.Switching"
                                     OnSelect="Page.SelectCatalogEntryAsync" />
@@ -51,6 +52,13 @@ else
                      ActiveTabId="Page.ActiveTabId"
                      Sticky="chrome.IsSticky"
                      OnSelect="Page.SelectTab" />
+
+    @if (Page.HasPages)
+    {
+        <DashboardPagePicker Pages="Page.ActiveTabPages()"
+                             ActivePageId="Page.ActivePageId"
+                             OnSelect="Page.SelectPageAsync" />
+    }
 
     <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
                              FilterIndex="Page.Session.FilterIndex"

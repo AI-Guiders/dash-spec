@@ -6,6 +6,19 @@ public sealed class DashSpecParseOptions
 {
     public static DashSpecParseOptions Default { get; } = new();
 
+    /// <summary>Editor/LSP: per-file validation, builtin extension blocks, no tab dashspec merge.</summary>
+    public static DashSpecParseOptions Editor { get; } = new()
+    {
+        MergeReferencedTabModules = false,
+        TolerateIncompleteIncludes = true,
+        ExtensionBlockKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "views" },
+    };
+
+    public bool MergeReferencedTabModules { get; init; } = true;
+
+    /// <summary>Editor/LSP: skip <c>!include</c> paths ending in <c>/</c> or <c>\</c> (in-progress completion).</summary>
+    public bool TolerateIncompleteIncludes { get; init; }
+
     public IReadOnlySet<string> ExtensionBlockKeywords { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

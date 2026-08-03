@@ -48,6 +48,7 @@ else if (_renderer?.WidgetId == "top")
 {
     <div class="@TopWrapperClass" style="@PlacementStyle">
         <TopFilterInput Label="@Label"
+                        ScopeHint="@Hint"
                         Disabled="@Disabled"
                         Min="@(filter!.MinValue ?? 1)"
                         Max="@(filter.MaxValue ?? TopLimitDefaults.DefaultMax)"

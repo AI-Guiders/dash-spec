@@ -9,8 +9,7 @@ namespace DashSpec.Host.Middleware;
 /// </summary>
 public sealed class DashSpecAccessMiddleware(
     RequestDelegate next,
-    DashSpecAccessValidator validator,
-    IHostEnvironment environment)
+    DashSpecAccessValidator validator)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -106,7 +105,7 @@ public sealed class DashSpecAccessMiddleware(
             new CookieOptions
             {
                 HttpOnly = true,
-                Secure = !environment.IsDevelopment(),
+                Secure = context.Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
                 MaxAge = TimeSpan.FromDays(30),
                 Path = "/",

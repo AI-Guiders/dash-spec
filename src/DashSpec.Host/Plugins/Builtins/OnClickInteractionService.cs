@@ -11,7 +11,7 @@ public sealed class OnClickInteractionService
     public bool HasNavigationEffects(CardClickBehaviour? behaviour) =>
         behaviour?.Effects.Any(effect => effect switch
         {
-            SetFilterFromFieldEffect or GotoTabEffect => true,
+            SetFilterFromFieldEffect or GotoTabEffect or GotoPageEffect or FocusPhaseEffect => true,
             InvokeHandlerEffect invoke =>
                 string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase),
             _ => false,

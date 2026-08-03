@@ -5,9 +5,23 @@ namespace DashSpec.Core.Parsing;
 internal sealed class TokenReader
 {
     private readonly IReadOnlyList<Token> _tokens;
+    private readonly Stack<BlockCloseStyle> _blockCloseStyles = new();
     private int _index;
 
     public TokenReader(IReadOnlyList<Token> tokens) => _tokens = tokens;
+
+    internal void PushBlockClose(BlockCloseStyle style) => _blockCloseStyles.Push(style);
+
+    internal void PopBlockClose()
+    {
+        if (_blockCloseStyles.Count > 0)
+        {
+            _blockCloseStyles.Pop();
+        }
+    }
+
+    internal BlockCloseStyle PeekBlockClose() =>
+        _blockCloseStyles.Count > 0 ? _blockCloseStyles.Peek() : BlockCloseStyle.EndKeyword;
 
     public string? ConsumedRuntimePath { get; private set; }
 
@@ -304,12 +318,31 @@ internal sealed class TokenReader
     public ColumnBindingValue ReadColumnBinding()
     {
         var column = ReadQualifiedName();
-        if (!TryKeyword("as"))
+        if (TryKeyword("as"))
         {
-            return new ColumnBindingValue(column, null);
+            return new ColumnBindingValue(column, ReadString());
         }
 
-        return new ColumnBindingValue(column, ReadString());
+        if (RawKind is TokenKind.Ident && !IsOnNewline())
+        {
+            var saved = SavePosition();
+            var alias = ReadIdent();
+            if (RawKind is TokenKind.Eq)
+            {
+                RestorePosition(saved);
+                return new ColumnBindingValue(column, null);
+            }
+
+            if (string.Equals(alias, "end", StringComparison.OrdinalIgnoreCase))
+            {
+                RestorePosition(saved);
+                return new ColumnBindingValue(column, null);
+            }
+
+            return new ColumnBindingValue(column, alias);
+        }
+
+        return new ColumnBindingValue(column, null);
     }
 
     public string ReadCommaSeparatedValues()
@@ -384,10 +417,11 @@ internal sealed class TokenReader
         };
     }
 
+    /// <summary>Reads scalar tokens until newline/EOF — does not cross line boundaries.</summary>
     public string ReadRestOfLine()
     {
         var parts = new List<string>();
-        while (CurrentKind is TokenKind.Ident or TokenKind.Raw)
+        while (Current.Kind is TokenKind.Ident or TokenKind.Raw)
         {
             parts.Add(Current.Value);
             _index++;
@@ -402,6 +436,10 @@ internal sealed class TokenReader
         var message = expected is null
             ? $"Unexpected token '{token.Value}' ({token.Kind}) at position {token.Start}."
             : $"Expected {expected}, got '{token.Value}' ({token.Kind}) at position {token.Start}.";
-        return new DashSpecParseException(message);
+        return new DashSpecParseException(message, token.Start);
     }
+
+    public int SavePosition() => _index;
+
+    public void RestorePosition(int position) => _index = position;
 }

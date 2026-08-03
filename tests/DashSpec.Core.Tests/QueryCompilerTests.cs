@@ -15,25 +15,28 @@ public class QueryCompilerTests
     public void Compile_applies_optional_date_and_field_filters()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Usage"
-                default = -7d..today
-              }
-              filter field app_name { column = demo.v_daily_active_users.app_name as "App" }
-              filters dashboard { usage_date, app_name }
-              card peak as "Peak" {
-                bind usage_date, app_name
-                diagram line {
-                  x = usage_date
-                  y = peak_concurrent_proxy
-                  series = app_name
-                }
-                datasource view demo.v_daily_peak_concurrent_proxy
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Usage" default -7d..today
+              filter field app_name on demo.v_daily_active_users.app_name as "App"
+              filters dashboard
+              usage_date
+              app_name
+              end dashboard
+              card peak as "Peak"
+              bind
+                usage_date, app_name
+              end bind
+              diagram line
+              x = usage_date
+              y = peak_concurrent_proxy
+              series = app_name
+              end line
+              datasource view demo.v_daily_peak_concurrent_proxy
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var filters = new FilterState();
@@ -58,18 +61,29 @@ public class QueryCompilerTests
     {
         var card = DashSpecParser.Parse("""
 
-            @dashboard t {
-              configuration { sqldialect = tsql }
-              report "T" {
-              filter date usage_date { column = usage_date as "Дата" default = -7d..today }
-              filters dashboard { usage_date }
-              card top as "Top" {
-                bind usage_date
-                diagram bar { x = user_sam y = peak_concurrent_apps }
-                datasource sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
-              }
-            }
-            }
+            @dashboard t
+              configuration
+              sqldialect = tsql
+              end configuration
+              report
+              title = "T"
+              filter date usage_date
+              column = usage_date as "Дата" default
+              end filter
+              filters dashboard
+              usage_date
+              end dashboard
+              card top as "Top"
+              bind
+                usage_date
+              end bind
+              diagram bar
+              x = user_sam y
+              end bar
+              datasource sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var filters = new FilterState();
@@ -91,21 +105,27 @@ public class QueryCompilerTests
     {
         var card = DashSpecParser.Parse("""
 
-            @dashboard t {
-              configuration { sqldialect = postgres }
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Дата"
-                default = -7d..today
-              }
-              filters dashboard { usage_date }
-              card a as "A" {
-                bind usage_date
-                diagram line { x = usage_date y = n }
-                datasource view public.metrics
-              }
-            }
-            }
+            @dashboard t
+              configuration
+              sqldialect = postgres
+              end configuration
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Дата" default -7d..today
+              filters dashboard
+              usage_date
+              end dashboard
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram line
+              x = usage_date y
+              end line
+              datasource view public.metrics
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var filters = new FilterState();
@@ -125,17 +145,18 @@ public class QueryCompilerTests
     public void Compile_table_uses_top_limit()
     {
         var card = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card events as "Events" {
-                diagram table {
-                  columns = id, name
-                  limit = 100
-                }
-                datasource view dbo.events
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card events as "Events"
+              diagram table
+              columns = id, name
+              limit = 100
+              end table
+              datasource view dbo.events
+              end card
+              end report
+            end dashboard
 """).Cards[0];
 
         var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>());
@@ -147,21 +168,26 @@ public class QueryCompilerTests
     public void Compile_table_uses_bound_top_filter()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter top row_limit as "Limit" {
-                default = 250
-              }
-              card events as "Events" {
-                filters { row_limit }
-                bind row_limit
-                diagram table {
-                  columns = id, name
-                }
-                datasource view dbo.events
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter top row_limit as "Limit"
+              default = 250
+              end filter
+              card events as "Events"
+              filters
+              row_limit
+              end filters
+              bind
+                row_limit
+              end bind
+              diagram table
+              columns = id, name
+              end table
+              datasource view dbo.events
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards[0];
@@ -217,22 +243,30 @@ public class QueryCompilerTests
     public void Compile_bound_top_filter_does_not_add_where_clause()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Дата"
-                default = -7d..today
-              }
-              filter top row_limit as "Limit" { default = 100 }
-              filters dashboard { usage_date }
-              card events as "Events" {
-                filters { row_limit }
-                bind usage_date, row_limit
-                diagram table { columns = id, name }
-                datasource view dbo.events
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Дата" default -7d..today
+              filter top row_limit as "Limit"
+              default = 100
+              end filter
+              filters dashboard
+              usage_date
+              end dashboard
+              card events as "Events"
+              filters
+              row_limit
+              end filters
+              bind
+                usage_date, row_limit
+              end bind
+              diagram table
+              columns = id, name
+              end table
+              datasource view dbo.events
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards[0];
@@ -246,5 +280,38 @@ public class QueryCompilerTests
         Assert.Contains("usage_date >= @usage_date_from", query.Sql);
         Assert.DoesNotContain("row_limit", query.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.StartsWith("SELECT TOP 50", query.Sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Compile_bar_applies_bound_top_filter_with_order_by()
+    {
+        var card = new CardDefinition(
+            "over",
+            "Over",
+            new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["category"] = "app_name",
+                ["value"] = "peak_concurrent_proxy",
+                ["reference"] = "purchased_seats",
+                ["order_by"] = "utilization_pct DESC, app_name",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_stakeholder_peak_over_limit"),
+            ["chart_top"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetTop("chart_top", 15);
+
+        var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["chart_top"] = new(FilterKind.Top, "chart_top", "10", null, MaxValue: 50),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, filterIndex);
+
+        Assert.StartsWith("SELECT TOP 15", query.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ORDER BY utilization_pct DESC, app_name", query.Sql);
+        Assert.Contains("peak_concurrent_proxy", query.Sql);
+        Assert.Contains("purchased_seats", query.Sql);
     }
 }
