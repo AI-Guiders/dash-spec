@@ -15,20 +15,24 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_reads_inline_select()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Дата"
-                default = -7d..today
-              }
-              filters dashboard { usage_date }
-              card a as "A" {
-                bind usage_date
-                diagram bar { x = user_sam y = peak }
-                datasource sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Дата" default -7d..today
+              filters dashboard
+              usage_date
+              end dashboard
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram bar
+              x = user_sam y
+              end bar
+              datasource sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
+              end card
+              end report
+            end dashboard
 """);
 
         var card = doc.Cards[0];
@@ -46,20 +50,25 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_rejects_non_readonly(string sqlBody)
     {
         var spec = $$"""
-            @dashboard t {
-              report "T" {
-                filter date usage_date {
-                  column = usage_date as "Дата"
-                  default = -7d..today
-                }
-                filters dashboard { usage_date }
-                card a as "A" {
-                  bind usage_date
-                  diagram bar { x = a y = b }
-                  datasource sql query "{{sqlBody.Replace("\"", "\\\"")}}"
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Дата" default -7d..today
+              filters dashboard
+              usage_date
+              end dashboard
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram bar
+              x = a
+              y = b
+              end bar
+              datasource sql query "{{sqlBody.Replace("\"", "\\\"")}}"
+              end card
+              end report
+            end dashboard
             """;
 
         var ex = Assert.ThrowsAny<Exception>(() => DashSpecParser.Parse(spec));
@@ -70,20 +79,24 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_allows_keyword_inside_string_literal()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              filter date usage_date {
-                column = usage_date as "Дата"
-                default = -7d..today
-              }
-              filters dashboard { usage_date }
-              card a as "A" {
-                bind usage_date
-                diagram bar { x = title y = n }
-                datasource sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter date usage_date on usage_date as "Дата" default -7d..today
+              filters dashboard
+              usage_date
+              end dashboard
+              card a as "A"
+              bind
+                usage_date
+              end bind
+              diagram bar
+              x = title y
+              end bar
+              title = 'DELETE is ok'"
+              end card
+              end report
+            end dashboard
 """);
 
         Assert.Equal(DataSourceKind.Sql, doc.Cards[0].DataSource.Kind);
@@ -94,14 +107,17 @@ public class SqlDataSourceParserTests
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-              card a as "A" {
-                diagram bar { x = a y = b }
-                datasource sql "SELECT 1"
-              }
-            }
-            }
+            @dashboard t
+              report
+              title = "T"
+              card a as "A"
+              diagram bar
+              x = a y
+              end bar
+              datasource sql "SELECT 1"
+              end card
+              end report
+            end dashboard
 """));
 
         Assert.Contains("query' or 'file'", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -119,14 +135,17 @@ public class SqlDataSourceParserTests
         try
         {
             var fileDoc = DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                  card a as "A" {
-                    diagram bar { x = user_sam y = peak }
-                    datasource sql file "queries/top.sql"
-                  }
-                }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  card a as "A"
+                  diagram bar
+                  x = user_sam y
+                  end bar
+                  datasource sql file "queries/top.sql"
+                  end card
+                  end report
+                end dashboard
 """, dir);
 
             var fileCard = fileDoc.Cards[0];
@@ -134,20 +153,23 @@ public class SqlDataSourceParserTests
             Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
 
             var blockDoc = DashSpecParser.Parse("""
-                @dashboard t {
-                  report "T" {
-                  card b as "B" {
-                    diagram bar { x = user_sam y = peak }
-                    datasource sql {
-                      from query [[
-                        SELECT user_sam, COUNT(*) AS peak
-                        FROM t
-                        GROUP BY user_sam
-                      ]]
-                    }
-                  }
-                }
-                }
+                @dashboard t
+                  report
+                  title = "T"
+                  card b as "B"
+                  diagram bar
+                  x = user_sam y
+                  end bar
+                  datasource sql
+                  from query [[
+                  SELECT user_sam, COUNT(*) AS peak
+                  FROM t
+                  GROUP BY user_sam
+                  ]]
+                  end sql
+                  end card
+                  end report
+                end dashboard
 """, dir);
 
             var blockCard = blockDoc.Cards[0];

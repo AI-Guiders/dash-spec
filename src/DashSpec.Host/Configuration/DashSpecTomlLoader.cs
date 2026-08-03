@@ -47,6 +47,16 @@ public static class DashSpecTomlLoader
             {
                 existing.ConnectionString = section.ConnectionString;
             }
+
+            if (section.CommandTimeoutSeconds > 0)
+            {
+                existing.CommandTimeoutSeconds = section.CommandTimeoutSeconds;
+            }
+
+            if (section.MaxRows > 0)
+            {
+                existing.MaxRows = section.MaxRows;
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(overlay.Plugins.DefaultConnectorId))
@@ -86,6 +96,20 @@ public static class DashSpecTomlLoader
                 yield return new KeyValuePair<string, string?>(
                     $"Connectors:{ToPascalCase(connectorId)}:ConnectionString",
                     section.ConnectionString);
+            }
+
+            if (section.CommandTimeoutSeconds > 0)
+            {
+                yield return new KeyValuePair<string, string?>(
+                    $"Connectors:{ToPascalCase(connectorId)}:CommandTimeoutSeconds",
+                    section.CommandTimeoutSeconds.ToString());
+            }
+
+            if (section.MaxRows > 0)
+            {
+                yield return new KeyValuePair<string, string?>(
+                    $"Connectors:{ToPascalCase(connectorId)}:MaxRows",
+                    section.MaxRows.ToString());
             }
         }
 

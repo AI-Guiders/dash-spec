@@ -27,6 +27,7 @@ window.dashSpecCharts = {
     const referenceLabel = (options && options.referenceLabel) || "Куплено";
     const categoryAxisLabel = (options && options.categoryAxisLabel) || "";
     const valueAxisLabel = (options && options.valueAxisLabel) || "";
+    const valueAxisMax = (options && options.valueAxisMax) || null;
     const defaultSeriesLabel = valueAxisLabel || "value";
     const hasReference =
       horizontal &&
@@ -55,13 +56,21 @@ window.dashSpecCharts = {
     const legendPosition = legend === "hidden" ? "bottom" : legend;
     const valueAxisScale = (options && options.valueAxisScale) || "decimal";
     const forceIntegerAxis = valueAxisScale === "integer";
+    const isPercentAxis = valueAxisScale === "percent";
 
     const valueMax = Math.max(
       0,
       ...datasets.flatMap((d) => (d.data || []).map((v) => (v == null ? 0 : Number(v)))),
       ...(hasReference ? referenceValues.map((v) => (v == null ? 0 : Number(v))) : []),
     );
-    const paddedMax = valueMax > 0 ? Math.ceil(valueMax * 1.12) : undefined;
+    const hardValueMax =
+      valueAxisMax != null && valueAxisMax > 0 ? valueAxisMax : isPercentAxis ? 100 : null;
+    const paddedMax =
+      hardValueMax != null
+        ? hardValueMax
+        : valueMax > 0
+          ? Math.ceil(valueMax * 1.12)
+          : undefined;
 
     const integerAxisStep = (max) => {
       if (max <= 10) {
@@ -79,11 +88,63 @@ window.dashSpecCharts = {
       return Math.max(10, Math.ceil(max / 12));
     };
 
+    const percentLimit =
+      isPercentAxis && hardValueMax != null && hardValueMax > 0 && !hasReference ? hardValueMax : null;
+
+    const percentLimitPlugin = {
+      id: "dashSpecPercentLimit",
+      afterDatasetsDraw(chart) {
+        if (percentLimit == null) {
+          return;
+        }
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) {
+          return;
+        }
+        const valueScale = horizontal ? chart.scales.x : chart.scales.y;
+        const pixel = valueScale.getPixelForValue(percentLimit);
+        const first = meta.data[0];
+        const last = meta.data[meta.data.length - 1];
+        const top = Math.min(first.y, last.y) - ((first.height || 12) / 2);
+        const bottom = Math.max(first.y, last.y) + ((last.height || 12) / 2);
+        ctx.save();
+        ctx.strokeStyle = "#f97316";
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        if (horizontal) {
+          ctx.moveTo(pixel, top);
+          ctx.lineTo(pixel, bottom);
+        } else {
+          ctx.moveTo(top, pixel);
+          ctx.lineTo(bottom, pixel);
+        }
+        ctx.stroke();
+        ctx.restore();
+      },
+    };
+
+    const valueTickFormat = isPercentAxis
+      ? {
+          callback: (value) => `${value}%`,
+        }
+      : {};
+
+    const valueAxisLimit =
+      hardValueMax != null
+        ? { max: hardValueMax, suggestedMax: hardValueMax }
+        : paddedMax != null
+          ? { suggestedMax: paddedMax }
+          : {};
+
     const valueTicks = forceIntegerAxis
-      ? { stepSize: integerAxisStep(valueMax), precision: 0, maxTicksLimit: 12 }
-      : stacked
-        ? { stepSize: 1, precision: 0 }
-        : {};
+      ? { stepSize: integerAxisStep(hardValueMax ?? valueMax), precision: 0, maxTicksLimit: 12 }
+      : isPercentAxis
+        ? { stepSize: 25, maxTicksLimit: 5, ...valueTickFormat }
+        : stacked
+          ? { stepSize: 1, precision: 0 }
+          : {};
 
     const axisTitle = (text) =>
       text
@@ -134,7 +195,7 @@ window.dashSpecCharts = {
     this._instances[canvasId] = new Chart(canvas, {
       type: chartType || "line",
       data: { labels: categoryLabels, datasets },
-      plugins: [referencePlugin],
+      plugins: [referencePlugin, percentLimitPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -155,19 +216,28 @@ window.dashSpecCharts = {
               font: { size: 11 },
               generateLabels(chart) {
                 const defaults = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                if (!hasReference) {
-                  return defaults;
-                }
-                return defaults.concat([
-                  {
+                const extra = [];
+                if (hasReference) {
+                  extra.push({
                     text: referenceLabel,
                     fillStyle: "transparent",
                     strokeStyle: "#f97316",
                     lineWidth: 2.5,
                     lineDash: [5, 4],
                     pointStyle: "line",
-                  },
-                ]);
+                  });
+                }
+                if (percentLimit != null) {
+                  extra.push({
+                    text: "лимит",
+                    fillStyle: "transparent",
+                    strokeStyle: "#f97316",
+                    lineWidth: 2.5,
+                    lineDash: [5, 4],
+                    pointStyle: "line",
+                  });
+                }
+                return defaults.concat(extra);
               },
             },
           },
@@ -195,11 +265,33 @@ window.dashSpecCharts = {
             },
           },
         },
+        onClick(event, elements, chart) {
+          const clickEnabled = options && options.categoryClickEnabled;
+          const dotNetRef = options && options.dotNetRef;
+          if (!clickEnabled || !dotNetRef || !elements || !elements.length) {
+            return;
+          }
+          const idx = elements[0].index;
+          const label = categoryLabels[idx];
+          if (label == null || label === "") {
+            return;
+          }
+          dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+        },
+        onHover(event, elements, chart) {
+          const canvas = chart && chart.canvas;
+          if (!canvas) {
+            return;
+          }
+          const clickEnabled = options && options.categoryClickEnabled;
+          canvas.style.cursor =
+            clickEnabled && elements && elements.length ? "pointer" : "default";
+        },
         scales: {
           x: {
             stacked,
             beginAtZero: horizontal,
-            suggestedMax: horizontal ? paddedMax : undefined,
+            ...(horizontal ? valueAxisLimit : {}),
             title: horizontal ? axisTitle(valueAxisLabel) : axisTitle(categoryAxisLabel),
             ticks: {
               maxRotation: !horizontal && longCategoryLabels ? 45 : 0,
@@ -221,7 +313,7 @@ window.dashSpecCharts = {
           y: {
             stacked,
             beginAtZero: !horizontal,
-            suggestedMax: !horizontal ? paddedMax : undefined,
+            ...(!horizontal ? valueAxisLimit : {}),
             title: horizontal ? axisTitle(categoryAxisLabel) : axisTitle(valueAxisLabel),
             ticks: {
               maxRotation: horizontal && longCategoryLabels ? 0 : 0,

@@ -8,11 +8,15 @@ internal static class ParserUtilities
         return new TokenReader(tokens);
     }
 
-    public static IReadOnlyList<string> ParseFilterPlacementList(TokenReader reader, string blockName)
+    public static IReadOnlyList<string> ParseFilterPlacementList(
+        TokenReader reader,
+        string endKind,
+        string blockName)
     {
-        if (reader.IsAt(TokenKind.LBrace))
+        if (reader.IsOnNewline())
         {
-            return PropertyBlockParser.ParseCommaListBlock(reader, blockName);
+            reader.SkipNewlines();
+            return PropertyBlockParser.ParseCommaListBlock(reader, endKind, blockName);
         }
 
         return reader.ReadCommaListInline();

@@ -10,6 +10,14 @@ public static class PeriodAnchorResolver
             _ => selected,
         };
 
+    public static DateOnly ResolvePeriodEnd(DateOnly anchor, string? grain) =>
+        grain?.Trim().ToLowerInvariant() switch
+        {
+            "month" => anchor.AddMonths(1).AddDays(-1),
+            "year" => new DateOnly(anchor.Year, 12, 31),
+            _ => anchor,
+        };
+
     public static string? TryReadGrain(FilterState filters, string? grainFilterName)
     {
         if (string.IsNullOrWhiteSpace(grainFilterName))

@@ -1,6 +1,6 @@
 @diagram demo_events_detail_table
 
-table {
+table
   columns = occurred_at_utc, app_name, user_name, product_version, window_title
   order_by = occurred_at_utc DESC
-}
+end table

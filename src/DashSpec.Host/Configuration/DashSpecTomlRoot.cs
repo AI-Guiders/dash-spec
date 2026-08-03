@@ -25,6 +25,12 @@ public sealed class DashboardTomlSection
 public sealed class ConnectorTomlSection
 {
     public string ConnectionString { get; set; } = string.Empty;
+
+    /// <summary>SqlCommand.CommandTimeout (seconds). 0 = connector default (120).</summary>
+    public int CommandTimeoutSeconds { get; set; }
+
+    /// <summary>Abort when result row count exceeds limit (0 = connector default 250000).</summary>
+    public int MaxRows { get; set; }
 }
 
 public sealed class PluginsTomlSection

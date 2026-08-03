@@ -40,8 +40,14 @@ internal static class DiagramModuleParser
     {
         var fragment = new SpecIncludeFragment(null, null, null);
 
-        while (!reader.IsEof && !reader.IsAt(TokenKind.RBrace))
+        while (!reader.IsEof)
         {
+            reader.SkipNewlines();
+            if (reader.IsEof)
+            {
+                break;
+            }
+
             if (reader.TryKeyword("include"))
             {
                 var (kind, reference) = ReadIncludeReference(reader);
@@ -63,7 +69,16 @@ internal static class DiagramModuleParser
             {
                 fragment = SpecIncludeResolver.Merge(
                     fragment,
-                    new SpecIncludeFragment(null, ParsePresentation(reader), null));
+                    new SpecIncludeFragment(null, ParseChartChrome(reader, "presentation"), null));
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("chrome"))
+            {
+                fragment = SpecIncludeResolver.Merge(
+                    fragment,
+                    new SpecIncludeFragment(null, ParseChartChrome(reader, "chrome"), null));
                 reader.SkipNewlines();
                 continue;
             }
@@ -77,17 +92,12 @@ internal static class DiagramModuleParser
                 continue;
             }
 
-            if (reader.IsAt(TokenKind.RBrace))
-            {
-                break;
-            }
-
             throw reader.Unexpected();
         }
 
         if (fragment.Diagram is null)
         {
-            throw new DashSpecParseException("Diagram module requires a chart kind block (e.g. heatmap { }).");
+            throw new DashSpecParseException("Diagram module requires a chart kind block (e.g. heatmap … end heatmap).");
         }
 
         return fragment;
@@ -97,7 +107,7 @@ internal static class DiagramModuleParser
     {
         diagram = null!;
         reader.SkipNewlines();
-        if (reader.IsEof || reader.IsAt(TokenKind.RBrace))
+        if (reader.IsEof)
         {
             return false;
         }
@@ -147,9 +157,9 @@ internal static class DiagramModuleParser
         return (kind, reference);
     }
 
-    private static PresentationBlock ParsePresentation(TokenReader reader)
+    private static PresentationBlock ParseChartChrome(TokenReader reader, string blockName)
     {
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.Presentation, "presentation");
+        var props = PropertyBlockParser.Parse(reader, PropertySchemas.Presentation, blockName);
         props.TryGetValue("use", out var usePreset);
         var inline = props
             .Where(x => !string.Equals(x.Key, "use", StringComparison.OrdinalIgnoreCase))

@@ -4,10 +4,8 @@ namespace DashSpec.Core.Parsing;
 
 internal static class ToolbarPlacementParser
 {
-    public static void Parse(TokenReader reader, DashboardShellContext ctx, string blockName)
-    {
+    public static void Parse(TokenReader reader, DashboardShellContext ctx, string blockName) =>
         Parse(reader, blockName, board => ctx.AssignToolbarBoard(board, blockName), names => ctx.DashboardFilters.AddRange(names));
-    }
 
     public static void Discard(TokenReader reader, string blockName) =>
         Parse(reader, blockName, _ => { }, _ => { });
@@ -18,40 +16,56 @@ internal static class ToolbarPlacementParser
         Action<LayoutBoardDefinition> onBoard,
         Action<IReadOnlyList<string>> onFlatNames)
     {
+        var (endKind, endId) = ResolveEndKind(blockName);
+
         if (reader.IsAt(TokenKind.LBracket))
         {
             onBoard(LayoutParser.ParseBoardRows(reader));
             return;
         }
 
-        if (reader.IsAt(TokenKind.LBrace))
+        if (reader.IsOnNewline())
         {
-            reader.Advance();
+            BlockSyntax.BeginBlock(reader);
             reader.SkipNewlines();
             if (reader.IsAt(TokenKind.LBracket))
             {
-                onBoard(LayoutParser.ParseBoardRows(reader));
-                reader.SkipNewlines();
-                reader.Expect(TokenKind.RBrace);
+                onBoard(LayoutParser.ParseBoardRows(reader, endKind, endId));
+                BlockSyntax.ExpectBlockEnd(reader, endKind, endId);
                 return;
             }
 
-            onFlatNames(ParseCommaListFromOpenBrace(reader, blockName));
+            onFlatNames(ParseNameListUntilEnd(reader, endKind, endId, blockName));
             return;
         }
 
         onFlatNames(reader.ReadCommaListInline());
     }
 
-    private static IReadOnlyList<string> ParseCommaListFromOpenBrace(TokenReader reader, string blockName)
+    private static (string kind, string? id) ResolveEndKind(string blockName)
     {
-        reader.SkipNewlines();
+        var parts = blockName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2 &&
+            string.Equals(parts[0], "layout", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(parts[1], "board", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("layout", "board");
+        }
 
+        return (parts[^1], null);
+    }
+
+    private static IReadOnlyList<string> ParseNameListUntilEnd(
+        TokenReader reader,
+        string endKind,
+        string? endId,
+        string blockName)
+    {
         var names = new List<string>();
-        while (!reader.IsAt(TokenKind.RBrace) && !reader.IsEof)
+        while (!BlockSyntax.IsBlockEnd(reader, endKind, endId) && !reader.IsEof)
         {
             reader.SkipNewlines();
-            if (reader.IsAt(TokenKind.RBrace))
+            if (BlockSyntax.IsBlockEnd(reader, endKind, endId))
             {
                 break;
             }
@@ -65,7 +79,7 @@ internal static class ToolbarPlacementParser
         }
 
         reader.SkipNewlines();
-        reader.Expect(TokenKind.RBrace);
+        BlockSyntax.ExpectBlockEnd(reader, endKind, endId);
         if (names.Count == 0)
         {
             throw new DashSpecParseException($"{blockName} block requires at least one name.");

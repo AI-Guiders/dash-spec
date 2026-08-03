@@ -50,7 +50,7 @@ public static class DiagramKindRegistry
         new Dictionary<string, DiagramKindSpec>(StringComparer.OrdinalIgnoreCase)
         {
             ["line"] = new("line", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["bar"] = new("bar", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["bar"] = new("bar", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),

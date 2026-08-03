@@ -1,6 +1,6 @@
 namespace DashSpec.Core.Tests;
 
-/// <summary>Minimal block-module .dashspec snippets for tests (ADR-0024).</summary>
+/// <summary>Minimal block-module .dashspec snippets for tests (ADR-0036 end-only).</summary>
 internal static class BlockSpecTestHelper
 {
     public static string Dashboard(
@@ -11,17 +11,21 @@ internal static class BlockSpecTestHelper
         bool connector = false,
         string? wiringExtra = null)
     {
-        var lines = new List<string> { $"@dashboard {id} {{" };
+        var lines = new List<string> { $"@dashboard {id}" };
 
         if (runtimeManifest is not null)
         {
-            lines.Add($"  runtime {{ manifest = \"{runtimeManifest}\" }}");
-            lines.Add("  configuration { sqldialect = tsql }");
+            lines.Add("  runtime");
+            lines.Add($"    manifest = \"{runtimeManifest}\"");
+            lines.Add("  end runtime");
+            lines.Add("  configuration");
+            lines.Add("    sqldialect = tsql");
+            lines.Add("  end configuration");
         }
 
         if (connector || wiringExtra is not null)
         {
-            lines.Add("  wiring {");
+            lines.Add("  wiring");
             if (connector)
             {
                 lines.Add("    use connector sqlserver");
@@ -32,13 +36,13 @@ internal static class BlockSpecTestHelper
                 lines.Add($"    {wiringExtra}");
             }
 
-            lines.Add("  }");
+            lines.Add("  end wiring");
         }
 
-        lines.Add($"  report \"{title}\" {{");
+        lines.Add("  report");
+        lines.Add($"    title = \"{title}\"");
         lines.Add(Indent(reportBody, 4));
-        lines.Add("  }");
-        lines.Add("}");
+        lines.Add("  end report");
         return string.Join('\n', lines);
     }
 
@@ -48,24 +52,22 @@ internal static class BlockSpecTestHelper
         string? title = null,
         bool connector = false)
     {
-        var lines = new List<string> { $"@tab {id} {{" };
+        var lines = new List<string> { $"@tab {id}" };
         if (connector)
         {
-            lines.Add("  wiring { use connector sqlserver }");
+            lines.Add("  wiring");
+            lines.Add("    use connector sqlserver");
+            lines.Add("  end wiring");
         }
 
-        if (title is null)
+        lines.Add("  report");
+        if (title is not null)
         {
-            lines.Add("  report {");
-        }
-        else
-        {
-            lines.Add($"  report \"{title}\" {{");
+            lines.Add($"    title = \"{title}\"");
         }
 
         lines.Add(Indent(reportBody, 4));
-        lines.Add("  }");
-        lines.Add("}");
+        lines.Add("  end report");
         return string.Join('\n', lines);
     }
 

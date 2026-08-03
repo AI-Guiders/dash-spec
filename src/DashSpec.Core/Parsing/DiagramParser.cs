@@ -22,7 +22,7 @@ internal static class DiagramParser
             return new DiagramDefinition(name, properties);
         }
 
-        var overrides = reader.IsAt(TokenKind.LBrace)
+        var overrides = !reader.IsOnNewline() && !reader.IsEof
             ? PropertyBlockParser.Parse(
                 reader,
                 DiagramKindRegistry.AllBindingProperties(),

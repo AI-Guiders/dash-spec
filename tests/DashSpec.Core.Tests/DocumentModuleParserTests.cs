@@ -14,30 +14,39 @@ public class DocumentModuleParserTests
         {
             File.WriteAllText(Path.Combine(dir, "diagrams", "x.dashdiagram"), """
                 @diagram x
-
-                number {
+                
+                number
                   value = n
-                }
+                end number
                 """);
 
             const string text = """
-                @tab t {
-                  runtime { manifest = "cfg.toml" }
-                  configuration { sqldialect = tsql }
+                @tab t
+                  runtime
+                  manifest = "cfg.toml"
+                  end runtime
+                  configuration
+                  sqldialect = tsql
+                  end configuration
                   !include "diagrams/x.dashdiagram"
-                  wiring { use connector sqlserver }
-                  report "Tab title" {
-                    standalone {
-                      filter field app on dbo.apps.name as "App"
-                      toolbar { app }
-                    }
-                    card c as "C" {
-                      diagram x
-                      datasource view dbo.t
-                      bind app
-                    }
-                  }
-                }
+                  wiring
+                  use connector sqlserver
+                  end wiring
+                  report
+                  title = "Tab title"
+                  standalone
+                  filter field app on dbo.apps.name as "App"
+                  toolbar app
+                  end standalone
+                  card c as "C"
+                  diagram x
+                  datasource view dbo.t
+                  bind
+                    app
+                  end bind
+                  end card
+                  end report
+                end tab
                 """;
 
             var doc = DashSpecParser.Parse(text, dir);

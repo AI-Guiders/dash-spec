@@ -10,23 +10,32 @@ public class CardInteriorLayoutTests
     public void Parse_card_interior_layout_with_diagram_and_filter_refs()
     {
         var doc = DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                filter top rows_top as "Top" ref T default 100
-                filter date usage_date on usage_date as "Date" default -7d..today
-                filters dashboard { usage_date }
-                card detail as "Detail" {
-                  filters { rows_top }
-                  diagram ref D table { columns = a, b }
-                  datasource view dbo.t
-                  bind usage_date
-                  layout {
-                    [ T ]
-                    [ D ]
-                  }
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter top rows_top as "Top" ref T default 100
+              filter date usage_date on usage_date as "Date" default -7d..today
+              filters dashboard
+              usage_date
+              end dashboard
+              card detail as "Detail"
+              filters
+              rows_top
+              end filters
+              diagram ref D table
+              columns = a, b
+              end table
+              datasource view dbo.t
+              bind
+                usage_date
+              end bind
+              layout
+              [ T ]
+              [ D ]
+              end layout
+              end card
+              end report
+            end dashboard
             """);
 
         var card = doc.Cards.Single();
@@ -44,19 +53,24 @@ public class CardInteriorLayoutTests
     public void Parse_rejects_interior_board_missing_diagram_slot()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                filter field app_name on dbo.t.app as "App"
-                card detail as "Detail" {
-                  filters { app_name }
-                  diagram number { value = n }
-                  datasource view dbo.t
-                  layout {
-                    [ app_name ]
-                  }
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter field app_name on dbo.t.app as "App"
+              card detail as "Detail"
+              filters
+              app_name
+              end filters
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              layout
+              [ app_name ]
+              end layout
+              end card
+              end report
+            end dashboard
             """));
 
         Assert.Contains("diagram slot", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -66,19 +80,24 @@ public class CardInteriorLayoutTests
     public void Parse_rejects_duplicate_slot_in_interior_board()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
-            @dashboard t {
-              report "T" {
-                filter field app_name on dbo.t.app as "App" ref A
-                card c as "C" {
-                  filters { app_name }
-                  diagram ref D number { value = x }
-                  datasource view dbo.t
-                  layout {
-                    [ A A ]
-                  }
-                }
-              }
-            }
+            @dashboard t
+              report
+              title = "T"
+              filter field app_name on dbo.t.app as "App" ref A
+              card c as "C"
+              filters
+              app_name
+              end filters
+              diagram ref D number
+              value = x
+              end number
+              datasource view dbo.t
+              layout
+              [ A A ]
+              end layout
+              end card
+              end report
+            end dashboard
             """));
 
         Assert.Contains("more than once", ex.Message, StringComparison.OrdinalIgnoreCase);

@@ -1,8 +1,6 @@
 @diagram demo_peak_apps_heatmap
 
-include presentation "<presentation/heatmap_tall>"
-
-heatmap {
+heatmap
   render = "css-grid"
   x = usage_date as "Day"
   y = user_id as "User"
@@ -13,4 +11,4 @@ heatmap {
   x_format = date.short
   y_format = user.short
   color_scale = heat
-}
+end heatmap

@@ -1,3 +1,4 @@
+using DashSpec.Core.Analysis;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
@@ -12,7 +13,8 @@ public static class TabLayoutCompactor
     public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
         DashboardDocument document,
         string tabId,
-        SpecLibrary? library = null)
+        SpecLibrary? library = null,
+        string? activePageId = null)
     {
         var tab = document.Tabs.Single(t =>
             string.Equals(t.Id, tabId, StringComparison.OrdinalIgnoreCase));
@@ -29,13 +31,38 @@ public static class TabLayoutCompactor
             })
             .ToList();
 
+        var effectivePageId = activePageId;
+        var tabPages = PageTabScope.FilterForTab(document.Pages, tabId);
+        if (string.IsNullOrWhiteSpace(effectivePageId) && tabPages.Count > 0)
+        {
+            effectivePageId = tabPages[0].Id;
+        }
+
+        if (!string.IsNullOrWhiteSpace(effectivePageId))
+        {
+            tabCards = tabCards
+                .Where(card => string.Equals(card.PageId, effectivePageId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         var columns = document.Layout.Columns;
         Dictionary<string, PlacementDefinition> result;
 
-        if (tab.LayoutBoard is not null)
+        var board = tab.LayoutBoard;
+        if (!string.IsNullOrWhiteSpace(effectivePageId))
+        {
+            var page = tabPages.FirstOrDefault(p =>
+                string.Equals(p.Id, effectivePageId, StringComparison.OrdinalIgnoreCase));
+            if (page?.LayoutBoard is not null)
+            {
+                board = page.LayoutBoard;
+            }
+        }
+
+        if (board is not null)
         {
             result = new Dictionary<string, PlacementDefinition>(
-                TabLayoutBoardResolver.Resolve(tab.LayoutBoard, tabCards, columns, tab.Id),
+                TabLayoutBoardResolver.Resolve(board, tabCards, columns, tab.Id),
                 StringComparer.OrdinalIgnoreCase);
         }
         else

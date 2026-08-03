@@ -11,10 +11,16 @@
            disabled="@Disabled"
            @bind="Value"
            @bind:after="OnChanged" />
+    @if (!string.IsNullOrWhiteSpace(ScopeHint))
+    {
+        <span class="filter-scope-hint muted">@ScopeHint</span>
+    }
 </div>
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public string? ScopeHint { get; set; }
 
     [Parameter] public int Min { get; set; } = 1;
 

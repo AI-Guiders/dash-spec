@@ -15,20 +15,27 @@ public class DirectiveParserTests
     public void ReadRuntimePath_returns_relative_toml_path()
     {
         const string text = """
-            @dashboard t {
-              runtime { manifest = "demo.toml" }
-              report "T" {
-                card a as "A" {
-                  diagram number { value = x }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard t
+              runtime
+              manifest = "demo.toml"
+              end runtime
+              report
+              title = "T"
+              card a as "A"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """;
 
         Assert.Equal("demo.toml", DashSpecParser.ReadRuntimePath(text));
         Assert.Equal("demo.toml", DashSpecParser.ReadConfigPath(text));
-        Assert.Equal(("t", "T"), DashSpecParser.ReadDashboardHeader(text));
+        var doc = DashSpecParser.Parse(text);
+        Assert.Equal("t", doc.Id);
+        Assert.Equal("T", doc.Title);
         Assert.Equal("t", DashSpecParser.Parse(text).Id);
     }
 
@@ -36,15 +43,20 @@ public class DirectiveParserTests
     public void ReadConfigPath_accepts_deprecated_alias()
     {
         const string text = """
-            @dashboard t {
-              runtime { manifest = "legacy.toml" }
-              report "T" {
-                card a as "A" {
-                  diagram number { value = x }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard t
+              runtime
+              manifest = "legacy.toml"
+              end runtime
+              report
+              title = "T"
+              card a as "A"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """;
 
         Assert.Equal("legacy.toml", DashSpecParser.ReadRuntimePath(text));
@@ -54,16 +66,23 @@ public class DirectiveParserTests
     public void ReadSqlDialect_parses_file_directive()
     {
         const string text = """
-            @dashboard t {
-              runtime { manifest = "cfg.toml" }
-              configuration { sqldialect = postgres }
-              report "T" {
-                card a as "A" {
-                  diagram number { value = x }
-                  datasource view dbo.t
-                }
-              }
-            }
+            @dashboard t
+              runtime
+              manifest = "cfg.toml"
+              end runtime
+              configuration
+              sqldialect = postgres
+              end configuration
+              report
+              title = "T"
+              card a as "A"
+              diagram number
+              value = x
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
             """;
 
         Assert.Equal(SqlDialect.Postgres, DashSpecParser.ReadSqlDialect(text));

@@ -30,7 +30,7 @@ public class FilterBindingTests
         Assert.Equal(
             ["peak_concurrent_proxy", "activity_5min", "dau_by_product", "peak_apps_heatmap", "idle_table"],
             map["usage_date"]);
-        Assert.False(map.ContainsKey("activity_slot"));
+        Assert.Equal(["activity_5min"], map["activity_slot"]);
         Assert.Equal(6, map["app_name"].Count);
         Assert.Equal(["activity_slot"], doc.Cards.Single(c => c.Id == "activity_5min").LocalFilters);
         Assert.Equal(

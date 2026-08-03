@@ -1,4 +1,5 @@
 using DashSpec.Abstractions.Plugins;
+using DashSpec.Core.Analysis;
 using DashSpec.Core.Compilation;
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
@@ -89,7 +90,16 @@ public sealed class DashboardPageController : IDisposable
         new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
 
+    public string ActivePhaseId { get; private set; } = "browse";
+
+    public string? ActivePageId { get; private set; }
+
     public bool HasCatalog => CatalogEntries.Count > 1;
+
+    public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
+        _hostContext.Catalog.Document.Groups ?? [];
+
+    public bool HasPages => ActiveTabPages().Count > 1;
 
     public IReadOnlyList<CatalogEntryDefinition> CatalogEntries =>
         _hostContext.Catalog.Document.Entries;
@@ -216,10 +226,28 @@ public sealed class DashboardPageController : IDisposable
     public async Task SelectTab(string tabId)
     {
         ActiveTabId = tabId;
+        ResetActivePageForTab();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
         Notify();
         await Task.CompletedTask;
+    }
+
+    public async Task SelectPageAsync(string pageId)
+    {
+        if (string.Equals(ActivePageId, pageId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        ActivePageId = pageId;
+        ActivePhaseId = "browse";
+        _refresh.ActivePhaseId = ActivePhaseId;
+        SyncUsageDateFromActivePage();
+        RecomputeTabPlacements();
+        RecomputeToolbarPlacements();
+        Notify();
+        await ApplyFiltersAsync().ConfigureAwait(false);
     }
 
     public async Task ApplyCardClickNavigationAsync(
@@ -233,18 +261,39 @@ public sealed class DashboardPageController : IDisposable
         }
 
         var navigate = false;
+        GotoCatalogEntryEffect? catalogGoto = null;
+        var clickSetFilters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var effect in _interactions.ExpandClickEffects(card.ClickBehaviour.Effects))
         {
+            if (effect is GotoCatalogEntryEffect gotoEntry)
+            {
+                catalogGoto = gotoEntry;
+                continue;
+            }
+
             switch (effect)
             {
                 case SetFilterFromFieldEffect setEffect:
                     ApplyFilterFromHeatmapCell(setEffect, context);
+                    clickSetFilters.Add(setEffect.FilterName);
                     navigate = true;
                     break;
                 case GotoTabEffect gotoEffect:
                     ActiveTabId = gotoEffect.TabId;
                     RecomputeTabPlacements();
                     RecomputeToolbarPlacements();
+                    navigate = true;
+                    break;
+                case FocusPhaseEffect focusEffect:
+                    ActivePhaseId = focusEffect.PhaseId;
+                    _refresh.ActivePhaseId = ActivePhaseId;
+                    navigate = true;
+                    break;
+                case GotoPageEffect gotoPage:
+                    ActivePageId = gotoPage.PageId;
+                    ActivePhaseId = "browse";
+                    _refresh.ActivePhaseId = ActivePhaseId;
+                    RecomputeTabPlacements();
                     navigate = true;
                     break;
                 case InvokeHandlerEffect invoke:
@@ -256,6 +305,13 @@ public sealed class DashboardPageController : IDisposable
                         cancellationToken).ConfigureAwait(false);
                     break;
             }
+        }
+
+        if (catalogGoto is not null)
+        {
+            var carriedFilters = BuildCarriedFiltersForCatalogEntry(catalogGoto, clickSetFilters);
+            await SelectCatalogEntryAsync(catalogGoto.EntryId, carriedFilters, cancellationToken).ConfigureAwait(false);
+            return;
         }
 
         if (!navigate)
@@ -343,6 +399,29 @@ public sealed class DashboardPageController : IDisposable
         }
     }
 
+    private FilterUiSnapshot? BuildCarriedFiltersForCatalogEntry(
+        GotoCatalogEntryEffect gotoEntry,
+        IReadOnlySet<string> clickSetFilters)
+    {
+        var snapshot = _filters.Capture();
+        if (gotoEntry.PreserveFilterNames is null)
+        {
+            return clickSetFilters.Count == 0
+                ? null
+                : snapshot.NarrowTo(clickSetFilters);
+        }
+
+        if (gotoEntry.PreserveFilterNames.Count == 0)
+        {
+            return snapshot;
+        }
+
+        var names = clickSetFilters
+            .Concat(gotoEntry.PreserveFilterNames)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return snapshot.NarrowTo(names);
+    }
+
     public bool ToolbarGroupBreakBefore(string filterName)
     {
         if (!GrainFilterPresentation.IsGrainHostFilter(filterName, _session.FilterIndex))
@@ -382,8 +461,25 @@ public sealed class DashboardPageController : IDisposable
 
     public async Task SelectCatalogEntryAsync(string entryId)
     {
+        await SelectCatalogEntryAsync(entryId, carriedFilters: null, CancellationToken.None).ConfigureAwait(false);
+    }
+
+    public async Task SelectCatalogEntryAsync(
+        string entryId,
+        FilterUiSnapshot? carriedFilters,
+        CancellationToken cancellationToken = default)
+    {
         if (string.Equals(_session.ActiveCatalogEntryId, entryId, StringComparison.OrdinalIgnoreCase))
         {
+            if (carriedFilters is null)
+            {
+                return;
+            }
+
+            _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
+            _filters.SyncToSession(_session, PlacedFilterNames());
+            Notify();
+            await ApplyFiltersAsync(cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -398,9 +494,18 @@ public sealed class DashboardPageController : IDisposable
             await _session.LoadCatalogEntryAsync(entryId).ConfigureAwait(false);
             LoadedSpecSource = _session.LoadedSpecSource;
             await InitializeDashboardStateAsync().ConfigureAwait(false);
+            if (carriedFilters is not null)
+            {
+                _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
+                _filters.SyncToSession(_session, PlacedFilterNames());
+            }
             Loaded = true;
             Notify();
             _ = RefreshCardsInBackgroundAsync();
+            if (carriedFilters is not null)
+            {
+                await ApplyFiltersAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {
@@ -417,21 +522,62 @@ public sealed class DashboardPageController : IDisposable
 
     public IEnumerable<CardRenderResult> VisibleCards()
     {
+        IEnumerable<CardRenderResult> cards;
         if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
         {
-            return _refresh.Cards;
+            cards = _refresh.Cards;
+        }
+        else
+        {
+            var tab = _session.Document.Tabs.Single(t =>
+                string.Equals(t.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase));
+
+            cards = _refresh.Cards.Where(card =>
+                tab.CardIds.Contains(card.Id, StringComparer.OrdinalIgnoreCase));
         }
 
-        var tab = _session.Document.Tabs.Single(t =>
-            string.Equals(t.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase));
+        return cards.Where(card =>
+        {
+            var definition = _session.Document.Cards.FirstOrDefault(c =>
+                string.Equals(c.Id, card.Id, StringComparison.OrdinalIgnoreCase));
+            if (definition is null)
+            {
+                return true;
+            }
 
-        return _refresh.Cards.Where(card =>
-            tab.CardIds.Contains(card.Id, StringComparer.OrdinalIgnoreCase));
+            return CardVisibilityEvaluator.Evaluate(definition, SelectedFields, ActivePhaseId)
+                is CardVisibilityOutcome.Visible or CardVisibilityOutcome.Placeholder;
+        })
+        .Where(card =>
+        {
+            if (string.IsNullOrWhiteSpace(ActivePageId))
+            {
+                return true;
+            }
+
+            var definition = FindCardDefinition(card.Id);
+            return definition is null ||
+                   string.Equals(definition.PageId, ActivePageId, StringComparison.OrdinalIgnoreCase);
+        });
     }
+
+    public IReadOnlyList<ReportPageDefinition> ActiveTabPages() => ResolveActiveTabPages();
+
+    public CardDefinition? FindCardDefinition(string cardId) =>
+        _session.Document.Cards.FirstOrDefault(c =>
+            string.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase));
 
     public void OnDashboardFieldChanged((string Name, HashSet<string> Values) args)
     {
         SelectedFields[args.Name] = args.Values;
+        if (string.Equals(args.Name, "user_name", StringComparison.OrdinalIgnoreCase))
+        {
+            ActivePhaseId = CardVisibilityEvaluator.FilterHasSelection(args.Name, SelectedFields)
+                ? "detail"
+                : "browse";
+            _refresh.ActivePhaseId = ActivePhaseId;
+        }
+
         NormalizeGrainDates(args.Name);
         _refresh.ScheduleDashboardApply();
     }
@@ -493,16 +639,29 @@ public sealed class DashboardPageController : IDisposable
 
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
 
-    public Task ApplyFiltersAsync(CancellationToken cancellationToken) =>
-        _refresh.RefreshDashboardAsync(cancellationToken);
+    public Task ApplyFiltersAsync(CancellationToken cancellationToken)
+    {
+        _refresh.ActivePhaseId = ActivePhaseId;
+        return _refresh.RefreshDashboardAsync(cancellationToken);
+    }
 
     public Task ApplyCardFiltersAsync(string cardId) =>
         _refresh.RefreshCardLocalAsync(cardId);
 
-    public IReadOnlyList<string> DashboardBoundForCard(CardRenderResult card) =>
-        (card.BoundFilters ?? [])
+    public IReadOnlyList<string> DashboardBoundForCard(CardRenderResult card)
+    {
+        var definition = FindCardDefinition(card.Id);
+        if (definition?.Chrome?.BoundFilters is CardBoundFilterChrome.Hidden or CardBoundFilterChrome.ToolbarOnly)
+        {
+            return [];
+        }
+
+        var visibleToolbar = VisibleToolbarFilterNames().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return (card.BoundFilters ?? [])
             .Where(name => _session.Document.DashboardFilters.Contains(name, StringComparer.OrdinalIgnoreCase))
+            .Where(name => !visibleToolbar.Contains(name))
             .ToList();
+    }
 
     public string FiltersSectionClass()
     {
@@ -595,6 +754,9 @@ public sealed class DashboardPageController : IDisposable
     private async Task InitializeDashboardStateAsync()
     {
         ActiveTabId = _session.Document.Tabs.FirstOrDefault()?.Id;
+        ActivePhaseId = "browse";
+        _refresh.ActivePhaseId = ActivePhaseId;
+        ResetActivePageForTab();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
         FiltersToCards = FilterBinding.MapFiltersToCards(_session.Document, _session.SpecLibrary)
@@ -702,25 +864,46 @@ public sealed class DashboardPageController : IDisposable
 
     private IReadOnlyList<string> VisibleToolbarFilterNames()
     {
-        var all = _session.Document.DashboardFilters;
-        if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
+        var pageToolbar = PageToolbarResolver.ResolveActiveToolbarBoard(
+            _session.Document,
+            ActiveTabId,
+            ActivePageId);
+
+        var visible = ToolbarFilterVisibility.ResolveVisibleFilters(
+            _session.Document,
+            ActiveTabId,
+            ActivePageId,
+            FiltersToCards);
+
+        if (pageToolbar is not null)
         {
-            return all;
+            var allowed = pageToolbar.Rows
+                .SelectMany(row => row)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            visible = visible
+                .Where(name => allowed.Contains(name))
+                .OrderBy(name =>
+                {
+                    var index = 0;
+                    foreach (var row in pageToolbar.Rows)
+                    {
+                        foreach (var token in row)
+                        {
+                            if (string.Equals(token, name, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return index;
+                            }
+
+                            index++;
+                        }
+                    }
+
+                    return int.MaxValue;
+                })
+                .ToList();
         }
 
-        var tab = _session.Document.Tabs.FirstOrDefault(t =>
-            string.Equals(t.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase));
-        if (tab is null)
-        {
-            return all;
-        }
-
-        var tabCardIds = tab.CardIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return all
-            .Where(filterName =>
-                FiltersToCards.TryGetValue(filterName, out var cards) &&
-                cards.Any(cardId => tabCardIds.Contains(cardId)))
-            .ToList();
+        return visible;
     }
 
     private void RecomputeTabPlacements()
@@ -734,16 +917,88 @@ public sealed class DashboardPageController : IDisposable
         foreach (var (title, placement) in TabLayoutCompactor.Compact(
                      _session.Document,
                      ActiveTabId,
-                     _session.SpecLibrary))
+                     _session.SpecLibrary,
+                     ActivePageId))
         {
             TabPlacements[title] = placement;
         }
     }
 
+    private void ResetActivePageForTab()
+    {
+        var pages = ResolveActiveTabPages();
+        ActivePageId = pages.FirstOrDefault()?.Id;
+        SyncUsageDateFromActivePage();
+    }
+
+    private void SyncUsageDateFromActivePage()
+    {
+        var derive = PageToolbarResolver.ResolveUsageDateDerive(
+            _session.Document,
+            ActiveTabId,
+            ActivePageId);
+        if (derive is null)
+        {
+            return;
+        }
+
+        if (!DateFrom.TryGetValue(derive.SourceFilter, out var anchor))
+        {
+            return;
+        }
+
+        var grain = PeriodAnchorResolver.TryReadGrain(_session.Filters, derive.GrainFilterName);
+        var from = PeriodAnchorResolver.ResolveAnchor(anchor, grain);
+        var to = PeriodAnchorResolver.ResolvePeriodEnd(from, grain);
+        DateFrom[derive.TargetFilter] = from;
+        DateTo[derive.TargetFilter] = to;
+        _session.Filters.SetDate(derive.TargetFilter, from, to);
+    }
+
+    private IReadOnlyList<ReportPageDefinition> ResolveActiveTabPages()
+    {
+        if ((_session.Document.Pages ?? []).Count == 0)
+        {
+            return [];
+        }
+
+        var tabCardIds = ResolveActiveTabCardIds();
+        if (tabCardIds.Count == 0)
+        {
+            return _session.Document.Pages ?? [];
+        }
+
+        var pageIds = _session.Document.Cards
+            .Where(card => tabCardIds.Contains(card.Id) && !string.IsNullOrWhiteSpace(card.PageId))
+            .Select(card => card.PageId!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return (_session.Document.Pages ?? [])
+            .Where(page =>
+                (string.IsNullOrWhiteSpace(ActiveTabId) ||
+                 PageTabScope.PageBelongsToTab(page, ActiveTabId)) &&
+                pageIds.Contains(page.Id))
+            .ToList();
+    }
+
+    private HashSet<string> ResolveActiveTabCardIds()
+    {
+        if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
+        {
+            return _session.Document.Cards
+                .Select(card => card.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var tab = _session.Document.Tabs.FirstOrDefault(t =>
+            string.Equals(t.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase));
+        return tab is null
+            ? []
+            : tab.CardIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
     private IEnumerable<string> PlacedFilterNames() =>
-        _session.Document.DashboardFilters
-            .Concat(_session.Document.Cards.SelectMany(c => c.LocalFilters))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+        PlacedFilterCollector.Collect(_session.Document);
 
     private void Notify() => Changed?.Invoke();
 }

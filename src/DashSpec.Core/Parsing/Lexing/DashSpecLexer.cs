@@ -205,7 +205,7 @@ internal static class DashSpecLexer
                 continue;
             }
 
-            throw new DashSpecParseException($"Unexpected character '{text[i]}' at position {i}.");
+            throw new DashSpecParseException($"Unexpected character '{text[i]}' at position {i}.", i);
         }
 
         tokens.Add(new Token(TokenKind.Eof, string.Empty, text.Length, 0));

@@ -16,13 +16,21 @@ public sealed record DashboardDocument(
     IReadOnlyList<CardDefinition> Cards,
     LayoutBoardDefinition? ToolbarBoard = null,
     ModuleExtensionsDefinition? ModuleExtensions = null,
-    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null)
+    IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null,
+    IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
+    IReadOnlyList<ReportPageDefinition>? Pages = null)
 {
     public static IReadOnlyDictionary<string, ModuleDiagramDefinition> EmptyModuleDiagrams { get; } =
         new Dictionary<string, ModuleDiagramDefinition>(StringComparer.OrdinalIgnoreCase);
 
+    public static IReadOnlyDictionary<string, PresentationBlock> EmptyModuleChartChromePresets { get; } =
+        new Dictionary<string, PresentationBlock>(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyDictionary<string, ModuleDiagramDefinition> ResolvedModuleDiagrams =>
         ModuleDiagrams ?? EmptyModuleDiagrams;
+
+    public IReadOnlyDictionary<string, PresentationBlock> ResolvedChartChromePresets =>
+        ModuleChartChromePresets ?? EmptyModuleChartChromePresets;
 }
 
 public sealed record FilterDefinition(
@@ -79,7 +87,13 @@ public sealed record CardDefinition(
     string? DiagramSlotRef = null,
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
-    bool LocalFiltersManualApply = false);
+    bool LocalFiltersManualApply = false,
+    CardVisibilityRule? Visibility = null,
+    string? PhaseId = null,
+    string? PageId = null,
+    MatrixRenderLimitsDefinition? MatrixLimits = null,
+    string? OversizeMessage = null,
+    CardChromeDefinition? Chrome = null);
 public sealed record DiagramDefinition(
     string Kind,
     IReadOnlyDictionary<string, string> Properties,
