@@ -12,7 +12,8 @@
 - **Responsive layout + CSS modules** — split `app.css` into `css/parts/*`, wider content area, stack cards only ≤768px, taller diagram slots.
 - **Heatmap guard** — `MatrixRenderLimits` (2500 cells / 80 axis); oversize message instead of DOM grid.
 - **Matrix canvas renderer** — `render = "matrix-canvas"` viz plugin (default for matrix); one `<canvas>` + hit-test; `css-grid` kept as legacy.
-- **Drill-down runtime** — `invoke drill_down` / phrase `drill to {tab} with {target} from {from}` expands to set/goto in `OnClickInteractionService`.
+- **Report scale (ADR-0030)** — `when` (card visibility / placeholder), `phase browse|detail`, `focus <phase>`; bar category click → `set … from y` when card has navigation `on click`.
+- **Bar drill** — horizontal/vertical bar category click invokes `OnCategoryClick` → same navigation pipeline as heatmap (`set`, `focus`, `goto tab`, `drill to …`).
 - **Action runtime** — `IDashSpecActionHandler`, `DashSpecActionDispatcher`, `csv_export` download from table/matrix/chart; parse-time lint for unknown action/interaction handlers.
 - **Mandatory `scope` in `.dashlayout`** — `scope toolbar|tab|card` after `@layout <id>`; static check against include site. [ADR-0026](design/DASHSPEC-ADR-0026-layout-module-scope.md)
 
