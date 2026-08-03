@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted (partial — P0–P2 implemented; P3 viewport pending) |
 | **Date** | 2026-07-05 |
 | **Relates to** | [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md) |
 
@@ -94,21 +94,29 @@ entry soak {
 
 **Prod 1:1:** catalog `entry { title = … }`; inner spec — **id = entry id**, `title` omitted on page/card ([ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md)).
 
-### 3. `gate` — precondition карточки
+### 3. `when` — precondition карточки (ранее draft: `gate`)
+
+`gate` в ранних черновиках ADR — неудачное имя (путается с access gate, mutex). Канон: **`when`**.
 
 ```text
 card user_day_heatmap ref D {
-  gate requires user_name {
+  when user_name {
     message = "Выберите пользователя"
   }
   diagram …
 }
 
 card browse_top_users ref B {
-  gate when user_name.empty
-  on click { set user_name from y }
+  when user_name.empty
+  on click { set user_name from y; focus detail }
 }
 ```
+
+| Форма | Смысл |
+|-------|--------|
+| `when filter empty` | карточка только если фильтр пуст |
+| `when filter` / `when filter set` | только если фильтр задан |
+| `when filter { message = "…" }` | если не задан — placeholder вместо heatmap |
 
 ### 4. `phase` — browse / detail
 
@@ -138,7 +146,7 @@ Scroll/pagination без отбрасывания данных.
 @catalog
   group? { entry → @tab | @dashboard }
   report
-    tab? / page / phase? / card (+ gate, on click)
+    tab? / page / phase? / card (+ when, on click)
 ```
 
 ## LUS reference
@@ -147,12 +155,12 @@ Draft: `URSA.LicenseUsage/docs/dashspec/drafts/lus-stakeholder-report2-pages.das
 
 ## Implementation phases
 
-| Phase | Deliverable |
-|-------|-------------|
-| **P0** | ADR-0030 + ADR-0031 + drafts |
-| **P1** | `page`, `gate`, `group`; display vocabulary parser |
-| **P2** | `phase`, `goto page` / `goto entry` |
-| **P3** | viewport presentation |
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
+| **P0** | ADR-0030 + ADR-0031 + drafts | Done |
+| **P1** | `page`, `when`, `group`; display vocabulary parser | Done (`when`, `group`, `page`; ADR-0031 still proposed) |
+| **P2** | `phase`, `focus`, `goto page` / `goto entry` | Done |
+| **P3** | viewport presentation | Pending |
 
 ## Consequences
 

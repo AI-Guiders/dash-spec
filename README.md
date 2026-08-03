@@ -32,6 +32,8 @@ dotnet run --project src/DashSpec.Host
 ```toml
 [connectors.sqlserver]
 connection_string = "Server=...;Database=DashSpecDemo;Trusted_Connection=True;TrustServerCertificate=True"
+command_timeout_seconds = 120   # SqlCommand timeout; 0 = connector default (120)
+max_rows = 250000               # abort if result exceeds row count; 0 = default (250000)
 
 [plugins]
 default_connector_id = "sqlserver"
@@ -80,6 +82,12 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 | `DashSpec.Host` | loader + Blazor UI (CSS grid для cards и toolbar) |
 | `samples/demo/` | reference `.dashspec` + `diagrams/` / `palettes/` |
 | `design/` | ADR (архитектурные решения DSL и host) |
+| `editor/` | VS Code extension ([`editor/vscode-dashspec`](editor/vscode-dashspec/)); authoring: [`docs/authoring`](docs/authoring/README.md) |
+
+## Authoring (editor)
+
+Подсветка, **LSP** (diagnostics, completion, go-to-definition) и snippets для `.dashspec` и родственных файлов — [`editor/vscode-dashspec`](editor/vscode-dashspec/). Перед F5: `scripts/publish-language-server.ps1` и `npm install` в каталоге extension.  
+Grammar в редакторе **может отставать** от парсера; для проверки — `DashSpec.Host validate` или validate on save в extension.
 
 ## Где живут фильтры
 
