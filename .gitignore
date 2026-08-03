@@ -3,8 +3,33 @@ obj/
 .vs/
 *.user
 *.suo
+*.bak
 appsettings.Development.local.json
 dash-spec.local.toml
 samples/demo/demo.local.toml
 publish/
 uploads/
+
+# Local test / unpack noise
+test-out.txt
+test-failures.txt
+omnisharp*.zip
+.signature.p7s
+\[Content_Types\].xml
+_rels/
+*.nuspec
+/lib/
+/package/
+
+# Editor extension build artifacts
+node_modules/
+*.vsix
+editor/vscode-dashspec/server/
+__pycache__/
+*.pyc
+
+# One-off migration scratch scripts / backup specs
+scripts/_*.py
+scripts/run_mig.py
+scripts/migrate_file.py
+*.dashdiagram.full
