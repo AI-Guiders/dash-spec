@@ -387,6 +387,13 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        // Folded "Other"/"Прочие" is not a real dimension value — filtering by it yields empty cards.
+        if (string.Equals(raw, "Other", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "Прочие", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         switch (filter.Kind)
         {
             case FilterKind.Date when DateOnly.TryParse(raw, out var day):
