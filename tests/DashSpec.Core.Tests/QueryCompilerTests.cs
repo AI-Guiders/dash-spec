@@ -311,7 +311,41 @@ public class QueryCompilerTests
 
         Assert.StartsWith("SELECT TOP 15", query.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("ORDER BY utilization_pct DESC, app_name", query.Sql);
-        Assert.Contains("peak_concurrent_proxy", query.Sql);
-        Assert.Contains("purchased_seats", query.Sql);
+        Assert.Contains("SUM(peak_concurrent_proxy) AS peak_concurrent_proxy", query.Sql);
+        Assert.Contains("MAX(purchased_seats) AS purchased_seats", query.Sql);
+        Assert.Contains("MAX(utilization_pct) AS utilization_pct", query.Sql);
+        Assert.Contains("GROUP BY app_name", query.Sql);
+    }
+
+    [Fact]
+    public void Compile_donut_sums_measure_by_category_after_filters()
+    {
+        var card = new CardDefinition(
+            "by_form",
+            "Form",
+            new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["category"] = "form",
+                ["value"] = "launch_count",
+                ["order_by"] = "launch_count DESC, form",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "luf.v_launches_by_form"),
+            ["usage_date"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetDate("usage_date", new DateOnly(2026, 7, 7), new DateOnly(2026, 8, 6));
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-30d..today", "usage_date"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.TSql);
+
+        Assert.Contains("SUM(launch_count) AS launch_count", query.Sql);
+        Assert.Contains("GROUP BY form", query.Sql);
+        Assert.Contains("usage_date >= @usage_date_from", query.Sql);
+        Assert.Contains("ORDER BY launch_count DESC, form", query.Sql);
+        Assert.DoesNotContain("SUM(form)", query.Sql);
     }
 }
