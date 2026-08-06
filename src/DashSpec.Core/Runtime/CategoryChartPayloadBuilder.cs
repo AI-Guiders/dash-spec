@@ -36,15 +36,12 @@ internal static class CategoryChartPayloadBuilder
 
             if (indexByLabel.TryGetValue(label, out var existingIndex))
             {
-                // Same category across filtered days (or other grain) → sum totals.
-                // Reference keeps first non-null (purchased seats etc. are not day-additive).
-                var existing = ordered[existingIndex];
-                var summed = existing.Value is null
-                    ? value
-                    : value is null
-                        ? existing.Value
-                        : existing.Value + value;
-                ordered[existingIndex] = (label, summed, existing.Reference ?? reference);
+                var existing = ordered[existingIndex].Value;
+                if (value is not null && (existing is null || value > existing))
+                {
+                    ordered[existingIndex] = (label, value, reference ?? ordered[existingIndex].Reference);
+                }
+
                 continue;
             }
 
