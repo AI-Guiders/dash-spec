@@ -133,7 +133,17 @@ internal static class CategoryChartPayloadBuilder
 
     private static ChartPayload ApplyMaxSeries(ChartPayload payload, SeriesTransformSettings? transform)
     {
-        if (transform is null || payload.Series.Count <= transform.Max)
+        if (transform is null)
+        {
+            return payload;
+        }
+
+        if (payload.Series.Count == 1 && payload.Labels.Count > transform.Max)
+        {
+            return ApplyMaxCategories(payload, transform);
+        }
+
+        if (payload.Series.Count <= transform.Max)
         {
             return payload;
         }
@@ -170,5 +180,49 @@ internal static class CategoryChartPayloadBuilder
 
         keep.Add(new ChartSeries(otherLabel, otherValues));
         return new ChartPayload(payload.Labels, keep, payload.ReferenceValues, payload.ReferenceLabel);
+    }
+
+    /// <summary>Top-N categories on a single-series category chart (bar/pie/donut); rest → Other.</summary>
+    private static ChartPayload ApplyMaxCategories(ChartPayload payload, SeriesTransformSettings transform)
+    {
+        var series = payload.Series[0];
+        var ranked = payload.Labels
+            .Select((label, index) => (label, index, value: series.Values.ElementAtOrDefault(index)))
+            .OrderByDescending(x => x.value ?? 0)
+            .ToList();
+
+        var keepCount = Math.Max(1, transform.Max - 1);
+        var keep = ranked.Take(keepCount).ToList();
+        var rest = ranked.Skip(keepCount).ToList();
+        if (rest.Count == 0)
+        {
+            return payload;
+        }
+
+        var labels = keep.Select(x => x.label).ToList();
+        labels.Add(transform.OtherLabel);
+
+        var values = keep.Select(x => x.value).ToList();
+        values.Add(rest.Sum(x => x.value ?? 0));
+
+        IReadOnlyList<string>? pointColors = null;
+        if (series.PointColors is not null && series.PointColors.Count == payload.Labels.Count)
+        {
+            var colors = keep.Select(x => series.PointColors[x.index]).ToList();
+            colors.Add("#94a3b8");
+            pointColors = colors;
+        }
+
+        IReadOnlyList<double?>? references = null;
+        if (payload.ReferenceValues is not null && payload.ReferenceValues.Count == payload.Labels.Count)
+        {
+            references = keep.Select(x => payload.ReferenceValues[x.index]).Append(null).ToList();
+        }
+
+        return new ChartPayload(
+            labels,
+            [new ChartSeries(series.Name, values, series.Color, pointColors)],
+            references,
+            payload.ReferenceLabel);
     }
 }

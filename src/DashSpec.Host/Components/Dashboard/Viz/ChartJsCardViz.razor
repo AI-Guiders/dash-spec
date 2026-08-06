@@ -13,7 +13,7 @@ else
 {
     <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Context.Card)">
         <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Context.Card.Id)"
-                     ChartType="@(string.Equals(Context.Card.DiagramKind, "bar", StringComparison.OrdinalIgnoreCase) ? "bar" : "line")"
+                     ChartType="@ResolveChartJsType(Context.Card.DiagramKind)"
                      Payload="Context.Card.Chart"
                      Legend="@(Context.Card.ChartPresentation?.Legend ?? "bottom")"
                      Stacked="@(Context.Card.ChartPresentation?.Stacked ?? false)"
@@ -32,6 +32,14 @@ else
 
     [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
 
+    private static string ResolveChartJsType(string? diagramKind) =>
+        diagramKind?.ToLowerInvariant() switch
+        {
+            "bar" => "bar",
+            "pie" => "pie",
+            "donut" or "doughnut" => "doughnut",
+            _ => "line",
+        };
     private bool CategoryClickEnabled =>
         Context.Card.ClickBehaviour is not null &&
         Interactions.HasNavigationEffects(Context.Card.ClickBehaviour);

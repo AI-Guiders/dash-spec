@@ -304,6 +304,18 @@ public class DashboardParseTests
     }
 
     [Fact]
+    public void Resolve_pie_and_donut_are_category_charts()
+    {
+        Assert.Equal(DiagramDataFamily.Chart, DiagramKindRegistry.Resolve("pie").DataFamily);
+        Assert.Equal(DiagramDataFamily.Chart, DiagramKindRegistry.Resolve("donut").DataFamily);
+        Assert.Equal(DiagramDataFamily.Chart, DiagramKindRegistry.Resolve("doughnut").DataFamily);
+        Assert.True(DiagramKindRegistry.SupportsTopLimit("pie"));
+        Assert.True(DiagramKindRegistry.SupportsTopLimit("donut"));
+        Assert.True(DiagramBindings.IsRadialChart("donut"));
+        Assert.True(DiagramBindings.IsCategoryChart("pie"));
+    }
+
+    [Fact]
     public void Parse_heatmap_column_as_labels()
     {
         var doc = DashSpecParser.Parse("""

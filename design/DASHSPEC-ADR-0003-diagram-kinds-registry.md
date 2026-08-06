@@ -39,7 +39,7 @@ diagram heatmap {
 
 | Поле | Смысл |
 |------|--------|
-| `Id` | `line`, `bar`, `table`, `number`, `heatmap` |
+| `Id` | `line`, `bar`, `pie`, `donut`/`doughnut`, `table`, `number`, `heatmap` |
 | `DataFamily` | `Chart`, `Table`, `Scalar`, `Matrix` — для host/compiler без switch по каждому kind |
 | `Properties` | допустимые свойства блока (как `PropertySchemas.FilterDate`) |
 | `SupportsTopLimit` | `filter top` на карточке |

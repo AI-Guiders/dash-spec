@@ -51,6 +51,9 @@ public static class DiagramKindRegistry
         {
             ["line"] = new("line", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["bar"] = new("bar", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["pie"] = new("pie", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["donut"] = new("donut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["doughnut"] = new("doughnut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),
