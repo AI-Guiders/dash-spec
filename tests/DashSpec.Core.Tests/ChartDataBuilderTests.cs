@@ -310,4 +310,77 @@ public class ChartDataBuilderTests
         Assert.NotNull(payload.Series[0].PointColors);
         Assert.Equal(2, payload.Series[0].PointColors!.Count);
     }
+
+    [Fact]
+    public void BuildLineOrBar_builds_donut_from_category_value()
+    {
+        var diagram = new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "location",
+            ["value"] = "launch_count",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["location"] = "/PROJECTHUB",
+                ["launch_count"] = 605d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["location"] = "/MOC",
+                ["launch_count"] = 177d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["/PROJECTHUB", "/MOC"], payload.Labels);
+        Assert.Equal(605d, payload.Series[0].Values[0]);
+        Assert.Equal(177d, payload.Series[0].Values[1]);
+        Assert.NotNull(payload.Series[0].PointColors);
+    }
+
+    [Fact]
+    public void BuildLineOrBar_folds_extra_donut_categories_into_other()
+    {
+        var diagram = new DiagramDefinition("pie", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "name",
+            ["value"] = "n",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "a", ["n"] = 50d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "b", ["n"] = 40d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "c", ["n"] = 30d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "d", ["n"] = 10d },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var transform = new SeriesTransformSettings(Max: 3, OtherLabel: "Other");
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, transform, card, null);
+
+        Assert.Equal(["a", "b", "Other"], payload.Labels);
+        Assert.Equal(50d, payload.Series[0].Values[0]);
+        Assert.Equal(40d, payload.Series[0].Values[1]);
+        Assert.Equal(40d, payload.Series[0].Values[2]);
+    }
 }

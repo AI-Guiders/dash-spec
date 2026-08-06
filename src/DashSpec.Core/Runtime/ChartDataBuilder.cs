@@ -30,7 +30,7 @@ public static class ChartDataBuilder
             return false;
         }
 
-        if (!string.Equals(diagram.Kind, "bar", StringComparison.OrdinalIgnoreCase))
+        if (!DiagramBindings.IsCategoryChart(diagram.Kind))
         {
             return false;
         }
