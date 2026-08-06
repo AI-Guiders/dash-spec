@@ -15,13 +15,19 @@ window.dashSpecCharts = {
       delete this._instances[canvasId];
     }
 
-    const palette = ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#fb7185", "#38bdf8", "#4ade80"];
-    const isBar = (chartType || "line") === "bar";
+    const palette = ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#fb7185", "#38bdf8", "#4ade80", "#eab308", "#14b8a6", "#ec4899", "#94a3b8"];
+    const type = chartType || "line";
+    const isRadial = type === "pie" || type === "doughnut";
+    if (isRadial) {
+      this._renderRadial(canvasId, canvas, type, labels, series, options, palette);
+      return;
+    }
+
+    const isBar = type === "bar";
     const stacked = !!(options && options.stacked);
     const horizontal = isBar && !!(options && options.horizontal);
     const categoryLabels = labels || [];
     const categoryAxis = horizontal ? "y" : "x";
-    const valueAxis = horizontal ? "x" : "y";
     const longCategoryLabels = categoryLabels.some((l) => String(l).length > 6);
     const referenceValues = (options && options.referenceValues) || null;
     const referenceLabel = (options && options.referenceLabel) || "Куплено";
@@ -193,7 +199,7 @@ window.dashSpecCharts = {
     };
 
     this._instances[canvasId] = new Chart(canvas, {
-      type: chartType || "line",
+      type,
       data: { labels: categoryLabels, datasets },
       plugins: [referencePlugin, percentLimitPlugin],
       options: {
@@ -279,12 +285,12 @@ window.dashSpecCharts = {
           dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
         },
         onHover(event, elements, chart) {
-          const canvas = chart && chart.canvas;
-          if (!canvas) {
+          const canvasEl = chart && chart.canvas;
+          if (!canvasEl) {
             return;
           }
           const clickEnabled = options && options.categoryClickEnabled;
-          canvas.style.cursor =
+          canvasEl.style.cursor =
             clickEnabled && elements && elements.length ? "pointer" : "default";
         },
         scales: {
@@ -316,7 +322,7 @@ window.dashSpecCharts = {
             ...(!horizontal ? valueAxisLimit : {}),
             title: horizontal ? axisTitle(categoryAxisLabel) : axisTitle(valueAxisLabel),
             ticks: {
-              maxRotation: horizontal && longCategoryLabels ? 0 : 0,
+              maxRotation: 0,
               minRotation: 0,
               autoSkip: horizontal,
               autoSkipPadding: horizontal ? 4 : 6,
@@ -330,6 +336,83 @@ window.dashSpecCharts = {
             },
             grid: { color: "#2a354455" },
           },
+        },
+      },
+    });
+  },
+
+  _renderRadial(canvasId, canvas, type, labels, series, options, palette) {
+    const categoryLabels = labels || [];
+    const legend = (options && options.legend) || "right";
+    const showLegend = legend !== "hidden";
+    const legendPosition = legend === "hidden" ? "right" : legend;
+    const valueAxisLabel = (options && options.valueAxisLabel) || "";
+    const item = (series && series[0]) || { name: "default", values: [], pointColors: null };
+    const colors = (item.pointColors && item.pointColors.length === categoryLabels.length)
+      ? item.pointColors
+      : categoryLabels.map((_, i) => palette[i % palette.length]);
+
+    this._instances[canvasId] = new Chart(canvas, {
+      type,
+      data: {
+        labels: categoryLabels,
+        datasets: [
+          {
+            label: item.name === "default" ? (valueAxisLabel || "value") : item.name,
+            data: item.values || [],
+            backgroundColor: colors,
+            borderColor: "#0f172a",
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: type === "doughnut" ? "55%" : undefined,
+        plugins: {
+          legend: {
+            display: showLegend,
+            position: legendPosition,
+            align: legendPosition === "right" ? "start" : "center",
+            labels: {
+              boxWidth: 10,
+              padding: 8,
+              font: { size: 11 },
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                const value = ctx.parsed;
+                const total = (ctx.dataset.data || []).reduce((a, b) => a + (b == null ? 0 : Number(b)), 0);
+                const pct = total > 0 ? ((Number(value) / total) * 100).toFixed(1) : "0";
+                return `${ctx.label}: ${value} (${pct}%)`;
+              },
+            },
+          },
+        },
+        onClick(event, elements) {
+          const clickEnabled = options && options.categoryClickEnabled;
+          const dotNetRef = options && options.dotNetRef;
+          if (!clickEnabled || !dotNetRef || !elements || !elements.length) {
+            return;
+          }
+          const idx = elements[0].index;
+          const label = categoryLabels[idx];
+          if (label == null || label === "") {
+            return;
+          }
+          dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+        },
+        onHover(event, elements, chart) {
+          const canvasEl = chart && chart.canvas;
+          if (!canvasEl) {
+            return;
+          }
+          const clickEnabled = options && options.categoryClickEnabled;
+          canvasEl.style.cursor =
+            clickEnabled && elements && elements.length ? "pointer" : "default";
         },
       },
     });
