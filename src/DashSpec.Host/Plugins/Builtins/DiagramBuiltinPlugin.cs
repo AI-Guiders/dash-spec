@@ -20,6 +20,9 @@ public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
     {
         RegisterKind(registry, Id, "line", "Chart", ["x", "y", "series", "reference"]);
         RegisterKind(registry, Id, "bar", "Chart", ["x", "y", "series", "reference", "category", "value"]);
+        RegisterKind(registry, Id, "pie", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
+        RegisterKind(registry, Id, "donut", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
+        RegisterKind(registry, Id, "doughnut", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
         RegisterKind(registry, Id, "table", "Table", ["columns", "order_by", "limit"], supportsTopLimit: true);
         RegisterKind(registry, Id, "number", "Scalar", ["value"]);
         RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value", "tooltip"]);

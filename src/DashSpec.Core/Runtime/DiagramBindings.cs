@@ -28,7 +28,7 @@ public static class DiagramBindings
     public static IEnumerable<string> SelectColumnRoles(string? kind) =>
         kind?.ToLowerInvariant() switch
         {
-            "bar" => ["x", "y", "reference"],
+            "bar" or "pie" or "donut" or "doughnut" => ["x", "y", "reference"],
             "line" => ["x", "y", "series"],
             "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
@@ -66,7 +66,7 @@ public static class DiagramBindings
 
     private static IEnumerable<string> PropertyKeysForRole(string? kind, string role)
     {
-        if (string.Equals(kind, "bar", StringComparison.OrdinalIgnoreCase))
+        if (IsCategoryChart(kind))
         {
             return role.ToLowerInvariant() switch
             {
@@ -80,8 +80,14 @@ public static class DiagramBindings
         return [role];
     }
 
+    public static bool IsCategoryChart(string? kind) =>
+        kind?.ToLowerInvariant() is "bar" or "pie" or "donut" or "doughnut";
+
+    public static bool IsRadialChart(string? kind) =>
+        kind?.ToLowerInvariant() is "pie" or "donut" or "doughnut";
+
     private static string DescribeExpected(string role, string? kind) =>
-        string.Equals(kind, "bar", StringComparison.OrdinalIgnoreCase) && role is "x" or "y"
-            ? "bar: category/value or x/y"
+        IsCategoryChart(kind) && role is "x" or "y"
+            ? $"{kind}: category/value or x/y"
             : "see diagram bindings";
 }
