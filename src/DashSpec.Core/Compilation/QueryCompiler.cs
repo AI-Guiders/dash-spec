@@ -19,7 +19,6 @@ public static class QueryCompiler
         ArgumentNullException.ThrowIfNull(filters);
         ArgumentNullException.ThrowIfNull(filterDefinitions);
 
-        var selectColumns = ResolveSelectColumns(card);
         var fromClause = card.DataSource.Kind switch
         {
             DataSourceKind.View => card.DataSource.Value,
@@ -30,37 +29,204 @@ public static class QueryCompiler
 
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
-
         AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, sqlDialect);
 
-        var sql = new StringBuilder();
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
             ? ResolveTableLimit(card, filters, filterDefinitions)
             : 0;
 
+        if (TryBuildCategoryAggregateSelect(card.Diagram, out var aggregateSelect, out var groupBy))
+        {
+            aggregateSelect = AppendOrderByAggregates(aggregateSelect, card.Diagram, groupBy);
+            return new CompiledQuery(
+                BuildSelectSql(
+                    aggregateSelect,
+                    fromClause,
+                    whereBuilder.ToString(),
+                    groupBy,
+                    ResolveOrderBy(card),
+                    tableLimit,
+                    sqlDialect),
+                parameters);
+        }
+
+        return new CompiledQuery(
+            BuildSelectSql(
+                ResolveSelectColumns(card),
+                fromClause,
+                whereBuilder.ToString(),
+                groupBy: null,
+                ResolveOrderBy(card),
+                tableLimit,
+                sqlDialect),
+            parameters);
+    }
+
+    private static string BuildSelectSql(
+        string selectList,
+        string fromClause,
+        string whereClause,
+        string? groupBy,
+        string orderBy,
+        int tableLimit,
+        SqlDialect sqlDialect)
+    {
+        var sql = new StringBuilder();
         if (tableLimit > 0 && sqlDialect is SqlDialect.Postgres)
         {
-            sql.Append("SELECT ").Append(selectColumns);
+            sql.Append("SELECT ").Append(selectList);
             sql.Append(" FROM ").Append(fromClause);
-            sql.Append(' ').Append(whereBuilder);
-            sql.Append(' ').Append(ResolveOrderBy(card));
-            sql.Append(" LIMIT ").Append(tableLimit);
-        }
-        else
-        {
-            sql.Append("SELECT ");
-            if (tableLimit > 0)
+            sql.Append(' ').Append(whereClause);
+            if (!string.IsNullOrEmpty(groupBy))
             {
-                sql.Append("TOP ").Append(tableLimit).Append(' ');
+                sql.Append(' ').Append(groupBy);
             }
 
-            sql.Append(selectColumns);
-            sql.Append(" FROM ").Append(fromClause);
-            sql.Append(' ').Append(whereBuilder);
-            sql.Append(' ').Append(ResolveOrderBy(card));
+            sql.Append(' ').Append(orderBy);
+            sql.Append(" LIMIT ").Append(tableLimit);
+            return sql.ToString();
         }
 
-        return new CompiledQuery(sql.ToString(), parameters);
+        sql.Append("SELECT ");
+        if (tableLimit > 0)
+        {
+            sql.Append("TOP ").Append(tableLimit).Append(' ');
+        }
+
+        sql.Append(selectList);
+        sql.Append(" FROM ").Append(fromClause);
+        sql.Append(' ').Append(whereClause);
+        if (!string.IsNullOrEmpty(groupBy))
+        {
+            sql.Append(' ').Append(groupBy);
+        }
+
+        sql.Append(' ').Append(orderBy);
+        return sql.ToString();
+    }
+
+    /// <summary>
+    /// Category charts (bar/pie/donut without series/x_step): filter first, then
+    /// <c>SUM(measure) GROUP BY category</c> so day-grain views roll up over the bound period.
+    /// </summary>
+    private static bool TryBuildCategoryAggregateSelect(
+        DiagramDefinition diagram,
+        out string selectList,
+        out string groupBy)
+    {
+        selectList = string.Empty;
+        groupBy = string.Empty;
+
+        if (!ShouldAggregateCategoryTotals(diagram) ||
+            !DiagramBindings.TryGetColumn(diagram, "x", out var category) ||
+            !DiagramBindings.TryGetColumn(diagram, "y", out var measure))
+        {
+            return false;
+        }
+
+        var parts = new List<string>
+        {
+            category,
+            $"SUM({measure}) AS {measure}",
+        };
+        var groupParts = new List<string> { category };
+
+        if (DiagramBindings.TryGetColumn(diagram, "reference", out var reference))
+        {
+            // Purchased seats / caps are not additive across days.
+            parts.Add($"MAX({reference}) AS {reference}");
+        }
+
+        selectList = string.Join(", ", parts);
+        groupBy = "GROUP BY " + string.Join(", ", groupParts);
+        return true;
+    }
+
+    /// <summary>
+    /// Keep ORDER BY columns available after GROUP BY via MAX(col) AS col
+    /// (e.g. utilization_pct on stakeholder bars).
+    /// </summary>
+    private static string AppendOrderByAggregates(
+        string selectList,
+        DiagramDefinition diagram,
+        string groupBy)
+    {
+        if (!diagram.Properties.TryGetValue("order_by", out var orderBy) ||
+            string.IsNullOrWhiteSpace(orderBy))
+        {
+            return selectList;
+        }
+
+        var grouped = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var token in groupBy.Replace("GROUP BY", "", StringComparison.OrdinalIgnoreCase)
+                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            grouped.Add(token);
+        }
+
+        var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var part in selectList.Split(',', StringSplitOptions.TrimEntries))
+        {
+            var asIdx = part.LastIndexOf(" AS ", StringComparison.OrdinalIgnoreCase);
+            selected.Add(asIdx >= 0 ? part[(asIdx + 4)..].Trim() : part.Trim());
+        }
+
+        var extras = new List<string>();
+        foreach (var segment in orderBy.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var column = segment.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+            if (string.IsNullOrWhiteSpace(column) ||
+                grouped.Contains(column) ||
+                selected.Contains(column) ||
+                !IsSimpleSqlIdent(column))
+            {
+                continue;
+            }
+
+            extras.Add($"MAX({column}) AS {column}");
+            selected.Add(column);
+        }
+
+        return extras.Count == 0 ? selectList : selectList + ", " + string.Join(", ", extras);
+    }
+
+    private static bool IsSimpleSqlIdent(string value)
+    {
+        if (value.Length == 0 || (!char.IsLetter(value[0]) && value[0] != '_'))
+        {
+            return false;
+        }
+
+        foreach (var ch in value)
+        {
+            if (!char.IsLetterOrDigit(ch) && ch is not '_' and not '.')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ShouldAggregateCategoryTotals(DiagramDefinition diagram)
+    {
+        if (!DiagramBindings.IsCategoryChart(diagram.Kind))
+        {
+            return false;
+        }
+
+        if (diagram.Properties.ContainsKey("x_step"))
+        {
+            return false;
+        }
+
+        if (diagram.Properties.TryGetValue("series", out var series) &&
+            !string.IsNullOrWhiteSpace(series))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static string WrapSqlDataSource(string rawSql)
@@ -118,6 +284,11 @@ public static class QueryCompiler
         if (card.Diagram.Properties.TryGetValue("order_by", out var orderBy))
         {
             return $"ORDER BY {orderBy}";
+        }
+
+        if (DiagramBindings.TryGetColumn(card.Diagram, "x", out var category))
+        {
+            return $"ORDER BY {category}";
         }
 
         if (card.Diagram.Properties.TryGetValue("x", out var x))
