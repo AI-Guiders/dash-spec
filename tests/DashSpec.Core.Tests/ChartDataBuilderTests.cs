@@ -351,7 +351,7 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
-    public void BuildLineOrBar_sums_duplicate_categories_across_days()
+    public void BuildLineOrBar_keeps_max_on_duplicate_categories()
     {
         var diagram = new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -389,7 +389,7 @@ public class ChartDataBuilderTests
         var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
 
         Assert.Equal(["/MOC", "/SPOC-K"], payload.Labels);
-        Assert.Equal(177d, payload.Series[0].Values[0]);
+        Assert.Equal(100d, payload.Series[0].Values[0]);
         Assert.Equal(10d, payload.Series[0].Values[1]);
     }
 
