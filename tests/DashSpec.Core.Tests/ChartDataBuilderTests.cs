@@ -351,6 +351,49 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildLineOrBar_sums_duplicate_categories_across_days()
+    {
+        var diagram = new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "location",
+            ["value"] = "launch_count",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["location"] = "/MOC",
+                ["launch_count"] = 100d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["location"] = "/MOC",
+                ["launch_count"] = 77d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["location"] = "/SPOC-K",
+                ["launch_count"] = 10d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+
+        Assert.Equal(["/MOC", "/SPOC-K"], payload.Labels);
+        Assert.Equal(177d, payload.Series[0].Values[0]);
+        Assert.Equal(10d, payload.Series[0].Values[1]);
+    }
+
+    [Fact]
     public void BuildLineOrBar_folds_extra_donut_categories_into_other()
     {
         var diagram = new DiagramDefinition("pie", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
