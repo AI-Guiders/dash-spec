@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>14</LangVersion>
     <RootNamespace>DashSpec.Host</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
-    <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

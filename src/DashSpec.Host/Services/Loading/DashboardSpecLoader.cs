@@ -7,13 +7,13 @@ using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Loading;
 
 public sealed class DashboardSpecLoader(
-    ConnectorRegistry connectorRegistry,
-    ConnectorPluginManifest pluginManifest,
+    RuntimeConnectorResolver runtimeConnectorResolver,
     DashSpecHostContext hostContext,
     DashSpecParseOptionsProvider parseOptionsProvider,
     IFieldOptionsCache fieldOptionsCache,
@@ -28,24 +28,16 @@ public sealed class DashboardSpecLoader(
     {
         options ??= new SpecLoadOptions();
         var entryRuntime = DashSpecParser.ReadRuntimePath(text);
-        if (string.IsNullOrWhiteSpace(entryRuntime) ||
-            !string.Equals(entryRuntime, hostContext.StartupRuntimeReference, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(entryRuntime))
         {
             throw new InvalidOperationException(
-                $"Этот дашборд ссылается на другой @runtime ({entryRuntime ?? "(нет)"}). " +
-                $"Ожидается {hostContext.StartupRuntimeReference} — все entry catalog должны ссылаться на один @runtime TOML.");
+                "В .dashspec нет @runtime — укажите runtime { manifest = \"...\" } в блоке @dashboard/@tab.");
         }
 
         var configPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
             specFullPath,
             text,
             hostContext.DefaultSpecDirectory);
-        if (!string.Equals(configPath, hostContext.StartupRuntimeConfigPath, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Файл @runtime разрешается в другой путь ({Path.GetFileName(configPath)}). " +
-                $"Положите {hostContext.StartupRuntimeReference} рядом с .dashspec или перезапустите Host.");
-        }
 
         var document = DashSpecParser.Parse(
             text,
@@ -58,11 +50,11 @@ public sealed class DashboardSpecLoader(
             hostContext.DefaultSpecDirectory,
             document);
         _ = SpecResolver.Resolve(document, library);
-        var connector = connectorRegistry.Resolve(document.ConnectorId, pluginManifest.DefaultConnectorId);
+        var connector = runtimeConnectorResolver.Resolve(configPath, document.ConnectorId);
         var filterIndex = DashboardBootstrap.IndexFilters(document);
         var filters = DashboardBootstrap.CreateInitialFilters(document, DateOnly.FromDateTime(DateTime.UtcNow));
         var fieldOptions = options.LoadFieldOptions
-            ? await LoadFieldOptionsAsync(document, connector, cancellationToken, options.FieldOptionsTimeout)
+            ? await LoadFieldOptionsAsync(document, connector, configPath, cancellationToken, options.FieldOptionsTimeout)
                 .ConfigureAwait(false)
             : new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -82,11 +74,30 @@ public sealed class DashboardSpecLoader(
         IDataSourceConnector connector,
         CancellationToken cancellationToken = default,
         TimeSpan? timeout = null) =>
-        LoadFieldOptionsCoreAsync(document, connector, cancellationToken, timeout ?? TimeSpan.FromSeconds(20));
+        LoadFieldOptionsCoreAsync(
+            document,
+            connector,
+            runtimeKey: hostContext.StartupRuntimeConfigPath,
+            cancellationToken,
+            timeout ?? TimeSpan.FromSeconds(20));
+
+    private Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
+        DashboardDocument document,
+        IDataSourceConnector connector,
+        string runtimeConfigPath,
+        CancellationToken cancellationToken,
+        TimeSpan? timeout) =>
+        LoadFieldOptionsCoreAsync(
+            document,
+            connector,
+            runtimeConfigPath,
+            cancellationToken,
+            timeout ?? TimeSpan.FromSeconds(20));
 
     private async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsCoreAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
+        string runtimeKey,
         CancellationToken cancellationToken,
         TimeSpan timeout)
     {
@@ -96,7 +107,8 @@ public sealed class DashboardSpecLoader(
             return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         }
 
-        var tasks = fieldFilters.Select(filter => LoadOneFieldOptionsAsync(filter, connector, timeout, cancellationToken));
+        var tasks = fieldFilters.Select(filter =>
+            LoadOneFieldOptionsAsync(filter, connector, runtimeKey, timeout, cancellationToken));
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
         return results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase);
     }
@@ -104,12 +116,13 @@ public sealed class DashboardSpecLoader(
     private async Task<(string Name, IReadOnlyList<string> Values)> LoadOneFieldOptionsAsync(
         FilterDefinition filter,
         IDataSourceConnector connector,
+        string runtimeKey,
         TimeSpan timeout,
         CancellationToken cancellationToken)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var sql = QueryCompiler.BuildDistinctFieldSql(filter);
-        var cacheKey = $"{connector.Id}:{sql}";
+        var cacheKey = $"{runtimeKey}:{connector.Id}:{sql}";
 
         try
         {
