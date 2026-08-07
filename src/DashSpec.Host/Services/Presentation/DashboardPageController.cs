@@ -260,10 +260,28 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        var effects = _interactions.ExpandClickEffects(card.ClickBehaviour.Effects).ToList();
+        // Stacked field filters from sequential chart clicks often yield empty detail cards
+        // (e.g. location=/PROJECTHUB AND program=DESIGN). Keep date; replace sibling fields.
+        var fieldFiltersThisClick = effects
+            .OfType<SetFilterFromFieldEffect>()
+            .Select(x => x.FilterName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (fieldFiltersThisClick.Count > 0)
+        {
+            foreach (var name in SelectedFields.Keys.ToList())
+            {
+                if (!fieldFiltersThisClick.Contains(name))
+                {
+                    SelectedFields.Remove(name);
+                }
+            }
+        }
+
         var navigate = false;
         GotoCatalogEntryEffect? catalogGoto = null;
         var clickSetFilters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var effect in _interactions.ExpandClickEffects(card.ClickBehaviour.Effects))
+        foreach (var effect in effects)
         {
             if (effect is GotoCatalogEntryEffect gotoEntry)
             {
