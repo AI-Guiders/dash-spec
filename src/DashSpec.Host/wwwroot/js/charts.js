@@ -272,17 +272,10 @@ window.dashSpecCharts = {
           },
         },
         onClick(event, elements, chart) {
-          const clickEnabled = options && options.categoryClickEnabled;
-          const dotNetRef = options && options.dotNetRef;
-          if (!clickEnabled || !dotNetRef || !elements || !elements.length) {
+          if (!elements || !elements.length) {
             return;
           }
-          const idx = elements[0].index;
-          const label = categoryLabels[idx];
-          if (label == null || label === "") {
-            return;
-          }
-          dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+          window.dashSpecCharts._emitCategoryClick(options, categoryLabels, elements[0].index);
         },
         onHover(event, elements, chart) {
           const canvasEl = chart && chart.canvas;
@@ -341,16 +334,33 @@ window.dashSpecCharts = {
     });
   },
 
+  _emitCategoryClick(options, categoryLabels, idx) {
+    const clickEnabled = options && options.categoryClickEnabled;
+    const dotNetRef = options && options.dotNetRef;
+    if (!clickEnabled || !dotNetRef || idx == null || idx < 0) {
+      return false;
+    }
+    const label = categoryLabels[idx];
+    if (label == null || label === "") {
+      return false;
+    }
+    dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+    return true;
+  },
+
   _renderRadial(canvasId, canvas, type, labels, series, options, palette) {
     const categoryLabels = labels || [];
     const legend = (options && options.legend) || "right";
     const showLegend = legend !== "hidden";
     const legendPosition = legend === "hidden" ? "right" : legend;
     const valueAxisLabel = (options && options.valueAxisLabel) || "";
+    const clickEnabled = !!(options && options.categoryClickEnabled);
     const item = (series && series[0]) || { name: "default", values: [], pointColors: null };
     const colors = (item.pointColors && item.pointColors.length === categoryLabels.length)
       ? item.pointColors
       : categoryLabels.map((_, i) => palette[i % palette.length]);
+    const self = this;
+    const defaultLegendClick = Chart.defaults.plugins.legend.onClick;
 
     this._instances[canvasId] = new Chart(canvas, {
       type,
@@ -370,6 +380,10 @@ window.dashSpecCharts = {
         responsive: true,
         maintainAspectRatio: false,
         cutout: type === "doughnut" ? "55%" : undefined,
+        interaction: {
+          mode: "nearest",
+          intersect: true,
+        },
         plugins: {
           legend: {
             display: showLegend,
@@ -379,6 +393,19 @@ window.dashSpecCharts = {
               boxWidth: 10,
               padding: 8,
               font: { size: 11 },
+            },
+            onClick(event, legendItem, legendArg) {
+              // With category drill, legend is a hit target (not hide/show).
+              if (clickEnabled) {
+                const idx = legendItem && typeof legendItem.index === "number"
+                  ? legendItem.index
+                  : -1;
+                self._emitCategoryClick(options, categoryLabels, idx);
+                return;
+              }
+              if (typeof defaultLegendClick === "function") {
+                defaultLegendClick.call(this, event, legendItem, legendArg);
+              }
             },
           },
           tooltip: {
@@ -393,24 +420,16 @@ window.dashSpecCharts = {
           },
         },
         onClick(event, elements) {
-          const clickEnabled = options && options.categoryClickEnabled;
-          const dotNetRef = options && options.dotNetRef;
-          if (!clickEnabled || !dotNetRef || !elements || !elements.length) {
+          if (!elements || !elements.length) {
             return;
           }
-          const idx = elements[0].index;
-          const label = categoryLabels[idx];
-          if (label == null || label === "") {
-            return;
-          }
-          dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+          self._emitCategoryClick(options, categoryLabels, elements[0].index);
         },
         onHover(event, elements, chart) {
           const canvasEl = chart && chart.canvas;
           if (!canvasEl) {
             return;
           }
-          const clickEnabled = options && options.categoryClickEnabled;
           canvasEl.style.cursor =
             clickEnabled && elements && elements.length ? "pointer" : "default";
         },
