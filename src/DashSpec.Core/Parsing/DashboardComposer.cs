@@ -128,10 +128,10 @@ internal static class DashboardComposer
 
             foreach (var (diagramId, definition) in module.ModuleDiagrams ?? DashboardDocument.EmptyModuleDiagrams)
             {
+                // Dual-use modules may !include the same presentation/diagram library.
                 if (moduleDiagrams.ContainsKey(diagramId))
                 {
-                    throw new DashSpecParseException(
-                        $"Tab module '{tab.Id}' redeclares module diagram preset '{diagramId}'.");
+                    continue;
                 }
 
                 moduleDiagrams[diagramId] = definition;
@@ -141,8 +141,7 @@ internal static class DashboardComposer
             {
                 if (moduleChartChromePresets.ContainsKey(presetId))
                 {
-                    throw new DashSpecParseException(
-                        $"Tab module '{tab.Id}' redeclares chart chrome preset '{presetId}'.");
+                    continue;
                 }
 
                 moduleChartChromePresets[presetId] = preset;
