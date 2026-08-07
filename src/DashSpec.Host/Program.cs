@@ -13,6 +13,7 @@ using DashSpec.Host.Services.Diagnostics;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 if (args is ["validate", var validatePath, ..])
@@ -86,6 +87,13 @@ builder.Services.AddSingleton(new DashSpecHostContext
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Survive Host upgrades: antiforgery cookies decrypt after redeploy.
+var dataProtectionKeys = Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+Directory.CreateDirectory(dataProtectionKeys);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeys))
+    .SetApplicationName("DashSpec.Host");
 
 using var pluginLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
 var pluginLogger = pluginLoggerFactory.CreateLogger("DashSpec.Plugins");
