@@ -12,7 +12,7 @@
 
 | Документ | Для кого |
 |----------|----------|
-| **[docs/USER_GUIDE_RU.md](docs/USER_GUIDE_RU.md)** | Пользователь экрана: как открыть отчёт, фильтры, клики, «Нет данных» |
+| **[docs/AUTHORING_GUIDE_RU.md](docs/AUTHORING_GUIDE_RU.md)** | Authoring Guide: модель, файлы, bind, клики, dogfood |
 | **[docs/HOWTO_RU.md](docs/HOWTO_RU.md)** | How-to: локальный Host, первый card, кросс-фильтры, catalog, runtime, служба |
 | [docs/README.md](docs/README.md) | Оглавление всей папки `docs/` |
 
@@ -77,7 +77,7 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 |-------------|----------|
 | Blazor Server host, hot reload spec-файлов | PostgreSQL / другие коннекторы (только plugin model) |
 | SqlServer connector plugin | `place` на фильтрах (toolbar — только board/ref) |
-| Line, bar, table, heatmap charts | Полный language reference на EN (RU: docs/USER_GUIDE + HOWTO) |
+| Line, bar, table, heatmap charts | Полный language reference на EN (RU: docs/AUTHORING_GUIDE + HOWTO) |
 | Модульные `@tab`, file includes, layout boards | CI badge, packaged NuGet |
 
 ## Структура
@@ -90,7 +90,7 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 | `DashSpec.Host` | loader + Blazor UI (CSS grid для cards и toolbar) |
 | `samples/demo/` | reference `.dashspec` + `diagrams/` / `palettes/` |
 | `design/` | ADR (архитектурные решения DSL и host) |
-| `docs/` | User Guide, How-to, FILTERS, authoring |
+| `docs/` | Authoring Guide, How-to, FILTERS, authoring |
 | `editor/` | VS Code extension ([`editor/vscode-dashspec`](editor/vscode-dashspec/)); authoring: [`docs/authoring`](docs/authoring/README.md) |
 
 ## Authoring (editor)
