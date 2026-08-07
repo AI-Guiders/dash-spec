@@ -1,11 +1,11 @@
 # Документация DashSpec
 
-## Для людей (с чего начать)
+## Для авторов (с чего начать)
 
 | Документ | Для кого |
 |----------|----------|
-| **[USER_GUIDE_RU.md](USER_GUIDE_RU.md)** | Зритель отчёта в браузере: фильтры, клики, пустые карточки, доступ |
-| **[HOWTO_RU.md](HOWTO_RU.md)** | Автор и админ: рецепты от demo Host до кросс-фильтров и службы |
+| **[AUTHORING_GUIDE_RU.md](AUTHORING_GUIDE_RU.md)** | Authoring Guide: модель продукта, файлы, bind, клики, dogfood |
+| **[HOWTO_RU.md](HOWTO_RU.md)** | How-to: рецепты от demo Host до catalog / службы |
 
 ## Справочники
 
