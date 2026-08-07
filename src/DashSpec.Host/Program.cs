@@ -8,6 +8,7 @@ using DashSpec.Host.Plugins;
 using DashSpec.Host.Security;
 using DashSpec.Host.Services;
 using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Dev;
 using DashSpec.Host.Services.Diagnostics;
 using DashSpec.Host.Services.Loading;
@@ -117,6 +118,7 @@ ConnectorPluginLoader.RegisterPlugins(
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
+builder.Services.AddSingleton<RuntimeConnectorResolver>();
 builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();

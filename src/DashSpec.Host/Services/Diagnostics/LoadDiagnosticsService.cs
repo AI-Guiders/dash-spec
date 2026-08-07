@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Compilation;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
@@ -8,6 +7,7 @@ using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
 
 namespace DashSpec.Host.Services.Diagnostics;
@@ -16,8 +16,7 @@ public sealed class LoadDiagnosticsService(
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
     DashSpecParseOptionsProvider parseOptionsProvider,
-    ConnectorRegistry connectorRegistry,
-    ConnectorPluginManifest connectorManifest,
+    RuntimeConnectorResolver runtimeConnectorResolver,
     IDashboardSpecLoader specLoader)
 {
     public LoadDiagnosticsReport DiagnoseConfiguredSpec(bool includeCards = false, bool includeFieldOptions = true)
@@ -105,17 +104,19 @@ public sealed class LoadDiagnosticsService(
                 text,
                 hostContext.DefaultSpecDirectory);
             runtimeSw.Stop();
+            var sameAsStartup = string.Equals(
+                runtimePath,
+                hostContext.StartupRuntimeConfigPath,
+                StringComparison.OrdinalIgnoreCase);
             steps.Add(new LoadStepReport(
                 "runtime_manifest",
-                string.Equals(runtimePath, hostContext.StartupRuntimeConfigPath, StringComparison.OrdinalIgnoreCase),
+                true,
                 runtimeSw.ElapsedMilliseconds,
                 Path.GetFileName(runtimePath),
-                string.Equals(runtimePath, hostContext.StartupRuntimeConfigPath, StringComparison.OrdinalIgnoreCase)
-                    ? null
-                    : $"Expected {Path.GetFileName(hostContext.StartupRuntimeConfigPath)}"));
+                sameAsStartup ? "startup default" : "per-entry runtime"));
 
             var connectorSw = Stopwatch.StartNew();
-            var connector = connectorRegistry.Resolve(document.ConnectorId, connectorManifest.DefaultConnectorId);
+            var connector = runtimeConnectorResolver.Resolve(runtimePath, document.ConnectorId);
             connectorSw.Stop();
             steps.Add(new LoadStepReport("resolve_connector", true, connectorSw.ElapsedMilliseconds, connector.Id));
 
@@ -225,7 +226,9 @@ public sealed class LoadDiagnosticsService(
         var sw = Stopwatch.StartNew();
         try
         {
-            var connector = connectorRegistry.Resolve(null, connectorManifest.DefaultConnectorId);
+            var connector = runtimeConnectorResolver.Resolve(
+                hostContext.StartupRuntimeConfigPath,
+                connectorId: null);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(10));
             await connector.QueryDistinctStringsAsync("SELECT CAST(1 AS varchar(1))", cts.Token).ConfigureAwait(false);
