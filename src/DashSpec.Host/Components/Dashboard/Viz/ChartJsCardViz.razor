@@ -51,10 +51,14 @@ else
             return Task.CompletedTask;
         }
 
-        var horizontal = Context.Card.ChartPresentation?.Orientation is ChartOrientation.Horizontal;
-        var context = horizontal
-            ? new HeatmapCellContext(args.Index, 0, string.Empty, args.Label, null, null)
-            : new HeatmapCellContext(0, args.Index, args.Label, string.Empty, null, null);
+        // Category label satisfies both `from x` and `from y` (horizontal bar vs vertical/donut).
+        var context = new HeatmapCellContext(
+            args.Index,
+            args.Index,
+            args.Label,
+            args.Label,
+            null,
+            null);
 
         return Context.OnHeatmapCellSelected.InvokeAsync(context);
     }
