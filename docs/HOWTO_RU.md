@@ -2,7 +2,7 @@
 
 Практические сценарии: поднять Host, написать первый отчёт, связать фильтры, клики, catalog, несколько runtime, доступ, типичные поломки.
 
-Для зрителя экрана — [USER_GUIDE_RU.md](USER_GUIDE_RU.md).  
+Модель и контракты автора — [AUTHORING_GUIDE_RU.md](AUTHORING_GUIDE_RU.md).  
 Глубина по фильтрам — [FILTERS_RU.md](FILTERS_RU.md).  
 Справочник DSL — [authoring/](authoring/README.md) и ADR в `design/`.
 
@@ -470,7 +470,7 @@ Host умеет работать как Windows Service (`Microsoft.Extensions.H
 
 | Документ | Когда |
 |----------|--------|
-| [USER_GUIDE_RU.md](USER_GUIDE_RU.md) | объяснить экран аналитику |
+| [AUTHORING_GUIDE_RU.md](AUTHORING_GUIDE_RU.md) | модель продукта, bind, клики, dogfood |
 | [FILTERS_RU.md](FILTERS_RU.md) | слои filter / bind / SQL |
 | [PLUGINS.md](PLUGINS.md) | connector / plugin load |
 | [authoring/README.md](authoring/README.md) | генерация AUTHORING.md |
