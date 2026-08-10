@@ -8,4 +8,5 @@ number
   value = peak_concurrent_proxy as "Peak"
   aggregate = max
   scale_value = integer
+  delta = prior
 end number

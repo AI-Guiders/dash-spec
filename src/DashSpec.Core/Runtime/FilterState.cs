@@ -27,6 +27,27 @@ public sealed class FilterState
     public IReadOnlyDictionary<string, DateRangeValue> Dates => _dates;
     public IReadOnlyDictionary<string, FieldFilterValue> Fields => _fields;
     public IReadOnlyDictionary<string, int> TopLimits => _topLimits;
+
+    public FilterState Clone()
+    {
+        var copy = new FilterState();
+        foreach (var (name, range) in _dates)
+        {
+            copy.SetDate(name, range.From, range.To);
+        }
+
+        foreach (var (name, field) in _fields)
+        {
+            copy.SetField(name, field.Values.ToList());
+        }
+
+        foreach (var (name, limit) in _topLimits)
+        {
+            copy.SetTop(name, limit);
+        }
+
+        return copy;
+    }
 }
 
 public readonly record struct DateRangeValue(DateOnly From, DateOnly To);
