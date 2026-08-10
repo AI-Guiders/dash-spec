@@ -28,8 +28,10 @@ public static class DiagramBindings
     public static IEnumerable<string> SelectColumnRoles(string? kind) =>
         kind?.ToLowerInvariant() switch
         {
-            "bar" or "pie" or "donut" or "doughnut" => ["x", "y", "reference"],
-            "line" => ["x", "y", "series"],
+            "bar" or "pie" or "donut" or "doughnut" => ["x", "y", "reference", "series"],
+            "line" or "area" or "sparkline" => ["x", "y", "series"],
+            "scatter" => ["x", "y"],
+            "histogram" => ["value", "x"],
             "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
         };

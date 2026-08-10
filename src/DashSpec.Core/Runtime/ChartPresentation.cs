@@ -11,22 +11,28 @@ public sealed record ChartPresentation(
     ChartAxisScale ValueAxisScale = ChartAxisScale.Decimal,
     string? CategoryAxisLabel = null,
     string? ValueAxisLabel = null,
-    double? ValueAxisMax = null)
+    double? ValueAxisMax = null,
+    bool FillArea = false,
+    bool Sparkline = false)
 {
     public bool IsHorizontal => Orientation is ChartOrientation.Horizontal;
 
     public static ChartPresentation FromProperties(
         IReadOnlyDictionary<string, string> properties,
-        int? maxSeries = null)
+        int? maxSeries = null,
+        string? diagramKind = null)
     {
+        var kind = diagramKind?.ToLowerInvariant();
+        var sparkline = kind is "sparkline";
+
         var legend = properties.TryGetValue("legend", out var rawLegend)
             ? rawLegend.ToLowerInvariant()
-            : "bottom";
+            : sparkline ? "hidden" : "bottom";
 
-        var height = 280;
+        var height = sparkline ? 64 : 280;
         if (properties.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
-            parsedHeight is >= 120 and <= 800)
+            parsedHeight is >= 40 and <= 800)
         {
             height = parsedHeight;
         }
@@ -42,6 +48,10 @@ public sealed record ChartPresentation(
 
         var stacked = properties.TryGetValue("stacked", out var rawStacked) &&
                       rawStacked is "true" or "yes" or "1";
+
+        var fillArea = kind is "area" ||
+                       (properties.TryGetValue("fill", out var rawFill) &&
+                        rawFill.Equals("area", StringComparison.OrdinalIgnoreCase));
 
         var orientation = ChartOrientationParser.Parse(
             properties.GetValueOrDefault("orientation"),
@@ -67,7 +77,9 @@ public sealed record ChartPresentation(
             stacked,
             orientation,
             valueAxisScale,
-            ValueAxisMax: valueAxisMax);
+            ValueAxisMax: valueAxisMax,
+            FillArea: fillArea,
+            Sparkline: sparkline);
     }
 
     private static bool TryReadAxisMax(
@@ -86,5 +98,5 @@ public sealed record ChartPresentation(
     }
 
     public static ChartPresentation FromDiagram(DiagramDefinition diagram) =>
-        FromProperties(diagram.Properties);
+        FromProperties(diagram.Properties, diagramKind: diagram.Kind);
 }
