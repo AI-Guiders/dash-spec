@@ -1,0 +1,12 @@
+@diagram demo_peak_by_app_windrose
+
+chrome
+  use windrose_360
+end chrome
+
+windrose
+  render = "chartjs"
+  category = app_name as "App"
+  value = peak_concurrent_proxy as "Peak"
+  scale_value = integer
+end windrose

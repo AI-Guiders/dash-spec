@@ -668,6 +668,46 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildChart_windrose_reuses_category_payload()
+    {
+        var diagram = new DiagramDefinition("windrose", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["category"] = "direction",
+            ["value"] = "speed",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["direction"] = "N",
+                ["speed"] = 12d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["direction"] = "E",
+                ["speed"] = 7d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "w",
+            "W",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.Equal(["N", "E"], payload.Labels);
+        Assert.Equal(12d, payload.Series[0].Values[0]);
+        Assert.Equal(7d, payload.Series[0].Values[1]);
+        Assert.True(DiagramBindings.IsCategoryChart("windrose"));
+        Assert.True(DiagramBindings.IsRadialChart("wind_rose"));
+    }
+
+    [Fact]
     public void ChartPresentation_area_and_sparkline_defaults()
     {
         var area = ChartPresentation.FromProperties(
