@@ -22,6 +22,9 @@ public static class DiagramKindRegistry
         new("legend", PropertyValueType.Scalar),
         new("max_series", PropertyValueType.Scalar),
         new("stacked", PropertyValueType.Scalar),
+        new("fill", PropertyValueType.Scalar),
+        new("bins", PropertyValueType.Scalar),
+        new("bin_width", PropertyValueType.Scalar),
         new("height", PropertyValueType.Scalar),
     ];
 
@@ -52,10 +55,14 @@ public static class DiagramKindRegistry
         new Dictionary<string, DiagramKindSpec>(StringComparer.OrdinalIgnoreCase)
         {
             ["line"] = new("line", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["area"] = new("area", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["sparkline"] = new("sparkline", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["bar"] = new("bar", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["pie"] = new("pie", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["donut"] = new("donut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["doughnut"] = new("doughnut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["scatter"] = new("scatter", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["histogram"] = new("histogram", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),

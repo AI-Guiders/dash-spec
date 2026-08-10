@@ -58,7 +58,8 @@ public static class SpecResolveExporter
         if (kind.DataFamily is DiagramDataFamily.Chart)
         {
             var presentation = ChartPresentation.FromProperties(
-                MergeChartPresentationProperties(card, library));
+                MergeChartPresentationProperties(card, library),
+                diagramKind: card.Diagram.Kind);
             chartPresentation = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["legend"] = presentation.Legend,
