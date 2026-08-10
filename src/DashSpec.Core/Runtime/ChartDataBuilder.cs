@@ -17,6 +17,9 @@ public static class ChartDataBuilder
         {
             "scatter" => ScatterPayloadBuilder.Build(rows, diagram),
             "histogram" => HistogramPayloadBuilder.Build(rows, diagram),
+            "box" or "boxplot" => BoxPlotPayloadBuilder.Build(rows, diagram),
+            "treemap" => TreemapPayloadBuilder.Build(rows, diagram),
+            "gauge" => GaugePayloadBuilder.Build(rows, diagram),
             _ => BuildLineOrBar(rows, diagram, seriesTransform, card, library, dashboardColorPalette),
         };
 
@@ -75,7 +78,10 @@ public sealed record ChartPayload(
     IReadOnlyList<ChartSeries> Series,
     IReadOnlyList<double?>? ReferenceValues = null,
     string? ReferenceLabel = null,
-    IReadOnlyList<ChartPoint>? Points = null);
+    IReadOnlyList<ChartPoint>? Points = null,
+    IReadOnlyList<BoxPlotGroup>? Boxes = null,
+    IReadOnlyList<TreemapTile>? Treemap = null,
+    GaugeReading? Gauge = null);
 
 public sealed record ChartSeries(
     string Name,
@@ -84,6 +90,12 @@ public sealed record ChartSeries(
     IReadOnlyList<string>? PointColors = null);
 
 public sealed record ChartPoint(double X, double Y, double? Size = null);
+
+public sealed record BoxPlotGroup(string Label, IReadOnlyList<double> Samples);
+
+public sealed record TreemapTile(string Label, double Value);
+
+public sealed record GaugeReading(double Value, double Min, double Max, string? Label = null);
 
 public sealed record TablePayload(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
