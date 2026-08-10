@@ -9,6 +9,7 @@
 | [authoring/README.md](authoring/README.md) | Сгенерированный DSL-справочник + VS Code |
 | [`design/`](../design/) | ADR |
 | [`samples/demo/`](../samples/demo/) | Эталон |
+| [DIAGRAM_KINDS_ROADMAP_RU.md](DIAGRAM_KINDS_ROADMAP_RU.md) | Какие kinds добавлять (world census) |
 
 ---
 
