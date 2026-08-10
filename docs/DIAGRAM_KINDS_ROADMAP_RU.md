@@ -25,6 +25,7 @@
 | `box` / `boxplot` | Chart | demo + `box_360` (Chart.js boxplot plugin) |
 | `treemap` | Chart | demo + `treemap_360` (canvas layout) |
 | `gauge` | Chart | demo + `gauge_200` (doughnut semicircle) |
+| `windrose` / `wind_rose` | Chart | demo + `windrose_360` (polarArea recipe) |
 | `table` | Table | demo |
 | `heatmap` | Matrix | demo + `heatmap_tall` |
 | `number` | Scalar | demo KPI + `kpi_compact` + `delta = prior` |
@@ -66,6 +67,7 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 | Точные значения | table | ✅ |
 | Связь двух мер | scatter / bubble | ✅ scatter + optional `size` → bubble |
 | Распределение | histogram / box | ✅ histogram + `box` |
+| Направления / polar share | wind rose | ✅ `windrose` |
 | Компактный тренд | sparkline | ✅ |
 | Воронка / поток | funnel / sankey | нет (редки в census) |
 | Гео | map | нет |
@@ -100,6 +102,9 @@ Chooser pack (не LUF-driven):
 | **Box / boxplot** | Core group samples + Chart.js boxplot CDN + demo by app |
 | **Treemap** | Core tiles + canvas squarify + demo peak by app |
 | **Gauge** | scalar rollup + doughnut semicircle + demo peak |
+| **Wind rose** | polar recipe over category payload ([ADR-0040](../design/DASHSPEC-ADR-0040-chart-recipes-coords-channels.md)) |
+
+Рамка: **coords / channels / named recipes** — не свободная композиция kinds.
 
 Дальше по standalone (не сейчас): waterfall / funnel как чеклист-parity; sunburst после реального hierarchy dogfood.
 
@@ -140,6 +145,7 @@ Chooser pack (не LUF-driven):
 | `box_360` | boxplot, h=360 |
 | `treemap_360` | treemap, h=360 |
 | `gauge_200` | gauge, h=200 |
+| `windrose_360` | wind rose / polarArea, h=360 |
 | `heatmap_tall` | heatmap chrome |
 
 ---
