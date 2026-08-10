@@ -83,7 +83,7 @@ public sealed record ChartSeries(
     string? Color = null,
     IReadOnlyList<string>? PointColors = null);
 
-public sealed record ChartPoint(double X, double Y);
+public sealed record ChartPoint(double X, double Y, double? Size = null);
 
 public sealed record TablePayload(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 

@@ -8,4 +8,5 @@ scatter
   render = "chartjs"
   x = idle_minutes as "Idle minutes"
   y = peak_concurrent_apps as "Peak apps"
+  size = intensity as "Intensity"
 end scatter
