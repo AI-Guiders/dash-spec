@@ -35,6 +35,8 @@ public static class DiagramKindRegistry
     private static readonly IReadOnlyList<PropertySpec> NumberProperties =
     [
         new("value", PropertyValueType.ColumnBinding),
+        new("aggregate", PropertyValueType.Scalar),
+        new("scale_value", PropertyValueType.Scalar),
     ];
 
     private static readonly IReadOnlyList<PropertySpec> HeatmapProperties =

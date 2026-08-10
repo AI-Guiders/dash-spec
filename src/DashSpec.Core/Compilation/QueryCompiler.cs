@@ -35,6 +35,20 @@ public static class QueryCompiler
             ? ResolveTableLimit(card, filters, filterDefinitions)
             : 0;
 
+        if (TryBuildScalarAggregateSelect(card.Diagram, out var scalarSelect))
+        {
+            return new CompiledQuery(
+                BuildSelectSql(
+                    scalarSelect,
+                    fromClause,
+                    whereBuilder.ToString(),
+                    groupBy: null,
+                    orderBy: string.Empty,
+                    tableLimit,
+                    sqlDialect),
+                parameters);
+        }
+
         if (TryBuildCategoryAggregateSelect(card.Diagram, out var aggregateSelect, out var groupBy))
         {
             aggregateSelect = AppendOrderByAggregates(aggregateSelect, card.Diagram, groupBy);
@@ -103,6 +117,73 @@ public static class QueryCompiler
 
         sql.Append(' ').Append(orderBy);
         return sql.ToString();
+    }
+
+    /// <summary>
+    /// Scalar KPI (<c>number</c>): filter first, then <c>SUM|MAX|MIN|AVG(value)</c>
+    /// (no GROUP BY) so day-grain views roll up over the bound period.
+    /// <c>aggregate = none</c> keeps row-level select (first-row display).
+    /// </summary>
+    private static bool TryBuildScalarAggregateSelect(DiagramDefinition diagram, out string selectList)
+    {
+        selectList = string.Empty;
+
+        if (!string.Equals(diagram.Kind, "number", StringComparison.OrdinalIgnoreCase) ||
+            !DiagramBindings.TryGetColumn(diagram, "value", out var measure))
+        {
+            return false;
+        }
+
+        if (!TryResolveScalarAggregate(diagram, out var aggregate))
+        {
+            return false;
+        }
+
+        selectList = aggregate is "COUNT"
+            ? $"COUNT({measure}) AS {measure}"
+            : $"{aggregate}({measure}) AS {measure}";
+        return true;
+    }
+
+    /// <summary>
+    /// Returns false when aggregation is explicitly disabled (<c>none</c>/<c>raw</c>).
+    /// </summary>
+    private static bool TryResolveScalarAggregate(DiagramDefinition diagram, out string sqlFn)
+    {
+        sqlFn = "SUM";
+        if (!diagram.Properties.TryGetValue("aggregate", out var raw) ||
+            string.IsNullOrWhiteSpace(raw))
+        {
+            return true;
+        }
+
+        switch (raw.Trim().ToLowerInvariant())
+        {
+            case "sum":
+                sqlFn = "SUM";
+                return true;
+            case "max":
+                sqlFn = "MAX";
+                return true;
+            case "min":
+                sqlFn = "MIN";
+                return true;
+            case "avg":
+            case "average":
+            case "mean":
+                sqlFn = "AVG";
+                return true;
+            case "count":
+                sqlFn = "COUNT";
+                return true;
+            case "none":
+            case "raw":
+            case "first":
+                return false;
+            default:
+                throw new InvalidOperationException(
+                    $"Diagram number aggregate '{raw}' is not supported (sum|max|min|avg|count|none).");
+        }
     }
 
     /// <summary>
