@@ -41,6 +41,7 @@
   peak_concurrent_proxy
   activity_5min
   dau_by_product
+  dau_by_product_donut
   end cards
   end tab
   tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
@@ -68,6 +69,13 @@
   end card
   card dau_by_product as "DAU by product"
   diagram demo_dau_bar
+  datasource view demo.v_daily_active_users
+  bind
+    usage_date, user_name, app_name
+  end bind
+  end card
+  card dau_by_product_donut as "DAU by product (donut)"
+  diagram demo_dau_donut
   datasource view demo.v_daily_active_users
   bind
     usage_date, user_name, app_name
