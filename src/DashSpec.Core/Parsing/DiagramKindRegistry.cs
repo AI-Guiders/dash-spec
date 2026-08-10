@@ -19,6 +19,7 @@ public static class DiagramKindRegistry
         new("value", PropertyValueType.ColumnBinding),
         new("series", PropertyValueType.ColumnBinding),
         new("reference", PropertyValueType.ColumnBinding),
+        new("size", PropertyValueType.ColumnBinding),
         new("legend", PropertyValueType.Scalar),
         new("max_series", PropertyValueType.Scalar),
         new("stacked", PropertyValueType.Scalar),
@@ -40,6 +41,7 @@ public static class DiagramKindRegistry
         new("value", PropertyValueType.ColumnBinding),
         new("aggregate", PropertyValueType.Scalar),
         new("scale_value", PropertyValueType.Scalar),
+        new("delta", PropertyValueType.Scalar),
     ];
 
     private static readonly IReadOnlyList<PropertySpec> HeatmapProperties =

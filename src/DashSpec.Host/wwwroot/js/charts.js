@@ -370,13 +370,45 @@ window.dashSpecCharts = {
     const valueAxisLabel = (options && options.valueAxisLabel) || "y";
     const item = (series && series[0]) || { name: "points" };
     const color = (item && item.color) || palette[0];
-    const data = points.map((p) => ({
-      x: Number(p.x ?? p.X),
-      y: Number(p.y ?? p.Y),
-    })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+    const raw = points.map((p) => {
+      const x = Number(p.x ?? p.X);
+      const y = Number(p.y ?? p.Y);
+      const sizeRaw = p.size ?? p.Size;
+      const size = sizeRaw == null || sizeRaw === "" ? null : Number(sizeRaw);
+      return {
+        x,
+        y,
+        size: Number.isFinite(size) ? size : null,
+      };
+    }).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+    const sized = raw.filter((p) => p.size != null);
+    const useBubble = sized.length > 0;
+    let data;
+    if (useBubble) {
+      const sizes = sized.map((p) => p.size);
+      const min = Math.min(...sizes);
+      const max = Math.max(...sizes);
+      const radius = (size) => {
+        if (!Number.isFinite(size)) {
+          return 4;
+        }
+        if (max <= min) {
+          return 8;
+        }
+        return 4 + ((size - min) / (max - min)) * 20;
+      };
+      data = raw.map((p) => ({
+        x: p.x,
+        y: p.y,
+        r: radius(p.size),
+      }));
+    } else {
+      data = raw.map((p) => ({ x: p.x, y: p.y }));
+    }
 
     this._instances[canvasId] = new Chart(canvas, {
-      type: "scatter",
+      type: useBubble ? "bubble" : "scatter",
       data: {
         datasets: [
           {
@@ -384,8 +416,8 @@ window.dashSpecCharts = {
             data,
             backgroundColor: color + "cc",
             borderColor: color,
-            pointRadius: 3,
-            pointHoverRadius: 5,
+            pointRadius: useBubble ? undefined : 3,
+            pointHoverRadius: useBubble ? undefined : 5,
           },
         ],
       },
