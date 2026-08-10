@@ -6,6 +6,7 @@
 |----------|----------|
 | **[AUTHORING_GUIDE_RU.md](AUTHORING_GUIDE_RU.md)** | Authoring Guide: модель продукта, файлы, bind, клики, dogfood |
 | **[HOWTO_RU.md](HOWTO_RU.md)** | How-to: рецепты от demo Host до catalog / службы |
+| **[DIAGRAM_KINDS_ROADMAP_RU.md](DIAGRAM_KINDS_ROADMAP_RU.md)** | Какие kinds добавлять дальше (world census + приоритеты) |
 
 ## Справочники
 
