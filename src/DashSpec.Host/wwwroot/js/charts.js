@@ -23,8 +23,15 @@ window.dashSpecCharts = {
       return;
     }
 
+    if (type === "scatter") {
+      this._renderScatter(canvasId, canvas, series, options, palette);
+      return;
+    }
+
     const isBar = type === "bar";
     const stacked = !!(options && options.stacked);
+    const fillArea = !isBar && !!(options && options.fill);
+    const sparkline = !!(options && options.sparkline);
     const horizontal = isBar && !!(options && options.horizontal);
     const categoryLabels = labels || [];
     const categoryAxis = horizontal ? "y" : "x";
@@ -43,21 +50,22 @@ window.dashSpecCharts = {
     const datasets = (series || []).map((item, index) => {
       const color = item.color || palette[index % palette.length];
       const pointColors = item.pointColors;
-      const barFill = (c) => c + (isBar ? "cc" : "55");
+      const barFill = (c) => c + (isBar ? "cc" : fillArea ? "66" : "55");
       return {
         label: item.name === "default" ? defaultSeriesLabel : item.name,
         data: item.values,
         borderColor: pointColors || color,
         backgroundColor: pointColors ? pointColors.map(barFill) : barFill(color),
-        borderWidth: item.name === "Other" ? 1 : isBar ? 1 : 2,
-        pointRadius: isBar ? 0 : categoryLabels.length > 40 ? 0 : 2,
-        pointHoverRadius: isBar ? 0 : 4,
+        borderWidth: item.name === "Other" ? 1 : isBar ? 1 : sparkline ? 1.5 : 2,
+        pointRadius: isBar || sparkline ? 0 : categoryLabels.length > 40 ? 0 : 2,
+        pointHoverRadius: isBar || sparkline ? 0 : 4,
         tension: isBar ? 0 : 0.15,
         spanGaps: !isBar,
+        fill: fillArea ? "origin" : false,
       };
     });
 
-    const legend = (options && options.legend) || "bottom";
+    const legend = sparkline ? "hidden" : ((options && options.legend) || "bottom");
     const showLegend = legend !== "hidden";
     const legendPosition = legend === "hidden" ? "bottom" : legend;
     const valueAxisScale = (options && options.valueAxisScale) || "decimal";
@@ -286,7 +294,12 @@ window.dashSpecCharts = {
           canvasEl.style.cursor =
             clickEnabled && elements && elements.length ? "pointer" : "default";
         },
-        scales: {
+        scales: sparkline
+          ? {
+              x: { display: false, stacked },
+              y: { display: false, stacked, beginAtZero: true },
+            }
+          : {
           x: {
             stacked,
             beginAtZero: horizontal,
@@ -346,6 +359,72 @@ window.dashSpecCharts = {
     }
     dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
     return true;
+  },
+
+  _renderScatter(canvasId, canvas, series, options, palette) {
+    const points = (options && options.points) || [];
+    const legend = (options && options.legend) || "bottom";
+    const showLegend = legend !== "hidden";
+    const legendPosition = legend === "hidden" ? "bottom" : legend;
+    const categoryAxisLabel = (options && options.categoryAxisLabel) || "x";
+    const valueAxisLabel = (options && options.valueAxisLabel) || "y";
+    const item = (series && series[0]) || { name: "points" };
+    const color = (item && item.color) || palette[0];
+    const data = points.map((p) => ({
+      x: Number(p.x ?? p.X),
+      y: Number(p.y ?? p.Y),
+    })).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+
+    this._instances[canvasId] = new Chart(canvas, {
+      type: "scatter",
+      data: {
+        datasets: [
+          {
+            label: item.name === "default" ? valueAxisLabel : item.name,
+            data,
+            backgroundColor: color + "cc",
+            borderColor: color,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: showLegend,
+            position: legendPosition,
+            labels: { boxWidth: 10, padding: 10, font: { size: 11 } },
+          },
+        },
+        scales: {
+          x: {
+            type: "linear",
+            beginAtZero: true,
+            title: {
+              display: !!categoryAxisLabel,
+              text: categoryAxisLabel,
+              font: { size: 11 },
+              color: "#94a3b8",
+            },
+            grid: { color: "#2a354433" },
+          },
+          y: {
+            type: "linear",
+            beginAtZero: true,
+            title: {
+              display: !!valueAxisLabel,
+              text: valueAxisLabel,
+              font: { size: 11 },
+              color: "#94a3b8",
+            },
+            grid: { color: "#2a354455" },
+          },
+        },
+      },
+    });
   },
 
   _renderRadial(canvasId, canvas, type, labels, series, options, palette) {
