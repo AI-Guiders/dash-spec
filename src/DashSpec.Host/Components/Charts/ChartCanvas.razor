@@ -19,6 +19,12 @@
     public bool Stacked { get; set; }
 
     [Parameter]
+    public bool FillArea { get; set; }
+
+    [Parameter]
+    public bool Sparkline { get; set; }
+
+    [Parameter]
     public ChartOrientation Orientation { get; set; } = ChartOrientation.Vertical;
 
     [Parameter]
@@ -46,6 +52,8 @@
     private ChartPayload? _previousPayload;
     private string _previousLegend = string.Empty;
     private bool _previousStacked;
+    private bool _previousFillArea;
+    private bool _previousSparkline;
     private ChartOrientation _previousOrientation;
     private ChartAxisScale _previousValueAxisScale;
     private string? _previousCategoryAxisLabel;
@@ -68,6 +76,8 @@
         if (ReferenceEquals(Payload, _previousPayload) &&
             string.Equals(Legend, _previousLegend, StringComparison.OrdinalIgnoreCase) &&
             Stacked == _previousStacked &&
+            FillArea == _previousFillArea &&
+            Sparkline == _previousSparkline &&
             Orientation == _previousOrientation &&
             ValueAxisScale == _previousValueAxisScale &&
             string.Equals(CategoryAxisLabel, _previousCategoryAxisLabel, StringComparison.Ordinal) &&
@@ -81,6 +91,8 @@
         _previousPayload = Payload;
         _previousLegend = Legend;
         _previousStacked = Stacked;
+        _previousFillArea = FillArea;
+        _previousSparkline = Sparkline;
         _previousOrientation = Orientation;
         _previousValueAxisScale = ValueAxisScale;
         _previousCategoryAxisLabel = CategoryAxisLabel;
@@ -97,6 +109,8 @@
             {
                 legend = Legend,
                 stacked = Stacked,
+                fill = FillArea,
+                sparkline = Sparkline,
                 horizontal = Orientation is ChartOrientation.Horizontal,
                 valueAxisScale = ValueAxisScale switch
                 {
@@ -106,6 +120,7 @@
                 },
                 referenceValues = Payload.ReferenceValues,
                 referenceLabel = Payload.ReferenceLabel,
+                points = Payload.Points,
                 categoryAxisLabel = CategoryAxisLabel,
                 valueAxisLabel = ValueAxisLabel,
                 valueAxisMax = ValueAxisMax,

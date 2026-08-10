@@ -60,7 +60,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Chart: ChartDataBuilder.BuildLineOrBar(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
+                    Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
