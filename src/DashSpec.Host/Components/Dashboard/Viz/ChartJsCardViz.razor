@@ -5,7 +5,7 @@
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Services.Presentation
 
-@if (Context.Card.Chart is null || Context.Card.Chart.Labels.Count == 0)
+@if (Context.Card.Chart is null || IsEmpty(Context.Card.Chart))
 {
     <p class="empty-state">Нет данных за выбранный период</p>
 }
@@ -17,6 +17,8 @@ else
                      Payload="Context.Card.Chart"
                      Legend="@(Context.Card.ChartPresentation?.Legend ?? "bottom")"
                      Stacked="@(Context.Card.ChartPresentation?.Stacked ?? false)"
+                     FillArea="@(Context.Card.ChartPresentation?.FillArea ?? false)"
+                     Sparkline="@(Context.Card.ChartPresentation?.Sparkline ?? false)"
                      Orientation="@(Context.Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
                      ValueAxisScale="@(Context.Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
                      CategoryAxisLabel="@Context.Card.ChartPresentation?.CategoryAxisLabel"
@@ -32,14 +34,22 @@ else
 
     [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
 
+    private static bool IsEmpty(ChartPayload chart) =>
+        chart.Points is { Count: > 0 }
+            ? false
+            : chart.Labels.Count == 0;
+
     private static string ResolveChartJsType(string? diagramKind) =>
         diagramKind?.ToLowerInvariant() switch
         {
-            "bar" => "bar",
+            "bar" or "histogram" => "bar",
             "pie" => "pie",
             "donut" or "doughnut" => "doughnut",
+            "scatter" => "scatter",
+            "area" or "sparkline" or "line" => "line",
             _ => "line",
         };
+
     private bool CategoryClickEnabled =>
         Context.Card.ClickBehaviour is not null &&
         Interactions.HasNavigationEffects(Context.Card.ClickBehaviour);
