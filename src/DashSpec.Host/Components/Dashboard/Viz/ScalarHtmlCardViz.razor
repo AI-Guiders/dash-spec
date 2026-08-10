@@ -1,7 +1,16 @@
 @namespace DashSpec.Host.Components.Dashboard.Viz
 @using DashSpec.Host.Services.Models
 
-<div class="number">@(Context.Card.Number ?? "—")</div>
+<div class="number-block">
+    <div class="number">@(Context.Card.Number ?? "—")</div>
+    @if (!string.IsNullOrWhiteSpace(Context.Card.NumberDelta))
+    {
+        var tone = string.IsNullOrWhiteSpace(Context.Card.NumberDeltaTone)
+            ? "flat"
+            : Context.Card.NumberDeltaTone;
+        <div class="number-delta number-delta-@tone">@Context.Card.NumberDelta</div>
+    }
+</div>
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;

@@ -56,7 +56,7 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 | Часть от целого (много) | stacked bar | ✅ stacked demo |
 | Две оси × значение | heatmap / matrix | ✅ |
 | Точные значения | table | ✅ |
-| Связь двух мер | scatter / bubble | ✅ scatter (bubble size — позже) |
+| Связь двух мер | scatter / bubble | ✅ scatter + optional `size` → bubble |
 | Распределение | histogram | ✅ |
 | Компактный тренд | sparkline | ✅ |
 | Воронка / поток | funnel / sankey | нет (редки в census) |
@@ -76,11 +76,12 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 
 | Kind | Ship |
 |------|------|
-| **Scatter** | kind + Chart.js scatter + demo idle×peak |
+| **Scatter** | kind + Chart.js scatter/bubble (`size`) + demo idle×peak |
 | **Histogram** | Core binning + demo idle_minutes |
 | **Sparkline** | kind + compact chrome + demo |
+| **KPI delta** | `delta = prior` vs equal-length prior period |
 
-Опциональный polish: bubble size на scatter, KPI delta, histogram `bin_width` UX.
+Опциональный polish: histogram `bin_width` UX.
 
 ### P2 — полезно, но нишево или дорого
 
@@ -145,6 +146,5 @@ Demo Overview: KPI, sparkline, stacked, area, donut. Analytics: histogram, scatt
 
 ## 7. Следующий конкретный leaf
 
-1. Bubble size на scatter (optional size binding).
-2. KPI delta vs prior period.
-3. Только потом P2 (treemap / map) по реальному dogfood.
+1. Histogram `bin_width` UX polish (если нужен dogfood).
+2. Только потом P2 (treemap / map) по реальному dogfood.
