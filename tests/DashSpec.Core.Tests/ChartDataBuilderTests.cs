@@ -498,6 +498,49 @@ public class ChartDataBuilderTests
         Assert.Equal(3d, payload.Points[0].Y);
         Assert.Equal(40d, payload.Points[1].X);
         Assert.Equal(7d, payload.Points[1].Y);
+        Assert.Null(payload.Points[0].Size);
+    }
+
+    [Fact]
+    public void BuildChart_scatter_with_size_emits_bubble_points()
+    {
+        var diagram = new DiagramDefinition("scatter", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "idle_minutes",
+            ["y"] = "peak_apps",
+            ["size"] = "intensity",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["idle_minutes"] = 12d,
+                ["peak_apps"] = 3d,
+                ["intensity"] = 52d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["idle_minutes"] = 40d,
+                ["peak_apps"] = 7d,
+                ["intensity"] = 328d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "s",
+            "S",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.NotNull(payload.Points);
+        Assert.Equal(2, payload.Points!.Count);
+        Assert.Equal(52d, payload.Points[0].Size);
+        Assert.Equal(328d, payload.Points[1].Size);
     }
 
     [Fact]

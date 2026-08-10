@@ -30,7 +30,7 @@ public static class DiagramBindings
         {
             "bar" or "pie" or "donut" or "doughnut" => ["x", "y", "reference", "series"],
             "line" or "area" or "sparkline" => ["x", "y", "series"],
-            "scatter" => ["x", "y"],
+            "scatter" => ["x", "y", "size"],
             "histogram" => ["value", "x"],
             "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
