@@ -19,6 +19,7 @@ end chrome
 | `bar_vertical_360` | chrome for vertical bars |
 | `donut_right_360` | legend right, height 360 |
 | `pie_right_360` | legend right, height 360 |
+| `kpi_compact` | number KPI, height 120 |
 | `heatmap_tall` | matrix chrome |
 
 Roadmap kinds: [docs/DIAGRAM_KINDS_ROADMAP_RU.md](../../../docs/DIAGRAM_KINDS_ROADMAP_RU.md).

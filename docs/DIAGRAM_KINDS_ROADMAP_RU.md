@@ -16,7 +16,7 @@
 | `pie` / `donut` / `doughnut` | Chart | demo donut + `donut_right_360`, `pie_right_360` |
 | `table` | Table | demo |
 | `heatmap` | Matrix | demo + `heatmap_tall` |
-| `number` | Scalar | **kind есть, demo/stdlib KPI chrome — нет** |
+| `number` | Scalar | demo KPI + `kpi_compact` |
 
 LUF догфуд: donut + horizontal/vertical bar — пресеты chrome теперь в **stdlib**, чтобы не тащить копии в каждый продукт.
 
@@ -67,7 +67,7 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome те
 
 ### P0 — закрыть пробелы уже существующих kinds
 
-1. **KPI / `number`** — demo-card + stdlib chrome (крупная цифра, опционально delta). Самый частый «визуал» после bar/line в operational BI, у нас kind уже в registry.
+1. **KPI / `number`** — ✅ demo-card + stdlib `kpi_compact` + scalar `SUM|MAX|…` rollup в QueryCompiler. Delta — позже.
 2. **Stacked bar** — убедиться, что `stacked` + series в demo/stdlib задокументированы (prop уже в chrome). Composition без pie.
 3. **Area (line family)** — либо `diagram area`, либо `line` + `fill = area`. Закрывает «объём во времени» без нового семейства.
 
@@ -108,9 +108,10 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome те
 | `bar_vertical_360` | bar V chrome |
 | `donut_right_360` | donut, легенда справа |
 | `pie_right_360` | pie, легенда справа |
+| `kpi_compact` | number KPI, h=120 |
 | `heatmap_tall` | matrix |
 
-Demo: `samples/demo/diagrams/dau-donut.dashdiagram` + card на Overview.
+Demo: `samples/demo/diagrams/dau-donut.dashdiagram`, `peak-kpi.dashdiagram` + cards на Overview.
 
 ---
 
@@ -136,9 +137,9 @@ Demo: `samples/demo/diagrams/dau-donut.dashdiagram` + card на Overview.
 
 ---
 
-## 7. Следующий конкретный leaf (когда снимем передышку)
+## 7. Следующий конкретный leaf
 
-1. `number` KPI demo + stdlib presentation.  
-2. Demo stacked bar (composition).  
-3. ADR-amend / spike: `area` vs line fill.  
-4. Только потом scatter.
+1. Demo stacked bar (composition).
+2. ADR-amend / spike: `area` vs line fill.
+3. Только потом scatter.
+4. KPI delta (vs prior period) — optional polish on `number`.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Compilation;
 using DashSpec.Core.Model;
@@ -145,14 +146,46 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         }
 
         var value = rows[0].GetValueOrDefault(DiagramBindings.Column(diagram, "value"));
+        if (value is null or DBNull)
+        {
+            return null;
+        }
+
         return value switch
         {
-            null => null,
             DateOnly d => d.ToString("dd.MM.yyyy"),
             DateTime dt => dt.TimeOfDay == TimeSpan.Zero
                 ? dt.ToString("dd.MM.yyyy")
                 : dt.ToString("dd.MM.yyyy HH:mm"),
-            _ => Convert.ToString(value),
+            _ => FormatScalarMeasure(value, diagram),
+        };
+    }
+
+    private static string FormatScalarMeasure(object value, DiagramDefinition diagram)
+    {
+        var culture = CultureInfo.CurrentCulture;
+        var preferInteger =
+            diagram.Properties.TryGetValue("scale_value", out var scale) &&
+            scale.Equals("integer", StringComparison.OrdinalIgnoreCase);
+
+        if (preferInteger)
+        {
+            return value switch
+            {
+                IFormattable formattable => formattable.ToString("N0", culture) ?? "—",
+                _ => Convert.ToString(value, culture) ?? "—",
+            };
+        }
+
+        return value switch
+        {
+            byte or sbyte or short or ushort or int or uint or long or ulong =>
+                ((IFormattable)value).ToString("N0", culture) ?? "—",
+            decimal d when d == decimal.Truncate(d) => d.ToString("N0", culture),
+            double d when Math.Abs(d % 1) < 1e-9 => d.ToString("N0", culture),
+            float f when Math.Abs(f % 1) < 1e-6f => f.ToString("N0", culture),
+            IFormattable formattable => formattable.ToString(null, culture) ?? "—",
+            _ => Convert.ToString(value, culture) ?? "—",
         };
     }
 }
