@@ -10,7 +10,7 @@ public static class CardChromeResolver
         SpecLibrary? library)
     {
         var props = ChartChromeProperties.Merge(card, library);
-        var presentation = ChartPresentation.FromProperties(props);
+        var presentation = ChartPresentation.FromProperties(props, diagramKind: card.Diagram.Kind);
         var valueAxisLabel = DiagramBindings.TryGetColumn(card.Diagram, "value", out _)
             ? DiagramBindings.Label(card.Diagram, "value") ?? DiagramBindings.Label(card.Diagram, "y")
             : DiagramBindings.Label(card.Diagram, "y");

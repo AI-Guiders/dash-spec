@@ -6,6 +6,20 @@ namespace DashSpec.Core.Runtime;
 /// <summary>Facade: row sets → chart/table/matrix payloads by diagram kind.</summary>
 public static class ChartDataBuilder
 {
+    public static ChartPayload BuildChart(
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        DiagramDefinition diagram,
+        SeriesTransformSettings? seriesTransform,
+        CardDefinition card,
+        SpecLibrary? library,
+        string? dashboardColorPalette = null) =>
+        diagram.Kind?.ToLowerInvariant() switch
+        {
+            "scatter" => ScatterPayloadBuilder.Build(rows, diagram),
+            "histogram" => HistogramPayloadBuilder.Build(rows, diagram),
+            _ => BuildLineOrBar(rows, diagram, seriesTransform, card, library, dashboardColorPalette),
+        };
+
     public static ChartPayload BuildLineOrBar(
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
         DiagramDefinition diagram,
@@ -60,13 +74,16 @@ public sealed record ChartPayload(
     IReadOnlyList<string> Labels,
     IReadOnlyList<ChartSeries> Series,
     IReadOnlyList<double?>? ReferenceValues = null,
-    string? ReferenceLabel = null);
+    string? ReferenceLabel = null,
+    IReadOnlyList<ChartPoint>? Points = null);
 
 public sealed record ChartSeries(
     string Name,
     IReadOnlyList<double?> Values,
     string? Color = null,
     IReadOnlyList<string>? PointColors = null);
+
+public sealed record ChartPoint(double X, double Y);
 
 public sealed record TablePayload(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
