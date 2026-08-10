@@ -28,6 +28,21 @@ window.dashSpecCharts = {
       return;
     }
 
+    if (type === "boxplot") {
+      this._renderBoxPlot(canvasId, canvas, labels, series, options, palette);
+      return;
+    }
+
+    if (type === "treemap") {
+      this._renderTreemap(canvasId, canvas, options, palette);
+      return;
+    }
+
+    if (type === "gauge") {
+      this._renderGauge(canvasId, canvas, options, palette);
+      return;
+    }
+
     const isBar = type === "bar";
     const stacked = !!(options && options.stacked);
     const fillArea = !isBar && !!(options && options.fill);
@@ -359,6 +374,216 @@ window.dashSpecCharts = {
     }
     dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
     return true;
+  },
+
+  _renderBoxPlot(canvasId, canvas, labels, series, options, palette) {
+    const boxes = (options && options.boxes) || [];
+    const categoryLabels = boxes.length
+      ? boxes.map((b) => b.label ?? b.Label ?? "")
+      : (labels || []);
+    const samples = boxes.map((b) => {
+      const raw = b.samples ?? b.Samples ?? [];
+      return raw.map((v) => Number(v)).filter((v) => Number.isFinite(v));
+    });
+    const legend = (options && options.legend) || "bottom";
+    const showLegend = legend !== "hidden";
+    const legendPosition = legend === "hidden" ? "bottom" : legend;
+    const item = (series && series[0]) || { name: "distribution" };
+    const color = (item && item.color) || palette[0];
+    const valueAxisLabel = (options && options.valueAxisLabel) || "";
+
+    this._instances[canvasId] = new Chart(canvas, {
+      type: "boxplot",
+      data: {
+        labels: categoryLabels,
+        datasets: [
+          {
+            label: item.name === "default" ? (valueAxisLabel || "value") : item.name,
+            data: samples,
+            backgroundColor: color + "66",
+            borderColor: color,
+            borderWidth: 1,
+            outlierBackgroundColor: color,
+            meanBackgroundColor: "#e2e8f0",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: showLegend,
+            position: legendPosition,
+            labels: { boxWidth: 10, padding: 10, font: { size: 11 } },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "#2a354455" },
+            title: {
+              display: !!valueAxisLabel,
+              text: valueAxisLabel,
+              font: { size: 11 },
+              color: "#94a3b8",
+            },
+          },
+          x: {
+            grid: { display: false },
+          },
+        },
+      },
+    });
+  },
+
+  _renderTreemap(canvasId, canvas, options, palette) {
+    const tiles = ((options && options.treemap) || [])
+      .map((t) => ({
+        label: String(t.label ?? t.Label ?? ""),
+        value: Number(t.value ?? t.Value),
+      }))
+      .filter((t) => Number.isFinite(t.value) && t.value > 0);
+
+    const parent = canvas.parentElement;
+    const width = Math.max(40, (parent && parent.clientWidth) || canvas.clientWidth || 320);
+    const height = Math.max(40, (parent && parent.clientHeight) || canvas.clientHeight || 240);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const total = tiles.reduce((s, t) => s + t.value, 0) || 1;
+    const rects = this._squarify(tiles, 0, 0, width, height, total);
+    rects.forEach((r, index) => {
+      const color = palette[index % palette.length];
+      ctx.fillStyle = color + "cc";
+      ctx.fillRect(r.x + 1, r.y + 1, Math.max(0, r.w - 2), Math.max(0, r.h - 2));
+      if (r.w > 48 && r.h > 28) {
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "600 12px Segoe UI, sans-serif";
+        ctx.fillText(r.label.slice(0, 18), r.x + 8, r.y + 18);
+        ctx.font = "11px Segoe UI, sans-serif";
+        ctx.fillStyle = "#1e293b";
+        ctx.fillText(String(Math.round(r.value)), r.x + 8, r.y + 34);
+      }
+    });
+
+    this._instances[canvasId] = {
+      destroy() {
+        ctx.clearRect(0, 0, width, height);
+      },
+    };
+  },
+
+  _squarify(tiles, x, y, w, h, total) {
+    if (!tiles.length || w <= 0 || h <= 0) {
+      return [];
+    }
+    if (tiles.length === 1) {
+      return [{ ...tiles[0], x, y, w, h }];
+    }
+
+    const vertical = w >= h;
+    let acc = 0;
+    let splitAt = 1;
+    const target = total / 2;
+    for (let i = 0; i < tiles.length; i += 1) {
+      acc += tiles[i].value;
+      splitAt = i + 1;
+      if (acc >= target && i < tiles.length - 1) {
+        break;
+      }
+    }
+
+    const leftTiles = tiles.slice(0, splitAt);
+    const rightTiles = tiles.slice(splitAt);
+    const leftSum = leftTiles.reduce((s, t) => s + t.value, 0);
+    const rightSum = Math.max(total - leftSum, 0.0001);
+
+    if (vertical) {
+      const leftW = w * (leftSum / total);
+      return this._squarify(leftTiles, x, y, leftW, h, leftSum).concat(
+        this._squarify(rightTiles, x + leftW, y, w - leftW, h, rightSum),
+      );
+    }
+
+    const topH = h * (leftSum / total);
+    return this._squarify(leftTiles, x, y, w, topH, leftSum).concat(
+      this._squarify(rightTiles, x, y + topH, w, h - topH, rightSum),
+    );
+  },
+
+  _renderGauge(canvasId, canvas, options, palette) {
+    const gauge = (options && options.gauge) || {};
+    const value = Number(gauge.value ?? gauge.Value ?? 0);
+    const min = Number(gauge.min ?? gauge.Min ?? 0);
+    const maxRaw = Number(gauge.max ?? gauge.Max ?? 100);
+    const max = maxRaw > min ? maxRaw : min + 1;
+    const clamped = Math.min(max, Math.max(min, value));
+    const filled = clamped - min;
+    const rest = max - clamped;
+    const label = gauge.label ?? gauge.Label ?? "value";
+    const color = palette[0];
+
+    this._instances[canvasId] = new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        labels: [label, "remainder"],
+        datasets: [
+          {
+            data: [filled, rest],
+            backgroundColor: [color, "#33415555"],
+            borderWidth: 0,
+            circumference: 180,
+            rotation: 270,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "72%",
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+          gaugeCenter: {
+            text: Number.isFinite(clamped) ? String(Math.round(clamped * 10) / 10) : "—",
+            sub: label,
+          },
+        },
+      },
+      plugins: [
+        {
+          id: "gaugeCenter",
+          afterDraw(chart) {
+            const cfg = chart.options.plugins && chart.options.plugins.gaugeCenter;
+            if (!cfg) {
+              return;
+            }
+            const { ctx, chartArea } = chart;
+            const cx = (chartArea.left + chartArea.right) / 2;
+            const cy = chartArea.top + (chartArea.bottom - chartArea.top) * 0.72;
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#e2e8f0";
+            ctx.font = "700 28px Segoe UI, sans-serif";
+            ctx.fillText(cfg.text, cx, cy);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "12px Segoe UI, sans-serif";
+            ctx.fillText(cfg.sub || "", cx, cy + 18);
+            ctx.restore();
+          },
+        },
+      ],
+    });
   },
 
   _renderScatter(canvasId, canvas, series, options, palette) {
