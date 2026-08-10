@@ -16,6 +16,7 @@
   !include "diagrams/idle-by-app-box.dashdiagram"
   !include "diagrams/peak-by-app-treemap.dashdiagram"
   !include "diagrams/peak-gauge.dashdiagram"
+  !include "diagrams/peak-by-app-windrose.dashdiagram"
 
   wiring
     use palette demo_apps
@@ -101,6 +102,18 @@
       datasource view demo.v_daily_peak_concurrent_proxy
       bind
         usage_date, user_name, app_name
+      end bind
+    end card
+
+    card peak_by_app_windrose as "Peak by app (wind rose)"
+      filters
+        period_grain
+        period_start
+      end filters
+      diagram demo_peak_by_app_windrose
+      datasource view demo.v_peak_concurrent_by_period
+      bind
+        period_grain, period_start, app_name
       end bind
     end card
   
