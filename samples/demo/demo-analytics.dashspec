@@ -11,6 +11,8 @@
   !include "diagrams/period-peak-by-app-bar.dashdiagram"
   !include "diagrams/peak-apps-heatmap.dashdiagram"
   !include "diagrams/idle-table.dashdiagram"
+  !include "diagrams/idle-histogram.dashdiagram"
+  !include "diagrams/idle-vs-peak-scatter.dashdiagram"
 
   wiring
     use palette demo_apps
@@ -50,6 +52,22 @@
       end filters
       diagram demo_idle_table
       datasource view demo.v_daily_idle_minutes_by_user_app
+      bind
+        usage_date, user_name, app_name
+      end bind
+    end card
+
+    card idle_histogram as "Idle minutes (histogram)"
+      diagram demo_idle_histogram
+      datasource view demo.v_daily_idle_minutes_by_user_app
+      bind
+        usage_date, user_name, app_name
+      end bind
+    end card
+
+    card idle_vs_peak_scatter as "Idle vs peak apps"
+      diagram demo_idle_vs_peak_scatter
+      datasource sql file "sql/idle-vs-peak-scatter.sql"
       bind
         usage_date, user_name, app_name
       end bind

@@ -1,0 +1,5 @@
+@presentation bar_stacked_360
+
+legend = bottom
+height = 360
+stacked = true
