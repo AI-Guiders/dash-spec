@@ -27,6 +27,9 @@ public static class DiagramKindRegistry
         new("bins", PropertyValueType.Scalar),
         new("bin_width", PropertyValueType.Scalar),
         new("height", PropertyValueType.Scalar),
+        new("aggregate", PropertyValueType.Scalar),
+        new("min", PropertyValueType.Scalar),
+        new("max", PropertyValueType.Scalar),
     ];
 
     private static readonly IReadOnlyList<PropertySpec> TableProperties =
@@ -65,6 +68,10 @@ public static class DiagramKindRegistry
             ["doughnut"] = new("doughnut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["scatter"] = new("scatter", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["histogram"] = new("histogram", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["box"] = new("box", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["boxplot"] = new("boxplot", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["treemap"] = new("treemap", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["gauge"] = new("gauge", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),

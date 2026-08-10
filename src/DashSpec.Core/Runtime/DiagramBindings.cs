@@ -32,6 +32,9 @@ public static class DiagramBindings
             "line" or "area" or "sparkline" => ["x", "y", "series"],
             "scatter" => ["x", "y", "size"],
             "histogram" => ["value", "x"],
+            "box" or "boxplot" => ["value", "x"],
+            "treemap" => ["x", "y"],
+            "gauge" => ["value"],
             "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
         };
@@ -83,7 +86,7 @@ public static class DiagramBindings
     }
 
     public static bool IsCategoryChart(string? kind) =>
-        kind?.ToLowerInvariant() is "bar" or "pie" or "donut" or "doughnut";
+        kind?.ToLowerInvariant() is "bar" or "pie" or "donut" or "doughnut" or "treemap";
 
     public static bool IsRadialChart(string? kind) =>
         kind?.ToLowerInvariant() is "pie" or "donut" or "doughnut";
