@@ -426,4 +426,101 @@ public class ChartDataBuilderTests
         Assert.Equal(40d, payload.Series[0].Values[1]);
         Assert.Equal(40d, payload.Series[0].Values[2]);
     }
+
+    [Fact]
+    public void BuildChart_histogram_bins_numeric_values()
+    {
+        var diagram = new DiagramDefinition("histogram", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["value"] = "idle_minutes",
+            ["bins"] = "4",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 1d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 2d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 8d },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 9d },
+        ];
+
+        var card = new CardDefinition(
+            "h",
+            "H",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.Equal(4, payload.Labels.Count);
+        Assert.Equal(4, payload.Series[0].Values.Count);
+        Assert.Equal(4d, payload.Series[0].Values.Sum(v => v ?? 0));
+    }
+
+    [Fact]
+    public void BuildChart_scatter_emits_xy_points()
+    {
+        var diagram = new DiagramDefinition("scatter", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "idle_minutes",
+            ["y"] = "peak_apps",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["idle_minutes"] = 12d,
+                ["peak_apps"] = 3d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["idle_minutes"] = 40d,
+                ["peak_apps"] = 7d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "s",
+            "S",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.NotNull(payload.Points);
+        Assert.Equal(2, payload.Points!.Count);
+        Assert.Equal(12d, payload.Points[0].X);
+        Assert.Equal(3d, payload.Points[0].Y);
+        Assert.Equal(40d, payload.Points[1].X);
+        Assert.Equal(7d, payload.Points[1].Y);
+    }
+
+    [Fact]
+    public void ChartPresentation_area_and_sparkline_defaults()
+    {
+        var area = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["fill"] = "area",
+            },
+            diagramKind: "line");
+        Assert.True(area.FillArea);
+
+        var areaKind = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            diagramKind: "area");
+        Assert.True(areaKind.FillArea);
+
+        var spark = ChartPresentation.FromProperties(
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+            diagramKind: "sparkline");
+        Assert.True(spark.Sparkline);
+        Assert.Equal("hidden", spark.Legend);
+        Assert.Equal(64, spark.HeightPx);
+    }
 }
