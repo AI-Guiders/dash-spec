@@ -28,12 +28,11 @@ public static class DiagramBindings
     public static IEnumerable<string> SelectColumnRoles(string? kind) =>
         kind?.ToLowerInvariant() switch
         {
-            "bar" or "pie" or "donut" or "doughnut" => ["x", "y", "reference", "series"],
+            "bar" or "pie" or "donut" or "doughnut" or "treemap" or "windrose" or "wind_rose" => ["x", "y", "reference", "series"],
             "line" or "area" or "sparkline" => ["x", "y", "series"],
             "scatter" => ["x", "y", "size"],
             "histogram" => ["value", "x"],
             "box" or "boxplot" => ["value", "x"],
-            "treemap" => ["x", "y"],
             "gauge" => ["value"],
             "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
             _ => ["x", "y", "series", "value", "tooltip"],
@@ -86,10 +85,11 @@ public static class DiagramBindings
     }
 
     public static bool IsCategoryChart(string? kind) =>
-        kind?.ToLowerInvariant() is "bar" or "pie" or "donut" or "doughnut" or "treemap";
+        kind?.ToLowerInvariant() is "bar" or "pie" or "donut" or "doughnut" or "treemap"
+            or "windrose" or "wind_rose";
 
     public static bool IsRadialChart(string? kind) =>
-        kind?.ToLowerInvariant() is "pie" or "donut" or "doughnut";
+        kind?.ToLowerInvariant() is "pie" or "donut" or "doughnut" or "windrose" or "wind_rose";
 
     private static string DescribeExpected(string role, string? kind) =>
         IsCategoryChart(kind) && role is "x" or "y"
