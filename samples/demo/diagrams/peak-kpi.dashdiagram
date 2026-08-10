@@ -1,0 +1,11 @@
+@diagram demo_peak_kpi
+
+chrome
+  use kpi_compact
+end chrome
+
+number
+  value = peak_concurrent_proxy as "Peak"
+  aggregate = max
+  scale_value = integer
+end number

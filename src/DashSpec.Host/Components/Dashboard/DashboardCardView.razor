@@ -136,10 +136,24 @@
 
     private bool UsesInteriorLayout => DashboardLayoutHelper.UsesInteriorLayout(Card);
 
-    private string CardCssClass =>
-        string.IsNullOrWhiteSpace(Card.FilterLinkCssClass)
-            ? "card"
-            : $"card {Card.FilterLinkCssClass}";
+    private string CardCssClass
+    {
+        get
+        {
+            var parts = new List<string> { "card" };
+            if (Card.DataFamily is DiagramDataFamily.Scalar)
+            {
+                parts.Add("card-kpi");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Card.FilterLinkCssClass))
+            {
+                parts.Add(Card.FilterLinkCssClass);
+            }
+
+            return string.Join(' ', parts);
+        }
+    }
 
     [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
 

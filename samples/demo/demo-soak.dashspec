@@ -38,6 +38,7 @@
   end toolbar
   tab overview as "Overview"
   cards
+  peak_concurrent_kpi
   peak_concurrent_proxy
   activity_5min
   dau_by_product
@@ -50,6 +51,13 @@
   events_detail
   end cards
   end tab
+  card peak_concurrent_kpi as "Peak concurrent (max)"
+  diagram demo_peak_kpi
+  datasource view demo.v_daily_peak_concurrent_proxy
+  bind
+    usage_date, user_name, app_name
+  end bind
+  end card
   card peak_concurrent_proxy as "Peak concurrent (proxy)"
   diagram demo_peak_concurrent_line
   datasource view demo.v_daily_peak_concurrent_proxy
