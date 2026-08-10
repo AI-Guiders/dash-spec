@@ -348,4 +348,85 @@ public class QueryCompilerTests
         Assert.Contains("ORDER BY launch_count DESC, form", query.Sql);
         Assert.DoesNotContain("SUM(form)", query.Sql);
     }
+
+    [Fact]
+    public void Compile_number_defaults_to_sum_over_filtered_rows()
+    {
+        var card = new CardDefinition(
+            "dau_total",
+            "DAU",
+            new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["value"] = "distinct_users",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_active_users"),
+            ["usage_date"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, index);
+
+        Assert.Contains("SUM(distinct_users) AS distinct_users", query.Sql);
+        Assert.Contains("usage_date >= @usage_date_from", query.Sql);
+        Assert.DoesNotContain("GROUP BY", query.Sql);
+    }
+
+    [Fact]
+    public void Compile_number_max_aggregate_without_group_by()
+    {
+        var card = new CardDefinition(
+            "peak",
+            "Peak",
+            new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["value"] = "peak_concurrent_proxy",
+                ["aggregate"] = "max",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy"),
+            ["usage_date", "app_name"],
+            []);
+
+        var filters = new FilterState();
+        filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
+        filters.SetField("app_name", ["Tekla Structures"]);
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v_daily_peak_concurrent_proxy.app_name"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, index);
+
+        Assert.Contains("MAX(peak_concurrent_proxy) AS peak_concurrent_proxy", query.Sql);
+        Assert.Contains("app_name = @app_name_0", query.Sql);
+        Assert.DoesNotContain("GROUP BY", query.Sql);
+    }
+
+    [Fact]
+    public void Compile_number_aggregate_none_keeps_row_select()
+    {
+        var card = new CardDefinition(
+            "single",
+            "Single",
+            new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["value"] = "kpi",
+                ["aggregate"] = "none",
+            }),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_kpi"),
+            [],
+            []);
+
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>());
+
+        Assert.Contains("SELECT kpi FROM demo.v_kpi", query.Sql);
+        Assert.DoesNotContain("SUM(", query.Sql);
+        Assert.DoesNotContain("MAX(", query.Sql);
+    }
 }
