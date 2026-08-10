@@ -25,10 +25,14 @@ public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
         RegisterKind(registry, Id, "pie", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
         RegisterKind(registry, Id, "donut", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
         RegisterKind(registry, Id, "doughnut", "Chart", ["x", "y", "series", "category", "value"], supportsTopLimit: true);
-        RegisterKind(registry, Id, "scatter", "Chart", ["x", "y"]);
+        RegisterKind(registry, Id, "scatter", "Chart", ["x", "y", "size"]);
         RegisterKind(registry, Id, "histogram", "Chart", ["value", "x", "bins", "bin_width"]);
+        RegisterKind(registry, Id, "box", "Chart", ["value", "x"]);
+        RegisterKind(registry, Id, "boxplot", "Chart", ["value", "x"]);
+        RegisterKind(registry, Id, "treemap", "Chart", ["x", "y", "category", "value"], supportsTopLimit: true);
+        RegisterKind(registry, Id, "gauge", "Chart", ["value", "aggregate", "min", "max"]);
         RegisterKind(registry, Id, "table", "Table", ["columns", "order_by", "limit"], supportsTopLimit: true);
-        RegisterKind(registry, Id, "number", "Scalar", ["value", "aggregate", "scale_value"]);
+        RegisterKind(registry, Id, "number", "Scalar", ["value", "aggregate", "scale_value", "delta"]);
         RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value", "tooltip"]);
     }
 
