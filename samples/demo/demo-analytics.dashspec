@@ -13,6 +13,9 @@
   !include "diagrams/idle-table.dashdiagram"
   !include "diagrams/idle-histogram.dashdiagram"
   !include "diagrams/idle-vs-peak-scatter.dashdiagram"
+  !include "diagrams/idle-by-app-box.dashdiagram"
+  !include "diagrams/peak-by-app-treemap.dashdiagram"
+  !include "diagrams/peak-gauge.dashdiagram"
 
   wiring
     use palette demo_apps
@@ -68,6 +71,34 @@
     card idle_vs_peak_scatter as "Idle vs peak apps"
       diagram demo_idle_vs_peak_scatter
       datasource sql file "sql/idle-vs-peak-scatter.sql"
+      bind
+        usage_date, user_name, app_name
+      end bind
+    end card
+
+    card idle_by_app_box as "Idle minutes by app (box)"
+      diagram demo_idle_by_app_box
+      datasource view demo.v_daily_idle_minutes_by_user_app
+      bind
+        usage_date, user_name, app_name
+      end bind
+    end card
+
+    card peak_by_app_treemap as "Peak by app (treemap)"
+      filters
+        period_grain
+        period_start
+      end filters
+      diagram demo_peak_by_app_treemap
+      datasource view demo.v_peak_concurrent_by_period
+      bind
+        period_grain, period_start, app_name
+      end bind
+    end card
+
+    card peak_gauge as "Peak concurrent (gauge)"
+      diagram demo_peak_gauge
+      datasource view demo.v_daily_peak_concurrent_proxy
       bind
         usage_date, user_name, app_name
       end bind

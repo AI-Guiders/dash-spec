@@ -1,0 +1,11 @@
+@diagram demo_peak_by_app_treemap
+
+chrome
+  use treemap_360
+end chrome
+
+treemap
+  render = "chartjs"
+  x = app_name as "App"
+  y = peak_concurrent_proxy as "Peak apps"
+end treemap
