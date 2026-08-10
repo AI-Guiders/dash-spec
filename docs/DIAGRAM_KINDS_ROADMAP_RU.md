@@ -3,6 +3,10 @@
 Заметка для авторов продукта (анализ на передышке).  
 Цель: расширять **stdlib / registry** по реальному использованию дашбордов в мире, а не по «зоопарку красивых картинок».
 
+Два трека:
+- **LUF/LUS dogfood** — только то, что реально нужно продукту.
+- **Standalone product** — chooser completeness для чужого автора дашборда (coverage + demo wow без sankey-кладбища).
+
 Связано: [ADR-0003](../design/DASHSPEC-ADR-0003-diagram-kinds-registry.md) (registry kinds), [ADR-0017](../design/DASHSPEC-ADR-0017-file-includes-and-stdlib.md) (stdlib presentations).
 
 ---
@@ -16,11 +20,14 @@
 | `area` | Chart | demo + `area_bottom_320` (`fill = area`) |
 | `sparkline` | Chart | demo + `sparkline_64` |
 | `pie` / `donut` / `doughnut` | Chart | demo donut + `donut_right_360`, `pie_right_360` |
-| `scatter` | Chart | demo + `scatter_360` |
+| `scatter` | Chart | demo + `scatter_360` (+ optional `size` → bubble) |
 | `histogram` | Chart | demo + `histogram_320` (bins in Core) |
+| `box` / `boxplot` | Chart | demo + `box_360` (Chart.js boxplot plugin) |
+| `treemap` | Chart | demo + `treemap_360` (canvas layout) |
+| `gauge` | Chart | demo + `gauge_200` (doughnut semicircle) |
 | `table` | Table | demo |
 | `heatmap` | Matrix | demo + `heatmap_tall` |
-| `number` | Scalar | demo KPI + `kpi_compact` |
+| `number` | Scalar | demo KPI + `kpi_compact` + `delta = prior` |
 
 LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в **stdlib**.
 
@@ -52,12 +59,13 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 | Сравнить категории | bar / column (H или V) | ✅ |
 | Тренд во времени | line (иногда area) | ✅ line + area |
 | Одно число / статус | KPI card / big number | ✅ `number` |
+| KPI vs цель / диапазон | gauge / bullet | ✅ `gauge` |
 | Часть от целого (≤5) | donut / pie | ✅ |
-| Часть от целого (много) | stacked bar | ✅ stacked demo |
+| Часть от целого (много) | stacked bar / treemap | ✅ stacked + `treemap` |
 | Две оси × значение | heatmap / matrix | ✅ |
 | Точные значения | table | ✅ |
 | Связь двух мер | scatter / bubble | ✅ scatter + optional `size` → bubble |
-| Распределение | histogram | ✅ |
+| Распределение | histogram / box | ✅ histogram + `box` |
 | Компактный тренд | sparkline | ✅ |
 | Воронка / поток | funnel / sankey | нет (редки в census) |
 | Гео | map | нет |
@@ -83,16 +91,27 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 
 Опциональный polish: histogram `bin_width` UX.
 
+### Standalone product track — ✅ batch shipped
+
+Chooser pack (не LUF-driven):
+
+| Kind | Ship |
+|------|------|
+| **Box / boxplot** | Core group samples + Chart.js boxplot CDN + demo by app |
+| **Treemap** | Core tiles + canvas squarify + demo peak by app |
+| **Gauge** | scalar rollup + doughnut semicircle + demo peak |
+
+Дальше по standalone (не сейчас): waterfall / funnel как чеклист-parity; sunburst после реального hierarchy dogfood.
+
 ### P2 — полезно, но нишево или дорого
 
 | Kind | Заметка |
-|------|---------|
-| **Treemap** | иерархия part-to-whole |
+|------|----------|
 | **Waterfall** | finance / bridge; &lt;0.5% Tableau census |
 | **Funnel** | sales/ops |
-| **Gauge / bullet** | часто заменяемо number + color |
 | **Map** | отдельный эпик |
 | **Sankey / network** | census почти не использует |
+| **Sunburst** | после treemap, тот же смысл |
 
 ### Не в stdlib (пока)
 
@@ -118,25 +137,14 @@ LUF догфуд: donut + horizontal/vertical bar — пресеты chrome в *
 | `sparkline_64` | sparkline, h=64 |
 | `scatter_360` | scatter, h=360 |
 | `histogram_320` | histogram bar, h=320 |
-| `heatmap_tall` | matrix |
-
-Demo Overview: KPI, sparkline, stacked, area, donut. Analytics: histogram, scatter.
-
----
-
-## 5. Как решать «добавлять kind или нет»
-
-1. Какой **бизнес-вопрос** не закрывают текущие kinds?
-2. Есть ли kind в **топ-практике** (census / Power BI defaults)?
-3. Есть ли **DataFamily** или нужно новое?
-4. Минимальный **payload + Host viz**?
-5. Demo на `samples/demo` + stdlib chrome в том же PR.
-
-Если пункт 1–2 слабые — лучше presentation/transform, не kind.
+| `box_360` | boxplot, h=360 |
+| `treemap_360` | treemap, h=360 |
+| `gauge_200` | gauge, h=200 |
+| `heatmap_tall` | heatmap chrome |
 
 ---
 
-## 6. Источники
+## 5–6. Источники
 
 - Tableau Research — [Dashboard design census](https://www.tableau.com/blog/tableau-research-understanding-dashboard-design-at-scale).
 - Power BI practical set — [The Data Alchemist](https://thedataalchemist.co/data-insights/power-bi-charts/).
@@ -147,4 +155,5 @@ Demo Overview: KPI, sparkline, stacked, area, donut. Analytics: histogram, scatt
 ## 7. Следующий конкретный leaf
 
 1. Histogram `bin_width` UX polish (если нужен dogfood).
-2. Только потом P2 (treemap / map) по реальному dogfood.
+2. Waterfall / funnel — только если standalone checklist реально болит.
+3. Map / sankey — не раньше отдельного эпика.

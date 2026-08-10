@@ -544,6 +544,130 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildChart_box_groups_samples_by_category()
+    {
+        var diagram = new DiagramDefinition("box", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "app_name",
+            ["value"] = "idle_minutes",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Excel",
+                ["idle_minutes"] = 10d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Excel",
+                ["idle_minutes"] = 30d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Word",
+                ["idle_minutes"] = 5d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "b",
+            "B",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.NotNull(payload.Boxes);
+        Assert.Equal(2, payload.Boxes!.Count);
+        Assert.Equal("Excel", payload.Boxes[0].Label);
+        Assert.Equal([10d, 30d], payload.Boxes[0].Samples);
+        Assert.Equal("Word", payload.Boxes[1].Label);
+        Assert.Equal([5d], payload.Boxes[1].Samples);
+    }
+
+    [Fact]
+    public void BuildChart_treemap_emits_positive_tiles()
+    {
+        var diagram = new DiagramDefinition("treemap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "app_name",
+            ["y"] = "peak",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Excel",
+                ["peak"] = 12d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Word",
+                ["peak"] = 4d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Skip",
+                ["peak"] = 0d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "t",
+            "T",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.NotNull(payload.Treemap);
+        Assert.Equal(2, payload.Treemap!.Count);
+        Assert.Equal("Excel", payload.Treemap[0].Label);
+        Assert.Equal(12d, payload.Treemap[0].Value);
+    }
+
+    [Fact]
+    public void BuildChart_gauge_clamps_value_to_bounds()
+    {
+        var diagram = new DiagramDefinition("gauge", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["value"] = "peak",
+            ["min"] = "0",
+            ["max"] = "20",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["peak"] = 35d,
+            },
+        ];
+
+        var card = new CardDefinition(
+            "g",
+            "G",
+            diagram,
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            [],
+            []);
+
+        var payload = ChartDataBuilder.BuildChart(rows, diagram, null, card, null);
+
+        Assert.NotNull(payload.Gauge);
+        Assert.Equal(20d, payload.Gauge!.Value);
+        Assert.Equal(0d, payload.Gauge.Min);
+        Assert.Equal(20d, payload.Gauge.Max);
+    }
+
+    [Fact]
     public void ChartPresentation_area_and_sparkline_defaults()
     {
         var area = ChartPresentation.FromProperties(
