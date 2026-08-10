@@ -45,6 +45,15 @@
 
 .card-kpi {
   max-width: none;
+  min-height: 0;
+}
+
+.card-kpi .card-diagram-slot {
+  min-height: 0;
+}
+
+.card-kpi .number {
+  padding: 0.35rem 0 0.15rem;
 }
 
 .card-head {
