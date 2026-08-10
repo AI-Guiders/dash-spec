@@ -51,6 +51,51 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
         var topFilterScopeHint = CardFilterScopeHints.ResolveTopFilterScope(card, document);
 
+        if (kind.DataFamily is DiagramDataFamily.Scalar)
+        {
+            string? numberDelta = null;
+            string? numberDeltaTone = null;
+            if (KpiPriorPeriod.WantsPriorDelta(effective.Diagram) &&
+                KpiPriorPeriod.TryBuildPriorFilters(
+                    EnumerateCardFilters(card),
+                    filters,
+                    filterIndex,
+                    out var priorFilters) &&
+                KpiPriorPeriod.TryReadScalar(rows, effective.Diagram, out var currentValue))
+            {
+                var priorQuery = QueryCompiler.Compile(
+                    effective,
+                    priorFilters,
+                    filterIndex,
+                    document.SqlDialect,
+                    specDirectory);
+                var priorRows = await connector.QueryAsync(priorQuery, cancellationToken).ConfigureAwait(false);
+                if (KpiPriorPeriod.TryReadScalar(priorRows, effective.Diagram, out var priorValue))
+                {
+                    (numberDelta, numberDeltaTone) = KpiPriorPeriod.FormatDelta(currentValue, priorValue);
+                }
+            }
+
+            return new CardRenderResult(
+                card.Id,
+                card.Title,
+                effective.Diagram.Kind,
+                kind.DataFamily,
+                renderPluginId,
+                Number: FormatNumber(rows, effective.Diagram),
+                NumberDelta: numberDelta,
+                NumberDeltaTone: numberDeltaTone,
+                Placement: card.Placement,
+                InteriorPlacements: interiorPlacements,
+                BoundFilters: card.BoundFilters,
+                LocalFilters: card.LocalFilters,
+                ClickBehaviour: card.ClickBehaviour,
+                ExtensionBlocks: card.ExtensionBlocks,
+                LocalFiltersManualApply: card.LocalFiltersManualApply,
+                MatrixLimits: card.MatrixLimits,
+                OversizeMessage: card.OversizeMessage);
+        }
+
         return kind.DataFamily switch
         {
             DiagramDataFamily.Chart =>
@@ -94,23 +139,6 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
-            DiagramDataFamily.Scalar =>
-                new CardRenderResult(
-                    card.Id,
-                    card.Title,
-                    effective.Diagram.Kind,
-                    kind.DataFamily,
-                    renderPluginId,
-                    Number: FormatNumber(rows, effective.Diagram),
-                    Placement: card.Placement,
-                    InteriorPlacements: interiorPlacements,
-                    BoundFilters: card.BoundFilters,
-                    LocalFilters: card.LocalFilters,
-                    ClickBehaviour: card.ClickBehaviour,
-                    ExtensionBlocks: card.ExtensionBlocks,
-                    LocalFiltersManualApply: card.LocalFiltersManualApply,
-                    MatrixLimits: card.MatrixLimits,
-                    OversizeMessage: card.OversizeMessage),
             DiagramDataFamily.Matrix =>
                 new CardRenderResult(
                     card.Id,
@@ -134,6 +162,19 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     TopFilterScopeHint: topFilterScopeHint),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
+    }
+
+    private static IEnumerable<string> EnumerateCardFilters(CardDefinition card)
+    {
+        foreach (var name in card.BoundFilters)
+        {
+            yield return name;
+        }
+
+        foreach (var name in card.LocalFilters)
+        {
+            yield return name;
+        }
     }
 
     private static string? FormatNumber(
