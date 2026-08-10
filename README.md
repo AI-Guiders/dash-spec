@@ -77,7 +77,7 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 |-------------|----------|
 | Blazor Server host, hot reload spec-файлов | PostgreSQL / другие коннекторы (только plugin model) |
 | SqlServer connector plugin | `place` на фильтрах (toolbar — только board/ref) |
-| Line, bar, table, heatmap charts | Полный language reference на EN (RU: docs/AUTHORING_GUIDE + HOWTO) |
+| Line, bar, table, heatmap, pie/donut charts | Полный language reference на EN (RU: docs/AUTHORING_GUIDE + HOWTO + DIAGRAM_KINDS_ROADMAP) |
 | Модульные `@tab`, file includes, layout boards | CI badge, packaged NuGet |
 
 ## Структура
