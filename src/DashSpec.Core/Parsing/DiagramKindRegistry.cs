@@ -72,6 +72,8 @@ public static class DiagramKindRegistry
             ["boxplot"] = new("boxplot", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
             ["treemap"] = new("treemap", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["gauge"] = new("gauge", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
+            ["windrose"] = new("windrose", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
+            ["wind_rose"] = new("wind_rose", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),
