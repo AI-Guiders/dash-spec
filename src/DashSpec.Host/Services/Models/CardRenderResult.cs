@@ -12,6 +12,8 @@ public sealed record CardRenderResult(
     ChartPayload? Chart = null,
     TablePayload? Table = null,
     string? Number = null,
+    string? NumberDelta = null,
+    string? NumberDeltaTone = null,
     string? Error = null,
     bool Loading = false,
     IReadOnlyList<string>? BoundFilters = null,
