@@ -17,7 +17,7 @@ window.dashSpecCharts = {
 
     const palette = ["#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#fb7185", "#38bdf8", "#4ade80", "#eab308", "#14b8a6", "#ec4899", "#94a3b8"];
     const type = chartType || "line";
-    const isRadial = type === "pie" || type === "doughnut";
+    const isRadial = type === "pie" || type === "doughnut" || type === "polarArea";
     if (isRadial) {
       this._renderRadial(canvasId, canvas, type, labels, series, options, palette);
       return;
