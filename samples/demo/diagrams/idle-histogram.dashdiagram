@@ -1,0 +1,12 @@
+@diagram demo_idle_histogram
+
+chrome
+  use histogram_320
+end chrome
+
+histogram
+  render = "chartjs"
+  value = idle_minutes as "Idle minutes"
+  bins = 10
+  scale_value = integer
+end histogram
