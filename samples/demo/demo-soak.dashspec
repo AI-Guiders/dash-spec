@@ -39,8 +39,11 @@
   tab overview as "Overview"
   cards
   peak_concurrent_kpi
+  peak_sparkline
   peak_concurrent_proxy
+  peak_stacked_bar
   activity_5min
+  activity_area
   dau_by_product
   dau_by_product_donut
   end cards
@@ -58,8 +61,22 @@
     usage_date, user_name, app_name
   end bind
   end card
+  card peak_sparkline as "Peak trend"
+  diagram demo_peak_sparkline
+  datasource view demo.v_daily_peak_concurrent_proxy
+  bind
+    usage_date, user_name, app_name
+  end bind
+  end card
   card peak_concurrent_proxy as "Peak concurrent (proxy)"
   diagram demo_peak_concurrent_line
+  datasource view demo.v_daily_peak_concurrent_proxy
+  bind
+    usage_date, user_name, app_name
+  end bind
+  end card
+  card peak_stacked_bar as "Peak by product (stacked)"
+  diagram demo_peak_stacked_bar
   datasource view demo.v_daily_peak_concurrent_proxy
   bind
     usage_date, user_name, app_name
@@ -70,6 +87,16 @@
     activity_slot
   end filters
   diagram demo_activity_5min_line
+  datasource view demo.v_five_minute_activity
+  bind
+    usage_date, user_name, app_name
+  end bind
+  end card
+  card activity_area as "Activity (area)"
+  filters
+    activity_slot
+  end filters
+  diagram demo_activity_area
   datasource view demo.v_five_minute_activity
   bind
     usage_date, user_name, app_name

@@ -1,0 +1,20 @@
+@diagram demo_peak_stacked_bar
+
+chrome
+  use bar_stacked_360
+end chrome
+
+series
+  max = 5
+  other = "Other"
+end series
+
+bar
+  render = "chartjs"
+  x = usage_date
+  x_format = date.short
+  y = peak_concurrent_proxy
+  scale_y = integer
+  series = app_name
+  stacked = true
+end bar
