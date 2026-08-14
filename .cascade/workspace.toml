@@ -1,4 +1,4 @@
-# DashSpec correspondence — design ADRs + product dogfood LUS
+# DashSpec correspondence — design ADRs + reverse anchors
 [workspace.adr]
 auto_include = "linked"
 max_related = 8
@@ -6,6 +6,19 @@ root_dir = "design"
 id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
 
 [workspace.adr.map]
+"src/DashSpec.Host/Plugins/" = [
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "design/DASHSPEC-ADR-0032-extension-blocks-and-plugins.md",
+  "docs/PLUGINS.md",
+]
+"src/DashSpec.Host/Configuration/" = [
+  "design/DASHSPEC-ADR-0019-runtime-directive.md",
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+]
+"src/DashSpec.Host/Endpoints/" = [
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "design/DASHSPEC-ADR-0019-runtime-directive.md",
+]
 "src/DashSpec.Host/" = [
   "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
   "design/DASHSPEC-ADR-0019-runtime-directive.md",
@@ -16,10 +29,17 @@ id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
   "design/DASHSPEC-ADR-0002-layout-and-presentation.md",
   "docs/AUTHORING_GUIDE_RU.md",
 ]
-"src/DashSpec.Plugins/" = [
+"src/DashSpec.Data/" = [
+  "design/DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md",
+  "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
+]
+"src/DashSpec.LanguageServer/" = [
+  "design/DASHSPEC-ADR-0010-spec-ergonomics.md",
+  "docs/AUTHORING_GUIDE_RU.md",
+]
+"src/DashSpec.Abstractions/" = [
+  "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
   "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
-  "design/DASHSPEC-ADR-0032-extension-blocks-and-plugins.md",
-  "docs/PLUGINS.md",
 ]
 "src/" = [
   "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
@@ -38,10 +58,39 @@ id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
 [[workspace.features.feature]]
 id = "dashspec.host.plugins"
 title = "Host microkernel + plugins"
-paths = ["src/DashSpec.Host/", "src/DashSpec.Plugins/"]
+paths = ["src/DashSpec.Host/Plugins/", "src/DashSpec.Host/Endpoints/"]
 docs = [
   "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
   "docs/PLUGINS.md",
 ]
 tags = ["dashspec", "plugins"]
 
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md"
+file = "src/DashSpec.Host/Plugins/ConnectorPluginLoader.cs"
+bracket = "F:src/DashSpec.Host/Plugins/ConnectorPluginLoader.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md"
+file = "src/DashSpec.Host/Endpoints/PluginEndpointMapper.cs"
+bracket = "F:src/DashSpec.Host/Endpoints/PluginEndpointMapper.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0019-runtime-directive.md"
+file = "src/DashSpec.Host/Configuration/DashSpecBootstrap.cs"
+bracket = "F:src/DashSpec.Host/Configuration/DashSpecBootstrap.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0019-runtime-directive.md"
+file = "src/DashSpec.Host/Configuration/DashSpecTomlLoader.cs"
+bracket = "F:src/DashSpec.Host/Configuration/DashSpecTomlLoader.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0003-diagram-kinds-registry.md"
+file = "src/DashSpec.Host/Program.cs"
+bracket = "F:src/DashSpec.Host/Program.cs"
+kind = "documents"
