@@ -1,0 +1,47 @@
+# DashSpec correspondence — design ADRs + product dogfood LUS
+[workspace.adr]
+auto_include = "linked"
+max_related = 8
+root_dir = "design"
+id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
+
+[workspace.adr.map]
+"src/DashSpec.Host/" = [
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "design/DASHSPEC-ADR-0019-runtime-directive.md",
+  "README.md",
+]
+"src/DashSpec.Core/" = [
+  "design/DASHSPEC-ADR-0003-diagram-kinds-registry.md",
+  "design/DASHSPEC-ADR-0002-layout-and-presentation.md",
+  "docs/AUTHORING_GUIDE_RU.md",
+]
+"src/DashSpec.Plugins/" = [
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "design/DASHSPEC-ADR-0032-extension-blocks-and-plugins.md",
+  "docs/PLUGINS.md",
+]
+"src/" = [
+  "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
+  "docs/AUTHORING_GUIDE_RU.md",
+  "README.md",
+]
+"docs/" = ["docs/AUTHORING_GUIDE_RU.md", "docs/DIAGRAM_KINDS_ROADMAP_RU.md"]
+"design/" = ["design/DASHSPEC-ADR-0001-connectors-as-plugins.md"]
+"*" = [
+  "README.md",
+  "docs/AUTHORING_GUIDE_RU.md",
+  "design/DASHSPEC-ADR-0003-diagram-kinds-registry.md",
+]
+
+[workspace.features]
+[[workspace.features.feature]]
+id = "dashspec.host.plugins"
+title = "Host microkernel + plugins"
+paths = ["src/DashSpec.Host/", "src/DashSpec.Plugins/"]
+docs = [
+  "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "docs/PLUGINS.md",
+]
+tags = ["dashspec", "plugins"]
+
