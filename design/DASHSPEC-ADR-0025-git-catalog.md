@@ -8,7 +8,7 @@
 
 ## Context
 
-Specs и `.dashcatalog` могут жить в git, не только в папке рядом со службой. URL репозитория и учётки — **на стороне оператора** (Forge / git server), не в dash-spec repo.
+Specs и `.dashcatalog` могут жить в git, не только в папке рядом со службой. Host вызывает `git clone` / `git fetch` — **любой** remote, который понимает git CLI (GitHub, GitLab, Forge, Gitea, Azure DevOps, внутренний git HTTP). URL и учётки — на стороне оператора, не в dash-spec repo.
 
 ## Decision
 
@@ -17,7 +17,7 @@ Specs и `.dashcatalog` могут жить в git, не только в пап�
 ```toml
 [catalog_git]
 enabled = true
-url = "http://<host>:<port>/git/<org>/<repo>.git"
+url = "https://<git-host>/<org>/<repo>.git"
 branch = "main"
 path = "catalogs/<name>.dashcatalog"
 pull_interval_minutes = 15
@@ -40,3 +40,4 @@ Env: `DASHSPEC_CATALOG_GIT_URL`, `DASHSPEC_CATALOG_GIT_BRANCH`, `DASHSPEC_CATALO
 - Хранение prod URL/credentials в dash-spec git
 - Git credential manager UI
 - Per-entry permissions
+- Поддержка только одного vendor (Forge) — URL generic
