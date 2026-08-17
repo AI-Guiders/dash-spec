@@ -10,6 +10,7 @@ using DashSpec.Host.Services;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Dev;
+using DashSpec.Host.Services.Git;
 using DashSpec.Host.Services.Diagnostics;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
@@ -53,14 +54,9 @@ if (OperatingSystem.IsWindows())
 }
 
 var bootstrap = DashSpecBootstrap.LoadBootstrap(builder.Environment);
-var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
-var envKey = Environment.GetEnvironmentVariable("DASHSPEC_API_KEY");
-if (!string.IsNullOrWhiteSpace(envKey))
-{
-    accessOptions.ApiKey = envKey;
-}
 
 var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
+var catalogState = new CatalogSourceState(catalog);
 var defaultSpecPath = DashSpecBootstrap.ResolveActiveSpecFullPath(catalog);
 var dashSpecToml = DashSpecBootstrap.Load(builder.Environment);
 var defaultSpecText = File.ReadAllText(defaultSpecPath);
@@ -70,8 +66,17 @@ var startupConfigPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
 var startupRuntimeReference = DashSpecParser.ReadRuntimePath(defaultSpecText)
     ?? throw new InvalidOperationException("Default catalog entry .dashspec must declare @runtime.");
 
+var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
+var envKey = Environment.GetEnvironmentVariable("DASHSPEC_API_KEY");
+if (!string.IsNullOrWhiteSpace(envKey))
+{
+    accessOptions.ApiKey = envKey;
+}
+
 builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
 
+builder.Services.AddSingleton(bootstrap);
+builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
 builder.Services.AddSingleton<DashSpecAccessValidator>();
 
@@ -133,6 +138,11 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<DevSpecResolveService>();
     builder.Services.AddHostedService<DevSpecFileWatcherService>();
+}
+
+if (bootstrap.CatalogGit.Enabled && !string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Url))
+{
+    builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
 }
 
 var app = builder.Build();
