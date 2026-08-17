@@ -30,6 +30,8 @@ public static class DashSpecTomlLoader
             root.Dashboard.CatalogPath = overlay.Dashboard.CatalogPath;
         }
 
+        MergeCatalogGit(root.CatalogGit, overlay.CatalogGit);
+
         if (!string.IsNullOrWhiteSpace(overlay.Access.ApiKey))
         {
             root.Access.ApiKey = overlay.Access.ApiKey;
@@ -129,6 +131,49 @@ public static class DashSpecTomlLoader
             yield return new KeyValuePair<string, string?>(
                 $"DashSpec:Plugins:{i}:Assembly",
                 entry.Assembly);
+        }
+    }
+
+    private static void MergeCatalogGit(CatalogGitTomlSection root, CatalogGitTomlSection overlay)
+    {
+        if (overlay.Enabled)
+        {
+            root.Enabled = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Url))
+        {
+            root.Url = overlay.Url;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Branch))
+        {
+            root.Branch = overlay.Branch;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Path))
+        {
+            root.Path = overlay.Path;
+        }
+
+        if (overlay.PullIntervalMinutes > 0)
+        {
+            root.PullIntervalMinutes = overlay.PullIntervalMinutes;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.CacheDirectory))
+        {
+            root.CacheDirectory = overlay.CacheDirectory;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Username))
+        {
+            root.Username = overlay.Username;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.Password))
+        {
+            root.Password = overlay.Password;
         }
     }
 

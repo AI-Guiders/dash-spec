@@ -12,7 +12,7 @@ public sealed class DashboardSessionService(
     IDashboardSpecLoader specLoader,
     ICardRenderer cardRenderService,
     ICardViewState cardViewState,
-    DashSpecHostContext hostContext,
+    CatalogSourceState catalogState,
     IWebHostEnvironment environment) : IDashboardSession
 {
     private DashboardDocument? _document;
@@ -45,7 +45,7 @@ public sealed class DashboardSessionService(
         if (string.IsNullOrWhiteSpace(specRelativePath) &&
             string.IsNullOrWhiteSpace(_activeCatalogEntryId))
         {
-            await LoadCatalogEntryAsync(hostContext.Catalog.Document.DefaultEntryId, cancellationToken, options)
+            await LoadCatalogEntryAsync(catalogState.Current.Document.DefaultEntryId, cancellationToken, options)
                 .ConfigureAwait(false);
             return;
         }
@@ -73,7 +73,7 @@ public sealed class DashboardSessionService(
         CancellationToken cancellationToken = default,
         SpecLoadOptions? options = null)
     {
-        var specFullPath = hostContext.Catalog.ResolveEntrySpecFullPath(entryId);
+        var specFullPath = catalogState.Current.ResolveEntrySpecFullPath(entryId);
         _activeCatalogEntryId = entryId;
         _currentSpecReference = DashSpecBootstrap.ToHostSpecReference(environment.ContentRootPath, specFullPath);
         var text = await File.ReadAllTextAsync(specFullPath, cancellationToken).ConfigureAwait(false);
