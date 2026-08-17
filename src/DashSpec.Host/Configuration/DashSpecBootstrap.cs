@@ -33,6 +33,8 @@ public static class DashSpecBootstrap
 
         ApplyAccessEnvOverride(bootstrap);
 
+        GitCatalogSynchronizer.TryApply(bootstrap, contentRoot);
+
         return bootstrap;
     }
 

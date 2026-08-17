@@ -4,6 +4,8 @@ public sealed class DashSpecTomlRoot
 {
     public DashboardTomlSection Dashboard { get; set; } = new();
 
+    public CatalogGitTomlSection CatalogGit { get; set; } = new();
+
     public AccessTomlSection Access { get; set; } = new();
 
     public Dictionary<string, ConnectorTomlSection> Connectors { get; set; } =
@@ -20,6 +22,27 @@ public sealed class AccessTomlSection
 public sealed class DashboardTomlSection
 {
     public string CatalogPath { get; set; } = string.Empty;
+}
+
+/// <summary>Опциональный git-источник каталога (.dashcatalog + specs). Перекрывает <see cref="DashboardTomlSection.CatalogPath"/>.</summary>
+public sealed class CatalogGitTomlSection
+{
+    public bool Enabled { get; set; }
+
+    public string Url { get; set; } = string.Empty;
+
+    public string Branch { get; set; } = "main";
+
+    /// <summary>Путь к .dashcatalog внутри репозитория.</summary>
+    public string Path { get; set; } = string.Empty;
+
+    public int PullIntervalMinutes { get; set; } = 15;
+
+    public string CacheDirectory { get; set; } = string.Empty;
+
+    public string Username { get; set; } = string.Empty;
+
+    public string Password { get; set; } = string.Empty;
 }
 
 public sealed class ConnectorTomlSection
