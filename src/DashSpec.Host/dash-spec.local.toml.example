@@ -7,10 +7,12 @@ catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.da
 
 # Or env: DASHSPEC_CATALOG_PATH
 
-# Prod / git catalog (оператор заполняет на сервере — не коммитить секреты в dash-spec)
+# Prod / git catalog (оператор на сервере — любой git remote, не коммитить секреты)
 # [catalog_git]
 # enabled = true
-# url = "http://<forge-host>:<port>/git/<org>/<repo>.git"
+# url = "https://github.com/<org>/<repo>.git"
+# url = "https://gitlab.example.com/<group>/<repo>.git"
+# url = "http://<git-host>/<path>/<repo>.git"
 # branch = "main"
 # path = "catalogs/<prod>.dashcatalog"
 # pull_interval_minutes = 15
