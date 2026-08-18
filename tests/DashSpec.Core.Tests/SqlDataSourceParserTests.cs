@@ -93,7 +93,7 @@ public class SqlDataSourceParserTests
               diagram bar
               x = title y
               end bar
-              title = 'DELETE is ok'"
+              datasource sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
               end card
               end report
             end dashboard
@@ -160,13 +160,11 @@ public class SqlDataSourceParserTests
                   diagram bar
                   x = user_sam y
                   end bar
-                  datasource sql
-                  from query [[
+                  datasource sql query [[
                   SELECT user_sam, COUNT(*) AS peak
                   FROM t
                   GROUP BY user_sam
                   ]]
-                  end sql
                   end card
                   end report
                 end dashboard

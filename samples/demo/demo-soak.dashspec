@@ -93,9 +93,6 @@
   end bind
   end card
   card activity_area as "Activity (area)"
-  filters
-    activity_slot
-  end filters
   diagram demo_activity_area
   datasource view demo.v_five_minute_activity
   bind

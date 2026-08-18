@@ -554,9 +554,10 @@ public class SpecModulesTests
               title = "T"
               card a as "A"
               diagram demo_custom_heatmap
-              x = a y
+              x = a
+              y = b
               value = c
-              end demo_custom_heatmap
+              end diagram
               datasource view dbo.t
               end card
               end report

@@ -263,7 +263,7 @@ internal static class DashboardShellParser
     {
         var assignChrome = assign;
 
-        if (reader.TryKeyword("dashboard"))
+        if (reader.TryKeywordSameLine("dashboard"))
         {
             if (assignChrome)
             {
@@ -277,7 +277,7 @@ internal static class DashboardShellParser
             return;
         }
 
-        if (reader.TryKeyword("chrome"))
+        if (reader.TryKeywordSameLine("chrome"))
         {
             var chrome = FiltersChromeParser.Parse(reader);
             if (assignChrome)

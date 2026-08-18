@@ -14,7 +14,7 @@ internal static class TabParser
             label = reader.ReadString();
         }
 
-        if (reader.TryKeyword("dashspec"))
+        if (reader.TryKeywordSameLine("dashspec"))
         {
             var path = reader.ReadString();
             return new TabDefinition(id, label, [], path);
