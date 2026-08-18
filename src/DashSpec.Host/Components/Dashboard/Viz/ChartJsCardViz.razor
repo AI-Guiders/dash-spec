@@ -35,15 +35,9 @@ else
     [Inject] private OnClickInteractionService Interactions { get; set; } = default!;
 
     private static bool IsEmpty(ChartPayload chart) =>
-        chart.Gauge is not null
+        chart.Points is { Count: > 0 }
             ? false
-            : chart.Boxes is { Count: > 0 }
-                ? false
-                : chart.Treemap is { Count: > 0 }
-                    ? false
-                    : chart.Points is { Count: > 0 }
-                        ? false
-                        : chart.Labels.Count == 0;
+            : chart.Labels.Count == 0;
 
     private static string ResolveChartJsType(string? diagramKind) =>
         diagramKind?.ToLowerInvariant() switch
@@ -52,10 +46,6 @@ else
             "pie" => "pie",
             "donut" or "doughnut" => "doughnut",
             "scatter" => "scatter",
-            "box" or "boxplot" => "boxplot",
-            "treemap" => "treemap",
-            "gauge" => "gauge",
-            "windrose" or "wind_rose" => "polarArea",
             "area" or "sparkline" or "line" => "line",
             _ => "line",
         };

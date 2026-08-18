@@ -128,10 +128,7 @@ public static class QueryCompiler
     {
         selectList = string.Empty;
 
-        var isScalarKind =
-            string.Equals(diagram.Kind, "number", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(diagram.Kind, "gauge", StringComparison.OrdinalIgnoreCase);
-        if (!isScalarKind ||
+        if (!string.Equals(diagram.Kind, "number", StringComparison.OrdinalIgnoreCase) ||
             !DiagramBindings.TryGetColumn(diagram, "value", out var measure))
         {
             return false;
