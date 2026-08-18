@@ -8,16 +8,6 @@
     palette = "palettes/demo-apps.dashpalette"
   end configuration
 
-  !include "diagrams/period-peak-by-app-bar.dashdiagram"
-  !include "diagrams/peak-apps-heatmap.dashdiagram"
-  !include "diagrams/idle-table.dashdiagram"
-  !include "diagrams/idle-histogram.dashdiagram"
-  !include "diagrams/idle-vs-peak-scatter.dashdiagram"
-  !include "diagrams/idle-by-app-box.dashdiagram"
-  !include "diagrams/peak-by-app-treemap.dashdiagram"
-  !include "diagrams/peak-gauge.dashdiagram"
-  !include "diagrams/peak-by-app-windrose.dashdiagram"
-
   wiring
     use palette demo_apps
   end wiring

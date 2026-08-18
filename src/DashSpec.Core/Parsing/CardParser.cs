@@ -219,7 +219,7 @@ internal static class CardParser
 
             if (reader.TryKeyword("filters"))
             {
-                if (reader.TryKeyword("host"))
+                if (reader.TryKeywordSameLine("host"))
                 {
                     var hostCardId = reader.ReadIdent();
                     if (filterHostCardId is not null)

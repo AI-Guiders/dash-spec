@@ -67,9 +67,7 @@ public class QueryCompilerTests
               end configuration
               report
               title = "T"
-              filter date usage_date
-              column = usage_date as "Дата" default
-              end filter
+              filter date usage_date on usage_date as "Дата" default -7d..today
               filters dashboard
               usage_date
               end dashboard
@@ -171,9 +169,7 @@ public class QueryCompilerTests
             @dashboard t
               report
               title = "T"
-              filter top row_limit as "Limit"
-              default = 250
-              end filter
+              filter top row_limit as "Limit" default 250
               card events as "Events"
               filters
               row_limit
@@ -247,9 +243,7 @@ public class QueryCompilerTests
               report
               title = "T"
               filter date usage_date on usage_date as "Дата" default -7d..today
-              filter top row_limit as "Limit"
-              default = 100
-              end filter
+              filter top row_limit as "Limit" default 100
               filters dashboard
               usage_date
               end dashboard

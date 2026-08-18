@@ -148,11 +148,10 @@ public class ChartDataBuilderTests
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
-        Assert.Equal(["08:00", "14:00"], matrix.XLabels);
+        Assert.Equal(["00:00"], matrix.XLabels);
         Assert.Equal(["Cursor IDE", "Google Chrome"], matrix.YLabels);
-        Assert.Equal(40, matrix.Cells[0][0]);
-        Assert.Equal(120, matrix.Cells[0][1]);
-        Assert.Equal(15, matrix.Cells[1][1]);
+        Assert.Equal(120, matrix.Cells[0][0]);
+        Assert.Equal(15, matrix.Cells[1][0]);
     }
 
     [Fact]

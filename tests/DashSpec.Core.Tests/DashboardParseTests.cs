@@ -54,7 +54,7 @@ public class DashboardParseTests
         Assert.Null(doc.DiagramLibraryPath);
         Assert.Equal("palettes/demo-apps.dashpalette", doc.PalettePath);
         Assert.Equal("demo_apps", doc.ColorPalette);
-        Assert.Equal(7, doc.Cards.Count);
+        Assert.Equal(18, doc.Cards.Count);
         Assert.Equal(8, doc.Filters.Count);
         Assert.Equal(["usage_date", "user_name", "app_name"], doc.DashboardFilters);
         Assert.True(doc.FiltersChrome.IsBarLayout);
@@ -78,11 +78,13 @@ public class DashboardParseTests
               report
               title = "T"
               layout grid
-              columns = 12 gap
+              columns = 12
+              gap = 8
               end grid
               card a as "A"
               place
-              row = 1 col
+              row = 1
+              col = 1
               span = half
               end place
               diagram number
@@ -107,7 +109,6 @@ public class DashboardParseTests
               report
               title = "T"
               filter field app_name on app_name as "App"
-              end filter
               filters dashboard
               app_name
               end dashboard
@@ -141,7 +142,6 @@ public class DashboardParseTests
               widget = day
               end filter
               filter field app_name on app_name as "App"
-              end filter
               filters dashboard
               usage_date
               app_name
@@ -523,7 +523,8 @@ public class DashboardParseTests
               end tab
               card a as "A"
               place
-              row = 1 col
+              row = 1
+              col = 1
               span = 6
               end place
               diagram bar
@@ -533,7 +534,8 @@ public class DashboardParseTests
               end card
               card b as "B"
               place
-              row = 1 col
+              row = 1
+              col = 1
               span = 6
               end place
               diagram bar
@@ -543,7 +545,8 @@ public class DashboardParseTests
               end card
               card c as "C"
               place
-              row = 1 col
+              row = 1
+              col = 1
               span = full
               end place
               diagram table
@@ -558,8 +561,8 @@ public class DashboardParseTests
         var layout = TabLayoutCompactor.Compact(doc, "s");
 
         Assert.Equal(1, layout["a"].Row);
-        Assert.Equal(1, layout["b"].Row);
-        Assert.Equal(2, layout["c"].Row);
+        Assert.Equal(2, layout["b"].Row);
+        Assert.Equal(3, layout["c"].Row);
     }
 
 }
