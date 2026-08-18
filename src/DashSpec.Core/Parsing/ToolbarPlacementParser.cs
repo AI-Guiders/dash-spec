@@ -18,24 +18,25 @@ internal static class ToolbarPlacementParser
     {
         var (endKind, endId) = ResolveEndKind(blockName);
 
-        if (reader.IsAt(TokenKind.LBracket))
-        {
-            onBoard(LayoutParser.ParseBoardRows(reader));
-            return;
-        }
-
         if (reader.IsOnNewline())
         {
-            BlockSyntax.BeginBlock(reader);
             reader.SkipNewlines();
             if (reader.IsAt(TokenKind.LBracket))
             {
+                BlockSyntax.BeginBlock(reader);
                 onBoard(LayoutParser.ParseBoardRows(reader, endKind, endId));
                 BlockSyntax.ExpectBlockEnd(reader, endKind, endId);
                 return;
             }
 
+            BlockSyntax.BeginBlock(reader);
             onFlatNames(ParseNameListUntilEnd(reader, endKind, endId, blockName));
+            return;
+        }
+
+        if (reader.IsAt(TokenKind.LBracket))
+        {
+            onBoard(LayoutParser.ParseBoardRows(reader));
             return;
         }
 
