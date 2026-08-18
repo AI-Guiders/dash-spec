@@ -16,7 +16,7 @@ public sealed class PhraseTemplateTests
               title = "T"
               card c as "C"
               on click
-              from = y, target
+              invoke drill_down(from = y, target = user_name)
               end click
               diagram heatmap
               x = a y
@@ -39,6 +39,7 @@ public sealed class PhraseTemplateTests
     {
         var options = new DashSpecParseOptions
         {
+            KnownActionHandlers = new HashSet<string>(["csv_export"], StringComparer.OrdinalIgnoreCase),
             PhraseTemplates =
             [
                 new PhraseTemplateDescriptor(
@@ -59,8 +60,7 @@ public sealed class PhraseTemplateTests
               title = "T"
               card c as "C"
               on click
-              export card as csv with delimiter "
-              "
+              invoke csv_export(format = csv, delimiter = ";")
               end click
               diagram heatmap
               x = a y

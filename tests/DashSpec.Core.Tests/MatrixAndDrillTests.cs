@@ -45,7 +45,7 @@ public sealed class DrillDownPhraseTests
               title = "T"
               card c as "C"
               on click
-              drill to detail with user_name from y
+              invoke drill_down(tab = detail, target = user_name, from = y)
               end click
               diagram heatmap
               x = a y

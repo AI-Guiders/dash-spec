@@ -22,10 +22,23 @@ internal static class PaletteModuleParser
         Dictionary<string, string> props;
         if (reader.TryKeyword("palette"))
         {
-            reader.Expect(TokenKind.LBrace);
-            reader.SkipNewlines();
-            props = ParsePaletteMappings(reader, constants, wrapped: true);
-            reader.Expect(TokenKind.RBrace);
+            if (reader.IsOnNewline())
+            {
+                BlockSyntax.BeginBlock(reader);
+                reader.SkipNewlines();
+                props = ParsePaletteMappingsUntilEnd(reader, constants, "palette");
+            }
+            else if (reader.IsAt(TokenKind.LBrace))
+            {
+                reader.Expect(TokenKind.LBrace);
+                reader.SkipNewlines();
+                props = ParsePaletteMappings(reader, constants, wrapped: true);
+                reader.Expect(TokenKind.RBrace);
+            }
+            else
+            {
+                props = ParsePaletteMappings(reader, constants, wrapped: false);
+            }
         }
         else
         {
@@ -120,6 +133,48 @@ internal static class PaletteModuleParser
             reader.SkipNewlines();
         }
 
+        return values;
+    }
+
+    private static Dictionary<string, string> ParsePaletteMappingsUntilEnd(
+        TokenReader reader,
+        IReadOnlyDictionary<string, string> constants,
+        string endKind)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        while (!BlockSyntax.IsBlockEnd(reader, endKind) && !reader.IsEof)
+        {
+            reader.SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(reader, endKind))
+            {
+                break;
+            }
+
+            while (!reader.IsAt(TokenKind.Newline) &&
+                   !reader.IsEof &&
+                   !BlockSyntax.IsBlockEnd(reader, endKind))
+            {
+                var key = reader.ReadPropertyKey(allowQuoted: true);
+                reader.Expect(TokenKind.Eq);
+
+                if (key.Equals("colors", StringComparison.OrdinalIgnoreCase))
+                {
+                    values[key] = ReadColorsProperty(reader, constants);
+                    continue;
+                }
+
+                var operand = ReadColorOperand(reader);
+                values[key] = PaletteColorResolver.ResolveOperand(
+                    operand,
+                    constants,
+                    $"palette entry '{key}'");
+            }
+
+            reader.SkipNewlines();
+        }
+
+        BlockSyntax.ExpectBlockEnd(reader, endKind);
         return values;
     }
 

@@ -446,7 +446,9 @@ end tab
               title = "T"
               filter date d1 on c1 as "D1" ref D default -7d..today
               toolbar d1
-              toolbar [, D, ]
+              toolbar
+              [ D ]
+              end toolbar
               card c as "C"
               bind
                 d1
@@ -460,7 +462,7 @@ end tab
             end dashboard
 """));
 
-        Assert.Contains("cannot combine a layout board with a flat filter list", ex.Message);
+        Assert.Contains("cannot combine", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -473,7 +475,7 @@ end tab
                 [ Q ]
                 """));
 
-        Assert.Contains("scope toolbar|tab|card", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("requires scope", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

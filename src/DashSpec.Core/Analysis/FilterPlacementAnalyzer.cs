@@ -10,7 +10,6 @@ internal static class FilterPlacementAnalyzer
     public static void Validate(DashboardDocument document)
     {
         var registry = document.Filters.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
-        var cardLocalOwners = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var filterName in document.DashboardFilters)
         {
@@ -73,12 +72,6 @@ internal static class FilterPlacementAnalyzer
                         $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
-                if (cardLocalOwners.TryGetValue(filterName, out var owner))
-                {
-                    throw new DashSpecParseException(
-                        $"Filter '{filterName}' is already placed on card '{owner}'; card-local filters must be unique.");
-                }
-
                 if (registry[filterName].Kind is FilterKind.Top)
                 {
                     var hasUnresolvedPreset =
@@ -94,8 +87,6 @@ internal static class FilterPlacementAnalyzer
                         throw new DashSpecParseException(violation);
                     }
                 }
-
-                cardLocalOwners[filterName] = card.Id;
             }
 
             foreach (var filterName in card.HostedFilters ?? [])

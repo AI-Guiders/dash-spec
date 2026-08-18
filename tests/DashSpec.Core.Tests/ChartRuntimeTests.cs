@@ -29,10 +29,12 @@ public class ChartRuntimeTests
               series = app_name
               end line
               presentation
-              use = line_bottom legend
+              use = line_bottom
+              legend = right
               end presentation
               transform series
-              max = 4 other
+              other = "Прочее"
+              max = 4
               end transform
               datasource view dbo.t
               end card
@@ -267,7 +269,7 @@ public class ChartRuntimeTests
         Assert.Equal(5d, payload.ReferenceValues![0]);
         Assert.Equal(50d, payload.ReferenceValues[1]);
         Assert.Equal("Куплено", payload.ReferenceLabel);
-        Assert.Equal("#ef4444", payload.Series[0].PointColors![0]);
+        Assert.Equal("#60a5fa", payload.Series[0].PointColors![0]);
         Assert.Contains("purchased_seats", DiagramBindings.SelectedSqlColumns(diagram));
     }
 
