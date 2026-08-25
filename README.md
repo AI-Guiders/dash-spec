@@ -267,4 +267,4 @@ dotnet test DashSpec.slnx
 
 ## Лицензия
 
-[MIT](LICENSE) — Copyright (c) 2026 AI Guiders
+Software: [MIT](LICENSE) · Ethical use: [policy](https://github.com/AI-Guiders/licensing/blob/main/docs/ethical-use.md) — Copyright (c) 2026 AI-Guiders
