@@ -1,229 +1,259 @@
-# DASHSPEC-ADR-0029: Inspect (tooltip) vs diagram data bindings
+# DASHSPEC-ADR-0029: Tooltip entity + template grammar
 
 | | |
 |---|---|
 | **Status** | Proposed |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0027](DASHSPEC-ADR-0027-single-declaration-and-layout-ids.md) |
+| **Date** | 2026-08-27 |
+| **Supersedes** | earlier draft of this ADR (inspect chrome only; `tooltip = col` on heatmap) |
+| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md) |
+| **Pattern borrow** | Cascade IDE [ADR-0017](../cascade-ide/docs/adr/0017-multi-window-workspace-and-agent-surfaces.md) (`presentation` string + `[presentation_grammar]`) · [ADR-0032](../cascade-ide/docs/adr/0032-hud-banner-configuration-and-grammar.md) (HUD banner template intent) |
 
 ## Context
 
-Heatmap tooltip сегодня размазан по трём слоям:
+Heatmap «tooltip» сегодня — не сущность, а размазанный контракт:
 
-1. **Spec / diagram** — `tooltip = peak_apps as "Состав в пике"`, плюс `tooltip_format`, `tooltip_split` в `diagram.Properties` ([ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md)).
-2. **Core** — `MatrixPayloadBuilder` склеивает и merge-ит **display strings** в payload ([`MatrixPayloadBuilder.cs`](../src/DashSpec.Core/Runtime/MatrixPayloadBuilder.cs)).
-3. **Host** — `HeatmapView` рисует popover на `@onmouseenter` ad hoc ([`HeatmapView.razor`](../src/DashSpec.Host/Components/Charts/HeatmapView.razor)).
+1. **Diagram** — `tooltip = peak_apps as "…"`, плюс `tooltip_time` / `tooltip_format` / `tooltip_split` в `heatmap { }` ([ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md)).
+2. **Core** — `MatrixPayloadBuilder.FormatCellTooltip` склеивает time + body через `\n` (магия в коде).
+3. **Host** — hover popover / `show below … from tooltip` читают уже склеенную строку.
 
-Подпись колонки, формат списка и hover-UI — **presentation**, но живут рядом с SQL binding. [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) уже отделяет `diagram` (data) от `presentation` (chrome) для line/bar — heatmap tooltip не довели до того же канона.
+Проблемы:
 
-Отдельно планируются **actions** (`on click` → `goto tab`, `set filter`) — [follow-up ADR actions]. Hover для popover и click для drill-down — **разные intent**, но один DOM event surface; смешивать их в одном «behaviour mini-PL» не нужно.
+- measure (`x`/`y`/`value`) и inspect-payload живут в одном блоке диаграммы;
+- drill-down формат (list/split/label) — presentation, но пишется рядом с SQL binding;
+- warm stub с `NULL` tooltip-колонками даёт UX «Нет данных…», хотя ячейка value есть;
+- нет общего способа собрать текст из **нескольких** колонок без хардкода.
+
+Нужен канон как у CIDE `presentation`: **именованная сущность + строка-шаблон + опциональная грамматика токенов + EBNF**, узкий ручной парсер, без mini-PL.
 
 ## Decision
 
-### 1. Два intent на pointer events
+### 1. Три слоя (orthogonal)
 
-| Intent | Событие | Слой | Пример |
-|--------|---------|------|--------|
-| **inspect** | hover (focus) | presentation + viz | popover «Состав в пике» |
-| **act** | click | behaviour (отдельный ADR) | `goto tab detail`, `set user_name from y` |
+| Слой | Сущность | Пример |
+|------|----------|--------|
+| **Measure** | `heatmap` / chart kind | `x`, `y`, `value` |
+| **Tooltip** | `@tooltip` / `.dashtooltip` | `template`, `label`, `format`, `split` |
+| **Inspect / act** | `inspect` + `on click` | hover popover; `show below list from tooltip` |
 
-**inspect** — read-only, без side effects на filter state.  
-**act** — mutation / navigation.  
+- **Нет блока tooltip** → value-only heatmap: hover-detail только по value (без list/inspect UX), `from tooltip` в card — **ошибка resolve**.
+- **Есть tooltip, ячейка после render пустая** → нет hover inspect / пустой list (не «Нет данных для выбранной ячейки»).
+- Warm stub без drill-down колонок → **не объявлять** tooltip в spec (не маскировать NULL в SQL «для совместимости»).
 
-Default: если задан `inspect.tooltip`, viz показывает popover on hover; отдельный `on hover` в behaviour **не вводим**.
+### 2. Tooltip — first-class module
 
-### 2. Data vs inspect в spec
-
-**Diagram** — только **data binding** (колонка в SELECT):
-
-```text
-heatmap {
-  x = usage_date as "День"
-  y = user_sam as "Пользователь"
-  value = peak_concurrent_apps as "Разных ПО"
-  tooltip = peak_apps
-}
-```
-
-- `tooltip = <column>` — optional column binding, как `x`/`y`/`value`.
-- **`as "…"` на `tooltip`** — deprecated; label → `inspect`.
-
-**Presentation** — chrome + inspect:
+Файл `.dashtooltip` (зеркало `.dashpresentation` / `.dashdiagram`):
 
 ```text
-presentation {
-  use = heatmap_tall
-  inspect {
-    tooltip {
-      label = "Состав в пике"
-      format = list
-      split = ", "
-    }
-  }
-}
+@tooltip peak_hosts
+
+label = "Одновременно в пике"
+format = list
+split = "; "
+template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
 ```
 
 | Поле | Слой | Смысл |
 |------|------|--------|
-| `tooltip = peak_apps` | diagram | колонка данных |
-| `inspect.tooltip.label` | presentation | заголовок секции popover |
-| `inspect.tooltip.format` | presentation | `list` \| `inline` |
-| `inspect.tooltip.split` | presentation | split для list (default `, `) |
+| `template` | data → text | SSOT содержимого ячейки; placeholders = SQL columns |
+| `label` | presentation | заголовок секции inspect / list |
+| `format` | presentation | `list` \| `inline` (default `list`, если задан template) |
+| `split` | presentation | разделитель элементов list после render (default `, `) |
 
-Порядок merge ([ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md)): **`.dashpresentation` preset → inline `presentation` → deprecated diagram props → defaults**.
+**Shorthand:** `source = peak_users_by_host` ≡ `template = "{peak_users_by_host}"`.  
+`source` и `template` вместе — parse error, если не эквивалентны.
 
-### 3. Файл `.dashpresentation`
+Регистрация:
 
-Расширяем module (flat properties + nested blocks):
+- `!include "tooltips/*.dashtooltip"` на tab/dashboard;
+- или `include tooltip "…"` внутри `@diagram` module;
+- или inline `tooltip <id> … end tooltip` в diagram module.
+
+### 3. Wiring: `inspect` на diagram / card
 
 ```text
-@presentation heatmap_stakeholder_tooltip
+@diagram lus_peak_concurrent_heatmap
 
-inspect {
-  tooltip {
-    label = "Состав в пике"
-    format = list
-    split = ", "
-  }
-}
+include tooltip "../../tooltips/peak-hosts.dashtooltip"
+
+chrome
+  use heatmap_tall
+end chrome
+
+heatmap
+  x = usage_date
+  y = app_name
+  value = peak_concurrent_proxy
+  # no tooltip_* here
+end heatmap
+
+inspect
+  use tooltip peak_hosts
+end inspect
 ```
 
-На `@diagram` module:
+На card (override):
 
 ```text
-@diagram lus_stakeholder_peak_apps_heatmap
-
-include presentation "<presentation/heatmap_tall>"
-include presentation "presentations/stakeholder-peak-apps-tooltip.dashpresentation"
-
-heatmap {
-  …
-  tooltip = peak_apps
-}
-```
-
-`height` остаётся в presentation preset ([`heatmap_tall.dashpresentation`](../src/DashSpec.Core/stdlib/presentation/heatmap_tall.dashpresentation)); tooltip inspect — отдельный preset или inline.
-
-### 4. Core / Host pipeline
-
-**До (сейчас):** SQL rows → `MatrixPayloadBuilder` форматирует tooltip **strings** → Host только показывает.
-
-**После:**
-
-1. **Query** — SELECT включает tooltip column, если `diagram` declares `tooltip`.
-2. **Payload** — `MatrixPayload.Tooltips` хранит **raw cell values** (или `string[]` после split на data boundary), не финальный UI text.
-3. **`InspectPresentation`** (расширение `MatrixPresentation`) — label, format, split, axis formats, color scale.
-4. **Viz plugin** — `OnInspect(hoverContext)` рендерит popover; heatmap/bar/table единый контракт inspect.
-
-`MatrixPresentation.FromCard` читает `inspect.tooltip.*` из merged presentation, **не** `tooltip_format` из diagram.
-
-### 5. Card-level override
-
-На card (optional):
-
-```text
-card peak_apps {
-  title = "№2 …"
-  presentation {
-    inspect {
-      tooltip { label = "Состав в пике" format = list }
-    }
+card peak {
+  inspect { use tooltip peak_hosts }
+  on click {
+    show below as list from tooltip
   }
-  diagram lus_stakeholder_peak_apps_heatmap
+  diagram lus_peak_concurrent_heatmap
   …
 }
 ```
 
-Merge: diagram-module presentation → card presentation override.
+`from tooltip` без id → **inspect tooltip** карточки/диаграммы.  
+`from tooltip peak_hosts` → явная ссылка (на будущее; v1 достаточно default).
 
-### 6. Deprecated (transitional)
+Merge: diagram-module inspect → card inspect override (card wins).
+
+### 4. Template grammar (a-la CIDE `presentation`)
+
+Паттерн как у [CIDE ADR-0017](../cascade-ide/docs/adr/0017-multi-window-workspace-and-agent-surfaces.md): строка + **настраиваемые токены грамматики** + EBNF в ADR; реализация — узкий ручной парсер + тесты (не ANTLR, пока DSL узкий — см. CIDE ADR-0032).
+
+#### 4.1 Default tokens
+
+| Token | Default | Смысл |
+|-------|---------|--------|
+| `open_placeholder` / `close_placeholder` | `{` / `}` | границы имени колонки |
+| `escape` | `\\` | экранирование следующего символа (в т.ч. `{`, `}`, `\\`) |
+| `newline_escape` | `\n` | литеральный перевод строки в template string |
+
+Опциональная секция на `@tooltip` (или `@tooltipgrammar` / stdlib preset — follow-up, если понадобится менять маркеры без правки шаблонов):
+
+```text
+@tooltip peak_hosts
+
+grammar
+  open = "{"
+  close = "}"
+  escape = "\\"
+end grammar
+
+template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
+…
+```
+
+v1: секция `grammar` **опциональна**; без неё — defaults выше. Менять `open`/`close` на `[`/`]` допустимо (тест + один stdlib preset), но **не** требуется для LUS.
+
+#### 4.2 EBNF (template body)
+
+```ebnf
+template   ::= { fragment }
+fragment   ::= literal | placeholder | escape_seq | newline_esc
+placeholder ::= OPEN ident CLOSE
+literal    ::= any char except OPEN, ESCAPE-prefix, and the two-char newline_esc
+escape_seq ::= ESCAPE ( OPEN | CLOSE | ESCAPE | "n" )
+newline_esc ::= "\\" "n"     (* when ESCAPE is backslash — sugar; same as escape_seq with n *)
+ident      ::= (letter | "_") { letter | digit | "_" }
+OPEN/CLOSE/ESCAPE ::= from grammar tokens (defaults "{", "}", "\\")
+```
+
+Семантика render (одна SQL row):
+
+1. Каждый `placeholder` → `FormatCell(row[ident])` (тот же formatter, что heatmap labels: null/DBNull → `""`).
+2. Склейка fragments → raw tooltip string ячейки.
+3. Если результат `IsNullOrWhiteSpace` → ячейка **без** tooltip payload (`null` в matrix), UI не показывает inspect.
+4. `format = list`: Host/Presenter сплитает **body** по `split` (как сейчас); если raw содержит `\n`, первая линия может быть headline (peak time) — **только** если author так заложил в template (`"{time}\n{list}"`), не магия Core.
+
+#### 4.3 SELECT columns
+
+`DiagramBindings.SelectedSqlColumns` / query builder:
+
+- всегда: measure roles (`x`/`y`/`value`/…);
+- плюс **все** `ident` из resolved tooltip template (и time больше не отдельное свойство).
+
+### 5. Pointer intents (unchanged from ADR-0028)
+
+| Intent | Trigger | Spec |
+|--------|---------|------|
+| Inspect | hover | resolved tooltip → popover / hover-detail |
+| Select + show | click | `on click { show … from tooltip\|cell }` |
+| Navigate | click | `set` / `goto` |
+
+Отдельный `on hover` **не** вводим.
+
+### 6. Deprecated (transitional, one release)
 
 | Было | Стало |
 |------|--------|
-| `tooltip = col as "Label"` | `tooltip = col` + `inspect.tooltip.label` |
-| `tooltip_format` / `tooltip_split` в `heatmap { }` | `presentation.inspect.tooltip` |
-| pre-merged strings в payload | raw values + inspect render |
+| `tooltip = col as "Label"` в `heatmap { }` | `@tooltip` + `template`/`source` + `label` + `inspect { use tooltip … }` |
+| `tooltip_time = col` | `{col}` в `template` |
+| `tooltip_format` / `tooltip_split` в heatmap | поля `@tooltip` |
+| Core `FormatCellTooltip` time+`\n`+body | render template |
 
-Parser v1: deprecated form still parses; lint warns.
+Parser v1: legacy heatmap props **ещё парсятся** → синтетический anonymous tooltip (`id = "__legacy"`) + warning/lint. Следующий minor: parse error.
 
-### 7. Relation to actions (follow-up)
+### 7. LUS examples (target authoring)
 
-```text
-card peak_apps {
-  title = "№2 …"
-  presentation {
-    inspect { tooltip { label = "Состав в пике" format = list } }
-  }
-  on click {
-    set usage_date from x
-    set user_name from y
-    goto tab detail
-  }
-  diagram lus_stakeholder_peak_apps_heatmap
-  …
-}
-```
-
-- hover → inspect (viz)
-- click → behaviour
-- **не** `.dashbehaviour` для tooltip v1
-
-## Example (LUS stakeholder heatmap)
-
-**`presentations/stakeholder-peak-apps-tooltip.dashpresentation`:**
+**`tooltips/peak-hosts.dashtooltip`:**
 
 ```text
-@presentation stakeholder_peak_apps_tooltip
+@tooltip peak_hosts
 
-inspect {
-  tooltip {
-    label = "Состав в пике"
-    format = list
-    split = ", "
-  }
-}
+label = "Одновременно в пике"
+format = list
+split = "; "
+template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
 ```
 
-**`diagrams/stakeholder/stakeholder-peak-apps-heatmap.dashdiagram`:**
+**`tooltips/peak-apps.dashtooltip`:**
 
 ```text
-@diagram lus_stakeholder_peak_apps_heatmap
+@tooltip peak_apps
 
-include presentation "<presentation/heatmap_tall>"
-include presentation "../../presentations/stakeholder-peak-apps-tooltip.dashpresentation"
-
-heatmap {
-  render = "css-grid"
-  x = usage_date as "День"
-  y = user_sam as "Пользователь"
-  value = peak_concurrent_apps as "Разных ПО"
-  tooltip = peak_apps
-  x_format = date.short
-  y_format = user.short
-  color_scale = heat
-}
+label = "Состав в пике"
+format = list
+split = ", "
+source = peak_apps
 ```
 
-Follow-up: `x_format`, `y_format`, `color_scale` → `presentation` / inspect axes (не блокирует tooltip split).
+**`diagrams/overview/peak-concurrent-heatmap.dashdiagram`:** heatmap только measure + `inspect { use tooltip peak_hosts }`.
 
-## Non-goals
+### 8. Pipeline
 
-- expressions / templates в tooltip (`{user}` кроме legend-style `{max}` на card)
-- `on hover` в behaviour для navigation
-- `.dashbehaviour` file v1
-- Chart.js tooltip для heatmap (остаётся css-grid viz или unified inspect port)
+1. Parse/register `@tooltip` → `TooltipDefinition`.
+2. Resolve card: attach effective `TooltipDefinition` (inspect ref).
+3. Query: SELECT includes placeholder columns.
+4. Payload: per cell render template → `MatrixPayload.Tooltips` (raw string or null).
+5. `MatrixPresentation`: label/format/split from tooltip entity (не из diagram props).
+6. Host viz / `CardSelectionPresenter`: без специальной time-логики; headline из первой линии только если template её положил.
+
+Validate:
+
+- `show … from tooltip` ⇒ card has resolved tooltip;
+- `inspect { use tooltip X }` ⇒ `X` registered;
+- unknown placeholder ident ⇒ parse/resolve error (fail closed).
+
+## Non-goals (v1)
+
+- expressions / filters в template (`{col|upper}`, тернарники, join);
+- `on hover` behaviour block;
+- Chart.js native tooltip для matrix-canvas (остаётся Host inspect surface);
+- генератор парсера из EBNF / ANTLR;
+- отдельный `.dashbehaviour` для tooltip.
 
 ## Consequences
 
-- **Core:** `InspectPresentation` / extend `PresentationBlock`; `PropertySchemas` + nested `inspect`; payload raw tooltips.
-- **Host:** `HeatmapView` → inspect через viz API; меньше string logic в Core builder.
-- **LUS:** вынести tooltip label/format из `.dashdiagram` в `.dashpresentation`.
-- **Amends [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md):** `as` на `tooltip` deprecated; label в inspect.
+- **Core:** `TooltipDefinition`, `TooltipModuleParser`, include kind `tooltip` / `.dashtooltip`, template lexer/renderer, resolve + semantic validate; deprecate heatmap tooltip props.
+- **Host:** `MatrixPresentation.FromCard` читает entity; убрать ad-hoc time split из payload builder.
+- **LUS:** вынести tooltip в `.dashtooltip`; heatmap modules — measure-only + inspect.
+- **Amends** [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md): `tooltip` column binding на heatmap deprecated.
+- **Amends** [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md): `from tooltip` означает entity, не diagram property.
+- **Replaces** прежний фокус этого ADR («только вынести format/label в presentation.inspect»).
 
-## Implementation plan
+## Implementation plan (after Accept)
 
-1. Schema `presentation.inspect.tooltip` + parser (card, diagram module, `@presentation` file).
-2. `MatrixPresentation` / merge из presentation blocks.
-3. Payload builder: raw tooltip values; move format/split to Host inspect.
-4. Lint: warn on diagram `tooltip_format` / `tooltip as`.
-5. Migrate LUS stakeholder heatmaps.
+1. ADR review → Status **Accepted**.
+2. Model + parser + `!include` / `include tooltip` + inline block.
+3. Template grammar + renderer + tests (incl. escape / empty → null).
+4. Resolve/validate wiring; legacy synthesizer.
+5. Host presentation path; remove Core time-merge magic.
+6. Migrate LUS heatmaps; soak Host.
+
+## Open questions
+
+- Нужен ли v1 отдельный `@tooltipgrammar` / stdlib preset, или достаточно optional `grammar { }` внутри tooltip (как локальный `[presentation_grammar]`)?
+- Headline convention: оставить «первая линия до `\n` = peak time» в Presenter как **документированный** contract template shape, или ввести явный `headline_template` позже?
