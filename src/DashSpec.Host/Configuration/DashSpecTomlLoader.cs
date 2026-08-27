@@ -175,6 +175,21 @@ public static class DashSpecTomlLoader
         {
             root.Password = overlay.Password;
         }
+
+        if (!string.IsNullOrWhiteSpace(overlay.SyncWebhookSecret))
+        {
+            root.SyncWebhookSecret = overlay.SyncWebhookSecret;
+        }
+
+        if (overlay.SyncAllowUnsigned)
+        {
+            root.SyncAllowUnsigned = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(overlay.SyncRepoSlug))
+        {
+            root.SyncRepoSlug = overlay.SyncRepoSlug;
+        }
     }
 
     private static string ToPascalCase(string value)
