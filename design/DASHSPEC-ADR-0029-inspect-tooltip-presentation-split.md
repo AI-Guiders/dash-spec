@@ -103,9 +103,9 @@ end inspect
 
 Регистрация tooltip: `!include "*.dashtooltip"` · `include tooltip` · inline в module.
 
-### 5. Deprecated (один release)
+### 5. Breaking change (no legacy)
 
-Heatmap `tooltip` / `tooltip_time` / `tooltip_format` / `tooltip_split` / `as` на tooltip-колонке → legacy synthesizer (`variables` + string + `inspect` chrome) + lint; потом error.
+Единственный потребитель — LUS. **Сразу** убираем heatmap `tooltip` / `tooltip_time` / `tooltip_format` / `tooltip_split` / `as` на tooltip-колонке: parse error, без synthesizer и без transitional release. Спеки мигрируем в том же ship.
 
 ### 6. Pipeline
 
@@ -130,5 +130,5 @@ Parse `@tooltip` (content) + `inspect`/`show` (presentation) → resolve → SEL
 
 1. Accept.
 2. Tooltip module (variables + string) + inspect block (use/label/as/split).
-3. Move format/split/label off diagram props / MatrixPresentation-from-diagram.
-4. Host + LUS migrate.
+3. Drop heatmap tooltip_* props (hard error); fix Core/Host/tests.
+4. Migrate LUS specs in the same ship + soak.
