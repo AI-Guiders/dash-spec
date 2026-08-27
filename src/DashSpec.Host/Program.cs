@@ -171,6 +171,7 @@ if (urlsEnv.Contains("https://", StringComparison.OrdinalIgnoreCase))
 app.UseMiddleware<DashSpecAccessMiddleware>();
 app.UseAntiforgery();
 app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.MapAccessEndpoints();
 app.MapCatalogSyncEndpoints();
