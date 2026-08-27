@@ -1,0 +1,231 @@
+@page "/admin"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DashSpec.Host.Configuration
+@using DashSpec.Host.Services.Git
+@using DashSpec.Host.Services.Settings
+@inject HostSettingsService Settings
+@inject DashSpecTomlRoot Bootstrap
+@inject GitCatalogSyncService SyncService
+@inject NavigationManager Nav
+
+<PageTitle>Control Center — DashSpec</PageTitle>
+
+<section class="admin">
+    <h1>Control Center</h1>
+    <p class="muted">Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery.</p>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <p class="ok">@_message</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <p class="err">@_error</p>
+    }
+
+    <h2>Access</h2>
+    <EditForm Model="_access" OnValidSubmit="SaveAccessAsync">
+        <div class="field">
+            <label>API key @(Settings.HasSecret(HostSettingsOverlay.SectionAccess, "api_key") ? "(set — leave blank to keep)" : "")</label>
+            <InputText type="password" @bind-Value="_access.ApiKey" class="input" autocomplete="new-password" />
+        </div>
+        <button type="submit" class="btn">Save access</button>
+    </EditForm>
+
+    <h2>Catalog (git)</h2>
+    <EditForm Model="_catalog" OnValidSubmit="SaveCatalogAsync">
+        <div class="field">
+            <label class="check"><InputCheckbox @bind-Value="_catalog.Enabled" /> Enabled</label>
+        </div>
+        <div class="field">
+            <label>URL</label>
+            <InputText @bind-Value="_catalog.Url" class="input" />
+        </div>
+        <div class="field">
+            <label>Branch</label>
+            <InputText @bind-Value="_catalog.Branch" class="input" />
+        </div>
+        <div class="field">
+            <label>Path (.dashcatalog in repo)</label>
+            <InputText @bind-Value="_catalog.Path" class="input" />
+        </div>
+        <div class="field">
+            <label>Pull interval (minutes, safety net)</label>
+            <InputNumber @bind-Value="_catalog.PullIntervalMinutes" class="input" />
+        </div>
+        <div class="field">
+            <label>Git username</label>
+            <InputText @bind-Value="_catalog.Username" class="input" />
+        </div>
+        <div class="field">
+            <label>Git password @(Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "password") ? "(set — leave blank to keep)" : "")</label>
+            <InputText type="password" @bind-Value="_catalog.Password" class="input" autocomplete="new-password" />
+        </div>
+        <div class="field">
+            <label>Sync repo slug filter (optional)</label>
+            <InputText @bind-Value="_catalog.SyncRepoSlug" class="input" />
+        </div>
+        <div class="field">
+            <label><InputCheckbox @bind-Value="_catalog.SyncAllowUnsigned" /> Allow unsigned webhooks (lab only)</label>
+        </div>
+        <button type="submit" class="btn">Save catalog</button>
+    </EditForm>
+
+    <div class="row">
+        <button type="button" class="btn" disabled="@_syncing" @onclick="SyncNowAsync">
+            @(_syncing ? "Syncing…" : "Sync now")
+        </button>
+        @if (!string.IsNullOrWhiteSpace(_syncResult))
+        {
+            <span class="muted">@_syncResult</span>
+        }
+    </div>
+
+    <h2>Inbound sync webhook</h2>
+    <p class="mono">POST @_webhookUrl</p>
+    <p class="muted">Paste into Forge <code>FORGE_DASHSPEC_WEBHOOK_URL</code> + shared secret.</p>
+    <p>
+        Secret:
+        @if (Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "sync_webhook_secret"))
+        {
+            <strong>set</strong>
+        }
+        else
+        {
+            <strong>not set</strong>
+        }
+        @if (!string.IsNullOrWhiteSpace(_generatedSecret))
+        {
+            <span class="mono"> — @_generatedSecret</span>
+            <span class="muted">(copy now — not shown again)</span>
+        }
+    </p>
+    <div class="row">
+        <button type="button" class="btn" @onclick="GenerateSecret">Generate secret</button>
+        <button type="button" class="btn secondary" @onclick="DownloadExport">Export TOML</button>
+    </div>
+</section>
+
+@code {
+    private readonly AccessForm _access = new();
+    private readonly CatalogForm _catalog = new();
+    private string? _message;
+    private string? _error;
+    private string? _syncResult;
+    private string? _generatedSecret;
+    private bool _syncing;
+    private string _webhookUrl = "";
+
+    protected override void OnInitialized()
+    {
+        _webhookUrl = $"{Nav.BaseUri.TrimEnd('/')}/v1/admin/catalog/sync";
+        var git = Bootstrap.CatalogGit;
+        _catalog.Enabled = git.Enabled;
+        _catalog.Url = git.Url;
+        _catalog.Branch = git.Branch;
+        _catalog.Path = git.Path;
+        _catalog.PullIntervalMinutes = git.PullIntervalMinutes;
+        _catalog.Username = git.Username;
+        _catalog.SyncRepoSlug = git.SyncRepoSlug;
+        _catalog.SyncAllowUnsigned = git.SyncAllowUnsigned;
+    }
+
+    private Task SaveAccessAsync()
+    {
+        ClearFlash();
+        try
+        {
+            Settings.UpsertSecret(HostSettingsOverlay.SectionAccess, "api_key", _access.ApiKey);
+            _access.ApiKey = "";
+            _message = "Access saved.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task SaveCatalogAsync()
+    {
+        ClearFlash();
+        try
+        {
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "enabled", _catalog.Enabled ? "true" : "false");
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "url", _catalog.Url ?? "");
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "branch", string.IsNullOrWhiteSpace(_catalog.Branch) ? "main" : _catalog.Branch);
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "path", _catalog.Path ?? "");
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "pull_interval_minutes", Math.Max(1, _catalog.PullIntervalMinutes).ToString());
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "username", _catalog.Username ?? "");
+            Settings.UpsertSecret(HostSettingsOverlay.SectionCatalogGit, "password", _catalog.Password);
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "sync_repo_slug", _catalog.SyncRepoSlug ?? "");
+            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "sync_allow_unsigned", _catalog.SyncAllowUnsigned ? "true" : "false");
+            _catalog.Password = "";
+            _message = "Catalog settings saved (WitDB). Sync now applies immediately; poll picks up interval changes.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task SyncNowAsync()
+    {
+        ClearFlash();
+        _syncing = true;
+        try
+        {
+            var result = await SyncService.SyncAsync();
+            _syncResult = $"{result.Status}; changed={result.Changed}";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private void GenerateSecret()
+    {
+        ClearFlash();
+        _generatedSecret = Settings.GenerateSyncWebhookSecret();
+        _message = "Webhook secret generated — copy into Forge FORGE_DASHSPEC_WEBHOOK_SECRET.";
+    }
+
+    private void DownloadExport()
+    {
+        // Blazor Server: show export in message for copy (no file download plumbing v1).
+        ClearFlash();
+        _message = Settings.ExportTomlFragment();
+    }
+
+    private void ClearFlash()
+    {
+        _message = null;
+        _error = null;
+    }
+
+    private sealed class AccessForm
+    {
+        public string ApiKey { get; set; } = "";
+    }
+
+    private sealed class CatalogForm
+    {
+        public bool Enabled { get; set; }
+        public string Url { get; set; } = "";
+        public string Branch { get; set; } = "main";
+        public string Path { get; set; } = "";
+        public int PullIntervalMinutes { get; set; } = 720;
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string SyncRepoSlug { get; set; } = "";
+        public bool SyncAllowUnsigned { get; set; }
+    }
+}

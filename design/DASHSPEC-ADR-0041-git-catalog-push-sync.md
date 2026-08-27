@@ -132,3 +132,4 @@ Env: `DASHSPEC_CATALOG_GIT_PULL_MINUTES`, `DASHSPEC_CATALOG_SYNC_SECRET`, …
 ## See also
 
 - Producer: [FORGE-ADR-0067](../../../../agent-forge/design/FORGE-ADR-0067-outbound-push-fanout.md) (путь относительно monorepo layout; иначе открыть sibling `agent-forge/design/`).
+- Operator UI / WitDB settings: [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md)
