@@ -316,7 +316,73 @@ public class DashboardParseTests
     }
 
     [Fact]
-    public void Parse_heatmap_column_as_labels()
+    public void Parse_heatmap_inspect_and_tooltip_entity()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              card h as "H"
+              tooltip peak_apps
+              source = peak_apps
+              end tooltip
+              diagram heatmap
+              x = usage_date as "День"
+              y = user_name as "Пользователь"
+              value = peak_concurrent_apps as "Разных ПО"
+              end heatmap
+              inspect
+              use tooltip peak_apps
+              label = "Состав в пике"
+              as list
+              end inspect
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+""");
+
+        var card = doc.Cards[0];
+        var diagram = card.Diagram;
+        Assert.Equal("usage_date", diagram.Properties["x"]);
+        Assert.Equal("День", diagram.Properties["x_as"]);
+        Assert.Equal("user_name", diagram.Properties["y"]);
+        Assert.Equal("Пользователь", diagram.Properties["y_as"]);
+        Assert.Equal("peak_concurrent_apps", diagram.Properties["value"]);
+        Assert.Equal("Разных ПО", diagram.Properties["value_as"]);
+        Assert.NotNull(card.Tooltip);
+        Assert.Equal("peak_apps", card.Tooltip!.Id);
+        Assert.NotNull(card.Inspect);
+        Assert.Equal("peak_apps", card.Inspect!.TooltipId);
+        Assert.Equal("Состав в пике", card.Inspect.Label);
+        Assert.Equal("list", card.Inspect.Format);
+    }
+
+    [Fact]
+    public void Parse_heatmap_rejects_legacy_tooltip_properties()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              card h as "H"
+              diagram heatmap
+              x = usage_date
+              y = user_name
+              value = peak_concurrent_apps
+              tooltip = peak_apps
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+"""));
+
+        Assert.Contains("ADR-0029", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_heatmap_allows_extension_presentation_properties()
     {
         var doc = DashSpecParser.Parse("""
             @dashboard t
@@ -324,26 +390,50 @@ public class DashboardParseTests
               title = "T"
               card h as "H"
               diagram heatmap
-              x = usage_date as "День"
-              y = user_name as "Пользователь"
-              value = peak_concurrent_apps as "Разных ПО"
-              tooltip = peak_apps as "Состав в пике"
+              x = usage_date
+              y = user_name
+              value = peak_concurrent_apps
+              color_scale = viridis
               end heatmap
+              inspect
+              use tooltip peak_apps
+              as list
+              split = ", "
+              end inspect
+              tooltip peak_apps
+              source = peak_apps
+              end tooltip
               datasource view dbo.t
               end card
               end report
             end dashboard
 """);
 
-        var diagram = doc.Cards[0].Diagram;
-        Assert.Equal("usage_date", diagram.Properties["x"]);
-        Assert.Equal("День", diagram.Properties["x_as"]);
-        Assert.Equal("user_name", diagram.Properties["y"]);
-        Assert.Equal("Пользователь", diagram.Properties["y_as"]);
-        Assert.Equal("peak_concurrent_apps", diagram.Properties["value"]);
-        Assert.Equal("Разных ПО", diagram.Properties["value_as"]);
-        Assert.Equal("peak_apps", diagram.Properties["tooltip"]);
-        Assert.Equal("Состав в пике", diagram.Properties["tooltip_as"]);
+        var props = doc.Cards[0].Diagram.Properties;
+        Assert.Equal("viridis", props["color_scale"]);
+        Assert.Equal("list", doc.Cards[0].Inspect!.Format);
+        Assert.Equal(", ", doc.Cards[0].Inspect.Split);
+    }
+
+    [Fact]
+    public void MatrixPresentation_defaults_tooltip_format_to_list_when_inspect_has_split()
+    {
+        var card = new CardDefinition(
+            "t",
+            "T",
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            BoundFilters: [],
+            LocalFilters: [],
+            Inspect: new InspectPresentation("peak_apps", null, "list", "; "),
+            Tooltip: new TooltipDefinition("peak_apps", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["value"] = "peak_apps",
+            }, "{value}"));
+
+        var presentation = MatrixPresentation.FromCard(card);
+        Assert.Equal(TooltipFormat.List, presentation.TooltipFormat);
+        Assert.True(presentation.HasTooltip);
     }
 
     [Fact]
@@ -368,52 +458,6 @@ public class DashboardParseTests
         var diagram = doc.Cards[0].Diagram;
         Assert.Equal("purchased_seats", diagram.Properties["reference"]);
         Assert.Equal("Куплено", diagram.Properties["reference_as"]);
-    }
-
-    [Fact]
-    public void Parse_heatmap_allows_extension_presentation_properties()
-    {
-        var doc = DashSpecParser.Parse("""
-            @dashboard t
-              report
-              title = "T"
-              card h as "H"
-              diagram heatmap
-              x = usage_date
-              y = user_name
-              value = peak_concurrent_apps
-              tooltip_format = list
-              tooltip_split = ", "
-              color_scale = viridis
-              end heatmap
-              datasource view dbo.t
-              end card
-              end report
-            end dashboard
-""");
-
-        var props = doc.Cards[0].Diagram.Properties;
-        Assert.Equal("list", props["tooltip_format"]);
-        Assert.Equal(", ", props["tooltip_split"]);
-        Assert.Equal("viridis", props["color_scale"]);
-    }
-
-    [Fact]
-    public void MatrixPresentation_defaults_tooltip_format_to_list_when_tooltip_column_set()
-    {
-        var card = new CardDefinition(
-            "t",
-            "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["tooltip"] = "peak_apps",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
-            BoundFilters: [],
-            LocalFilters: []);
-
-        var presentation = MatrixPresentation.FromCard(card);
-        Assert.Equal(TooltipFormat.List, presentation.TooltipFormat);
     }
 
     [Fact]

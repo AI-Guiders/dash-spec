@@ -92,6 +92,42 @@ internal static class DiagramModuleParser
                 continue;
             }
 
+            if (reader.TryKeyword("tooltip"))
+            {
+                var tooltipId = reader.ReadIdent();
+                if (string.IsNullOrWhiteSpace(tooltipId))
+                {
+                    throw new DashSpecParseException("Inline tooltip requires an id.");
+                }
+
+                var definition = TooltipModuleParser.ParseInline(reader, tooltipId);
+                fragment = SpecIncludeResolver.Merge(
+                    fragment,
+                    new SpecIncludeFragment(
+                        null,
+                        null,
+                        null,
+                        new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            [tooltipId] = definition,
+                        }));
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("inspect"))
+            {
+                fragment = SpecIncludeResolver.Merge(
+                    fragment,
+                    new SpecIncludeFragment(
+                        null,
+                        null,
+                        null,
+                        Inspect: InspectPresentationParser.Parse(reader, "diagram module")));
+                reader.SkipNewlines();
+                continue;
+            }
+
             throw reader.Unexpected();
         }
 

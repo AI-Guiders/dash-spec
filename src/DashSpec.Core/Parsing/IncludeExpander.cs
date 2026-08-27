@@ -56,6 +56,10 @@ internal static class IncludeExpander
                 RegisterPresentationFile(path, specDirectory, state);
                 return;
 
+            case ".dashtooltip":
+                RegisterTooltipFile(path, state);
+                return;
+
             case ".dashtransform":
                 throw new DashSpecParseException(
                     $"!include '{path}': register transform via .dashdiagram or card block, not module include.");
@@ -137,6 +141,12 @@ internal static class IncludeExpander
         state.RegisterChartChromePreset(id, block);
     }
 
+    private static void RegisterTooltipFile(string path, ModuleIncludeState state)
+    {
+        var (id, definition) = TooltipModuleParser.ParseTooltipFileWithId(File.ReadAllText(path));
+        state.RegisterTooltip(id, definition);
+    }
+
     private static void AssignLayoutBoard(
         LayoutBoardDefinition board,
         DocumentModuleKind moduleKind,
@@ -185,7 +195,7 @@ internal static class IncludeExpander
             return path;
         }
 
-        foreach (var ext in new[] { ".dashlayout", ".dashdiagram", ".dashinclude", ".dashpresentation" })
+        foreach (var ext in new[] { ".dashlayout", ".dashdiagram", ".dashinclude", ".dashpresentation", ".dashtooltip" })
         {
             var withExt = path.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? path : path + ext;
             if (File.Exists(withExt))

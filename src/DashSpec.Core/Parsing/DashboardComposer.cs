@@ -58,6 +58,9 @@ internal static class DashboardComposer
         var moduleChartChromePresets = new Dictionary<string, PresentationBlock>(
             document.ResolvedChartChromePresets,
             StringComparer.OrdinalIgnoreCase);
+        var moduleTooltips = new Dictionary<string, TooltipDefinition>(
+            document.ResolvedModuleTooltips,
+            StringComparer.OrdinalIgnoreCase);
 
         foreach (var tab in document.Tabs)
         {
@@ -148,6 +151,22 @@ internal static class DashboardComposer
                 moduleChartChromePresets[presetId] = preset;
             }
 
+            foreach (var (tooltipId, definition) in module.ModuleTooltips ?? DashboardDocument.EmptyModuleTooltips)
+            {
+                if (moduleTooltips.TryGetValue(tooltipId, out var existing))
+                {
+                    if (!TooltipDefinitionsEquivalent(existing, definition))
+                    {
+                        throw new DashSpecParseException(
+                            $"Tab module '{tab.Id}' redeclares module tooltip '{tooltipId}' with a different definition.");
+                    }
+
+                    continue;
+                }
+
+                moduleTooltips[tooltipId] = definition;
+            }
+
             var label = tab.Label ?? module.Label;
             mergedTabs.Add(new TabDefinition(
                 tab.Id,
@@ -166,6 +185,7 @@ internal static class DashboardComposer
             Tabs = mergedTabs,
             ModuleDiagrams = moduleDiagrams,
             ModuleChartChromePresets = moduleChartChromePresets,
+            ModuleTooltips = moduleTooltips,
             Pages = pages,
         };
 
@@ -188,4 +208,12 @@ internal static class DashboardComposer
 
         dashboardFilters.Add(filterName);
     }
+
+    private static bool TooltipDefinitionsEquivalent(TooltipDefinition left, TooltipDefinition right) =>
+        string.Equals(left.Id, right.Id, StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(left.Template, right.Template, StringComparison.Ordinal) &&
+        left.Variables.Count == right.Variables.Count &&
+        left.Variables.All(kv =>
+            right.Variables.TryGetValue(kv.Key, out var value) &&
+            string.Equals(kv.Value, value, StringComparison.OrdinalIgnoreCase));
 }

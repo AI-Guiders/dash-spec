@@ -52,7 +52,6 @@ public static class DiagramKindRegistry
         new("x", PropertyValueType.ColumnBinding),
         new("y", PropertyValueType.ColumnBinding),
         new("value", PropertyValueType.ColumnBinding),
-        new("tooltip", PropertyValueType.ColumnBinding),
         new("height", PropertyValueType.Scalar),
     ];
 

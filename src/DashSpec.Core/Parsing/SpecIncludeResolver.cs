@@ -2,11 +2,13 @@ using DashSpec.Core.Model;
 
 namespace DashSpec.Core.Parsing;
 
-/// <summary>Resolved diagram / presentation / transform fragment from an include file.</summary>
+/// <summary>Resolved diagram / presentation / transform / tooltip fragment from an include file.</summary>
 internal sealed record SpecIncludeFragment(
     DiagramDefinition? Diagram,
     PresentationBlock? Presentation,
-    SeriesTransformBlock? SeriesTransform);
+    SeriesTransformBlock? SeriesTransform,
+    IReadOnlyDictionary<string, TooltipDefinition>? Tooltips = null,
+    InspectPresentation? Inspect = null);
 
 internal static class SpecIncludeResolver
 {
@@ -55,9 +57,23 @@ internal static class SpecIncludeResolver
                 PresentationModuleParser.ParsePresentationFile(text, baseDirectory),
                 null),
             "transform" => new SpecIncludeFragment(null, null, TransformModuleParser.ParseTransformFile(text)),
+            "tooltip" => LoadTooltipFragment(text),
             _ => throw new DashSpecParseException(
-                $"Include kind must be diagram, presentation, chrome, or transform, got '{includeKind}'."),
+                $"Include kind must be diagram, presentation, chrome, transform, or tooltip, got '{includeKind}'."),
         };
+    }
+
+    private static SpecIncludeFragment LoadTooltipFragment(string text)
+    {
+        var (id, definition) = TooltipModuleParser.ParseTooltipFileWithId(text);
+        return new SpecIncludeFragment(
+            null,
+            null,
+            null,
+            new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
+            {
+                [id] = definition,
+            });
     }
 
     public static SpecIncludeFragment Merge(SpecIncludeFragment current, SpecIncludeFragment incoming)
@@ -65,7 +81,9 @@ internal static class SpecIncludeResolver
         return new SpecIncludeFragment(
             MergeDiagram(current.Diagram, incoming.Diagram),
             MergePresentation(current.Presentation, incoming.Presentation),
-            MergeSeriesTransform(current.SeriesTransform, incoming.SeriesTransform));
+            MergeSeriesTransform(current.SeriesTransform, incoming.SeriesTransform),
+            MergeTooltips(current.Tooltips, incoming.Tooltips),
+            InspectPresentationParser.Merge(current.Inspect, incoming.Inspect));
     }
 
     private static bool IsStdlibReference(string reference) =>
@@ -121,6 +139,7 @@ internal static class SpecIncludeResolver
             "diagram" => new[] { ".dashdiagram" },
             "presentation" or "chrome" => new[] { ".dashpresentation" },
             "transform" => new[] { ".dashtransform" },
+            "tooltip" => new[] { ".dashtooltip" },
             _ => Array.Empty<string>(),
         };
 
@@ -197,5 +216,28 @@ internal static class SpecIncludeResolver
             right.UsePreset ?? left.UsePreset,
             right.Max ?? left.Max,
             right.OtherLabel ?? left.OtherLabel);
+    }
+
+    private static IReadOnlyDictionary<string, TooltipDefinition>? MergeTooltips(
+        IReadOnlyDictionary<string, TooltipDefinition>? left,
+        IReadOnlyDictionary<string, TooltipDefinition>? right)
+    {
+        if (right is null || right.Count == 0)
+        {
+            return left;
+        }
+
+        if (left is null || left.Count == 0)
+        {
+            return right;
+        }
+
+        var merged = new Dictionary<string, TooltipDefinition>(left, StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, value) in right)
+        {
+            merged[key] = value;
+        }
+
+        return merged;
     }
 }

@@ -9,7 +9,8 @@ public sealed record ShowSelectionEffect(
     ShowPlacement Placement,
     ShowFormat Format,
     ShowSource Source,
-    bool CopyFriendly) : CardClickEffect;
+    bool CopyFriendly,
+    string? Split = null) : CardClickEffect;
 
 public sealed record SetFilterFromFieldEffect(
     string FilterName,
