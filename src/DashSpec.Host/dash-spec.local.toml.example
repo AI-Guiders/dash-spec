@@ -15,9 +15,13 @@ catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.da
 # url = "http://<git-host>/<path>/<repo>.git"
 # branch = "main"
 # path = "catalogs/<prod>.dashcatalog"
-# pull_interval_minutes = 15
+# pull_interval_minutes = 720   # safety net; webhook is primary (ADR-0041)
+# sync_webhook_secret = "..."   # HMAC for POST /v1/admin/catalog/sync
+# sync_repo_slug = "ursa-license-usage"
+# sync_allow_unsigned = false
 # username = "<user>"
 # password = "..."  # или env DASHSPEC_CATALOG_GIT_PASSWORD
+# Env: DASHSPEC_CATALOG_SYNC_SECRET, DASHSPEC_CATALOG_SYNC_REPO_SLUG
 # Optional: override connector if not using @runtime in .dashspec
 # [connectors.sqlserver]
 # connection_string = "Server=localhost;Database=UrsaLicenseUsage;Trusted_Connection=True;TrustServerCertificate=True"

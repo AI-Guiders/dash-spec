@@ -43,6 +43,15 @@ public sealed class CatalogGitTomlSection
     public string Username { get; set; } = string.Empty;
 
     public string Password { get; set; } = string.Empty;
+
+    /// <summary>HMAC secret for POST /v1/admin/catalog/sync (DASHSPEC-ADR-0041).</summary>
+    public string SyncWebhookSecret { get; set; } = string.Empty;
+
+    /// <summary>Lab only: accept unsigned sync POSTs when secret is set.</summary>
+    public bool SyncAllowUnsigned { get; set; }
+
+    /// <summary>Optional filter vs Forge payload repo / refs.repo.</summary>
+    public string SyncRepoSlug { get; set; } = string.Empty;
 }
 
 public sealed class ConnectorTomlSection

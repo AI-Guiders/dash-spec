@@ -140,6 +140,7 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddHostedService<DevSpecFileWatcherService>();
 }
 
+builder.Services.AddSingleton<GitCatalogSyncService>();
 if (bootstrap.CatalogGit.Enabled && !string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Url))
 {
     builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
@@ -165,6 +166,7 @@ app.UseAntiforgery();
 app.UseStaticFiles();
 
 app.MapAccessEndpoints();
+app.MapCatalogSyncEndpoints();
 app.MapPluginEndpoints();
 
 app.MapRazorComponents<App>()
