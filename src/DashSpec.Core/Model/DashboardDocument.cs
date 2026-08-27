@@ -18,6 +18,7 @@ public sealed record DashboardDocument(
     ModuleExtensionsDefinition? ModuleExtensions = null,
     IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null,
     IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
+    IReadOnlyDictionary<string, TooltipDefinition>? ModuleTooltips = null,
     IReadOnlyList<ReportPageDefinition>? Pages = null)
 {
     public static IReadOnlyDictionary<string, ModuleDiagramDefinition> EmptyModuleDiagrams { get; } =
@@ -26,11 +27,17 @@ public sealed record DashboardDocument(
     public static IReadOnlyDictionary<string, PresentationBlock> EmptyModuleChartChromePresets { get; } =
         new Dictionary<string, PresentationBlock>(StringComparer.OrdinalIgnoreCase);
 
+    public static IReadOnlyDictionary<string, TooltipDefinition> EmptyModuleTooltips { get; } =
+        new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyDictionary<string, ModuleDiagramDefinition> ResolvedModuleDiagrams =>
         ModuleDiagrams ?? EmptyModuleDiagrams;
 
     public IReadOnlyDictionary<string, PresentationBlock> ResolvedChartChromePresets =>
         ModuleChartChromePresets ?? EmptyModuleChartChromePresets;
+
+    public IReadOnlyDictionary<string, TooltipDefinition> ResolvedModuleTooltips =>
+        ModuleTooltips ?? EmptyModuleTooltips;
 }
 
 public sealed record FilterDefinition(
@@ -93,7 +100,9 @@ public sealed record CardDefinition(
     string? PageId = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,
     string? OversizeMessage = null,
-    CardChromeDefinition? Chrome = null);
+    CardChromeDefinition? Chrome = null,
+    InspectPresentation? Inspect = null,
+    TooltipDefinition? Tooltip = null);
 public sealed record DiagramDefinition(
     string Kind,
     IReadOnlyDictionary<string, string> Properties,

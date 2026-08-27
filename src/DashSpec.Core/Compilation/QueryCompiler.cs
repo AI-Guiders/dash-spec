@@ -347,7 +347,7 @@ public static class QueryCompiler
         }
 
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var column in DiagramBindings.SelectedSqlColumns(card.Diagram))
+        foreach (var column in DiagramBindings.SelectedSqlColumns(card.Diagram, card.Tooltip))
         {
             names.Add(column);
         }

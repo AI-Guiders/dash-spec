@@ -65,6 +65,15 @@ internal static class CardSemanticValidator
             {
                 throw new InvalidOperationException($"Card '{card.Id}' has no datasource after resolving presets.");
             }
+
+            var showEffect = effective.ClickBehaviour?.Effects
+                .OfType<ShowSelectionEffect>()
+                .FirstOrDefault();
+            if (showEffect?.Source is ShowSource.Tooltip && effective.Tooltip is null)
+            {
+                throw new InvalidOperationException(
+                    $"Card '{card.Id}': show from tooltip requires a tooltip entity (inspect use tooltip <id> or include @tooltip).");
+            }
         }
     }
 }

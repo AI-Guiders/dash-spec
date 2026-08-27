@@ -4,4 +4,6 @@ namespace DashSpec.Core.Model;
 public sealed record ModuleDiagramDefinition(
     DiagramDefinition Diagram,
     PresentationBlock? Presentation,
-    SeriesTransformBlock? SeriesTransform);
+    SeriesTransformBlock? SeriesTransform,
+    InspectPresentation? Inspect = null,
+    TooltipDefinition? Tooltip = null);

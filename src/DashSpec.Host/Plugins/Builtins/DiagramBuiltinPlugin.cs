@@ -35,7 +35,7 @@ public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
         RegisterKind(registry, Id, "wind_rose", "Chart", ["x", "y", "category", "value"], supportsTopLimit: true);
         RegisterKind(registry, Id, "table", "Table", ["columns", "order_by", "limit"], supportsTopLimit: true);
         RegisterKind(registry, Id, "number", "Scalar", ["value", "aggregate", "scale_value", "delta"]);
-        RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value", "tooltip"]);
+        RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value"]);
     }
 
     private static void RegisterKind(

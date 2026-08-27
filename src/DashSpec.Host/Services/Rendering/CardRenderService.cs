@@ -146,7 +146,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform),
+                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
                     MatrixPresentation: matrixPresentation,

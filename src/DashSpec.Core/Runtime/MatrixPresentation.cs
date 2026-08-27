@@ -14,22 +14,17 @@ public sealed record MatrixPresentation(
     string XFormat = "date.short",
     string YFormat = "user.short",
     string ColorScale = "heat",
-    LegendDefinition? Legend = null)
+    LegendDefinition? Legend = null,
+    bool HasTooltip = false)
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
         var diagram = card.Diagram;
         var height = CardChromeResolver.ResolveMatrixHeightPx(card, library);
 
-        var hasTooltipColumn = diagram.Properties.ContainsKey("tooltip");
-        var tooltipFormat = TooltipFormatParser.Parse(
-            diagram.Properties.GetValueOrDefault("tooltip_format"),
-            hasTooltipColumn ? TooltipFormat.List : TooltipFormat.Inline);
-
-        var tooltipSplit = diagram.Properties.TryGetValue("tooltip_split", out var rawSplit) &&
-                           !string.IsNullOrWhiteSpace(rawSplit)
-            ? rawSplit
-            : ", ";
+        var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect);
+        var tooltipSplit = card.Inspect?.Split ?? ", ";
+        var tooltipLabel = card.Inspect?.Label;
 
         var xFormat = diagram.Properties.GetValueOrDefault("x_format") ?? "date.short";
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
@@ -40,13 +35,14 @@ public sealed record MatrixPresentation(
             DiagramBindings.Label(diagram, "x"),
             DiagramBindings.Label(diagram, "y"),
             DiagramBindings.Label(diagram, "value"),
-            DiagramBindings.Label(diagram, "tooltip"),
+            tooltipLabel,
             tooltipFormat,
             tooltipSplit,
             xFormat,
             yFormat,
             colorScale,
-            card.Legend);
+            card.Legend,
+            card.Tooltip is not null);
     }
 
     public string? FormatLegendMin(double min, double max) =>
