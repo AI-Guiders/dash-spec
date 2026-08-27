@@ -67,12 +67,12 @@ else
                         @onmouseleave="ClearHover"></canvas>
             </div>
         </div>
-        @if (_hoverCell is { } hover && hover.Value is not null)
-        {
-            <div class="heatmap-hover-detail" role="status">
+        <div class="heatmap-hover-detail" role="status" aria-live="polite">
+            @if (_hoverCell is { } hover && hover.Value is not null)
+            {
                 <p class="heatmap-hover-detail-head">@PopoverHeader(hover.Yi, hover.Xi, hover.Value)</p>
-            </div>
-        }
+            }
+        </div>
         @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
         {
             <div class="heatmap-legend">
