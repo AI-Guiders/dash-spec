@@ -86,7 +86,7 @@
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: box-shadow 0.1s ease;
 }
 
 .heatmap-cell-filled {
@@ -95,18 +95,21 @@
 
 .heatmap-cell-filled:hover,
 .heatmap-cell-active {
-  transform: scale(1.04);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  /* No scale — transform caused scroll/layout jump inside .heatmap-scroll */
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
   z-index: 2;
 }
 
 .heatmap-hover-detail {
+  /* Always in flow (MatrixCanvasView) so hover does not reflow the card */
   margin-top: 0.35rem;
-  padding: 0.65rem 0.75rem;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.75rem;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   user-select: text;
+  box-sizing: border-box;
 }
 
 .heatmap-hover-detail-head {
