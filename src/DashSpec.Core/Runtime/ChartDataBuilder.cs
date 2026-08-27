@@ -69,8 +69,9 @@ public static class ChartDataBuilder
     public static MatrixPayload BuildHeatmap(
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
         DiagramDefinition diagram,
-        SeriesTransformSettings? seriesTransform = null) =>
-        MatrixPayloadBuilder.Build(rows, diagram, seriesTransform);
+        SeriesTransformSettings? seriesTransform = null,
+        TooltipDefinition? tooltip = null) =>
+        MatrixPayloadBuilder.Build(rows, diagram, seriesTransform, tooltip);
 }
 
 public sealed record ChartPayload(

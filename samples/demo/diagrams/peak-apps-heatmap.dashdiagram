@@ -1,14 +1,20 @@
 @diagram demo_peak_apps_heatmap
 
+include tooltip "../tooltips/peak-apps.dashtooltip"
+
 heatmap
   render = "css-grid"
   x = usage_date as "Day"
   y = user_id as "User"
   value = peak_concurrent_apps as "Apps"
-  tooltip = peak_apps as "Peak composition"
-  tooltip_format = list
-  tooltip_split = ", "
   x_format = date.short
   y_format = user.short
   color_scale = heat
 end heatmap
+
+inspect
+  use tooltip peak_apps
+  label = "Peak composition"
+  as list
+  split = ", "
+end inspect

@@ -238,7 +238,9 @@ public sealed class SpecLibrary
             string.IsNullOrWhiteSpace(render) ? null : render,
             presentationPreset,
             seriesTransformPreset,
-            diagramProps);
+            diagramProps,
+            definition.Inspect,
+            definition.Tooltip);
     }
 
     private void EnsureStdlibPresentation(string name)
@@ -513,7 +515,9 @@ public sealed record DiagramPreset(
     string? Render,
     string? PresentationPreset,
     string? SeriesTransformPreset,
-    IReadOnlyDictionary<string, string> Properties);
+    IReadOnlyDictionary<string, string> Properties,
+    InspectPresentation? Inspect = null,
+    TooltipDefinition? Tooltip = null);
 
 public sealed record CardPreset(
     string DiagramPreset,

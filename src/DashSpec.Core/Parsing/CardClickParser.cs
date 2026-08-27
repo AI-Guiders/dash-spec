@@ -233,7 +233,18 @@ internal static class CardClickParser
 
         var copyFriendly = reader.TryKeyword("copy");
 
-        return new ShowSelectionEffect(ShowPlacement.Below, format, source, copyFriendly);
+        string? split = null;
+        if (reader.TryKeyword("split"))
+        {
+            if (reader.IsAt(TokenKind.Eq))
+            {
+                reader.Expect(TokenKind.Eq);
+            }
+
+            split = reader.ReadString();
+        }
+
+        return new ShowSelectionEffect(ShowPlacement.Below, format, source, copyFriendly, split);
     }
 
     private static SetFilterFromFieldEffect ParseSetEffect(TokenReader reader, string cardId)

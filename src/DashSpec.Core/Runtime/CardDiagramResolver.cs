@@ -27,6 +27,8 @@ public static class CardDiagramResolver
         var diagram = new DiagramDefinition(preset.Kind, diagramProps);
         var presentation = MergePresentation(preset.PresentationPreset, card.Presentation);
         var seriesTransform = MergeSeriesTransform(preset.SeriesTransformPreset, card.SeriesTransform);
+        var inspect = InspectPresentationParser.Merge(preset.Inspect, card.Inspect);
+        var tooltip = card.Tooltip ?? preset.Tooltip;
 
         return new ResolvedCardView(
             card with
@@ -34,6 +36,8 @@ public static class CardDiagramResolver
                 Diagram = diagram,
                 Presentation = presentation,
                 SeriesTransform = seriesTransform,
+                Inspect = inspect,
+                Tooltip = tooltip,
             },
             preset.Render);
     }
