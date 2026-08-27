@@ -52,6 +52,10 @@ if (args is ["validate", var validatePath, ..])
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Production + `dotnet run` does not load staticwebassets.runtime.json by default —
+// Blazor _framework/*.js then 404/500 (see aspnetcore#65468). Publish is fine; local prod smoke needs this.
+builder.WebHost.UseStaticWebAssets();
+
 if (OperatingSystem.IsWindows())
 {
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
