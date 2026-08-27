@@ -1,4 +1,5 @@
 using DashSpec.Core.Parsing;
+using DashSpec.Host.Services.Settings;
 
 namespace DashSpec.Host.Configuration;
 
@@ -31,6 +32,10 @@ public static class DashSpecBootstrap
                 "dash-spec.toml: set [dashboard] catalog_path to your .dashcatalog file.");
         }
 
+        ApplyAccessEnvOverride(bootstrap);
+
+        HostSettingsOverlay.Apply(bootstrap);
+        // Env break-glass after WitDB (ADR-0042). Access env re-applied; catalog env inside TryApply.
         ApplyAccessEnvOverride(bootstrap);
 
         GitCatalogSynchronizer.TryApply(bootstrap, contentRoot);

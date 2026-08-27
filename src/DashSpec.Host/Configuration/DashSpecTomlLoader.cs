@@ -30,6 +30,11 @@ public static class DashSpecTomlLoader
             root.Dashboard.CatalogPath = overlay.Dashboard.CatalogPath;
         }
 
+        if (!string.IsNullOrWhiteSpace(overlay.Host.DatabasePath))
+        {
+            root.Host.DatabasePath = overlay.Host.DatabasePath;
+        }
+
         MergeCatalogGit(root.CatalogGit, overlay.CatalogGit);
 
         if (!string.IsNullOrWhiteSpace(overlay.Access.ApiKey))

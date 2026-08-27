@@ -7,13 +7,14 @@
             <strong>DashSpec</strong>
             <span class="muted">interactive dashboard host</span>
         </div>
-        @if (Environment.IsDevelopment())
-        {
             <nav class="topbar-nav">
                 <a href="/">Dashboard</a>
-                <a href="/dev/spec">Spec</a>
+                <a href="/admin">Control Center</a>
+                @if (Environment.IsDevelopment())
+                {
+                    <a href="/dev/spec">Spec</a>
+                }
             </nav>
-        }
     </header>
     <main class="content">
         @Body
