@@ -115,6 +115,24 @@ public static class GitCatalogSynchronizer
         {
             git.PullIntervalMinutes = minutes;
         }
+
+        var syncSecret = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_SECRET");
+        if (!string.IsNullOrWhiteSpace(syncSecret))
+        {
+            git.SyncWebhookSecret = syncSecret;
+        }
+
+        var syncRepo = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_REPO_SLUG");
+        if (!string.IsNullOrWhiteSpace(syncRepo))
+        {
+            git.SyncRepoSlug = syncRepo;
+        }
+
+        var allowUnsigned = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_ALLOW_UNSIGNED");
+        if (bool.TryParse(allowUnsigned, out var unsigned))
+        {
+            git.SyncAllowUnsigned = unsigned;
+        }
     }
 
     private static string BuildAuthenticatedUrl(CatalogGitTomlSection git)
