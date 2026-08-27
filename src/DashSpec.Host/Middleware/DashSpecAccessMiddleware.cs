@@ -55,8 +55,10 @@ public sealed class DashSpecAccessMiddleware(
     private static bool IsAnonymousPath(PathString path)
     {
         if (path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWithSegments("/access", StringComparison.OrdinalIgnoreCase))
+            path.StartsWithSegments("/access", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWithSegments("/v1/admin/catalog/sync", StringComparison.OrdinalIgnoreCase))
         {
+            // catalog/sync has its own HMAC / X-Api-Key gate (DASHSPEC-ADR-0041).
             return true;
         }
 

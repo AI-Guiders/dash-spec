@@ -41,3 +41,7 @@ Env: `DASHSPEC_CATALOG_GIT_URL`, `DASHSPEC_CATALOG_GIT_BRANCH`, `DASHSPEC_CATALO
 - Git credential manager UI
 - Per-entry permissions
 - Поддержка только одного vendor (Forge) — URL generic
+
+## See also
+
+- Push-triggered sync (webhook) + редкий poll как safety net: [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md)
