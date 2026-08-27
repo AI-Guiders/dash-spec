@@ -1,4 +1,5 @@
 @page "/admin"
+@page "/admin/{SectionId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Git
@@ -8,105 +9,146 @@
 @inject GitCatalogSyncService SyncService
 @inject NavigationManager Nav
 
-<PageTitle>Control Center — DashSpec</PageTitle>
+<PageTitle>@_section.Title — Control Center</PageTitle>
 
 <section class="admin">
-    <h1>Control Center</h1>
-    <p class="muted">Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery.</p>
+    <header class="admin-header">
+        <h1>Control Center</h1>
+        <p class="muted">Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery.</p>
+    </header>
 
-    @if (!string.IsNullOrWhiteSpace(_message))
-    {
-        <p class="ok">@_message</p>
-    }
-    @if (!string.IsNullOrWhiteSpace(_error))
-    {
-        <p class="err">@_error</p>
-    }
+    <div class="admin-shell">
+        <nav class="admin-list" aria-label="Control Center sections">
+            <p class="admin-list-heading">Settings</p>
+            <ul>
+                @foreach (var item in AdminSectionCatalog.All)
+                {
+                    var active = string.Equals(item.Id, _section.Id, StringComparison.OrdinalIgnoreCase);
+                    <li>
+                        <a href="@($"/admin/{item.Id}")"
+                           class="@(active ? "is-active" : null)"
+                           title="@item.Description">
+                            <span class="admin-list-title">@item.Title</span>
+                            <span class="admin-list-desc">@item.Description</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
 
-    <h2>Access</h2>
-    <EditForm Model="_access" OnValidSubmit="SaveAccessAsync">
-        <div class="field">
-            <label>API key @(Settings.HasSecret(HostSettingsOverlay.SectionAccess, "api_key") ? "(set — leave blank to keep)" : "")</label>
-            <InputText type="password" @bind-Value="_access.ApiKey" class="input" autocomplete="new-password" />
-        </div>
-        <button type="submit" class="btn">Save access</button>
-    </EditForm>
+        <div class="admin-data">
+            <h2>@_section.Title</h2>
+            <p class="muted admin-data-lead">@_section.Description</p>
 
-    <h2>Catalog (git)</h2>
-    <EditForm Model="_catalog" OnValidSubmit="SaveCatalogAsync">
-        <div class="field">
-            <label class="check"><InputCheckbox @bind-Value="_catalog.Enabled" /> Enabled</label>
-        </div>
-        <div class="field">
-            <label>URL</label>
-            <InputText @bind-Value="_catalog.Url" class="input" />
-        </div>
-        <div class="field">
-            <label>Branch</label>
-            <InputText @bind-Value="_catalog.Branch" class="input" />
-        </div>
-        <div class="field">
-            <label>Path (.dashcatalog in repo)</label>
-            <InputText @bind-Value="_catalog.Path" class="input" />
-        </div>
-        <div class="field">
-            <label>Pull interval (minutes, safety net)</label>
-            <InputNumber @bind-Value="_catalog.PullIntervalMinutes" class="input" />
-        </div>
-        <div class="field">
-            <label>Git username</label>
-            <InputText @bind-Value="_catalog.Username" class="input" />
-        </div>
-        <div class="field">
-            <label>Git password @(Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "password") ? "(set — leave blank to keep)" : "")</label>
-            <InputText type="password" @bind-Value="_catalog.Password" class="input" autocomplete="new-password" />
-        </div>
-        <div class="field">
-            <label>Sync repo slug filter (optional)</label>
-            <InputText @bind-Value="_catalog.SyncRepoSlug" class="input" />
-        </div>
-        <div class="field">
-            <label><InputCheckbox @bind-Value="_catalog.SyncAllowUnsigned" /> Allow unsigned webhooks (lab only)</label>
-        </div>
-        <button type="submit" class="btn">Save catalog</button>
-    </EditForm>
+            @if (!string.IsNullOrWhiteSpace(_message))
+            {
+                <p class="ok">@_message</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <p class="err">@_error</p>
+            }
 
-    <div class="row">
-        <button type="button" class="btn" disabled="@_syncing" @onclick="SyncNowAsync">
-            @(_syncing ? "Syncing…" : "Sync now")
-        </button>
-        @if (!string.IsNullOrWhiteSpace(_syncResult))
-        {
-            <span class="muted">@_syncResult</span>
-        }
-    </div>
+            @if (IsSection("access"))
+            {
+                <EditForm Model="_access" OnValidSubmit="SaveAccessAsync">
+                    <div class="field">
+                        <label>API key @(Settings.HasSecret(HostSettingsOverlay.SectionAccess, "api_key") ? "(set — leave blank to keep)" : "")</label>
+                        <InputText type="password" @bind-Value="_access.ApiKey" class="input" autocomplete="new-password" />
+                    </div>
+                    <button type="submit" class="btn">Save access</button>
+                </EditForm>
+            }
+            else if (IsSection("catalog"))
+            {
+                <EditForm Model="_catalog" OnValidSubmit="SaveCatalogAsync">
+                    <div class="field">
+                        <label class="check"><InputCheckbox @bind-Value="_catalog.Enabled" /> Enabled</label>
+                    </div>
+                    <div class="field">
+                        <label>URL</label>
+                        <InputText @bind-Value="_catalog.Url" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Branch</label>
+                        <InputText @bind-Value="_catalog.Branch" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Path (.dashcatalog in repo)</label>
+                        <InputText @bind-Value="_catalog.Path" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Pull interval (minutes, safety net)</label>
+                        <InputNumber @bind-Value="_catalog.PullIntervalMinutes" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Git username</label>
+                        <InputText @bind-Value="_catalog.Username" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Git password @(Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "password") ? "(set — leave blank to keep)" : "")</label>
+                        <InputText type="password" @bind-Value="_catalog.Password" class="input" autocomplete="new-password" />
+                    </div>
+                    <div class="field">
+                        <label>Sync repo slug filter (optional)</label>
+                        <InputText @bind-Value="_catalog.SyncRepoSlug" class="input" />
+                    </div>
+                    <div class="field">
+                        <label class="check"><InputCheckbox @bind-Value="_catalog.SyncAllowUnsigned" /> Allow unsigned webhooks (lab only)</label>
+                    </div>
+                    <button type="submit" class="btn">Save catalog</button>
+                </EditForm>
 
-    <h2>Inbound sync webhook</h2>
-    <p class="mono">POST @_webhookUrl</p>
-    <p class="muted">Paste into Forge <code>FORGE_DASHSPEC_WEBHOOK_URL</code> + shared secret.</p>
-    <p>
-        Secret:
-        @if (Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "sync_webhook_secret"))
-        {
-            <strong>set</strong>
-        }
-        else
-        {
-            <strong>not set</strong>
-        }
-        @if (!string.IsNullOrWhiteSpace(_generatedSecret))
-        {
-            <span class="mono"> — @_generatedSecret</span>
-            <span class="muted">(copy now — not shown again)</span>
-        }
-    </p>
-    <div class="row">
-        <button type="button" class="btn" @onclick="GenerateSecret">Generate secret</button>
-        <button type="button" class="btn secondary" @onclick="DownloadExport">Export TOML</button>
+                <div class="row admin-ops">
+                    <button type="button" class="btn" disabled="@_syncing" @onclick="SyncNowAsync">
+                        @(_syncing ? "Syncing…" : "Sync now")
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(_syncResult))
+                    {
+                        <span class="muted">@_syncResult</span>
+                    }
+                </div>
+            }
+            else if (IsSection("sync"))
+            {
+                <p class="mono">POST @_webhookUrl</p>
+                <p class="muted">Paste into Forge <code>FORGE_DASHSPEC_WEBHOOK_URL</code> + shared secret.</p>
+                <p>
+                    Secret:
+                    @if (Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "sync_webhook_secret"))
+                    {
+                        <strong>set</strong>
+                    }
+                    else
+                    {
+                        <strong>not set</strong>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_generatedSecret))
+                    {
+                        <span class="mono"> — @_generatedSecret</span>
+                        <span class="muted">(copy now — not shown again)</span>
+                    }
+                </p>
+                <div class="row">
+                    <button type="button" class="btn" @onclick="GenerateSecret">Generate secret</button>
+                </div>
+            }
+            else if (IsSection("export"))
+            {
+                <p class="muted">Redacted TOML fragment from WitDB for air-gap backup (does not write <code>local.toml</code>).</p>
+                <div class="row">
+                    <button type="button" class="btn" @onclick="DownloadExport">Show export</button>
+                </div>
+            }
+        </div>
     </div>
 </section>
 
 @code {
+    [Parameter]
+    public string? SectionId { get; set; }
+
+    private AdminSection _section = AdminSectionCatalog.All[0];
     private readonly AccessForm _access = new();
     private readonly CatalogForm _catalog = new();
     private string? _message;
@@ -115,6 +157,21 @@
     private string? _generatedSecret;
     private bool _syncing;
     private string _webhookUrl = "";
+
+    protected override void OnParametersSet()
+    {
+        if (!AdminSectionCatalog.TryResolve(SectionId, out _section) &&
+            !string.IsNullOrWhiteSpace(SectionId))
+        {
+            Nav.NavigateTo($"/admin/{AdminSectionCatalog.DefaultSectionId}", replace: true);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SectionId))
+        {
+            Nav.NavigateTo($"/admin/{AdminSectionCatalog.DefaultSectionId}", replace: true);
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -129,6 +186,9 @@
         _catalog.SyncRepoSlug = git.SyncRepoSlug;
         _catalog.SyncAllowUnsigned = git.SyncAllowUnsigned;
     }
+
+    private bool IsSection(string id) =>
+        string.Equals(_section.Id, id, StringComparison.OrdinalIgnoreCase);
 
     private Task SaveAccessAsync()
     {
@@ -200,7 +260,6 @@
 
     private void DownloadExport()
     {
-        // Blazor Server: show export in message for copy (no file download plumbing v1).
         ClearFlash();
         _message = Settings.ExportTomlFragment();
     }
