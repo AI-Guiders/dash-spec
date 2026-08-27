@@ -18,7 +18,7 @@ internal static class CardSelectionPresenter
     {
         if (effect.Source is ShowSource.Tooltip)
         {
-            var split = presentation?.TooltipSplit ?? ", ";
+            var split = effect.Split ?? presentation?.TooltipSplit ?? ", ";
             var raw = context.TooltipRaw;
             if (!string.IsNullOrWhiteSpace(raw))
             {

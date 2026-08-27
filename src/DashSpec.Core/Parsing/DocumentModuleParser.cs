@@ -127,6 +127,7 @@ internal static class DocumentModuleParser
             result.Shell.LayoutBoard,
             result.Shell.Includes.ExportDefinitions(),
             result.Shell.Includes.ExportChartChromePresets(),
+            result.Shell.Includes.ExportTooltips(),
             result.Shell.Pages);
     }
 
@@ -317,6 +318,7 @@ internal static class DocumentModuleParser
             result.Shell.ModuleExtensions,
             result.Shell.Includes.ExportDefinitions(),
             result.Shell.Includes.ExportChartChromePresets(),
+            result.Shell.Includes.ExportTooltips(),
             result.Shell.Pages);
 
         DashboardValidator.Validate(document);
@@ -361,6 +363,7 @@ internal static class DocumentModuleParser
             shell.ModuleExtensions,
             shell.Includes.ExportDefinitions(),
             shell.Includes.ExportChartChromePresets(),
+            shell.Includes.ExportTooltips(),
             shell.Pages);
     }
 

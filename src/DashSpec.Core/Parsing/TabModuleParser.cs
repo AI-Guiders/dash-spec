@@ -11,6 +11,7 @@ internal sealed record TabModuleContent(
     LayoutBoardDefinition? LayoutBoard = null,
     IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null,
     IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
+    IReadOnlyDictionary<string, TooltipDefinition>? ModuleTooltips = null,
     IReadOnlyList<ReportPageDefinition>? Pages = null);
 
 internal static class TabModuleParser

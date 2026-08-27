@@ -11,6 +11,12 @@ namespace DashSpec.Core.Tests;
 
 public class ChartDataBuilderTests
 {
+    private static TooltipDefinition PeakAppsTooltip =>
+        new("peak_apps", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["value"] = "peak_apps",
+        }, "{value}");
+
     [Fact]
     public void BuildHeatmap_pivots_rows_and_sorts_axes()
     {
@@ -19,7 +25,6 @@ public class ChartDataBuilderTests
             ["x"] = "usage_date",
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
-            ["tooltip"] = "peak_apps",
         });
 
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
@@ -47,7 +52,7 @@ public class ChartDataBuilderTests
             },
         ];
 
-        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram, tooltip: PeakAppsTooltip);
 
         Assert.Equal(["2026-06-23", "2026-06-25"], matrix.XLabels);
         Assert.Equal(["bob", "alice"], matrix.YLabels);
@@ -68,7 +73,6 @@ public class ChartDataBuilderTests
             ["x"] = "usage_date",
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
-            ["tooltip"] = "peak_apps",
             ["y_format"] = "user.short",
         });
 
@@ -102,7 +106,7 @@ public class ChartDataBuilderTests
             },
         ];
 
-        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram, tooltip: PeakAppsTooltip);
 
         Assert.Single(matrix.YLabels);
         Assert.Equal("LonelySoul", matrix.YLabels[0]);

@@ -21,12 +21,18 @@ public class CardClickBehaviourTests
               on click
               show below as list from tooltip copy
               end click
+              tooltip peak_apps
+              source = peak_apps
+              end tooltip
               diagram heatmap
               x = usage_date
               y = user_sam
               value = peak_concurrent_apps
-              tooltip = peak_apps
               end heatmap
+              inspect
+              use tooltip peak_apps
+              as list
+              end inspect
               datasource view dbo.t
               bind
                 usage_date
@@ -43,6 +49,7 @@ public class CardClickBehaviourTests
         Assert.Equal(ShowFormat.List, show.Format);
         Assert.Equal(ShowSource.Tooltip, show.Source);
         Assert.True(show.CopyFriendly);
+        Assert.NotNull(card.Tooltip);
     }
 
     [Fact]
@@ -65,7 +72,7 @@ public class CardClickBehaviourTests
               end click
               diagram heatmap
               x = a y
-              value = c tooltip
+              value = c
               end heatmap
               datasource view dbo.t
               bind
@@ -106,5 +113,36 @@ public class CardClickBehaviourTests
             """));
 
         Assert.Contains("list, plain, or kv", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_on_click_show_accepts_split_on_tooltip_source()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab demo
+              report
+              title = "demo"
+              card c as "C"
+              on click
+              show below as list from tooltip split "; "
+              end click
+              tooltip peak_apps
+              source = peak_apps
+              end tooltip
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              inspect
+              use tooltip peak_apps
+              end inspect
+              datasource view dbo.t
+              end card
+              end report
+            end tab
+            """);
+
+        var show = Assert.IsType<ShowSelectionEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
+        Assert.Equal("; ", show.Split);
     }
 }

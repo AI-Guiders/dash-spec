@@ -34,16 +34,26 @@ public static class DiagramBindings
             "histogram" => ["value", "x"],
             "box" or "boxplot" => ["value", "x"],
             "gauge" => ["value"],
-            "heatmap" => ["x", "y", "value", "tooltip", "tooltip_time"],
-            _ => ["x", "y", "series", "value", "tooltip"],
+            "heatmap" => ["x", "y", "value"],
+            _ => ["x", "y", "series", "value"],
         };
 
-    public static IEnumerable<string> SelectedSqlColumns(DiagramDefinition diagram)
+    public static IEnumerable<string> SelectedSqlColumns(
+        DiagramDefinition diagram,
+        TooltipDefinition? tooltip = null)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var role in SelectColumnRoles(diagram.Kind))
         {
             if (TryGetColumn(diagram, role, out var column))
+            {
+                names.Add(column);
+            }
+        }
+
+        if (tooltip is not null)
+        {
+            foreach (var column in TooltipTemplate.SelectColumns(tooltip))
             {
                 names.Add(column);
             }

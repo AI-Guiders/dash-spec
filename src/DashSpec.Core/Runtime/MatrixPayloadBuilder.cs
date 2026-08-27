@@ -4,26 +4,34 @@ namespace DashSpec.Core.Runtime;
 
 internal static class MatrixPayloadBuilder
 {
+    private const string DefaultTooltipMergeSplit = ", ";
+
     public static MatrixPayload Build(
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
         DiagramDefinition diagram,
-        SeriesTransformSettings? seriesTransform = null)
+        SeriesTransformSettings? seriesTransform = null,
+        TooltipDefinition? tooltip = null)
     {
         var xColumn = DiagramBindings.Column(diagram, "x");
         var yColumn = DiagramBindings.Column(diagram, "y");
         var valueColumn = DiagramBindings.Column(diagram, "value");
-        diagram.Properties.TryGetValue("tooltip", out var tooltipColumn);
-        diagram.Properties.TryGetValue("tooltip_time", out var tooltipTimeColumn);
         diagram.Properties.TryGetValue("x_format", out var xFormat);
         diagram.Properties.TryGetValue("y_format", out var yFormat);
         diagram.Properties.TryGetValue("x_step", out var xStepRaw);
-        diagram.Properties.TryGetValue("tooltip_split", out var rawTooltipSplit);
-        var tooltipSplit = string.IsNullOrWhiteSpace(rawTooltipSplit) ? ", " : rawTooltipSplit;
 
         if (TimeSeriesGrid.TryParseStep(xStepRaw, out var xStep) &&
             string.Equals(xFormat, "time.short", StringComparison.OrdinalIgnoreCase))
         {
-            return BuildHourGrid(rows, diagram, xColumn, yColumn, valueColumn, tooltipColumn, tooltipTimeColumn, xFormat, yFormat, xStep, tooltipSplit, seriesTransform);
+            return BuildHourGrid(
+                rows,
+                xColumn,
+                yColumn,
+                valueColumn,
+                xFormat,
+                yFormat,
+                xStep,
+                seriesTransform,
+                tooltip);
         }
 
         var xLabels = new List<string>();
@@ -77,7 +85,7 @@ internal static class MatrixPayloadBuilder
             .Select(_ => new double?[xLabels.Count])
             .ToArray();
 
-        string?[][]? tooltips = tooltipColumn is null
+        string?[][]? tooltips = tooltip is null
             ? null
             : Enumerable.Range(0, yLabels.Count)
                 .Select(_ => new string?[xLabels.Count])
@@ -106,15 +114,7 @@ internal static class MatrixPayloadBuilder
                 continue;
             }
 
-            string? tip = null;
-            if (tooltips is not null && tooltipColumn is not null)
-            {
-                tip = FormatCellTooltip(row, tooltipColumn, tooltipTimeColumn);
-                if (string.IsNullOrWhiteSpace(tip))
-                {
-                    tip = null;
-                }
-            }
+            string? tip = tooltip is null ? null : TooltipTemplate.Render(tooltip, row);
 
             var existing = cells[yi][xi];
             if (existing is not null)
@@ -131,7 +131,10 @@ internal static class MatrixPayloadBuilder
 
                 if (value.Value == existing.Value && tooltips is not null && tip is not null)
                 {
-                    tooltips[yi][xi] = PayloadRowFormatters.MergeTooltipStrings(tooltips[yi][xi], tip, tooltipSplit);
+                    tooltips[yi][xi] = PayloadRowFormatters.MergeTooltipStrings(
+                        tooltips[yi][xi],
+                        tip,
+                        DefaultTooltipMergeSplit);
                     continue;
                 }
             }
@@ -157,19 +160,18 @@ internal static class MatrixPayloadBuilder
 
     private static MatrixPayload BuildHourGrid(
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
-        DiagramDefinition diagram,
         string xColumn,
         string yColumn,
         string valueColumn,
-        string? tooltipColumn,
-        string? tooltipTimeColumn,
         string? xFormat,
         string? yFormat,
         TimeSpan xStep,
-        string tooltipSplit,
-        SeriesTransformSettings? seriesTransform)
+        SeriesTransformSettings? seriesTransform,
+        TooltipDefinition? tooltip)
     {
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
+        var bucketRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
+            Comparer<DateTime>.Default);
         var yLabels = new List<string>();
         var yIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var yTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
@@ -193,6 +195,7 @@ internal static class MatrixPayloadBuilder
             {
                 seriesValues = new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
                 buckets[xKey] = seriesValues;
+                bucketRows[xKey] = new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.OrdinalIgnoreCase);
             }
 
             if (!yIndex.ContainsKey(y))
@@ -203,6 +206,7 @@ internal static class MatrixPayloadBuilder
 
             var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(valueColumn)) ?? 0;
             seriesValues[y] = value;
+            bucketRows[xKey][y] = row;
             yTotals[y] = yTotals.GetValueOrDefault(y) + value;
         }
 
@@ -218,14 +222,20 @@ internal static class MatrixPayloadBuilder
         {
             var day = buckets.Keys.First().Date;
             var expanded = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
+            var expandedRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
+                Comparer<DateTime>.Default);
             for (var hour = day; hour < day.AddDays(1); hour = hour.Add(xStep))
             {
                 expanded[hour] = buckets.TryGetValue(hour, out var values)
                     ? new Dictionary<string, double?>(values, StringComparer.OrdinalIgnoreCase)
                     : new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
+                expandedRows[hour] = bucketRows.TryGetValue(hour, out var rowMap)
+                    ? new Dictionary<string, IReadOnlyDictionary<string, object?>>(rowMap, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.OrdinalIgnoreCase);
             }
 
             buckets = expanded;
+            bucketRows = expandedRows;
         }
 
         var xLabels = buckets.Keys
@@ -236,7 +246,7 @@ internal static class MatrixPayloadBuilder
             .Select(_ => new double?[xLabels.Count])
             .ToArray();
 
-        string?[][]? tooltips = tooltipColumn is null
+        string?[][]? tooltips = tooltip is null
             ? null
             : Enumerable.Range(0, yLabels.Count)
                 .Select(_ => new string?[xLabels.Count])
@@ -248,7 +258,6 @@ internal static class MatrixPayloadBuilder
         var xi = 0;
         foreach (var (xKey, seriesValues) in buckets)
         {
-            _ = xKey;
             foreach (var (y, value) in seriesValues)
             {
                 if (!yIndex.TryGetValue(y, out var yi) || value is null)
@@ -259,6 +268,14 @@ internal static class MatrixPayloadBuilder
                 cells[yi][xi] = value;
                 min = Math.Min(min, value.Value);
                 max = Math.Max(max, value.Value);
+
+                if (tooltips is not null &&
+                    tooltip is not null &&
+                    bucketRows.TryGetValue(xKey, out var rowMap) &&
+                    rowMap.TryGetValue(y, out var row))
+                {
+                    tooltips[yi][xi] = TooltipTemplate.Render(tooltip, row);
+                }
             }
 
             xi++;
@@ -301,27 +318,5 @@ internal static class MatrixPayloadBuilder
         }
 
         yLabels.RemoveRange(seriesTransform.Max, yLabels.Count - seriesTransform.Max);
-    }
-
-    private static string? FormatCellTooltip(
-        IReadOnlyDictionary<string, object?> row,
-        string tooltipColumn,
-        string? tooltipTimeColumn)
-    {
-        var body = PayloadRowFormatters.FormatHeatmapLabel(row.GetValueOrDefault(tooltipColumn));
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return null;
-        }
-
-        if (string.IsNullOrWhiteSpace(tooltipTimeColumn) ||
-            !row.TryGetValue(tooltipTimeColumn, out var rawTime) ||
-            rawTime is null)
-        {
-            return body;
-        }
-
-        var time = PayloadRowFormatters.FormatHeatmapLabel(rawTime);
-        return string.IsNullOrWhiteSpace(time) ? body : $"{time}\n{body}";
     }
 }

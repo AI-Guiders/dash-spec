@@ -49,6 +49,9 @@ internal static class CardParser
         var extensionBlocks = new List<ExtensionBlockNode>();
         var localFiltersManualApply = false;
         var includeFragment = new SpecIncludeFragment(null, null, null);
+        InspectPresentation? inspect = null;
+        TooltipDefinition? tooltip = null;
+        var inlineTooltips = new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase);
 
         while (!BlockSyntax.IsBlockEnd(reader, "card", id) && !reader.IsEof)
         {
@@ -310,6 +313,28 @@ internal static class CardParser
                 continue;
             }
 
+            if (reader.TryKeyword("inspect"))
+            {
+                inspect = InspectPresentationParser.Merge(
+                    inspect,
+                    InspectPresentationParser.Parse(reader, $"Card '{id}'"));
+                reader.SkipNewlines();
+                continue;
+            }
+
+            if (reader.TryKeyword("tooltip"))
+            {
+                var tooltipId = reader.ReadIdent();
+                if (string.IsNullOrWhiteSpace(tooltipId))
+                {
+                    throw new DashSpecParseException($"Card '{id}': inline tooltip requires an id.");
+                }
+
+                inlineTooltips[tooltipId] = TooltipModuleParser.ParseInline(reader, tooltipId);
+                reader.SkipNewlines();
+                continue;
+            }
+
             if (reader.TryKeyword("transform"))
             {
                 if (!reader.TryKeyword("series"))
@@ -391,6 +416,9 @@ internal static class CardParser
                     new SpecIncludeFragment(null, null, seriesTransform)).SeriesTransform;
         }
 
+        inspect = InspectPresentationParser.Merge(includeFragment.Inspect, inspect);
+        tooltip = ResolveCardTooltip(inspect, inlineTooltips, includeFragment.Tooltips, tooltip);
+
         if (diagram is null && useCardPreset is null)
         {
             throw new DashSpecParseException("Card requires a diagram block or use <card-preset>.");
@@ -428,7 +456,42 @@ internal static class CardParser
             PageId: pageId,
             MatrixLimits: matrixLimits,
             OversizeMessage: oversizeMessage,
-            Chrome: chrome);
+            Chrome: chrome,
+            Inspect: inspect,
+            Tooltip: tooltip);
+    }
+
+    private static TooltipDefinition? ResolveCardTooltip(
+        InspectPresentation? inspect,
+        IReadOnlyDictionary<string, TooltipDefinition> inlineTooltips,
+        IReadOnlyDictionary<string, TooltipDefinition>? includeTooltips,
+        TooltipDefinition? explicitTooltip)
+    {
+        if (explicitTooltip is not null)
+        {
+            return explicitTooltip;
+        }
+
+        var merged = new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase);
+        if (includeTooltips is not null)
+        {
+            foreach (var (key, value) in includeTooltips)
+            {
+                merged[key] = value;
+            }
+        }
+
+        foreach (var (key, value) in inlineTooltips)
+        {
+            merged[key] = value;
+        }
+
+        if (inspect?.TooltipId is not { } tooltipId)
+        {
+            return null;
+        }
+
+        return merged.TryGetValue(tooltipId, out var resolved) ? resolved : null;
     }
 
     private static void ParseDataBlock(
