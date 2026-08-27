@@ -1,33 +1,32 @@
-# DASHSPEC-ADR-0029: Tooltip as entity (named slots + string)
+# DASHSPEC-ADR-0029: Tooltip as entity (content only)
 
 | | |
 |---|---|
 | **Status** | Proposed |
 | **Date** | 2026-08-27 |
-| **Supersedes** | earlier drafts (inspect-only chrome; raw `{sql_col}` templates; full EBNF / grammar tokens) |
+| **Supersedes** | earlier drafts (format/split on tooltip; EBNF; raw SQL placeholders) |
 | **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) |
 
 ## Context
 
-Сейчас tooltip размазан: колонка/`tooltip_time`/`format`/`split` в `heatmap { }`, склейка time+body в Core, Host только показывает. Measure и inspect-payload в одном блоке; нет нормального способа собрать текст из нескольких колонок без хардкода.
+Tooltip сегодня смешивает **что** (колонки, склейка) и **как** (`tooltip_format` / `tooltip_split` / label в том же heatmap-блоке).  
+Разделение: tooltip решает **содержание**; способ показа (список, inline, kv, …) — **другой слой**.
 
-Дух (не буквальная копия CIDE `presentation` / EBNF): **ты сам обозначаешь позиции так, как хочешь** — даёшь слотам удобные имена, потом пишешь строку с `{этими_именами}`.
+Дух именования: в `variables` слоты называешь как удобно; строка подставляет `{слоты}`.
 
 ## Decision
 
 ### 1. Три слоя
 
-| Слой | Что |
-|------|-----|
-| Measure | `heatmap` — только `x` / `y` / `value` |
-| Tooltip | отдельная сущность `@tooltip` / `.dashtooltip` |
-| Inspect / act | `inspect { use tooltip … }` · `on click { show … from tooltip }` |
+| Слой | Отвечает на | Примеры |
+|------|-------------|---------|
+| **Measure** | что на осях / в ячейке | `heatmap` → `x` `y` `value` |
+| **Tooltip** | **что** показать при inspect/select | `@tooltip` → `variables` + `tooltip = "…"` |
+| **Present / act** | **как** показать + действия | `inspect` · `on click { show below as list … }` |
 
-Нет tooltip → value-only, `from tooltip` = resolve error.  
-Tooltip есть, ячейка после подстановки пустая → нет inspect UX (не «Нет данных…»).  
-Warm stub без drill-down → просто не объявлять tooltip.
+Tooltip **не** задаёт list/inline/table. Это делают present-эффекты / inspect chrome.
 
-### 2. Именованные позиции + строка
+### 2. Tooltip = только content
 
 ```text
 @tooltip peak_hosts
@@ -38,42 +37,50 @@ variables
 end variables
 
 tooltip = "{peak_time}\n{hosts}"
-label = "Одновременно в пике"
-format = list
-split = "; "
 ```
 
-- `variables` — слот → SQL column; **имена слотов — твои**, любые удобные (`n1`, `hosts`, `peak_time`…).
-- `tooltip = "…"` — обычная interpolated string: `{slot}` подставляется из row по RHS слота.
-- `label` / `format` / `split` — chrome списка (как сейчас).
+| Поле | Смысл |
+|------|--------|
+| `variables` | слот → SQL column; имена — авторские |
+| `tooltip` | interpolated string → текст (или `null`, если пусто) |
 
-Одна колонка:
+Shorthand: `source = peak_apps` ≡ один слот + `tooltip = "{value}"`.
 
-```text
-@tooltip peak_apps
-
-variables
-  apps = peak_apps
-end variables
-
-tooltip = "{apps}"
-label = "Состав в пике"
-format = list
-```
-
-Или shorthand `source = peak_apps` (= один слот + `tooltip = "{value}"`).
-
-Правила без церемоний:
+Нет: `format`, `split`, `label` на `@tooltip`.
 
 - `{unknown}` → ошибка;
-- SELECT = RHS слотов, реально встретившихся в строке;
-- пустой результат → `null` в payload;
-- `
-` в строке — просто перевод строки (Presenter может взять первую линию как headline, если так написали).
+- SELECT = RHS использованных слотов;
+- пустой render → нет inspect payload.
 
-Не делаем: EBNF в ADR, настраиваемые `{`/`}`, `@tooltipgrammar`, expressions в слотах.
+### 3. Как показать — inspect / show
 
-### 3. Wiring
+```text
+inspect
+  use tooltip peak_hosts
+  label = "Одновременно в пике"
+  as list
+  split = "; "
+end inspect
+```
+
+Или только через click (без hover chrome):
+
+```text
+on click
+  show below as list from tooltip split "; "
+end click
+```
+
+| Где | Что |
+|-----|-----|
+| `inspect` | hover/popover: `use tooltip`, опционально `label`, `as list\|inline`, `split` |
+| `show below as …` | sticky detail: уже есть `list` / `plain` / `kv` ([ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md)); `split` — сюда же, если source = tooltip |
+
+Default при `use tooltip` без `as`: Host может взять `list`, если в show/inspect задан `split`, иначе `inline` — уточнить при implement; канон: **явный `as` предпочтительнее**.
+
+Merge: diagram `inspect` → card `inspect` override.
+
+### 4. Wiring (diagram)
 
 ```text
 @diagram lus_peak_concurrent_heatmap
@@ -88,35 +95,40 @@ end heatmap
 
 inspect
   use tooltip peak_hosts
+  label = "Одновременно в пике"
+  as list
+  split = "; "
 end inspect
 ```
 
-Регистрация: `!include "*.dashtooltip"` · `include tooltip "…"` · inline в diagram module.  
-Card может override `inspect`. `from tooltip` → effective entity карточки.
+Регистрация tooltip: `!include "*.dashtooltip"` · `include tooltip` · inline в module.
 
-### 4. Deprecated (один release)
+### 5. Deprecated (один release)
 
-`tooltip` / `tooltip_time` / `tooltip_format` / `tooltip_split` на heatmap → синтетический legacy tooltip + lint; потом parse error.
+Heatmap `tooltip` / `tooltip_time` / `tooltip_format` / `tooltip_split` / `as` на tooltip-колонке → legacy synthesizer (`variables` + string + `inspect` chrome) + lint; потом error.
 
-### 5. Pipeline (кратко)
+### 6. Pipeline
 
-Parse entity → resolve на card → SELECT RHS → per-cell render → Host показывает.  
-Убрать `FormatCellTooltip` time-магию из Core.
+Parse `@tooltip` (content) + `inspect`/`show` (presentation) → resolve → SELECT → render string per cell → Host применяет **present** rules к raw text.
+
+Убрать Core-магию `FormatCellTooltip` (time+`\n`).
 
 ## Non-goals
 
-Mini-PL в строке, `on hover` behaviour, Chart.js tooltip для matrix, отдельный grammar-модуль.
+- `format`/`split`/`label` на tooltip entity;
+- EBNF / настраиваемые маркеры `{ }`;
+- expressions в строке;
+- tooltip решает table vs list.
 
 ## Consequences
 
-Core: `TooltipDefinition` + module parser + include + validate.  
-Host: presentation из entity.  
-LUS: `.dashtooltip` + measure-only heatmaps.  
-Amends ADR-0004 / ADR-0028.
+- Content и presentation снова orthogonal (как measure vs chrome).
+- ADR-0028 `show … as list|plain|kv` — канон «как»; tooltip — только source текста.
+- LUS: `.dashtooltip` тонкий; list/split/label живут в `inspect` на diagram/card.
 
 ## Implementation (after Accept)
 
 1. Accept.
-2. Model / parser / include / inspect wire / legacy.
-3. Render + tests.
-4. Host + LUS migrate + soak.
+2. Tooltip module (variables + string) + inspect block (use/label/as/split).
+3. Move format/split/label off diagram props / MatrixPresentation-from-diagram.
+4. Host + LUS migrate.
