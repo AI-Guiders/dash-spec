@@ -41,13 +41,16 @@ Export: Control Center «Download TOML fragment» for air-gap backup (non-goal: 
 
 ### 3. Control Center UI (Host Blazor)
 
-Route: `/admin` (and `/admin/{section}`).
+Route: `/admin` → redirect `/admin/access`; content at `/admin/{section}`.
 
-| Section | Purpose |
-|---------|---------|
-| Access | set/rotate API key |
-| Catalog | git url/branch/path/interval; **Sync now**; last sync status |
-| Sync webhook | show inbound URL; **Generate secret**; copy for Forge `FORGE_DASHSPEC_WEBHOOK_*` |
+**Chrome:** Forge/GH settings shape — **List | Data** (left section nav, right one-section pane). Not a single scrolling form.
+
+| Section id | Purpose |
+|------------|---------|
+| `access` | set/rotate API key |
+| `catalog` | git url/branch/path/interval; **Sync now**; last sync status |
+| `sync` | inbound URL; **Generate secret**; Forge `FORGE_DASHSPEC_WEBHOOK_*` |
+| `export` | redacted TOML fragment (air-gap backup) |
 
 Auth: same Host access gate (`[access]` / cookie). No anonymous admin.
 
