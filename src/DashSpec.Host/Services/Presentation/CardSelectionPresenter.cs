@@ -16,29 +16,57 @@ internal static class CardSelectionPresenter
         HeatmapCellContext context,
         MatrixPresentation? presentation)
     {
-        if (effect.Source is not ShowSource.Tooltip)
+        if (effect.Source is ShowSource.Tooltip)
         {
+            var split = presentation?.TooltipSplit ?? ", ";
+            var raw = context.TooltipRaw;
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                string? peakTime = null;
+                var body = raw;
+                var newline = raw.IndexOf('\n');
+                if (newline >= 0)
+                {
+                    peakTime = raw[..newline].Trim();
+                    body = raw[(newline + 1)..];
+                }
+
+                var headline = BuildSelectionHeadline(context, peakTime);
+                return (headline, SplitTooltip(body, split));
+            }
+
+            // Warm heatmap stubs may leave tooltip NULL while the cell still has a value.
+            if (context.Value is not null)
+            {
+                return (
+                    BuildSelectionHeadline(context, peakTime: null),
+                    BuildCellFallbackItems(context, presentation));
+            }
+
             return (null, []);
         }
 
-        var split = presentation?.TooltipSplit ?? ", ";
-        var raw = context.TooltipRaw;
-        if (string.IsNullOrWhiteSpace(raw))
+        if (effect.Source is ShowSource.Cell)
         {
-            return (null, []);
+            return (
+                BuildSelectionHeadline(context, peakTime: null),
+                BuildCellFallbackItems(context, presentation));
         }
 
-        string? peakTime = null;
-        var body = raw;
-        var newline = raw.IndexOf('\n');
-        if (newline >= 0)
+        return (null, []);
+    }
+
+    private static IReadOnlyList<string> BuildCellFallbackItems(
+        HeatmapCellContext context,
+        MatrixPresentation? presentation)
+    {
+        var rows = BuildKeyValueRows(context, presentation);
+        if (rows.Count == 0)
         {
-            peakTime = raw[..newline].Trim();
-            body = raw[(newline + 1)..];
+            return [];
         }
 
-        var headline = BuildSelectionHeadline(context, peakTime);
-        return (headline, SplitTooltip(body, split));
+        return rows.Select(row => $"{row.Key}: {row.Value}").ToList();
     }
 
     public static string BuildPlainText(
@@ -48,8 +76,12 @@ internal static class CardSelectionPresenter
     {
         return effect.Source switch
         {
-            ShowSource.Tooltip => context.TooltipRaw ?? string.Empty,
-            ShowSource.Cell => context.TooltipRaw ?? FormatCellSummary(context, presentation),
+            ShowSource.Tooltip => string.IsNullOrWhiteSpace(context.TooltipRaw)
+                ? FormatCellSummary(context, presentation)
+                : context.TooltipRaw,
+            ShowSource.Cell => string.IsNullOrWhiteSpace(context.TooltipRaw)
+                ? FormatCellSummary(context, presentation)
+                : context.TooltipRaw,
             _ => string.Empty,
         };
     }
