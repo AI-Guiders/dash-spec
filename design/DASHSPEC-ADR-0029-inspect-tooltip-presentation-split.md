@@ -32,35 +32,74 @@ Heatmap «tooltip» сегодня — не сущность, а размаза�
 | Слой | Сущность | Пример |
 |------|----------|--------|
 | **Measure** | `heatmap` / chart kind | `x`, `y`, `value` |
-| **Tooltip** | `@tooltip` / `.dashtooltip` | `template`, `label`, `format`, `split` |
+| **Tooltip** | `@tooltip` / `.dashtooltip` | `variables` + `tooltip = "…"`, `label`, `format`, `split` |
 | **Inspect / act** | `inspect` + `on click` | hover popover; `show below list from tooltip` |
 
 - **Нет блока tooltip** → value-only heatmap: hover-detail только по value (без list/inspect UX), `from tooltip` в card — **ошибка resolve**.
 - **Есть tooltip, ячейка после render пустая** → нет hover inspect / пустой list (не «Нет данных для выбранной ячейки»).
 - Warm stub без drill-down колонок → **не объявлять** tooltip в spec (не маскировать NULL в SQL «для совместимости»).
 
-### 2. Tooltip — first-class module
+### 2. Tooltip — first-class module + `variables`
 
-Файл `.dashtooltip` (зеркало `.dashpresentation` / `.dashdiagram`):
+Канон в духе CIDE `presentation` / `[presentation_grammar]`: **сначала именованные слоты**, потом строка, которая на них ссылается. Placeholders в строке — **не** сырые SQL-имена, а ключи из `variables`.
+
+Файл `.dashtooltip`:
 
 ```text
 @tooltip peak_hosts
 
+variables
+  peak_time = peak_bucket_hhmm
+  hosts = peak_users_by_host
+end variables
+
+tooltip = "{peak_time}\n{hosts}"
 label = "Одновременно в пике"
 format = list
 split = "; "
-template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
 ```
 
-| Поле | Слой | Смысл |
-|------|------|--------|
-| `template` | data → text | SSOT содержимого ячейки; placeholders = SQL columns |
+Минимальный одноколоночный:
+
+```text
+@tooltip peak_apps
+
+variables
+  apps = peak_apps
+end variables
+
+tooltip = "{apps}"
+label = "Состав в пике"
+format = list
+split = ", "
+```
+
+| Поле / блок | Слой | Смысл |
+|-------------|------|--------|
+| `variables` | binding | `name = column` — слот → SQL column (v1); имя слота — идентиф. для placeholders |
+| `tooltip` | data → text | interpolated string; `{name}` только из `variables` |
 | `label` | presentation | заголовок секции inspect / list |
-| `format` | presentation | `list` \| `inline` (default `list`, если задан template) |
+| `format` | presentation | `list` \| `inline` (default `list`, если задан `tooltip`) |
 | `split` | presentation | разделитель элементов list после render (default `, `) |
 
-**Shorthand:** `source = peak_users_by_host` ≡ `template = "{peak_users_by_host}"`.  
-`source` и `template` вместе — parse error, если не эквивалентны.
+**Правила v1:**
+
+- `variables` обязателен, если есть `tooltip =` с хотя бы одним placeholder.
+- `{unknown}` (нет в `variables`) → **parse/resolve error** (fail closed).
+- Слот объявлен, но не использован в `tooltip` → warning/lint (SELECT всё равно может не тянуть лишнее: в SELECT только слоты, реально встречающиеся в строке).
+- RHS `variables`: v1 = **column binding** (ident). Строковый литерал (`prefix = "пик "`) — follow-up, не блокирует LUS.
+- Alias свойства: `template =` ≡ `tooltip =` (одно имя канон — `tooltip`; `template` deprecated synonym one release).
+
+**Shorthand:** `source = peak_apps` ≡
+
+```text
+variables
+  value = peak_apps
+end variables
+tooltip = "{value}"
+```
+
+(`source` + явные `variables`/`tooltip` вместе — parse error.)
 
 Регистрация:
 
@@ -111,17 +150,19 @@ Merge: diagram-module inspect → card inspect override (card wins).
 
 ### 4. Template grammar (a-la CIDE `presentation`)
 
-Паттерн как у [CIDE ADR-0017](../cascade-ide/docs/adr/0017-multi-window-workspace-and-agent-surfaces.md): строка + **настраиваемые токены грамматики** + EBNF в ADR; реализация — узкий ручной парсер + тесты (не ANTLR, пока DSL узкий — см. CIDE ADR-0032).
+Два уровня, как у CIDE:
 
-#### 4.1 Default tokens
+1. **Словарь слотов** — блок `variables` (аналог настраиваемых идентификаторов / `[presentation_grammar]` literals).
+2. **Строка раскладки** — `tooltip = "…"` (аналог строки `presentation`), EBNF ниже.
+
+Реализация — узкий ручной парсер + тесты (не ANTLR, пока DSL узкий — см. CIDE ADR-0032).
+
+#### 4.1 Placeholder markers (optional `grammar`)
 
 | Token | Default | Смысл |
 |-------|---------|--------|
-| `open_placeholder` / `close_placeholder` | `{` / `}` | границы имени колонки |
-| `escape` | `\\` | экранирование следующего символа (в т.ч. `{`, `}`, `\\`) |
-| `newline_escape` | `\n` | литеральный перевод строки в template string |
-
-Опциональная секция на `@tooltip` (или `@tooltipgrammar` / stdlib preset — follow-up, если понадобится менять маркеры без правки шаблонов):
+| `open` / `close` | `{` / `}` | границы **имени слота** (не SQL column) |
+| `escape` | `\\` | экранирование `{`, `}`, `\\`, `n` |
 
 ```text
 @tooltip peak_hosts
@@ -132,38 +173,54 @@ grammar
   escape = "\\"
 end grammar
 
-template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
-…
+variables
+  peak_time = peak_bucket_hhmm
+  hosts = peak_users_by_host
+end variables
+
+tooltip = "{peak_time}\n{hosts}"
 ```
 
-v1: секция `grammar` **опциональна**; без неё — defaults выше. Менять `open`/`close` на `[`/`]` допустимо (тест + один stdlib preset), но **не** требуется для LUS.
+v1: `grammar` опционален (defaults). Отдельный `@tooltipgrammar` / stdlib — **не** нужен, пока хватает локального блока.
 
-#### 4.2 EBNF (template body)
+#### 4.2 EBNF
 
 ```ebnf
-template   ::= { fragment }
-fragment   ::= literal | placeholder | escape_seq | newline_esc
-placeholder ::= OPEN ident CLOSE
-literal    ::= any char except OPEN, ESCAPE-prefix, and the two-char newline_esc
-escape_seq ::= ESCAPE ( OPEN | CLOSE | ESCAPE | "n" )
-newline_esc ::= "\\" "n"     (* when ESCAPE is backslash — sugar; same as escape_seq with n *)
-ident      ::= (letter | "_") { letter | digit | "_" }
-OPEN/CLOSE/ESCAPE ::= from grammar tokens (defaults "{", "}", "\\")
+tooltip_module ::= { variables_block | grammar_block | prop }
+
+variables_block ::= "variables" { binding } "end" "variables"
+binding         ::= ident "=" column_ident
+
+grammar_block   ::= "grammar" { grammar_prop } "end" "grammar"
+
+prop            ::= "tooltip" "=" string
+                  | "label" "=" string
+                  | "format" "=" ("list" | "inline")
+                  | "split" "=" string
+                  | "source" "=" column_ident   (* shorthand *)
+
+tooltip_string  ::= { fragment }
+fragment        ::= literal | placeholder | escape_seq
+placeholder     ::= OPEN slot_ident CLOSE
+slot_ident      ::= ident   (* must exist in variables *)
+literal         ::= any char except OPEN and ESCAPE-prefix
+escape_seq      ::= ESCAPE ( OPEN | CLOSE | ESCAPE | "n" )
+OPEN/CLOSE/ESCAPE ::= from grammar tokens
 ```
 
-Семантика render (одна SQL row):
+#### 4.3 Render (одна SQL row)
 
-1. Каждый `placeholder` → `FormatCell(row[ident])` (тот же formatter, что heatmap labels: null/DBNull → `""`).
-2. Склейка fragments → raw tooltip string ячейки.
-3. Если результат `IsNullOrWhiteSpace` → ячейка **без** tooltip payload (`null` в matrix), UI не показывает inspect.
-4. `format = list`: Host/Presenter сплитает **body** по `split` (как сейчас); если raw содержит `\n`, первая линия может быть headline (peak time) — **только** если author так заложил в template (`"{time}\n{list}"`), не магия Core.
+1. Разобрать `tooltip` string → fragments.
+2. Каждый `placeholder` `{slot}` → `FormatCell(row[variables[slot]])` (null/DBNull → `""`).
+3. Склейка → raw string ячейки.
+4. `IsNullOrWhiteSpace` → `null` в matrix (нет inspect UX).
+5. `format = list`: Presenter сплитает body по `split`. Форма `"{peak_time}\n{hosts}"` — **документированный** shape для headline (первая линия), не магия Core по имени колонки.
 
-#### 4.3 SELECT columns
+#### 4.4 SELECT columns
 
-`DiagramBindings.SelectedSqlColumns` / query builder:
+В SELECT попадают **RHS** слотов, которые реально встречаются в `tooltip` string (не весь `variables` block).
 
-- всегда: measure roles (`x`/`y`/`value`/…);
-- плюс **все** `ident` из resolved tooltip template (и time больше не отдельное свойство).
+Measure roles (`x`/`y`/`value`) — по-прежнему с diagram; tooltip columns — только через entity.
 
 ### 5. Pointer intents (unchanged from ADR-0028)
 
@@ -179,10 +236,11 @@ OPEN/CLOSE/ESCAPE ::= from grammar tokens (defaults "{", "}", "\\")
 
 | Было | Стало |
 |------|--------|
-| `tooltip = col as "Label"` в `heatmap { }` | `@tooltip` + `template`/`source` + `label` + `inspect { use tooltip … }` |
-| `tooltip_time = col` | `{col}` в `template` |
+| `tooltip = col as "Label"` в `heatmap { }` | `@tooltip` + `variables` + `tooltip = "{slot}"` + `label` + `inspect { use tooltip … }` |
+| `tooltip_time = col` | слот в `variables` + `{slot}` в строке |
 | `tooltip_format` / `tooltip_split` в heatmap | поля `@tooltip` |
-| Core `FormatCellTooltip` time+`\n`+body | render template |
+| Core `FormatCellTooltip` time+`\n`+body | render `tooltip` string через `variables` |
+| placeholders = SQL column names | placeholders = variable names only |
 
 Parser v1: legacy heatmap props **ещё парсятся** → синтетический anonymous tooltip (`id = "__legacy"`) + warning/lint. Следующий minor: parse error.
 
@@ -193,10 +251,15 @@ Parser v1: legacy heatmap props **ещё парсятся** → синтетич
 ```text
 @tooltip peak_hosts
 
+variables
+  peak_time = peak_bucket_hhmm
+  hosts = peak_users_by_host
+end variables
+
+tooltip = "{peak_time}\n{hosts}"
 label = "Одновременно в пике"
 format = list
 split = "; "
-template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
 ```
 
 **`tooltips/peak-apps.dashtooltip`:**
@@ -204,22 +267,26 @@ template = "{peak_bucket_hhmm}\n{peak_users_by_host}"
 ```text
 @tooltip peak_apps
 
+variables
+  apps = peak_apps
+end variables
+
+tooltip = "{apps}"
 label = "Состав в пике"
 format = list
 split = ", "
-source = peak_apps
 ```
 
 **`diagrams/overview/peak-concurrent-heatmap.dashdiagram`:** heatmap только measure + `inspect { use tooltip peak_hosts }`.
 
 ### 8. Pipeline
 
-1. Parse/register `@tooltip` → `TooltipDefinition`.
+1. Parse/register `@tooltip` → `TooltipDefinition` (`Variables` map + `Tooltip` string).
 2. Resolve card: attach effective `TooltipDefinition` (inspect ref).
-3. Query: SELECT includes placeholder columns.
-4. Payload: per cell render template → `MatrixPayload.Tooltips` (raw string or null).
-5. `MatrixPresentation`: label/format/split from tooltip entity (не из diagram props).
-6. Host viz / `CardSelectionPresenter`: без специальной time-логики; headline из первой линии только если template её положил.
+3. Query: SELECT includes RHS columns for slots used in `tooltip` string.
+4. Payload: per cell resolve slots → render string → `MatrixPayload.Tooltips` (raw or null).
+5. `MatrixPresentation`: label/format/split from tooltip entity.
+6. Host viz / `CardSelectionPresenter`: headline из первой линии только по documented template shape.
 
 Validate:
 
@@ -248,12 +315,12 @@ Validate:
 
 1. ADR review → Status **Accepted**.
 2. Model + parser + `!include` / `include tooltip` + inline block.
-3. Template grammar + renderer + tests (incl. escape / empty → null).
+3. `variables` + `tooltip` string grammar/renderer + tests (unknown slot → error; empty → null).
 4. Resolve/validate wiring; legacy synthesizer.
 5. Host presentation path; remove Core time-merge magic.
 6. Migrate LUS heatmaps; soak Host.
 
 ## Open questions
 
-- Нужен ли v1 отдельный `@tooltipgrammar` / stdlib preset, или достаточно optional `grammar { }` внутри tooltip (как локальный `[presentation_grammar]`)?
-- Headline convention: оставить «первая линия до `\n` = peak time» в Presenter как **документированный** contract template shape, или ввести явный `headline_template` позже?
+- Headline: оставить documented shape `"{peak_time}\n{hosts}"` (первая линия = headline в Presenter), или позже явный `headline = "{peak_time}"`?
+- Literals в `variables` (`prefix = "пик "`) — в том же minor, что Accept, или follow-up?
