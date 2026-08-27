@@ -11,12 +11,16 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Dev;
 using DashSpec.Host.Services.Git;
-using DashSpec.Host.Services.Diagnostics;
+using DashSpec.Host.Data;
+using DashSpec.Host.Services.Settings;
+using Microsoft.EntityFrameworkCore;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
+using DashSpec.Host.Services.Diagnostics;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging.Abstractions;
+using OutWit.Database.EntityFramework.Extensions;
 
 if (args is ["validate", var validatePath, ..])
 {
@@ -141,10 +145,13 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddSingleton<GitCatalogSyncService>();
-if (bootstrap.CatalogGit.Enabled && !string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Url))
-{
-    builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
-}
+builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
+
+var hostDbPath = HostSettingsPaths.ResolveDatabasePath(bootstrap);
+HostSettingsPaths.EnsureDatabase(hostDbPath);
+builder.Services.AddDbContext<DashSpecHostDbContext>(options =>
+    options.UseWitDb($"Data Source={hostDbPath}"));
+builder.Services.AddScoped<HostSettingsService>();
 
 var app = builder.Build();
 

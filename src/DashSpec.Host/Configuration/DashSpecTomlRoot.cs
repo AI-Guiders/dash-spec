@@ -4,6 +4,8 @@ public sealed class DashSpecTomlRoot
 {
     public DashboardTomlSection Dashboard { get; set; } = new();
 
+    public HostTomlSection Host { get; set; } = new();
+
     public CatalogGitTomlSection CatalogGit { get; set; } = new();
 
     public AccessTomlSection Access { get; set; } = new();
@@ -12,6 +14,12 @@ public sealed class DashSpecTomlRoot
         new(StringComparer.OrdinalIgnoreCase);
 
     public PluginsTomlSection Plugins { get; set; } = new();
+}
+
+public sealed class HostTomlSection
+{
+    /// <summary>WitDB path for Control Center settings (ADR-0042). Default: %ProgramData%\DashSpec\host-settings.witdb</summary>
+    public string DatabasePath { get; set; } = string.Empty;
 }
 
 public sealed class AccessTomlSection
