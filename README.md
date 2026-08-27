@@ -253,7 +253,7 @@ Legacy `toolbar { usage_date, app_name }` — одна неявная строк
 - [ADR-0022](design/DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md) — toolbar board
 - [ADR-0026](design/DASHSPEC-ADR-0026-layout-module-scope.md) — mandatory `scope` in `.dashlayout`
 - [ADR-0027](design/DASHSPEC-ADR-0027-single-declaration-and-layout-ids.md) — single declaration; layout tokens = filter/card id (proposed)
-- [ADR-0029](design/DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md) — tooltip entity + template grammar (proposed)
+- [ADR-0029](design/DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md) — tooltip entity: named slots + string (proposed)
 - [ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md) — `.dashcatalog`
 - [ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md) — document blocks (`runtime`, `configuration`, `wiring`, `body`)
 
