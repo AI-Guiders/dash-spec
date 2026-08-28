@@ -12,6 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="DashSpec.Host.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.4.2" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane\AIGuiders.Platform.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />

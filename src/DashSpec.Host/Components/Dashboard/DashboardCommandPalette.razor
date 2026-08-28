@@ -1,0 +1,123 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using AIGuiders.Platform.CommandPlane
+@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
+
+@if (Visible)
+{
+    <div class="dash-command-palette-backdrop" @onclick="Close">
+        <div class="dash-command-palette" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
+            <header class="dash-command-palette-header">
+                <span class="dash-command-palette-title">Commands</span>
+                <span class="dash-command-palette-hint">Ctrl+K</span>
+            </header>
+            <input class="dash-command-palette-input"
+                   placeholder="Type /select date today…"
+                   @bind="Line"
+                   @bind:event="oninput"
+                   @onkeydown="OnKeyDown" />
+            <ul class="dash-command-palette-list" role="listbox">
+                @for (var i = 0; i < _suggestions.Count; i++)
+                {
+                    var item = _suggestions[i];
+                    var index = i;
+                    <li role="option"
+                        class="dash-command-palette-item @(index == _selected ? "active" : null)"
+                        @onclick="() => Accept(item)">
+                        <span class="path">@item.InsertText.TrimEnd()</span>
+                        <span class="help">@item.Help</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public IReadOnlyList<string> ToolbarFilterNames { get; set; } = [];
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<string> OnCommit { get; set; }
+
+    string _line = "/";
+    int _selected;
+    IReadOnlyList<SlashCompletionItem> _suggestions = [];
+
+    protected override void OnParametersSet()
+    {
+        if (Visible)
+        {
+            RefreshSuggestions();
+        }
+    }
+
+    string Line
+    {
+        get => _line;
+        set
+        {
+            _line = value.StartsWith('/') ? value : "/" + value;
+            RefreshSuggestions();
+        }
+    }
+
+    void RefreshSuggestions()
+    {
+        var body = _line.Length <= 1 ? "" : _line[1..];
+        _suggestions = SlashStepCompletion.GetSuggestions(
+            CommandService.BuildCatalog(ToolbarFilterNames),
+            body);
+        _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
+    }
+
+    async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await Close();
+            return;
+        }
+
+        if (e.Key == "ArrowDown" && _suggestions.Count > 0)
+        {
+            _selected = (_selected + 1) % _suggestions.Count;
+            return;
+        }
+
+        if (e.Key == "ArrowUp" && _suggestions.Count > 0)
+        {
+            _selected = (_selected - 1 + _suggestions.Count) % _suggestions.Count;
+            return;
+        }
+
+        if (e.Key == "Tab" && _suggestions.Count > 0)
+        {
+            Accept(_suggestions[_selected]);
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            await OnCommit.InvokeAsync(_line.Trim());
+            await Close();
+        }
+    }
+
+    void Accept(SlashCompletionItem item)
+    {
+        _line = item.InsertText.TrimEnd();
+        if (item.InsertText.EndsWith(' '))
+        {
+            _line += " ";
+        }
+
+        RefreshSuggestions();
+    }
+
+    async Task Close()
+    {
+        _line = "/";
+        _selected = 0;
+        _suggestions = [];
+        await OnClose.InvokeAsync();
+    }
+}

@@ -19,6 +19,8 @@ public interface IDashSpecContributorRegistry
     void AddFilterWidget(FilterWidgetContributorDescriptor descriptor);
 
     void AddCardChrome(CardChromeContributorDescriptor descriptor);
+
+    void AddCommand(DashSpecCommandDescriptor descriptor);
 }
 
 public sealed record FilterWidgetContributorDescriptor(
