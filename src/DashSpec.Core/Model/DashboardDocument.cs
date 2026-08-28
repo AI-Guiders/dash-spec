@@ -19,8 +19,14 @@ public sealed record DashboardDocument(
     IReadOnlyDictionary<string, ModuleDiagramDefinition>? ModuleDiagrams = null,
     IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
     IReadOnlyDictionary<string, TooltipDefinition>? ModuleTooltips = null,
-    IReadOnlyList<ReportPageDefinition>? Pages = null)
+    IReadOnlyList<ReportPageDefinition>? Pages = null,
+    IReadOnlyDictionary<string, string>? CommandAliases = null)
 {
+    public static IReadOnlyDictionary<string, string> EmptyCommandAliases { get; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, string> ResolvedCommandAliases =>
+        CommandAliases ?? EmptyCommandAliases;
     public static IReadOnlyDictionary<string, ModuleDiagramDefinition> EmptyModuleDiagrams { get; } =
         new Dictionary<string, ModuleDiagramDefinition>(StringComparer.OrdinalIgnoreCase);
 
