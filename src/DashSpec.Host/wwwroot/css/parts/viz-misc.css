@@ -40,6 +40,22 @@ th {
   font-variant-numeric: tabular-nums;
 }
 
+.card-kpi .number {
+  font-size: clamp(1rem, 11cqi, 1.85rem);
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-kpi .number-delta {
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .number-block {
   display: flex;
   flex-direction: column;
