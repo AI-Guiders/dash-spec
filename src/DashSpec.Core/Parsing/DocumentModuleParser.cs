@@ -319,7 +319,8 @@ internal static class DocumentModuleParser
             result.Shell.Includes.ExportDefinitions(),
             result.Shell.Includes.ExportChartChromePresets(),
             result.Shell.Includes.ExportTooltips(),
-            result.Shell.Pages);
+            result.Shell.Pages,
+            result.Shell.CommandAliases);
 
         DashboardValidator.Validate(document);
         return document;
@@ -364,7 +365,8 @@ internal static class DocumentModuleParser
             shell.Includes.ExportDefinitions(),
             shell.Includes.ExportChartChromePresets(),
             shell.Includes.ExportTooltips(),
-            shell.Pages);
+            shell.Pages,
+            shell.CommandAliases);
     }
 
     private static (DashboardShellContext Shell, SqlDialect SqlDialect, string? PalettePath, string? DiagramLibraryPath, string? ReportTitle)
@@ -776,6 +778,17 @@ internal static class DocumentModuleParser
                 }
 
                 ParsePageBlock(reader, shell, pageId);
+                continue;
+            }
+
+            if (reader.TryKeyword("commands"))
+            {
+                foreach (var (alias, filterId) in CommandAliasesParser.Parse(reader))
+                {
+                    shell.CommandAliases[alias] = filterId;
+                }
+
+                reader.SkipNewlines();
                 continue;
             }
 
