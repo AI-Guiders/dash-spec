@@ -57,6 +57,8 @@ internal sealed class DashboardShellContext
 
     public ModuleExtensionsDefinition ModuleExtensions { get; set; } = ModuleExtensionsDefinition.Empty;
 
+    public Dictionary<string, string> CommandAliases { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyList<FilterDefinition> CardBindValidationFilters =>
         MergeFilterScopes(ParentFilters, ShellFilters, TabLocalFilters, Filters);
 
@@ -175,6 +177,17 @@ internal static class DashboardShellParser
         if (reader.TryKeyword("filters") || reader.TryKeyword("toolbar"))
         {
             ParseFiltersChrome(reader, ctx);
+            reader.SkipNewlines();
+            return true;
+        }
+
+        if (reader.TryKeyword("commands"))
+        {
+            foreach (var (alias, filterId) in CommandAliasesParser.Parse(reader))
+            {
+                ctx.CommandAliases[alias] = filterId;
+            }
+
             reader.SkipNewlines();
             return true;
         }
