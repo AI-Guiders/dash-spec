@@ -60,6 +60,8 @@ else
                              OnSelect="Page.SelectPageAsync" />
     }
 
+    <DashboardFilterCommandBar OnCommit="Page.OnFilterCommandCommittedAsync" />
+
     <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
                              FilterIndex="Page.Session.FilterIndex"
                              FiltersToCards="Page.FiltersToCards"

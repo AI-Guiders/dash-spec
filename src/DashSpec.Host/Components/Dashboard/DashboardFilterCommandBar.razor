@@ -1,0 +1,88 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using AIGuiders.Platform.CommandPlane
+@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandCatalog
+
+<div class="dash-filter-command-bar">
+    <label class="dash-filter-command-label" for="dash-filter-command-input">/select</label>
+    <input id="dash-filter-command-input"
+           class="dash-filter-command-input"
+           placeholder="Type /select date today… (Tab to complete)"
+           @bind="Line"
+           @bind:event="oninput"
+           @onkeydown="OnKeyDown" />
+    @if (_suggestions.Count > 0)
+    {
+        <ul class="dash-filter-command-suggestions" role="listbox">
+            @for (var i = 0; i < _suggestions.Count; i++)
+            {
+                var item = _suggestions[i];
+                var index = i;
+                <li role="option"
+                    class="dash-filter-command-item @(index == _selected ? "active" : null)"
+                    @onclick="() => Accept(item)">
+                    <span class="path">@item.InsertText.TrimEnd()</span>
+                    <span class="help">@item.Help</span>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<string> OnCommit { get; set; }
+
+    string _line = "/";
+    int _selected;
+    IReadOnlyList<SlashCompletionItem> _suggestions = [];
+
+    string Line
+    {
+        get => _line;
+        set
+        {
+            _line = value.StartsWith('/') ? value : "/" + value;
+            RefreshSuggestions();
+        }
+    }
+
+    void RefreshSuggestions()
+    {
+        var body = _line.Length <= 1 ? "" : _line[1..];
+        _suggestions = SlashStepCompletion.GetSuggestions(CommandCatalog.CurrentCatalog, body);
+        _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
+    }
+
+    async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown" && _suggestions.Count > 0)
+        {
+            _selected = (_selected + 1) % _suggestions.Count;
+            return;
+        }
+
+        if (e.Key == "ArrowUp" && _suggestions.Count > 0)
+        {
+            _selected = (_selected - 1 + _suggestions.Count) % _suggestions.Count;
+            return;
+        }
+
+        if (e.Key == "Tab" && _suggestions.Count > 0)
+        {
+            Accept(_suggestions[_selected]);
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            await OnCommit.InvokeAsync(_line.Trim());
+        }
+    }
+
+    void Accept(SlashCompletionItem item)
+    {
+        _line = item.InsertText.TrimEnd();
+        if (item.InsertText.EndsWith(' '))
+            _line += " ";
+        RefreshSuggestions();
+    }
+}
