@@ -9,17 +9,31 @@ public sealed class GitCatalogSyncBackgroundService(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var firstPoll = true;
         while (!stoppingToken.IsCancellationRequested)
         {
-            var intervalMinutes = Math.Max(1, bootstrap.CatalogGit.PullIntervalMinutes);
+            if (!firstPoll)
+            {
+                var intervalMinutes = Math.Max(1, bootstrap.CatalogGit.PullIntervalMinutes);
+                try
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), stoppingToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+
+            firstPoll = false;
+
+            if (!syncService.IsEnabled)
+            {
+                continue;
+            }
+
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), stoppingToken).ConfigureAwait(false);
-                if (!syncService.IsEnabled)
-                {
-                    continue;
-                }
-
                 var result = await syncService.SyncAsync(stoppingToken).ConfigureAwait(false);
                 if (result.Status == "busy")
                 {
@@ -32,6 +46,7 @@ public sealed class GitCatalogSyncBackgroundService(
             }
             catch (Exception ex)
             {
+                var intervalMinutes = Math.Max(1, bootstrap.CatalogGit.PullIntervalMinutes);
                 logger.LogWarning(ex, "Git catalog pull failed; will retry in {Minutes} min", intervalMinutes);
             }
         }
