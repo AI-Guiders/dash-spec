@@ -29,9 +29,11 @@ Env: `DASHSPEC_CATALOG_GIT_URL`, `DASHSPEC_CATALOG_GIT_BRANCH`, `DASHSPEC_CATALO
 
 При `enabled = true` Host:
 
-1. `git clone` / `git fetch + reset` в `%ProgramData%\DashSpec\git-catalogs\<hash>`
-2. Устанавливает `dashboard.catalog_path` на файл внутри кэша
-3. `GitCatalogSyncBackgroundService` — периодический pull + reload UI при изменении catalog
+1. **Cold start** — использует `[dashboard] catalog_path` (вшитый fallback / bootstrap). Git **не блокирует** подъём службы.
+2. **Первый sync** — сразу после старта (`GitCatalogSyncBackgroundService`) + **Sync now** в Control Center + webhook (ADR-0041).
+3. `git clone` / `git fetch + reset` в `%ProgramData%\DashSpec\git-catalogs\<hash>` при успешном sync
+4. `catalogState` hot-reload при изменении `.dashcatalog`
+5. `GitCatalogSyncBackgroundService` — периодический pull + reload UI при изменении catalog
 
 `catalog_path` остаётся fallback (dev без git).
 
