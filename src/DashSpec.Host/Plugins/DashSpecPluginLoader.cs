@@ -3,6 +3,7 @@ using System.Runtime.Loader;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Host.Configuration;
+using DashSpec.Host.Commands;
 using DashSpec.Host.Plugins.Builtins;
 using DashSpec.Host.Services.Presentation;
 using Microsoft.Extensions.Configuration;
@@ -51,13 +52,14 @@ public static class DashSpecPluginLoader
     {
         logger ??= NullLogger.Instance;
         var registry = new DashSpecContributorRegistry();
+        var commandRegistry = new DashSpecCommandPluginRegistry();
 
-        RegisterBuiltIn(new ScopeBuiltinPlugin(), registry, services, configuration);
-        RegisterBuiltIn(new DiagramBuiltinPlugin(), registry, services, configuration);
-        RegisterBuiltIn(new OnClickDefaultPlugin(), registry, services, configuration);
-        RegisterBuiltIn(new VizBuiltinPlugin(), registry, services, configuration);
-        RegisterBuiltIn(new FilterWidgetsBuiltinPlugin(), registry, services, configuration);
-        RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration);
+        RegisterBuiltIn(new ScopeBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        RegisterBuiltIn(new DiagramBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        RegisterBuiltIn(new OnClickDefaultPlugin(), registry, services, configuration, commandRegistry);
+        RegisterBuiltIn(new VizBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        RegisterBuiltIn(new FilterWidgetsBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
 
         services.AddScoped<ICardViewState, CardViewStateService>();
 
@@ -82,15 +84,16 @@ public static class DashSpecPluginLoader
                 continue;
             }
 
-            LoadExternalPlugin(services, configuration, registry, pluginsDir, entry, logger);
+            LoadExternalPlugin(services, configuration, registry, commandRegistry, pluginsDir, entry, logger);
         }
 
         if (pluginIds.Contains("dashspec_diagnostics", StringComparer.OrdinalIgnoreCase) &&
             !registry.ContainsPlugin("dashspec_diagnostics"))
         {
-            RegisterBuiltIn(new DiagnosticsBuiltinPlugin(), registry, services, configuration);
+            RegisterBuiltIn(new DiagnosticsBuiltinPlugin(), registry, services, configuration, commandRegistry);
         }
 
+        services.AddSingleton(commandRegistry);
         services.AddSingleton(registry);
         services.AddSingleton(manifest);
         services.AddSingleton(sp => sp.GetRequiredService<DashSpecContributorRegistry>().BuildCapabilities(activeBundle));
@@ -104,16 +107,29 @@ public static class DashSpecPluginLoader
         IDashSpecPlugin plugin,
         DashSpecContributorRegistry registry,
         IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        DashSpecCommandPluginRegistry commandRegistry)
     {
         plugin.ConfigureServices(services, configuration);
         registry.RegisterPlugin(plugin);
+        RegisterCommandPlugin(plugin, commandRegistry);
+    }
+
+    private static void RegisterCommandPlugin(
+        IDashSpecPlugin plugin,
+        DashSpecCommandPluginRegistry commandRegistry)
+    {
+        if (plugin is IDashSpecCommandPlugin commandPlugin)
+        {
+            commandPlugin.RegisterCommands(commandRegistry);
+        }
     }
 
     private static void LoadExternalPlugin(
         IServiceCollection services,
         IConfiguration configuration,
         DashSpecContributorRegistry registry,
+        DashSpecCommandPluginRegistry commandRegistry,
         string pluginsDir,
         DashSpecPluginLoadEntry entry,
         ILogger logger)
@@ -172,6 +188,7 @@ public static class DashSpecPluginLoader
 
             plugin.ConfigureServices(services, configuration);
             registry.RegisterPlugin(plugin);
+            RegisterCommandPlugin(plugin, commandRegistry);
             loaded = true;
             logger.LogInformation("Loaded DashSpec plugin {PluginId} from {Assembly}", plugin.Id, assemblyPath);
         }

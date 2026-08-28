@@ -24,8 +24,11 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly Dictionary<string, CardChromeContributorDescriptor> _cardChrome =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<IDashSpecEndpointContributor> _endpointContributors = [];
+    private readonly List<DashSpecCommandDescriptor> _commands = [];
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
+
+    public IReadOnlyList<DashSpecCommandDescriptor> CommandDescriptors => _commands;
 
     public bool ContainsPlugin(string pluginId) =>
         _plugins.Any(x => string.Equals(x.Id, pluginId, StringComparison.OrdinalIgnoreCase));
@@ -146,6 +149,24 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         TrackPlugin(descriptor.PluginId, cardChrome: descriptor.BlockKeyword);
     }
 
+    public void AddCommand(DashSpecCommandDescriptor descriptor)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        if (string.IsNullOrWhiteSpace(descriptor.CommandId))
+        {
+            throw new ArgumentException("CommandId is required.", nameof(descriptor));
+        }
+
+        if (_commands.Any(x => string.Equals(x.CommandId, descriptor.CommandId, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException(
+                $"Duplicate command id '{descriptor.CommandId}' from plugin '{descriptor.PluginId}'.");
+        }
+
+        _commands.Add(descriptor);
+        TrackPlugin(descriptor.PluginId);
+    }
+
     public IReadOnlyDictionary<string, CardChromeContributorDescriptor> CardChromeBlocks => _cardChrome;
 
     public IReadOnlyDictionary<string, FilterWidgetContributorDescriptor> FilterWidgets => _filterWidgets;
@@ -180,6 +201,18 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
                 .ToList(),
             FilterWidgets = _filterWidgets.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList(),
             CardChromeBlocks = _cardChrome.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList(),
+            Commands = _commands
+                .Select(x => new DashSpecCommandCapability
+                {
+                    PluginId = x.PluginId,
+                    CommandId = x.CommandId,
+                    Path = x.Path,
+                    Help = x.Help,
+                    ArgTail = x.ArgTail,
+                    PathAliases = x.PathAliases?.ToList() ?? [],
+                    Group = x.Group,
+                })
+                .ToList(),
             Plugins = _plugins
                 .Select(entry => new LoadedPluginCapability
                 {

@@ -1,9 +1,15 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
-@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandCatalog
+@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
 
 <div class="dash-filter-command-bar">
     <label class="dash-filter-command-label" for="dash-filter-command-input">/select</label>
+    <button type="button"
+            class="dash-filter-command-palette-trigger"
+            title="Command palette (Ctrl+K)"
+            @onclick="OpenPalette">
+        Ctrl+K
+    </button>
     <input id="dash-filter-command-input"
            class="dash-filter-command-input"
            placeholder="Type /select date today… (Tab to complete)"
@@ -28,11 +34,19 @@
     }
 </div>
 
+<DashboardCommandPalette Visible="_paletteOpen"
+                         ToolbarFilterNames="ToolbarFilterNames"
+                         OnClose="ClosePalette"
+                         OnCommit="OnCommit" />
+
 @code {
+    [Parameter] public IReadOnlyList<string> ToolbarFilterNames { get; set; } = [];
     [Parameter] public EventCallback<string> OnCommit { get; set; }
+    [Parameter] public EventCallback OpenPaletteRequested { get; set; }
 
     string _line = "/";
     int _selected;
+    bool _paletteOpen;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
 
     string Line
@@ -45,15 +59,32 @@
         }
     }
 
+    public void OpenPaletteFromHost()
+    {
+        _paletteOpen = true;
+    }
+
+    void OpenPalette() => _paletteOpen = true;
+
+    void ClosePalette() => _paletteOpen = false;
+
     void RefreshSuggestions()
     {
         var body = _line.Length <= 1 ? "" : _line[1..];
-        _suggestions = SlashStepCompletion.GetSuggestions(CommandCatalog.CurrentCatalog, body);
+        _suggestions = SlashStepCompletion.GetSuggestions(
+            CommandService.BuildCatalog(ToolbarFilterNames),
+            body);
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
     }
 
     async Task OnKeyDown(KeyboardEventArgs e)
     {
+        if (e.CtrlKey && string.Equals(e.Key, "k", StringComparison.OrdinalIgnoreCase))
+        {
+            _paletteOpen = true;
+            return;
+        }
+
         if (e.Key == "ArrowDown" && _suggestions.Count > 0)
         {
             _selected = (_selected + 1) % _suggestions.Count;
@@ -82,7 +113,10 @@
     {
         _line = item.InsertText.TrimEnd();
         if (item.InsertText.EndsWith(' '))
+        {
             _line += " ";
+        }
+
         RefreshSuggestions();
     }
 }
