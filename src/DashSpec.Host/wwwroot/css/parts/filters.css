@@ -109,12 +109,17 @@
   margin-top: 0.15rem;
 }
 
-.filters-bar input[type="date"] {
+.filters-bar input[type="date"],
+.filters-bar input[type="month"],
+.filters-bar input.filter-grain-input,
+.filters-bar input.date-input-grain,
+.filters-bar input.date-input-year {
   border: none;
   background: transparent;
   padding: 0.15rem 0.25rem;
   color: var(--text);
   font-size: 0.85rem;
+  color-scheme: dark;
 }
 
 .filters-bar .filters-grid,
@@ -307,12 +312,15 @@
   background: transparent;
 }
 
-.filters-bar .toolbar-filter-cell .field-select {
+.filters-bar .toolbar-filter-cell .field-select,
+.filters-bar .toolbar-filter-cell .filter-number {
   width: 100%;
   min-height: 0;
   padding: 0.12rem 0;
   border: none;
   background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
 }
 
 .filters-actions {
@@ -445,8 +453,15 @@
   gap: 0.35rem;
 }
 
-.date-range-day input[type="date"] {
+.date-range-day input[type="date"],
+.date-range-day input[type="month"],
+.date-range-day input.date-input-grain,
+.date-range-day input.date-input-year {
   min-width: 9.5rem;
+}
+
+.date-range-day input.date-input-year {
+  min-width: 5.5rem;
 }
 
 .date-sep {
@@ -654,16 +669,27 @@ input, button {
 }
 
 input[type="date"],
-input[type="search"] {
+input[type="month"],
+input[type="search"],
+input.date-input-grain,
+input.date-input-year {
   background: var(--bg);
   color: inherit;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.45rem 0.55rem;
+  color-scheme: dark;
 }
 
-input[type="date"] {
+input[type="date"],
+input[type="month"],
+input.date-input-grain {
   min-width: 9.5rem;
+}
+
+input.date-input-year {
+  min-width: 5.5rem;
+  max-width: 6.5rem;
 }
 
 button.primary {
