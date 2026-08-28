@@ -254,6 +254,7 @@ Legacy `toolbar { usage_date, app_name }` — одна неявная строк
 - [ADR-0026](design/DASHSPEC-ADR-0026-layout-module-scope.md) — mandatory `scope` in `.dashlayout`
 - [ADR-0027](design/DASHSPEC-ADR-0027-single-declaration-and-layout-ids.md) — single declaration; layout tokens = filter/card id (proposed)
 - [ADR-0029](design/DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md) — tooltip entity = content; inspect/show = how (accepted)
+- [ADR-0043](design/DASHSPEC-ADR-0043-filter-command-palette.md) — `/select` filter commands via CommandPlane (accepted)
 - [ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md) — `.dashcatalog`
 - [ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md) — document blocks (`runtime`, `configuration`, `wiring`, `body`)
 
