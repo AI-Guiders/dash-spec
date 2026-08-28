@@ -1,6 +1,9 @@
 #nullable enable
 using AIGuiders.Platform.CommandPlane;
 using DashSpec.Host.Commands;
+using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Presentation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DashSpec.Host.Endpoints;
 
@@ -9,14 +12,20 @@ public static class DashboardCommandEndpoints
     public static WebApplication MapDashboardCommandEndpoints(this WebApplication app)
     {
         app.MapGet("/api/v1/commands/complete", Complete);
+        app.MapGet("/api/v1/commands/capabilities", Capabilities);
+        app.MapPost("/api/v1/commands/execute", Execute);
         return app;
     }
 
-    static IResult Complete(HttpContext context, DashboardFilterCommandService commands)
+    static IResult Complete(
+        HttpContext context,
+        DashboardFilterCommandService commands,
+        IDashboardSession session)
     {
         var line = context.Request.Query["line"].ToString();
         var body = NormalizeBody(line);
-        var catalog = commands.CurrentCatalog;
+        var toolbar = ResolveToolbarFilters(context, session);
+        var catalog = commands.BuildCatalog(toolbar);
         var items = SlashStepCompletion.GetSuggestions(catalog, body);
         return Results.Ok(new
         {
@@ -31,14 +40,91 @@ public static class DashboardCommandEndpoints
         });
     }
 
+    static IResult Capabilities(
+        DashboardFilterCommandService commands,
+        IDashboardSession session,
+        HttpContext context)
+    {
+        var toolbar = ResolveToolbarFilters(context, session);
+        var catalog = commands.BuildCatalog(toolbar);
+        return Results.Ok(new
+        {
+            commands = catalog.Routes
+                .OrderBy(x => x.SlashPath, StringComparer.OrdinalIgnoreCase)
+                .Select(route => new
+                {
+                    commandId = route.CommandId,
+                    path = route.SlashPath,
+                    help = route.Help,
+                    group = route.Group,
+                    argTail = route.ArgTailKind.ToString(),
+                }),
+        });
+    }
+
+    static IResult Execute(
+        [FromBody] DashboardCommandExecuteRequest request,
+        DashboardFilterCommandService commands,
+        DashboardFilterUiState uiState,
+        IDashboardSession session)
+    {
+        if (string.IsNullOrWhiteSpace(request.Line))
+        {
+            return Results.BadRequest(new { error = "line is required." });
+        }
+
+        var toolbar = request.ToolbarFilters?.Count > 0
+            ? request.ToolbarFilters
+            : session.Document.DashboardFilters;
+
+        uiState.LoadFromSession(session, toolbar);
+        var outcome = commands.TryExecute(request.Line, toolbar);
+        if (!outcome.Success)
+        {
+            return Results.BadRequest(new { success = false, error = outcome.Error });
+        }
+
+        uiState.SyncToSession(session, toolbar);
+        return Results.Ok(new { success = true });
+    }
+
+    static IReadOnlyList<string> ResolveToolbarFilters(HttpContext context, IDashboardSession session)
+    {
+        var raw = context.Request.Query["toolbar"].ToString();
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            return raw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        }
+
+        try
+        {
+            return session.Document.DashboardFilters;
+        }
+        catch (InvalidOperationException)
+        {
+            return [];
+        }
+    }
+
     static string NormalizeBody(string? line)
     {
         if (string.IsNullOrWhiteSpace(line))
+        {
             return "";
+        }
 
         var text = line.Trim();
         if (text.StartsWith('/'))
+        {
             text = text[1..];
+        }
+
         return text.TrimEnd();
     }
+
+    public sealed record DashboardCommandExecuteRequest(
+        string Line,
+        IReadOnlyList<string>? ToolbarFilters = null);
 }

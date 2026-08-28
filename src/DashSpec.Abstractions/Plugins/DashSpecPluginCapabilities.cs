@@ -23,6 +23,25 @@ public sealed class DashSpecPluginCapabilities
     public List<string> FilterWidgets { get; set; } = [];
 
     public List<string> CardChromeBlocks { get; set; } = [];
+
+    public List<DashSpecCommandCapability> Commands { get; set; } = [];
+}
+
+public sealed class DashSpecCommandCapability
+{
+    public string PluginId { get; set; } = string.Empty;
+
+    public string CommandId { get; set; } = string.Empty;
+
+    public string Path { get; set; } = string.Empty;
+
+    public string? Help { get; set; }
+
+    public string ArgTail { get; set; } = "required";
+
+    public List<string> PathAliases { get; set; } = [];
+
+    public string? Group { get; set; }
 }
 
 public sealed class LoadedPluginCapability
