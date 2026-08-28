@@ -128,7 +128,8 @@ internal static class TabModuleParser
             tabs,
             cards,
             shell.ToolbarBoard,
-            Pages: shell.Pages);
+            Pages: shell.Pages,
+            CommandAliases: shell.CommandAliases);
 
         DashboardValidator.Validate(document);
         return document;
