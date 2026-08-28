@@ -7,7 +7,11 @@ namespace DashSpec.Host.Configuration;
 /// <summary>Clone/pull git-репозитория со specs и возврат пути к .dashcatalog.</summary>
 public static class GitCatalogSynchronizer
 {
-    public static bool TryApply(DashSpecTomlRoot bootstrap, string contentRoot, ILogger? logger = null)
+    /// <summary>
+    /// Applies env overrides and validates git catalog config.
+    /// Does not clone/pull — deferred to <see cref="Services.Git.GitCatalogSyncService"/> (boot uses <c>[dashboard] catalog_path</c>).
+    /// </summary>
+    public static bool PrepareDeferredSync(DashSpecTomlRoot bootstrap, ILogger? logger = null)
     {
         ApplyCatalogGitEnvOverrides(bootstrap.CatalogGit);
 
@@ -16,12 +20,26 @@ public static class GitCatalogSynchronizer
             return false;
         }
 
-        var git = bootstrap.CatalogGit;
-        if (string.IsNullOrWhiteSpace(git.Path))
+        if (string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Path))
         {
             throw new InvalidOperationException("catalog_git.path is required when catalog_git.enabled = true.");
         }
 
+        logger?.LogInformation(
+            "Git catalog configured ({Url}); Host starts on [dashboard] catalog_path until sync succeeds.",
+            bootstrap.CatalogGit.Url);
+        return true;
+    }
+
+    /// <summary>Clone/pull and return catalog file path (on-demand / background sync).</summary>
+    public static bool TryApply(DashSpecTomlRoot bootstrap, string contentRoot, ILogger? logger = null)
+    {
+        if (!PrepareDeferredSync(bootstrap, logger))
+        {
+            return false;
+        }
+
+        var git = bootstrap.CatalogGit;
         var cacheDir = ResolveCacheDirectory(git, contentRoot);
         var catalogFullPath = SyncRepository(git, cacheDir, logger);
         bootstrap.Dashboard.CatalogPath = catalogFullPath;

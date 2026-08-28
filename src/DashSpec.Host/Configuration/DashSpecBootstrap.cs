@@ -35,10 +35,10 @@ public static class DashSpecBootstrap
         ApplyAccessEnvOverride(bootstrap);
 
         HostSettingsOverlay.Apply(bootstrap);
-        // Env break-glass after WitDB (ADR-0042). Access env re-applied; catalog env inside TryApply.
+        // Env break-glass after WitDB (ADR-0042). Access env re-applied; catalog env inside PrepareDeferredSync.
         ApplyAccessEnvOverride(bootstrap);
 
-        GitCatalogSynchronizer.TryApply(bootstrap, contentRoot);
+        GitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
         return bootstrap;
     }
