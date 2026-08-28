@@ -7,6 +7,7 @@ using DashSpec.Core.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Plugins.Builtins;
+using DashSpec.Host.Commands;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Dev;
 using DashSpec.Host.Services.Diagnostics;
@@ -28,6 +29,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly DashSpecHostContext _hostContext;
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
+    private readonly DashboardFilterCommandService _filterCommands;
     private readonly DevSpecReloadNotifier? _reloadNotifier;
     private readonly LoadTrace _loadTrace;
     private readonly ILogger<DashboardPageController> _logger;
@@ -40,6 +42,7 @@ public sealed class DashboardPageController : IDisposable
         DashSpecHostContext hostContext,
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
+        DashboardFilterCommandService filterCommands,
         IWebHostEnvironment environment,
         DevSpecReloadNotifier reloadNotifier,
         LoadTrace loadTrace,
@@ -52,6 +55,7 @@ public sealed class DashboardPageController : IDisposable
         _hostContext = hostContext;
         _filters = filters;
         _refresh = refresh;
+        _filterCommands = filterCommands;
         _loadTrace = loadTrace;
         _logger = logger;
         _refresh.StateChanged += OnRefreshStateChanged;
@@ -662,10 +666,22 @@ public sealed class DashboardPageController : IDisposable
 
     public void ScheduleCardApplyAsync(string cardId) => _refresh.ScheduleCardApply(cardId);
 
-    public Task OnFilterCommandCommittedAsync(string line)
+    public async Task OnFilterCommandCommittedAsync(string line)
     {
-        _logger.LogInformation("Filter slash command: {Line}", line);
-        return Task.CompletedTask;
+        var toolbar = VisibleToolbarFilterNames();
+        var outcome = _filterCommands.TryExecute(line, toolbar);
+        if (!outcome.Success)
+        {
+            _logger.LogWarning("Filter slash command failed: {Error}", outcome.Error);
+            Error = outcome.Error;
+            Notify();
+            return;
+        }
+
+        _filters.SyncToSession(_session, PlacedFilterNames());
+        Error = null;
+        Notify();
+        await ApplyFiltersAsync().ConfigureAwait(false);
     }
 
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
