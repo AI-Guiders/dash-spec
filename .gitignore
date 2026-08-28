@@ -9,6 +9,7 @@ dash-spec.local.toml
 samples/demo/demo.local.toml
 publish/
 uploads/
+data-protection-keys/
 
 # Local test / unpack noise
 test-out.txt
