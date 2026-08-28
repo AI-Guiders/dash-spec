@@ -662,6 +662,12 @@ public sealed class DashboardPageController : IDisposable
 
     public void ScheduleCardApplyAsync(string cardId) => _refresh.ScheduleCardApply(cardId);
 
+    public Task OnFilterCommandCommittedAsync(string line)
+    {
+        _logger.LogInformation("Filter slash command: {Line}", line);
+        return Task.CompletedTask;
+    }
+
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
 
     public Task ApplyFiltersAsync(CancellationToken cancellationToken)

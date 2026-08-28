@@ -7,9 +7,13 @@
     <LangVersion>14</LangVersion>
     <RootNamespace>DashSpec.Host</RootNamespace>
     <Version>0.2.3</Version>
+    <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
+    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln')">true</UseLocalGuidersPlatform>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.4.2" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane\AIGuiders.Platform.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
