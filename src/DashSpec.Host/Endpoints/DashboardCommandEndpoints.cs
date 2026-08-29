@@ -26,7 +26,8 @@ public static class DashboardCommandEndpoints
         var body = NormalizeBody(line);
         var toolbar = ResolveToolbarFilters(context, session);
         var catalog = commands.BuildCatalog(toolbar);
-        var items = SlashStepCompletion.GetSuggestions(catalog, body);
+        var pickerSource = new DashboardFilterPickerSource(session, toolbar);
+        var items = SlashStepCompletion.GetSuggestions(catalog, body, pickerSource);
         return Results.Ok(new
         {
             items = items.Select(i => new
@@ -36,6 +37,8 @@ public static class DashboardCommandEndpoints
                 help = i.Help,
                 group = i.Group,
                 stepSegment = i.StepSegment,
+                kind = i.Kind.ToString().ToLowerInvariant(),
+                pickValue = i.PickValue,
             }),
         });
     }
