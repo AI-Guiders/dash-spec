@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.4.4" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.4.6" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane\AIGuiders.Platform.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
