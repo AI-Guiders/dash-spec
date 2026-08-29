@@ -71,9 +71,7 @@
     void RefreshSuggestions()
     {
         var body = _line.Length <= 1 ? "" : _line[1..];
-        _suggestions = SlashStepCompletion.GetSuggestions(
-            CommandService.BuildCatalog(ToolbarFilterNames),
-            body);
+        _suggestions = CommandService.GetSuggestions(body, ToolbarFilterNames);
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
     }
 

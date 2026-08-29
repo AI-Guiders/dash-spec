@@ -53,6 +53,18 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void GetSuggestions_lists_date_presets_after_path()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var items = SlashStepCompletion.GetSuggestions(catalog, "select date ");
+
+        Assert.Contains(items, item => item.PickValue == "today");
+        Assert.Contains(items, item => item.PickValue == "last-week");
+    }
+
+    [Fact]
     public void Executor_runs_slash_line_through_registry()
     {
         var uiState = new DashboardFilterUiState();

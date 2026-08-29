@@ -19,6 +19,14 @@ public sealed class DashboardFilterCommandService(
         return DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
     }
 
+    public IReadOnlyList<SlashCompletionItem> GetSuggestions(
+        string typedBody,
+        IReadOnlyList<string> toolbarFilterNames) =>
+        SlashStepCompletion.GetSuggestions(
+            BuildCatalog(toolbarFilterNames),
+            typedBody,
+            CreatePickerSource(toolbarFilterNames));
+
     public CommandOutcome TryExecute(string line, IReadOnlyList<string> toolbarFilterNames)
     {
         var context = CreateContext(toolbarFilterNames);
@@ -36,4 +44,7 @@ public sealed class DashboardFilterCommandService(
             UiState = uiState,
             GetFieldOptions = session.GetFieldOptions,
         };
+
+    ISlashPickerChoiceSource CreatePickerSource(IReadOnlyList<string> toolbarFilterNames) =>
+        new DashboardFilterPickerSource(session, toolbarFilterNames);
 }
