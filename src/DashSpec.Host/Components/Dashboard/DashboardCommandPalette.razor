@@ -11,10 +11,11 @@
                 <span class="dash-command-palette-hint">Ctrl+K</span>
             </header>
             <input class="dash-command-palette-input"
-                   placeholder="Type /select date today…"
+                   placeholder="@_guidance.Placeholder"
                    @bind="Line"
                    @bind:event="oninput"
                    @onkeydown="OnKeyDown" />
+            <DashboardSlashGuidance Guidance="_guidance" />
             <ul class="dash-command-palette-list" role="listbox">
                 @for (var i = 0; i < _suggestions.Count; i++)
                 {
@@ -41,6 +42,7 @@
     string _line = "/";
     int _selected;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
+    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/", "Type a command path", "Start typing — Tab completes the next segment");
 
     protected override void OnParametersSet()
     {
@@ -63,7 +65,9 @@
     void RefreshSuggestions()
     {
         var body = _line.Length <= 1 ? "" : _line[1..];
-        _suggestions = CommandService.GetSuggestions(body, ToolbarFilterNames);
+        var result = CommandService.GetCompletionResult(body, ToolbarFilterNames);
+        _suggestions = result.Items;
+        _guidance = result.Guidance;
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
     }
 

@@ -19,13 +19,18 @@ public sealed class DashboardFilterCommandService(
         return DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
     }
 
-    public IReadOnlyList<SlashCompletionItem> GetSuggestions(
+    public SlashCompletionResult GetCompletionResult(
         string typedBody,
         IReadOnlyList<string> toolbarFilterNames) =>
-        SlashStepCompletion.GetSuggestions(
+        SlashCompletion.GetResult(
             BuildCatalog(toolbarFilterNames),
             typedBody,
             CreatePickerSource(toolbarFilterNames));
+
+    public IReadOnlyList<SlashCompletionItem> GetSuggestions(
+        string typedBody,
+        IReadOnlyList<string> toolbarFilterNames) =>
+        GetCompletionResult(typedBody, toolbarFilterNames).Items;
 
     public CommandOutcome TryExecute(string line, IReadOnlyList<string> toolbarFilterNames)
     {
