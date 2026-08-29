@@ -22,6 +22,7 @@ internal static class DashboardCommandCatalogBuilder
                 Path = "select date",
                 Help = "Set date filter (today, last-week, YYYY-MM, range)",
                 ArgTail = "picker:enum:date_preset",
+                ArgHint = "Preset, YYYY-MM, or from..to range",
                 ArgPickerChoices = SlashPickerChoices.FromLabels(
                     ("today", "Today"),
                     ("last-week", "Last 7 days"),
@@ -41,6 +42,7 @@ internal static class DashboardCommandCatalogBuilder
                 Path = $"select {alias}",
                 Help = $"Set {alias} filter",
                 ArgTail = $"picker:dash.field.{alias}",
+                ArgHint = $"Choose a {alias} value or type to filter",
                 Group = "Filters",
             });
         }

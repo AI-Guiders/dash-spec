@@ -12,10 +12,11 @@
     </button>
     <input id="dash-filter-command-input"
            class="dash-filter-command-input"
-           placeholder="Type /select date today… (Tab to complete)"
+           placeholder="@_guidance.Placeholder"
            @bind="Line"
            @bind:event="oninput"
            @onkeydown="OnKeyDown" />
+    <DashboardSlashGuidance Guidance="_guidance" />
     @if (_suggestions.Count > 0)
     {
         <ul class="dash-filter-command-suggestions" role="listbox">
@@ -48,6 +49,7 @@
     int _selected;
     bool _paletteOpen;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
+    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/", "Type a command path", "Start typing — Tab completes the next segment");
 
     string Line
     {
@@ -71,7 +73,9 @@
     void RefreshSuggestions()
     {
         var body = _line.Length <= 1 ? "" : _line[1..];
-        _suggestions = CommandService.GetSuggestions(body, ToolbarFilterNames);
+        var result = CommandService.GetCompletionResult(body, ToolbarFilterNames);
+        _suggestions = result.Items;
+        _guidance = result.Guidance;
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
     }
 

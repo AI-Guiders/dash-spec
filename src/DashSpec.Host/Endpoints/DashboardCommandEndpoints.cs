@@ -27,10 +27,10 @@ public static class DashboardCommandEndpoints
         var toolbar = ResolveToolbarFilters(context, session);
         var catalog = commands.BuildCatalog(toolbar);
         var pickerSource = new DashboardFilterPickerSource(session, toolbar);
-        var items = SlashStepCompletion.GetSuggestions(catalog, body, pickerSource);
+        var result = SlashCompletion.GetResult(catalog, body, pickerSource);
         return Results.Ok(new
         {
-            items = items.Select(i => new
+            items = result.Items.Select(i => new
             {
                 insertText = i.InsertText,
                 path = i.SlashPath,
@@ -40,6 +40,15 @@ public static class DashboardCommandEndpoints
                 kind = i.Kind.ToString().ToLowerInvariant(),
                 pickValue = i.PickValue,
             }),
+            guidance = new
+            {
+                mode = result.Guidance.Mode.ToString().ToLowerInvariant(),
+                breadcrumb = result.Guidance.Breadcrumb,
+                placeholder = result.Guidance.Placeholder,
+                hint = result.Guidance.Hint,
+                canonicalPath = result.Guidance.CanonicalPath,
+                argTailKind = result.Guidance.ArgTailKind,
+            },
         });
     }
 
