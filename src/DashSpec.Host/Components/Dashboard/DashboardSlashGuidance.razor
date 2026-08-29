@@ -1,0 +1,46 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using AIGuiders.Platform.CommandPlane
+
+@if (Guidance is not null)
+{
+    <div class="dash-slash-guidance" aria-live="polite">
+        <span class="dash-slash-mode @ModeClass">@ModeLabel</span>
+        @if (!string.IsNullOrWhiteSpace(Guidance.Breadcrumb))
+        {
+            <span class="dash-slash-breadcrumb">@Guidance.Breadcrumb</span>
+        }
+        @if (ShowHint)
+        {
+            <span class="dash-slash-hint">@Guidance.Hint</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public SlashInputGuidance? Guidance { get; set; }
+
+    bool ShowHint =>
+        Guidance is not null
+        && !string.IsNullOrWhiteSpace(Guidance.Hint)
+        && !string.Equals(Guidance.Hint, Guidance.Placeholder, StringComparison.Ordinal);
+
+    string ModeLabel => Guidance?.Mode switch
+    {
+        SlashInputMode.Path => "Path",
+        SlashInputMode.Picker => "Pick",
+        SlashInputMode.FreeText => "Free text",
+        SlashInputMode.Optional => "Optional",
+        SlashInputMode.Ready => "Ready",
+        _ => "",
+    };
+
+    string ModeClass => Guidance?.Mode switch
+    {
+        SlashInputMode.Path => "mode-path",
+        SlashInputMode.Picker => "mode-picker",
+        SlashInputMode.FreeText => "mode-freetext",
+        SlashInputMode.Optional => "mode-optional",
+        SlashInputMode.Ready => "mode-ready",
+        _ => "",
+    };
+}
