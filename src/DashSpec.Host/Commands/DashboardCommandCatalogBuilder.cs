@@ -21,7 +21,11 @@ internal static class DashboardCommandCatalogBuilder
                 CommandId = SelectDateFilterCommand.Id,
                 Path = "select date",
                 Help = "Set date filter (today, last-week, YYYY-MM, range)",
-                ArgTail = "required",
+                ArgTail = "picker:enum:date_preset",
+                ArgPickerChoices = SlashPickerChoices.FromLabels(
+                    ("today", "Today"),
+                    ("last-week", "Last 7 days"),
+                    ("last-month", "Last month")),
                 Group = "Filters",
             },
         };
@@ -36,7 +40,7 @@ internal static class DashboardCommandCatalogBuilder
                 CommandId = $"dash.select.{alias}",
                 Path = $"select {alias}",
                 Help = $"Set {alias} filter",
-                ArgTail = "required",
+                ArgTail = $"picker:dash.field.{alias}",
                 Group = "Filters",
             });
         }
