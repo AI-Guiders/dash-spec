@@ -63,7 +63,13 @@ else
 
     <DashboardFilterCommandBar @ref="_filterCommandBar"
                                ToolbarFilterNames="Page.VisibleToolbarFilters()"
+                               CommandError="Page.CommandError"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
+
+    @if (!string.IsNullOrEmpty(Page.CommandError))
+    {
+        <div class="dash-command-error" role="alert">@Page.CommandError</div>
+    }
 
     <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
                              FilterIndex="Page.Session.FilterIndex"

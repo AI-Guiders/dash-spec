@@ -21,6 +21,12 @@ internal static class DashboardCommandAliasResolver
 
     public static string? ResolveFieldFilter(string slashAlias, DashboardFilterContext context)
     {
+        if (string.Equals(slashAlias, "scale", StringComparison.OrdinalIgnoreCase)
+            && IsToolbarFieldFilter(context, "period_grain"))
+        {
+            return "period_grain";
+        }
+
         if (context.CommandAliases.TryGetValue(slashAlias, out var aliased) &&
             IsToolbarFieldFilter(context, aliased))
         {
@@ -70,7 +76,7 @@ internal static class DashboardCommandAliasResolver
                 continue;
             }
 
-            aliases.Add(filter.Name);
+            aliases.Add(FieldSlashAlias(filter.Name));
         }
 
         return aliases
@@ -88,4 +94,9 @@ internal static class DashboardCommandAliasResolver
         context.ToolbarFilterNames.Contains(filterName, StringComparer.OrdinalIgnoreCase) &&
         context.FilterIndex.TryGetValue(filterName, out var filter) &&
         filter.Kind is FilterKind.Field;
+
+    static string FieldSlashAlias(string filterName) =>
+        filterName.Equals("period_grain", StringComparison.OrdinalIgnoreCase)
+            ? "scale"
+            : filterName;
 }

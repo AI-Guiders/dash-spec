@@ -244,3 +244,21 @@
   flex: 1 1 12rem;
   min-width: 0;
 }
+
+.dash-command-error {
+  width: 100%;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+  font-size: 0.85rem;
+}
+
+.dash-command-palette-error {
+  margin: 0;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
