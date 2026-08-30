@@ -80,7 +80,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_inputBound)
+        if (Visible && !_inputBound)
         {
             _inputBound = true;
             await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
@@ -94,6 +94,7 @@
         else if (!Visible)
         {
             _wasVisible = false;
+            _inputBound = false;
         }
     }
 
