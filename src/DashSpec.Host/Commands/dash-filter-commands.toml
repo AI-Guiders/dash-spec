@@ -4,10 +4,7 @@
 [[command]]
 command_id = "dash.select.date"
 path = "select date"
-domain = "dash"
-object = "select"
-intent = "date"
-help = "Set date filter (today, last-week, YYYY-MM, range)"
+help = "Date filter — today, last-week, YYYY-MM, range"
 group = "Filters"
 arg_tail = "picker:enum:date_preset"
 arg_hint = "Preset, YYYY-MM, or from..to range"
