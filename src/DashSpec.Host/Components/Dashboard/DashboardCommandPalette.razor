@@ -2,6 +2,7 @@
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
 @inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
+@inject IJSRuntime Js
 
 @if (Visible)
 {
@@ -16,6 +17,7 @@
                 <input @ref="_inputRef"
                        class="dash-command-palette-input"
                        placeholder="@InputPlaceholder"
+                       data-ccl-suggest="@SuggestActive"
                        @bind="Line"
                        @bind:event="oninput"
                        @onkeydown="OnKeyDown" />
@@ -49,6 +51,7 @@
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
     ElementReference _inputRef;
+    bool _inputBound;
     bool _wasVisible;
     string _line = "";
     string? _validationError;
@@ -57,8 +60,10 @@
     SlashInputGuidance _guidance = new(
         SlashInputMode.Path,
         DashboardFilterCommandDisplay.RootVerb,
-        "Tab — выбрать фильтр",
+        DashboardFilterCommandDisplay.AcceptCompletionHint,
         DashboardFilterCommandDisplay.EmptyPlaceholder);
+
+    string SuggestActive => Visible && _suggestions.Count > 0 ? "true" : "false";
 
     string InputPlaceholder =>
         string.IsNullOrWhiteSpace(_guidance.Placeholder)
@@ -75,6 +80,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!_inputBound)
+        {
+            _inputBound = true;
+            await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
+        }
+
         if (Visible && !_wasVisible)
         {
             _wasVisible = true;
@@ -134,7 +145,7 @@
             return;
         }
 
-        if (e.Key == "Tab" && _suggestions.Count > 0)
+        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
         {
             Accept(_suggestions[_selected]);
             return;
