@@ -1,22 +1,2 @@
-# Bundled DashSpec command catalog — branch verbs only; report/filter paths merge at runtime.
-
-[[command]]
-command_id = "dash.select.report"
-path = "select report"
-help = "Switch catalog report"
-group = "Report"
-surfaces = "dash-slash, dash-palette, dash-ccl"
-
-[[command]]
-command_id = "dash.select.page"
-path = "select page"
-help = "Switch report page"
-group = "Report"
-surfaces = "dash-slash, dash-palette, dash-ccl"
-
-[[command]]
-command_id = "dash.select.filter"
-path = "select filter"
-help = "Set toolbar filter"
-group = "Filter"
-surfaces = "dash-slash, dash-palette, dash-ccl"
+# Branch verbs are synthesized at runtime (select filter|report|page <id>).
+# Keeping this file so the embedded catalog resource exists for DashSpec.Host.
