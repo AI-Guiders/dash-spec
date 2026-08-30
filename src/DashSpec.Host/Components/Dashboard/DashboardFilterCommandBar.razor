@@ -11,14 +11,14 @@
         Ctrl+K
     </button>
     <div class="dash-filter-command-input-wrap">
-        <span class="dash-filter-command-prefix" aria-hidden="true">/select</span>
+        <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.Prompt</span>
         <input id="dash-filter-command-input"
                class="dash-filter-command-input"
-               placeholder="@_guidance.Placeholder"
-               aria-label="Filter slash command"
+               placeholder="@InputPlaceholder"
+               aria-label="Filter command line"
                aria-expanded="@(_suggestions.Count > 0)"
                aria-controls="dash-filter-command-suggestions"
-               @bind="Tail"
+               @bind="Line"
                @bind:event="oninput"
                @onfocus="OnFocus"
                @onkeydown="OnKeyDown" />
@@ -38,7 +38,7 @@
                     aria-selected="@(index == _selected)"
                     class="dash-filter-command-item @(index == _selected ? "active" : null)"
                     @onclick="() => Accept(item)">
-                    <span class="path">@FormatPath(item)</span>
+                    <span class="path">@DashboardFilterCommandDisplay.FormatSuggestion(item)</span>
                     <span class="help">@item.Help</span>
                 </li>
             }
@@ -57,18 +57,27 @@
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
     DashboardCommandPalette? _palette;
-    string _tail = "";
+    string _line = "";
     int _selected;
     bool _paletteOpen;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
-    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/select", "Tab — выбрать фильтр", "Фильтры toolbar");
+    SlashInputGuidance _guidance = new(
+        SlashInputMode.Path,
+        DashboardFilterCommandDisplay.RootVerb,
+        "Tab — выбрать фильтр",
+        DashboardFilterCommandDisplay.EmptyPlaceholder);
 
-    string Tail
+    string InputPlaceholder =>
+        string.IsNullOrWhiteSpace(_guidance.Placeholder)
+            ? DashboardFilterCommandDisplay.EmptyPlaceholder
+            : _guidance.Placeholder;
+
+    string Line
     {
-        get => _tail;
+        get => _line;
         set
         {
-            _tail = DashboardFilterSlashCompletion.SanitizeTail(value);
+            _line = DashboardFilterSlashCompletion.SanitizeLine(value);
             RefreshSuggestions();
         }
     }
@@ -91,7 +100,7 @@
 
     void RefreshSuggestions()
     {
-        var result = CommandService.GetCompletionResult(_tail, ToolbarFilterNames);
+        var result = CommandService.GetCompletionResult(_line, ToolbarFilterNames);
         _suggestions = result.Items;
         _guidance = result.Guidance;
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
@@ -134,8 +143,8 @@
 
         if (e.Key == "Enter")
         {
-            var line = DashboardFilterSlashCompletion.ToSlashLine(_tail);
-            if (line.Length > "/select".Length)
+            var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
+            if (!line.Equals(DashboardFilterCommandDisplay.RootVerb, StringComparison.OrdinalIgnoreCase))
             {
                 await OnCommit.InvokeAsync(line);
             }
@@ -144,17 +153,7 @@
 
     void Accept(SlashCompletionItem item)
     {
-        _tail = DashboardFilterSlashCompletion.TailFromInsert(item.InsertText);
+        _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
         RefreshSuggestions();
-    }
-
-    static string FormatPath(SlashCompletionItem item)
-    {
-        if (!string.IsNullOrWhiteSpace(item.StepSegment))
-        {
-            return "/select " + item.StepSegment;
-        }
-
-        return item.InsertText.TrimEnd();
     }
 }

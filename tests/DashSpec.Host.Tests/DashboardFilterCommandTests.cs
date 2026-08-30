@@ -106,18 +106,19 @@ public class DashboardFilterCommandTests
     }
 
     [Theory]
-    [InlineData("/select", "")]
-    [InlineData(" /select ", "")]
-    [InlineData("/select date", "date")]
-    [InlineData("select program", "program")]
-    [InlineData("/select /select location", "location")]
-    public void SanitizeTail_strips_duplicate_select_prefix(string input, string expected)
+    [InlineData("/select", "select")]
+    [InlineData("> select", "select")]
+    [InlineData(" /select ", "select ")]
+    [InlineData("/select date", "select date")]
+    [InlineData("select program", "select program")]
+    [InlineData("select select location", "select location")]
+    public void SanitizeLine_strips_prompt_and_duplicate_select(string input, string expected)
     {
-        Assert.Equal(expected, DashboardFilterSlashCompletion.SanitizeTail(input));
+        Assert.Equal(expected, DashboardFilterSlashCompletion.SanitizeLine(input));
     }
 
     [Fact]
-    public void Completion_tolerates_duplicate_select_in_tail()
+    public void Completion_tolerates_legacy_slash_prefix()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
@@ -140,10 +141,11 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void ToSlashLine_builds_executable_command()
+    public void ToCommandLine_builds_executable_command()
     {
-        Assert.Equal("/select date today", DashboardFilterSlashCompletion.ToSlashLine("date today"));
-        Assert.Equal("/select", DashboardFilterSlashCompletion.ToSlashLine(""));
+        Assert.Equal("select date today", DashboardFilterSlashCompletion.ToCommandLine("date today"));
+        Assert.Equal("select", DashboardFilterSlashCompletion.ToCommandLine(""));
+        Assert.Equal("select date today", DashboardFilterSlashCompletion.ToCommandLine("> select date today"));
     }
 
     [Fact]
@@ -191,7 +193,7 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        var outcome = executor.TryExecuteSlashLine("/select date today", context, catalog);
+        var outcome = executor.TryExecuteSlashLine("select date today", context, catalog);
 
         Assert.True(outcome.Success, outcome.Error);
         Assert.Equal(new DateOnly(2026, 6, 24), uiState.DateFrom["usage_date"]);
@@ -218,7 +220,7 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        var outcome = executor.TryExecuteSlashLine("/select app Revit", context, catalog);
+        var outcome = executor.TryExecuteSlashLine("select app Revit", context, catalog);
 
         Assert.True(outcome.Success, outcome.Error);
         uiState.SyncToSession(session, ["app_name"]);
