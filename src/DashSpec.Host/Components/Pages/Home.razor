@@ -7,6 +7,7 @@
 
 <PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
 
+<div class="dash-home" @onkeydown:window="OnWindowKeyDown">
 <DashboardToolbar Busy="Page.Switching"
                   ShowUpload="HostEnvironment.IsDevelopment()"
                   SpecSource="Page.LoadedSpecSource"
@@ -60,7 +61,8 @@ else
                              OnSelect="Page.SelectPageAsync" />
     }
 
-    <DashboardFilterCommandBar ToolbarFilterNames="Page.VisibleToolbarFilters()"
+    <DashboardFilterCommandBar @ref="_filterCommandBar"
+                               ToolbarFilterNames="Page.VisibleToolbarFilters()"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
 
     <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
@@ -110,3 +112,4 @@ else
         }
     </section>
 }
+</div>

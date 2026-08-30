@@ -21,15 +21,26 @@ internal static class DashboardFilterSlashCompletion
         return SlashCompletion.GetResult(catalog, body, pickerSource);
     }
 
-    public static string NormalizeBody(string typedBody)
+    public static string SanitizeTail(string tail)
     {
-        var text = typedBody;
-        if (text.StartsWith('/'))
+        var text = tail.TrimStart();
+        while (text.StartsWith('/') || text.StartsWith("select", StringComparison.OrdinalIgnoreCase))
         {
-            text = text[1..];
+            if (text.StartsWith('/'))
+            {
+                text = text[1..].TrimStart();
+                continue;
+            }
+
+            text = text["select".Length..].TrimStart();
         }
 
-        text = text.TrimStart();
+        return text;
+    }
+
+    public static string NormalizeBody(string typedBody)
+    {
+        var text = SanitizeTail(typedBody);
         if (text.Length == 0)
         {
             return "select";
