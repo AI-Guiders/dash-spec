@@ -15,7 +15,7 @@
             <form class="dash-command-palette-input-wrap"
                   autocomplete="off"
                   @onsubmit:preventDefault="true">
-                <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.Prompt</span>
+                <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.VisiblePrefix</span>
                 <input type="text"
                        @ref="_inputRef"
                        class="dash-command-palette-input"
@@ -113,7 +113,7 @@
         get => _line;
         set
         {
-            _line = DashboardFilterSlashCompletion.SanitizeLine(value);
+            _line = DashboardFilterSlashCompletion.ToInputTail(value);
             _validationError = null;
             RefreshSuggestions();
         }

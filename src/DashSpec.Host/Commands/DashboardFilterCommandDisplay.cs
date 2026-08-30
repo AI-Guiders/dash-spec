@@ -8,7 +8,8 @@ internal static class DashboardFilterCommandDisplay
 {
     public const string RootVerb = "select";
     public const string Prompt = ">";
-    public const string EmptyPlaceholder = "select filter · select report …";
+    public const string EmptyPlaceholder = "filter · report · page";
+    public static string VisiblePrefix => $"{Prompt} {RootVerb} ";
     public const string AcceptCompletionHint = "Ctrl+Space — выбрать";
 
     public static string AcceptHint(string action) => $"Ctrl+Space — {action}";
@@ -84,7 +85,7 @@ internal static class DashboardFilterCommandDisplay
             "Type a command path" => EmptyPlaceholder,
             "Continue typing the command path" => EmptyPlaceholder,
             _ when placeholder.StartsWith("Next: ", StringComparison.Ordinal) =>
-                $"{RootVerb} {placeholder["Next: ".Length..]}",
+                placeholder["Next: ".Length..].Trim(),
             _ => FormatCommand(placeholder),
         };
 }
