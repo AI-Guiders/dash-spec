@@ -31,6 +31,8 @@
   border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .dash-filter-command-prompt {
@@ -154,6 +156,8 @@
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--border);
+  margin: 0;
+  padding: 0;
 }
 
 .dash-command-palette-input-wrap .dash-filter-command-prompt {
