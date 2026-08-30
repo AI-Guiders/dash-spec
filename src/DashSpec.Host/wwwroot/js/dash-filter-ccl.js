@@ -15,7 +15,7 @@ window.dashFilterCcl = (function () {
   }
 
   function bindInput(input) {
-    if (!input || bound.has(input)) {
+    if (!input || typeof input.addEventListener !== "function" || bound.has(input)) {
       return;
     }
 
