@@ -35,7 +35,9 @@ public sealed class DashboardFilterCommandService(
         return new CommandRunResult(
             outcome,
             context.PendingCatalogEntryId,
-            context.PendingPageId);
+            context.PendingPageId,
+            context.PendingCardId,
+            context.PendingViewId);
     }
 
     public bool TryValidateRunnable(
@@ -44,8 +46,11 @@ public sealed class DashboardFilterCommandService(
         out string? error)
     {
         var catalog = BuildCatalog(context);
-        return executor.TryValidateRunnable(line, catalog, out error);
+        return executor.TryValidateRunnable(line, context, catalog, out error);
     }
+
+    public CommandHighlightState ResolveHighlights(string tail, DashboardFilterContext context) =>
+        DashboardCommandHighlightResolver.Resolve(tail, context);
 
     ISlashPickerChoiceSource CreatePickerSource(DashboardFilterContext context) =>
         new DashboardFilterPickerSource(session, context.ToolbarFilterNames);
