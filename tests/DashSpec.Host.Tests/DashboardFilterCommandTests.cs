@@ -105,6 +105,28 @@ public class DashboardFilterCommandTests
         Assert.Contains(result.Items, item => item.Help.Contains("Продукты"));
     }
 
+    [Theory]
+    [InlineData("/select", "")]
+    [InlineData(" /select ", "")]
+    [InlineData("/select date", "date")]
+    [InlineData("select program", "program")]
+    [InlineData("/select /select location", "location")]
+    public void SanitizeTail_strips_duplicate_select_prefix(string input, string expected)
+    {
+        Assert.Equal(expected, DashboardFilterSlashCompletion.SanitizeTail(input));
+    }
+
+    [Fact]
+    public void Completion_tolerates_duplicate_select_in_tail()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "/select", null);
+
+        Assert.Equal(3, result.Items.Count);
+    }
+
     [Fact]
     public void Completion_on_select_date_space_enters_picker_mode()
     {

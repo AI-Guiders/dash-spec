@@ -16,14 +16,20 @@
                class="dash-filter-command-input"
                placeholder="@_guidance.Placeholder"
                aria-label="Filter slash command"
-               @bind="_tail"
+               aria-expanded="@(_suggestions.Count > 0)"
+               aria-controls="dash-filter-command-suggestions"
+               @bind="Tail"
                @bind:event="oninput"
+               @onfocus="OnFocus"
                @onkeydown="OnKeyDown" />
     </div>
     <DashboardSlashGuidance Guidance="_guidance" />
     @if (_suggestions.Count > 0)
     {
-        <ul class="dash-filter-command-suggestions" role="listbox" aria-label="Filter commands">
+        <ul id="dash-filter-command-suggestions"
+            class="dash-filter-command-suggestions"
+            role="listbox"
+            aria-label="Filter commands">
             @for (var i = 0; i < _suggestions.Count; i++)
             {
                 var item = _suggestions[i];
@@ -40,7 +46,8 @@
     }
 </div>
 
-<DashboardCommandPalette Visible="_paletteOpen"
+<DashboardCommandPalette @ref="_palette"
+                         Visible="_paletteOpen"
                          ToolbarFilterNames="ToolbarFilterNames"
                          OnClose="ClosePalette"
                          OnCommit="OnCommit" />
@@ -48,13 +55,28 @@
 @code {
     [Parameter] public IReadOnlyList<string> ToolbarFilterNames { get; set; } = [];
     [Parameter] public EventCallback<string> OnCommit { get; set; }
-    [Parameter] public EventCallback OpenPaletteRequested { get; set; }
 
+    DashboardCommandPalette? _palette;
     string _tail = "";
     int _selected;
     bool _paletteOpen;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
     SlashInputGuidance _guidance = new(SlashInputMode.Path, "/select", "Tab — выбрать фильтр", "Фильтры toolbar");
+
+    string Tail
+    {
+        get => _tail;
+        set
+        {
+            _tail = DashboardFilterSlashCompletion.SanitizeTail(value);
+            RefreshSuggestions();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        RefreshSuggestions();
+    }
 
     public void OpenPaletteFromHost()
     {
@@ -64,6 +86,8 @@
     void OpenPalette() => _paletteOpen = true;
 
     void ClosePalette() => _paletteOpen = false;
+
+    void OnFocus() => RefreshSuggestions();
 
     void RefreshSuggestions()
     {
@@ -81,9 +105,18 @@
             return;
         }
 
-        if (e.Key == "ArrowDown" && _suggestions.Count > 0)
+        if (e.Key == "ArrowDown")
         {
-            _selected = (_selected + 1) % _suggestions.Count;
+            if (_suggestions.Count == 0)
+            {
+                RefreshSuggestions();
+            }
+
+            if (_suggestions.Count > 0)
+            {
+                _selected = (_selected + 1) % _suggestions.Count;
+            }
+
             return;
         }
 
