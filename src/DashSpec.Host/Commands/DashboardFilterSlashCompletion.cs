@@ -318,7 +318,7 @@ internal static class DashboardFilterSlashCompletion
 
             items,
 
-            TreeGuidance("Tab — выбрать ветку", "report · filter · page"));
+            TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("выбрать ветку"), "report · filter · page"));
 
         return true;
 
@@ -370,7 +370,7 @@ internal static class DashboardFilterSlashCompletion
 
 
 
-        result = new SlashCompletionResult(items, TreeGuidance("Tab — отчёт", "select report <id>"));
+        result = new SlashCompletionResult(items, TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("отчёт"), "select report <id>"));
 
         return true;
 
@@ -422,7 +422,7 @@ internal static class DashboardFilterSlashCompletion
 
 
 
-        result = new SlashCompletionResult(items, TreeGuidance("Tab — страница", "select page <id>"));
+        result = new SlashCompletionResult(items, TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("страницу"), "select page <id>"));
 
         return true;
 
@@ -506,7 +506,7 @@ internal static class DashboardFilterSlashCompletion
 
             items,
 
-            TreeGuidance("Tab — фильтр", "select filter <id> <value>"));
+            TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("фильтр"), "select filter <id> <value>"));
 
         return true;
 

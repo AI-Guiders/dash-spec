@@ -9,6 +9,9 @@ internal static class DashboardFilterCommandDisplay
     public const string RootVerb = "select";
     public const string Prompt = ">";
     public const string EmptyPlaceholder = "select filter · select report …";
+    public const string AcceptCompletionHint = "Ctrl+Space — выбрать";
+
+    public static string AcceptHint(string action) => $"Ctrl+Space — {action}";
 
     public static SlashInputGuidance ForCli(SlashInputGuidance guidance) =>
         guidance with

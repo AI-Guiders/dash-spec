@@ -29,6 +29,29 @@ public class DashboardFilterCommandTests
         Assert.True(uiState.DateTo.ContainsKey("usage_date"));
     }
 
+    [Theory]
+    [InlineData("Tab", false, false, false, true)]
+    [InlineData(" ", true, false, false, true)]
+    [InlineData(" ", false, false, false, false)]
+    [InlineData("Enter", false, false, false, false)]
+    public void AcceptCompletionKey(
+        string key,
+        bool ctrl,
+        bool alt,
+        bool shift,
+        bool expected)
+    {
+        var args = new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs
+        {
+            Key = key,
+            CtrlKey = ctrl,
+            AltKey = alt,
+            ShiftKey = shift,
+        };
+
+        Assert.Equal(expected, DashboardFilterCommandKeys.IsAcceptCompletion(args));
+    }
+
     [Fact]
     public void SelectFieldFilterCommand_applies_single_value_by_filter_id()
     {
