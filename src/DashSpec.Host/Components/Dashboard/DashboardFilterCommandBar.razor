@@ -11,32 +11,43 @@
             @onclick="OpenPalette">
         Ctrl+K
     </button>
-    <form class="dash-filter-command-input-wrap"
-          autocomplete="off"
-          @onsubmit:preventDefault="true">
-        <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.VisiblePrefix</span>
-        <input type="text"
-               @ref="_inputRef"
-               id="dash-filter-command-input"
-               class="dash-filter-command-input"
-               placeholder="@InputPlaceholder"
-               aria-label="Filter command line"
-               role="combobox"
-               aria-autocomplete="list"
-               aria-haspopup="listbox"
-               aria-expanded="@(_focused && _suggestions.Count > 0)"
-               aria-controls="dash-filter-command-suggestions"
-               autocomplete="off"
-               autocapitalize="off"
-               autocorrect="off"
-               spellcheck="false"
-               data-ccl-suggest="@SuggestActive"
-               @bind="Line"
-               @bind:event="oninput"
-               @onfocus="OnFocus"
-               @onblur="OnBlur"
-               @onkeydown="OnKeyDown" />
-    </form>
+    <div class="dash-filter-command-editor">
+        @if (_trail.Count > 0)
+        {
+            <div class="dash-filter-command-trail" aria-label="Command path">
+                @foreach (var segment in _trail)
+                {
+                    <span class="dash-command-trail-segment">@segment.Label</span>
+                }
+            </div>
+        }
+        <form class="dash-filter-command-input-wrap"
+              autocomplete="off"
+              @onsubmit:preventDefault="true">
+            <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.VisiblePrefix</span>
+            <input type="text"
+                   @ref="_inputRef"
+                   id="dash-filter-command-input"
+                   class="dash-filter-command-input"
+                   placeholder="@InputPlaceholder"
+                   aria-label="Filter command line"
+                   role="combobox"
+                   aria-autocomplete="list"
+                   aria-haspopup="listbox"
+                   aria-expanded="@(_focused && _suggestions.Count > 0)"
+                   aria-controls="dash-filter-command-suggestions"
+                   autocomplete="off"
+                   autocapitalize="off"
+                   autocorrect="off"
+                   spellcheck="false"
+                   data-ccl-suggest="@SuggestActive"
+                   @bind="Line"
+                   @bind:event="oninput"
+                   @onfocus="OnFocus"
+                   @onblur="OnBlur"
+                   @onkeydown="OnKeyDown" />
+        </form>
+    </div>
     @if (!string.IsNullOrEmpty(_validationError))
     {
         <div class="dash-command-error" role="alert">@_validationError</div>
@@ -56,11 +67,18 @@
             {
                 var item = _suggestions[i];
                 var index = i;
+                var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext);
                 <li role="option"
                     aria-selected="@(index == _selected)"
                     class="dash-filter-command-item @(index == _selected ? "active" : null)"
                     @onclick="() => Accept(item)">
-                    <span class="path">@DashboardFilterCommandDisplay.FormatSuggestion(item)</span>
+                    <span class="path">
+                        <span class="dash-command-suggest-primary">@parts.Primary</span>
+                        @if (!string.IsNullOrWhiteSpace(parts.Secondary))
+                        {
+                            <span class="dash-command-suggest-badge">@parts.Secondary</span>
+                        }
+                    </span>
                     <span class="help">@item.Help</span>
                 </li>
             }
@@ -78,6 +96,7 @@
     [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
     [Parameter] public string? CommandError { get; set; }
     [Parameter] public EventCallback<string> OnCommit { get; set; }
+    [Parameter] public EventCallback<string> OnTailChanged { get; set; }
 
     DashboardCommandPalette? _palette;
     ElementReference _inputRef;
@@ -88,9 +107,10 @@
     bool _focused;
     string? _validationError;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
+    IReadOnlyList<CommandTrailSegment> _trail = [];
     SlashInputGuidance _guidance = new(
         SlashInputMode.Path,
-        DashboardFilterCommandDisplay.RootVerb,
+        "команда",
         DashboardFilterCommandDisplay.AcceptCompletionHint,
         DashboardFilterCommandDisplay.EmptyPlaceholder);
 
@@ -152,7 +172,9 @@
         var result = CommandService.GetCompletionResult(_line, CommandContext);
         _suggestions = result.Items;
         _guidance = result.Guidance;
+        _trail = DashboardCommandTrailFormatter.Format(_line, CommandContext);
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
+        _ = OnTailChanged.InvokeAsync(_line);
     }
 
     async Task OnKeyDown(KeyboardEventArgs e)
@@ -193,7 +215,7 @@
         if (e.Key == "Enter")
         {
             var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
-            if (line.Equals(DashboardFilterCommandDisplay.RootVerb, StringComparison.OrdinalIgnoreCase))
+            if (DashboardFilterSlashCompletion.IsIncompleteRoot(_line))
             {
                 return;
             }

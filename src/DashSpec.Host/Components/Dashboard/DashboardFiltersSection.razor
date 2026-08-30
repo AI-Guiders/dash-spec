@@ -32,7 +32,7 @@
             var placementStyle = BarLayout
                 ? string.Empty
                 : DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
-            <div class="@FilterCellClass(filter)" style="@placementStyle">
+            <div class="@FilterCellClass(filter, filterName)" style="@placementStyle">
                 <FilterWidgetHost Filter="filter"
                                   Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
                                   Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
@@ -106,13 +106,25 @@
     [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
     [Parameter] public EventCallback<(string Name, int Value)> OnTopChanged { get; set; }
     [Parameter] public Func<string, bool>? GroupBreakBefore { get; set; }
+    [Parameter] public IReadOnlySet<string>? HighlightFilterNames { get; set; }
 
-    private string FilterCellClass(FilterDefinition filter) =>
-        BarLayout
+    private string FilterCellClass(FilterDefinition filter, string filterName)
+    {
+        var classes = BarLayout
             ? filter.Kind is FilterKind.Date && !filter.IsDayWidget
                 ? "toolbar-filter-cell toolbar-filter-date"
                 : "toolbar-filter-cell"
             : filter.Kind is FilterKind.Field ? "filter-field-cell" : string.Empty;
+
+        if (HighlightFilterNames?.Contains(filterName) == true)
+        {
+            classes = string.IsNullOrWhiteSpace(classes)
+                ? "dash-command-target-highlight"
+                : $"{classes} dash-command-target-highlight";
+        }
+
+        return classes;
+    }
 
     private Task OnTopChangedForFilter(FilterDefinition filter, int value) =>
         filter.Kind is FilterKind.Top

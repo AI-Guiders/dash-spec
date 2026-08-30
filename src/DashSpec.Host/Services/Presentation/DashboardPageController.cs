@@ -80,6 +80,18 @@ public sealed class DashboardPageController : IDisposable
     public bool Switching { get; private set; }
     public string? Error { get; private set; }
     public string? CommandError { get; private set; }
+    string _commandTail = "";
+
+    public string CommandTail => _commandTail;
+
+    public CommandHighlightState CommandHighlights =>
+        _filterCommands.ResolveHighlights(_commandTail, BuildCommandContext());
+
+    public void OnCommandTailChanged(string tail)
+    {
+        _commandTail = tail ?? "";
+        Notify();
+    }
     public string? LoadedSpecSource { get; private set; }
     public IReadOnlyList<CardRenderResult> Cards => _refresh.Cards;
     public DashboardFilterUiState FilterState => _filters;
@@ -691,6 +703,15 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        if (run.PendingCardId is not null && run.PendingViewId is not null)
+        {
+            _cardViewState.SetActiveView(run.PendingCardId, run.PendingViewId);
+            CommandError = null;
+            Notify();
+            await _refresh.RefreshSingleCardAsync(run.PendingCardId, CancellationToken.None).ConfigureAwait(false);
+            return;
+        }
+
         _filters.SyncToSession(_session, PlacedFilterNames());
         SyncUsageDateFromActivePage();
         CommandError = null;
@@ -711,7 +732,15 @@ public sealed class DashboardPageController : IDisposable
             ReportPages = ActiveTabPages(),
             ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
             ActivePageId = ActivePageId,
+            SwitchableCards = BuildSwitchableCards(),
         };
+
+    IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
+        DashboardCardCommandTargetsBuilder.Build(
+            VisibleCards()
+                .Select(card => FindCardDefinition(card.Id))
+                .Where(definition => definition is not null)
+                .Cast<CardDefinition>());
 
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
 

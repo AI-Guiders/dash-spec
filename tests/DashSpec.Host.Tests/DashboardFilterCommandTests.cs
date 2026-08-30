@@ -30,11 +30,11 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void ToInputTail_strips_fixed_select_prefix()
+    public void ToInputTail_keeps_command_verbs_in_tail()
     {
         Assert.Equal("", DashboardFilterSlashCompletion.ToInputTail(""));
-        Assert.Equal("filter usage_date", DashboardFilterSlashCompletion.ToInputTail("select filter usage_date"));
-        Assert.Equal("filter", DashboardFilterSlashCompletion.ToInputTail("> select filter"));
+        Assert.Equal("select filter usage_date", DashboardFilterSlashCompletion.ToInputTail("select filter usage_date"));
+        Assert.Equal("select filter", DashboardFilterSlashCompletion.ToInputTail("> select filter"));
     }
 
     [Theory]
@@ -133,8 +133,16 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void FormatSuggestion_shows_next_segment_only()
+    public void FormatSuggestion_shows_human_label_with_id_badge()
     {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            labels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = "Дата отчёта",
+            });
         var item = new SlashCompletionItem(
             "select filter usage_date ",
             "select filter usage_date",
@@ -142,9 +150,12 @@ public class DashboardFilterCommandTests
             "Filter",
             "usage_date");
 
-        Assert.Equal("usage_date", DashboardFilterCommandDisplay.FormatSuggestion(item));
+        var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, context);
+        Assert.Equal("Дата отчёта", parts.Primary);
+        Assert.Equal("usage_date", parts.Secondary);
         Assert.Equal("today", DashboardFilterCommandDisplay.FormatSuggestion(
-            new SlashCompletionItem("/select filter usage_date today", "select filter usage_date", "Today", "Filter", "today", SlashCompletionItemKind.Picker, "today")));
+            new SlashCompletionItem("/select filter usage_date today", "select filter usage_date", "Today", "Filter", "today", SlashCompletionItemKind.Picker, "today"),
+            context));
     }
 
     [Fact]
@@ -165,9 +176,13 @@ public class DashboardFilterCommandTests
 
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
-        Assert.All(result.Items, item => Assert.Equal(item.StepSegment, DashboardFilterCommandDisplay.FormatSuggestion(item)));
+        Assert.All(result.Items, item =>
+        {
+            var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, context);
+            Assert.False(string.IsNullOrWhiteSpace(parts.Primary));
+        });
         Assert.Equal("select filter", result.Guidance.Breadcrumb);
-        Assert.Equal("<id> · <value>", result.Guidance.Hint);
+        Assert.Equal("название фильтра · значение", result.Guidance.Hint);
     }
 
     [Theory]
@@ -216,10 +231,11 @@ public class DashboardFilterCommandTests
         Assert.Equal(
             "select filter usage_date today",
             DashboardFilterSlashCompletion.ToCommandLine("filter usage_date today"));
-        Assert.Equal("select", DashboardFilterSlashCompletion.ToCommandLine(""));
+        Assert.Equal("", DashboardFilterSlashCompletion.ToCommandLine(""));
         Assert.Equal(
             "select filter usage_date today",
             DashboardFilterSlashCompletion.ToCommandLine("> select filter usage_date today"));
+        Assert.Equal("view card_a heatmap", DashboardFilterSlashCompletion.ToCommandLine("view card_a heatmap"));
     }
 
     [Fact]
@@ -281,7 +297,7 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        Assert.False(executor.TryValidateRunnable(FilterCommandPaths.FilterPath("app_name"), catalog, out var error));
+        Assert.False(executor.TryValidateRunnable(FilterCommandPaths.FilterPath("app_name"), context, catalog, out var error));
         Assert.False(string.IsNullOrWhiteSpace(error));
     }
 
@@ -330,12 +346,122 @@ public class DashboardFilterCommandTests
         Assert.Equal(["Revit"], field.Value.Values);
     }
 
+    [Fact]
+    public void Completion_at_empty_root_lists_select_and_view_when_cards_switchable()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            switchableCards:
+            [
+                new DashboardCardCommandTarget(
+                    "heatmap_card",
+                    "Heatmap",
+                    [new DashboardCardViewOption("heatmap", "Heatmap"), new DashboardCardViewOption("line", "Line")]),
+            ]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "", null);
+
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, item => item.StepSegment == FilterCommandPaths.RootVerb);
+        Assert.Contains(result.Items, item => item.StepSegment == ViewCommandPaths.RootVerb);
+    }
+
+    [Fact]
+    public void Normalizer_resolves_filter_label_to_id()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            labels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = "Дата отчёта",
+            });
+
+        var normalized = DashboardCommandLineNormalizer.NormalizeExecutableLine(
+            "select filter Дата today",
+            context);
+
+        Assert.Equal("select filter usage_date today", normalized);
+    }
+
+    [Fact]
+    public void Executor_runs_view_command_by_card_and_view_labels()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            switchableCards:
+            [
+                new DashboardCardCommandTarget(
+                    "heatmap_card",
+                    "Heatmap card",
+                    [new DashboardCardViewOption("heatmap", "Heatmap view"), new DashboardCardViewOption("line", "Line view")]),
+            ]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+
+        var outcome = executor.TryExecuteSlashLine(
+            "view Heatmap heatmap",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.Equal("heatmap_card", context.PendingCardId);
+        Assert.Equal("heatmap", context.PendingViewId);
+    }
+
+    [Fact]
+    public void Highlights_focus_single_filter_when_named_in_tail()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date", "app_name"],
+            labels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = "Дата отчёта",
+            });
+
+        var highlights = DashboardCommandHighlightResolver.Resolve("select filter Дата", context);
+
+        Assert.Single(highlights.FilterNames);
+        Assert.Contains("usage_date", highlights.FilterNames);
+        Assert.Empty(highlights.CardIds);
+    }
+
+    [Fact]
+    public void Trail_formatter_shows_human_filter_label()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            labels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = "Дата отчёта",
+            });
+
+        var trail = DashboardCommandTrailFormatter.Format("select filter usage_date today", context);
+
+        Assert.Collection(
+            trail,
+            segment => Assert.Equal("select", segment.Label),
+            segment => Assert.Equal("filter", segment.Label),
+            segment => Assert.Equal("Дата отчёта", segment.Label),
+            segment => Assert.Equal("today", segment.Label));
+    }
+
     static DashboardFilterContext CreateContext(
         DashboardFilterUiState uiState,
         IReadOnlyList<string> toolbarFilters,
         IReadOnlyDictionary<string, string>? aliases = null,
         IReadOnlyDictionary<string, IReadOnlyList<string>>? options = null,
-        IReadOnlyDictionary<string, string>? labels = null)
+        IReadOnlyDictionary<string, string>? labels = null,
+        IReadOnlyList<DashboardCardCommandTarget>? switchableCards = null)
     {
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
@@ -370,6 +496,7 @@ public class DashboardFilterCommandTests
             UiState = uiState,
             GetFieldOptions = name => options?.TryGetValue(name, out var values) == true ? values : [],
             TodayUtc = new DateOnly(2026, 6, 24),
+            SwitchableCards = switchableCards ?? [],
         };
     }
 
