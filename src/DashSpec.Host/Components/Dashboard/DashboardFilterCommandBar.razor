@@ -16,20 +16,25 @@
                class="dash-filter-command-input"
                placeholder="@InputPlaceholder"
                aria-label="Filter command line"
-               aria-expanded="@(_suggestions.Count > 0)"
+               aria-expanded="@(_focused && _suggestions.Count > 0)"
                aria-controls="dash-filter-command-suggestions"
                @bind="Line"
                @bind:event="oninput"
                @onfocus="OnFocus"
+               @onblur="OnBlur"
                @onkeydown="OnKeyDown" />
     </div>
-    <DashboardSlashGuidance Guidance="_guidance" />
-    @if (_suggestions.Count > 0)
+    @if (_focused)
+    {
+        <DashboardSlashGuidance Guidance="_guidance" />
+    }
+    @if (_focused && _suggestions.Count > 0)
     {
         <ul id="dash-filter-command-suggestions"
             class="dash-filter-command-suggestions"
             role="listbox"
-            aria-label="Filter commands">
+            aria-label="Filter commands"
+            @onmousedown:preventDefault="true">
             @for (var i = 0; i < _suggestions.Count; i++)
             {
                 var item = _suggestions[i];
@@ -60,6 +65,7 @@
     string _line = "";
     int _selected;
     bool _paletteOpen;
+    bool _focused;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
     SlashInputGuidance _guidance = new(
         SlashInputMode.Path,
@@ -84,7 +90,10 @@
 
     protected override void OnParametersSet()
     {
-        RefreshSuggestions();
+        if (_focused)
+        {
+            RefreshSuggestions();
+        }
     }
 
     public void OpenPaletteFromHost()
@@ -96,7 +105,13 @@
 
     void ClosePalette() => _paletteOpen = false;
 
-    void OnFocus() => RefreshSuggestions();
+    void OnFocus()
+    {
+        _focused = true;
+        RefreshSuggestions();
+    }
+
+    void OnBlur() => _focused = false;
 
     void RefreshSuggestions()
     {
@@ -147,7 +162,10 @@
             if (!line.Equals(DashboardFilterCommandDisplay.RootVerb, StringComparison.OrdinalIgnoreCase))
             {
                 await OnCommit.InvokeAsync(line);
+                _line = "";
             }
+
+            _focused = false;
         }
     }
 
