@@ -1,35 +1,31 @@
 #nullable enable
 using AIGuiders.Platform.CommandPlane;
-using AIGuiders.Platform.CommandPlane.Commands;
+using AIGuiders.Platform.CommandPlane.Sources;
 using DashSpec.Abstractions.Plugins;
 
 namespace DashSpec.Host.Commands;
 
 internal static class DashboardCommandCatalogBuilder
 {
+    static readonly ICommandSource Bundled = LoadBundledSource();
+
+    static readonly string[] FilterSurfaces = ["dash-slash", "dash-palette", "dash-ccl"];
+
     public static SlashCatalogIndex Build(
         DashboardFilterContext context,
         IReadOnlyList<DashSpecCommandDescriptor> pluginDescriptors)
     {
-        var descriptors = new List<SlashCommandDescriptor>
-        {
-            new()
-            {
-                Domain = "dash",
-                Object = "select",
-                Intent = "date",
-                CommandId = SelectDateFilterCommand.Id,
-                Path = "select date",
-                Help = "Set date filter (today, last-week, YYYY-MM, range)",
-                ArgTail = "picker:enum:date_preset",
-                ArgHint = "Preset, YYYY-MM, or from..to range",
-                ArgPickerChoices = SlashPickerChoices.FromLabels(
-                    ("today", "Today"),
-                    ("last-week", "Last 7 days"),
-                    ("last-month", "Last month")),
-                Group = "Filters",
-            },
-        };
+        var report = CommandSource.From(BuildReportFieldDescriptors(context), "report");
+        var plugins = CommandSource.From(
+            pluginDescriptors.Select(ToSlashDescriptor).ToList(),
+            "plugins");
+
+        return SlashCatalogComposer.Build(Bundled, report, plugins);
+    }
+
+    static IReadOnlyList<SlashCommandDescriptor> BuildReportFieldDescriptors(DashboardFilterContext context)
+    {
+        var descriptors = new List<SlashCommandDescriptor>();
 
         foreach (var alias in DashboardCommandAliasResolver.ResolveFieldSlashAliases(context))
         {
@@ -44,15 +40,11 @@ internal static class DashboardCommandCatalogBuilder
                 ArgTail = $"picker:dash.field.{alias}",
                 ArgHint = $"Choose a {alias} value or type to filter",
                 Group = "Filters",
+                Surfaces = FilterSurfaces,
             });
         }
 
-        foreach (var plugin in pluginDescriptors)
-        {
-            descriptors.Add(ToSlashDescriptor(plugin));
-        }
-
-        return SlashCatalogIndex.FromDescriptors(descriptors);
+        return descriptors;
     }
 
     static SlashCommandDescriptor ToSlashDescriptor(DashSpecCommandDescriptor descriptor) =>
@@ -68,5 +60,20 @@ internal static class DashboardCommandCatalogBuilder
             ArgTail = descriptor.ArgTail,
             Group = descriptor.Group ?? "Plugins",
             PluginId = descriptor.PluginId,
+            Surfaces = FilterSurfaces,
         };
+
+    static ICommandSource LoadBundledSource()
+    {
+        const string resourceSuffix = "dash-filter-commands.toml";
+        var assembly = typeof(DashboardCommandCatalogBuilder).Assembly;
+        var resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(name => name.EndsWith(resourceSuffix, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Embedded catalog '{resourceSuffix}' was not found.");
+
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+                         ?? throw new InvalidOperationException($"Embedded catalog '{resourceName}' could not be opened.");
+        using var reader = new StreamReader(stream);
+        return CommandSources.FromToml(reader.ReadToEnd(), "bundled");
+    }
 }
