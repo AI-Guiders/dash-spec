@@ -79,6 +79,7 @@ public sealed class DashboardPageController : IDisposable
     public bool Busy => _refresh.Busy;
     public bool Switching { get; private set; }
     public string? Error { get; private set; }
+    public string? CommandError { get; private set; }
     public string? LoadedSpecSource { get; private set; }
     public IReadOnlyList<CardRenderResult> Cards => _refresh.Cards;
     public DashboardFilterUiState FilterState => _filters;
@@ -668,18 +669,19 @@ public sealed class DashboardPageController : IDisposable
 
     public async Task OnFilterCommandCommittedAsync(string line)
     {
+        CommandError = null;
         var toolbar = VisibleToolbarFilterNames();
         var outcome = _filterCommands.TryExecute(line, toolbar);
         if (!outcome.Success)
         {
-            _logger.LogWarning("Filter slash command failed: {Error}", outcome.Error);
-            Error = outcome.Error;
+            _logger.LogWarning("Filter command failed: {Error}", outcome.Error);
+            CommandError = outcome.Error;
             Notify();
             return;
         }
 
         _filters.SyncToSession(_session, PlacedFilterNames());
-        Error = null;
+        CommandError = null;
         Notify();
         await ApplyFiltersAsync().ConfigureAwait(false);
     }
@@ -994,7 +996,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var grain = PeriodAnchorResolver.TryReadGrain(_session.Filters, derive.GrainFilterName);
+        var grain = ResolveDeriveGrain(derive.GrainFilterName);
         var from = PeriodAnchorResolver.ResolveAnchor(anchor, grain);
         var to = PeriodAnchorResolver.ResolvePeriodEnd(from, grain);
         DateFrom[derive.TargetFilter] = from;
@@ -1046,6 +1048,28 @@ public sealed class DashboardPageController : IDisposable
 
     private IEnumerable<string> PlacedFilterNames() =>
         PlacedFilterCollector.Collect(_session.Document);
+
+    string? ResolveDeriveGrain(string? grainFilterName)
+    {
+        if (string.IsNullOrWhiteSpace(grainFilterName))
+        {
+            return null;
+        }
+
+        if (VisibleToolbarFilterNames().Contains(grainFilterName, StringComparer.OrdinalIgnoreCase))
+        {
+            return PeriodAnchorResolver.TryReadGrain(_session.Filters, grainFilterName)
+                ?? DefaultGrainExpression(grainFilterName);
+        }
+
+        return DefaultGrainExpression(grainFilterName);
+    }
+
+    string DefaultGrainExpression(string grainFilterName) =>
+        _session.FilterIndex.TryGetValue(grainFilterName, out var grainFilter)
+        && !string.IsNullOrWhiteSpace(grainFilter.DefaultExpression)
+            ? grainFilter.DefaultExpression
+            : "day";
 
     private void Notify() => Changed?.Invoke();
 }

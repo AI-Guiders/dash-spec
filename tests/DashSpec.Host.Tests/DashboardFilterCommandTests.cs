@@ -186,6 +186,43 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void Executor_rejects_incomplete_field_command()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["app_name"],
+            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app"] = "app_name",
+            });
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+
+        var outcome = executor.TryExecuteSlashLine("select app", context, catalog);
+
+        Assert.False(outcome.Success);
+        Assert.Contains("аргумент", outcome.Error!, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateRunnable_blocks_incomplete_command()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["app_name"],
+            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app"] = "app_name",
+            });
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+
+        Assert.False(executor.TryValidateRunnable("select app", catalog, out var error));
+        Assert.False(string.IsNullOrWhiteSpace(error));
+    }
+    [Fact]
     public void Executor_runs_slash_line_through_registry()
     {
         var uiState = new DashboardFilterUiState();
