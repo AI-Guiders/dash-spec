@@ -18,7 +18,7 @@ internal static partial class DateFilterPresets
         var token = expression.Trim();
         if (token.Length == 0)
         {
-            error = "Date argument is required.";
+            error = "Укажите дату (today, last-week, YYYY-MM, from..to).";
             return false;
         }
 
