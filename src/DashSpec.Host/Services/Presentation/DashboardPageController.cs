@@ -670,21 +670,48 @@ public sealed class DashboardPageController : IDisposable
     public async Task OnFilterCommandCommittedAsync(string line)
     {
         CommandError = null;
-        var toolbar = VisibleToolbarFilterNames();
-        var outcome = _filterCommands.TryExecute(line, toolbar);
-        if (!outcome.Success)
+        var run = _filterCommands.TryExecute(line, BuildCommandContext());
+        if (!run.Outcome.Success)
         {
-            _logger.LogWarning("Filter command failed: {Error}", outcome.Error);
-            CommandError = outcome.Error;
+            _logger.LogWarning("Filter command failed: {Error}", run.Outcome.Error);
+            CommandError = run.Outcome.Error;
             Notify();
             return;
         }
 
+        if (run.PendingCatalogEntryId is not null)
+        {
+            await SelectCatalogEntryAsync(run.PendingCatalogEntryId).ConfigureAwait(false);
+            return;
+        }
+
+        if (run.PendingPageId is not null)
+        {
+            await SelectPageAsync(run.PendingPageId).ConfigureAwait(false);
+            return;
+        }
+
         _filters.SyncToSession(_session, PlacedFilterNames());
+        SyncUsageDateFromActivePage();
         CommandError = null;
         Notify();
         await ApplyFiltersAsync().ConfigureAwait(false);
     }
+
+    public DashboardFilterContext BuildCommandContext() =>
+        new()
+        {
+            ReportId = _session.Document.Id,
+            FilterIndex = _session.FilterIndex,
+            ToolbarFilterNames = VisibleToolbarFilterNames(),
+            CommandAliases = _session.Document.ResolvedCommandAliases,
+            UiState = _filters,
+            GetFieldOptions = _session.GetFieldOptions,
+            CatalogEntries = CatalogEntries,
+            ReportPages = ActiveTabPages(),
+            ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
+            ActivePageId = ActivePageId,
+        };
 
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
 
@@ -952,7 +979,11 @@ public sealed class DashboardPageController : IDisposable
                 .ToList();
         }
 
-        return visible;
+        var derive = PageToolbarResolver.ResolveUsageDateDerive(
+            _session.Document,
+            ActiveTabId,
+            ActivePageId);
+        return DeriveToolbarExpander.Expand(visible, derive, _session.FilterIndex);
     }
 
     private void RecomputeTabPlacements()
@@ -996,7 +1027,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var grain = ResolveDeriveGrain(derive.GrainFilterName);
+        var grain = PeriodAnchorResolver.TryReadGrain(_session.Filters, derive.GrainFilterName);
         var from = PeriodAnchorResolver.ResolveAnchor(anchor, grain);
         var to = PeriodAnchorResolver.ResolvePeriodEnd(from, grain);
         DateFrom[derive.TargetFilter] = from;
@@ -1048,28 +1079,6 @@ public sealed class DashboardPageController : IDisposable
 
     private IEnumerable<string> PlacedFilterNames() =>
         PlacedFilterCollector.Collect(_session.Document);
-
-    string? ResolveDeriveGrain(string? grainFilterName)
-    {
-        if (string.IsNullOrWhiteSpace(grainFilterName))
-        {
-            return null;
-        }
-
-        if (VisibleToolbarFilterNames().Contains(grainFilterName, StringComparer.OrdinalIgnoreCase))
-        {
-            return PeriodAnchorResolver.TryReadGrain(_session.Filters, grainFilterName)
-                ?? DefaultGrainExpression(grainFilterName);
-        }
-
-        return DefaultGrainExpression(grainFilterName);
-    }
-
-    string DefaultGrainExpression(string grainFilterName) =>
-        _session.FilterIndex.TryGetValue(grainFilterName, out var grainFilter)
-        && !string.IsNullOrWhiteSpace(grainFilter.DefaultExpression)
-            ? grainFilter.DefaultExpression
-            : "day";
 
     private void Notify() => Changed?.Invoke();
 }

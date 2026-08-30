@@ -1,12 +1,22 @@
-# Bundled DashSpec filter slash catalog (GUIDERS-ADR-0013 ship layer).
-# Report-scoped field aliases merge from DashboardCommandCatalogBuilder ("report" layer).
+# Bundled DashSpec command catalog — branch verbs only; report/filter paths merge at runtime.
 
 [[command]]
-command_id = "dash.select.date"
-path = "select date"
-help = "Date filter — today, last-week, YYYY-MM, range"
-group = "Filters"
-arg_tail = "picker:enum:date_preset"
-arg_hint = "Preset, YYYY-MM, or from..to range"
-arg_picker_choices = ["today:Today", "last-week:Last 7 days", "last-month:Last month"]
+command_id = "dash.select.report"
+path = "select report"
+help = "Switch catalog report"
+group = "Report"
+surfaces = "dash-slash, dash-palette, dash-ccl"
+
+[[command]]
+command_id = "dash.select.page"
+path = "select page"
+help = "Switch report page"
+group = "Report"
+surfaces = "dash-slash, dash-palette, dash-ccl"
+
+[[command]]
+command_id = "dash.select.filter"
+path = "select filter"
+help = "Set toolbar filter"
+group = "Filter"
 surfaces = "dash-slash, dash-palette, dash-ccl"
