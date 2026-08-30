@@ -213,41 +213,23 @@ internal static class DashboardFilterSlashCompletion
         var parsed = ParseBody(body);
 
         if (parsed.Depth == 0)
-
         {
-
-            return TryBuildRootChoice(context, parsed.Partial, out result);
-
+            return TryBuildRootChoice(context, body, parsed.Partial, out result);
         }
-
-
 
         if (parsed.Branch.Equals(FilterCommandPaths.ReportBranch, StringComparison.OrdinalIgnoreCase))
-
         {
-
-            return TryBuildReportChoice(context, parsed.Partial, out result);
-
+            return TryBuildReportChoice(context, body, parsed.Partial, out result);
         }
-
-
 
         if (parsed.Branch.Equals(FilterCommandPaths.PageBranch, StringComparison.OrdinalIgnoreCase))
-
         {
-
-            return TryBuildPageChoice(context, parsed.Partial, out result);
-
+            return TryBuildPageChoice(context, body, parsed.Partial, out result);
         }
 
-
-
         if (parsed.Branch.Equals(FilterCommandPaths.FilterBranch, StringComparison.OrdinalIgnoreCase))
-
         {
-
-            return TryBuildFilterChoice(catalog, context, parsed.Partial, out result);
-
+            return TryBuildFilterChoice(catalog, context, body, parsed.Partial, out result);
         }
 
 
@@ -259,11 +241,9 @@ internal static class DashboardFilterSlashCompletion
 
 
     static bool TryBuildRootChoice(
-
         DashboardFilterContext context,
-
+        string body,
         string partial,
-
         out SlashCompletionResult result)
 
     {
@@ -315,23 +295,15 @@ internal static class DashboardFilterSlashCompletion
 
 
         result = new SlashCompletionResult(
-
             items,
-
-            TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("выбрать ветку"), "report · filter · page"));
-
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("выбрать ветку"), "filter · report · page"));
         return true;
-
     }
 
-
-
     static bool TryBuildReportChoice(
-
         DashboardFilterContext context,
-
+        string body,
         string partial,
-
         out SlashCompletionResult result)
 
     {
@@ -370,20 +342,16 @@ internal static class DashboardFilterSlashCompletion
 
 
 
-        result = new SlashCompletionResult(items, TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("отчёт"), "select report <id>"));
-
+        result = new SlashCompletionResult(
+            items,
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("отчёт"), "<id>"));
         return true;
-
     }
 
-
-
     static bool TryBuildPageChoice(
-
         DashboardFilterContext context,
-
+        string body,
         string partial,
-
         out SlashCompletionResult result)
 
     {
@@ -422,22 +390,17 @@ internal static class DashboardFilterSlashCompletion
 
 
 
-        result = new SlashCompletionResult(items, TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("страницу"), "select page <id>"));
-
+        result = new SlashCompletionResult(
+            items,
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("страницу"), "<id>"));
         return true;
-
     }
 
-
-
     static bool TryBuildFilterChoice(
-
         SlashCatalogIndex catalog,
-
         DashboardFilterContext context,
-
+        string body,
         string partial,
-
         out SlashCompletionResult result)
 
     {
@@ -503,37 +466,21 @@ internal static class DashboardFilterSlashCompletion
 
 
         result = new SlashCompletionResult(
-
             items,
-
-            TreeGuidance(DashboardFilterCommandDisplay.AcceptHint("фильтр"), "select filter <id> <value>"));
-
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("фильтр"), "<id> · <value>"));
         return true;
-
     }
 
-
-
     static SlashCompletionItem BranchItem(string branch, string help) =>
-
         new($"select {branch} ", $"select {branch}", help, "Command", branch);
 
-
-
-    static SlashInputGuidance TreeGuidance(string placeholder, string hint) =>
-
+    static SlashInputGuidance TreeGuidance(string body, string placeholder, string nextStepHint) =>
         new(
-
             SlashInputMode.Path,
-
-            DashboardFilterCommandDisplay.RootVerb,
-
+            DashboardFilterCommandDisplay.FormatTreeBreadcrumb(body),
             placeholder,
-
-            hint,
-
+            nextStepHint,
             null,
-
             nameof(SlashArgTailKind.None));
 
 

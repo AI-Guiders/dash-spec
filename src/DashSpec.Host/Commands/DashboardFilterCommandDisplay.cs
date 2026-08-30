@@ -40,10 +40,26 @@ internal static class DashboardFilterCommandDisplay
 
         if (!string.IsNullOrWhiteSpace(item.StepSegment))
         {
-            return $"{RootVerb} {item.StepSegment}";
+            return item.StepSegment;
         }
 
         return FormatCommand(item.InsertText.TrimEnd());
+    }
+
+    public static string FormatTreeBreadcrumb(string typedBody)
+    {
+        var text = typedBody.Trim();
+        if (text.Length == 0)
+        {
+            return RootVerb;
+        }
+
+        if (!text.StartsWith(RootVerb, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{RootVerb} {text}";
+        }
+
+        return text;
     }
 
     static string FormatBreadcrumb(string breadcrumb)
