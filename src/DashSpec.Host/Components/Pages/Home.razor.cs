@@ -1,11 +1,28 @@
+using DashSpec.Host.Components.Dashboard;
 using DashSpec.Host.Services.Presentation;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace DashSpec.Host.Components.Pages;
 
 public partial class Home : IDisposable
 {
     [Inject] private DashboardPageController Page { get; set; } = default!;
+
+    DashboardFilterCommandBar? _filterCommandBar;
+
+    void OnWindowKeyDown(KeyboardEventArgs e)
+    {
+        if (!Page.Loaded)
+        {
+            return;
+        }
+
+        if (e.CtrlKey && string.Equals(e.Key, "k", StringComparison.OrdinalIgnoreCase))
+        {
+            _filterCommandBar?.OpenPaletteFromHost();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

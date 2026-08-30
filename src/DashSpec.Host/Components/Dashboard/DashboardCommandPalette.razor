@@ -11,7 +11,8 @@
                 <span class="dash-command-palette-title">Commands</span>
                 <span class="dash-command-palette-hint">Ctrl+K</span>
             </header>
-            <input class="dash-command-palette-input"
+            <input @ref="_inputRef"
+                   class="dash-command-palette-input"
                    placeholder="@_guidance.Placeholder"
                    @bind="Line"
                    @bind:event="oninput"
@@ -40,6 +41,8 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
+    ElementReference _inputRef;
+    bool _wasVisible;
     string _line = "/select ";
     int _selected;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
@@ -53,12 +56,27 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Visible && !_wasVisible)
+        {
+            _wasVisible = true;
+            await _inputRef.FocusAsync();
+        }
+        else if (!Visible)
+        {
+            _wasVisible = false;
+        }
+    }
+
     string Line
     {
         get => _line;
         set
         {
-            _line = value.StartsWith('/') ? value : "/" + value;
+            var raw = value.StartsWith('/') ? value[1..] : value;
+            var tail = DashboardFilterSlashCompletion.SanitizeTail(raw);
+            _line = string.IsNullOrEmpty(tail) ? "/select " : "/select " + tail;
             RefreshSuggestions();
         }
     }
@@ -80,9 +98,18 @@
             return;
         }
 
-        if (e.Key == "ArrowDown" && _suggestions.Count > 0)
+        if (e.Key == "ArrowDown")
         {
-            _selected = (_selected + 1) % _suggestions.Count;
+            if (_suggestions.Count == 0)
+            {
+                RefreshSuggestions();
+            }
+
+            if (_suggestions.Count > 0)
+            {
+                _selected = (_selected + 1) % _suggestions.Count;
+            }
+
             return;
         }
 
