@@ -2,6 +2,7 @@
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
 @inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
+@inject IJSRuntime Js
 
 <div class="dash-filter-command-bar">
     <button type="button"
@@ -12,12 +13,14 @@
     </button>
     <div class="dash-filter-command-input-wrap">
         <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.Prompt</span>
-        <input id="dash-filter-command-input"
+        <input @ref="_inputRef"
+               id="dash-filter-command-input"
                class="dash-filter-command-input"
                placeholder="@InputPlaceholder"
                aria-label="Filter command line"
                aria-expanded="@(_focused && _suggestions.Count > 0)"
                aria-controls="dash-filter-command-suggestions"
+               data-ccl-suggest="@SuggestActive"
                @bind="Line"
                @bind:event="oninput"
                @onfocus="OnFocus"
@@ -67,6 +70,8 @@
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
     DashboardCommandPalette? _palette;
+    ElementReference _inputRef;
+    bool _inputBound;
     string _line = "";
     int _selected;
     bool _paletteOpen;
@@ -76,8 +81,10 @@
     SlashInputGuidance _guidance = new(
         SlashInputMode.Path,
         DashboardFilterCommandDisplay.RootVerb,
-        "Tab — выбрать фильтр",
+        DashboardFilterCommandDisplay.AcceptCompletionHint,
         DashboardFilterCommandDisplay.EmptyPlaceholder);
+
+    string SuggestActive => _focused && _suggestions.Count > 0 ? "true" : "false";
 
     string InputPlaceholder =>
         string.IsNullOrWhiteSpace(_guidance.Placeholder)
@@ -100,6 +107,15 @@
         if (_focused)
         {
             RefreshSuggestions();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_inputBound)
+        {
+            _inputBound = true;
+            await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
         }
     }
 
@@ -158,7 +174,7 @@
             return;
         }
 
-        if (e.Key == "Tab" && _suggestions.Count > 0)
+        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
         {
             Accept(_suggestions[_selected]);
             return;
