@@ -44,7 +44,7 @@
 
 @code {
     [Parameter] public bool Visible { get; set; }
-    [Parameter] public IReadOnlyList<string> ToolbarFilterNames { get; set; } = [];
+    [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
@@ -99,7 +99,7 @@
 
     void RefreshSuggestions()
     {
-        var result = CommandService.GetCompletionResult(_line, ToolbarFilterNames);
+        var result = CommandService.GetCompletionResult(_line, CommandContext);
         _suggestions = result.Items;
         _guidance = result.Guidance;
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
@@ -148,7 +148,7 @@
                 return;
             }
 
-            if (!CommandService.TryValidateRunnable(line, ToolbarFilterNames, out var error))
+            if (!CommandService.TryValidateRunnable(line, CommandContext, out var error))
             {
                 _validationError = error;
                 return;

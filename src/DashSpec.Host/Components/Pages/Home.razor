@@ -62,7 +62,7 @@ else
     }
 
     <DashboardFilterCommandBar @ref="_filterCommandBar"
-                               ToolbarFilterNames="Page.VisibleToolbarFilters()"
+                               CommandContext="Page.BuildCommandContext()"
                                CommandError="Page.CommandError"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
 

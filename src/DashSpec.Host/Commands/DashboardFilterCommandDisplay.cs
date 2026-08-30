@@ -8,7 +8,7 @@ internal static class DashboardFilterCommandDisplay
 {
     public const string RootVerb = "select";
     public const string Prompt = ">";
-    public const string EmptyPlaceholder = "select date · select user …";
+    public const string EmptyPlaceholder = "select filter · select report …";
 
     public static SlashInputGuidance ForCli(SlashInputGuidance guidance) =>
         guidance with

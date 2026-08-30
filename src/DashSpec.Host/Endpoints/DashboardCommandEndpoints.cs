@@ -20,14 +20,12 @@ public static class DashboardCommandEndpoints
     static IResult Complete(
         HttpContext context,
         DashboardFilterCommandService commands,
-        IDashboardSession session)
+        IDashboardSession session,
+        DashboardFilterUiState uiState)
     {
         var line = context.Request.Query["line"].ToString();
-        var body = NormalizeBody(line);
-        var toolbar = ResolveToolbarFilters(context, session);
-        var catalog = commands.BuildCatalog(toolbar);
-        var pickerSource = new DashboardFilterPickerSource(session, toolbar);
-        var result = SlashCompletion.GetResult(catalog, body, pickerSource);
+        var commandContext = BuildApiContext(session, ResolveToolbarFilters(context, session), uiState);
+        var result = commands.GetCompletionResult(line, commandContext);
         return Results.Ok(new
         {
             items = result.Items.Select(i => new
@@ -55,10 +53,11 @@ public static class DashboardCommandEndpoints
     static IResult Capabilities(
         DashboardFilterCommandService commands,
         IDashboardSession session,
+        DashboardFilterUiState uiState,
         HttpContext context)
     {
-        var toolbar = ResolveToolbarFilters(context, session);
-        var catalog = commands.BuildCatalog(toolbar);
+        var commandContext = BuildApiContext(session, ResolveToolbarFilters(context, session), uiState);
+        var catalog = commands.BuildCatalog(commandContext);
         return Results.Ok(new
         {
             commands = catalog.Routes
@@ -90,15 +89,33 @@ public static class DashboardCommandEndpoints
             : session.Document.DashboardFilters;
 
         uiState.LoadFromSession(session, toolbar);
-        var outcome = commands.TryExecute(request.Line, toolbar);
-        if (!outcome.Success)
+        var commandContext = BuildApiContext(session, toolbar, uiState);
+        var run = commands.TryExecute(request.Line, commandContext);
+        if (!run.Outcome.Success)
         {
-            return Results.BadRequest(new { success = false, error = outcome.Error });
+            return Results.BadRequest(new { success = false, error = run.Outcome.Error });
         }
 
         uiState.SyncToSession(session, toolbar);
         return Results.Ok(new { success = true });
     }
+
+    static DashboardFilterContext BuildApiContext(
+        IDashboardSession session,
+        IReadOnlyList<string> toolbar,
+        DashboardFilterUiState uiState) =>
+        new()
+        {
+            ReportId = session.Document.Id,
+            FilterIndex = session.FilterIndex,
+            ToolbarFilterNames = toolbar,
+            CommandAliases = session.Document.ResolvedCommandAliases,
+            UiState = uiState,
+            GetFieldOptions = session.GetFieldOptions,
+            CatalogEntries = [],
+            ReportPages = session.Document.Pages ?? [],
+            ActiveCatalogEntryId = session.ActiveCatalogEntryId,
+        };
 
     static IReadOnlyList<string> ResolveToolbarFilters(HttpContext context, IDashboardSession session)
     {
@@ -118,22 +135,6 @@ public static class DashboardCommandEndpoints
         {
             return [];
         }
-    }
-
-    static string NormalizeBody(string? line)
-    {
-        if (string.IsNullOrWhiteSpace(line))
-        {
-            return "";
-        }
-
-        var text = line.Trim();
-        if (text.StartsWith('/'))
-        {
-            text = text[1..];
-        }
-
-        return text.TrimEnd();
     }
 
     public sealed record DashboardCommandExecuteRequest(

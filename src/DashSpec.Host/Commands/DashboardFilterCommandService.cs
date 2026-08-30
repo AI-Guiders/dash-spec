@@ -13,58 +13,40 @@ public sealed class DashboardFilterCommandService(
     DashboardCommandExecutor executor,
     DashSpecContributorRegistry pluginRegistry)
 {
-    public SlashCatalogIndex BuildCatalog(IReadOnlyList<string> toolbarFilterNames)
-    {
-        var context = CreateContext(toolbarFilterNames);
-        return DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
-    }
+    public SlashCatalogIndex BuildCatalog(DashboardFilterContext context) =>
+        DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
 
     public SlashCompletionResult GetCompletionResult(
-        string typedBody,
-        IReadOnlyList<string> toolbarFilterNames)
+        string typedLine,
+        DashboardFilterContext context)
     {
-        var context = CreateContext(toolbarFilterNames);
-        var catalog = DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
+        var catalog = BuildCatalog(context);
         return DashboardFilterSlashCompletion.GetResult(
             catalog,
             context,
-            typedBody,
-            CreatePickerSource(toolbarFilterNames));
+            typedLine,
+            CreatePickerSource(context));
     }
 
-    public IReadOnlyList<SlashCompletionItem> GetSuggestions(
-        string typedBody,
-        IReadOnlyList<string> toolbarFilterNames) =>
-        GetCompletionResult(typedBody, toolbarFilterNames).Items;
-
-    public CommandOutcome TryExecute(string line, IReadOnlyList<string> toolbarFilterNames)
+    public CommandRunResult TryExecute(string line, DashboardFilterContext context)
     {
-        var context = CreateContext(toolbarFilterNames);
-        var catalog = DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
-        return executor.TryExecuteSlashLine(line, context, catalog);
+        var catalog = BuildCatalog(context);
+        var outcome = executor.TryExecuteSlashLine(line, context, catalog);
+        return new CommandRunResult(
+            outcome,
+            context.PendingCatalogEntryId,
+            context.PendingPageId);
     }
 
     public bool TryValidateRunnable(
         string line,
-        IReadOnlyList<string> toolbarFilterNames,
+        DashboardFilterContext context,
         out string? error)
     {
-        var context = CreateContext(toolbarFilterNames);
-        var catalog = DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
+        var catalog = BuildCatalog(context);
         return executor.TryValidateRunnable(line, catalog, out error);
     }
 
-    DashboardFilterContext CreateContext(IReadOnlyList<string> toolbarFilterNames) =>
-        new()
-        {
-            ReportId = session.Document.Id,
-            FilterIndex = session.FilterIndex,
-            ToolbarFilterNames = toolbarFilterNames,
-            CommandAliases = session.Document.ResolvedCommandAliases,
-            UiState = uiState,
-            GetFieldOptions = session.GetFieldOptions,
-        };
-
-    ISlashPickerChoiceSource CreatePickerSource(IReadOnlyList<string> toolbarFilterNames) =>
-        new DashboardFilterPickerSource(session, toolbarFilterNames);
+    ISlashPickerChoiceSource CreatePickerSource(DashboardFilterContext context) =>
+        new DashboardFilterPickerSource(session, context.ToolbarFilterNames);
 }
