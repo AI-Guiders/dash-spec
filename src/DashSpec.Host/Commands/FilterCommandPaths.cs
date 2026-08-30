@@ -4,6 +4,7 @@ namespace DashSpec.Host.Commands;
 
 internal static class FilterCommandPaths
 {
+    public const string RootVerb = "select";
     public const string FilterBranch = "filter";
     public const string ReportBranch = "report";
     public const string PageBranch = "page";
