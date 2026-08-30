@@ -1,0 +1,15 @@
+# Bundled DashSpec filter slash catalog (GUIDERS-ADR-0013 ship layer).
+# Report-scoped field aliases merge from DashboardCommandCatalogBuilder ("report" layer).
+
+[[command]]
+command_id = "dash.select.date"
+path = "select date"
+domain = "dash"
+object = "select"
+intent = "date"
+help = "Set date filter (today, last-week, YYYY-MM, range)"
+group = "Filters"
+arg_tail = "picker:enum:date_preset"
+arg_hint = "Preset, YYYY-MM, or from..to range"
+arg_picker_choices = ["today:Today", "last-week:Last 7 days", "last-month:Last month"]
+surfaces = "dash-slash, dash-palette, dash-ccl"

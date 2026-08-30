@@ -16,8 +16,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.4.7" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.30.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane.Slash" Version="0.30.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane.Sources" Version="0.30.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane\AIGuiders.Platform.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane.Slash\AIGuiders.Platform.CommandPlane.Slash.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane.Sources\AIGuiders.Platform.CommandPlane.Sources.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
@@ -32,6 +36,10 @@
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Commands\dash-filter-commands.toml" />
   </ItemGroup>
 
   <ItemGroup>
