@@ -136,6 +136,26 @@ internal static class DashboardCommandCatalogBuilder
 
 
 
+        foreach (var card in context.SwitchableCards)
+
+        {
+
+            foreach (var view in card.Views)
+
+            {
+
+                descriptors.Add(NavDescriptor(
+                    SelectViewCommand.Id,
+                    ViewCommandPaths.ViewPath(card.CardId, view.ViewId),
+                    $"{card.Title} — {view.Label}",
+                    "View"));
+
+            }
+
+        }
+
+
+
         return descriptors;
 
     }

@@ -8,7 +8,9 @@ namespace DashSpec.Host.Commands;
 public sealed record CommandRunResult(
     CommandOutcome Outcome,
     string? PendingCatalogEntryId = null,
-    string? PendingPageId = null);
+    string? PendingPageId = null,
+    string? PendingCardId = null,
+    string? PendingViewId = null);
 
 /// <summary>Invocation payload for dashboard filter commands (DASHSPEC-ADR-0043).</summary>
 public sealed class DashboardFilterContext : ICommandContext
@@ -42,6 +44,12 @@ public sealed class DashboardFilterContext : ICommandContext
     public string? PendingCatalogEntryId { get; set; }
 
     public string? PendingPageId { get; set; }
+
+    public string? PendingCardId { get; set; }
+
+    public string? PendingViewId { get; set; }
+
+    public IReadOnlyList<DashboardCardCommandTarget> SwitchableCards { get; init; } = [];
 
     public void ApplyDate(string filterName, DateOnly from, DateOnly to)
     {

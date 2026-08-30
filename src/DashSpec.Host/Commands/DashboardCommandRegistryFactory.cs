@@ -25,6 +25,8 @@ internal static class DashboardCommandRegistryFactory
 
         registry.Register(new SelectDateFilterCommand());
 
+        registry.Register(new SelectViewCommand());
+
 
 
         foreach (var filterName in context.ToolbarFilterNames

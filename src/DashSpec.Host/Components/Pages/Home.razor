@@ -64,6 +64,7 @@ else
     <DashboardFilterCommandBar @ref="_filterCommandBar"
                                CommandContext="Page.BuildCommandContext()"
                                CommandError="Page.CommandError"
+                               OnTailChanged="Page.OnCommandTailChanged"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
 
     @if (!string.IsNullOrEmpty(Page.CommandError))
@@ -84,6 +85,7 @@ else
                              BarLayout="chrome.IsBarLayout"
                              AutoApply="chrome.IsAutoApply"
                              Busy="Page.Busy"
+                             HighlightFilterNames="Page.CommandHighlights.FilterNames"
                              SectionClass="@Page.FiltersSectionClass()"
                              GridClass="@Page.FiltersGridClass()"
                              GridStyle="@Page.FiltersGridStyle()"
@@ -109,6 +111,7 @@ else
                                GetFieldOptions="Page.Session.GetFieldOptions"
                                AutoApply="chrome.IsAutoApply"
                                ActiveViewId="@Page.GetCardActiveView(card.Id)"
+                               CommandHighlight="Page.CommandHighlights.CardIds.Contains(card.Id)"
                                OnApplyCard="Page.ApplyCardFiltersAsync"
                                OnScheduleCardApply="Page.ScheduleCardApplyAsync"
                                OnCardDayChanged="Page.OnCardDayChanged"
