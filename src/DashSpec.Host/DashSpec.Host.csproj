@@ -8,7 +8,7 @@
     <RootNamespace>DashSpec.Host</RootNamespace>
     <Version>0.2.3</Version>
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
-    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx')">true</UseLocalGuidersPlatform>
+    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
   </PropertyGroup>
 
   <ItemGroup>
