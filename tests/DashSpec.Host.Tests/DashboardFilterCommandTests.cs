@@ -29,6 +29,14 @@ public class DashboardFilterCommandTests
         Assert.True(uiState.DateTo.ContainsKey("usage_date"));
     }
 
+    [Fact]
+    public void ToInputTail_strips_fixed_select_prefix()
+    {
+        Assert.Equal("", DashboardFilterSlashCompletion.ToInputTail(""));
+        Assert.Equal("filter usage_date", DashboardFilterSlashCompletion.ToInputTail("select filter usage_date"));
+        Assert.Equal("filter", DashboardFilterSlashCompletion.ToInputTail("> select filter"));
+    }
+
     [Theory]
     [InlineData("Tab", false, false, false, true)]
     [InlineData(" ", true, false, false, true)]

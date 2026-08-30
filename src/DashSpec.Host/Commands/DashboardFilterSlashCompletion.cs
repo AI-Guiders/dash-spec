@@ -122,9 +122,26 @@ internal static class DashboardFilterSlashCompletion
 
     public static string ToCommandLine(string typedLine) => NormalizeBody(typedLine);
 
+    /// <summary>Editable tail shown after the fixed <c>select</c> prompt prefix.</summary>
+    public static string ToInputTail(string line)
+    {
+        var text = SanitizeLine(line);
+        if (text.Length == 0
+            || text.Equals(DashboardFilterCommandDisplay.RootVerb, StringComparison.OrdinalIgnoreCase))
+        {
+            return "";
+        }
 
+        var prefix = DashboardFilterCommandDisplay.RootVerb + " ";
+        if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return text[prefix.Length..].TrimStart();
+        }
 
-    public static string LineFromInsert(string insertText) => SanitizeLine(insertText);
+        return text;
+    }
+
+    public static string LineFromInsert(string insertText) => ToInputTail(insertText);
 
 
 
