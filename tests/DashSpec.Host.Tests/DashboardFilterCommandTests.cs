@@ -99,6 +99,19 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void Completion_on_select_filter_with_trailing_space_lists_toolbar_filters()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter ", null);
+
+        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
+    }
+
+    [Fact]
     public void Completion_on_select_lists_branches()
     {
         var uiState = new DashboardFilterUiState();
