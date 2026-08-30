@@ -18,6 +18,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
+        context.CanonicalPath = FilterCommandPaths.FilterPath("usage_date");
         context.ArgTail = argTail;
 
         var command = new SelectDateFilterCommand();
@@ -29,23 +30,20 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void SelectFieldFilterCommand_resolves_alias_and_single_value()
+    public void SelectFieldFilterCommand_applies_single_value_by_filter_id()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(
             uiState,
             ["app_name"],
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            },
             options: new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
             {
                 ["app_name"] = ["AutoCAD", "Revit"],
             });
+        context.CanonicalPath = FilterCommandPaths.FilterPath("app_name");
         context.ArgTail = "AutoCAD";
 
-        var command = new SelectFieldFilterCommand("app");
+        var command = new SelectFieldFilterCommand("app_name");
         var outcome = command.ExecuteAsync(context).AsTask().GetAwaiter().GetResult();
 
         Assert.True(outcome.Success, outcome.Error);
@@ -53,38 +51,45 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void Catalog_loads_date_command_from_bundled_toml()
+    public void Catalog_loads_date_filter_from_toolbar()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
 
-        Assert.True(catalog.TryGet("select date", out var route));
+        Assert.True(catalog.TryGet(FilterCommandPaths.FilterPath("usage_date"), out var route));
         Assert.Equal(SelectDateFilterCommand.Id, route.CommandId);
         Assert.Equal(SlashArgTailKind.Picker, route.ArgTailKind);
         Assert.Contains("today", route.ResolvedPickerChoices.Select(choice => choice.Value));
     }
 
     [Fact]
-    public void Catalog_merges_report_field_aliases()
+    public void Catalog_exposes_field_filter_by_id()
     {
         var uiState = new DashboardFilterUiState();
-        var context = CreateContext(
-            uiState,
-            ["app_name"],
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            });
+        var context = CreateContext(uiState, ["app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
 
-        Assert.True(catalog.TryGet("select app", out var route));
-        Assert.Equal("dash.select.app", route.CommandId);
-        Assert.Equal("picker:dash.field.app", route.ArgTail);
+        Assert.True(catalog.TryGet(FilterCommandPaths.FilterPath("app_name"), out var route));
+        Assert.Equal("dash.select.filter.app_name", route.CommandId);
+        Assert.Equal("picker:dash.field.app_name", route.ArgTail);
     }
 
     [Fact]
-    public void Completion_on_select_lists_all_toolbar_filters()
+    public void Completion_on_select_lists_branches()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null);
+
+        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
+        Assert.Single(result.Items);
+        Assert.Equal("filter", result.Items[0].StepSegment);
+    }
+
+    [Fact]
+    public void Completion_on_select_filter_lists_toolbar_filters()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(
@@ -97,11 +102,10 @@ public class DashboardFilterCommandTests
                 ["user_name"] = "Пользователь",
             });
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter", null);
 
-        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
         Assert.Equal(3, result.Items.Count);
-        Assert.Contains(result.Items, item => item.StepSegment == "date");
+        Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
         Assert.Contains(result.Items, item => item.Help.Contains("Продукты"));
     }
 
@@ -109,9 +113,9 @@ public class DashboardFilterCommandTests
     [InlineData("/select", "select")]
     [InlineData("> select", "select")]
     [InlineData(" /select ", "select ")]
-    [InlineData("/select date", "select date")]
-    [InlineData("select program", "select program")]
-    [InlineData("select select location", "select location")]
+    [InlineData("/select filter usage_date", "select filter usage_date")]
+    [InlineData("select filter program", "select filter program")]
+    [InlineData("select select filter location", "select filter location")]
     public void SanitizeLine_strips_prompt_and_duplicate_select(string input, string expected)
     {
         Assert.Equal(expected, DashboardFilterSlashCompletion.SanitizeLine(input));
@@ -125,16 +129,21 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "/select", null);
 
-        Assert.Equal(3, result.Items.Count);
+        Assert.Single(result.Items);
+        Assert.Equal("filter", result.Items[0].StepSegment);
     }
 
     [Fact]
-    public void Completion_on_select_date_space_enters_picker_mode()
+    public void Completion_on_select_filter_date_space_enters_picker_mode()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select date ", null);
+        var result = DashboardFilterSlashCompletion.GetResult(
+            catalog,
+            context,
+            $"{FilterCommandPaths.FilterPath("usage_date")} ",
+            null);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
         Assert.Contains(result.Items, item => item.PickValue == "today");
@@ -143,9 +152,13 @@ public class DashboardFilterCommandTests
     [Fact]
     public void ToCommandLine_builds_executable_command()
     {
-        Assert.Equal("select date today", DashboardFilterSlashCompletion.ToCommandLine("date today"));
+        Assert.Equal(
+            "select filter usage_date today",
+            DashboardFilterSlashCompletion.ToCommandLine("filter usage_date today"));
         Assert.Equal("select", DashboardFilterSlashCompletion.ToCommandLine(""));
-        Assert.Equal("select date today", DashboardFilterSlashCompletion.ToCommandLine("> select date today"));
+        Assert.Equal(
+            "select filter usage_date today",
+            DashboardFilterSlashCompletion.ToCommandLine("> select filter usage_date today"));
     }
 
     [Fact]
@@ -154,7 +167,9 @@ public class DashboardFilterCommandTests
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var items = SlashStepCompletion.GetSuggestions(catalog, "select date ");
+        var items = SlashStepCompletion.GetSuggestions(
+            catalog,
+            $"{FilterCommandPaths.FilterPath("usage_date")} ");
 
         Assert.Contains(items, item => item.PickValue == "today");
         Assert.Contains(items, item => item.PickValue == "last-week");
@@ -164,22 +179,20 @@ public class DashboardFilterCommandTests
     public void GetResult_enters_picker_mode_for_field_filter()
     {
         var uiState = new DashboardFilterUiState();
-        var session = new StubDashboardSession(
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            });
+        var session = new StubDashboardSession();
         var context = CreateContext(
             uiState,
             ["app_name"],
-            aliases: session.Document.ResolvedCommandAliases,
             options: new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
             {
                 ["app_name"] = ["AutoCAD", "Revit"],
             });
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var picker = new DashboardFilterPickerSource(session, ["app_name"]);
-        var result = SlashCompletion.GetResult(catalog, "select app ", picker);
+        var result = SlashCompletion.GetResult(
+            catalog,
+            $"{FilterCommandPaths.FilterPath("app_name")} ",
+            picker);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
         Assert.Contains(result.Items, item => item.PickValue == "AutoCAD");
@@ -189,17 +202,11 @@ public class DashboardFilterCommandTests
     public void Executor_rejects_incomplete_field_command()
     {
         var uiState = new DashboardFilterUiState();
-        var context = CreateContext(
-            uiState,
-            ["app_name"],
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            });
+        var context = CreateContext(uiState, ["app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        var outcome = executor.TryExecuteSlashLine("select app", context, catalog);
+        var outcome = executor.TryExecuteSlashLine(FilterCommandPaths.FilterPath("app_name"), context, catalog);
 
         Assert.False(outcome.Success);
         Assert.Contains("аргумент", outcome.Error!, StringComparison.OrdinalIgnoreCase);
@@ -209,19 +216,14 @@ public class DashboardFilterCommandTests
     public void ValidateRunnable_blocks_incomplete_command()
     {
         var uiState = new DashboardFilterUiState();
-        var context = CreateContext(
-            uiState,
-            ["app_name"],
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            });
+        var context = CreateContext(uiState, ["app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        Assert.False(executor.TryValidateRunnable("select app", catalog, out var error));
+        Assert.False(executor.TryValidateRunnable(FilterCommandPaths.FilterPath("app_name"), catalog, out var error));
         Assert.False(string.IsNullOrWhiteSpace(error));
     }
+
     [Fact]
     public void Executor_runs_slash_line_through_registry()
     {
@@ -230,7 +232,10 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        var outcome = executor.TryExecuteSlashLine("select date today", context, catalog);
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} today",
+            context,
+            catalog);
 
         Assert.True(outcome.Success, outcome.Error);
         Assert.Equal(new DateOnly(2026, 6, 24), uiState.DateFrom["usage_date"]);
@@ -241,15 +246,10 @@ public class DashboardFilterCommandTests
     public void Executor_field_command_syncs_to_session_filter_state()
     {
         var uiState = new DashboardFilterUiState();
-        var session = new StubDashboardSession(
-            aliases: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["app"] = "app_name",
-            });
+        var session = new StubDashboardSession();
         var context = CreateContext(
             uiState,
             ["app_name"],
-            aliases: session.Document.ResolvedCommandAliases,
             options: new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
             {
                 ["app_name"] = ["AutoCAD", "Revit"],
@@ -257,7 +257,10 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
 
-        var outcome = executor.TryExecuteSlashLine("select app Revit", context, catalog);
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("app_name")} Revit",
+            context,
+            catalog);
 
         Assert.True(outcome.Success, outcome.Error);
         uiState.SyncToSession(session, ["app_name"]);

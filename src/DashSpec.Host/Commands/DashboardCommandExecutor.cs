@@ -25,7 +25,7 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
         context.ArgTail = resolution.ArgTail;
 
         var registry = DashboardCommandRegistryFactory.Create(
-            DashboardCommandAliasResolver.ResolveFieldSlashAliases(context),
+            context,
             pluginRegistry.Commands);
 
         if (!registry.TryExecute(route.CommandId, context, out var outcome))
