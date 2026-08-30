@@ -538,6 +538,13 @@ internal static class DashboardFilterSlashCompletion
 
 
 
+    static bool IsTreeBranchPath(string canonicalPath) =>
+        canonicalPath.Equals($"select {FilterCommandPaths.FilterBranch}", StringComparison.OrdinalIgnoreCase)
+        || canonicalPath.Equals($"select {FilterCommandPaths.ReportBranch}", StringComparison.OrdinalIgnoreCase)
+        || canonicalPath.Equals($"select {FilterCommandPaths.PageBranch}", StringComparison.OrdinalIgnoreCase);
+
+
+
     static bool IsArgOrReadyPhase(SlashCatalogIndex catalog, string body)
 
     {
@@ -545,6 +552,16 @@ internal static class DashboardFilterSlashCompletion
         if (!SlashLineResolver.TryResolveBody(body, catalog, out var line)
 
             || !catalog.TryGet(line.CanonicalPath, out var route))
+
+        {
+
+            return false;
+
+        }
+
+
+
+        if (IsTreeBranchPath(line.CanonicalPath) && !line.HasArgTailContent)
 
         {
 
