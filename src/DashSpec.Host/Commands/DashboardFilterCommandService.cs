@@ -44,6 +44,16 @@ public sealed class DashboardFilterCommandService(
         return executor.TryExecuteSlashLine(line, context, catalog);
     }
 
+    public bool TryValidateRunnable(
+        string line,
+        IReadOnlyList<string> toolbarFilterNames,
+        out string? error)
+    {
+        var context = CreateContext(toolbarFilterNames);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
+        return executor.TryValidateRunnable(line, catalog, out error);
+    }
+
     DashboardFilterContext CreateContext(IReadOnlyList<string> toolbarFilterNames) =>
         new()
         {

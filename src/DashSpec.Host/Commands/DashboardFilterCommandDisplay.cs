@@ -28,10 +28,20 @@ internal static class DashboardFilterCommandDisplay
         return line;
     }
 
-    public static string FormatSuggestion(SlashCompletionItem item) =>
-        !string.IsNullOrWhiteSpace(item.StepSegment)
-            ? $"{RootVerb} {item.StepSegment}"
-            : FormatCommand(item.InsertText.TrimEnd());
+    public static string FormatSuggestion(SlashCompletionItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.PickValue))
+        {
+            return item.PickValue;
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.StepSegment))
+        {
+            return $"{RootVerb} {item.StepSegment}";
+        }
+
+        return FormatCommand(item.InsertText.TrimEnd());
+    }
 
     static string FormatBreadcrumb(string breadcrumb)
     {

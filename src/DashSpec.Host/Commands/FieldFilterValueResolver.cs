@@ -17,7 +17,7 @@ internal static class FieldFilterValueResolver
         var tail = argTail.Trim();
         if (tail.Length == 0)
         {
-            error = "Field value is required.";
+            error = "Укажите значение фильтра.";
             return false;
         }
 
