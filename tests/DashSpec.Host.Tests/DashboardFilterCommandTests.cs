@@ -125,6 +125,21 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void FormatSuggestion_shows_next_segment_only()
+    {
+        var item = new SlashCompletionItem(
+            "select filter usage_date ",
+            "select filter usage_date",
+            "Дата отчёта",
+            "Filter",
+            "usage_date");
+
+        Assert.Equal("usage_date", DashboardFilterCommandDisplay.FormatSuggestion(item));
+        Assert.Equal("today", DashboardFilterCommandDisplay.FormatSuggestion(
+            new SlashCompletionItem("/select filter usage_date today", "select filter usage_date", "Today", "Filter", "today", SlashCompletionItemKind.Picker, "today")));
+    }
+
+    [Fact]
     public void Completion_on_select_filter_lists_toolbar_filters()
     {
         var uiState = new DashboardFilterUiState();
@@ -142,7 +157,9 @@ public class DashboardFilterCommandTests
 
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
-        Assert.Contains(result.Items, item => item.Help.Contains("Продукты"));
+        Assert.All(result.Items, item => Assert.Equal(item.StepSegment, DashboardFilterCommandDisplay.FormatSuggestion(item)));
+        Assert.Equal("select filter", result.Guidance.Breadcrumb);
+        Assert.Equal("<id> · <value>", result.Guidance.Hint);
     }
 
     [Theory]

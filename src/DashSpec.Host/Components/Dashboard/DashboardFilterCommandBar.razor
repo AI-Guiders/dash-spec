@@ -207,13 +207,15 @@
             _validationError = null;
             await OnCommit.InvokeAsync(line);
             _line = "";
-            _focused = false;
+            _selected = 0;
+            RefreshSuggestions();
         }
     }
 
     void Accept(SlashCompletionItem item)
     {
         _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
+        _selected = 0;
         RefreshSuggestions();
     }
 }
