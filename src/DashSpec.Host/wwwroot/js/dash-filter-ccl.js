@@ -14,12 +14,37 @@ window.dashFilterCcl = (function () {
     return e.key === " " && e.ctrlKey && !e.altKey && !e.metaKey;
   }
 
+  function suppressBrowserAutocomplete(input) {
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autocorrect", "off");
+    input.setAttribute("autocapitalize", "off");
+    input.setAttribute("spellcheck", "false");
+    input.setAttribute("data-lpignore", "true");
+    input.setAttribute("data-1p-ignore", "true");
+    input.setAttribute("data-form-type", "other");
+    input.setAttribute("name", "dashspec-ccl-" + Math.random().toString(36).slice(2));
+
+    if (input.dataset.cclAutocompleteBound === "true") {
+      return;
+    }
+
+    input.dataset.cclAutocompleteBound = "true";
+    input.setAttribute("readonly", "readonly");
+    input.addEventListener("focus", function () {
+      input.removeAttribute("readonly");
+    });
+    input.addEventListener("blur", function () {
+      input.setAttribute("readonly", "readonly");
+    });
+  }
+
   function bindInput(input) {
     if (!input || typeof input.addEventListener !== "function" || bound.has(input)) {
       return;
     }
 
     bound.add(input);
+    suppressBrowserAutocomplete(input);
     input.addEventListener(
       "keydown",
       function (e) {

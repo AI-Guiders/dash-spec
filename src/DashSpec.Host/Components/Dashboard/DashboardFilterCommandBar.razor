@@ -11,22 +11,32 @@
             @onclick="OpenPalette">
         Ctrl+K
     </button>
-    <div class="dash-filter-command-input-wrap">
+    <form class="dash-filter-command-input-wrap"
+          autocomplete="off"
+          @onsubmit:preventDefault="true">
         <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.Prompt</span>
-        <input @ref="_inputRef"
+        <input type="text"
+               @ref="_inputRef"
                id="dash-filter-command-input"
                class="dash-filter-command-input"
                placeholder="@InputPlaceholder"
                aria-label="Filter command line"
+               role="combobox"
+               aria-autocomplete="list"
+               aria-haspopup="listbox"
                aria-expanded="@(_focused && _suggestions.Count > 0)"
                aria-controls="dash-filter-command-suggestions"
+               autocomplete="off"
+               autocapitalize="off"
+               autocorrect="off"
+               spellcheck="false"
                data-ccl-suggest="@SuggestActive"
                @bind="Line"
                @bind:event="oninput"
                @onfocus="OnFocus"
                @onblur="OnBlur"
                @onkeydown="OnKeyDown" />
-    </div>
+    </form>
     @if (!string.IsNullOrEmpty(_validationError))
     {
         <div class="dash-command-error" role="alert">@_validationError</div>

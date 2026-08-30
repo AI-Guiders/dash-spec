@@ -12,16 +12,26 @@
                 <span class="dash-command-palette-title">Commands</span>
                 <span class="dash-command-palette-hint">Ctrl+K</span>
             </header>
-            <div class="dash-command-palette-input-wrap">
+            <form class="dash-command-palette-input-wrap"
+                  autocomplete="off"
+                  @onsubmit:preventDefault="true">
                 <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.Prompt</span>
-                <input @ref="_inputRef"
+                <input type="text"
+                       @ref="_inputRef"
                        class="dash-command-palette-input"
                        placeholder="@InputPlaceholder"
+                       role="combobox"
+                       aria-autocomplete="list"
+                       aria-haspopup="listbox"
+                       autocomplete="off"
+                       autocapitalize="off"
+                       autocorrect="off"
+                       spellcheck="false"
                        data-ccl-suggest="@SuggestActive"
                        @bind="Line"
                        @bind:event="oninput"
                        @onkeydown="OnKeyDown" />
-            </div>
+            </form>
             <DashboardSlashGuidance Guidance="_guidance" />
             @if (!string.IsNullOrEmpty(_validationError))
             {
