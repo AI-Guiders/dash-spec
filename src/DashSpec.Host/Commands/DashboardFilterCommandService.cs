@@ -21,11 +21,16 @@ public sealed class DashboardFilterCommandService(
 
     public SlashCompletionResult GetCompletionResult(
         string typedBody,
-        IReadOnlyList<string> toolbarFilterNames) =>
-        SlashCompletion.GetResult(
-            BuildCatalog(toolbarFilterNames),
+        IReadOnlyList<string> toolbarFilterNames)
+    {
+        var context = CreateContext(toolbarFilterNames);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
+        return DashboardFilterSlashCompletion.GetResult(
+            catalog,
+            context,
             typedBody,
             CreatePickerSource(toolbarFilterNames));
+    }
 
     public IReadOnlyList<SlashCompletionItem> GetSuggestions(
         string typedBody,

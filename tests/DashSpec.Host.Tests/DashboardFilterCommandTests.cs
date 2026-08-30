@@ -84,6 +84,47 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void Completion_on_select_lists_all_toolbar_filters()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date", "user_name", "app_name"],
+            labels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = "Дата отчёта",
+                ["app_name"] = "Продукты",
+                ["user_name"] = "Пользователь",
+            });
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null);
+
+        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Contains(result.Items, item => item.StepSegment == "date");
+        Assert.Contains(result.Items, item => item.Help.Contains("Продукты"));
+    }
+
+    [Fact]
+    public void Completion_on_select_date_space_enters_picker_mode()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select date ", null);
+
+        Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Contains(result.Items, item => item.PickValue == "today");
+    }
+
+    [Fact]
+    public void ToSlashLine_builds_executable_command()
+    {
+        Assert.Equal("/select date today", DashboardFilterSlashCompletion.ToSlashLine("date today"));
+        Assert.Equal("/select", DashboardFilterSlashCompletion.ToSlashLine(""));
+    }
+
+    [Fact]
     public void GetSuggestions_lists_date_presets_after_path()
     {
         var uiState = new DashboardFilterUiState();
@@ -168,7 +209,8 @@ public class DashboardFilterCommandTests
         DashboardFilterUiState uiState,
         IReadOnlyList<string> toolbarFilters,
         IReadOnlyDictionary<string, string>? aliases = null,
-        IReadOnlyDictionary<string, IReadOnlyList<string>>? options = null)
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? options = null,
+        IReadOnlyDictionary<string, string>? labels = null)
     {
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
@@ -176,12 +218,21 @@ public class DashboardFilterCommandTests
                 FilterKind.Date,
                 "usage_date",
                 "-7d..today",
-                "usage_date"),
+                "usage_date",
+                Label: labels?.GetValueOrDefault("usage_date")),
             ["app_name"] = new(
                 FilterKind.Field,
                 "app_name",
                 null,
                 "app_name",
+                Label: labels?.GetValueOrDefault("app_name"),
+                Widget: "chips"),
+            ["user_name"] = new(
+                FilterKind.Field,
+                "user_name",
+                null,
+                "user_name",
+                Label: labels?.GetValueOrDefault("user_name"),
                 Widget: "chips"),
         };
 

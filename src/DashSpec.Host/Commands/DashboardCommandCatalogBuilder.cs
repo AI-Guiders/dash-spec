@@ -31,14 +31,14 @@ internal static class DashboardCommandCatalogBuilder
         {
             descriptors.Add(new SlashCommandDescriptor
             {
-                Domain = "dash",
-                Object = "select",
-                Intent = alias,
+                Domain = "",
+                Object = "",
+                Intent = "",
                 CommandId = $"dash.select.{alias}",
                 Path = $"select {alias}",
-                Help = $"Set {alias} filter",
+                Help = DashboardFilterSlashLabels.FieldCommandHelp(context, alias),
                 ArgTail = $"picker:dash.field.{alias}",
-                ArgHint = $"Choose a {alias} value or type to filter",
+                ArgHint = $"Choose a value for {DashboardFilterSlashLabels.ResolveFieldLabel(context, alias)}",
                 Group = "Filters",
                 Surfaces = FilterSurfaces,
             });
