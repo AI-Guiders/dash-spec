@@ -1,33 +1,38 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
+@using DashSpec.Host.Commands
 @inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
 
 <div class="dash-filter-command-bar">
-    <label class="dash-filter-command-label" for="dash-filter-command-input">/select</label>
     <button type="button"
             class="dash-filter-command-palette-trigger"
             title="Command palette (Ctrl+K)"
             @onclick="OpenPalette">
         Ctrl+K
     </button>
-    <input id="dash-filter-command-input"
-           class="dash-filter-command-input"
-           placeholder="@_guidance.Placeholder"
-           @bind="Line"
-           @bind:event="oninput"
-           @onkeydown="OnKeyDown" />
+    <div class="dash-filter-command-input-wrap">
+        <span class="dash-filter-command-prefix" aria-hidden="true">/select</span>
+        <input id="dash-filter-command-input"
+               class="dash-filter-command-input"
+               placeholder="@_guidance.Placeholder"
+               aria-label="Filter slash command"
+               @bind="_tail"
+               @bind:event="oninput"
+               @onkeydown="OnKeyDown" />
+    </div>
     <DashboardSlashGuidance Guidance="_guidance" />
     @if (_suggestions.Count > 0)
     {
-        <ul class="dash-filter-command-suggestions" role="listbox">
+        <ul class="dash-filter-command-suggestions" role="listbox" aria-label="Filter commands">
             @for (var i = 0; i < _suggestions.Count; i++)
             {
                 var item = _suggestions[i];
                 var index = i;
                 <li role="option"
+                    aria-selected="@(index == _selected)"
                     class="dash-filter-command-item @(index == _selected ? "active" : null)"
                     @onclick="() => Accept(item)">
-                    <span class="path">@item.InsertText.TrimEnd()</span>
+                    <span class="path">@FormatPath(item)</span>
                     <span class="help">@item.Help</span>
                 </li>
             }
@@ -45,21 +50,11 @@
     [Parameter] public EventCallback<string> OnCommit { get; set; }
     [Parameter] public EventCallback OpenPaletteRequested { get; set; }
 
-    string _line = "/";
+    string _tail = "";
     int _selected;
     bool _paletteOpen;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
-    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/", "Type a command path", "Start typing — Tab completes the next segment");
-
-    string Line
-    {
-        get => _line;
-        set
-        {
-            _line = value.StartsWith('/') ? value : "/" + value;
-            RefreshSuggestions();
-        }
-    }
+    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/select", "Tab — выбрать фильтр", "Фильтры toolbar");
 
     public void OpenPaletteFromHost()
     {
@@ -72,8 +67,7 @@
 
     void RefreshSuggestions()
     {
-        var body = _line.Length <= 1 ? "" : _line[1..];
-        var result = CommandService.GetCompletionResult(body, ToolbarFilterNames);
+        var result = CommandService.GetCompletionResult(_tail, ToolbarFilterNames);
         _suggestions = result.Items;
         _guidance = result.Guidance;
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
@@ -107,18 +101,27 @@
 
         if (e.Key == "Enter")
         {
-            await OnCommit.InvokeAsync(_line.Trim());
+            var line = DashboardFilterSlashCompletion.ToSlashLine(_tail);
+            if (line.Length > "/select".Length)
+            {
+                await OnCommit.InvokeAsync(line);
+            }
         }
     }
 
     void Accept(SlashCompletionItem item)
     {
-        _line = item.InsertText.TrimEnd();
-        if (item.InsertText.EndsWith(' '))
+        _tail = DashboardFilterSlashCompletion.TailFromInsert(item.InsertText);
+        RefreshSuggestions();
+    }
+
+    static string FormatPath(SlashCompletionItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.StepSegment))
         {
-            _line += " ";
+            return "/select " + item.StepSegment;
         }
 
-        RefreshSuggestions();
+        return item.InsertText.TrimEnd();
     }
 }

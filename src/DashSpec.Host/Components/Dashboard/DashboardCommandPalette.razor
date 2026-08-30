@@ -1,5 +1,6 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
+@using DashSpec.Host.Commands
 @inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
 
 @if (Visible)
@@ -24,7 +25,7 @@
                     <li role="option"
                         class="dash-command-palette-item @(index == _selected ? "active" : null)"
                         @onclick="() => Accept(item)">
-                        <span class="path">@item.InsertText.TrimEnd()</span>
+                        <span class="path">@FormatPath(item)</span>
                         <span class="help">@item.Help</span>
                     </li>
                 }
@@ -39,10 +40,10 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<string> OnCommit { get; set; }
 
-    string _line = "/";
+    string _line = "/select ";
     int _selected;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
-    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/", "Type a command path", "Start typing — Tab completes the next segment");
+    SlashInputGuidance _guidance = new(SlashInputMode.Path, "/select", "Tab — выбрать фильтр", "Фильтры toolbar");
 
     protected override void OnParametersSet()
     {
@@ -117,9 +118,19 @@
 
     async Task Close()
     {
-        _line = "/";
+        _line = "/select ";
         _selected = 0;
         _suggestions = [];
         await OnClose.InvokeAsync();
+    }
+
+    static string FormatPath(SlashCompletionItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.StepSegment))
+        {
+            return "/select " + item.StepSegment;
+        }
+
+        return item.InsertText.TrimEnd();
     }
 }
