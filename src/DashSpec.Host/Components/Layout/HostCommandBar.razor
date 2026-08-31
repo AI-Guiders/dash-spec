@@ -1,0 +1,30 @@
+@using DashSpec.Host.Components.Dashboard
+@using DashSpec.Host.Services.Presentation
+@using Microsoft.AspNetCore.Components.Web
+@inject DashboardHostCommandCoordinator Coordinator
+@implements IDisposable
+
+<div class="dash-host-command-shell" @onkeydown:window="OnWindowKeyDown">
+    <DashboardFilterCommandBar @ref="_bar"
+                               CommandContext="@Coordinator.BuildContext()"
+                               CommandError="@Coordinator.CommandError"
+                               OnCommit="Coordinator.CommitAsync" />
+</div>
+
+@code {
+    DashboardFilterCommandBar? _bar;
+
+    protected override void OnInitialized() => Coordinator.Changed += OnCoordinatorChanged;
+
+    void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
+
+    void OnWindowKeyDown(KeyboardEventArgs e)
+    {
+        if (e.CtrlKey && string.Equals(e.Key, "k", StringComparison.OrdinalIgnoreCase))
+        {
+            _bar?.OpenPaletteFromHost();
+        }
+    }
+
+    public void Dispose() => Coordinator.Changed -= OnCoordinatorChanged;
+}

@@ -72,7 +72,8 @@ internal static class DashboardFilterSlashCompletion
     {
         var body = NormalizeBody(typedLine);
         return body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
-               || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase);
+               || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+               || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase);
     }
 
     static string EnsureCommandRoot(string body)
@@ -85,7 +86,9 @@ internal static class DashboardFilterSlashCompletion
         if (body.StartsWith($"{FilterCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
             || body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
             || body.StartsWith($"{ViewCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
-            || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase))
+            || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+            || body.StartsWith($"{ShowCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
+            || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase))
         {
             return body;
         }
@@ -220,6 +223,12 @@ internal static class DashboardFilterSlashCompletion
             return TryBuildViewKindChoice(context, body, parsed.Branch, parsed.Partial, out result);
         }
 
+        if (parsed.Root.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase))
+        {
+            var surfacePartial = parsed.Depth >= 2 ? parsed.Branch : "";
+            return TryBuildShowSurfaceChoice(context, body, surfacePartial, out result);
+        }
+
         return false;
     }
 
@@ -240,6 +249,11 @@ internal static class DashboardFilterSlashCompletion
             items.Add(RootVerbItem(ViewCommandPaths.RootVerb, "Представление карточки — heatmap, line…"));
         }
 
+        if (MatchesPartial(ShowCommandPaths.RootVerb, partial))
+        {
+            items.Add(RootVerbItem(ShowCommandPaths.RootVerb, "Вкладка хоста — dashboard, controlcenter"));
+        }
+
         if (items.Count == 0)
         {
             result = default!;
@@ -248,7 +262,7 @@ internal static class DashboardFilterSlashCompletion
 
         result = new SlashCompletionResult(
             items,
-            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("команду"), "select · view"));
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("команду"), "select · view · show"));
         return true;
     }
 
@@ -339,6 +353,34 @@ internal static class DashboardFilterSlashCompletion
         result = new SlashCompletionResult(
             items,
             TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("страницу"), "название страницы"));
+        return true;
+    }
+
+    static bool TryBuildShowSurfaceChoice(
+        DashboardFilterContext context,
+        string body,
+        string partial,
+        out SlashCompletionResult result)
+    {
+        var items = HostSurfaceCatalog.Surfaces
+            .Where(surface => MatchesPartial(surface.Id, partial) || MatchesPartial(surface.Title, partial))
+            .Select(surface => new ArgCompletionItem(
+                $"{ShowCommandPaths.SurfacePath(surface.Id)} ",
+                ShowCommandPaths.SurfacePath(surface.Id),
+                surface.Hint,
+                "Host",
+                surface.Id))
+            .ToList();
+
+        if (items.Count == 0)
+        {
+            result = default!;
+            return false;
+        }
+
+        result = new SlashCompletionResult(
+            items,
+            TreeGuidance(body, DashboardFilterCommandDisplay.AcceptHint("вкладку"), "dashboard · controlcenter"));
         return true;
     }
 

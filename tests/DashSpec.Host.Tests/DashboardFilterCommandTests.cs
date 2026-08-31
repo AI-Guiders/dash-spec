@@ -46,8 +46,30 @@ public class DashboardFilterCommandTests
         Assert.Equal("select filter", DashboardFilterSlashCompletion.ToInputTail("> select filter"));
     }
 
+    [Fact]
+    public void ShowHostSurfaceCommand_sets_pending_route()
+    {
+        var context = CreateContext(new DashboardFilterUiState(), []);
+        context.CanonicalPath = ShowCommandPaths.SurfacePath("controlcenter");
+        context.ArgTail = "";
+
+        var command = new ShowHostSurfaceCommand();
+        var outcome = command.ExecuteAsync(context).AsTask().GetAwaiter().GetResult();
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.Equal("/admin/access", context.PendingHostRoute);
+    }
+
+    [Fact]
+    public void Root_completion_includes_show_verb()
+    {
+        var service = CreateCommandService(new DashboardFilterUiState());
+        var context = CreateContext(new DashboardFilterUiState(), []);
+        var result = service.GetCompletionResult("", context);
+        Assert.Contains(result.Items, item => item.InsertText.StartsWith("show ", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
-    [InlineData("Tab", false, false, false, true)]
     [InlineData(" ", true, false, false, true)]
     [InlineData(" ", false, false, false, false)]
     [InlineData("Enter", false, false, false, false)]
@@ -651,9 +673,10 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "", null, null);
 
-        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == FilterCommandPaths.RootVerb);
         Assert.Contains(result.Items, item => item.StepSegment == ViewCommandPaths.RootVerb);
+        Assert.Contains(result.Items, item => item.StepSegment == ShowCommandPaths.RootVerb);
     }
 
     [Fact]

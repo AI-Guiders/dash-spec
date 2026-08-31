@@ -144,6 +144,7 @@ builder.Services.AddScoped<DashboardCommandSession>();
 builder.Services.AddScoped<DashboardRefreshCoordinator>();
 builder.Services.AddScoped<DashboardFilterCommandService>();
 builder.Services.AddScoped<DashboardCommandExecutor>();
+builder.Services.AddScoped<DashboardHostCommandCoordinator>();
 builder.Services.AddScoped<DashboardPageController>();
 builder.Services.AddSingleton<LoadTrace>();
 builder.Services.AddSingleton<DevSpecReloadNotifier>();
