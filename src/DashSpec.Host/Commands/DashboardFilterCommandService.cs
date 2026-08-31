@@ -24,12 +24,14 @@ public sealed class DashboardFilterCommandService(
     {
         constructorHost.SegmentProvider.Today = context.TodayUtc;
         var catalog = BuildCatalog(context);
+        var options = constructorHost.CreateCompletionOptions(context.Culture, context.TodayUtc);
         return DashboardFilterSlashCompletion.GetResult(
             catalog,
             context,
             typedLine,
             CreatePickerSource(context),
-            constructorHost.Session);
+            constructorHost.Session,
+            options);
     }
 
     public CommandRunResult TryExecute(string line, DashboardFilterContext context)

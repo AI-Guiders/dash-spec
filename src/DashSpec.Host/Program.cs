@@ -138,6 +138,7 @@ builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
+builder.Services.AddScoped<IDashboardCultureAmbient, DashboardCultureAmbient>();
 builder.Services.AddScoped<DashboardSlashConstructorHost>();
 builder.Services.AddScoped<DashboardCommandSession>();
 builder.Services.AddScoped<DashboardRefreshCoordinator>();

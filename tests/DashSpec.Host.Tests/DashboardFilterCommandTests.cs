@@ -362,7 +362,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         host.SegmentProvider.Today = context.TodayUtc;
         host.Session.Start(
             DateConstructorCatalog.DateRangeId,
@@ -395,7 +395,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         host.SegmentProvider.Today = context.TodayUtc;
         host.Session.Start(
             DateConstructorCatalog.DateMonthId,
@@ -424,7 +424,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         host.SegmentProvider.Today = context.TodayUtc;
         host.Session.Start(
             DateConstructorCatalog.DateQuarterId,
@@ -453,7 +453,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         host.SegmentProvider.Today = context.TodayUtc;
         host.Session.Start(
             DateConstructorCatalog.DateWeekId,
@@ -482,7 +482,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         host.SegmentProvider.Today = context.TodayUtc;
         host.Session.Start(
             DateConstructorCatalog.DateMonthWeekId,
@@ -512,7 +512,7 @@ public class DashboardFilterCommandTests
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var host = new DashboardSlashConstructorHost();
+        var host = new DashboardSlashConstructorHost(TestCulture);
         var line = FilterCommandPaths.FilterPath("usage_date");
         var item = new SlashCompletionItem(
             "",
@@ -770,13 +770,42 @@ public class DashboardFilterCommandTests
         Assert.True(session.IsFilterHighlighted("usage_date"));
     }
 
+    [Fact]
+    public void Locale_typed_complete_date_enters_ready_mode()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var result = CreateCommandService(uiState).GetCompletionResult(
+            $"{FilterCommandPaths.FilterPath("usage_date")} 31.08.2026",
+            context);
+
+        Assert.Equal(SlashInputMode.Ready, result.Guidance.Mode);
+        Assert.Equal("2026-08-31", result.Guidance.ReadyWire);
+    }
+
+    [Fact]
+    public void Locale_typed_month_year_enters_ready_mode()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var result = CreateCommandService(uiState).GetCompletionResult(
+            $"{FilterCommandPaths.FilterPath("usage_date")} 08.2026",
+            context);
+
+        Assert.Equal(SlashInputMode.Ready, result.Guidance.Mode);
+        Assert.Equal("2026-08", result.Guidance.ReadyWire);
+    }
+
     static DashboardFilterCommandService CreateCommandService(DashboardFilterUiState uiState) =>
         new(
             new StubDashboardSession(),
             uiState,
             new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
             DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
-            new DashboardSlashConstructorHost());
+            new DashboardSlashConstructorHost(TestCulture));
+
+    static readonly DashboardCultureAmbient TestCulture =
+        new(System.Globalization.CultureInfo.GetCultureInfo("ru-RU"));
 
     static DashboardCommandSession CreateCommandSession(DashboardFilterUiState uiState)
     {
@@ -825,6 +854,7 @@ public class DashboardFilterCommandTests
             UiState = uiState,
             GetFieldOptions = name => options?.TryGetValue(name, out var values) == true ? values : [],
             TodayUtc = new DateOnly(2026, 6, 24),
+            Culture = TestCulture.Culture,
             SwitchableCards = switchableCards ?? [],
         };
     }
