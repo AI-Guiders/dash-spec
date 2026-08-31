@@ -7,7 +7,14 @@ namespace DashSpec.Host.Commands.Constructors;
 
 public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentProvider
 {
+    readonly IDashboardCultureAmbient _cultureAmbient;
+
+    public DateConstructorSegmentProvider(IDashboardCultureAmbient cultureAmbient) =>
+        _cultureAmbient = cultureAmbient;
+
     public DateOnly Today { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    CultureInfo ActiveCulture => _cultureAmbient.Culture;
 
     public IReadOnlyList<SlashCompletionItem> GetSegmentSuggestions(
         SlashLeafConstructorDefinition leaf,
@@ -70,7 +77,7 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
         for (var month = 1; month <= 12; month++)
         {
             var wire = month.ToString("00", CultureInfo.InvariantCulture);
-            var label = CultureInfo.GetCultureInfo("ru-RU").DateTimeFormat.GetMonthName(month);
+            var label = ActiveCulture.DateTimeFormat.GetMonthName(month);
             if (!MatchesPartial(wire, partial) && !MatchesPartial(label, partial))
             {
                 continue;
