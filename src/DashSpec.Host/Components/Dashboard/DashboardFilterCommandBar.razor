@@ -87,6 +87,7 @@
     int _selected;
     bool _paletteOpen;
     bool _focused;
+    bool _blurPending;
     string? _validationError;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
     IReadOnlyList<CommandTrailSegment> _trail = [];
@@ -140,14 +141,29 @@
 
     void ClosePalette() => _paletteOpen = false;
 
+    void OnBlur()
+    {
+        _blurPending = true;
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(120);
+            await InvokeAsync(() =>
+            {
+                if (_blurPending)
+                {
+                    _focused = false;
+                }
+            });
+        });
+    }
+
     void OnFocus()
     {
+        _blurPending = false;
         _focused = true;
         _validationError = null;
         RefreshSuggestions();
     }
-
-    void OnBlur() => _focused = false;
 
     void RefreshSuggestions()
     {
@@ -188,9 +204,19 @@
             return;
         }
 
-        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
+        if (DashboardFilterCommandKeys.IsAcceptCompletion(e))
         {
-            Accept(_suggestions[_selected]);
+            if (_suggestions.Count == 0)
+            {
+                RefreshSuggestions();
+            }
+
+            if (_suggestions.Count > 0)
+            {
+                _blurPending = false;
+                Accept(_suggestions[_selected]);
+            }
+
             return;
         }
 
@@ -218,6 +244,7 @@
 
     void Accept(SlashCompletionItem item)
     {
+        _blurPending = false;
         _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
         _selected = 0;
         RefreshSuggestions();

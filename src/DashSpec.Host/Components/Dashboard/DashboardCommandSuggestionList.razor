@@ -4,7 +4,7 @@
 
 @if (Items.Count > 0)
 {
-    <div class="dash-command-suggest-table">
+    <div class="dash-command-suggest-table" @onmousedown:preventDefault="true">
         <div class="dash-command-suggest-head" aria-hidden="true">
             <span class="col-human">Название</span>
             <span class="col-name">id</span>
@@ -13,8 +13,7 @@
         <ul id="@Id"
             class="@CssClass"
             role="listbox"
-            aria-label="@AriaLabel"
-            @onmousedown:preventDefault="true">
+            aria-label="@AriaLabel">
             @for (var i = 0; i < Items.Count; i++)
             {
                 var item = Items[i];
