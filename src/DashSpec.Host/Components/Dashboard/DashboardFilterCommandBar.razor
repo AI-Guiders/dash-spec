@@ -58,31 +58,13 @@
     }
     @if (_focused && _suggestions.Count > 0)
     {
-        <ul id="dash-filter-command-suggestions"
-            class="dash-filter-command-suggestions"
-            role="listbox"
-            aria-label="Filter commands"
-            @onmousedown:preventDefault="true">
-            @for (var i = 0; i < _suggestions.Count; i++)
-            {
-                var item = _suggestions[i];
-                var index = i;
-                var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext);
-                <li role="option"
-                    aria-selected="@(index == _selected)"
-                    class="dash-filter-command-item @(index == _selected ? "active" : null)"
-                    @onclick="() => Accept(item)">
-                    <span class="path">
-                        <span class="dash-command-suggest-primary">@parts.Primary</span>
-                        @if (!string.IsNullOrWhiteSpace(parts.Secondary))
-                        {
-                            <span class="dash-command-suggest-badge">@parts.Secondary</span>
-                        }
-                    </span>
-                    <span class="help">@item.Help</span>
-                </li>
-            }
-        </ul>
+        <DashboardCommandSuggestionList Id="dash-filter-command-suggestions"
+                                        CssClass="dash-filter-command-suggestions"
+                                        AriaLabel="Filter commands"
+                                        Items="_suggestions"
+                                        CommandContext="CommandContext"
+                                        SelectedIndex="_selected"
+                                        OnSelect="Accept" />
     }
 </div>
 
