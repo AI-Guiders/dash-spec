@@ -53,42 +53,52 @@ Wire format: **`yyyy-MM-dd..yyyy-MM-dd`** — matches existing `DateFilterPreset
 
 **Rule:** constructor MUST NOT add a second parser. Emitted wire MUST pass `SelectDateFilterCommand` unchanged.
 
-### 3. Step sequences
+### 3. Constructor hierarchy (not flat steps)
 
-#### `date_range` (default for toolbar date filters)
-
-```text
-from: Year → Month → Day → .. → to: Year → Month → Day → Ready
-```
-
-- Year step: sensible window (e.g. ±10 from today, or data-driven later)
-- Month step: `01`–`12` with localized labels optional
-- Day step: valid days for chosen year/month
-- Separator step: auto-insert display ` .. ` + wire `..`; no user pick
-
-#### `date_single` (when grain = day)
+Per [GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md) §0–§4 — **tree of reusable constructors**:
 
 ```text
-Year → Month → Day → Ready
+Arg entry
+├── Free text                        ← always available
+├── today / last-week / …            ← presets
+└── Range                            ← root composite
+    ├── Date (from)                  ← child composite → leaf `date`
+    │   ├── Year
+    │   ├── Month
+    │   └── Day
+    ├── ..                           ← separator (auto)
+    └── Date (to)                    ← same `date` leaf reused
+        ├── Year
+        ├── Month
+        └── Day
 ```
 
-#### Grain-aware shortcuts (v1.1)
+DashSpec registers two catalog nodes:
 
-When filter grain is `month` / `year` ([ADR-0037](DASHSPEC-ADR-0037-filter-scopes-and-toolbar-grouping.md)):
+| Id | Shape | Role |
+|----|-------|------|
+| `date` | leaf | segments: year → month → day; wire `yyyy-MM-dd` |
+| `date_range` | composite | slots: `from`→`date`, `to`→`date`; wire `{from}..{to}` |
 
-| Grain | Constructor | Wire |
-|-------|-------------|------|
-| `month` | Year → Month | `YYYY-MM` |
-| `year` | Year | `YYYY` |
+`date_single` (optional) = root slot `[date]` only — same leaf, no range wrapper.
 
-v1 ships full `date_range` on all date filters; grain variants follow in W2.
+#### Grain-aware variants (v1.1)
+
+Derive truncated **leaf** defs from `date` — do not duplicate range tree:
+
+| Grain | Leaf id | Segments | Wire |
+|-------|---------|----------|------|
+| `month` | `date_month` | year → month | `YYYY-MM` |
+| `year` | `date_year` | year | `YYYY` |
+
+v1 ships `date` + `date_range` on all toolbar date filters.
 
 ### 4. DashSpec implementation map
 
 | Component | Role |
 |-----------|------|
-| `DateRangeValueConstructor` | `ISlashValueConstructor` — step suggestions + `TryEmitWire` |
-| `DateSingleValueConstructor` | optional scalar variant |
+| `DateConstructorCatalog` | bundled `date` leaf + `date_range` composite defs |
+| `DateConstructorNavigator` | DashSpec calendar rules (valid days, year window) — optional custom navigator |
 | `DashboardCommandCatalogBuilder` | composite arg tail + constructor descriptor block |
 | `DateFilterPresets` | **unchanged** — SSOT wire parse at Execute |
 | `SelectDateFilterCommand` | **unchanged** |
@@ -97,8 +107,9 @@ v1 ships full `date_range` on all date filters; grain variants follow in W2.
 
 ### 5. CCL UX rules
 
+- Arg entry shows presets + **Период…** (Range) + free-text path (hint / continue typing)
 - Accept preset → runnable immediately (Enter executes)
-- Accept “Выбрать период…” → `SlashInputMode.Constructor`; Enter does **not** execute until `Ready`
+- Accept Range → enter tree at `from` → `date` leaf; breadcrumb reflects depth
 - Breadcrumb shows human segments: `select › filter › Дата › 31.08.2026 .. 15.09.`
 - Escape: cancel constructor → return to picker phase
 - Backspace at step boundary: platform step back (W2); v1 may reset constructor
