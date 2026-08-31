@@ -1,22 +1,23 @@
 #nullable enable
 using AIGuiders.Platform.CommandPlane;
+using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Host.Services.Abstractions;
 
 namespace DashSpec.Host.Commands;
 
-public sealed class DashboardFilterPickerSource(
+public sealed class DashboardFilterSuggestionProvider(
     IDashboardSession session,
-    IReadOnlyList<string> toolbarFilterNames) : ICommandPickerChoiceSource
+    IReadOnlyList<string> toolbarFilterNames) : IArgSuggestionProvider
 {
-    public IReadOnlyList<CommandPickerChoice> GetChoices(string pickerId, string partial)
+    public IReadOnlyList<CommandPickerChoice> GetSuggestions(ArgSuggestionRequest request)
     {
-        if (!pickerId.StartsWith("dash.field.", StringComparison.OrdinalIgnoreCase))
+        if (!request.SuggestionId.StartsWith("dash.field.", StringComparison.OrdinalIgnoreCase))
         {
             return [];
         }
 
-        var slashAlias = pickerId["dash.field.".Length..];
+        var slashAlias = request.SuggestionId["dash.field.".Length..];
         var filterName = DashboardCommandAliasResolver.ResolveFieldFilter(
             slashAlias,
             CreateContext());
@@ -27,7 +28,7 @@ public sealed class DashboardFilterPickerSource(
 
         var options = session.GetFieldOptions(filterName);
         return options
-            .Where(option => Matches(option, partial))
+            .Where(option => Matches(option, request.Partial))
             .Select(option => new CommandPickerChoice { Value = option, Label = option })
             .ToList();
     }

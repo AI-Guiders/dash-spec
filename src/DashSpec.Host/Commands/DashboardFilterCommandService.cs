@@ -1,5 +1,6 @@
 #nullable enable
 using AIGuiders.Platform.CommandPlane;
+using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 using AIGuiders.Platform.CommandPlane.Commands;
 using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Plugins;
@@ -29,7 +30,7 @@ public sealed class DashboardFilterCommandService(
             catalog,
             context,
             typedLine,
-            CreatePickerSource(context),
+            CreateSuggestionBroker(context),
             constructorHost.Session,
             options);
     }
@@ -58,6 +59,8 @@ public sealed class DashboardFilterCommandService(
     public CommandHighlightState ResolveHighlights(string tail, DashboardFilterContext context) =>
         DashboardCommandHighlightResolver.Resolve(tail, context);
 
-    ICommandPickerChoiceSource CreatePickerSource(DashboardFilterContext context) =>
-        new DashboardFilterPickerSource(session, context.ToolbarFilterNames);
+    ICommandArgSuggestionBroker CreateSuggestionBroker(DashboardFilterContext context) =>
+        new CommandArgSuggestionRegistry()
+            .RegisterPrefix("dash.field.", new DashboardFilterSuggestionProvider(session, context.ToolbarFilterNames))
+            .Build();
 }

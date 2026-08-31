@@ -1,6 +1,7 @@
 #nullable enable
 
 using AIGuiders.Platform.CommandPlane;
+using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 
 namespace DashSpec.Host.Commands;
 
@@ -11,7 +12,7 @@ internal static class DashboardFilterSlashCompletion
         CommandCatalogIndex catalog,
         DashboardFilterContext context,
         string typedLine,
-        ICommandPickerChoiceSource pickerSource,
+        ICommandArgSuggestionBroker suggestionBroker,
         SlashConstructorSession? constructorSession,
         SlashCompletionOptions? options = null)
     {
@@ -22,7 +23,7 @@ internal static class DashboardFilterSlashCompletion
             return treeChoice;
         }
 
-        var platform = SlashCompletion.GetResult(catalog, body, pickerSource, constructorSession, options);
+        var platform = SlashCompletion.GetResult(catalog, body, suggestionBroker, constructorSession, options);
         return platform with { Guidance = DashboardFilterCommandDisplay.ForCli(platform.Guidance) };
     }
 
