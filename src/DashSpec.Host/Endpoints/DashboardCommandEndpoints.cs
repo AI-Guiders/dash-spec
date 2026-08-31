@@ -61,11 +61,11 @@ public static class DashboardCommandEndpoints
         return Results.Ok(new
         {
             commands = catalog.Routes
-                .OrderBy(x => x.SlashPath, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x.Path, StringComparer.OrdinalIgnoreCase)
                 .Select(route => new
                 {
                     commandId = route.CommandId,
-                    path = route.SlashPath,
+                    path = route.Path,
                     help = route.Help,
                     group = route.Group,
                     argTail = route.ArgTailKind.ToString(),

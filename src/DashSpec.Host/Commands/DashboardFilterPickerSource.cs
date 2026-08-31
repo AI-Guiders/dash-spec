@@ -7,9 +7,9 @@ namespace DashSpec.Host.Commands;
 
 public sealed class DashboardFilterPickerSource(
     IDashboardSession session,
-    IReadOnlyList<string> toolbarFilterNames) : ISlashPickerChoiceSource
+    IReadOnlyList<string> toolbarFilterNames) : ICommandPickerChoiceSource
 {
-    public IReadOnlyList<SlashPickerChoice> GetChoices(string pickerId, string partial)
+    public IReadOnlyList<CommandPickerChoice> GetChoices(string pickerId, string partial)
     {
         if (!pickerId.StartsWith("dash.field.", StringComparison.OrdinalIgnoreCase))
         {
@@ -28,7 +28,7 @@ public sealed class DashboardFilterPickerSource(
         var options = session.GetFieldOptions(filterName);
         return options
             .Where(option => Matches(option, partial))
-            .Select(option => new SlashPickerChoice { Value = option, Label = option })
+            .Select(option => new CommandPickerChoice { Value = option, Label = option })
             .ToList();
     }
 
