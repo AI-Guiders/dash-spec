@@ -48,6 +48,7 @@ else
     </header>
 
   var chrome = Page.Session.Document.FiltersChrome;
+  var commandContext = Page.BuildCommandContext();
 
     <DashboardTabBar Tabs="Page.Session.Document.Tabs"
                      ActiveTabId="Page.ActiveTabId"
@@ -62,9 +63,9 @@ else
     }
 
     <DashboardFilterCommandBar @ref="_filterCommandBar"
-                               CommandContext="Page.BuildCommandContext()"
+                               CommandContext="commandContext"
                                CommandError="Page.CommandError"
-                               OnTailChanged="Page.OnCommandTailChanged"
+                               OnTailChanged="OnCommandTailChangedAsync"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
 
     @if (!string.IsNullOrEmpty(Page.CommandError))
@@ -72,53 +73,58 @@ else
         <div class="dash-command-error" role="alert">@Page.CommandError</div>
     }
 
-    <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
-                             FilterIndex="Page.Session.FilterIndex"
-                             FiltersToCards="Page.FiltersToCards"
-                             DateFrom="Page.DateFrom"
-                             DateTo="Page.DateTo"
-                             SelectedFields="Page.SelectedFields"
-                             TopLimits="Page.TopLimits"
-                             GetFieldOptions="Page.Session.GetFieldOptions"
-                             Layout="Page.Session.Document.Layout"
-                             FilterPlacements="Page.ToolbarPlacements"
-                             BarLayout="chrome.IsBarLayout"
-                             AutoApply="chrome.IsAutoApply"
-                             Busy="Page.Busy"
-                             HighlightFilterNames="Page.CommandHighlights.FilterNames"
-                             SectionClass="@Page.FiltersSectionClass()"
-                             GridClass="@Page.FiltersGridClass()"
-                             GridStyle="@Page.FiltersGridStyle()"
-                             OnApply="Page.ApplyFiltersAsync"
-                             OnScheduleApply="Page.OnDashboardRangeChanged"
-                             OnDayChanged="Page.OnDashboardDayChanged"
-                             OnFieldChanged="Page.OnDashboardFieldChanged"
-                             OnTopChanged="Page.OnDashboardTopChanged"
-                             GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
+    <DashboardCommandHighlightRegion @ref="_commandHighlightRegion"
+                                     CommandContext="commandContext">
+        <ChildContent Context="highlights">
+            <DashboardFiltersSection FilterNames="Page.VisibleToolbarFilters()"
+                                     FilterIndex="Page.Session.FilterIndex"
+                                     FiltersToCards="Page.FiltersToCards"
+                                     DateFrom="Page.DateFrom"
+                                     DateTo="Page.DateTo"
+                                     SelectedFields="Page.SelectedFields"
+                                     TopLimits="Page.TopLimits"
+                                     GetFieldOptions="Page.Session.GetFieldOptions"
+                                     Layout="Page.Session.Document.Layout"
+                                     FilterPlacements="Page.ToolbarPlacements"
+                                     BarLayout="chrome.IsBarLayout"
+                                     AutoApply="chrome.IsAutoApply"
+                                     Busy="Page.Busy"
+                                     HighlightFilterNames="highlights.FilterNames"
+                                     SectionClass="@Page.FiltersSectionClass()"
+                                     GridClass="@Page.FiltersGridClass()"
+                                     GridStyle="@Page.FiltersGridStyle()"
+                                     OnApply="Page.ApplyFiltersAsync"
+                                     OnScheduleApply="Page.OnDashboardRangeChanged"
+                                     OnDayChanged="Page.OnDashboardDayChanged"
+                                     OnFieldChanged="Page.OnDashboardFieldChanged"
+                                     OnTopChanged="Page.OnDashboardTopChanged"
+                                     GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
 
-    <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
-        @foreach (var card in Page.VisibleCards())
-        {
-            <DashboardCardView Card="card"
-                               PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)"
-                               GridColumns="@Page.Session.Document.Layout.Columns"
-                               DashboardBoundFilters="Page.DashboardBoundForCard(card)"
-                               FilterIndex="Page.Session.FilterIndex"
-                               DateFrom="Page.DateFrom"
-                               DateTo="Page.DateTo"
-                               SelectedFields="Page.SelectedFields"
-                               TopLimits="Page.TopLimits"
-                               GetFieldOptions="Page.Session.GetFieldOptions"
-                               AutoApply="chrome.IsAutoApply"
-                               ActiveViewId="@Page.GetCardActiveView(card.Id)"
-                               CommandHighlight="Page.CommandHighlights.CardIds.Contains(card.Id)"
-                               OnApplyCard="Page.ApplyCardFiltersAsync"
-                               OnScheduleCardApply="Page.ScheduleCardApplyAsync"
-                               OnCardDayChanged="Page.OnCardDayChanged"
-                               OnCardFieldChanged="Page.OnCardFieldChanged"
-                               OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
-                               OnCardAction="Page.ExecuteCardActionAsync" />
-        }
-    </section>
+            <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
+                @foreach (var card in Page.VisibleCards())
+                {
+                    <DashboardCardView Card="card"
+                                       PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)"
+                                       GridColumns="@Page.Session.Document.Layout.Columns"
+                                       DashboardBoundFilters="Page.DashboardBoundForCard(card)"
+                                       FilterIndex="Page.Session.FilterIndex"
+                                       DateFrom="Page.DateFrom"
+                                       DateTo="Page.DateTo"
+                                       SelectedFields="Page.SelectedFields"
+                                       TopLimits="Page.TopLimits"
+                                       GetFieldOptions="Page.Session.GetFieldOptions"
+                                       AutoApply="chrome.IsAutoApply"
+                                       ActiveViewId="@Page.GetCardActiveView(card.Id)"
+                                       CommandHighlight="highlights.CardIds.Contains(card.Id)"
+                                       OnApplyCard="Page.ApplyCardFiltersAsync"
+                                       OnScheduleCardApply="Page.ScheduleCardApplyAsync"
+                                       OnCardDayChanged="Page.OnCardDayChanged"
+                                       OnCardFieldChanged="Page.OnCardFieldChanged"
+                                       OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
+                                       OnCardAction="Page.ExecuteCardActionAsync" />
+                }
+            </section>
+        </ChildContent>
+    </DashboardCommandHighlightRegion>
 }
 </div>
