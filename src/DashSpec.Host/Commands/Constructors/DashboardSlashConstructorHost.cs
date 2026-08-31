@@ -11,7 +11,7 @@ public sealed class DashboardSlashConstructorHost
     public DateConstructorSegmentProvider SegmentProvider { get; }
     public SlashValueConstructorNavigator Navigator { get; }
     public SlashConstructorSession Session { get; }
-    public SlashLocaleTypedConstructorCoordinator Coordinator { get; }
+    readonly ISlashPrefixArmProfile _datePrefixProfile;
 
     public DashboardSlashConstructorHost(IDashboardCultureAmbient cultureAmbient)
     {
@@ -19,7 +19,7 @@ public sealed class DashboardSlashConstructorHost
         DateConstructorCatalog.Register(Registry);
         Navigator = new SlashValueConstructorNavigator(Registry, SegmentProvider);
         Session = new SlashConstructorSession(Navigator);
-        Coordinator = new SlashLocaleTypedConstructorCoordinator(Navigator, Registry);
+        _datePrefixProfile = new SlashLocaleDatePrefixArmProfile(cultureAmbient);
     }
 
     public SlashCompletionOptions CreateCompletionOptions(CultureInfo culture, DateOnly anchorDate) =>
@@ -29,5 +29,6 @@ public sealed class DashboardSlashConstructorHost
             Culture = new SlashCultureAmbient(culture),
             SegmentProvider = SegmentProvider,
             AnchorDate = anchorDate,
+            PrefixArmProfiles = [_datePrefixProfile],
         };
 }
