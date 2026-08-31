@@ -19,7 +19,7 @@ internal static partial class DateFilterPresets
         var token = expression.Trim();
         if (token.Length == 0)
         {
-            error = "Укажите дату (today, YYYY-Www, YYYY-MM, YYYY-Q1, from..to).";
+            error = "Укажите дату (today, YYYY-Www, YYYY-MM-Mn, YYYY-MM, YYYY-Q1, from..to).";
             return false;
         }
 
@@ -80,6 +80,17 @@ internal static partial class DateFilterPresets
                 out error);
         }
 
+        var monthWeekMatch = MonthWeekTokenPattern().Match(token);
+        if (monthWeekMatch.Success)
+        {
+            return TryResolveMonthWeek(
+                int.Parse(monthWeekMatch.Groups["year"].Value),
+                int.Parse(monthWeekMatch.Groups["month"].Value),
+                int.Parse(monthWeekMatch.Groups["week"].Value),
+                out range,
+                out error);
+        }
+
         var monthMatch = MonthTokenPattern().Match(token);
         if (monthMatch.Success)
         {
@@ -105,8 +116,32 @@ internal static partial class DateFilterPresets
             }
         }
 
-        error = $"Unknown date preset '{token}'. Use today, YYYY-Www, Www, YYYY-MM, YYYY-Q1, Q1, or from..to.";
+        error = $"Unknown date preset '{token}'. Use today, YYYY-Www, YYYY-MM-Mn, YYYY-MM, YYYY-Q1, Q1, or from..to.";
         return false;
+    }
+
+    static bool TryResolveMonthWeek(int year, int month, int week, out DateRangeValue range, out string? error)
+    {
+        range = default;
+        error = null;
+        if (month is < 1 or > 12)
+        {
+            error = "Month must be between 1 and 12.";
+            return false;
+        }
+
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+        var maxWeek = (daysInMonth + 6) / 7;
+        if (week < 1 || week > maxWeek)
+        {
+            error = $"Week-of-month must be between 1 and {maxWeek}.";
+            return false;
+        }
+
+        var fromDay = (week - 1) * 7 + 1;
+        var toDay = Math.Min(week * 7, daysInMonth);
+        range = new DateRangeValue(new DateOnly(year, month, fromDay), new DateOnly(year, month, toDay));
+        return true;
     }
 
     static bool TryResolveWeek(int year, int week, out DateRangeValue range, out string? error)
@@ -141,6 +176,9 @@ internal static partial class DateFilterPresets
         range = new DateRangeValue(first, last);
         return true;
     }
+
+    [GeneratedRegex(@"^(?<year>\d{4})-(?<month>\d{2})-M(?<week>[1-9])$", RegexOptions.IgnoreCase)]
+    private static partial Regex MonthWeekTokenPattern();
 
     [GeneratedRegex(@"^(?<year>\d{4})-(?<month>\d{2})$")]
     private static partial Regex MonthTokenPattern();

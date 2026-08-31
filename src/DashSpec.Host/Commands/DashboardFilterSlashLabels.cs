@@ -78,7 +78,7 @@ internal static class DashboardFilterSlashLabels
 
 
 
-        return $"{label} — Сегодня / Неделя / Месяц / Квартал / Период или YYYY-Www, YYYY-MM, from..to";
+        return $"{label} — конструкторы (день / неделя года / неделя месяца / месяц / квартал / период) или free text";
 
     }
 
