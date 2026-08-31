@@ -22,6 +22,8 @@
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane\AIGuiders.Platform.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane.Slash\AIGuiders.Platform.CommandPlane.Slash.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane.Sources\AIGuiders.Platform.CommandPlane.Sources.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane.PrefixArmed.Locale" Version="0.30.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.CommandPlane.PrefixArmed.Locale\AIGuiders.Platform.CommandPlane.PrefixArmed.Locale.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
