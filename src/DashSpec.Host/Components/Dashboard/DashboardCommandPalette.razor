@@ -317,11 +317,29 @@
 
 
 
-        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
+        if (DashboardFilterCommandKeys.IsAcceptCompletion(e))
 
         {
 
-            Accept(_suggestions[_selected]);
+            if (_suggestions.Count == 0)
+
+            {
+
+                RefreshSuggestions();
+
+            }
+
+
+
+            if (_suggestions.Count > 0)
+
+            {
+
+                Accept(_suggestions[_selected]);
+
+            }
+
+
 
             return;
 
