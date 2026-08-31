@@ -66,7 +66,10 @@ public class DashboardFilterCommandTests
         var service = CreateCommandService(new DashboardFilterUiState());
         var context = CreateContext(new DashboardFilterUiState(), []);
         var result = service.GetCompletionResult("", context);
-        Assert.Contains(result.Items, item => item.InsertText.StartsWith("show ", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Items, item =>
+            item.StepSegment == ShowCommandPaths.RootVerb
+            || DashboardFilterSlashCompletion.LineFromInsert(item.InsertText)
+                .StartsWith("show ", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
