@@ -1,3 +1,4 @@
+using AIGuiders.Platform.IntermediateRepresentation.Invocation;
 using AIGuiders.Platform.CommandPlane;
 using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
@@ -125,7 +126,7 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter ", null, null);
 
-        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
+        Assert.Equal(InvocationLinePhase.Path, result.Guidance.Phase);
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
     }
@@ -138,7 +139,7 @@ public class DashboardFilterCommandTests
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
         var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null, null);
 
-        Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
+        Assert.Equal(InvocationLinePhase.Path, result.Guidance.Phase);
         Assert.Single(result.Items);
         Assert.Equal("filter", result.Items[0].StepSegment);
     }
@@ -154,7 +155,7 @@ public class DashboardFilterCommandTests
             {
                 ["usage_date"] = "Дата отчёта",
             });
-        var item = new SlashCompletionItem(
+        var item = new ArgCompletionItem(
             "select filter usage_date ",
             "select filter usage_date",
             "Дата отчёта",
@@ -165,7 +166,7 @@ public class DashboardFilterCommandTests
         Assert.Equal("Дата отчёта", parts.Primary);
         Assert.Equal("usage_date", parts.Secondary);
         Assert.Equal("today", DashboardFilterCommandDisplay.FormatSuggestion(
-            new SlashCompletionItem("/select filter usage_date today", "select filter usage_date", "Today", "Filter", "today", SlashCompletionItemKind.Picker, "today"),
+            new ArgCompletionItem("/select filter usage_date today", "select filter usage_date", "Today", "Filter", "today", ArgCompletionItemKind.Picker, "today"),
             context));
     }
 
@@ -233,10 +234,11 @@ public class DashboardFilterCommandTests
             null,
             null);
 
-        Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateTodayId);
     }
 
@@ -263,15 +265,15 @@ public class DashboardFilterCommandTests
             context);
         var items = result.Items;
 
-        Assert.DoesNotContain(items, item => item.PickValue == "today" && item.Kind == SlashCompletionItemKind.Picker);
+        Assert.DoesNotContain(items, item => item.PickValue == "today" && item.Kind == ArgCompletionItemKind.Picker);
         Assert.DoesNotContain(items, item => item.PickValue == "last-week");
         Assert.Contains(
             items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateTodayId);
         Assert.Contains(
             items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateWeekId);
     }
 
@@ -331,30 +333,31 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("usage_date")} ",
             context);
 
-        Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateTodayId);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateWeekId);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateMonthWeekId);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateMonthId);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateQuarterId);
         Assert.Contains(
             result.Items,
-            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+            item => item.Kind == ArgCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateRangeId);
     }
 
@@ -515,13 +518,13 @@ public class DashboardFilterCommandTests
         var context = CreateContext(uiState, ["usage_date"]);
         var host = new DashboardSlashConstructorHost(TestCulture);
         var line = FilterCommandPaths.FilterPath("usage_date");
-        var item = new SlashCompletionItem(
+        var item = new ArgCompletionItem(
             "",
             FilterCommandPaths.FilterPath("usage_date"),
             "Сегодня",
             "Filter",
             "Сегодня",
-            SlashCompletionItemKind.ConstructorEntry,
+            ArgCompletionItemKind.ConstructorEntry,
             DateConstructorCatalog.DateTodayId);
 
         Assert.True(DashboardFilterCommandAcceptance.TryAcceptItem(
@@ -555,7 +558,8 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("app_name")} ",
             broker);
 
-        Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(result.Items, item => item.PickValue == "AutoCAD");
     }
 
@@ -782,7 +786,7 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("usage_date")} 31.08.2026",
             context);
 
-        Assert.Equal(SlashInputMode.Ready, result.Guidance.Mode);
+        Assert.Equal(InvocationLinePhase.Ready, result.Guidance.Phase);
         Assert.Equal("2026-08-31", result.Guidance.ReadyWire);
     }
 
@@ -795,7 +799,7 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("usage_date")} 08.2026",
             context);
 
-        Assert.Equal(SlashInputMode.Ready, result.Guidance.Mode);
+        Assert.Equal(InvocationLinePhase.Ready, result.Guidance.Phase);
         Assert.Equal("2026-08", result.Guidance.ReadyWire);
     }
 

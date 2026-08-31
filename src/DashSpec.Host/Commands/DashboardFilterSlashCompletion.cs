@@ -1,5 +1,6 @@
 #nullable enable
 
+using AIGuiders.Platform.IntermediateRepresentation.Invocation;
 using AIGuiders.Platform.CommandPlane;
 using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 
@@ -13,7 +14,7 @@ internal static class DashboardFilterSlashCompletion
         DashboardFilterContext context,
         string typedLine,
         ICommandArgSuggestionBroker suggestionBroker,
-        SlashConstructorSession? constructorSession,
+        ArgConstructorSession? constructorSession,
         SlashCompletionOptions? options = null)
     {
         var body = SanitizeLine(typedLine);
@@ -228,7 +229,7 @@ internal static class DashboardFilterSlashCompletion
         string partial,
         out SlashCompletionResult result)
     {
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         if (MatchesPartial(FilterCommandPaths.RootVerb, partial))
         {
             items.Add(RootVerbItem(FilterCommandPaths.RootVerb, "Срез данных — filter, report, page"));
@@ -257,7 +258,7 @@ internal static class DashboardFilterSlashCompletion
         string partial,
         out SlashCompletionResult result)
     {
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         if (MatchesPartial(FilterCommandPaths.FilterBranch, partial))
         {
             items.Add(SelectBranchItem(FilterCommandPaths.FilterBranch, "Фильтры toolbar — как в UI"));
@@ -293,7 +294,7 @@ internal static class DashboardFilterSlashCompletion
     {
         var items = context.CatalogEntries
             .Where(entry => MatchesPartial(entry.Id, partial) || MatchesPartial(entry.Title, partial))
-            .Select(entry => new SlashCompletionItem(
+            .Select(entry => new ArgCompletionItem(
                 $"select report {entry.Id} ",
                 $"select report {entry.Id}",
                 entry.Title,
@@ -321,7 +322,7 @@ internal static class DashboardFilterSlashCompletion
     {
         var items = context.ReportPages
             .Where(page => MatchesPartial(page.Id, partial) || MatchesPartial(page.Title, partial))
-            .Select(page => new SlashCompletionItem(
+            .Select(page => new ArgCompletionItem(
                 $"select page {page.Id} ",
                 $"select page {page.Id}",
                 page.Title,
@@ -348,7 +349,7 @@ internal static class DashboardFilterSlashCompletion
         string partial,
         out SlashCompletionResult result)
     {
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         foreach (var filterName in context.ToolbarFilterNames)
         {
             var label = DashboardFilterSlashLabels.ResolveFilterLabel(context, filterName);
@@ -363,7 +364,7 @@ internal static class DashboardFilterSlashCompletion
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 path + " ",
                 route.Path,
                 route.Help,
@@ -391,7 +392,7 @@ internal static class DashboardFilterSlashCompletion
     {
         var items = context.SwitchableCards
             .Where(card => MatchesPartial(card.CardId, partial) || MatchesPartial(card.Title, partial))
-            .Select(card => new SlashCompletionItem(
+            .Select(card => new ArgCompletionItem(
                 ViewCommandPaths.CardPath(card.CardId) + " ",
                 ViewCommandPaths.CardPath(card.CardId),
                 card.Title,
@@ -429,7 +430,7 @@ internal static class DashboardFilterSlashCompletion
 
         var items = card.Views
             .Where(view => MatchesPartial(view.ViewId, partial) || MatchesPartial(view.Label, partial))
-            .Select(view => new SlashCompletionItem(
+            .Select(view => new ArgCompletionItem(
                 ViewCommandPaths.ViewPath(card.CardId, view.ViewId) + " ",
                 ViewCommandPaths.ViewPath(card.CardId, view.ViewId),
                 view.Label,
@@ -449,20 +450,20 @@ internal static class DashboardFilterSlashCompletion
         return true;
     }
 
-    static SlashCompletionItem RootVerbItem(string verb, string help) =>
+    static ArgCompletionItem RootVerbItem(string verb, string help) =>
         new($"{verb} ", verb, help, "Command", verb);
 
-    static SlashCompletionItem SelectBranchItem(string branch, string help) =>
+    static ArgCompletionItem SelectBranchItem(string branch, string help) =>
         new($"select {branch} ", $"select {branch}", help, "Command", branch);
 
     static SlashInputGuidance TreeGuidance(string body, string placeholder, string nextStepHint) =>
         new(
-            SlashInputMode.Path,
             DashboardFilterCommandDisplay.FormatTreeBreadcrumb(body),
             placeholder,
             nextStepHint,
-            null,
-            nameof(CommandArgTailKind.None));
+            InvocationLinePhase.Path,
+            CanonicalPath: null,
+            ArgTailKind: nameof(CommandArgTailKind.None));
 
     static bool IsTreeBranchPath(string canonicalPath, DashboardFilterContext context)
     {

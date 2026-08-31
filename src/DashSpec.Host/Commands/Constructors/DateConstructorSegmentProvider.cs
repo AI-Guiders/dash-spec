@@ -5,7 +5,7 @@ using AIGuiders.Platform.CommandPlane;
 
 namespace DashSpec.Host.Commands.Constructors;
 
-public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentProvider
+public sealed class DateConstructorSegmentProvider : IConstructorSegmentProvider
 {
     readonly IDashboardCultureAmbient _cultureAmbient;
 
@@ -16,10 +16,10 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
 
     CultureInfo ActiveCulture => _cultureAmbient.Culture;
 
-    public IReadOnlyList<SlashCompletionItem> GetSegmentSuggestions(
-        SlashLeafConstructorDefinition leaf,
+    public IReadOnlyList<ArgCompletionItem> GetSegmentSuggestions(
+        LeafConstructorDefinition leaf,
         int segmentIndex,
-        SlashConstructorDraft draft,
+        ArgConstructorDraft draft,
         string partial)
     {
         if (segmentIndex < 0 || segmentIndex >= leaf.Segments.Count)
@@ -40,11 +40,11 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
         };
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildYearSuggestions(string partial)
+    IReadOnlyList<ArgCompletionItem> BuildYearSuggestions(string partial)
     {
         var first = Today.Year - 10;
         var last = Today.Year + 2;
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var year = last; year >= first; year--)
         {
             var text = year.ToString(CultureInfo.InvariantCulture);
@@ -53,27 +53,27 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 text,
                 "",
                 text,
                 "Date",
                 text,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 text));
         }
 
         return items;
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildMonthSuggestions(SlashConstructorDraft draft, string partial)
+    IReadOnlyList<ArgCompletionItem> BuildMonthSuggestions(ArgConstructorDraft draft, string partial)
     {
         if (!TryReadYear(draft, out var year))
         {
             return [];
         }
 
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var month = 1; month <= 12; month++)
         {
             var wire = month.ToString("00", CultureInfo.InvariantCulture);
@@ -83,20 +83,20 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 wire,
                 "",
                 label,
                 "Date",
                 label,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 wire));
         }
 
         return items;
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildDaySuggestions(SlashConstructorDraft draft, string partial)
+    IReadOnlyList<ArgCompletionItem> BuildDaySuggestions(ArgConstructorDraft draft, string partial)
     {
         if (!TryReadYear(draft, out var year) || !TryReadMonth(draft, out var month))
         {
@@ -104,7 +104,7 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
         }
 
         var days = DateTime.DaysInMonth(year, month);
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var day = 1; day <= days; day++)
         {
             var wire = day.ToString("00", CultureInfo.InvariantCulture);
@@ -113,20 +113,20 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 wire,
                 "",
                 wire,
                 "Date",
                 wire,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 wire));
         }
 
         return items;
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildWeekSuggestions(SlashConstructorDraft draft, string partial)
+    IReadOnlyList<ArgCompletionItem> BuildWeekSuggestions(ArgConstructorDraft draft, string partial)
     {
         if (!TryReadYear(draft, out var year))
         {
@@ -134,7 +134,7 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
         }
 
         var weeksInYear = ISOWeek.GetWeeksInYear(year);
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var week = weeksInYear; week >= 1; week--)
         {
             var wire = week.ToString("00", CultureInfo.InvariantCulture);
@@ -144,20 +144,20 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 wire,
                 "",
                 label,
                 "Date",
                 label,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 wire));
         }
 
         return items;
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildMonthWeekSuggestions(SlashConstructorDraft draft, string partial)
+    IReadOnlyList<ArgCompletionItem> BuildMonthWeekSuggestions(ArgConstructorDraft draft, string partial)
     {
         if (!TryReadYear(draft, out var year) || !TryReadMonth(draft, out var month))
         {
@@ -166,7 +166,7 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
 
         var daysInMonth = DateTime.DaysInMonth(year, month);
         var maxWeek = (daysInMonth + 6) / 7;
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var week = 1; week <= maxWeek; week++)
         {
             var wire = week.ToString(CultureInfo.InvariantCulture);
@@ -176,22 +176,22 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 wire,
                 "",
                 label,
                 "Date",
                 label,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 wire));
         }
 
         return items;
     }
 
-    IReadOnlyList<SlashCompletionItem> BuildQuarterSuggestions(string partial)
+    IReadOnlyList<ArgCompletionItem> BuildQuarterSuggestions(string partial)
     {
-        var items = new List<SlashCompletionItem>();
+        var items = new List<ArgCompletionItem>();
         for (var quarter = 1; quarter <= 4; quarter++)
         {
             var wire = $"Q{quarter}";
@@ -207,26 +207,26 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 continue;
             }
 
-            items.Add(new SlashCompletionItem(
+            items.Add(new ArgCompletionItem(
                 wire,
                 "",
                 label,
                 "Date",
                 label,
-                SlashCompletionItemKind.ConstructorStep,
+                ArgCompletionItemKind.ConstructorStep,
                 wire));
         }
 
         return items;
     }
 
-    static bool TryReadYear(SlashConstructorDraft draft, out int year) =>
+    static bool TryReadYear(ArgConstructorDraft draft, out int year) =>
         int.TryParse(ReadSegment(draft, "year"), out year);
 
-    static bool TryReadMonth(SlashConstructorDraft draft, out int month) =>
+    static bool TryReadMonth(ArgConstructorDraft draft, out int month) =>
         int.TryParse(ReadSegment(draft, "month"), out month);
 
-    static string? ReadSegment(SlashConstructorDraft draft, string segmentId) =>
+    static string? ReadSegment(ArgConstructorDraft draft, string segmentId) =>
         draft.ActiveSegments.TryGetValue(segmentId, out var value) ? value : null;
 
     static bool MatchesPartial(string value, string partial) =>

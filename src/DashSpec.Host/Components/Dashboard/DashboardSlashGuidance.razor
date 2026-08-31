@@ -26,25 +26,25 @@
 
     string ModeLabel => Guidance?.Mode switch
     {
-        SlashInputMode.Path => "Command",
-        SlashInputMode.Picker => "Pick",
-        SlashInputMode.TypedInput => "Date",
-        SlashInputMode.Constructor => "Constructor",
-        SlashInputMode.FreeText => "Free text",
-        SlashInputMode.Optional => "Optional",
-        SlashInputMode.Ready => "Ready",
+        "Path" => "Command",
+        "Picker" => "Pick",
+        "TypedInput" => "Date",
+        "Constructor" => "Constructor",
+        "FreeText" => "Free text",
+        "Optional" => "Optional",
+        "Ready" => "Ready",
         _ => "",
     };
 
     string ModeClass => Guidance?.Mode switch
     {
-        SlashInputMode.Path => "mode-path",
-        SlashInputMode.Picker => "mode-picker",
-        SlashInputMode.TypedInput => "mode-typed",
-        SlashInputMode.Constructor => "mode-constructor",
-        SlashInputMode.FreeText => "mode-freetext",
-        SlashInputMode.Optional => "mode-optional",
-        SlashInputMode.Ready => "mode-ready",
+        "Path" => "mode-path",
+        "Picker" => "mode-picker",
+        "TypedInput" => "mode-typed",
+        "Constructor" => "mode-constructor",
+        "FreeText" => "mode-freetext",
+        "Optional" => "mode-optional",
+        "Ready" => "mode-ready",
         _ => "",
     };
 }
