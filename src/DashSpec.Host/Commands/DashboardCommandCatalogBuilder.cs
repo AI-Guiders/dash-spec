@@ -103,7 +103,7 @@ internal static class DashboardCommandCatalogBuilder
                     FilterCommandPaths.FilterPath(filterName),
                     DashboardFilterSlashLabels.DateFilterHelp(context, filterName),
                     "Filter",
-                    argTail: "picker+constructor:+date_today+date_week+date_month+date_quarter+date_range",
+                    argTail: "picker+constructor:+date_today+date_week+date_month_week+date_month+date_quarter+date_range",
                     argHint: DashboardFilterSlashLabels.DateFilterHint(context, filterName),
                     argConstructors:
                     [
@@ -113,8 +113,12 @@ internal static class DashboardCommandCatalogBuilder
                             "Сегодняшний день"),
                         new SlashConstructorBinding(
                             Constructors.DateConstructorCatalog.DateWeekId,
-                            "Неделя…",
-                            "ISO-неделя (YYYY-Www)"),
+                            "Неделя года…",
+                            "ISO-неделя в году (YYYY-Www)"),
+                        new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateMonthWeekId,
+                            "Неделя месяца…",
+                            "N-я 7-дневная неделя внутри месяца"),
                         new SlashConstructorBinding(
                             Constructors.DateConstructorCatalog.DateMonthId,
                             "Месяц…",
