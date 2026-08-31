@@ -14,6 +14,11 @@ public class DashboardFilterCommandTests
     [InlineData("today")]
     [InlineData("last-week")]
     [InlineData("2026-07")]
+    [InlineData("2026-W26")]
+    [InlineData("W26")]
+    [InlineData("2026-Q1")]
+    [InlineData("2026-q2")]
+    [InlineData("Q3")]
     [InlineData("2026-07-01..2026-07-15")]
     public void SelectDateFilterCommand_applies_range(string argTail)
     {
@@ -92,7 +97,10 @@ public class DashboardFilterCommandTests
         Assert.True(catalog.TryGet(FilterCommandPaths.FilterPath("usage_date"), out var route));
         Assert.Equal(SelectDateFilterCommand.Id, route.CommandId);
         Assert.Equal(SlashArgTailKind.Picker, route.ArgTailKind);
-        Assert.Contains("today", route.ResolvedPickerChoices.Select(choice => choice.Value));
+        Assert.Contains(
+            route.ResolvedConstructors,
+            binding => binding.ConstructorId == DateConstructorCatalog.DateTodayId);
+        Assert.Empty(route.ResolvedPickerChoices);
     }
 
     [Fact]
@@ -224,7 +232,10 @@ public class DashboardFilterCommandTests
             null);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
-        Assert.Contains(result.Items, item => item.PickValue == "today");
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateTodayId);
     }
 
     [Fact]
@@ -241,21 +252,61 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void GetSuggestions_lists_date_presets_after_path()
+    public void GetSuggestions_lists_date_constructors_after_path()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
-        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var items = SlashStepCompletion.GetSuggestions(
-            catalog,
-            $"{FilterCommandPaths.FilterPath("usage_date")} ");
+        var result = CreateCommandService(uiState).GetCompletionResult(
+            $"{FilterCommandPaths.FilterPath("usage_date")} ",
+            context);
+        var items = result.Items;
 
-        Assert.Contains(items, item => item.PickValue == "today");
-        Assert.Contains(items, item => item.PickValue == "last-week");
+        Assert.DoesNotContain(items, item => item.PickValue == "today" && item.Kind == SlashCompletionItemKind.Picker);
+        Assert.DoesNotContain(items, item => item.PickValue == "last-week");
+        Assert.Contains(
+            items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateTodayId);
+        Assert.Contains(
+            items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateWeekId);
     }
 
     [Fact]
-    public void GetResult_lists_date_range_constructor_entry()
+    public void DateFilterPresets_resolves_iso_week_to_monday_sunday_bounds()
+    {
+        Assert.True(
+            DateFilterPresets.TryResolve("2026-W26", new DateOnly(2026, 6, 24), out var week, out var error),
+            error);
+        Assert.Equal(DayOfWeek.Monday, week.From.DayOfWeek);
+        Assert.Equal(DayOfWeek.Sunday, week.To.DayOfWeek);
+        Assert.Equal(week.From.AddDays(6), week.To);
+
+        Assert.True(DateFilterPresets.TryResolve("W26", new DateOnly(2026, 6, 24), out var currentYear, out _));
+        Assert.Equal(2026, currentYear.From.Year);
+    }
+
+    [Fact]
+    public void DateFilterPresets_resolves_quarter_to_calendar_bounds()
+    {
+        Assert.True(
+            DateFilterPresets.TryResolve("2026-Q1", new DateOnly(2026, 6, 24), out var q1, out var error),
+            error);
+        Assert.Equal(new DateOnly(2026, 1, 1), q1.From);
+        Assert.Equal(new DateOnly(2026, 3, 31), q1.To);
+
+        Assert.True(DateFilterPresets.TryResolve("2026-Q4", new DateOnly(2026, 6, 24), out var q4, out _));
+        Assert.Equal(new DateOnly(2026, 10, 1), q4.From);
+        Assert.Equal(new DateOnly(2026, 12, 31), q4.To);
+
+        Assert.True(DateFilterPresets.TryResolve("Q2", new DateOnly(2026, 6, 24), out var currentYear, out _));
+        Assert.Equal(new DateOnly(2026, 4, 1), currentYear.From);
+        Assert.Equal(new DateOnly(2026, 6, 30), currentYear.To);
+    }
+
+    [Fact]
+    public void GetResult_lists_grain_constructor_entries()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
@@ -265,6 +316,22 @@ public class DashboardFilterCommandTests
             context);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateTodayId);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateWeekId);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateMonthId);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateQuarterId);
         Assert.Contains(
             result.Items,
             item => item.Kind == SlashCompletionItemKind.ConstructorEntry
@@ -302,6 +369,119 @@ public class DashboardFilterCommandTests
         Assert.True(outcome.Success, outcome.Error);
         Assert.True(uiState.DateFrom.ContainsKey("usage_date"));
         Assert.True(uiState.DateTo.ContainsKey("usage_date"));
+    }
+
+    [Fact]
+    public void Date_month_constructor_emits_wire_and_executes()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        host.SegmentProvider.Today = context.TodayUtc;
+        host.Session.Start(
+            DateConstructorCatalog.DateMonthId,
+            FilterCommandPaths.FilterPath("usage_date"));
+
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("07");
+
+        Assert.True(host.Session.TryComplete(out var wire));
+        Assert.Equal("2026-07", wire);
+
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} {wire}",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.Equal(new DateOnly(2026, 7, 1), uiState.DateFrom["usage_date"]);
+        Assert.Equal(new DateOnly(2026, 7, 31), uiState.DateTo["usage_date"]);
+    }
+
+    [Fact]
+    public void Date_quarter_constructor_emits_wire_and_executes()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        host.SegmentProvider.Today = context.TodayUtc;
+        host.Session.Start(
+            DateConstructorCatalog.DateQuarterId,
+            FilterCommandPaths.FilterPath("usage_date"));
+
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("Q2");
+
+        Assert.True(host.Session.TryComplete(out var wire));
+        Assert.Equal("2026-Q2", wire);
+
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} {wire}",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.Equal(new DateOnly(2026, 4, 1), uiState.DateFrom["usage_date"]);
+        Assert.Equal(new DateOnly(2026, 6, 30), uiState.DateTo["usage_date"]);
+    }
+
+    [Fact]
+    public void Date_week_constructor_emits_wire_and_executes()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        host.SegmentProvider.Today = context.TodayUtc;
+        host.Session.Start(
+            DateConstructorCatalog.DateWeekId,
+            FilterCommandPaths.FilterPath("usage_date"));
+
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("26");
+
+        Assert.True(host.Session.TryComplete(out var wire));
+        Assert.Equal("2026-W26", wire);
+
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} {wire}",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.True(uiState.DateFrom.ContainsKey("usage_date"));
+        Assert.True(uiState.DateTo.ContainsKey("usage_date"));
+    }
+
+    [Fact]
+    public void Date_today_constructor_entry_commits_immediately()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        var line = FilterCommandPaths.FilterPath("usage_date");
+        var item = new SlashCompletionItem(
+            "",
+            FilterCommandPaths.FilterPath("usage_date"),
+            "Сегодня",
+            "Filter",
+            "Сегодня",
+            SlashCompletionItemKind.ConstructorEntry,
+            DateConstructorCatalog.DateTodayId);
+
+        Assert.True(DashboardFilterCommandAcceptance.TryAcceptItem(
+            item,
+            CreateCommandService(uiState),
+            context,
+            host,
+            ref line));
+        Assert.Equal($"{FilterCommandPaths.FilterPath("usage_date")} today", line);
+        Assert.False(host.Session.IsActive);
     }
 
     [Fact]

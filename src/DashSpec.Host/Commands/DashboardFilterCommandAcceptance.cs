@@ -23,6 +23,12 @@ internal static class DashboardFilterCommandAcceptance
                 return false;
             }
 
+            if (DateConstructorCatalog.IsInstantEntry(item.PickValue!))
+            {
+                line = $"{path} today";
+                return true;
+            }
+
             constructorHost.Session.Start(item.PickValue!, path);
             return true;
         }
