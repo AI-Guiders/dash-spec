@@ -122,11 +122,11 @@ internal static class DashboardFilterCommandDisplay
 
 
 
-        if (item.SlashPath.StartsWith("view ", StringComparison.OrdinalIgnoreCase))
+        if (item.CommandPath.StartsWith("view ", StringComparison.OrdinalIgnoreCase))
 
         {
 
-            var parts = item.SlashPath.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var parts = item.CommandPath.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
             if (parts.Length >= 3)
 

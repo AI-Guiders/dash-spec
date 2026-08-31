@@ -31,7 +31,7 @@ public static class DashboardCommandEndpoints
             items = result.Items.Select(i => new
             {
                 insertText = i.InsertText,
-                path = i.SlashPath,
+                path = i.CommandPath,
                 help = i.Help,
                 group = i.Group,
                 stepSegment = i.StepSegment,
