@@ -1,222 +1,411 @@
-@namespace DashSpec.Host.Components.Dashboard
-@using AIGuiders.Platform.CommandPlane
-@using DashSpec.Host.Commands
-@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
-@inject IJSRuntime Js
-
-@if (Visible)
-{
-    <div class="dash-command-palette-backdrop" @onclick="Close">
-        <div class="dash-command-palette" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
-            <header class="dash-command-palette-header">
-                <span class="dash-command-palette-title">Commands</span>
-                <span class="dash-command-palette-hint">Ctrl+K</span>
-            </header>
-            @if (_trail.Count > 0)
-            {
-                <div class="dash-filter-command-trail dash-command-palette-trail" aria-label="Command path">
-                    @foreach (var segment in _trail)
-                    {
-                        <span class="dash-command-trail-segment">@segment.Label</span>
-                    }
-                </div>
-            }
-            <form class="dash-command-palette-input-wrap"
-                  autocomplete="off"
-                  @onsubmit:preventDefault="true">
-                <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.VisiblePrefix</span>
-                <input type="text"
-                       @ref="_inputRef"
-                       class="dash-command-palette-input"
-                       placeholder="@InputPlaceholder"
-                       role="combobox"
-                       aria-autocomplete="list"
-                       aria-haspopup="listbox"
-                       autocomplete="off"
-                       autocapitalize="off"
-                       autocorrect="off"
-                       spellcheck="false"
-                       data-ccl-suggest="@SuggestActive"
-                       @bind="Line"
-                       @bind:event="oninput"
-                       @onkeydown="OnKeyDown" />
-            </form>
-            <DashboardSlashGuidance Guidance="_guidance" />
-            @if (!string.IsNullOrEmpty(_validationError))
-            {
-                <div class="dash-command-error dash-command-palette-error" role="alert">@_validationError</div>
-            }
-            <ul class="dash-command-palette-list" role="listbox">
-                @for (var i = 0; i < _suggestions.Count; i++)
-                {
-                    var item = _suggestions[i];
-                    var index = i;
-                    var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext);
-                    <li role="option"
-                        class="dash-command-palette-item @(index == _selected ? "active" : null)"
-                        @onclick="() => Accept(item)">
-                        <span class="path">
-                            <span class="dash-command-suggest-primary">@parts.Primary</span>
-                            @if (!string.IsNullOrWhiteSpace(parts.Secondary))
-                            {
-                                <span class="dash-command-suggest-badge">@parts.Secondary</span>
-                            }
-                        </span>
-                        <span class="help">@item.Help</span>
-                    </li>
-                }
-            </ul>
-        </div>
-    </div>
-}
-
-@code {
-    [Parameter] public bool Visible { get; set; }
-    [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
-    [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback<string> OnCommit { get; set; }
-
-    ElementReference _inputRef;
-    bool _inputBound;
-    bool _wasVisible;
-    string _line = "";
-    string? _validationError;
-    int _selected;
-    IReadOnlyList<SlashCompletionItem> _suggestions = [];
-    IReadOnlyList<CommandTrailSegment> _trail = [];
-    SlashInputGuidance _guidance = new(
-        SlashInputMode.Path,
-        "команда",
-        DashboardFilterCommandDisplay.AcceptCompletionHint,
-        DashboardFilterCommandDisplay.EmptyPlaceholder);
-
-    string SuggestActive => Visible && _suggestions.Count > 0 ? "true" : "false";
-
-    string InputPlaceholder =>
-        string.IsNullOrWhiteSpace(_guidance.Placeholder)
-            ? DashboardFilterCommandDisplay.EmptyPlaceholder
-            : _guidance.Placeholder;
-
-    protected override void OnParametersSet()
-    {
-        if (Visible)
-        {
-            RefreshSuggestions();
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Visible && !_inputBound)
-        {
-            _inputBound = true;
-            await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
-        }
-
-        if (Visible && !_wasVisible)
-        {
-            _wasVisible = true;
-            await _inputRef.FocusAsync();
-        }
-        else if (!Visible)
-        {
-            _wasVisible = false;
-            _inputBound = false;
-        }
-    }
-
-    string Line
-    {
-        get => _line;
-        set
-        {
-            _line = DashboardFilterSlashCompletion.ToInputTail(value);
-            _validationError = null;
-            RefreshSuggestions();
-        }
-    }
-
-    void RefreshSuggestions()
-    {
-        var result = CommandService.GetCompletionResult(_line, CommandContext);
-        _suggestions = result.Items;
-        _guidance = result.Guidance;
-        _trail = DashboardCommandTrailFormatter.Format(_line, CommandContext);
-        _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
-    }
-
-    async Task OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Escape")
-        {
-            await Close();
-            return;
-        }
-
-        if (e.Key == "ArrowDown")
-        {
-            if (_suggestions.Count == 0)
-            {
-                RefreshSuggestions();
-            }
-
-            if (_suggestions.Count > 0)
-            {
-                _selected = (_selected + 1) % _suggestions.Count;
-            }
-
-            return;
-        }
-
-        if (e.Key == "ArrowUp" && _suggestions.Count > 0)
-        {
-            _selected = (_selected - 1 + _suggestions.Count) % _suggestions.Count;
-            return;
-        }
-
-        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
-        {
-            Accept(_suggestions[_selected]);
-            return;
-        }
-
-        if (e.Key == "Enter")
-        {
-            var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
-            if (DashboardFilterSlashCompletion.IsIncompleteRoot(_line))
-            {
-                return;
-            }
-
-            if (!CommandService.TryValidateRunnable(line, CommandContext, out var error))
-            {
-                _validationError = error;
-                return;
-            }
-
-            await OnCommit.InvokeAsync(line);
-            await Close();
-        }
-    }
-
-    void Accept(SlashCompletionItem item)
-    {
-        _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
-        if (item.InsertText.EndsWith(' '))
-        {
-            _line += " ";
-        }
-
-        RefreshSuggestions();
-    }
-
-    async Task Close()
-    {
-        _line = "";
-        _validationError = null;
-        _selected = 0;
-        _suggestions = [];
-        _trail = [];
-        await OnClose.InvokeAsync();
-    }
-}
+@namespace DashSpec.Host.Components.Dashboard
+
+@using AIGuiders.Platform.CommandPlane
+
+@using DashSpec.Host.Commands
+
+@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
+
+@inject IJSRuntime Js
+
+
+
+@if (Visible)
+
+{
+
+    <div class="dash-command-palette-backdrop" @onclick="Close">
+
+        <div class="dash-command-palette" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
+
+            <header class="dash-command-palette-header">
+
+                <span class="dash-command-palette-title">Commands</span>
+
+                <span class="dash-command-palette-hint">Ctrl+K</span>
+
+            </header>
+
+            @if (_trail.Count > 0)
+
+            {
+
+                <div class="dash-filter-command-trail dash-command-palette-trail" aria-label="Command path">
+
+                    @foreach (var segment in _trail)
+
+                    {
+
+                        <span class="dash-command-trail-segment">@segment.Label</span>
+
+                    }
+
+                </div>
+
+            }
+
+            <form class="dash-command-palette-input-wrap"
+
+                  autocomplete="off"
+
+                  @onsubmit:preventDefault="true">
+
+                <span class="dash-filter-command-prompt" aria-hidden="true">@DashboardFilterCommandDisplay.VisiblePrefix</span>
+
+                <input type="text"
+
+                       @ref="_inputRef"
+
+                       class="dash-command-palette-input"
+
+                       placeholder="@InputPlaceholder"
+
+                       role="combobox"
+
+                       aria-autocomplete="list"
+
+                       aria-haspopup="listbox"
+
+                       autocomplete="off"
+
+                       autocapitalize="off"
+
+                       autocorrect="off"
+
+                       spellcheck="false"
+
+                       data-ccl-suggest="@SuggestActive"
+
+                       @bind="Line"
+
+                       @bind:event="oninput"
+
+                       @onkeydown="OnKeyDown" />
+
+            </form>
+
+            <DashboardSlashGuidance Guidance="_guidance" />
+
+            @if (!string.IsNullOrEmpty(_validationError))
+
+            {
+
+                <div class="dash-command-error dash-command-palette-error" role="alert">@_validationError</div>
+
+            }
+
+            <DashboardCommandSuggestionList CssClass="dash-command-palette-list"
+                                            AriaLabel="Commands"
+                                            Items="_suggestions"
+                                            CommandContext="CommandContext"
+                                            SelectedIndex="_selected"
+                                            OnSelect="Accept" />
+
+        </div>
+
+    </div>
+
+}
+
+
+
+@code {
+
+    [Parameter] public bool Visible { get; set; }
+
+    [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public EventCallback<string> OnCommit { get; set; }
+
+
+
+    ElementReference _inputRef;
+
+    bool _inputBound;
+
+    bool _wasVisible;
+
+    string _line = "";
+
+    string? _validationError;
+
+    int _selected;
+
+    IReadOnlyList<SlashCompletionItem> _suggestions = [];
+
+    IReadOnlyList<CommandTrailSegment> _trail = [];
+
+    SlashInputGuidance _guidance = new(
+
+        SlashInputMode.Path,
+
+        "команда",
+
+        DashboardFilterCommandDisplay.AcceptCompletionHint,
+
+        DashboardFilterCommandDisplay.EmptyPlaceholder);
+
+
+
+    string SuggestActive => Visible && _suggestions.Count > 0 ? "true" : "false";
+
+
+
+    string InputPlaceholder =>
+
+        string.IsNullOrWhiteSpace(_guidance.Placeholder)
+
+            ? DashboardFilterCommandDisplay.EmptyPlaceholder
+
+            : _guidance.Placeholder;
+
+
+
+    protected override void OnParametersSet()
+
+    {
+
+        if (Visible)
+
+        {
+
+            RefreshSuggestions();
+
+        }
+
+    }
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+
+    {
+
+        if (Visible && !_inputBound)
+
+        {
+
+            _inputBound = true;
+
+            await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
+
+        }
+
+
+
+        if (Visible && !_wasVisible)
+
+        {
+
+            _wasVisible = true;
+
+            await _inputRef.FocusAsync();
+
+        }
+
+        else if (!Visible)
+
+        {
+
+            _wasVisible = false;
+
+            _inputBound = false;
+
+        }
+
+    }
+
+
+
+    string Line
+
+    {
+
+        get => _line;
+
+        set
+
+        {
+
+            _line = DashboardFilterSlashCompletion.ToInputTail(value);
+
+            _validationError = null;
+
+            RefreshSuggestions();
+
+        }
+
+    }
+
+
+
+    void RefreshSuggestions()
+
+    {
+
+        var result = CommandService.GetCompletionResult(_line, CommandContext);
+
+        _suggestions = result.Items;
+
+        _guidance = result.Guidance;
+
+        _trail = DashboardCommandTrailFormatter.Format(_line, CommandContext);
+
+        _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
+
+    }
+
+
+
+    async Task OnKeyDown(KeyboardEventArgs e)
+
+    {
+
+        if (e.Key == "Escape")
+
+        {
+
+            await Close();
+
+            return;
+
+        }
+
+
+
+        if (e.Key == "ArrowDown")
+
+        {
+
+            if (_suggestions.Count == 0)
+
+            {
+
+                RefreshSuggestions();
+
+            }
+
+
+
+            if (_suggestions.Count > 0)
+
+            {
+
+                _selected = (_selected + 1) % _suggestions.Count;
+
+            }
+
+
+
+            return;
+
+        }
+
+
+
+        if (e.Key == "ArrowUp" && _suggestions.Count > 0)
+
+        {
+
+            _selected = (_selected - 1 + _suggestions.Count) % _suggestions.Count;
+
+            return;
+
+        }
+
+
+
+        if (DashboardFilterCommandKeys.IsAcceptCompletion(e) && _suggestions.Count > 0)
+
+        {
+
+            Accept(_suggestions[_selected]);
+
+            return;
+
+        }
+
+
+
+        if (e.Key == "Enter")
+
+        {
+
+            var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
+
+            if (DashboardFilterSlashCompletion.IsIncompleteRoot(_line))
+
+            {
+
+                return;
+
+            }
+
+
+
+            if (!CommandService.TryValidateRunnable(line, CommandContext, out var error))
+
+            {
+
+                _validationError = error;
+
+                return;
+
+            }
+
+
+
+            await OnCommit.InvokeAsync(line);
+
+            await Close();
+
+        }
+
+    }
+
+
+
+    void Accept(SlashCompletionItem item)
+
+    {
+
+        _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
+
+        if (item.InsertText.EndsWith(' '))
+
+        {
+
+            _line += " ";
+
+        }
+
+
+
+        RefreshSuggestions();
+
+    }
+
+
+
+    async Task Close()
+
+    {
+
+        _line = "";
+
+        _validationError = null;
+
+        _selected = 0;
+
+        _suggestions = [];
+
+        _trail = [];
+
+        await OnClose.InvokeAsync();
+
+    }
+
+}
+
