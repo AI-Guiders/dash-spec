@@ -80,46 +80,6 @@ public sealed class DashboardPageController : IDisposable
     public bool Switching { get; private set; }
     public string? Error { get; private set; }
     public string? CommandError { get; private set; }
-    string _commandTail = "";
-    CancellationTokenSource? _commandHighlightNotify;
-
-    public string CommandTail => _commandTail;
-
-    public CommandHighlightState CommandHighlights =>
-        _filterCommands.ResolveHighlights(_commandTail, BuildCommandContext());
-
-    public void OnCommandTailChanged(string tail)
-    {
-        _commandTail = tail ?? "";
-        _commandHighlightNotify?.Cancel();
-        _commandHighlightNotify?.Dispose();
-        _commandHighlightNotify = new CancellationTokenSource();
-        var token = _commandHighlightNotify.Token;
-        _ = ScheduleHighlightNotifyAsync(token);
-    }
-
-    async Task ScheduleHighlightNotifyAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await Task.Delay(120, cancellationToken).ConfigureAwait(false);
-            if (UiDispatcher is not null)
-            {
-                await UiDispatcher(() =>
-                {
-                    Notify();
-                    return Task.CompletedTask;
-                }).ConfigureAwait(false);
-            }
-            else
-            {
-                Notify();
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
     public string? LoadedSpecSource { get; private set; }
     public IReadOnlyList<CardRenderResult> Cards => _refresh.Cards;
     public DashboardFilterUiState FilterState => _filters;
@@ -830,8 +790,6 @@ public sealed class DashboardPageController : IDisposable
 
     public void Dispose()
     {
-        _commandHighlightNotify?.Cancel();
-        _commandHighlightNotify?.Dispose();
         _refresh.StateChanged -= OnRefreshStateChanged;
         if (_reloadNotifier is not null)
         {
