@@ -6,8 +6,8 @@
 {
     <div class="dash-command-suggest-table" @onmousedown:preventDefault="true">
         <div class="dash-command-suggest-head" aria-hidden="true">
-            <span class="col-human">Название</span>
             <span class="col-name">id</span>
+            <span class="col-human">Название</span>
             <span class="col-help">Подсказка</span>
         </div>
         <ul id="@Id"
@@ -23,8 +23,8 @@
                     aria-selected="@(index == SelectedIndex)"
                     class="dash-command-suggest-row @(index == SelectedIndex ? "active" : null)"
                     @onclick="() => OnSelect.InvokeAsync(item)">
-                    <span class="col-human">@parts.Primary</span>
                     <span class="col-name">@(parts.Secondary ?? "")</span>
+                    <span class="col-human">@parts.Primary</span>
                     <span class="col-help">@item.Help</span>
                 </li>
             }
