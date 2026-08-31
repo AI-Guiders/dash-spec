@@ -1,0 +1,71 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Host.Commands
+@inject DashboardCommandSession CommandSession
+@implements IDisposable
+
+<div class="@ShellClass" style="@Style">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string TargetId { get; set; } = "";
+    [Parameter] public CommandTargetKind Kind { get; set; }
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    bool _highlighted;
+
+    protected override void OnInitialized()
+    {
+        CommandSession.HighlightsChanged += OnHighlightsChanged;
+        _highlighted = IsHighlighted();
+    }
+
+    void OnHighlightsChanged() =>
+        _ = InvokeAsync(() =>
+        {
+            var next = IsHighlighted();
+            if (next == _highlighted)
+            {
+                return;
+            }
+
+            _highlighted = next;
+            StateHasChanged();
+        });
+
+    bool IsHighlighted() =>
+        Kind switch
+        {
+            CommandTargetKind.Filter => CommandSession.IsFilterHighlighted(TargetId),
+            CommandTargetKind.Card => CommandSession.IsCardHighlighted(TargetId),
+            _ => false,
+        };
+
+    string ShellClass
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (Kind is CommandTargetKind.Card)
+            {
+                parts.Add("card-shell");
+            }
+
+            if (!string.IsNullOrWhiteSpace(CssClass))
+            {
+                parts.Add(CssClass);
+            }
+
+            if (_highlighted)
+            {
+                parts.Add("dash-command-target-highlight");
+            }
+
+            return string.Join(' ', parts);
+        }
+    }
+
+    public void Dispose() => CommandSession.HighlightsChanged -= OnHighlightsChanged;
+}

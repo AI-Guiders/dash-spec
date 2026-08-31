@@ -201,6 +201,11 @@
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.card-shell {
+  display: contents;
+}
+
+.card-shell.dash-command-target-highlight > .card,
 .dash-command-target-highlight {
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 2px;
