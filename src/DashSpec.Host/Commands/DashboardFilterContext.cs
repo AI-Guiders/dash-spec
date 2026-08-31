@@ -10,7 +10,8 @@ public sealed record CommandRunResult(
     string? PendingCatalogEntryId = null,
     string? PendingPageId = null,
     string? PendingCardId = null,
-    string? PendingViewId = null);
+    string? PendingViewId = null,
+    string? PendingHostRoute = null);
 
 /// <summary>Invocation payload for dashboard filter commands (DASHSPEC-ADR-0043).</summary>
 public sealed class DashboardFilterContext : ICommandContext
@@ -51,6 +52,8 @@ public sealed class DashboardFilterContext : ICommandContext
     public string? PendingCardId { get; set; }
 
     public string? PendingViewId { get; set; }
+
+    public string? PendingHostRoute { get; set; }
 
     public IReadOnlyList<DashboardCardCommandTarget> SwitchableCards { get; init; } = [];
 

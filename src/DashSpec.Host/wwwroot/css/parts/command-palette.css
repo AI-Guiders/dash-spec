@@ -1,3 +1,16 @@
+.dash-host-command-shell {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--surface, #fff);
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.dash-host-command-shell .dash-filter-command-bar {
+  margin: 0;
+}
+
 .dash-filter-command-bar {
   display: flex;
   flex-wrap: wrap;
