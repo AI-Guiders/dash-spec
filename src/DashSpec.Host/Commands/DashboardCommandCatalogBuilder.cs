@@ -32,7 +32,7 @@ internal static class DashboardCommandCatalogBuilder
 
         var plugins = CommandSource.From(
 
-            pluginDescriptors.Select(ToSlashDescriptor).ToList(),
+            pluginDescriptors.Select(ToCommandDescriptor).ToList(),
 
             "plugins");
 
@@ -206,7 +206,7 @@ internal static class DashboardCommandCatalogBuilder
             Surfaces = FilterSurfaces,
         };
 
-    static CommandDescriptor ToSlashDescriptor(DashSpecCommandDescriptor descriptor) =>
+    static CommandDescriptor ToCommandDescriptor(DashSpecCommandDescriptor descriptor) =>
 
         new()
 
