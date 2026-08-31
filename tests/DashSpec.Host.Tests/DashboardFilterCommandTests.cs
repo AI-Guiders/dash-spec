@@ -844,6 +844,7 @@ public class DashboardFilterCommandTests
             uiState,
             new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
             DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
+            new DashSpecCommandPluginRegistry(),
             new DashboardSlashConstructorHost(TestCulture));
 
     static readonly DashboardCultureAmbient TestCulture =

@@ -1,2 +1,0 @@
-# Branch verbs are synthesized at runtime (select filter|report|page <id>).
-# Keeping this file so the embedded catalog resource exists for DashSpec.Host.
