@@ -1,4 +1,5 @@
 @namespace DashSpec.Host.Components.Dashboard
+@using AIGuiders.Platform.IntermediateRepresentation.Invocation
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
 @using DashSpec.Host.Commands.Constructors
@@ -92,13 +93,13 @@
     bool _focused;
     CancellationTokenSource? _blurDelayCts;
     string? _validationError;
-    IReadOnlyList<SlashCompletionItem> _suggestions = [];
+    IReadOnlyList<ArgCompletionItem> _suggestions = [];
     IReadOnlyList<CommandTrailSegment> _trail = [];
     SlashInputGuidance _guidance = new(
-        SlashInputMode.Path,
         "команда",
         DashboardFilterCommandDisplay.AcceptCompletionHint,
-        DashboardFilterCommandDisplay.EmptyPlaceholder);
+        DashboardFilterCommandDisplay.EmptyPlaceholder,
+        InvocationLinePhase.Path);
 
     string SuggestActive => _focused && _suggestions.Count > 0 ? "true" : "false";
 
@@ -278,7 +279,7 @@
                 return;
             }
 
-            if (_guidance.Mode == SlashInputMode.Ready
+            if (_guidance.Phase == InvocationLinePhase.Ready
                 && !string.IsNullOrWhiteSpace(_guidance.ReadyWire)
                 && DashboardFilterSlashCompletion.TryResolveCommandPath(
                     CommandService.BuildCatalog(CommandContext),
@@ -320,7 +321,7 @@
         }
     }
 
-    void Accept(SlashCompletionItem item)
+    void Accept(ArgCompletionItem item)
     {
         CancelBlurDelay();
         if (DashboardFilterCommandAcceptance.TryAcceptItem(

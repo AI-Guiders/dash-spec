@@ -6,7 +6,7 @@ using AIGuiders.Platform.CommandPlane;
 namespace DashSpec.Host.Commands;
 
 /// <summary>Ambient culture for CCL — from request localization, not hardcoded by Platform.</summary>
-public interface IDashboardCultureAmbient : ISlashCultureAmbient;
+public interface IDashboardCultureAmbient : ICultureAmbient;
 
 public sealed class DashboardCultureAmbient : IDashboardCultureAmbient
 {

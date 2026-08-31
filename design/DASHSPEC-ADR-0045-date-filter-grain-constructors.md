@@ -12,7 +12,7 @@
 
 Static presets overlap with guided constructors. Grain constructors + free text replace enum presets in CCL.
 
-Users also need **nested grains** — e.g. “2-я неделя месяца” vs “26-я неделя года (ISO)”. These are **virtual picker sub-modes**: separate `SlashConstructorBinding` rows that enter a shorter constructor tree, not flat enum presets.
+Users also need **nested grains** — e.g. “2-я неделя месяца” vs “26-я неделя года (ISO)”. These are **virtual picker sub-modes**: separate `ArgConstructorBinding` rows that enter a shorter constructor tree, not flat enum presets.
 
 ## Decision
 
@@ -47,7 +47,7 @@ argTail = picker+constructor:+date_today+date_week+date_month_week+date_month+da
 | **Квартал…** | `date_quarter` | год → Q1..Q4 | `2026-Q1` |
 | **Период…** | `date_range` | day tree from..to | `2026-08-01..2026-09-15` |
 
-**Pattern:** each row = `SlashConstructorBinding` (virtual picker entry) → dedicated composite/leaf catalog id. Platform unchanged ([GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md) §6).
+**Pattern:** each row = `ArgConstructorBinding` (virtual picker entry) → dedicated composite/leaf catalog id. Platform unchanged ([GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md) §6).
 
 ### 3. Leaf defs
 
