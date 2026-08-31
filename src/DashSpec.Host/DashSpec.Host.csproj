@@ -41,10 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Commands\dash-filter-commands.toml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="dash-spec.toml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
