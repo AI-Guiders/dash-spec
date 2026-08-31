@@ -26,6 +26,8 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
             "year" => BuildYearSuggestions(partial),
             "month" => BuildMonthSuggestions(draft, partial),
             "day" => BuildDaySuggestions(draft, partial),
+            "week" => BuildWeekSuggestions(draft, partial),
+            "quarter" => BuildQuarterSuggestions(partial),
             _ => [],
         };
     }
@@ -109,6 +111,68 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
                 wire,
                 "Date",
                 wire,
+                SlashCompletionItemKind.ConstructorStep,
+                wire));
+        }
+
+        return items;
+    }
+
+    IReadOnlyList<SlashCompletionItem> BuildWeekSuggestions(SlashConstructorDraft draft, string partial)
+    {
+        if (!TryReadYear(draft, out var year))
+        {
+            return [];
+        }
+
+        var weeksInYear = ISOWeek.GetWeeksInYear(year);
+        var items = new List<SlashCompletionItem>();
+        for (var week = weeksInYear; week >= 1; week--)
+        {
+            var wire = week.ToString("00", CultureInfo.InvariantCulture);
+            var label = $"Неделя {week}";
+            if (!MatchesPartial(wire, partial) && !MatchesPartial(label, partial))
+            {
+                continue;
+            }
+
+            items.Add(new SlashCompletionItem(
+                wire,
+                "",
+                label,
+                "Date",
+                label,
+                SlashCompletionItemKind.ConstructorStep,
+                wire));
+        }
+
+        return items;
+    }
+
+    IReadOnlyList<SlashCompletionItem> BuildQuarterSuggestions(string partial)
+    {
+        var items = new List<SlashCompletionItem>();
+        for (var quarter = 1; quarter <= 4; quarter++)
+        {
+            var wire = $"Q{quarter}";
+            var label = quarter switch
+            {
+                1 => "I квартал (Q1)",
+                2 => "II квартал (Q2)",
+                3 => "III квартал (Q3)",
+                _ => "IV квартал (Q4)",
+            };
+            if (!MatchesPartial(wire, partial) && !MatchesPartial(label, partial))
+            {
+                continue;
+            }
+
+            items.Add(new SlashCompletionItem(
+                wire,
+                "",
+                label,
+                "Date",
+                label,
                 SlashCompletionItemKind.ConstructorStep,
                 wire));
         }
