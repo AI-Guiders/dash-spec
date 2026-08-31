@@ -1,8 +1,10 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
+@using DashSpec.Host.Commands.Constructors
 @inject DashboardFilterCommandService CommandService
 @inject DashboardCommandSession CommandSession
+@inject DashboardSlashConstructorHost ConstructorHost
 @inject IJSRuntime Js
 @implements IAsyncDisposable
 
@@ -110,6 +112,11 @@
         get => _line;
         set
         {
+            if (_line != DashboardFilterSlashCompletion.ToInputTail(value))
+            {
+                DashboardFilterCommandAcceptance.CancelConstructorIfActive(ConstructorHost);
+            }
+
             _line = DashboardFilterSlashCompletion.ToInputTail(value);
             _validationError = null;
             RefreshSuggestions();
@@ -197,6 +204,17 @@
             return;
         }
 
+        if (e.Key == "Escape")
+        {
+            if (ConstructorHost.Session.IsActive)
+            {
+                ConstructorHost.Session.Cancel();
+                RefreshSuggestions();
+            }
+
+            return;
+        }
+
         if (e.Key == "ArrowDown")
         {
             if (_suggestions.Count == 0)
@@ -235,6 +253,19 @@
 
         if (e.Key == "Enter")
         {
+            if (ConstructorHost.Session.IsActive)
+            {
+                if (ConstructorHost.Session.TryComplete(out var wire)
+                    && CommandService.BuildCatalog(CommandContext) is { } catalog
+                    && DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, _line, out var path))
+                {
+                    _line = $"{path} {wire}";
+                    RefreshSuggestions();
+                }
+
+                return;
+            }
+
             var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
             if (DashboardFilterSlashCompletion.IsIncompleteRoot(_line))
             {
@@ -259,9 +290,16 @@
     void Accept(SlashCompletionItem item)
     {
         CancelBlurDelay();
-        _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
-        _selected = 0;
-        RefreshSuggestions();
+        if (DashboardFilterCommandAcceptance.TryAcceptItem(
+                item,
+                CommandService,
+                CommandContext,
+                ConstructorHost,
+                ref _line))
+        {
+            _selected = 0;
+            RefreshSuggestions();
+        }
     }
 
     public ValueTask DisposeAsync()
