@@ -117,7 +117,6 @@
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public bool AutoApply { get; set; }
     [Parameter] public string? ActiveViewId { get; set; }
-    [Parameter] public bool CommandHighlight { get; set; }
     [Parameter] public EventCallback<string> OnApplyCard { get; set; }
     [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
@@ -126,6 +125,35 @@
     [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
 
     private HeatmapCellContext? _selection;
+    private RenderSnapshot _renderSnapshot;
+
+    protected override bool ShouldRender()
+    {
+        var snapshot = new RenderSnapshot(
+            Card,
+            ActiveViewId,
+            Card.Loading,
+            Card.DataFamily,
+            Card.Matrix is not null,
+            Card.Title,
+            Card.FilterLinkCssClass);
+        if (_renderSnapshot.Equals(snapshot))
+        {
+            return false;
+        }
+
+        _renderSnapshot = snapshot;
+        return true;
+    }
+
+    readonly record struct RenderSnapshot(
+        CardRenderResult Card,
+        string? ActiveViewId,
+        bool Loading,
+        DiagramDataFamily DataFamily,
+        bool HasMatrix,
+        string Title,
+        string? FilterLinkCssClass);
 
     protected override void OnParametersSet()
     {
@@ -150,11 +178,6 @@
             if (!string.IsNullOrWhiteSpace(Card.FilterLinkCssClass))
             {
                 parts.Add(Card.FilterLinkCssClass);
-            }
-
-            if (CommandHighlight)
-            {
-                parts.Add("dash-command-target-highlight");
             }
 
             return string.Join(' ', parts);

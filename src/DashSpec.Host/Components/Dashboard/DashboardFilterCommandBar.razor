@@ -1,8 +1,10 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
-@inject DashSpec.Host.Commands.DashboardFilterCommandService CommandService
+@inject DashboardFilterCommandService CommandService
+@inject DashboardCommandSession CommandSession
 @inject IJSRuntime Js
+@implements IAsyncDisposable
 
 <div class="dash-filter-command-bar">
     <button type="button"
@@ -78,7 +80,6 @@
     [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
     [Parameter] public string? CommandError { get; set; }
     [Parameter] public EventCallback<string> OnCommit { get; set; }
-    [Parameter] public EventCallback<string> OnTailChanged { get; set; }
 
     DashboardCommandPalette? _palette;
     ElementReference _inputRef;
@@ -87,7 +88,7 @@
     int _selected;
     bool _paletteOpen;
     bool _focused;
-    bool _blurPending;
+    CancellationTokenSource? _blurDelayCts;
     string? _validationError;
     IReadOnlyList<SlashCompletionItem> _suggestions = [];
     IReadOnlyList<CommandTrailSegment> _trail = [];
@@ -143,26 +144,39 @@
 
     void OnBlur()
     {
-        _blurPending = true;
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(120);
-            await InvokeAsync(() =>
-            {
-                if (_blurPending)
-                {
-                    _focused = false;
-                }
-            });
-        });
+        CancelBlurDelay();
+        _blurDelayCts = new CancellationTokenSource();
+        _ = CompleteBlurAfterDelayAsync(_blurDelayCts.Token);
     }
 
     void OnFocus()
     {
-        _blurPending = false;
+        CancelBlurDelay();
         _focused = true;
         _validationError = null;
+        CommandSession.SetBarActive(true, CommandContext);
         RefreshSuggestions();
+    }
+
+    void CancelBlurDelay()
+    {
+        _blurDelayCts?.Cancel();
+        _blurDelayCts?.Dispose();
+        _blurDelayCts = null;
+    }
+
+    async Task CompleteBlurAfterDelayAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(120, cancellationToken);
+            _focused = false;
+            CommandSession.SetBarActive(false, CommandContext);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     void RefreshSuggestions()
@@ -172,7 +186,7 @@
         _guidance = result.Guidance;
         _trail = DashboardCommandTrailFormatter.Format(_line, CommandContext);
         _selected = Math.Clamp(_selected, 0, Math.Max(0, _suggestions.Count - 1));
-        _ = OnTailChanged.InvokeAsync(_line);
+        CommandSession.SetDraftTail(_line, CommandContext);
     }
 
     async Task OnKeyDown(KeyboardEventArgs e)
@@ -213,7 +227,6 @@
 
             if (_suggestions.Count > 0)
             {
-                _blurPending = false;
                 Accept(_suggestions[_selected]);
             }
 
@@ -238,15 +251,22 @@
             await OnCommit.InvokeAsync(line);
             _line = "";
             _selected = 0;
+            CommandSession.ClearDraft(CommandContext);
             RefreshSuggestions();
         }
     }
 
     void Accept(SlashCompletionItem item)
     {
-        _blurPending = false;
+        CancelBlurDelay();
         _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
         _selected = 0;
         RefreshSuggestions();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        CancelBlurDelay();
+        return ValueTask.CompletedTask;
     }
 }

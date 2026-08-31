@@ -455,6 +455,50 @@ public class DashboardFilterCommandTests
             segment => Assert.Equal("today", segment.Label));
     }
 
+    [Fact]
+    public void CommandSession_clears_highlights_when_deactivated()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date", "app_name"]);
+        var session = CreateCommandSession(uiState);
+
+        session.SetBarActive(true, context);
+        session.SetDraftTail("select filter usage_date", context);
+
+        Assert.True(session.IsFilterHighlighted("usage_date"));
+        Assert.False(session.IsFilterHighlighted("app_name"));
+
+        session.SetBarActive(false, context);
+
+        Assert.False(session.IsFilterHighlighted("usage_date"));
+    }
+
+    [Fact]
+    public void CommandSession_keeps_highlights_while_palette_open_after_bar_blur()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var session = CreateCommandSession(uiState);
+
+        session.SetBarActive(true, context);
+        session.SetDraftTail("select filter usage_date", context);
+        session.SetBarActive(false, context);
+        session.SetPaletteActive(true, context);
+        session.SetDraftTail("select filter usage_date", context);
+
+        Assert.True(session.IsFilterHighlighted("usage_date"));
+    }
+
+    static DashboardCommandSession CreateCommandSession(DashboardFilterUiState uiState)
+    {
+        var commandService = new DashboardFilterCommandService(
+            new StubDashboardSession(),
+            uiState,
+            new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
+            DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins());
+        return new DashboardCommandSession(commandService);
+    }
+
     static DashboardFilterContext CreateContext(
         DashboardFilterUiState uiState,
         IReadOnlyList<string> toolbarFilters,

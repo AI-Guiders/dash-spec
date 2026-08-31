@@ -1,133 +1,243 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using DashSpec.Core.Model
 @using DashSpec.Core.Runtime
+@using DashSpec.Host.Commands
 @using DashSpec.Host.Components.Filters
+
 @using DashSpec.Host.Services.Presentation
 
+
+
 <section class="@SectionClass" aria-label="Фильтры дашборда">
+
     <div class="@GridClass" style="@GridStyle">
+
         @{
+
             var lastPlacementRow = 0;
+
         }
+
         @foreach (var filterName in FilterNames)
+
         {
+
             if (BarLayout && GroupBreakBefore?.Invoke(filterName) == true)
+
             {
+
                 <div class="toolbar-filter-row-break" aria-hidden="true"></div>
+
             }
+
             else if (BarLayout &&
+
                 FilterPlacements.TryGetValue(filterName, out var placement) &&
+
                 lastPlacementRow > 0 &&
+
                 placement.Row > lastPlacementRow)
+
             {
+
                 <div class="toolbar-filter-row-break" aria-hidden="true"></div>
+
             }
+
+
 
             if (BarLayout && FilterPlacements.TryGetValue(filterName, out var currentPlacement))
+
             {
+
                 lastPlacementRow = currentPlacement.Row;
+
             }
 
+
+
             var filter = FilterIndex[filterName];
+
             var placementStyle = BarLayout
+
                 ? string.Empty
+
                 : DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
-            <div class="@FilterCellClass(filter, filterName)" style="@placementStyle">
+
+            <CommandTargetShell TargetId="@filterName"
+                                Kind="CommandTargetKind.Filter"
+                                CssClass="@FilterCellClass(filter)"
+                                Style="@placementStyle">
+
                 <FilterWidgetHost Filter="filter"
+
                                   Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
+
                                   Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
+
                                   Compact="@BarLayout"
+
                                   Disabled="@Busy"
+
                                   ShowDateLabel="true"
+
                                   DateLabelClass="@(BarLayout ? "filter-inline-label" : "filter-label")"
+
                                   Options="GetFieldOptions(filter.Name)"
+
                                   Selected="@FilterUiHelpers.SelectedFieldValues(filter, SelectedFields)"
+
                                   SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))"
+
                                   DateFrom="DateFrom"
+
                                   DateTo="DateTo"
+
                                   FilterIndex="FilterIndex"
+
                                   SelectedFields="SelectedFields"
+
                                   OnDayChanged="OnDayChanged"
+
                                   OnRangeChanged="OnScheduleApply"
+
                                   TopValue="@FilterUiHelpers.ResolveTopValue(filter, TopLimits)"
+
                                   TopValueChanged="value => OnTopChangedForFilter(filter, value)" />
-            </div>
+
+            </CommandTargetShell>
+
         }
+
     </div>
+
     @if (!AutoApply)
+
     {
+
         <div class="filters-actions">
+
             <button class="primary"
+
                     disabled="@Busy"
+
                     @onclick="OnApply">
+
                 @if (Busy)
+
                 {
+
                     <span class="spinner spinner-inline" aria-hidden="true"></span>
+
                     <span>Загрузка…</span>
+
                 }
+
                 else
+
                 {
+
                     <span>Применить</span>
+
                 }
+
             </button>
+
         </div>
+
     }
+
     else if (Busy)
+
     {
+
         <div class="filters-actions">
+
             <span class="muted filters-busy"><span class="spinner spinner-inline" aria-hidden="true"></span> обновление…</span>
+
         </div>
+
     }
+
 </section>
 
-@code {
-    [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
-    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
-        new Dictionary<string, FilterDefinition>();
-    [Parameter] public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
-        new Dictionary<string, IReadOnlyList<string>>();
-    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
-    [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
-    [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
-        new Dictionary<string, PlacementDefinition>();
-    [Parameter] public bool BarLayout { get; set; }
-    [Parameter] public bool AutoApply { get; set; }
-    [Parameter] public bool Busy { get; set; }
-    [Parameter] public string SectionClass { get; set; } = "filters filters-card";
-    [Parameter] public string GridClass { get; set; } = "filters-grid";
-    [Parameter] public string GridStyle { get; set; } = string.Empty;
-    [Parameter] public EventCallback OnApply { get; set; }
-    [Parameter] public EventCallback OnScheduleApply { get; set; }
-    [Parameter] public EventCallback<string> OnDayChanged { get; set; }
-    [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
-    [Parameter] public EventCallback<(string Name, int Value)> OnTopChanged { get; set; }
-    [Parameter] public Func<string, bool>? GroupBreakBefore { get; set; }
-    [Parameter] public IReadOnlySet<string>? HighlightFilterNames { get; set; }
 
-    private string FilterCellClass(FilterDefinition filter, string filterName)
-    {
-        var classes = BarLayout
+
+@code {
+
+    [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
+
+    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
+
+        new Dictionary<string, FilterDefinition>();
+
+    [Parameter] public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
+
+        new Dictionary<string, IReadOnlyList<string>>();
+
+    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+
+    [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
+
+    [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
+
+        new Dictionary<string, PlacementDefinition>();
+
+    [Parameter] public bool BarLayout { get; set; }
+
+    [Parameter] public bool AutoApply { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public string SectionClass { get; set; } = "filters filters-card";
+
+    [Parameter] public string GridClass { get; set; } = "filters-grid";
+
+    [Parameter] public string GridStyle { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnApply { get; set; }
+
+    [Parameter] public EventCallback OnScheduleApply { get; set; }
+
+    [Parameter] public EventCallback<string> OnDayChanged { get; set; }
+
+    [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
+
+    [Parameter] public EventCallback<(string Name, int Value)> OnTopChanged { get; set; }
+
+    [Parameter] public Func<string, bool>? GroupBreakBefore { get; set; }
+
+
+
+    private string FilterCellClass(FilterDefinition filter) =>
+
+        BarLayout
+
             ? filter.Kind is FilterKind.Date && !filter.IsDayWidget
+
                 ? "toolbar-filter-cell toolbar-filter-date"
+
                 : "toolbar-filter-cell"
+
             : filter.Kind is FilterKind.Field ? "filter-field-cell" : string.Empty;
 
-        if (HighlightFilterNames?.Contains(filterName) == true)
-        {
-            classes = string.IsNullOrWhiteSpace(classes)
-                ? "dash-command-target-highlight"
-                : $"{classes} dash-command-target-highlight";
-        }
 
-        return classes;
-    }
 
     private Task OnTopChangedForFilter(FilterDefinition filter, int value) =>
+
         filter.Kind is FilterKind.Top
+
             ? OnTopChanged.InvokeAsync((filter.Name, value))
+
             : Task.CompletedTask;
+
 }
+
