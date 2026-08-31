@@ -30,26 +30,8 @@ else if (!Page.Loaded)
 }
 else
 {
-    <header class="dash-header">
-        <div>
-            <h1>@Page.Session.Document.Title</h1>
-            <p class="muted dash-meta">
-                <span class="badge">@Page.Session.Document.Id</span>
-                <span class="badge">@Page.Session.ActiveConnectorId</span>
-            </p>
-        </div>
-        @if (Page.HasCatalog)
-        {
-            <DashboardCatalogPicker Entries="Page.CatalogEntries"
-                                    Groups="Page.CatalogGroups"
-                                    ActiveEntryId="Page.ActiveCatalogEntryId"
-                                    Busy="Page.Switching"
-                                    OnSelect="Page.SelectCatalogEntryAsync" />
-        }
-    </header>
-
-  var chrome = Page.Session.Document.FiltersChrome;
-  var commandContext = Page.BuildCommandContext();
+    var chrome = Page.Session.Document.FiltersChrome;
+    var commandContext = Page.BuildCommandContext();
 
     <DashboardTabBar Tabs="Page.Session.Document.Tabs"
                      ActiveTabId="Page.ActiveTabId"
@@ -67,6 +49,17 @@ else
                                CommandContext="commandContext"
                                CommandError="Page.CommandError"
                                OnCommit="Page.OnFilterCommandCommittedAsync" />
+
+    @if (Page.HasCatalog)
+    {
+        <div class="dash-catalog-row">
+            <DashboardCatalogPicker Entries="Page.CatalogEntries"
+                                    Groups="Page.CatalogGroups"
+                                    ActiveEntryId="Page.ActiveCatalogEntryId"
+                                    Busy="Page.Switching"
+                                    OnSelect="Page.SelectCatalogEntryAsync" />
+        </div>
+    }
 
     @if (!string.IsNullOrEmpty(Page.CommandError))
     {
