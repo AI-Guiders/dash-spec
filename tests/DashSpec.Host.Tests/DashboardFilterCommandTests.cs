@@ -1,4 +1,5 @@
 using AIGuiders.Platform.CommandPlane;
+using AIGuiders.Platform.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Commands;
@@ -546,11 +547,13 @@ public class DashboardFilterCommandTests
                 ["app_name"] = ["AutoCAD", "Revit"],
             });
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var picker = new DashboardFilterPickerSource(session, ["app_name"]);
+        var broker = new CommandArgSuggestionRegistry()
+            .RegisterPrefix("dash.field.", new DashboardFilterSuggestionProvider(session, ["app_name"]))
+            .Build();
         var result = SlashCompletion.GetResult(
             catalog,
             $"{FilterCommandPaths.FilterPath("app_name")} ",
-            picker);
+            broker);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
         Assert.Contains(result.Items, item => item.PickValue == "AutoCAD");
