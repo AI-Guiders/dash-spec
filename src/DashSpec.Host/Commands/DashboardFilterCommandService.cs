@@ -14,10 +14,14 @@ public sealed class DashboardFilterCommandService(
     DashboardFilterUiState uiState,
     DashboardCommandExecutor executor,
     DashSpecContributorRegistry pluginRegistry,
+    DashSpecCommandPluginRegistry commandPluginRegistry,
     DashboardSlashConstructorHost constructorHost)
 {
     public CommandCatalogIndex BuildCatalog(DashboardFilterContext context) =>
-        DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
+        DashboardCommandCatalogBuilder.Build(
+            context,
+            pluginRegistry.CommandDescriptors,
+            commandPluginRegistry.Commands);
 
     public SlashCompletionResult GetCompletionResult(
         string typedLine,
