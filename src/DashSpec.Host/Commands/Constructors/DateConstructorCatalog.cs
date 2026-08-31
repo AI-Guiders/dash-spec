@@ -11,7 +11,9 @@ internal static class DateConstructorCatalog
     public const string WeekGrainLeafId = "week_grain";
     public const string MonthGrainLeafId = "month_grain";
     public const string QuarterGrainLeafId = "quarter_grain";
+    public const string MonthWeekGrainLeafId = "month_week_grain";
     public const string DateWeekId = "date_week";
+    public const string DateMonthWeekId = "date_month_week";
     public const string DateMonthId = "date_month";
     public const string DateQuarterId = "date_quarter";
     public const string DateRangeId = "date_range";
@@ -43,6 +45,17 @@ internal static class DateConstructorCatalog
             DisplayPattern: "W{week} {year}"));
 
         registry.Register(new SlashLeafConstructorDefinition(
+            MonthWeekGrainLeafId,
+            "Неделя месяца",
+            [
+                new SlashConstructorSegmentDefinition("year", "Год"),
+                new SlashConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
+                new SlashConstructorSegmentDefinition("month_week", "Неделя месяца"),
+            ],
+            WirePattern: "{year}-{month}-M{month_week}",
+            DisplayPattern: "{month_week}-я нед. {month}.{year}"));
+
+        registry.Register(new SlashLeafConstructorDefinition(
             MonthGrainLeafId,
             "Месяц",
             [
@@ -67,6 +80,14 @@ internal static class DateConstructorCatalog
             "Неделя…",
             [
                 new SlashConstructorSlotDefinition("value", WeekGrainLeafId, "Неделя"),
+            ],
+            WirePattern: "{value}"));
+
+        registry.Register(new SlashCompositeConstructorDefinition(
+            DateMonthWeekId,
+            "Неделя месяца…",
+            [
+                new SlashConstructorSlotDefinition("value", MonthWeekGrainLeafId, "Неделя месяца"),
             ],
             WirePattern: "{value}"));
 
