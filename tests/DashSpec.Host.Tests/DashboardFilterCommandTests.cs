@@ -69,6 +69,18 @@ public class DashboardFilterCommandTests
         Assert.Contains(result.Items, item => item.InsertText.StartsWith("show ", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void Catalog_host_scope_excludes_dashboard_paths()
+    {
+        var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
+        var catalog = DashboardCommandCatalogBuilder.Build(hostContext, []);
+
+        Assert.True(catalog.TryGet(ShowCommandPaths.SurfacePath("dashboard"), out _));
+        Assert.True(catalog.TryGet(ShowCommandPaths.SurfacePath("controlcenter"), out _));
+        Assert.False(catalog.TryGet(FilterCommandPaths.FilterPath("usage_date"), out _));
+        Assert.False(catalog.TryGet($"{FilterCommandPaths.RootVerb} filter", out _));
+    }
+
     [Theory]
     [InlineData(" ", true, false, false, true)]
     [InlineData(" ", false, false, false, false)]
@@ -878,6 +890,7 @@ public class DashboardFilterCommandTests
         return new DashboardFilterContext
         {
             ReportId = "demo",
+            ActiveScope = [DashSpecCommandScope.Dashboard],
             FilterIndex = filterIndex,
             ToolbarFilterNames = toolbarFilters,
             CommandAliases = aliases ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),

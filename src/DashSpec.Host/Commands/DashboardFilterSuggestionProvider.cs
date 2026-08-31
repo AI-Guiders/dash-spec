@@ -47,6 +47,7 @@ public sealed class DashboardFilterSuggestionProvider(
         new()
         {
             ReportId = session.Document.Id,
+            ActiveScope = [DashSpecCommandScope.Dashboard],
             FilterIndex = session.FilterIndex,
             ToolbarFilterNames = toolbarFilterNames,
             CommandAliases = session.Document.ResolvedCommandAliases,

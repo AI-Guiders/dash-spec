@@ -12,6 +12,7 @@ internal static class HostCommandContextFactory
         new()
         {
             ReportId = "host",
+            ActiveScope = [DashSpecCommandScope.ControlCenter],
             FilterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase),
             ToolbarFilterNames = [],
             CommandAliases = DashboardDocument.EmptyCommandAliases,

@@ -724,6 +724,7 @@ public sealed class DashboardPageController : IDisposable
         new()
         {
             ReportId = _session.Document.Id,
+            ActiveScope = [DashSpecCommandScope.Dashboard],
             FilterIndex = _session.FilterIndex,
             ToolbarFilterNames = VisibleToolbarFilterNames(),
             CommandAliases = _session.Document.ResolvedCommandAliases,
