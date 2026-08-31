@@ -8,7 +8,7 @@ namespace DashSpec.Host.Commands;
 internal static class DashboardFilterCommandAcceptance
 {
     public static bool TryAcceptItem(
-        SlashCompletionItem item,
+        ArgCompletionItem item,
         DashboardFilterCommandService commandService,
         DashboardFilterContext context,
         DashboardSlashConstructorHost constructorHost,
@@ -16,7 +16,7 @@ internal static class DashboardFilterCommandAcceptance
     {
         var catalog = commandService.BuildCatalog(context);
 
-        if (item.Kind == SlashCompletionItemKind.ConstructorEntry)
+        if (item.Kind == ArgCompletionItemKind.ConstructorEntry)
         {
             if (!DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, line, out var path))
             {
@@ -33,7 +33,7 @@ internal static class DashboardFilterCommandAcceptance
             return true;
         }
 
-        if (item.Kind == SlashCompletionItemKind.ConstructorStep)
+        if (item.Kind == ArgCompletionItemKind.ConstructorStep)
         {
             constructorHost.Session.TryAdvance(item.PickValue!);
             if (constructorHost.Session.TryComplete(out var wire)

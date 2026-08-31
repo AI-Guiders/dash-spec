@@ -107,27 +107,27 @@ internal static class DashboardCommandCatalogBuilder
                     argHint: DashboardFilterSlashLabels.DateFilterHint(context, filterName),
                     argConstructors:
                     [
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateTodayId,
                             "Сегодня",
                             "Сегодняшний день"),
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateWeekId,
                             "Неделя года…",
                             "ISO-неделя в году (YYYY-Www)"),
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateMonthWeekId,
                             "Неделя месяца…",
                             "N-я 7-дневная неделя внутри месяца"),
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateMonthId,
                             "Месяц…",
                             "Календарный месяц"),
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateQuarterId,
                             "Квартал…",
                             "Квартал Q1–Q4"),
-                        new SlashConstructorBinding(
+                        new ArgConstructorBinding(
                             Constructors.DateConstructorCatalog.DateRangeId,
                             "Период…",
                             "Период с … по …"),
@@ -189,7 +189,7 @@ internal static class DashboardCommandCatalogBuilder
         string? argTail = null,
         string? argHint = null,
         IReadOnlyList<CommandPickerChoice>? argPickerChoices = null,
-        IReadOnlyList<SlashConstructorBinding>? argConstructors = null) =>
+        IReadOnlyList<ArgConstructorBinding>? argConstructors = null) =>
         new()
         {
             Domain = "",

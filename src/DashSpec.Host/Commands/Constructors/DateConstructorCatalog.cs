@@ -21,98 +21,98 @@ internal static class DateConstructorCatalog
     public static bool IsInstantEntry(string constructorId) =>
         constructorId.Equals(DateTodayId, StringComparison.OrdinalIgnoreCase);
 
-    public static void Register(SlashValueConstructorRegistry registry)
+    public static void Register(ValueConstructorRegistry registry)
     {
-        registry.Register(new SlashLeafConstructorDefinition(
+        registry.Register(new LeafConstructorDefinition(
             DateLeafId,
             "Дата",
             [
-                new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
-                new SlashConstructorSegmentDefinition("day", "День", WireMinWidth: 2, DisplayMinWidth: 2),
+                new ConstructorSegmentDefinition("year", "Год"),
+                new ConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
+                new ConstructorSegmentDefinition("day", "День", WireMinWidth: 2, DisplayMinWidth: 2),
             ],
             WirePattern: "{year}-{month}-{day}",
             DisplayPattern: "{day}.{month}.{year}"));
 
-        registry.Register(new SlashLeafConstructorDefinition(
+        registry.Register(new LeafConstructorDefinition(
             WeekGrainLeafId,
             "Неделя",
             [
-                new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("week", "Неделя", WireMinWidth: 2, DisplayMinWidth: 2),
+                new ConstructorSegmentDefinition("year", "Год"),
+                new ConstructorSegmentDefinition("week", "Неделя", WireMinWidth: 2, DisplayMinWidth: 2),
             ],
             WirePattern: "{year}-W{week}",
             DisplayPattern: "W{week} {year}"));
 
-        registry.Register(new SlashLeafConstructorDefinition(
+        registry.Register(new LeafConstructorDefinition(
             MonthWeekGrainLeafId,
             "Неделя месяца",
             [
-                new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
-                new SlashConstructorSegmentDefinition("month_week", "Неделя месяца"),
+                new ConstructorSegmentDefinition("year", "Год"),
+                new ConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
+                new ConstructorSegmentDefinition("month_week", "Неделя месяца"),
             ],
             WirePattern: "{year}-{month}-M{month_week}",
             DisplayPattern: "{month_week}-я нед. {month}.{year}"));
 
-        registry.Register(new SlashLeafConstructorDefinition(
+        registry.Register(new LeafConstructorDefinition(
             MonthGrainLeafId,
             "Месяц",
             [
-                new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
+                new ConstructorSegmentDefinition("year", "Год"),
+                new ConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
             ],
             WirePattern: "{year}-{month}",
             DisplayPattern: "{month}.{year}"));
 
-        registry.Register(new SlashLeafConstructorDefinition(
+        registry.Register(new LeafConstructorDefinition(
             QuarterGrainLeafId,
             "Квартал",
             [
-                new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("quarter", "Квартал"),
+                new ConstructorSegmentDefinition("year", "Год"),
+                new ConstructorSegmentDefinition("quarter", "Квартал"),
             ],
             WirePattern: "{year}-{quarter}",
             DisplayPattern: "{quarter} {year}"));
 
-        registry.Register(new SlashCompositeConstructorDefinition(
+        registry.Register(new CompositeConstructorDefinition(
             DateWeekId,
             "Неделя…",
             [
-                new SlashConstructorSlotDefinition("value", WeekGrainLeafId, "Неделя"),
+                new ConstructorSlotDefinition("value", WeekGrainLeafId, "Неделя"),
             ],
             WirePattern: "{value}"));
 
-        registry.Register(new SlashCompositeConstructorDefinition(
+        registry.Register(new CompositeConstructorDefinition(
             DateMonthWeekId,
             "Неделя месяца…",
             [
-                new SlashConstructorSlotDefinition("value", MonthWeekGrainLeafId, "Неделя месяца"),
+                new ConstructorSlotDefinition("value", MonthWeekGrainLeafId, "Неделя месяца"),
             ],
             WirePattern: "{value}"));
 
-        registry.Register(new SlashCompositeConstructorDefinition(
+        registry.Register(new CompositeConstructorDefinition(
             DateMonthId,
             "Месяц…",
             [
-                new SlashConstructorSlotDefinition("value", MonthGrainLeafId, "Месяц"),
+                new ConstructorSlotDefinition("value", MonthGrainLeafId, "Месяц"),
             ],
             WirePattern: "{value}"));
 
-        registry.Register(new SlashCompositeConstructorDefinition(
+        registry.Register(new CompositeConstructorDefinition(
             DateQuarterId,
             "Квартал…",
             [
-                new SlashConstructorSlotDefinition("value", QuarterGrainLeafId, "Квартал"),
+                new ConstructorSlotDefinition("value", QuarterGrainLeafId, "Квартал"),
             ],
             WirePattern: "{value}"));
 
-        registry.Register(new SlashCompositeConstructorDefinition(
+        registry.Register(new CompositeConstructorDefinition(
             DateRangeId,
             "Период…",
             [
-                new SlashConstructorSlotDefinition("from", DateLeafId, "Дата (с)"),
-                new SlashConstructorSlotDefinition("to", DateLeafId, "Дата (по)", SeparatorBefore: ".."),
+                new ConstructorSlotDefinition("from", DateLeafId, "Дата (с)"),
+                new ConstructorSlotDefinition("to", DateLeafId, "Дата (по)", SeparatorBefore: ".."),
             ],
             WirePattern: "{from}..{to}"));
     }
