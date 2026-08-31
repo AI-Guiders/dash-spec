@@ -77,7 +77,7 @@
 }
 
 .dash-command-suggest-table {
-  --suggest-cols: minmax(9rem, 1.35fr) minmax(6rem, 0.85fr) minmax(7rem, 1fr);
+  --suggest-cols: minmax(6rem, 0.85fr) minmax(9rem, 1.35fr) minmax(7rem, 1fr);
 }
 
 .dash-filter-command-bar > .dash-command-suggest-table {
