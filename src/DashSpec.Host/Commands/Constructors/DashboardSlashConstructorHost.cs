@@ -11,7 +11,7 @@ public sealed class DashboardSlashConstructorHost
     public DateConstructorSegmentProvider SegmentProvider { get; }
     public SlashValueConstructorNavigator Navigator { get; }
     public SlashConstructorSession Session { get; }
-    readonly ISlashPrefixArmProfile _datePrefixProfile;
+    readonly IPrefixArmProfile _datePrefixProfile;
 
     public DashboardSlashConstructorHost(IDashboardCultureAmbient cultureAmbient)
     {
