@@ -28,7 +28,11 @@ internal static class DashboardCommandCatalogBuilder
         DashboardFilterContext context,
         IReadOnlyList<DashSpecCommandDescriptor> pluginDescriptors)
     {
-        var report = CommandSource.From(BuildReportDescriptors(context), "report");
+        var report = CommandSource.From(
+            CommandScopeFilter
+                .WhereScope(BuildReportDescriptors(context), context.ActiveScope)
+                .ToList(),
+            "report");
 
         var plugins = CommandSource.From(
 
@@ -56,7 +60,8 @@ internal static class DashboardCommandCatalogBuilder
                 ShowHostSurfaceCommand.Id,
                 ShowCommandPaths.SurfacePath(surface.Id),
                 surface.Hint,
-                "Host"));
+                "Host",
+                scope: []));
         }
 
         foreach (var entry in context.CatalogEntries)
@@ -196,7 +201,8 @@ internal static class DashboardCommandCatalogBuilder
         string? argTail = null,
         string? argHint = null,
         IReadOnlyList<CommandPickerChoice>? argPickerChoices = null,
-        IReadOnlyList<ArgConstructorBinding>? argConstructors = null) =>
+        IReadOnlyList<ArgConstructorBinding>? argConstructors = null,
+        IReadOnlyList<string>? scope = null) =>
         new()
         {
             Domain = "",
@@ -211,6 +217,7 @@ internal static class DashboardCommandCatalogBuilder
             ArgPickerChoices = argPickerChoices ?? [],
             ArgConstructors = argConstructors ?? [],
             Surfaces = FilterSurfaces,
+            Scope = scope ?? [DashSpecCommandScope.Dashboard],
         };
 
     static CommandDescriptor ToCommandDescriptor(DashSpecCommandDescriptor descriptor) =>
@@ -240,6 +247,8 @@ internal static class DashboardCommandCatalogBuilder
             PluginId = descriptor.PluginId,
 
             Surfaces = FilterSurfaces,
+
+            Scope = [DashSpecCommandScope.Dashboard],
 
         };
 
