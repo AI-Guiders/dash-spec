@@ -10,6 +10,15 @@ public partial class Home : IDisposable
     [Inject] private DashboardPageController Page { get; set; } = default!;
 
     DashboardFilterCommandBar? _filterCommandBar;
+    DashboardCommandHighlightRegion? _commandHighlightRegion;
+
+    async Task OnCommandTailChangedAsync(string tail)
+    {
+        if (_commandHighlightRegion is not null)
+        {
+            await _commandHighlightRegion.NotifyTailChangedAsync(tail);
+        }
+    }
 
     void OnWindowKeyDown(KeyboardEventArgs e)
     {
