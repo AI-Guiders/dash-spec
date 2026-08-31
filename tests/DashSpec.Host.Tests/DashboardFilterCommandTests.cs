@@ -15,6 +15,7 @@ public class DashboardFilterCommandTests
     [InlineData("last-week")]
     [InlineData("2026-07")]
     [InlineData("2026-W26")]
+    [InlineData("2026-08-M2")]
     [InlineData("W26")]
     [InlineData("2026-Q1")]
     [InlineData("2026-q2")]
@@ -274,6 +275,20 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void DateFilterPresets_resolves_month_week_to_seven_day_blocks_from_first()
+    {
+        Assert.True(
+            DateFilterPresets.TryResolve("2026-08-M2", new DateOnly(2026, 6, 24), out var range, out var error),
+            error);
+        Assert.Equal(new DateOnly(2026, 8, 8), range.From);
+        Assert.Equal(new DateOnly(2026, 8, 14), range.To);
+
+        Assert.True(DateFilterPresets.TryResolve("2026-08-M1", new DateOnly(2026, 6, 24), out var first, out _));
+        Assert.Equal(new DateOnly(2026, 8, 1), first.From);
+        Assert.Equal(new DateOnly(2026, 8, 7), first.To);
+    }
+
+    [Fact]
     public void DateFilterPresets_resolves_iso_week_to_monday_sunday_bounds()
     {
         Assert.True(
@@ -324,6 +339,10 @@ public class DashboardFilterCommandTests
             result.Items,
             item => item.Kind == SlashCompletionItemKind.ConstructorEntry
                     && item.PickValue == DateConstructorCatalog.DateWeekId);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateMonthWeekId);
         Assert.Contains(
             result.Items,
             item => item.Kind == SlashCompletionItemKind.ConstructorEntry
@@ -456,6 +475,36 @@ public class DashboardFilterCommandTests
         Assert.True(outcome.Success, outcome.Error);
         Assert.True(uiState.DateFrom.ContainsKey("usage_date"));
         Assert.True(uiState.DateTo.ContainsKey("usage_date"));
+    }
+
+    [Fact]
+    public void Date_month_week_constructor_emits_wire_and_executes()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        host.SegmentProvider.Today = context.TodayUtc;
+        host.Session.Start(
+            DateConstructorCatalog.DateMonthWeekId,
+            FilterCommandPaths.FilterPath("usage_date"));
+
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("08");
+        host.Session.TryAdvance("2");
+
+        Assert.True(host.Session.TryComplete(out var wire));
+        Assert.Equal("2026-08-M2", wire);
+
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} {wire}",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.Equal(new DateOnly(2026, 8, 8), uiState.DateFrom["usage_date"]);
+        Assert.Equal(new DateOnly(2026, 8, 14), uiState.DateTo["usage_date"]);
     }
 
     [Fact]

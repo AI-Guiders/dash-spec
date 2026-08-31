@@ -27,6 +27,7 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
             "month" => BuildMonthSuggestions(draft, partial),
             "day" => BuildDaySuggestions(draft, partial),
             "week" => BuildWeekSuggestions(draft, partial),
+            "month_week" => BuildMonthWeekSuggestions(draft, partial),
             "quarter" => BuildQuarterSuggestions(partial),
             _ => [],
         };
@@ -131,6 +132,38 @@ public sealed class DateConstructorSegmentProvider : ISlashConstructorSegmentPro
         {
             var wire = week.ToString("00", CultureInfo.InvariantCulture);
             var label = $"Неделя {week}";
+            if (!MatchesPartial(wire, partial) && !MatchesPartial(label, partial))
+            {
+                continue;
+            }
+
+            items.Add(new SlashCompletionItem(
+                wire,
+                "",
+                label,
+                "Date",
+                label,
+                SlashCompletionItemKind.ConstructorStep,
+                wire));
+        }
+
+        return items;
+    }
+
+    IReadOnlyList<SlashCompletionItem> BuildMonthWeekSuggestions(SlashConstructorDraft draft, string partial)
+    {
+        if (!TryReadYear(draft, out var year) || !TryReadMonth(draft, out var month))
+        {
+            return [];
+        }
+
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+        var maxWeek = (daysInMonth + 6) / 7;
+        var items = new List<SlashCompletionItem>();
+        for (var week = 1; week <= maxWeek; week++)
+        {
+            var wire = week.ToString(CultureInfo.InvariantCulture);
+            var label = $"{week}-я неделя месяца";
             if (!MatchesPartial(wire, partial) && !MatchesPartial(label, partial))
             {
                 continue;
