@@ -22,11 +22,6 @@ internal static class DashboardCommandCatalogBuilder
 
 
 
-    static readonly IReadOnlyList<SlashPickerChoice> DatePresetChoices = SlashPickerChoices.FromLabels(
-        ("today", "Today"),
-        ("last-week", "Last 7 days"),
-        ("last-month", "Last month"));
-
     static readonly string[] FilterSurfaces = ["dash-slash", "dash-palette", "dash-ccl"];
 
     public static SlashCatalogIndex Build(
@@ -108,15 +103,30 @@ internal static class DashboardCommandCatalogBuilder
                     FilterCommandPaths.FilterPath(filterName),
                     DashboardFilterSlashLabels.DateFilterHelp(context, filterName),
                     "Filter",
-                    argTail: "picker+constructor:enum:date_preset+date_range",
+                    argTail: "picker+constructor:+date_today+date_week+date_month+date_quarter+date_range",
                     argHint: DashboardFilterSlashLabels.DateFilterHint(context, filterName),
-                    argPickerChoices: DatePresetChoices,
                     argConstructors:
                     [
                         new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateTodayId,
+                            "Сегодня",
+                            "Сегодняшний день"),
+                        new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateWeekId,
+                            "Неделя…",
+                            "ISO-неделя (YYYY-Www)"),
+                        new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateMonthId,
+                            "Месяц…",
+                            "Календарный месяц"),
+                        new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateQuarterId,
+                            "Квартал…",
+                            "Квартал Q1–Q4"),
+                        new SlashConstructorBinding(
                             Constructors.DateConstructorCatalog.DateRangeId,
                             "Период…",
-                            "Выбрать период с … по …"),
+                            "Период с … по …"),
                     ]));
 
                 continue;
