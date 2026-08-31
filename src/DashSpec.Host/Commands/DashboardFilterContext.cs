@@ -14,9 +14,11 @@ public sealed record CommandRunResult(
     string? PendingHostRoute = null);
 
 /// <summary>Invocation payload for dashboard filter commands (DASHSPEC-ADR-0043).</summary>
-public sealed class DashboardFilterContext : ICommandContext
+public sealed class DashboardFilterContext : ICommandScopedContext
 {
     public required string ReportId { get; init; }
+
+    public required IReadOnlyList<string> ActiveScope { get; init; }
 
     public required IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; init; }
 

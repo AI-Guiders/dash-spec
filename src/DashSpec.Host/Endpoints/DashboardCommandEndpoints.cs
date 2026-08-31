@@ -107,6 +107,7 @@ public static class DashboardCommandEndpoints
         new()
         {
             ReportId = session.Document.Id,
+            ActiveScope = [DashSpecCommandScope.Dashboard],
             FilterIndex = session.FilterIndex,
             ToolbarFilterNames = toolbar,
             CommandAliases = session.Document.ResolvedCommandAliases,
