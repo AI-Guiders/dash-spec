@@ -2,7 +2,7 @@
 
 using AIGuiders.Platform.CommandPlane;
 
-using AIGuiders.Platform.CommandPlane.Sources;
+using AIGuiders.Platform.CommandPlane.Catalog.Sources;
 
 using DashSpec.Abstractions.Plugins;
 
@@ -24,7 +24,7 @@ internal static class DashboardCommandCatalogBuilder
 
     static readonly string[] FilterSurfaces = ["dash-slash", "dash-palette", "dash-ccl"];
 
-    public static SlashCatalogIndex Build(
+    public static CommandCatalogIndex Build(
         DashboardFilterContext context,
         IReadOnlyList<DashSpecCommandDescriptor> pluginDescriptors)
     {
@@ -38,17 +38,17 @@ internal static class DashboardCommandCatalogBuilder
 
 
 
-        return SlashCatalogComposer.Build(Bundled, report, plugins);
+        return CommandCatalogComposer.Build(Bundled, report, plugins);
 
     }
 
 
 
-    static IReadOnlyList<SlashCommandDescriptor> BuildReportDescriptors(DashboardFilterContext context)
+    static IReadOnlyList<CommandDescriptor> BuildReportDescriptors(DashboardFilterContext context)
 
     {
 
-        var descriptors = new List<SlashCommandDescriptor>();
+        var descriptors = new List<CommandDescriptor>();
 
 
 
@@ -181,14 +181,14 @@ internal static class DashboardCommandCatalogBuilder
 
     }
 
-    static SlashCommandDescriptor NavDescriptor(
+    static CommandDescriptor NavDescriptor(
         string commandId,
         string path,
         string help,
         string group,
         string? argTail = null,
         string? argHint = null,
-        IReadOnlyList<SlashPickerChoice>? argPickerChoices = null,
+        IReadOnlyList<CommandPickerChoice>? argPickerChoices = null,
         IReadOnlyList<SlashConstructorBinding>? argConstructors = null) =>
         new()
         {
@@ -206,7 +206,7 @@ internal static class DashboardCommandCatalogBuilder
             Surfaces = FilterSurfaces,
         };
 
-    static SlashCommandDescriptor ToSlashDescriptor(DashSpecCommandDescriptor descriptor) =>
+    static CommandDescriptor ToSlashDescriptor(DashSpecCommandDescriptor descriptor) =>
 
         new()
 
