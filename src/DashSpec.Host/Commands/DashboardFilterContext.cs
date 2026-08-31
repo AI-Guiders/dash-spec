@@ -37,6 +37,9 @@ public sealed class DashboardFilterContext : ICommandContext
 
     public DateOnly TodayUtc { get; init; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
+    public System.Globalization.CultureInfo Culture { get; init; } =
+        System.Globalization.CultureInfo.CurrentCulture;
+
     public string CanonicalPath { get; set; } = "";
 
     public string ArgTail { get; set; } = "";

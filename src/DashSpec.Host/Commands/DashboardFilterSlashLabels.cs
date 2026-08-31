@@ -78,7 +78,7 @@ internal static class DashboardFilterSlashLabels
 
 
 
-        return $"{label} — конструкторы (день / неделя года / неделя месяца / месяц / квартал / период) или free text";
+        return $"{label} — введите дату в формате локали или выберите конструктор";
 
     }
 

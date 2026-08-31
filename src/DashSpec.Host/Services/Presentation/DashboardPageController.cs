@@ -30,6 +30,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
     private readonly DashboardFilterCommandService _filterCommands;
+    private readonly IDashboardCultureAmbient _cultureAmbient;
     private readonly DevSpecReloadNotifier? _reloadNotifier;
     private readonly LoadTrace _loadTrace;
     private readonly ILogger<DashboardPageController> _logger;
@@ -43,6 +44,7 @@ public sealed class DashboardPageController : IDisposable
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
         DashboardFilterCommandService filterCommands,
+        IDashboardCultureAmbient cultureAmbient,
         IWebHostEnvironment environment,
         DevSpecReloadNotifier reloadNotifier,
         LoadTrace loadTrace,
@@ -56,6 +58,7 @@ public sealed class DashboardPageController : IDisposable
         _filters = filters;
         _refresh = refresh;
         _filterCommands = filterCommands;
+        _cultureAmbient = cultureAmbient;
         _loadTrace = loadTrace;
         _logger = logger;
         _refresh.StateChanged += OnRefreshStateChanged;
@@ -721,6 +724,7 @@ public sealed class DashboardPageController : IDisposable
             ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
             ActivePageId = ActivePageId,
             SwitchableCards = BuildSwitchableCards(),
+            Culture = _cultureAmbient.Culture,
         };
 
     IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
