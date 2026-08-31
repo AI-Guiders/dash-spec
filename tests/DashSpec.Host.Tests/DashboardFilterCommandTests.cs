@@ -97,7 +97,7 @@ public class DashboardFilterCommandTests
 
         Assert.True(catalog.TryGet(FilterCommandPaths.FilterPath("usage_date"), out var route));
         Assert.Equal(SelectDateFilterCommand.Id, route.CommandId);
-        Assert.Equal(SlashArgTailKind.Picker, route.ArgTailKind);
+        Assert.Equal(CommandArgTailKind.Picker, route.ArgTailKind);
         Assert.Contains(
             route.ResolvedConstructors,
             binding => binding.ConstructorId == DateConstructorCatalog.DateTodayId);

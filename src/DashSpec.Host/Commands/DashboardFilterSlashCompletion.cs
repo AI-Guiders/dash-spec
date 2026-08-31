@@ -8,10 +8,10 @@ namespace DashSpec.Host.Commands;
 internal static class DashboardFilterSlashCompletion
 {
     public static SlashCompletionResult GetResult(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         DashboardFilterContext context,
         string typedLine,
-        ISlashPickerChoiceSource pickerSource,
+        ICommandPickerChoiceSource pickerSource,
         SlashConstructorSession? constructorSession,
         SlashCompletionOptions? options = null)
     {
@@ -27,7 +27,7 @@ internal static class DashboardFilterSlashCompletion
     }
 
     public static bool TryResolveCommandPath(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         string typedLine,
         out string canonicalPath)
     {
@@ -104,7 +104,7 @@ internal static class DashboardFilterSlashCompletion
     public static string ToInputTail(string line) => SanitizeLine(line);
 
     public static bool TrySplitPathAndArg(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         string typedLine,
         out string canonicalPath,
         out string argTail)
@@ -123,7 +123,7 @@ internal static class DashboardFilterSlashCompletion
     }
 
     public static bool HasCommandPathChanged(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         string previousLine,
         string nextLine)
     {
@@ -168,7 +168,7 @@ internal static class DashboardFilterSlashCompletion
     }
 
     static bool TryBuildTreeChoiceResult(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         DashboardFilterContext context,
         string body,
         out SlashCompletionResult result)
@@ -341,7 +341,7 @@ internal static class DashboardFilterSlashCompletion
     }
 
     static bool TryBuildFilterChoice(
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         DashboardFilterContext context,
         string body,
         string partial,
@@ -364,7 +364,7 @@ internal static class DashboardFilterSlashCompletion
 
             items.Add(new SlashCompletionItem(
                 path + " ",
-                route.SlashPath,
+                route.Path,
                 route.Help,
                 route.Group ?? "Filter",
                 filterName));
@@ -461,7 +461,7 @@ internal static class DashboardFilterSlashCompletion
             placeholder,
             nextStepHint,
             null,
-            nameof(SlashArgTailKind.None));
+            nameof(CommandArgTailKind.None));
 
     static bool IsTreeBranchPath(string canonicalPath, DashboardFilterContext context)
     {
@@ -477,7 +477,7 @@ internal static class DashboardFilterSlashCompletion
             canonicalPath.Equals(ViewCommandPaths.CardPath(card.CardId), StringComparison.OrdinalIgnoreCase));
     }
 
-    static bool IsArgOrReadyPhase(SlashCatalogIndex catalog, DashboardFilterContext context, string body)
+    static bool IsArgOrReadyPhase(CommandCatalogIndex catalog, DashboardFilterContext context, string body)
     {
         if (body.Length == 0)
         {
@@ -501,7 +501,7 @@ internal static class DashboardFilterSlashCompletion
         }
 
         if (line.IsExactPathMatch
-            && route.ArgTailKind is SlashArgTailKind.Picker or SlashArgTailKind.Required
+            && route.ArgTailKind is CommandArgTailKind.Picker or CommandArgTailKind.Required
             && (line.EndsWithSpaceAfterPath || body.EndsWith(' ')))
         {
             return true;
@@ -512,7 +512,7 @@ internal static class DashboardFilterSlashCompletion
             return false;
         }
 
-        return line.EndsWithSpaceAfterPath || route.ArgTailKind == SlashArgTailKind.None;
+        return line.EndsWithSpaceAfterPath || route.ArgTailKind == CommandArgTailKind.None;
     }
 
     static ParsedBody ParseBody(string body)

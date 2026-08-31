@@ -15,7 +15,7 @@ public sealed class DashboardFilterCommandService(
     DashSpecContributorRegistry pluginRegistry,
     DashboardSlashConstructorHost constructorHost)
 {
-    public SlashCatalogIndex BuildCatalog(DashboardFilterContext context) =>
+    public CommandCatalogIndex BuildCatalog(DashboardFilterContext context) =>
         DashboardCommandCatalogBuilder.Build(context, pluginRegistry.CommandDescriptors);
 
     public SlashCompletionResult GetCompletionResult(
@@ -58,6 +58,6 @@ public sealed class DashboardFilterCommandService(
     public CommandHighlightState ResolveHighlights(string tail, DashboardFilterContext context) =>
         DashboardCommandHighlightResolver.Resolve(tail, context);
 
-    ISlashPickerChoiceSource CreatePickerSource(DashboardFilterContext context) =>
+    ICommandPickerChoiceSource CreatePickerSource(DashboardFilterContext context) =>
         new DashboardFilterPickerSource(session, context.ToolbarFilterNames);
 }

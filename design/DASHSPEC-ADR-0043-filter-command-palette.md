@@ -12,7 +12,7 @@ Toolbar filters (`filter`, `toolbar`, chips/date widgets) — единствен
 
 В Guiders stack уже есть платформенный слой:
 
-- **Catalog** — discoverability (`SlashCommandDescriptor`, path, help, arg_tail)
+- **Catalog** — discoverability (`CommandDescriptor`, path, help, arg_tail)
 - **Registry** — `PlatformCommandRegistry<TContext>` → `TryExecute(commandId, …)`
 - **Command** — `IPlatformCommand<TContext>` / `PlatformCommand<TContext>`
 - **Surface** — slash bar, `Ctrl+K`, toolbar, MCP — параллельные invokers одного executor
