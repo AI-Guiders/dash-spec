@@ -44,7 +44,8 @@ public sealed class DashboardFilterCommandService(
             context.PendingCatalogEntryId,
             context.PendingPageId,
             context.PendingCardId,
-            context.PendingViewId);
+            context.PendingViewId,
+            context.PendingHostRoute);
     }
 
     public bool TryValidateRunnable(

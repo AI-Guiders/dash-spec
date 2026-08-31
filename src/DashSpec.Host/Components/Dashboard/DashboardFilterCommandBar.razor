@@ -154,6 +154,7 @@
     public void OpenPaletteFromHost()
     {
         _paletteOpen = true;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     void OpenPalette() => _paletteOpen = true;
@@ -221,8 +222,22 @@
             {
                 ConstructorHost.Session.Cancel();
                 RefreshSuggestions();
+                return;
             }
 
+            if (_suggestions.Count > 0 || !string.IsNullOrWhiteSpace(_line))
+            {
+                _line = "";
+                _selected = 0;
+                _validationError = null;
+                CommandSession.ClearDraft(CommandContext);
+                RefreshSuggestions();
+                return;
+            }
+
+            CancelBlurDelay();
+            _focused = false;
+            CommandSession.SetBarActive(false, CommandContext);
             return;
         }
 

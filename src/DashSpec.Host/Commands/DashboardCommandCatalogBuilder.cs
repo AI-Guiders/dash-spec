@@ -50,7 +50,14 @@ internal static class DashboardCommandCatalogBuilder
 
         var descriptors = new List<CommandDescriptor>();
 
-
+        foreach (var surface in HostSurfaceCatalog.Surfaces)
+        {
+            descriptors.Add(NavDescriptor(
+                ShowHostSurfaceCommand.Id,
+                ShowCommandPaths.SurfacePath(surface.Id),
+                surface.Hint,
+                "Host"));
+        }
 
         foreach (var entry in context.CatalogEntries)
 

@@ -23,6 +23,8 @@ internal static class DashboardCommandRegistryFactory
 
         registry.Register(new SelectPageCommand());
 
+        registry.Register(new ShowHostSurfaceCommand());
+
         registry.Register(new SelectDateFilterCommand());
 
         registry.Register(new SelectViewCommand());
