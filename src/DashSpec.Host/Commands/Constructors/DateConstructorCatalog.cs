@@ -16,8 +16,8 @@ internal static class DateConstructorCatalog
             "Дата",
             [
                 new SlashConstructorSegmentDefinition("year", "Год"),
-                new SlashConstructorSegmentDefinition("month", "Месяц"),
-                new SlashConstructorSegmentDefinition("day", "День"),
+                new SlashConstructorSegmentDefinition("month", "Месяц", WireMinWidth: 2, DisplayMinWidth: 2),
+                new SlashConstructorSegmentDefinition("day", "День", WireMinWidth: 2, DisplayMinWidth: 2),
             ],
             WirePattern: "{year}-{month}-{day}",
             DisplayPattern: "{day}.{month}.{year}"));
