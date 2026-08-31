@@ -9,7 +9,7 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
     public CommandOutcome TryExecuteSlashLine(
         string line,
         DashboardFilterContext context,
-        SlashCatalogIndex catalog)
+        CommandCatalogIndex catalog)
     {
         if (!TryResolveRunnable(line, context, catalog, out var resolution, out var error))
         {
@@ -41,7 +41,7 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
     public bool TryValidateRunnable(
         string line,
         DashboardFilterContext context,
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         out string? error)
     {
         if (TryResolveRunnable(line, context, catalog, out _, out error))
@@ -56,7 +56,7 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
     static bool TryResolveRunnable(
         string line,
         DashboardFilterContext context,
-        SlashCatalogIndex catalog,
+        CommandCatalogIndex catalog,
         out SlashLineResolver.SlashLineResolution resolution,
         out string? error)
     {
@@ -94,14 +94,14 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
     static bool NeedsArgument(SlashLineResolver.SlashLineResolution resolution) =>
         resolution.ArgTailKind switch
         {
-            SlashArgTailKind.Required or SlashArgTailKind.Picker =>
+            CommandArgTailKind.Required or CommandArgTailKind.Picker =>
                 !resolution.HasArgTailContent,
             _ => false,
         };
 
     static string MissingArgsMessage(
         SlashLineResolver.SlashLineResolution resolution,
-        SlashCatalogIndex catalog)
+        CommandCatalogIndex catalog)
     {
         if (!catalog.TryGet(resolution.CanonicalPath, out var route))
         {
@@ -110,9 +110,9 @@ public sealed class DashboardCommandExecutor(DashSpecCommandPluginRegistry plugi
 
         return route.ArgTailKind switch
         {
-            SlashArgTailKind.Picker => "Выберите значение (Tab) или допишите аргумент.",
-            SlashArgTailKind.Required => "Допишите значение аргумента.",
-            SlashArgTailKind.Optional => "Добавьте аргумент или завершите команду.",
+            CommandArgTailKind.Picker => "Выберите значение (Tab) или допишите аргумент.",
+            CommandArgTailKind.Required => "Допишите значение аргумента.",
+            CommandArgTailKind.Optional => "Добавьте аргумент или завершите команду.",
             _ => "Команда неполная — укажите аргумент.",
         };
     }
