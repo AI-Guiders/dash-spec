@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-08-28 |
-| **Relates to** | [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0037](DASHSPEC-ADR-0037-filter-scopes-and-toolbar-grouping.md), [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md), [GUIDERS-ADR-0009](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0009-command-surface-pattern.md), [GUIDERS-ADR-0010](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0010-platform-mechanics.md), [FORGE-ADR-0048](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0048-human-primary-surface-and-command-palette.md), [FORGE-ADR-0025](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0025-human-command-parity.md) |
+| **Relates to** | [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0037](DASHSPEC-ADR-0037-filter-scopes-and-toolbar-grouping.md), [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md), [ADR-0044](DASHSPEC-ADR-0044-date-filter-value-constructor.md), [GUIDERS-ADR-0009](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0009-command-surface-pattern.md), [GUIDERS-ADR-0010](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0010-platform-mechanics.md), [GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md), [FORGE-ADR-0048](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0048-human-primary-surface-and-command-palette.md), [FORGE-ADR-0025](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0025-human-command-parity.md) |
 
 ## Context
 
@@ -139,6 +139,7 @@ Filter state serializes to query string (existing Host behaviour). Commands writ
 | **W2** | `SelectFieldFilterCommand` (single / all / multi + picker) |
 | **W3** | `Ctrl+K` palette + optional `commands { }` aliases in Core parser |
 | **W4** | MCP tool / plugin `RegisterCommands` hook |
+| **W5** | Date value constructor in CCL ([ADR-0044](DASHSPEC-ADR-0044-date-filter-value-constructor.md), [GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md)) |
 
 ## Alternatives considered
 
