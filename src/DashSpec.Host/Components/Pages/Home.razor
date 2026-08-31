@@ -8,7 +8,7 @@
 
 <PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
 
-<div class="dash-home" @onkeydown:window="OnWindowKeyDown">
+<div class="dash-home">
 <DashboardToolbar Busy="Page.Switching"
                   ShowUpload="HostEnvironment.IsDevelopment()"
                   SpecSource="Page.LoadedSpecSource"
@@ -31,7 +31,6 @@ else if (!Page.Loaded)
 else
 {
     var chrome = Page.Session.Document.FiltersChrome;
-    var commandContext = Page.BuildCommandContext();
 
     <DashboardTabBar Tabs="Page.Session.Document.Tabs"
                      ActiveTabId="Page.ActiveTabId"
@@ -44,11 +43,6 @@ else
                              ActivePageId="Page.ActivePageId"
                              OnSelect="Page.SelectPageAsync" />
     }
-
-    <DashboardFilterCommandBar @ref="_filterCommandBar"
-                               CommandContext="commandContext"
-                               CommandError="Page.CommandError"
-                               OnCommit="Page.OnFilterCommandCommittedAsync" />
 
     @if (Page.HasCatalog)
     {

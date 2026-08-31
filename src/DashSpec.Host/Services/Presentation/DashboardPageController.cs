@@ -16,6 +16,7 @@ using DashSpec.Host.Services.Models;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Host.Services.Presentation;
 
@@ -34,6 +35,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly DevSpecReloadNotifier? _reloadNotifier;
     private readonly LoadTrace _loadTrace;
     private readonly ILogger<DashboardPageController> _logger;
+    private readonly NavigationManager _navigation;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -48,7 +50,8 @@ public sealed class DashboardPageController : IDisposable
         IWebHostEnvironment environment,
         DevSpecReloadNotifier reloadNotifier,
         LoadTrace loadTrace,
-        ILogger<DashboardPageController> logger)
+        ILogger<DashboardPageController> logger,
+        NavigationManager navigation)
     {
         _session = session;
         _interactions = interactions;
@@ -61,6 +64,7 @@ public sealed class DashboardPageController : IDisposable
         _cultureAmbient = cultureAmbient;
         _loadTrace = loadTrace;
         _logger = logger;
+        _navigation = navigation;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -691,6 +695,12 @@ public sealed class DashboardPageController : IDisposable
         if (run.PendingPageId is not null)
         {
             await SelectPageAsync(run.PendingPageId).ConfigureAwait(false);
+            return;
+        }
+
+        if (run.PendingHostRoute is not null)
+        {
+            _navigation.NavigateTo(run.PendingHostRoute);
             return;
         }
 
