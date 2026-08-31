@@ -1,8 +1,10 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using AIGuiders.Platform.CommandPlane
 @using DashSpec.Host.Commands
+@using DashSpec.Host.Commands.Constructors
 @inject DashboardFilterCommandService CommandService
 @inject DashboardCommandSession CommandSession
+@inject DashboardSlashConstructorHost ConstructorHost
 @inject IJSRuntime Js
 
 @if (Visible)
@@ -122,6 +124,11 @@
         get => _line;
         set
         {
+            if (_line != DashboardFilterSlashCompletion.ToInputTail(value))
+            {
+                DashboardFilterCommandAcceptance.CancelConstructorIfActive(ConstructorHost);
+            }
+
             _line = DashboardFilterSlashCompletion.ToInputTail(value);
             _validationError = null;
             RefreshSuggestions();
@@ -147,6 +154,13 @@
     {
         if (e.Key == "Escape")
         {
+            if (ConstructorHost.Session.IsActive)
+            {
+                ConstructorHost.Session.Cancel();
+                RefreshSuggestions();
+                return;
+            }
+
             await Close();
             return;
         }
@@ -189,6 +203,19 @@
 
         if (e.Key == "Enter")
         {
+            if (ConstructorHost.Session.IsActive)
+            {
+                if (ConstructorHost.Session.TryComplete(out var wire)
+                    && CommandService.BuildCatalog(CommandContext) is { } catalog
+                    && DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, _line, out var path))
+                {
+                    _line = $"{path} {wire}";
+                    RefreshSuggestions();
+                }
+
+                return;
+            }
+
             var line = DashboardFilterSlashCompletion.ToCommandLine(_line);
             if (DashboardFilterSlashCompletion.IsIncompleteRoot(_line))
             {
@@ -208,17 +235,21 @@
 
     void Accept(SlashCompletionItem item)
     {
-        _line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
-        if (item.InsertText.EndsWith(' '))
+        if (DashboardFilterCommandAcceptance.TryAcceptItem(
+                item,
+                CommandService,
+                CommandContext,
+                ConstructorHost,
+                ref _line))
         {
-            _line += " ";
+            _selected = 0;
+            RefreshSuggestions();
         }
-
-        RefreshSuggestions();
     }
 
     async Task Close()
     {
+        DashboardFilterCommandAcceptance.CancelConstructorIfActive(ConstructorHost);
         _line = "";
         _validationError = null;
         _selected = 0;

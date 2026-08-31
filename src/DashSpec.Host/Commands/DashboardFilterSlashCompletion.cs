@@ -11,16 +11,34 @@ internal static class DashboardFilterSlashCompletion
         SlashCatalogIndex catalog,
         DashboardFilterContext context,
         string typedLine,
-        ISlashPickerChoiceSource pickerSource)
+        ISlashPickerChoiceSource pickerSource,
+        SlashConstructorSession? constructorSession)
     {
         var body = SanitizeLine(typedLine);
-        if (TryBuildTreeChoiceResult(catalog, context, body, out var treeChoice))
+        if (constructorSession?.IsActive != true
+            && TryBuildTreeChoiceResult(catalog, context, body, out var treeChoice))
         {
             return treeChoice;
         }
 
-        var platform = SlashCompletion.GetResult(catalog, body, pickerSource);
+        var platform = SlashCompletion.GetResult(catalog, body, pickerSource, constructorSession);
         return platform with { Guidance = DashboardFilterCommandDisplay.ForCli(platform.Guidance) };
+    }
+
+    public static bool TryResolveCommandPath(
+        SlashCatalogIndex catalog,
+        string typedLine,
+        out string canonicalPath)
+    {
+        canonicalPath = "";
+        var body = SanitizeLine(typedLine);
+        if (!SlashLineResolver.TryResolveBody(body, catalog, out var line))
+        {
+            return false;
+        }
+
+        canonicalPath = line.CanonicalPath;
+        return true;
     }
 
     public static string SanitizeLine(string line)
