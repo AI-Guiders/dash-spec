@@ -108,9 +108,16 @@ internal static class DashboardCommandCatalogBuilder
                     FilterCommandPaths.FilterPath(filterName),
                     DashboardFilterSlashLabels.DateFilterHelp(context, filterName),
                     "Filter",
-                    argTail: "picker:enum:date_preset",
+                    argTail: "picker+constructor:enum:date_preset+date_range",
                     argHint: DashboardFilterSlashLabels.DateFilterHint(context, filterName),
-                    argPickerChoices: DatePresetChoices));
+                    argPickerChoices: DatePresetChoices,
+                    argConstructors:
+                    [
+                        new SlashConstructorBinding(
+                            Constructors.DateConstructorCatalog.DateRangeId,
+                            "Период…",
+                            "Выбрать период с … по …"),
+                    ]));
 
                 continue;
 
@@ -167,7 +174,8 @@ internal static class DashboardCommandCatalogBuilder
         string group,
         string? argTail = null,
         string? argHint = null,
-        IReadOnlyList<SlashPickerChoice>? argPickerChoices = null) =>
+        IReadOnlyList<SlashPickerChoice>? argPickerChoices = null,
+        IReadOnlyList<SlashConstructorBinding>? argConstructors = null) =>
         new()
         {
             Domain = "",
@@ -180,6 +188,7 @@ internal static class DashboardCommandCatalogBuilder
             ArgTail = argTail,
             ArgHint = argHint,
             ArgPickerChoices = argPickerChoices ?? [],
+            ArgConstructors = argConstructors ?? [],
             Surfaces = FilterSurfaces,
         };
 

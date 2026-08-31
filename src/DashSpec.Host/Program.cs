@@ -1,6 +1,7 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpec.Host.Commands;
+using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Endpoints;
@@ -137,6 +138,7 @@ builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
+builder.Services.AddScoped<DashboardSlashConstructorHost>();
 builder.Services.AddScoped<DashboardCommandSession>();
 builder.Services.AddScoped<DashboardRefreshCoordinator>();
 builder.Services.AddScoped<DashboardFilterCommandService>();

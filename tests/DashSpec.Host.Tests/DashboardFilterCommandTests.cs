@@ -2,6 +2,7 @@ using AIGuiders.Platform.CommandPlane;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Commands;
+using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Services.Presentation;
 using Xunit;
 
@@ -112,7 +113,7 @@ public class DashboardFilterCommandTests
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter ", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter ", null, null);
 
         Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
         Assert.Equal(3, result.Items.Count);
@@ -125,7 +126,7 @@ public class DashboardFilterCommandTests
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select", null, null);
 
         Assert.Equal(SlashInputMode.Path, result.Guidance.Mode);
         Assert.Single(result.Items);
@@ -172,7 +173,7 @@ public class DashboardFilterCommandTests
                 ["user_name"] = "Пользователь",
             });
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "select filter", null, null);
 
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == "usage_date");
@@ -203,7 +204,7 @@ public class DashboardFilterCommandTests
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date", "user_name", "app_name"]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "/select", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "/select", null, null);
 
         Assert.Single(result.Items);
         Assert.Equal("filter", result.Items[0].StepSegment);
@@ -219,6 +220,7 @@ public class DashboardFilterCommandTests
             catalog,
             context,
             $"{FilterCommandPaths.FilterPath("usage_date")} ",
+            null,
             null);
 
         Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
@@ -250,6 +252,56 @@ public class DashboardFilterCommandTests
 
         Assert.Contains(items, item => item.PickValue == "today");
         Assert.Contains(items, item => item.PickValue == "last-week");
+    }
+
+    [Fact]
+    public void GetResult_lists_date_range_constructor_entry()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var service = CreateCommandService(uiState);
+        var result = service.GetCompletionResult(
+            $"{FilterCommandPaths.FilterPath("usage_date")} ",
+            context);
+
+        Assert.Equal(SlashInputMode.Picker, result.Guidance.Mode);
+        Assert.Contains(
+            result.Items,
+            item => item.Kind == SlashCompletionItemKind.ConstructorEntry
+                    && item.PickValue == DateConstructorCatalog.DateRangeId);
+    }
+
+    [Fact]
+    public void Date_range_constructor_emits_wire_and_executes()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(uiState, ["usage_date"]);
+        var host = new DashboardSlashConstructorHost();
+        host.SegmentProvider.Today = context.TodayUtc;
+        host.Session.Start(
+            DateConstructorCatalog.DateRangeId,
+            FilterCommandPaths.FilterPath("usage_date"));
+
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("08");
+        host.Session.TryAdvance("01");
+        host.Session.TryAdvance("2026");
+        host.Session.TryAdvance("09");
+        host.Session.TryAdvance("15");
+
+        Assert.True(host.Session.TryComplete(out var wire));
+        Assert.Equal("2026-08-01..2026-09-15", wire);
+
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var executor = new DashboardCommandExecutor(new DashSpecCommandPluginRegistry());
+        var outcome = executor.TryExecuteSlashLine(
+            $"{FilterCommandPaths.FilterPath("usage_date")} {wire}",
+            context,
+            catalog);
+
+        Assert.True(outcome.Success, outcome.Error);
+        Assert.True(uiState.DateFrom.ContainsKey("usage_date"));
+        Assert.True(uiState.DateTo.ContainsKey("usage_date"));
     }
 
     [Fact]
@@ -361,7 +413,7 @@ public class DashboardFilterCommandTests
                     [new DashboardCardViewOption("heatmap", "Heatmap"), new DashboardCardViewOption("line", "Line")]),
             ]);
         var catalog = DashboardCommandCatalogBuilder.Build(context, []);
-        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "", null);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, context, "", null, null);
 
         Assert.Equal(2, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == FilterCommandPaths.RootVerb);
@@ -489,13 +541,17 @@ public class DashboardFilterCommandTests
         Assert.True(session.IsFilterHighlighted("usage_date"));
     }
 
-    static DashboardCommandSession CreateCommandSession(DashboardFilterUiState uiState)
-    {
-        var commandService = new DashboardFilterCommandService(
+    static DashboardFilterCommandService CreateCommandService(DashboardFilterUiState uiState) =>
+        new(
             new StubDashboardSession(),
             uiState,
             new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
-            DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins());
+            DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
+            new DashboardSlashConstructorHost());
+
+    static DashboardCommandSession CreateCommandSession(DashboardFilterUiState uiState)
+    {
+        var commandService = CreateCommandService(uiState);
         return new DashboardCommandSession(commandService);
     }
 
