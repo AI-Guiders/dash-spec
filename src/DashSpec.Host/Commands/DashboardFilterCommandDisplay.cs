@@ -66,28 +66,28 @@ internal static class DashboardFilterCommandDisplay
 
 
 
-    public static string FormatSuggestion(SlashCompletionItem item, DashboardFilterContext context) =>
+    public static string FormatSuggestion(ArgCompletionItem item, DashboardFilterContext context) =>
 
         FormatSuggestionParts(item, context).Primary;
 
 
 
     public static (string Primary, string? Secondary) FormatSuggestionParts(
-        SlashCompletionItem item,
+        ArgCompletionItem item,
         DashboardFilterContext context)
     {
-        if (item.Kind == SlashCompletionItemKind.ConstructorEntry)
+        if (item.Kind == ArgCompletionItemKind.ConstructorEntry)
         {
             return (item.StepSegment ?? item.Help, item.PickValue);
         }
 
-        if (item.Kind == SlashCompletionItemKind.ConstructorStep)
+        if (item.Kind == ArgCompletionItemKind.ConstructorStep)
         {
             return (item.StepSegment ?? item.PickValue ?? "", item.PickValue);
         }
 
         if (!string.IsNullOrWhiteSpace(item.PickValue)
-            && item.Kind == SlashCompletionItemKind.Picker)
+            && item.Kind == ArgCompletionItemKind.Picker)
         {
             return (item.PickValue, null);
         }

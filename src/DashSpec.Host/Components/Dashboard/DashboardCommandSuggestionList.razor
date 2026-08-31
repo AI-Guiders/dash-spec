@@ -36,8 +36,8 @@
     [Parameter] public string? Id { get; set; }
     [Parameter] public string CssClass { get; set; } = "";
     [Parameter] public string AriaLabel { get; set; } = "Commands";
-    [Parameter] public IReadOnlyList<SlashCompletionItem> Items { get; set; } = [];
+    [Parameter] public IReadOnlyList<ArgCompletionItem> Items { get; set; } = [];
     [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
     [Parameter] public int SelectedIndex { get; set; }
-    [Parameter] public EventCallback<SlashCompletionItem> OnSelect { get; set; }
+    [Parameter] public EventCallback<ArgCompletionItem> OnSelect { get; set; }
 }
