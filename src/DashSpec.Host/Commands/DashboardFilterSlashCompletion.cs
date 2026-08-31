@@ -12,7 +12,8 @@ internal static class DashboardFilterSlashCompletion
         DashboardFilterContext context,
         string typedLine,
         ISlashPickerChoiceSource pickerSource,
-        SlashConstructorSession? constructorSession)
+        SlashConstructorSession? constructorSession,
+        SlashCompletionOptions? options = null)
     {
         var body = SanitizeLine(typedLine);
         if (constructorSession?.IsActive != true
@@ -21,7 +22,7 @@ internal static class DashboardFilterSlashCompletion
             return treeChoice;
         }
 
-        var platform = SlashCompletion.GetResult(catalog, body, pickerSource, constructorSession);
+        var platform = SlashCompletion.GetResult(catalog, body, pickerSource, constructorSession, options);
         return platform with { Guidance = DashboardFilterCommandDisplay.ForCli(platform.Guidance) };
     }
 
@@ -101,6 +102,39 @@ internal static class DashboardFilterSlashCompletion
     }
 
     public static string ToInputTail(string line) => SanitizeLine(line);
+
+    public static bool TrySplitPathAndArg(
+        SlashCatalogIndex catalog,
+        string typedLine,
+        out string canonicalPath,
+        out string argTail)
+    {
+        canonicalPath = "";
+        argTail = "";
+        var body = SanitizeLine(typedLine);
+        if (!SlashLineResolver.TryResolveBody(body, catalog, out var line))
+        {
+            return false;
+        }
+
+        canonicalPath = line.CanonicalPath;
+        argTail = line.ArgTail;
+        return true;
+    }
+
+    public static bool HasCommandPathChanged(
+        SlashCatalogIndex catalog,
+        string previousLine,
+        string nextLine)
+    {
+        if (!TrySplitPathAndArg(catalog, previousLine, out var oldPath, out _)
+            || !TrySplitPathAndArg(catalog, nextLine, out var newPath, out _))
+        {
+            return true;
+        }
+
+        return !string.Equals(oldPath, newPath, StringComparison.OrdinalIgnoreCase);
+    }
 
     public static string LineFromInsert(string insertText) => SanitizeLine(insertText);
 

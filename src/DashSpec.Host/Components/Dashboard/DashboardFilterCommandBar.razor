@@ -112,12 +112,22 @@
         get => _line;
         set
         {
-            if (_line != DashboardFilterSlashCompletion.ToInputTail(value))
+            var next = DashboardFilterSlashCompletion.ToInputTail(value);
+            if (_line != next)
             {
-                DashboardFilterCommandAcceptance.CancelConstructorIfActive(ConstructorHost);
+                var catalog = CommandService.BuildCatalog(CommandContext);
+                if (DashboardFilterSlashCompletion.HasCommandPathChanged(catalog, _line, next))
+                {
+                    DashboardFilterCommandAcceptance.CancelConstructorIfActive(ConstructorHost);
+                }
+                else if (ConstructorHost.Session.IsActive
+                         && DashboardFilterSlashCompletion.TrySplitPathAndArg(catalog, next, out _, out var argTail))
+                {
+                    ConstructorHost.Session.SetTypedArgTail(argTail);
+                }
             }
 
-            _line = DashboardFilterSlashCompletion.ToInputTail(value);
+            _line = next;
             _validationError = null;
             RefreshSuggestions();
         }
@@ -256,10 +266,33 @@
             if (ConstructorHost.Session.IsActive)
             {
                 if (ConstructorHost.Session.TryComplete(out var wire)
-                    && CommandService.BuildCatalog(CommandContext) is { } catalog
-                    && DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, _line, out var path))
+                    && DashboardFilterSlashCompletion.TryResolveCommandPath(
+                        CommandService.BuildCatalog(CommandContext),
+                        _line,
+                        out var path))
                 {
                     _line = $"{path} {wire}";
+                    RefreshSuggestions();
+                }
+
+                return;
+            }
+
+            if (_guidance.Mode == SlashInputMode.Ready
+                && !string.IsNullOrWhiteSpace(_guidance.ReadyWire)
+                && DashboardFilterSlashCompletion.TryResolveCommandPath(
+                    CommandService.BuildCatalog(CommandContext),
+                    _line,
+                    out var readyPath))
+            {
+                var readyLine = DashboardFilterSlashCompletion.ToCommandLine($"{readyPath} {_guidance.ReadyWire}");
+                if (CommandService.TryValidateRunnable(readyLine, CommandContext, out _))
+                {
+                    _validationError = null;
+                    await OnCommit.InvokeAsync(readyLine);
+                    _line = "";
+                    _selected = 0;
+                    CommandSession.ClearDraft(CommandContext);
                     RefreshSuggestions();
                 }
 
