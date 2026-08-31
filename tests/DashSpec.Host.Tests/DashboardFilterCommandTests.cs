@@ -234,7 +234,7 @@ public class DashboardFilterCommandTests
             null,
             null);
 
-        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(ArgMechanic.Picker, result.Guidance.ArgMechanic);
         Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(
             result.Items,
@@ -333,7 +333,7 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("usage_date")} ",
             context);
 
-        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(ArgMechanic.Picker, result.Guidance.ArgMechanic);
         Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(
             result.Items,
@@ -558,7 +558,7 @@ public class DashboardFilterCommandTests
             $"{FilterCommandPaths.FilterPath("app_name")} ",
             broker);
 
-        Assert.Equal(InvocationArgMechanic.Picker, result.Guidance.ArgMechanic);
+        Assert.Equal(ArgMechanic.Picker, result.Guidance.ArgMechanic);
         Assert.Equal(InvocationLinePhase.Arg, result.Guidance.Phase);
         Assert.Contains(result.Items, item => item.PickValue == "AutoCAD");
     }
