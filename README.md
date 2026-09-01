@@ -1,8 +1,8 @@
 # DashSpec (DSPEC)
 
-Декларативные operational dashboards: **текстовый `.dashspec` в git** → **интерактивный Blazor Server host**.
+Декларативные operational dashboards: **текстовый `.dashspec` в git** → **DashSpec Platform** (engine) → **surfaces** (Web Host, Studio, …).
 
-Проект AI Guiders — product-neutral DSL и Blazor host; **без привязки к конкретной БД** в Core.
+Проект AI Guiders — product-neutral DSL и BI platform; **без привязки к конкретной БД** в Core. **DashSpec.Host** — web **viewer**, не весь продукт ([ADR-0047](design/DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md)).
 
 > **Early preview (0.x):** DSL и API Core могут меняться между минорными версиями.
 > Ломающие правки — через ADR в `design/`; стабильный контракт — с public **1.0**.
