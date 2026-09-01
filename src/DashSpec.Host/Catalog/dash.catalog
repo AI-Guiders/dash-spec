@@ -58,6 +58,11 @@ helps table
   | variable filter     | label   | Имя фильтра на toolbar                      |
 end helps
 
+profiles
+  date-value = bundle date-filter
+  field-value.value.picker-for-slot = filter
+end profiles
+
 commands table
   | command       | phrase         | profile     | expand                 | fills          |
   | filter.date   | filter-by-name | date-value  | toolbar-filters date   | filter         |
