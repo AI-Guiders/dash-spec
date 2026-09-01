@@ -1,6 +1,7 @@
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 @using Microsoft.AspNetCore.Components.Web
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject DashboardHostCommandCoordinator Coordinator
 @implements IDisposable
 
