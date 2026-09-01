@@ -30,12 +30,15 @@ var aiguidersInput = (() => {
   var keyboard_exports = {};
   __export(keyboard_exports, {
     bindChordRoot: () => bindChordRoot,
+    bindHostBindings: () => bindHostBindings,
     isAcceptCompletion: () => isAcceptCompletion,
     keyStateFromEvent: () => keyStateFromEvent,
     parseChord: () => parseChord,
     preventDefaultWhenSuggestOpen: () => preventDefaultWhenSuggestOpen,
     shouldCapturePreventDefault: () => shouldCapturePreventDefault,
-    unbindChordRoot: () => unbindChordRoot
+    suggestDismissMatcherActive: () => suggestDismissMatcherActive,
+    unbindChordRoot: () => unbindChordRoot,
+    unbindHostBindings: () => unbindHostBindings
   });
 
   // src/keyboard/accept-keys.ts
@@ -93,12 +96,59 @@ var aiguidersInput = (() => {
     activeHandler = null;
   }
 
+  // src/keyboard/host-bindings.ts
+  var bindingsHandler = null;
+  var suggestDismissMatcher = null;
+  function suggestDismissMatcherActive() {
+    return suggestDismissMatcher;
+  }
+  function bindHostBindings(dotNetRef, bindings) {
+    unbindHostBindings();
+    const matchers = bindings.map((binding) => ({
+      match: parseChord(binding.gesture),
+      methodName: binding.methodName
+    }));
+    suggestDismissMatcher = matchers.find((binding) => binding.methodName === "OnSuggestDismiss")?.match ?? null;
+    bindingsHandler = (event) => {
+      for (const binding of matchers) {
+        if (!binding.match(event)) {
+          continue;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        void dotNetRef?.invokeMethodAsync(binding.methodName);
+        return;
+      }
+    };
+    window.addEventListener("keydown", bindingsHandler, true);
+  }
+  function unbindHostBindings() {
+    if (bindingsHandler) {
+      window.removeEventListener("keydown", bindingsHandler, true);
+      bindingsHandler = null;
+    }
+    suggestDismissMatcher = null;
+  }
+
   // src/keyboard/command-line-keys.ts
   function shouldCapturePreventDefault(state, suggestOpen) {
     if (preventDefaultWhenSuggestOpen(state, suggestOpen)) {
       return true;
     }
-    return suggestOpen && (state.key === "ArrowUp" || state.key === "ArrowDown" || state.key === "Escape");
+    const suggestDismiss = suggestDismissMatcherActive();
+    if (suggestOpen && suggestDismiss) {
+      const event = {
+        key: state.key,
+        ctrlKey: state.ctrlKey,
+        altKey: state.altKey,
+        metaKey: state.metaKey,
+        shiftKey: state.shiftKey
+      };
+      if (suggestDismiss(event)) {
+        return true;
+      }
+    }
+    return suggestOpen && (state.key === "ArrowUp" || state.key === "ArrowDown");
   }
 
   // src/keyboard/key-state.ts

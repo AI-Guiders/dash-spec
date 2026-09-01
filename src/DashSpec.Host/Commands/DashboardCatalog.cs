@@ -17,6 +17,8 @@ internal static class DashboardCatalog
 
     public static IReadOnlyList<CatalogPhrase> Phrases => Current.Phrases;
 
+    public static IReadOnlyList<CatalogBindingRow> Bindings => Current.Bindings;
+
     public static string Summary => CatalogSummary.Format(Current);
 
     static CatalogDocument Load()
