@@ -76,8 +76,9 @@ commands table
 end commands
 
 bindings table
-  | gesture      | command | role       |
-  | Ctrl+K       | —       | chord-root |
+  | gesture      | command | role            |
+  | Ctrl+K       | —       | chord-root      |
+  | Ctrl+.       | —       | suggest-dismiss |
 end bindings
 
 melodies table
