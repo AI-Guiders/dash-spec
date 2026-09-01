@@ -32,9 +32,10 @@ internal static class DashboardCatalog
         }
 
         var errors = result.Diagnostics.Where(static d =>
-            d.Code is AuthoringDiagnosticCode.NotationWireMismatch
-                or AuthoringDiagnosticCode.MissingNotationDeclaration
-                or AuthoringDiagnosticCode.MissingCatalogHeader).ToList();
+            d.Code is AuthoringDiagnosticCode.GrammarWireMismatch
+                or AuthoringDiagnosticCode.MissingGrammarDeclaration
+                or AuthoringDiagnosticCode.MissingCatalogHeader
+                or AuthoringDiagnosticCode.UnknownGrammarId).ToList();
 
         if (errors.Count > 0)
         {
