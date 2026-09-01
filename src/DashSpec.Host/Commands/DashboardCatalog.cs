@@ -1,5 +1,6 @@
 #nullable enable
 
+using AIGuiders.Platform.Authoring.Command.Bundles;
 using AIGuiders.Platform.Authoring.Command.Catalog;
 using AIGuiders.Platform.Authoring.Core;
 
@@ -24,7 +25,7 @@ internal static class DashboardCatalog
             throw new FileNotFoundException("Missing dash.catalog SSOT.", path);
         }
 
-        var result = CatalogParser.ParseFile(path);
+        var result = CatalogParser.ParseFile(path, CatalogBundleLibrary.Federation);
         if (result.Document is null)
         {
             var message = string.Join("; ", result.Diagnostics.Select(static d => d.Message));
@@ -35,7 +36,9 @@ internal static class DashboardCatalog
             d.Code is AuthoringDiagnosticCode.GrammarWireMismatch
                 or AuthoringDiagnosticCode.MissingGrammarDeclaration
                 or AuthoringDiagnosticCode.MissingCatalogHeader
-                or AuthoringDiagnosticCode.UnknownGrammarId).ToList();
+                or AuthoringDiagnosticCode.UnknownGrammarId
+                or AuthoringDiagnosticCode.UnknownBundle
+                or AuthoringDiagnosticCode.UnknownProfile).ToList();
 
         if (errors.Count > 0)
         {
