@@ -205,7 +205,14 @@ internal static class MatrixPayloadBuilder
             }
 
             var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(valueColumn)) ?? 0;
-            seriesValues[y] = value;
+            if (seriesValues.TryGetValue(y, out var existing) && existing is not null)
+            {
+                seriesValues[y] = Math.Max(existing.Value, value);
+            }
+            else
+            {
+                seriesValues[y] = value;
+            }
             bucketRows[xKey][y] = row;
             yTotals[y] = yTotals.GetValueOrDefault(y) + value;
         }

@@ -1,5 +1,9 @@
 @inherits LayoutComponentBase
+@using DashSpec.Host.Components.Dashboard
+@using DashSpec.Host.Services.Presentation
 @inject IWebHostEnvironment Environment
+@inject DashboardHostCommandCoordinator Coordinator
+@implements IDisposable
 
 <div class="page">
     <header class="topbar">
@@ -8,6 +12,15 @@
             <span class="muted">interactive dashboard host</span>
         </div>
             <nav class="topbar-nav">
+                @if (Coordinator.HasCatalog)
+                {
+                    <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
+                                            Groups="Coordinator.CatalogGroups"
+                                            ActiveEntryId="Coordinator.ActiveCatalogEntryId"
+                                            Busy="Coordinator.CatalogBusy"
+                                            OnSelect="Coordinator.SelectCatalogEntryAsync"
+                                            Inline="true" />
+                }
                 <a href="/">Dashboard</a>
                 <a href="/admin/access">Control Center</a>
                 @if (Environment.IsDevelopment())
@@ -21,3 +34,11 @@
         @Body
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized() => Coordinator.Changed += OnCoordinatorChanged;
+
+    void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Coordinator.Changed -= OnCoordinatorChanged;
+}
