@@ -7,7 +7,7 @@ namespace DashSpec.Core.Validation;
 public sealed class DashSpecWorkspaceIndex
 {
     private static readonly Regex IncludePattern = new(
-        @"!include\s+""([^""]+)""",
+        @"(?:!include|import)\s+""([^""]+)""",
         RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly Dictionary<string, string> _diagrams =

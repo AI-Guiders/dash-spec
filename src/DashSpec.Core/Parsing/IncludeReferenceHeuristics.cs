@@ -72,6 +72,6 @@ internal static partial class IncludeReferenceHeuristics
     private static string NormalizePath(string path) =>
         Path.GetFullPath(path.TrimEnd('"', '\''));
 
-    [GeneratedRegex(@"!include\s+""([^""]*)""", RegexOptions.Multiline)]
+    [GeneratedRegex(@"(?:!include|import)\s+""([^""]*)""", RegexOptions.Multiline)]
     private static partial Regex ModuleIncludePattern();
 }
