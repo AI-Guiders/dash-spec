@@ -764,15 +764,15 @@ public class DashboardFilterCommandTests
 
         Assert.Contains(cardStep.Items, item => item.StepSegment == "heatmap_card");
         var cardItem = cardStep.Items.First(item => item.StepSegment == "heatmap_card");
-        var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context);
+        var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context, "view ");
         Assert.Equal("Heatmap", cardParts.Primary);
         Assert.Equal("heatmap_card", cardParts.Secondary);
-        Assert.Equal("Heatmap · Line", DashboardFilterCommandDisplay.FormatSuggestionHelp(cardItem, context));
+        Assert.Equal("Heatmap · Line", DashboardFilterCommandDisplay.FormatSuggestionHelp(cardItem, context, "view "));
 
         var viewStep = DashboardFilterSlashCompletion.GetResult(catalog, context, "view heatmap_card ", null, null);
         Assert.Contains(viewStep.Items, item => item.StepSegment == "heatmap");
         var viewItem = viewStep.Items.First(item => item.StepSegment == "heatmap");
-        var viewParts = DashboardFilterCommandDisplay.FormatSuggestionParts(viewItem, context);
+        var viewParts = DashboardFilterCommandDisplay.FormatSuggestionParts(viewItem, context, "view heatmap_card ");
         Assert.Equal("Heatmap — Heatmap", viewParts.Primary);
         Assert.Equal("heatmap", viewParts.Secondary);
     }
