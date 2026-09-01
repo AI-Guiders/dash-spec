@@ -60,4 +60,15 @@ public sealed class CommandCatalogChainTests
             item => string.Equals(item.StepSegment, "select", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(item.StepSegment, FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase));
     }
+
+    [Fact]
+    public void Host_catalog_materializes_show_host_phrase_paths()
+    {
+        var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
+        var catalog = DashboardCommandCatalogBuilder.Build(hostContext, []);
+
+        Assert.Equal("show host dashboard", ShowCommandPaths.SurfacePath("dashboard"));
+        Assert.True(catalog.TryGet("show host dashboard", out _));
+        Assert.True(catalog.TryGet("show host controlcenter", out _));
+    }
 }

@@ -73,6 +73,26 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void Show_host_completion_uses_console_phrase_from_catalog()
+    {
+        var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
+        var catalog = DashboardCommandCatalogBuilder.Build(hostContext, []);
+        var result = DashboardFilterSlashCompletion.GetResult(catalog, hostContext, "show", null, null);
+
+        Assert.Contains(result.Items, item => item.StepSegment == ShowCommandPaths.HostBranch);
+        Assert.Equal("show host dashboard", ShowCommandPaths.SurfacePath("dashboard"));
+        Assert.Equal("show host controlcenter", ShowCommandPaths.SurfacePath("controlcenter"));
+        Assert.True(catalog.TryGet(ShowCommandPaths.SurfacePath("dashboard"), out _));
+    }
+
+    [Fact]
+    public void Catalog_flavor_is_console_with_matching_ccl_grammar()
+    {
+        Assert.True(DashboardCatalogFlavor.IsConsole);
+        Assert.Equal(DashboardCatalogFlavor.ConsoleGrammar, DashboardCatalogFlavor.CclCommandGrammar);
+    }
+
+    [Fact]
     public void Catalog_host_scope_excludes_dashboard_paths()
     {
         var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
