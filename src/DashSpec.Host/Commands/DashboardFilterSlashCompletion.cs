@@ -18,7 +18,8 @@ internal static class DashboardFilterSlashCompletion
         SlashCompletionOptions? options = null)
     {
         var body = SanitizeLine(typedLine);
-        var platform = SlashCompletion.GetResult(catalog, body, suggestionBroker, constructorSession, options);
+        var completionOptions = MergeCompletionOptions(options);
+        var platform = SlashCompletion.GetResult(catalog, body, suggestionBroker, constructorSession, completionOptions);
         platform = EnrichPathGuidance(platform, body);
         return platform with { Guidance = DashboardFilterCommandDisplay.ForCli(platform.Guidance) };
     }
@@ -108,6 +109,24 @@ internal static class DashboardFilterSlashCompletion
     }
 
     public static string LineFromInsert(string insertText) => SanitizeLine(insertText);
+
+    static SlashCompletionOptions MergeCompletionOptions(SlashCompletionOptions? options)
+    {
+        if (options?.PhraseSlots is not null)
+        {
+            return options;
+        }
+
+        return new SlashCompletionOptions
+        {
+            ConstructorRegistry = options?.ConstructorRegistry,
+            Culture = options?.Culture,
+            SegmentProvider = options?.SegmentProvider,
+            AnchorDate = options?.AnchorDate,
+            PrefixArmProfiles = options?.PrefixArmProfiles ?? [],
+            PhraseSlots = DashboardCatalog.PhraseSlots,
+        };
+    }
 
     static SlashCompletionResult EnrichPathGuidance(SlashCompletionResult result, string body)
     {

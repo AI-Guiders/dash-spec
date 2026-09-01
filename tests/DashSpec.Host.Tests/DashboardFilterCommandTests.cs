@@ -764,6 +764,8 @@ public class DashboardFilterCommandTests
 
         Assert.Contains(cardStep.Items, item => item.StepSegment == "heatmap_card");
         var cardItem = cardStep.Items.First(item => item.StepSegment == "heatmap_card");
+        Assert.Equal("card", cardItem.ActiveSlot);
+        Assert.Equal("dash.view.card", cardItem.CommandId);
         var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context, "view ");
         Assert.Equal("Heatmap", cardParts.Primary);
         Assert.Equal("heatmap_card", cardParts.Secondary);
@@ -772,6 +774,7 @@ public class DashboardFilterCommandTests
         var viewStep = DashboardFilterSlashCompletion.GetResult(catalog, context, "view heatmap_card ", null, null);
         Assert.Contains(viewStep.Items, item => item.StepSegment == "heatmap");
         var viewItem = viewStep.Items.First(item => item.StepSegment == "heatmap");
+        Assert.Equal("view", viewItem.ActiveSlot);
         var viewParts = DashboardFilterCommandDisplay.FormatSuggestionParts(viewItem, context, "view heatmap_card ");
         Assert.Equal("Heatmap — Heatmap", viewParts.Primary);
         Assert.Equal("heatmap", viewParts.Secondary);

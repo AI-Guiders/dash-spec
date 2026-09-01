@@ -21,6 +21,12 @@ internal static class DashboardCatalog
 
     public static string Summary => CatalogSummary.Format(Current);
 
+    public static CatalogPhraseSlotIndex PhraseSlots => PhraseSlotIndex.Value;
+
+    static readonly Lazy<CatalogPhraseSlotIndex> PhraseSlotIndex = new(
+        () => CatalogPhraseSlotIndex.FromDocument(Current),
+        isThreadSafe: true);
+
     static CatalogDocument Load()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Catalog", "dash.catalog");
