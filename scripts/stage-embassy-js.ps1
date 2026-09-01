@@ -10,7 +10,7 @@ $target = Join-Path $dashSpecRoot "src\DashSpec.Host\wwwroot\js\aiguiders-input.
 if (-not (Test-Path $bundle)) {
     Push-Location $GuidersJsRoot
     try {
-        npm run build -w @aiguiders/input
+        npm run build
     }
     finally {
         Pop-Location
