@@ -160,6 +160,13 @@ end view
 
 Diagram (`@diagram`) задаёт kind и привязки колонок (`category` / `value` / оси heatmap). Presentation — «как лежит» chart area; palette — цвета.
 
+**Heatmap `color_normalize`** — шкала цвета ячейки (min/max для градиента):
+- `map` — по всей матрице (глобальный min/max);
+- `row` — по строке Y (продукт / пользователь), **default**;
+- `column` — по столбцу X (час / день).
+
+Алиасы: `global`/`matrix` → `map`, `line`/`y` → `row`, `col`/`x` → `column`.
+
 Kinds сейчас: line, bar, table, heatmap, pie/donut, … (см. ADR-0003 / samples).
 
 ---
