@@ -1,4 +1,5 @@
 #nullable enable
+using DashSpec.Core.Model;
 using DashSpec.Host.Commands;
 using Microsoft.AspNetCore.Components;
 
@@ -29,6 +30,28 @@ public sealed class DashboardHostCommandCoordinator
     public event Action? Changed;
 
     public string? CommandError { get; private set; }
+
+    public bool HasCatalog => _dashboard is { Loaded: true, HasCatalog: true };
+
+    public IReadOnlyList<CatalogEntryDefinition> CatalogEntries =>
+        _dashboard is { Loaded: true } ? _dashboard.CatalogEntries : [];
+
+    public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
+        _dashboard is { Loaded: true } ? _dashboard.CatalogGroups : [];
+
+    public string? ActiveCatalogEntryId => _dashboard?.ActiveCatalogEntryId;
+
+    public bool CatalogBusy => _dashboard?.Switching == true;
+
+    public async Task SelectCatalogEntryAsync(string entryId)
+    {
+        if (_dashboard is { Loaded: true })
+        {
+            await _dashboard.SelectCatalogEntryAsync(entryId).ConfigureAwait(false);
+            CommandError = _dashboard.CommandError;
+            Notify();
+        }
+    }
 
     public void AttachDashboard(DashboardPageController dashboard)
     {

@@ -8,9 +8,12 @@
 
 {
 
-    <label class="dash-catalog">
+    <label class="dash-catalog @(Inline ? "dash-catalog-inline" : null)">
 
-        <span class="filter-inline-label">Отчёт</span>
+        @if (!Inline)
+        {
+            <span class="filter-inline-label">Отчёт</span>
+        }
 
         <select class="dash-catalog-select"
 
@@ -67,6 +70,8 @@
     [Parameter] public string? ActiveEntryId { get; set; }
 
     [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public bool Inline { get; set; }
 
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 

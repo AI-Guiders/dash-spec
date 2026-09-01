@@ -136,7 +136,9 @@
             Card.DataFamily,
             Card.Matrix is not null,
             Card.Title,
-            Card.FilterLinkCssClass);
+            Card.FilterLinkCssClass,
+            _selection?.Xi,
+            _selection?.Yi);
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -153,7 +155,9 @@
         DiagramDataFamily DataFamily,
         bool HasMatrix,
         string Title,
-        string? FilterLinkCssClass);
+        string? FilterLinkCssClass,
+        int? SelectionXi,
+        int? SelectionYi);
 
     protected override void OnParametersSet()
     {
@@ -207,6 +211,11 @@
             OnCellClickNavigate.HasDelegate)
         {
             await OnCellClickNavigate.InvokeAsync((Card, context));
+        }
+
+        if (EffectiveShowSelection is not null)
+        {
+            await InvokeAsync(StateHasChanged);
         }
     }
 
