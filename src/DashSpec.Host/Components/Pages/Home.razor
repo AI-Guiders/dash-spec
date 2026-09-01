@@ -11,7 +11,6 @@
 <div class="dash-home">
 <DashboardToolbar Busy="Page.Switching"
                   ShowUpload="HostEnvironment.IsDevelopment()"
-                  SpecSource="Page.LoadedSpecSource"
                   OnUpload="Page.OnSpecUploadedAsync" />
 
 @if (!string.IsNullOrEmpty(Page.Error))
@@ -42,17 +41,6 @@ else
         <DashboardPagePicker Pages="Page.ActiveTabPages()"
                              ActivePageId="Page.ActivePageId"
                              OnSelect="Page.SelectPageAsync" />
-    }
-
-    @if (Page.HasCatalog)
-    {
-        <div class="dash-catalog-row">
-            <DashboardCatalogPicker Entries="Page.CatalogEntries"
-                                    Groups="Page.CatalogGroups"
-                                    ActiveEntryId="Page.ActiveCatalogEntryId"
-                                    Busy="Page.Switching"
-                                    OnSelect="Page.SelectCatalogEntryAsync" />
-        </div>
     }
 
     @if (!string.IsNullOrEmpty(Page.CommandError))
