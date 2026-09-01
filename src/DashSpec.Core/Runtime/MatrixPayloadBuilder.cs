@@ -155,7 +155,8 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips);
+        var (rowMins, rowMaxs) = ComputeRowRanges(cells, min, max);
+        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips, rowMins, rowMaxs);
     }
 
     private static MatrixPayload BuildHourGrid(
@@ -294,7 +295,45 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips);
+        var (rowMins, rowMaxs) = ComputeRowRanges(cells, min, max);
+        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips, rowMins, rowMaxs);
+    }
+
+    private static (double[] RowMins, double[] RowMaxs) ComputeRowRanges(
+        double?[][] cells,
+        double fallbackMin,
+        double fallbackMax)
+    {
+        var rowMins = new double[cells.Length];
+        var rowMaxs = new double[cells.Length];
+        for (var yi = 0; yi < cells.Length; yi++)
+        {
+            var rMin = double.PositiveInfinity;
+            var rMax = double.NegativeInfinity;
+            foreach (var cell in cells[yi])
+            {
+                if (cell is null)
+                {
+                    continue;
+                }
+
+                rMin = Math.Min(rMin, cell.Value);
+                rMax = Math.Max(rMax, cell.Value);
+            }
+
+            if (double.IsPositiveInfinity(rMin))
+            {
+                rowMins[yi] = fallbackMin;
+                rowMaxs[yi] = fallbackMax;
+            }
+            else
+            {
+                rowMins[yi] = rMin;
+                rowMaxs[yi] = rMax;
+            }
+        }
+
+        return (rowMins, rowMaxs);
     }
 
     private static void SortHeatmapXLabels(List<string> xLabels)
