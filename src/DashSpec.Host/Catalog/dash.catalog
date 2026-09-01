@@ -50,6 +50,7 @@ phrases table
   | pick-report    | select report {report}   |
   | pick-page      | select page {page}       |
   | pick-view      | view {card} {view}       |
+  | show-host      | show host {surface}      |
 end phrases
 
 helps table
@@ -70,7 +71,7 @@ commands table
   | report.select | pick-report    |             | report-catalog         | report         |
   | page.select   | pick-page      |             | report-pages           | page           |
   | card.view     | pick-view      |             | card-views             | card, view     |
-  | host.show     |                | show host {surface} | host-surfaces  | surface        |
+  | host.show     | show-host      |             | host-surfaces  | surface        |
 end commands
 
 bindings table
