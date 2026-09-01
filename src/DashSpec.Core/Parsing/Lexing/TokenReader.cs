@@ -193,6 +193,12 @@ internal sealed class TokenReader
     public bool TryModuleInclude(out string reference)
     {
         SkipNewlines();
+        if (TryKeyword("import"))
+        {
+            reference = ReadString();
+            return true;
+        }
+
         if (!IsAt(TokenKind.Bang))
         {
             reference = string.Empty;
