@@ -68,7 +68,82 @@ public class ChartDataBuilderTests
         Assert.Equal(3, matrix.RowMins![1]); // alice
         Assert.Equal(6, matrix.RowMaxs![1]);
         Assert.Equal((10d, 10d), matrix.ColorRangeForRow(0));
-        Assert.Equal((3d, 6d), matrix.ColorRangeForRow(1));
+        Assert.Equal((3d, 6d), matrix.ColorRangeForCell(1, 1));
+    }
+
+    [Fact]
+    public void BuildHeatmap_color_normalize_map_uses_global_range()
+    {
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "usage_date",
+            ["y"] = "user_name",
+            ["value"] = "peak_concurrent_apps",
+            ["color_normalize"] = "map",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 23),
+                ["user_name"] = "alice",
+                ["peak_concurrent_apps"] = 3d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 25),
+                ["user_name"] = "bob",
+                ["peak_concurrent_apps"] = 10d,
+            },
+        ];
+
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+        Assert.Equal(MatrixColorNormalize.Map, matrix.ColorNormalize);
+        Assert.Equal((3d, 10d), matrix.ColorRangeForCell(0, 0));
+        Assert.Equal((3d, 10d), matrix.ColorRangeForCell(1, 0));
+    }
+
+    [Fact]
+    public void BuildHeatmap_color_normalize_column_uses_x_axis_range()
+    {
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "usage_date",
+            ["y"] = "user_name",
+            ["value"] = "peak_concurrent_apps",
+            ["color_normalize"] = "column",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 23),
+                ["user_name"] = "alice",
+                ["peak_concurrent_apps"] = 3d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 23),
+                ["user_name"] = "bob",
+                ["peak_concurrent_apps"] = 10d,
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 25),
+                ["user_name"] = "alice",
+                ["peak_concurrent_apps"] = 6d,
+            },
+        ];
+
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+        Assert.Equal(MatrixColorNormalize.Column, matrix.ColorNormalize);
+        Assert.Equal((3d, 10d), matrix.ColorRangeForCell(0, 0));
+        Assert.Equal((3d, 10d), matrix.ColorRangeForCell(1, 0));
+        Assert.Equal((6d, 6d), matrix.ColorRangeForCell(0, 1));
     }
 
     [Fact]
