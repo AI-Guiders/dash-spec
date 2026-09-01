@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "surface": "ccl-accept-keys",
+  "source": "DashSpec DashboardFilterCommandKeys + @aiguiders/ccl-input",
+  "vectors": [
+    {
+      "id": "tab-accepts-completion",
+      "key": "Tab",
+      "expect": {
+        "isAcceptCompletion": true,
+        "preventDefaultWhenSuggestOpen": true
+      }
+    },
+    {
+      "id": "ctrl-space-accepts",
+      "key": " ",
+      "ctrlKey": true,
+      "expect": {
+        "isAcceptCompletion": true,
+        "preventDefaultWhenSuggestOpen": true
+      }
+    },
+    {
+      "id": "ctrl-space-shift-rejects",
+      "key": " ",
+      "ctrlKey": true,
+      "shiftKey": true,
+      "expect": {
+        "isAcceptCompletion": false,
+        "preventDefaultWhenSuggestOpen": false
+      }
+    },
+    {
+      "id": "plain-space-rejects",
+      "key": " ",
+      "expect": {
+        "isAcceptCompletion": false,
+        "preventDefaultWhenSuggestOpen": false
+      }
+    },
+    {
+      "id": "enter-not-accept-completion",
+      "key": "Enter",
+      "expect": {
+        "isAcceptCompletion": false,
+        "preventDefaultWhenSuggestOpen": false
+      }
+    },
+    {
+      "id": "arrow-down-not-accept",
+      "key": "ArrowDown",
+      "expect": {
+        "isAcceptCompletion": false,
+        "preventDefaultWhenSuggestOpen": false
+      }
+    }
+  ]
+}

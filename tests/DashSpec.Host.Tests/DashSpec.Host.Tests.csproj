@@ -21,4 +21,8 @@
     <ProjectReference Include="..\..\src\DashSpec.Host\DashSpec.Host.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Conformance\ccl-accept-keys.spec.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
