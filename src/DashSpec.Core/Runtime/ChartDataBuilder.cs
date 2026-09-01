@@ -106,4 +106,21 @@ public sealed record MatrixPayload(
     double?[][] Cells,
     double Min,
     double Max,
-    string?[][]? Tooltips = null);
+    string?[][]? Tooltips = null,
+    IReadOnlyList<double>? RowMins = null,
+    IReadOnlyList<double>? RowMaxs = null)
+{
+    /// <summary>Per-row (Y) color range; falls back to matrix Min/Max.</summary>
+    public (double Min, double Max) ColorRangeForRow(int yi)
+    {
+        if (RowMins is not null &&
+            RowMaxs is not null &&
+            (uint)yi < (uint)RowMins.Count &&
+            (uint)yi < (uint)RowMaxs.Count)
+        {
+            return (RowMins[yi], RowMaxs[yi]);
+        }
+
+        return (Min, Max);
+    }
+}

@@ -63,6 +63,12 @@ public class ChartDataBuilderTests
         Assert.Equal(3, matrix.Min);
         Assert.Equal(10, matrix.Max);
         Assert.Equal("AutoCAD, Revit, Chrome", matrix.Tooltips![1][1]);
+        Assert.Equal(10, matrix.RowMins![0]); // bob — one cell
+        Assert.Equal(10, matrix.RowMaxs![0]);
+        Assert.Equal(3, matrix.RowMins![1]); // alice
+        Assert.Equal(6, matrix.RowMaxs![1]);
+        Assert.Equal((10d, 10d), matrix.ColorRangeForRow(0));
+        Assert.Equal((3d, 6d), matrix.ColorRangeForRow(1));
     }
 
     [Fact]
