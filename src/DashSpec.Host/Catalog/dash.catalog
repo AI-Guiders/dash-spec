@@ -33,6 +33,7 @@ defaults
   grammar.keyboard.binding   = keyboard-key-gesture
   grammar.keyboard.melody    = keyboard-key-gesture
   binding.chord-root         = Ctrl+K
+  command.flavor             = console
 end defaults
 
 variables

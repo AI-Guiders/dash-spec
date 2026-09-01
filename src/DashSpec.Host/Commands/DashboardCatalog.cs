@@ -15,6 +15,8 @@ internal static class DashboardCatalog
 
     public static IReadOnlyList<string> FederationSurfaces => Current.FederationSurfaces();
 
+    public static IReadOnlyList<CatalogPhrase> Phrases => Current.Phrases;
+
     public static string Summary => CatalogSummary.Format(Current);
 
     static CatalogDocument Load()
@@ -45,6 +47,7 @@ internal static class DashboardCatalog
             throw new InvalidOperationException($"dash.catalog validation failed: {string.Join("; ", errors.Select(static e => e.Message))}");
         }
 
+        DashboardCatalogFlavor.ValidateAtLoad(result.Document);
         return result.Document;
     }
 }
