@@ -1,11 +1,13 @@
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject DashboardHostCommandCoordinator Coordinator
-@implements IDisposable
+@inject IJSRuntime Js
+@implements IAsyncDisposable
 
-<div class="dash-host-command-shell" @onkeydown:window="OnWindowKeyDown">
+<div class="dash-host-command-shell">
     <DashboardFilterCommandBar @ref="_bar"
                                CommandContext="@Coordinator.BuildContext()"
                                CommandError="@Coordinator.CommandError"
@@ -14,18 +16,36 @@
 
 @code {
     DashboardFilterCommandBar? _bar;
+    DotNetObjectReference<HostCommandBar>? _selfRef;
+    bool _chordBound;
 
     protected override void OnInitialized() => Coordinator.Changed += OnCoordinatorChanged;
 
-    void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
-
-    void OnWindowKeyDown(KeyboardEventArgs e)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (e.CtrlKey && string.Equals(e.Key, "k", StringComparison.OrdinalIgnoreCase))
+        if (_chordBound)
         {
-            _bar?.OpenPaletteFromHost();
+            return;
         }
+
+        _chordBound = true;
+        _selfRef = DotNetObjectReference.Create(this);
+        await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindChordRoot", "Ctrl+K", _selfRef);
     }
 
-    public void Dispose() => Coordinator.Changed -= OnCoordinatorChanged;
+    void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
+
+    [JSInvokable]
+    public void OnChordRoot() => _bar?.OpenPaletteFromHost();
+
+    public async ValueTask DisposeAsync()
+    {
+        Coordinator.Changed -= OnCoordinatorChanged;
+        if (_chordBound)
+        {
+            await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindChordRoot");
+        }
+
+        _selfRef?.Dispose();
+    }
 }
