@@ -7,16 +7,22 @@ import <grain/date-filter>
 channels
   slash
     bar = toolbar-slash
-    command-notation = command-slash
-    argument-notation = argument-slash
+    grammar
+      command = command-slash
+      argument = argument-slash
+    end grammar
   console
     filter = filter-bar
-    command-notation = command-console
-    argument-notation = argument-kv
+    grammar
+      command = command-console
+      argument = argument-kv
+    end grammar
   ccl
     filter = filter-ccl
-    command-notation = command-console
-    argument-notation = argument-kv
+    grammar
+      command = command-console
+      argument = argument-kv
+    end grammar
   palette = command-palette
 end channels
 
@@ -24,8 +30,8 @@ defaults
   variable.kind              = phrase-slot
   command.scope              = dashboard
   command.surfaces           = slash.bar, palette, console.filter, ccl.filter
-  notation.keyboard.binding  = keyboard-key-gesture
-  notation.keyboard.melody   = keyboard-key-gesture
+  grammar.keyboard.binding   = keyboard-key-gesture
+  grammar.keyboard.melody    = keyboard-key-gesture
   binding.chord-root         = Ctrl+K
 end defaults
 
