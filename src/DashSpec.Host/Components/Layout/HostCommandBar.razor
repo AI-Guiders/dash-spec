@@ -1,3 +1,4 @@
+@using DashSpec.Host.Commands
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 @using Microsoft.AspNetCore.Components.Web
@@ -17,20 +18,23 @@
 @code {
     DashboardFilterCommandBar? _bar;
     DotNetObjectReference<HostCommandBar>? _selfRef;
-    bool _chordBound;
+    bool _bindingsBound;
 
     protected override void OnInitialized() => Coordinator.Changed += OnCoordinatorChanged;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_chordBound)
+        if (_bindingsBound)
         {
             return;
         }
 
-        _chordBound = true;
+        _bindingsBound = true;
         _selfRef = DotNetObjectReference.Create(this);
-        await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindChordRoot", "Ctrl+K", _selfRef);
+        var bindings = DashboardCatalogBindings.HostBindings()
+            .Select(binding => new { gesture = binding.Gesture, methodName = binding.MethodName })
+            .ToArray();
+        await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindHostBindings", _selfRef, bindings);
     }
 
     void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
@@ -38,12 +42,15 @@
     [JSInvokable]
     public void OnChordRoot() => _bar?.OpenPaletteFromHost();
 
+    [JSInvokable]
+    public void OnSuggestDismiss() => _bar?.DismissSuggestionsFromHost();
+
     public async ValueTask DisposeAsync()
     {
         Coordinator.Changed -= OnCoordinatorChanged;
-        if (_chordBound)
+        if (_bindingsBound)
         {
-            await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindChordRoot");
+            await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindHostBindings");
         }
 
         _selfRef?.Dispose();
