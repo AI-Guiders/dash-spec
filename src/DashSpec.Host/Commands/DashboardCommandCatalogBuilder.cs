@@ -40,7 +40,7 @@ internal static class DashboardCommandCatalogBuilder
             .ArgTail(descriptor.ArgTail)
             .Group(descriptor.Group ?? "Plugins")
             .PluginId(descriptor.PluginId)
-            .Surfaces(DashboardCommandCatalogExpander.DashSurfaces)
+            .Surfaces(DashboardCommandCatalogExpander.FederationSurfaces)
             .Scope(DashSpecCommandScope.Dashboard)
             .Build();
 }
