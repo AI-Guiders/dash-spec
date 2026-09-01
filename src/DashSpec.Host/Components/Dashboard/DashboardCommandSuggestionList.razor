@@ -18,14 +18,14 @@
             {
                 var item = Items[i];
                 var index = i;
-                var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext);
+                var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext, TypedLine);
                 <li role="option"
                     aria-selected="@(index == SelectedIndex)"
                     class="dash-command-suggest-row @(index == SelectedIndex ? "active" : null)"
                     @onclick="() => OnSelect.InvokeAsync(item)">
                     <span class="col-name">@(parts.Secondary ?? "")</span>
                     <span class="col-human">@parts.Primary</span>
-                    <span class="col-help">@DashboardFilterCommandDisplay.FormatSuggestionHelp(item, CommandContext)</span>
+                    <span class="col-help">@DashboardFilterCommandDisplay.FormatSuggestionHelp(item, CommandContext, TypedLine)</span>
                 </li>
             }
         </ul>
@@ -38,6 +38,7 @@
     [Parameter] public string AriaLabel { get; set; } = "Commands";
     [Parameter] public IReadOnlyList<ArgCompletionItem> Items { get; set; } = [];
     [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
+    [Parameter] public string TypedLine { get; set; } = "";
     [Parameter] public int SelectedIndex { get; set; }
     [Parameter] public EventCallback<ArgCompletionItem> OnSelect { get; set; }
 }
