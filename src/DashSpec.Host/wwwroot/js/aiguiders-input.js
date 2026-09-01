@@ -29,10 +29,13 @@ var aiguidersInput = (() => {
   // src/keyboard/index.ts
   var keyboard_exports = {};
   __export(keyboard_exports, {
+    bindChordRoot: () => bindChordRoot,
     isAcceptCompletion: () => isAcceptCompletion,
     keyStateFromEvent: () => keyStateFromEvent,
+    parseChord: () => parseChord,
     preventDefaultWhenSuggestOpen: () => preventDefaultWhenSuggestOpen,
-    shouldCapturePreventDefault: () => shouldCapturePreventDefault
+    shouldCapturePreventDefault: () => shouldCapturePreventDefault,
+    unbindChordRoot: () => unbindChordRoot
   });
 
   // src/keyboard/accept-keys.ts
@@ -49,12 +52,53 @@ var aiguidersInput = (() => {
     return state.key === " " && !!state.ctrlKey && !state.altKey && !state.metaKey && !state.shiftKey;
   }
 
+  // src/keyboard/chord-root.ts
+  var activeHandler = null;
+  function parseChord(chord) {
+    const parts = chord.split("+").map((part) => part.trim().toLowerCase());
+    const keyToken = parts[parts.length - 1] ?? "";
+    const needCtrl = parts.includes("ctrl") || parts.includes("control");
+    const needAlt = parts.includes("alt");
+    const needMeta = parts.includes("meta") || parts.includes("cmd") || parts.includes("command");
+    const needShift = parts.includes("shift");
+    return (event) => {
+      if (event.ctrlKey !== needCtrl || event.altKey !== needAlt || event.metaKey !== needMeta || event.shiftKey !== needShift) {
+        return false;
+      }
+      if (keyToken.length === 1) {
+        return event.key.toLowerCase() === keyToken;
+      }
+      return event.key.toLowerCase() === keyToken;
+    };
+  }
+  function bindChordRoot(chord, dotNetRef, methodName = "OnChordRoot") {
+    unbindChordRoot();
+    const match = parseChord(chord);
+    activeHandler = (event) => {
+      if (!match(event)) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void dotNetRef?.invokeMethodAsync(methodName);
+      window.dispatchEvent(new CustomEvent("aiguiders:chord-root", { detail: { chord } }));
+    };
+    window.addEventListener("keydown", activeHandler, true);
+  }
+  function unbindChordRoot() {
+    if (!activeHandler) {
+      return;
+    }
+    window.removeEventListener("keydown", activeHandler, true);
+    activeHandler = null;
+  }
+
   // src/keyboard/command-line-keys.ts
   function shouldCapturePreventDefault(state, suggestOpen) {
     if (preventDefaultWhenSuggestOpen(state, suggestOpen)) {
       return true;
     }
-    return suggestOpen && (state.key === "ArrowUp" || state.key === "ArrowDown");
+    return suggestOpen && (state.key === "ArrowUp" || state.key === "ArrowDown" || state.key === "Escape");
   }
 
   // src/keyboard/key-state.ts
