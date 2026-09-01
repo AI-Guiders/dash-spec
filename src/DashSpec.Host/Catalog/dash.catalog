@@ -1,0 +1,79 @@
+# DashSpec federation command catalog (SSOT) — GUIDERS-ADR-0047 grammar v0
+
+catalog dash
+
+import <grain/date-filter>
+
+channels
+  slash
+    bar = toolbar-slash
+    command-notation = command-slash
+    argument-notation = argument-slash
+  console
+    filter = filter-bar
+    command-notation = command-console
+    argument-notation = argument-kv
+  ccl
+    filter = filter-ccl
+    command-notation = command-console
+    argument-notation = argument-kv
+  palette = command-palette
+end channels
+
+defaults
+  variable.kind              = phrase-slot
+  command.scope              = dashboard
+  command.surfaces           = slash.bar, palette, console.filter, ccl.filter
+  notation.keyboard.binding  = keyboard-key-gesture
+  notation.keyboard.melody   = keyboard-key-gesture
+  binding.chord-root         = Ctrl+K
+end defaults
+
+variables
+  filter
+  report
+  page
+  card
+  view
+  surface
+end variables
+
+phrases table
+  | name           | phrase                   |
+  | filter-by-name | select filter {filter}   |
+  | pick-report    | select report {report}   |
+  | pick-page      | select page {page}       |
+  | pick-view      | view {card} {view}       |
+end phrases
+
+helps table
+  | target              | field   | text                                        |
+  | command filter.date | summary | Установить date-фильтр на toolbar           |
+  | variable filter     | label   | Имя фильтра на toolbar                      |
+end helps
+
+commands table
+  | command       | phrase         | profile     | expand                 | fills          |
+  | filter.date   | filter-by-name | date-value  | toolbar-filters date   | filter         |
+  | filter.field  | filter-by-name | field-value | toolbar-filters field  | filter         |
+  | report.select | pick-report    |             | report-catalog         | report         |
+  | page.select   | pick-page      |             | report-pages           | page           |
+  | card.view     | pick-view      |             | card-views             | card, view     |
+  | host.show     |                | show host {surface} | host-surfaces  | surface        |
+end commands
+
+bindings table
+  | gesture      | command | role       |
+  | Ctrl+K       | —       | chord-root |
+end bindings
+
+melodies table
+  | slug | command     |
+  | fd   | filter.date |
+end melodies
+
+mcp table
+  | command     | expose |
+  | filter.date | yes    |
+  | host.show   | yes    |
+end mcp
