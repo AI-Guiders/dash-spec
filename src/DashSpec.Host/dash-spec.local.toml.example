@@ -6,7 +6,10 @@
 # database_path = "D:/data/dashspec-host-settings.witdb"
 
 [dashboard]
-catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.dashcatalog"
+# LUS-only dev slice:
+# catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.dashcatalog"
+# LUS + LUF (prod-like local):
+catalog_path = "D:/SSCADRepo/LogUseFunc.DashSpec/publish/handoff/dashspec/catalogs/sscad-prod.dashcatalog"
 
 # Prod / git catalog — preferred via Control Center (/admin) → WitDB; toml = bootstrap fallback
 # [catalog_git]
