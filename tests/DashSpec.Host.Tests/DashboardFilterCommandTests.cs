@@ -84,6 +84,29 @@ public class DashboardFilterCommandTests
         Assert.False(catalog.TryGet($"{FilterCommandPaths.RootVerb} filter", out _));
     }
 
+    [Fact]
+    public void Root_completion_requires_dashboard_scope_for_filter_and_select()
+    {
+        var service = CreateCommandService(new DashboardFilterUiState());
+        var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
+        var dashboardContext = CreateContext(
+            new DashboardFilterUiState(),
+            ["usage_date", "app_name"]);
+
+        var hostResult = service.GetCompletionResult("", hostContext);
+        var dashboardResult = service.GetCompletionResult("", dashboardContext);
+
+        Assert.DoesNotContain(
+            hostResult.Items,
+            item => string.Equals(item.StepSegment, FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(item.StepSegment, "select", StringComparison.OrdinalIgnoreCase));
+
+        Assert.Contains(
+            dashboardResult.Items,
+            item => string.Equals(item.StepSegment, "select", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(item.StepSegment, FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     [InlineData(" ", true, false, false, true)]
     [InlineData(" ", false, false, false, false)]

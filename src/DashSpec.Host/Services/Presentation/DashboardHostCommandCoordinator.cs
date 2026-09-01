@@ -30,9 +30,30 @@ public sealed class DashboardHostCommandCoordinator
 
     public string? CommandError { get; private set; }
 
-    public void AttachDashboard(DashboardPageController dashboard) => _dashboard = dashboard;
+    public void AttachDashboard(DashboardPageController dashboard)
+    {
+        if (_dashboard is not null)
+        {
+            _dashboard.Changed -= OnDashboardChanged;
+        }
 
-    public void DetachDashboard() => _dashboard = null;
+        _dashboard = dashboard;
+        _dashboard.Changed += OnDashboardChanged;
+        Notify();
+    }
+
+    public void DetachDashboard()
+    {
+        if (_dashboard is not null)
+        {
+            _dashboard.Changed -= OnDashboardChanged;
+            _dashboard = null;
+        }
+
+        Notify();
+    }
+
+    void OnDashboardChanged() => Notify();
 
     public DashboardFilterContext BuildContext() =>
         _dashboard is { Loaded: true }
