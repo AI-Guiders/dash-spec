@@ -6,7 +6,10 @@
 # database_path = "D:/data/dashspec-host-settings.witdb"
 
 [dashboard]
-catalog_path = "samples/demo/catalogs/demo.dashcatalog"
+# demo-only dev slice:
+# catalog_path = "samples/demo/catalogs/demo.dashcatalog"
+# demo + LUF (prod-like local):
+catalog_path = "D:/DashSpecDemo/DemoHost.DashSpec/publish/handoff/dashspec/catalogs/demo.dashcatalog"
 
 # Prod / git catalog — preferred via Control Center (/admin) → WitDB; toml = bootstrap fallback
 # [catalog_git]
