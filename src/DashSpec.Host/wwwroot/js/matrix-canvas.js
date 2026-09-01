@@ -51,6 +51,8 @@ window.dashSpecMatrix = {
     const cells = payload.cells;
     const min = payload.min;
     const max = payload.max;
+    const rowMins = payload.rowMins;
+    const rowMaxs = payload.rowMaxs;
     const colorScale = payload.colorScale || "heat";
     const gapPx = payload.gap ?? 2;
     const cellW = payload.cellWidth ?? 26;
@@ -73,6 +75,8 @@ window.dashSpecMatrix = {
     canvas._matrixLayout = { cellW, cellH, gapPx, xCount, yCount, cells };
 
     for (let yi = 0; yi < yCount; yi++) {
+      const rowMin = Array.isArray(rowMins) && rowMins[yi] != null ? rowMins[yi] : min;
+      const rowMax = Array.isArray(rowMaxs) && rowMaxs[yi] != null ? rowMaxs[yi] : max;
       for (let xi = 0; xi < xCount; xi++) {
         const value = cells[yi][xi];
         const x = gapPx + xi * (cellW + gapPx);
@@ -89,11 +93,11 @@ window.dashSpecMatrix = {
           continue;
         }
 
-        ctx.fillStyle = this.cellBackground(colorScale, value, min, max);
+        ctx.fillStyle = this.cellBackground(colorScale, value, rowMin, rowMax);
         ctx.fillRect(x, y, cellW, cellH);
 
         if (showValues && cellW >= 20 && cellH >= 16) {
-          ctx.fillStyle = this.cellText(value, min, max);
+          ctx.fillStyle = this.cellText(value, rowMin, rowMax);
           const fontSize = Math.min(12, Math.max(9, Math.floor(Math.min(cellW, cellH) * 0.42)));
           ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
           ctx.textAlign = "center";
