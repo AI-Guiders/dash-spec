@@ -40,6 +40,7 @@
                        autocapitalize="off"
                        autocorrect="off"
                        spellcheck="false"
+                       data-command-line-suggest="@SuggestActive"
                        data-ccl-suggest="@SuggestActive"
                        @bind="Line"
                        @bind:event="oninput"
@@ -105,7 +106,7 @@
         if (Visible && !_inputBound)
         {
             _inputBound = true;
-            await Js.InvokeVoidAsync("dashFilterCcl.bindInput", _inputRef);
+            await Js.InvokeVoidAsync("aiguidersInput.surfaces.commandLine.bindInput", _inputRef);
         }
 
         if (Visible && !_wasVisible)
