@@ -54,8 +54,9 @@ else
                     var xLabel = Payload.XLabels[xi];
                     var filled = value is not null;
                     var active = _activeCell is { Yi: var ay, Xi: var ax } && ay == yi && ax == xi;
+                    var (rowMin, rowMax) = Payload.ColorRangeForRow(yi);
                     <div class="heatmap-cell @(filled ? "heatmap-cell-filled" : "heatmap-cell-empty") @(active ? "heatmap-cell-active" : null)"
-                         style="@(filled ? $"background:{HeatmapColorScale.CellBackground(ColorScale, value!.Value, Payload.Min, Payload.Max)};color:{HeatmapColorScale.CellText(ColorScale, value!.Value, Payload.Min, Payload.Max)}" : null)"
+                         style="@(filled ? $"background:{HeatmapColorScale.CellBackground(ColorScale, value!.Value, rowMin, rowMax)};color:{HeatmapColorScale.CellText(ColorScale, value!.Value, rowMin, rowMax)}" : null)"
                          @onmouseenter="() => ShowPopover(yi, xi)"
                          @onmouseleave="HidePopover"
                          @onclick="() => SelectCell(yi, xi)"
