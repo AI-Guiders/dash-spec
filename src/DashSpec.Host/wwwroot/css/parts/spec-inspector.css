@@ -1,7 +1,22 @@
 .topbar-nav {
   display: flex;
+  align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
   font-size: 0.85rem;
+}
+
+.dash-catalog-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: auto;
+  max-width: none;
+}
+
+.dash-catalog-inline .dash-catalog-select {
+  min-width: 11rem;
+  max-width: 16rem;
 }
 
 .topbar-nav a {

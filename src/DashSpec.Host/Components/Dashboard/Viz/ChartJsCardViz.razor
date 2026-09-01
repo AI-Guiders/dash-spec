@@ -51,8 +51,10 @@ else
         };
 
     private bool CategoryClickEnabled =>
+        Context.OnHeatmapCellSelected.HasDelegate &&
         Context.Card.ClickBehaviour is not null &&
-        Interactions.HasNavigationEffects(Context.Card.ClickBehaviour);
+        (Interactions.HasNavigationEffects(Context.Card.ClickBehaviour) ||
+         Interactions.ResolveShowEffect(Context.Card.ClickBehaviour) is not null);
 
     private Task HandleCategorySelectedAsync((int Index, string Label) args)
     {

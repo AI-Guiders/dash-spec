@@ -16,15 +16,10 @@
         <InputFile OnChange="OnUpload" accept=".dashspec" disabled="@Busy" />
     </label>
     }
-    @if (!string.IsNullOrEmpty(SpecSource))
-    {
-        <span class="badge">@SpecSource</span>
-    }
 </section>
 
 @code {
     [Parameter] public bool Busy { get; set; }
     [Parameter] public bool ShowUpload { get; set; }
-    [Parameter] public string? SpecSource { get; set; }
     [Parameter] public EventCallback<InputFileChangeEventArgs> OnUpload { get; set; }
 }
