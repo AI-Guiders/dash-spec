@@ -25,7 +25,7 @@
                     @onclick="() => OnSelect.InvokeAsync(item)">
                     <span class="col-name">@(parts.Secondary ?? "")</span>
                     <span class="col-human">@parts.Primary</span>
-                    <span class="col-help">@item.Help</span>
+                    <span class="col-help">@DashboardFilterCommandDisplay.FormatSuggestionHelp(item, CommandContext)</span>
                 </li>
             }
         </ul>
