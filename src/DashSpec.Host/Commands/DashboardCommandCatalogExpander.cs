@@ -10,7 +10,7 @@ namespace DashSpec.Host.Commands;
 /// <summary>Context-bound catalog rows — federation builder, product data (GUIDERS-ADR-0045).</summary>
 internal static class DashboardCommandCatalogExpander
 {
-    internal static readonly string[] DashSurfaces = ["dash-slash", "dash-palette", "dash-ccl"];
+    internal static IReadOnlyList<string> FederationSurfaces => DashboardCatalog.FederationSurfaces;
 
     public static IReadOnlyList<CommandDescriptor> Expand(DashboardFilterContext context)
     {
@@ -21,7 +21,7 @@ internal static class DashboardCommandCatalogExpander
             HostSurfaceCatalog.Surfaces,
             surface => ShowCommandPaths.SurfacePath(surface.Id),
             surface => surface.Hint,
-            (builder, _) => builder.Group("Host").Surfaces(DashSurfaces).Scope([])));
+            (builder, _) => builder.Group("Host").Surfaces(FederationSurfaces).Scope([])));
 
         descriptors.AddRange(CommandDescriptorRows.Map(
             SelectReportCommand.Id,
@@ -71,7 +71,7 @@ internal static class DashboardCommandCatalogExpander
             .Group("Filter")
             .ArgTail($"picker:dash.field.{filterName}")
             .ArgHint(DashboardFilterSlashLabels.FieldFilterHint(context, filterName))
-            .Surfaces(DashSurfaces)
+            .Surfaces(FederationSurfaces)
             .Scope(DashSpecCommandScope.Dashboard)
             .Build();
 
@@ -83,13 +83,13 @@ internal static class DashboardCommandCatalogExpander
             .ArgTail("picker+constructor:+date_today+date_week+date_month_week+date_month+date_quarter+date_range")
             .ArgHint(DashboardFilterSlashLabels.DateFilterHint(context, filterName))
             .ArgConstructors(DateConstructorBindings())
-            .Surfaces(DashSurfaces)
+            .Surfaces(FederationSurfaces)
             .Scope(DashSpecCommandScope.Dashboard)
             .Build();
 
     static CommandDescriptorBuilder DashboardDefaults(CommandDescriptorBuilder builder) =>
         builder.Group("Report")
-            .Surfaces(DashSurfaces)
+            .Surfaces(FederationSurfaces)
             .Scope(DashSpecCommandScope.Dashboard);
 
     static IReadOnlyList<ArgConstructorBinding> DateConstructorBindings() =>
