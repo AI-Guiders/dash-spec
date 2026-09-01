@@ -53,6 +53,7 @@ public static class DiagramKindRegistry
         new("y", PropertyValueType.ColumnBinding),
         new("value", PropertyValueType.ColumnBinding),
         new("height", PropertyValueType.Scalar),
+        new("color_normalize", PropertyValueType.Scalar),
     ];
 
     private static readonly IReadOnlyDictionary<string, DiagramKindSpec> Specs =

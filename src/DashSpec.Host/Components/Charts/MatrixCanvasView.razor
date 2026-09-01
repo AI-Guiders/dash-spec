@@ -154,8 +154,11 @@ else
             cells = Payload.Cells,
             min = Payload.Min,
             max = Payload.Max,
+            colorNormalize = MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize),
             rowMins = Payload.RowMins,
             rowMaxs = Payload.RowMaxs,
+            colMins = Payload.ColMins,
+            colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
             showValues = cellCount <= 200,
@@ -184,7 +187,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{ComputeCellHash()}:{ColorScale}:{HeightPx}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}";
 
     private int ComputeCellHash()
     {

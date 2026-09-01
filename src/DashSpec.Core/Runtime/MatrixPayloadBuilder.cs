@@ -31,7 +31,8 @@ internal static class MatrixPayloadBuilder
                 yFormat,
                 xStep,
                 seriesTransform,
-                tooltip);
+                tooltip,
+                diagram);
         }
 
         var xLabels = new List<string>();
@@ -155,8 +156,7 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        var (rowMins, rowMaxs) = ComputeRowRanges(cells, min, max);
-        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips, rowMins, rowMaxs);
+        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
     }
 
     private static MatrixPayload BuildHourGrid(
@@ -168,7 +168,8 @@ internal static class MatrixPayloadBuilder
         string? yFormat,
         TimeSpan xStep,
         SeriesTransformSettings? seriesTransform,
-        TooltipDefinition? tooltip)
+        TooltipDefinition? tooltip,
+        DiagramDefinition diagram)
     {
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
         var bucketRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
@@ -295,8 +296,48 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        var (rowMins, rowMaxs) = ComputeRowRanges(cells, min, max);
-        return new MatrixPayload(xLabels, yLabels, cells, min, max, tooltips, rowMins, rowMaxs);
+        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
+    }
+
+    private static MatrixPayload FinalizeMatrix(
+        IReadOnlyList<string> xLabels,
+        IReadOnlyList<string> yLabels,
+        double?[][] cells,
+        double min,
+        double max,
+        string?[][]? tooltips,
+        DiagramDefinition diagram)
+    {
+        diagram.Properties.TryGetValue("color_normalize", out var normalizeRaw);
+        var normalize = MatrixColorNormalizeParser.Parse(normalizeRaw);
+
+        double[]? rowMins = null;
+        double[]? rowMaxs = null;
+        double[]? colMins = null;
+        double[]? colMaxs = null;
+
+        switch (normalize)
+        {
+            case MatrixColorNormalize.Row:
+                (rowMins, rowMaxs) = ComputeRowRanges(cells, min, max);
+                break;
+            case MatrixColorNormalize.Column:
+                (colMins, colMaxs) = ComputeColumnRanges(cells, min, max);
+                break;
+        }
+
+        return new MatrixPayload(
+            xLabels,
+            yLabels,
+            cells,
+            min,
+            max,
+            tooltips,
+            normalize,
+            rowMins,
+            rowMaxs,
+            colMins,
+            colMaxs);
     }
 
     private static (double[] RowMins, double[] RowMaxs) ComputeRowRanges(
@@ -334,6 +375,44 @@ internal static class MatrixPayloadBuilder
         }
 
         return (rowMins, rowMaxs);
+    }
+
+    private static (double[] ColMins, double[] ColMaxs) ComputeColumnRanges(
+        double?[][] cells,
+        double fallbackMin,
+        double fallbackMax)
+    {
+        var colCount = cells.Length == 0 ? 0 : cells[0].Length;
+        var colMins = new double[colCount];
+        var colMaxs = new double[colCount];
+        for (var xi = 0; xi < colCount; xi++)
+        {
+            var cMin = double.PositiveInfinity;
+            var cMax = double.NegativeInfinity;
+            foreach (var row in cells)
+            {
+                if ((uint)xi >= (uint)row.Length || row[xi] is not { } value)
+                {
+                    continue;
+                }
+
+                cMin = Math.Min(cMin, value);
+                cMax = Math.Max(cMax, value);
+            }
+
+            if (double.IsPositiveInfinity(cMin))
+            {
+                colMins[xi] = fallbackMin;
+                colMaxs[xi] = fallbackMax;
+            }
+            else
+            {
+                colMins[xi] = cMin;
+                colMaxs[xi] = cMax;
+            }
+        }
+
+        return (colMins, colMaxs);
     }
 
     private static void SortHeatmapXLabels(List<string> xLabels)
