@@ -135,9 +135,16 @@
         }
     }
 
+    DashboardFilterContext? _lastCommandContext;
+
     protected override void OnParametersSet()
     {
-        if (_focused)
+        if (!ReferenceEquals(_lastCommandContext, CommandContext))
+        {
+            _lastCommandContext = CommandContext;
+            RefreshSuggestions();
+        }
+        else if (_focused)
         {
             RefreshSuggestions();
         }
