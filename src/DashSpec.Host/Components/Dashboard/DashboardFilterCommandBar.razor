@@ -167,6 +167,17 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    public void DismissSuggestionsFromHost()
+    {
+        if (!_focused)
+        {
+            return;
+        }
+
+        ApplySuggestDismiss();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     void OpenPalette() => _paletteOpen = true;
 
     void ClosePalette() => _paletteOpen = false;
@@ -221,9 +232,15 @@
 
     async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (e.CtrlKey && string.Equals(e.Key, "k", StringComparison.OrdinalIgnoreCase))
+        if (DashboardCatalogBindings.MatchesGesture(e, DashboardCatalogBindings.ChordRootGesture))
         {
             _paletteOpen = true;
+            return;
+        }
+
+        if (DashboardCatalogBindings.MatchesGesture(e, DashboardCatalogBindings.SuggestDismissGesture))
+        {
+            ApplySuggestDismiss();
             return;
         }
 
@@ -236,21 +253,8 @@
                 return;
             }
 
-            if (!_suggestionsDismissed && _suggestions.Count > 0)
+            if (!_focused)
             {
-                _suggestionsDismissed = true;
-                _selected = 0;
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(_line))
-            {
-                _line = "";
-                _selected = 0;
-                _validationError = null;
-                _suggestionsDismissed = true;
-                CommandSession.ClearDraft(CommandContext);
-                RefreshSuggestions();
                 return;
             }
 
@@ -367,6 +371,33 @@
                 ref _line))
         {
             _selected = 0;
+            RefreshSuggestions();
+        }
+    }
+
+    void ApplySuggestDismiss()
+    {
+        if (ConstructorHost.Session.IsActive)
+        {
+            ConstructorHost.Session.Cancel();
+            RefreshSuggestions();
+            return;
+        }
+
+        if (!_suggestionsDismissed && _suggestions.Count > 0)
+        {
+            _suggestionsDismissed = true;
+            _selected = 0;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_line))
+        {
+            _line = "";
+            _selected = 0;
+            _validationError = null;
+            _suggestionsDismissed = true;
+            CommandSession.ClearDraft(CommandContext);
             RefreshSuggestions();
         }
     }

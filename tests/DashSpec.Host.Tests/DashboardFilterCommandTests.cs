@@ -93,6 +93,14 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void Catalog_bindings_resolve_suggest_dismiss_gesture()
+    {
+        Assert.Equal("Ctrl+.", DashboardCatalogBindings.SuggestDismissGesture);
+        Assert.Equal("Ctrl+K", DashboardCatalogBindings.ChordRootGesture);
+        Assert.Contains(DashboardCatalogBindings.HostBindings(), binding => binding.MethodName == "OnSuggestDismiss");
+    }
+
+    [Fact]
     public void Catalog_host_scope_excludes_dashboard_paths()
     {
         var hostContext = HostCommandContextFactory.CreateHostOnly(new DashboardFilterUiState(), TestCulture);
