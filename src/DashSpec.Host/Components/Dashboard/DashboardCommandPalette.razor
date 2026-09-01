@@ -77,8 +77,8 @@
     IReadOnlyList<CommandTrailSegment> _trail = [];
     SlashInputGuidance _guidance = new(
         "команда",
-        DashboardFilterCommandDisplay.AcceptCompletionHint,
         DashboardFilterCommandDisplay.EmptyPlaceholder,
+        "Начните ввод — Tab или Ctrl+Space дополняет сегмент",
         InvocationLinePhase.Path);
 
     string SuggestActive => Visible && _suggestions.Count > 0 ? "true" : "false";
