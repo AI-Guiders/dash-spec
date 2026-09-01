@@ -126,33 +126,10 @@ internal static class DashboardFilterCommandDisplay
 
 
 
-        if (item.CommandPath.StartsWith("view ", StringComparison.OrdinalIgnoreCase))
-
+        if (TryFormatViewSuggestionParts(item, context, out var viewParts))
         {
-
-            var parts = item.CommandPath.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            if (parts.Length >= 3)
-
-            {
-
-                return (item.Help, parts[2]);
-
-            }
-
-
-
-            if (parts.Length >= 2)
-
-            {
-
-                return (item.Help, parts[1]);
-
-            }
-
+            return viewParts;
         }
-
-
 
         var catalogEntry = context.CatalogEntries.FirstOrDefault(entry =>
 
@@ -208,7 +185,80 @@ internal static class DashboardFilterCommandDisplay
 
     }
 
+    public static string FormatSuggestionHelp(ArgCompletionItem item, DashboardFilterContext context)
+    {
+        var commandPath = FormatCommand(item.CommandPath);
+        if (!commandPath.StartsWith($"{ViewCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(item.StepSegment))
+        {
+            return item.Help;
+        }
 
+        var tokens = commandPath.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length < 3)
+        {
+            return item.Help;
+        }
+
+        var card = context.SwitchableCards.FirstOrDefault(target =>
+            target.CardId.Equals(tokens[1], StringComparison.OrdinalIgnoreCase));
+        if (card is null)
+        {
+            return item.Help;
+        }
+
+        if (item.StepSegment.Equals(tokens[1], StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Join(" · ", card.Views.Select(view => view.Label));
+        }
+
+        var view = card.Views.FirstOrDefault(option =>
+            option.ViewId.Equals(tokens[2], StringComparison.OrdinalIgnoreCase));
+        return view?.Label ?? item.Help;
+    }
+
+    static bool TryFormatViewSuggestionParts(
+        ArgCompletionItem item,
+        DashboardFilterContext context,
+        out (string Primary, string? Secondary) parts)
+    {
+        parts = default;
+        var commandPath = FormatCommand(item.CommandPath);
+        if (!commandPath.StartsWith($"{ViewCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(item.StepSegment))
+        {
+            return false;
+        }
+
+        var tokens = commandPath.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length < 3)
+        {
+            return false;
+        }
+
+        var card = context.SwitchableCards.FirstOrDefault(target =>
+            target.CardId.Equals(tokens[1], StringComparison.OrdinalIgnoreCase));
+        if (card is null)
+        {
+            return false;
+        }
+
+        if (item.StepSegment.Equals(tokens[1], StringComparison.OrdinalIgnoreCase))
+        {
+            parts = (card.Title, card.CardId);
+            return true;
+        }
+
+        if (item.StepSegment.Equals(tokens[2], StringComparison.OrdinalIgnoreCase))
+        {
+            var view = card.Views.FirstOrDefault(option =>
+                option.ViewId.Equals(tokens[2], StringComparison.OrdinalIgnoreCase));
+            parts = (view is not null ? $"{card.Title} — {view.Label}" : tokens[2], tokens[2]);
+            return true;
+        }
+
+        return false;
+    }
 
     public static string FormatTreeBreadcrumb(string typedBody)
 
