@@ -9,7 +9,7 @@ internal static class DashboardFilterCommandKeys
         e.Key == "Tab"
         || (e.Key == " " && e.CtrlKey && !e.AltKey && !e.MetaKey && !e.ShiftKey);
 
-    /// <summary>Capture-phase preventDefault when suggestions are open (see @aiguiders/ccl-input).</summary>
+    /// <summary>Capture-phase preventDefault when suggestions are open (see @aiguiders/input surfaces.commandLine).</summary>
     public static bool PreventDefaultWhenSuggestOpen(KeyboardEventArgs e, bool suggestOpen) =>
         suggestOpen
         && (e.Key == "Tab"
