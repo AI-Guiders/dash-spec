@@ -107,20 +107,22 @@ public sealed record MatrixPayload(
     double Min,
     double Max,
     string?[][]? Tooltips = null,
+    MatrixColorNormalize ColorNormalize = MatrixColorNormalize.Row,
     IReadOnlyList<double>? RowMins = null,
-    IReadOnlyList<double>? RowMaxs = null)
+    IReadOnlyList<double>? RowMaxs = null,
+    IReadOnlyList<double>? ColMins = null,
+    IReadOnlyList<double>? ColMaxs = null)
 {
-    /// <summary>Per-row (Y) color range; falls back to matrix Min/Max.</summary>
-    public (double Min, double Max) ColorRangeForRow(int yi)
+    public (double Min, double Max) ColorRangeForCell(int yi, int xi) => ColorNormalize switch
     {
-        if (RowMins is not null &&
-            RowMaxs is not null &&
-            (uint)yi < (uint)RowMins.Count &&
-            (uint)yi < (uint)RowMaxs.Count)
-        {
-            return (RowMins[yi], RowMaxs[yi]);
-        }
+        MatrixColorNormalize.Row when RowMins is not null && RowMaxs is not null &&
+            (uint)yi < (uint)RowMins.Count && (uint)yi < (uint)RowMaxs.Count
+            => (RowMins[yi], RowMaxs[yi]),
+        MatrixColorNormalize.Column when ColMins is not null && ColMaxs is not null &&
+            (uint)xi < (uint)ColMins.Count && (uint)xi < (uint)ColMaxs.Count
+            => (ColMins[xi], ColMaxs[xi]),
+        _ => (Min, Max),
+    };
 
-        return (Min, Max);
-    }
+    public (double Min, double Max) ColorRangeForRow(int yi) => ColorRangeForCell(yi, 0);
 }

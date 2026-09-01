@@ -51,8 +51,11 @@ window.dashSpecMatrix = {
     const cells = payload.cells;
     const min = payload.min;
     const max = payload.max;
+    const colorNormalize = payload.colorNormalize || "row";
     const rowMins = payload.rowMins;
     const rowMaxs = payload.rowMaxs;
+    const colMins = payload.colMins;
+    const colMaxs = payload.colMaxs;
     const colorScale = payload.colorScale || "heat";
     const gapPx = payload.gap ?? 2;
     const cellW = payload.cellWidth ?? 26;
@@ -75,12 +78,19 @@ window.dashSpecMatrix = {
     canvas._matrixLayout = { cellW, cellH, gapPx, xCount, yCount, cells };
 
     for (let yi = 0; yi < yCount; yi++) {
-      const rowMin = Array.isArray(rowMins) && rowMins[yi] != null ? rowMins[yi] : min;
-      const rowMax = Array.isArray(rowMaxs) && rowMaxs[yi] != null ? rowMaxs[yi] : max;
       for (let xi = 0; xi < xCount; xi++) {
         const value = cells[yi][xi];
         const x = gapPx + xi * (cellW + gapPx);
         const y = gapPx + yi * (cellH + gapPx);
+        let cellMin = min;
+        let cellMax = max;
+        if (colorNormalize === "row") {
+          if (Array.isArray(rowMins) && rowMins[yi] != null) cellMin = rowMins[yi];
+          if (Array.isArray(rowMaxs) && rowMaxs[yi] != null) cellMax = rowMaxs[yi];
+        } else if (colorNormalize === "column") {
+          if (Array.isArray(colMins) && colMins[xi] != null) cellMin = colMins[xi];
+          if (Array.isArray(colMaxs) && colMaxs[xi] != null) cellMax = colMaxs[xi];
+        }
 
         if (value == null) {
           ctx.fillStyle = "#141c28";
@@ -93,11 +103,11 @@ window.dashSpecMatrix = {
           continue;
         }
 
-        ctx.fillStyle = this.cellBackground(colorScale, value, rowMin, rowMax);
+        ctx.fillStyle = this.cellBackground(colorScale, value, cellMin, cellMax);
         ctx.fillRect(x, y, cellW, cellH);
 
         if (showValues && cellW >= 20 && cellH >= 16) {
-          ctx.fillStyle = this.cellText(value, rowMin, rowMax);
+          ctx.fillStyle = this.cellText(value, cellMin, cellMax);
           const fontSize = Math.min(12, Math.max(9, Math.floor(Math.min(cellW, cellH) * 0.42)));
           ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
           ctx.textAlign = "center";
