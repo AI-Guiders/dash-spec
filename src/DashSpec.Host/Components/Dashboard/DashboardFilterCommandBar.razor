@@ -39,7 +39,7 @@
                    role="combobox"
                    aria-autocomplete="list"
                    aria-haspopup="listbox"
-                   aria-expanded="@(_focused && _suggestions.Count > 0)"
+                   aria-expanded="@(_focused && !_suggestionsDismissed && _suggestions.Count > 0)"
                    aria-controls="dash-filter-command-suggestions"
                    autocomplete="off"
                    autocapitalize="off"
@@ -62,7 +62,7 @@
     {
         <DashboardSlashGuidance Guidance="_guidance" />
     }
-    @if (_focused && _suggestions.Count > 0)
+    @if (_focused && !_suggestionsDismissed && _suggestions.Count > 0)
     {
         <DashboardCommandSuggestionList Id="dash-filter-command-suggestions"
                                         CssClass="dash-filter-command-suggestions"
@@ -92,6 +92,7 @@
     int _selected;
     bool _paletteOpen;
     bool _focused;
+    bool _suggestionsDismissed;
     CancellationTokenSource? _blurDelayCts;
     string? _validationError;
     IReadOnlyList<ArgCompletionItem> _suggestions = [];
@@ -102,7 +103,7 @@
         "Начните ввод — Tab или Ctrl+Space дополняет сегмент",
         InvocationLinePhase.Path);
 
-    string SuggestActive => _focused && _suggestions.Count > 0 ? "true" : "false";
+    string SuggestActive => _focused && !_suggestionsDismissed && _suggestions.Count > 0 ? "true" : "false";
 
     string InputPlaceholder =>
         string.IsNullOrWhiteSpace(_guidance.Placeholder)
@@ -131,6 +132,7 @@
 
             _line = next;
             _validationError = null;
+            _suggestionsDismissed = false;
             RefreshSuggestions();
         }
     }
@@ -180,6 +182,7 @@
     {
         CancelBlurDelay();
         _focused = true;
+        _suggestionsDismissed = false;
         _validationError = null;
         CommandSession.SetBarActive(true, CommandContext);
         RefreshSuggestions();
@@ -233,11 +236,19 @@
                 return;
             }
 
-            if (_suggestions.Count > 0 || !string.IsNullOrWhiteSpace(_line))
+            if (!_suggestionsDismissed && _suggestions.Count > 0)
+            {
+                _suggestionsDismissed = true;
+                _selected = 0;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_line))
             {
                 _line = "";
                 _selected = 0;
                 _validationError = null;
+                _suggestionsDismissed = true;
                 CommandSession.ClearDraft(CommandContext);
                 RefreshSuggestions();
                 return;
@@ -245,6 +256,7 @@
 
             CancelBlurDelay();
             _focused = false;
+            _suggestionsDismissed = false;
             CommandSession.SetBarActive(false, CommandContext);
             return;
         }
