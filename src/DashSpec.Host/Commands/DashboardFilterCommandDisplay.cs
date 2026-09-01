@@ -1,10 +1,10 @@
 #nullable enable
 
+using AIGuiders.Platform.Authoring.Command.Catalog;
 using AIGuiders.Platform.CommandPlane;
 
 namespace DashSpec.Host.Commands;
 
-/// <summary>CLI-facing labels for dash-ccl (no leading slashes).</summary>
 internal static class DashboardFilterCommandDisplay
 {
     public const string Prompt = ">";
@@ -73,29 +73,19 @@ internal static class DashboardFilterCommandDisplay
             return (item.StepSegment, null);
         }
 
-        if (TryFormatCatalogPhraseSlot(item, context, typedBody, out var phraseParts))
+        if (!string.IsNullOrWhiteSpace(item.ActiveSlot))
         {
-            return phraseParts;
+            return DashboardSlotNouns.FormatValue(
+                item.ActiveSlot,
+                item.StepSegment,
+                typedBody,
+                item.CommandId,
+                context);
         }
 
-        var catalogEntry = context.CatalogEntries.FirstOrDefault(entry =>
-            entry.Id.Equals(item.StepSegment, StringComparison.OrdinalIgnoreCase));
-        if (catalogEntry is not null)
+        if (!string.IsNullOrWhiteSpace(item.Help) && item.Help != item.StepSegment)
         {
-            return (catalogEntry.Title, catalogEntry.Id);
-        }
-
-        var page = context.ReportPages.FirstOrDefault(reportPage =>
-            reportPage.Id.Equals(item.StepSegment, StringComparison.OrdinalIgnoreCase));
-        if (page is not null)
-        {
-            return (page.Title ?? page.Id, page.Id);
-        }
-
-        if (context.ToolbarFilterNames.Contains(item.StepSegment, StringComparer.OrdinalIgnoreCase))
-        {
-            var label = DashboardCommandEntityResolver.ResolveFilterLabel(context, item.StepSegment);
-            return (label, item.StepSegment);
+            return (item.Help, item.StepSegment);
         }
 
         if (!string.IsNullOrWhiteSpace(item.Help))
@@ -108,13 +98,13 @@ internal static class DashboardFilterCommandDisplay
 
     public static string FormatSuggestionHelp(ArgCompletionItem item, DashboardFilterContext context, string typedBody = "")
     {
-        if (TryResolveCatalogPhraseSlot(item, context, typedBody, out var commandId, out var slotName))
+        if (!string.IsNullOrWhiteSpace(item.ActiveSlot) && !string.IsNullOrWhiteSpace(item.StepSegment))
         {
-            return DashboardCatalogCompletion.FormatSlotHelp(
-                commandId,
-                slotName,
-                item.StepSegment!,
+            return DashboardSlotNouns.FormatHelp(
+                item.ActiveSlot,
+                item.StepSegment,
                 typedBody,
+                item.CommandId,
                 context);
         }
 
@@ -125,58 +115,6 @@ internal static class DashboardFilterCommandDisplay
     {
         var text = typedBody.Trim();
         return text.Length == 0 ? "команда" : text;
-    }
-
-    static bool TryFormatCatalogPhraseSlot(
-        ArgCompletionItem item,
-        DashboardFilterContext context,
-        string typedBody,
-        out (string Primary, string? Secondary) parts)
-    {
-        parts = default;
-        if (!TryResolveCatalogPhraseSlot(item, context, typedBody, out var commandId, out var slotName))
-        {
-            return false;
-        }
-
-        parts = DashboardCatalogCompletion.FormatSlotValue(
-            commandId,
-            slotName,
-            item.StepSegment!,
-            typedBody,
-            context);
-        return true;
-    }
-
-    static bool TryResolveCatalogPhraseSlot(
-        ArgCompletionItem item,
-        DashboardFilterContext context,
-        string typedBody,
-        out string commandId,
-        out string slotName)
-    {
-        commandId = "";
-        slotName = "";
-        if (string.IsNullOrWhiteSpace(typedBody) || string.IsNullOrWhiteSpace(item.StepSegment))
-        {
-            return false;
-        }
-
-        if (string.Equals(item.Group, "View", StringComparison.OrdinalIgnoreCase))
-        {
-            commandId = DashboardCatalogCompletion.CardViewCommand;
-            slotName = DashboardCatalogCompletion.ResolveActiveSlot(typedBody, commandId) ?? "";
-            return slotName.Length > 0;
-        }
-
-        if (string.Equals(item.Group, "Host", StringComparison.OrdinalIgnoreCase))
-        {
-            commandId = DashboardCatalogCompletion.ShowHostCommand;
-            slotName = DashboardCatalogCompletion.ResolveActiveSlot(typedBody, commandId) ?? "";
-            return slotName.Length > 0;
-        }
-
-        return false;
     }
 
     static string FormatBreadcrumb(string breadcrumb)
