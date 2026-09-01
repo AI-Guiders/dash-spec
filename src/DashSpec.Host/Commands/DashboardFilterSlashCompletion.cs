@@ -68,7 +68,8 @@ internal static class DashboardFilterSlashCompletion
         var body = NormalizeBody(typedLine);
         return body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
                || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
-               || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase);
+               || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+               || body.Equals($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch}", StringComparison.OrdinalIgnoreCase);
     }
 
     public static string ToInputTail(string line) => SanitizeLine(line);
@@ -134,8 +135,10 @@ internal static class DashboardFilterSlashCompletion
             "название фильтра · значение",
         _ when body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase) =>
             "Представление карточки — heatmap, line…",
-        _ when body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
-               || body.StartsWith($"{ShowCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase) =>
+        _ when body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase) =>
+            ShowCommandPaths.HostBranch,
+        _ when body.Equals($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch}", StringComparison.OrdinalIgnoreCase)
+               || body.StartsWith($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch} ", StringComparison.OrdinalIgnoreCase) =>
             "dashboard · controlcenter",
         _ => null,
     };
@@ -152,7 +155,9 @@ internal static class DashboardFilterSlashCompletion
             || body.StartsWith($"{ViewCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
             || body.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
             || body.StartsWith($"{ShowCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
-            || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase))
+            || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+            || body.StartsWith($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch} ", StringComparison.OrdinalIgnoreCase)
+            || body.Equals($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch}", StringComparison.OrdinalIgnoreCase))
         {
             return body;
         }

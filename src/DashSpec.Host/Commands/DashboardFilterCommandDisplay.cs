@@ -108,6 +108,10 @@ internal static class DashboardFilterCommandDisplay
 
             || item.StepSegment.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
 
+            || item.StepSegment.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+
+            || item.StepSegment.Equals(ShowCommandPaths.HostBranch, StringComparison.OrdinalIgnoreCase)
+
             || item.StepSegment.Equals(FilterCommandPaths.FilterBranch, StringComparison.OrdinalIgnoreCase)
 
             || item.StepSegment.Equals(FilterCommandPaths.ReportBranch, StringComparison.OrdinalIgnoreCase)

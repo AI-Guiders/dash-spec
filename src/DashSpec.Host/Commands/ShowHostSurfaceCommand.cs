@@ -19,7 +19,7 @@ internal sealed class ShowHostSurfaceCommand : PlatformCommand<DashboardFilterCo
 
         if (surfaceId.Length == 0)
         {
-            return CommandOutcome.Fail("Укажите вкладку: show dashboard | controlcenter.");
+            return CommandOutcome.Fail("Укажите вкладку: show host dashboard | show host controlcenter.");
         }
 
         if (!HostSurfaceCatalog.TryResolveRoute(surfaceId, out var route))
