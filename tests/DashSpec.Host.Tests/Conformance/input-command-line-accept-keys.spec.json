@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "surface": "ccl-accept-keys",
-  "source": "DashSpec DashboardFilterCommandKeys + @aiguiders/ccl-input",
+  "surface": "input-command-line-accept-keys",
+  "source": "GUIDERS-ADR-0009 surfaces; command-line invoker keyboard policy",
   "vectors": [
     {
       "id": "tab-accepts-completion",
