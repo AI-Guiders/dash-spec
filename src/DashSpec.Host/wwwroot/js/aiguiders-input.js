@@ -1,5 +1,5 @@
 "use strict";
-var aiguidersCcl = (() => {
+var aiguidersInput = (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -21,12 +21,20 @@ var aiguidersCcl = (() => {
   // src/browser-entry.ts
   var browser_entry_exports = {};
   __export(browser_entry_exports, {
-    bindInput: () => bindInput,
+    commandLine: () => command_line_exports,
+    keyboard: () => keyboard_exports,
+    surfaces: () => surfaces
+  });
+
+  // src/keyboard/index.ts
+  var keyboard_exports = {};
+  __export(keyboard_exports, {
     isAcceptCompletion: () => isAcceptCompletion,
+    keyStateFromEvent: () => keyStateFromEvent,
     preventDefaultWhenSuggestOpen: () => preventDefaultWhenSuggestOpen
   });
 
-  // src/accept-keys.ts
+  // src/keyboard/accept-keys.ts
   function isAcceptCompletion(state) {
     return state.key === "Tab" || state.key === " " && !!state.ctrlKey && !state.altKey && !state.metaKey && !state.shiftKey;
   }
@@ -40,7 +48,7 @@ var aiguidersCcl = (() => {
     return state.key === " " && !!state.ctrlKey && !state.altKey && !state.metaKey && !state.shiftKey;
   }
 
-  // src/key-state.ts
+  // src/keyboard/key-state.ts
   function keyStateFromEvent(event) {
     return {
       key: event.key,
@@ -51,10 +59,16 @@ var aiguidersCcl = (() => {
     };
   }
 
-  // src/dom-binder.ts
+  // src/surfaces/command-line/index.ts
+  var command_line_exports = {};
+  __export(command_line_exports, {
+    bindInput: () => bindInput
+  });
+
+  // src/surfaces/command-line/dom-binder.ts
   var bound = /* @__PURE__ */ new WeakSet();
   function readSuggestOpen(input) {
-    return input.getAttribute("data-ccl-suggest") === "true";
+    return input.getAttribute("data-command-line-suggest") === "true" || input.getAttribute("data-ccl-suggest") === "true";
   }
   function suppressBrowserAutocomplete(input) {
     input.setAttribute("autocomplete", "off");
@@ -64,11 +78,11 @@ var aiguidersCcl = (() => {
     input.setAttribute("data-lpignore", "true");
     input.setAttribute("data-1p-ignore", "true");
     input.setAttribute("data-form-type", "other");
-    input.setAttribute("name", "aiguiders-ccl-" + Math.random().toString(36).slice(2));
-    if (input.dataset.cclAutocompleteBound === "true") {
+    input.setAttribute("name", "aiguiders-command-line-" + Math.random().toString(36).slice(2));
+    if (input.dataset.commandLineAutocompleteBound === "true") {
       return;
     }
-    input.dataset.cclAutocompleteBound = "true";
+    input.dataset.commandLineAutocompleteBound = "true";
     input.setAttribute("readonly", "readonly");
     input.addEventListener("focus", () => {
       input.removeAttribute("readonly");
@@ -97,5 +111,10 @@ var aiguidersCcl = (() => {
       true
     );
   }
+
+  // src/browser-entry.ts
+  var surfaces = {
+    commandLine: command_line_exports
+  };
   return __toCommonJS(browser_entry_exports);
 })();

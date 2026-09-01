@@ -4,13 +4,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 $dashSpecRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$bundle = Join-Path $GuidersJsRoot "packages\ccl-input\dist\browser\aiguiders-ccl-input.js"
-$target = Join-Path $dashSpecRoot "src\DashSpec.Host\wwwroot\js\aiguiders-ccl-input.js"
+$bundle = Join-Path $GuidersJsRoot "packages\input\dist\browser\aiguiders-input.js"
+$target = Join-Path $dashSpecRoot "src\DashSpec.Host\wwwroot\js\aiguiders-input.js"
 
 if (-not (Test-Path $bundle)) {
     Push-Location $GuidersJsRoot
     try {
-        npm run build -w @aiguiders/ccl-input
+        npm run build -w @aiguiders/input
     }
     finally {
         Pop-Location

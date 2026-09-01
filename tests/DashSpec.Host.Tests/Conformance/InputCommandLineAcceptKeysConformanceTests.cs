@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DashSpec.Host.Tests.Conformance;
 
-public sealed class CclAcceptKeysConformanceTests
+public sealed class InputCommandLineAcceptKeysConformanceTests
 {
     static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -14,12 +14,12 @@ public sealed class CclAcceptKeysConformanceTests
     };
 
     [Fact]
-    public void DashboardFilterCommandKeys_matches_ccl_accept_keys_vectors()
+    public void DashboardFilterCommandKeys_matches_input_command_line_accept_keys_vectors()
     {
-        var specPath = Path.Combine(AppContext.BaseDirectory, "Conformance", "ccl-accept-keys.spec.json");
+        var specPath = Path.Combine(AppContext.BaseDirectory, "Conformance", "input-command-line-accept-keys.spec.json");
         var json = File.ReadAllText(specPath);
-        var spec = JsonSerializer.Deserialize<CclAcceptKeysSpecDocument>(json, JsonOptions)
-                   ?? throw new InvalidOperationException("ccl-accept-keys spec deserialized to null.");
+        var spec = JsonSerializer.Deserialize<InputCommandLineAcceptKeysSpecDocument>(json, JsonOptions)
+                   ?? throw new InvalidOperationException("input-command-line-accept-keys spec deserialized to null.");
 
         var errors = new List<string>();
         foreach (var vector in spec.Vectors)
@@ -50,19 +50,19 @@ public sealed class CclAcceptKeysConformanceTests
         Assert.Empty(errors);
     }
 
-    sealed record CclAcceptKeysSpecDocument(
-        [property: JsonPropertyName("vectors")] IReadOnlyList<CclAcceptKeysVector> Vectors);
+    sealed record InputCommandLineAcceptKeysSpecDocument(
+        [property: JsonPropertyName("vectors")] IReadOnlyList<InputCommandLineAcceptKeysVector> Vectors);
 
-    sealed record CclAcceptKeysVector(
+    sealed record InputCommandLineAcceptKeysVector(
         [property: JsonPropertyName("id")] string Id,
         [property: JsonPropertyName("key")] string Key,
         [property: JsonPropertyName("ctrlKey")] bool CtrlKey,
         [property: JsonPropertyName("altKey")] bool AltKey,
         [property: JsonPropertyName("metaKey")] bool MetaKey,
         [property: JsonPropertyName("shiftKey")] bool ShiftKey,
-        [property: JsonPropertyName("expect")] CclAcceptKeysExpectation Expect);
+        [property: JsonPropertyName("expect")] InputCommandLineAcceptKeysExpectation Expect);
 
-    sealed record CclAcceptKeysExpectation(
+    sealed record InputCommandLineAcceptKeysExpectation(
         [property: JsonPropertyName("isAcceptCompletion")] bool IsAcceptCompletion,
         [property: JsonPropertyName("preventDefaultWhenSuggestOpen")] bool PreventDefaultWhenSuggestOpen);
 }
