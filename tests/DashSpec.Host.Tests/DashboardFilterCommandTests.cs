@@ -746,6 +746,38 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void View_completion_shows_card_step_before_view_step()
+    {
+        var uiState = new DashboardFilterUiState();
+        var context = CreateContext(
+            uiState,
+            ["usage_date"],
+            switchableCards:
+            [
+                new DashboardCardCommandTarget(
+                    "heatmap_card",
+                    "Heatmap",
+                    [new DashboardCardViewOption("heatmap", "Heatmap"), new DashboardCardViewOption("line", "Line")]),
+            ]);
+        var catalog = DashboardCommandCatalogBuilder.Build(context, []);
+        var cardStep = DashboardFilterSlashCompletion.GetResult(catalog, context, "view ", null, null);
+
+        Assert.Contains(cardStep.Items, item => item.StepSegment == "heatmap_card");
+        var cardItem = cardStep.Items.First(item => item.StepSegment == "heatmap_card");
+        var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context);
+        Assert.Equal("Heatmap", cardParts.Primary);
+        Assert.Equal("heatmap_card", cardParts.Secondary);
+        Assert.Equal("Heatmap · Line", DashboardFilterCommandDisplay.FormatSuggestionHelp(cardItem, context));
+
+        var viewStep = DashboardFilterSlashCompletion.GetResult(catalog, context, "view heatmap_card ", null, null);
+        Assert.Contains(viewStep.Items, item => item.StepSegment == "heatmap");
+        var viewItem = viewStep.Items.First(item => item.StepSegment == "heatmap");
+        var viewParts = DashboardFilterCommandDisplay.FormatSuggestionParts(viewItem, context);
+        Assert.Equal("Heatmap — Heatmap", viewParts.Primary);
+        Assert.Equal("heatmap", viewParts.Secondary);
+    }
+
+    [Fact]
     public void Normalizer_resolves_filter_label_to_id()
     {
         var uiState = new DashboardFilterUiState();
