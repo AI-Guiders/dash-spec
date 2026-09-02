@@ -5,7 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-02 |
 | **Tags** | #dashspec #planet #modeling #execution #fsharp #dsl #parse |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild — federation) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md) (informative — LRC) |
+| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild) · [GUIDERS-ADR-0061](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0061-language-resolver-center.md) (LRC) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-resolver-center-cdp-host.md) (CDP host) |
 
 ## Context
 
@@ -99,7 +99,7 @@ Execution **maps** Modeling IR to runtime DTOs — does not re-parse text except
 | Modeling packages | `Platform.Modeling.Gdl.*` | `DashSpec.Modeling.*` |
 | Block / parse kit | `BlockReader` (line-level; catalog quarries) | **not used** — premature; own token layer |
 | Project imports | `AuthoringProjectLoader` / `GdlProject` | `DashSpecProject` may keep thin C# shim → federation |
-| CDP LRC | `GdlBackend` | future planet backend (informative; [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md)) |
+| CDP LRC | `Platform.Execution.Language` + `Adapters.Gdl` | — (dashspec not in federation LRC v1) |
 
 DashSpec **does not** take a dependency on federation Block Kit in M0–M6. Lexical overlap (`end keyword`, `#` comments) is coincidental, not a shared library contract. If GDL later needs token-aware blocks (`end card id`, `@` roots), federation **may** study DashSpec Modeling — not the other way around today.
 
