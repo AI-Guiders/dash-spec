@@ -21,7 +21,7 @@
 
 Problems:
 
-- **Parser sprawl** — `CardParser` and peers reimplement block/`end keyword` machinery federation already ships as F# `BlockReader` ([`Platform.Modeling.Gdl.Authoring`](https://github.com/AI-Guiders/guiders-fsharp/tree/main/src/AIGuiders.Platform.Modeling.Gdl.Authoring)).
+- **Parser sprawl** — `CardParser` and peers are large hand-rolled `TryKeyword` ladders with mutable parse state; hard to extend and test in isolation.
 - **No algebraic IR boundary** — optional card children are nullable fields + runtime throws; new keywords need manual ladder updates across many files.
 - **Diagnostics** — `DashSpecParseException` throw-on-error; federation Authoring uses accumulated `AuthoringDiagnostic` lists.
 - **Layer blur** — [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) names Platform vs Surfaces; **inside** platform, parse/IR still shares a package with session builders and SQL compile.
@@ -51,7 +51,7 @@ Surfaces ([ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md)) and `
 ```text
 dash-spec repo (planet platform)
 ├── src/DashSpec.Modeling.Core          F#  IR spine, diagnostics, source spans
-├── src/DashSpec.Modeling.Parse         F#  lexer + parsers (all file roots from ADR-0017)
+├── src/DashSpec.Modeling.Parse         F#  lexer, token reader, block syntax, parsers (ADR-0017 roots)
 ├── src/DashSpec.Execution.Core         C#  resolve, effective model, workspace index
 ├── src/DashSpec.Execution.Runtime      C#  bind, QueryCompiler, MatrixPayloadBuilder, …
 ├── src/DashSpec.Execution.Catalog      C#  dashcatalog, git sync (when split from Host)
@@ -77,7 +77,7 @@ dash-spec repo (planet platform)
 .dashtransform · .dashinclude · .dashcatalog · .dashtooltip · …
 ```
 
-One Modeling parse entry per root kind; shared lexer/token layer inside `Modeling.Parse`.
+One Modeling parse entry per root kind; **planet-owned** lexer + token layer (`@` roots, `end kind id`, `end on click`, same-line properties) — richer than federation GDL `BlockReader` today (line-level `end keyword` only).
 
 ### 3. Execution owns (C#)
 
@@ -97,18 +97,21 @@ Execution **maps** Modeling IR to runtime DTOs — does not re-parse text except
 |--|------------------------------|----------------------|
 | Grammar | `*.{quarry}.gdl` | `.dashspec`, `.dashdiagram`, … |
 | Modeling packages | `Platform.Modeling.Gdl.*` | `DashSpec.Modeling.*` |
-| Shared kit | `BlockReader`, import patterns, table surfaces | **optional** `PackageReference` — reuse, not fork |
+| Block / parse kit | `BlockReader` (line-level; catalog quarries) | **not used** — premature; own token layer |
+| Project imports | `AuthoringProjectLoader` / `GdlProject` | `DashSpecProject` may keep thin C# shim → federation |
 | CDP LRC | `GdlBackend` | future planet backend (informative; [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md)) |
 
-DashSpec **may reference** federation Authoring kit where lexical DNA overlaps (`end keyword`, `!include` graph). DashSpec **does not** copy `GdlFragment` or adopt federation quarry names in this ADR.
+DashSpec **does not** take a dependency on federation Block Kit in M0–M6. Lexical overlap (`end keyword`, `#` comments) is coincidental, not a shared library contract. If GDL later needs token-aware blocks (`end card id`, `@` roots), federation **may** study DashSpec Modeling — not the other way around today.
+
+DashSpec **does not** copy `GdlFragment` or adopt federation quarry names in this ADR.
 
 ### 5. F# rationale (planet choice)
 
 F# is **recommended** for `DashSpec.Modeling.*`, not mandated for Execution:
 
 - block/module grammar is **algebraic** — DU + exhaustive `match` vs 900-line `TryKeyword` ladders;
-- diagnostic accumulation matches federation Authoring patterns;
-- optional shared `BlockReader` from `guiders-fsharp` reduces duplicate C# block machinery;
+- diagnostic accumulation (ref list, partial AST) vs throw-on-error;
+- planet-owned **token lexer** — no forced fit to federation line-level `BlockReader`;
 - Host / Blazor / connectors stay idiomatic C# with `[<CLIMutable>]` or thin mapper at the boundary.
 
 **Language per layer is a planet decision** — federation precedent is F# Modeling + C# Execution, not a platform law for sovereign DSLs.
@@ -165,7 +168,7 @@ M8  optional CDP LRC backend for `.dashspec` (planet extension; not federation s
 ## Consequences
 
 - Clear seam aligned with federation Modeling/Execution — easier for operators moving between guiders-fsharp and dash-spec.
-- Parser maintenance cost drops as `BlockReader` and DU patterns replace C# sprawl.
+- Parser maintenance cost drops as F# DU + token-layer patterns replace C# sprawl.
 - [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) package map updates: `DashSpec.Core` → `Modeling.*` + `Execution.*`.
 - Studio / Host / LSP share one parse SSOT; surfaces stay thin.
 - Internal refactor only — no product commitment on GDL rebrand or public authoring until Studio.
@@ -175,12 +178,12 @@ M8  optional CDP LRC backend for `.dashspec` (planet extension; not federation s
 - Merging `.dashspec` into federation `*.{quarry}.gdl` or GDL «edition» branding (deferred — post-Studio discussion).
 - Rewriting Host, connectors, or EF in F#.
 - Mandatory CDP integration in M0–M6.
+- Taking a dependency on federation `BlockReader` / Authoring block kit (premature — dashspec grammar is token-rich).
 - Deleting C# `DashboardDocument` in v1 of the split (projection/shim until consumers migrate).
 
 ## References
 
 - [GUIDERS-FEDERATION-CONSTITUTION](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/GUIDERS-FEDERATION-CONSTITUTION.md) — planets are not federation SSOT
 - [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) — Authoring Guild vs planet grammars
-- [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) — federation Modeling/Execution precedent
-- `DashSpec.Core/Parsing/` — current C# parser surface (~8.5k LOC)
-- `AIGuiders.Platform.Modeling.Gdl.Authoring/BlockReader.fs` — shared block kit candidate
+- [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) — federation Modeling/Execution precedent (pattern only)
+- `DashSpec.Core/Parsing/` — current C# parser surface (~8.5k LOC); `BlockSyntax.cs` / `TokenReader.cs` — port targets for F# Modeling
