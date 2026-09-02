@@ -4,8 +4,8 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-09-02 |
-| **Tags** | #dashspec #planet #modeling #execution #fsharp #dsl #parse |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild — federation) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md) (informative — LRC) |
+| **Tags** | #dashspec #gdl #report-edition #modeling #execution #fsharp #dsl #parse |
+| **Relates to** | [ADR-0049](DASHSPEC-ADR-0049-gdl-report-edition.md) · [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild — federation) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md) (informative — LRC) |
 
 ## Context
 
@@ -33,7 +33,7 @@ Platform.Modeling.*     F#   parse, IR SSOT, validation, conformance
 Platform.Execution.*    C#   mechanics, UI, session, emit — consumers only
 ```
 
-DashSpec is a **sovereign planet** for `.dashspec` / `.dashdiagram` / … grammar ([GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) §Planet boundary). Federation does **not** own dashspec bodies. The planet **may** adopt the same **Modeling / Execution** seam and **may** implement Modeling in F# — no requirement to stay on C# for parsers.
+DashSpec grammar ships as **GDL Report Edition** ([ADR-0049](DASHSPEC-ADR-0049-gdl-report-edition.md)) — Authoring Guild quarries, not a parallel planet DSL. [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) `DashSpec.Modeling.*` is **transitional** until packages land as `Platform.Modeling.Gdl.Report.*` in `guiders-fsharp`.
 
 ## Decision
 
@@ -91,16 +91,17 @@ One Modeling parse entry per root kind; shared lexer/token layer inside `Modelin
 
 Execution **maps** Modeling IR to runtime DTOs — does not re-parse text except through Modeling APIs.
 
-### 4. Federation boundary (reference, not merge)
+### 4. Federation boundary — Report Edition ([ADR-0049](DASHSPEC-ADR-0049-gdl-report-edition.md))
 
-| | Federation (Authoring Guild) | DashSpec planet |
-|--|------------------------------|-----------------|
-| Grammar | `*.{quarry}.gdl` | `.dashspec`, `.dashdiagram`, … |
-| Modeling packages | `Platform.Modeling.Gdl.*` | `DashSpec.Modeling.*` |
-| Shared kit | `BlockReader`, import patterns, table surfaces | **optional** `PackageReference` — reuse, not fork |
-| CDP LRC | `GdlBackend` | future `DashSpecBackend` (informative; [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-code-ir-fsharp-fcs.md)) |
+| | Authoring Guild (GDL Report Edition) | DashSpec Platform (Execution) |
+|--|--------------------------------------|-------------------------------|
+| Grammar | `*.{quarry}.report.gdl`, `*.report.gdl` | — |
+| Modeling packages | `Platform.Modeling.Gdl.Report.*` (`guiders-fsharp`) | transitional `DashSpec.Modeling.*` until R3 |
+| Shared kit | `BlockReader`, `GdlProject`, import graph | references federation kit |
+| CDP LRC | `GdlBackend` report quarries | — |
+| Runtime | — | `DashSpec.Execution.*`, Host, connectors |
 
-Planet **references** federation Authoring kit where lexical DNA overlaps (`end keyword`, `!include` graph). Planet **does not** copy `GdlFragment` or move dashspec quarries into federation.
+Content planets (URSA, …) ship report **instances** only — never fork Report Edition grammar.
 
 ### 5. F# rationale (planet choice)
 
@@ -168,11 +169,11 @@ M8  optional CDP LRC backend for `.dashspec` (planet extension; not federation s
 - Parser maintenance cost drops as `BlockReader` and DU patterns replace C# sprawl.
 - [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) package map updates: `DashSpec.Core` → `Modeling.*` + `Execution.*`.
 - Studio / Host / LSP share one parse SSOT; surfaces stay thin.
-- Planet sovereignty preserved — dashspec grammar does not migrate to federation GDL quarries.
+- Report Edition joins GDL Authoring Guild ([ADR-0049](DASHSPEC-ADR-0049-gdl-report-edition.md)); dash-spec repo narrows to Execution + surfaces.
 
 ## Non-goals
 
-- Merging `.dashspec` into federation `*.{quarry}.gdl` (constitution planet boundary).
+- Permanent parallel `.dashspec` grammar outside GDL (superseded by [ADR-0049](DASHSPEC-ADR-0049-gdl-report-edition.md) — canonical `*.report.gdl`).
 - Rewriting Host, connectors, or EF in F#.
 - Mandatory CDP integration in M0–M6.
 - Deleting C# `DashboardDocument` in v1 of the split (projection/shim until consumers migrate).
