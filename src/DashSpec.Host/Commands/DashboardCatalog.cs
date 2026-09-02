@@ -6,7 +6,7 @@ using AIGuiders.Platform.Authoring.Core;
 
 namespace DashSpec.Host.Commands;
 
-/// <summary>Loads <c>Catalog/dash.catalog</c> — federation SSOT for surfaces and notation contract.</summary>
+/// <summary>Loads <c>Catalog/dash.catalog.gdl</c> — federation SSOT for surfaces and notation contract.</summary>
 internal static class DashboardCatalog
 {
     static readonly Lazy<CatalogDocument> Document = new(Load, isThreadSafe: true);
@@ -29,17 +29,17 @@ internal static class DashboardCatalog
 
     static CatalogDocument Load()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Catalog", "dash.catalog");
+        var path = Path.Combine(AppContext.BaseDirectory, "Catalog", "dash.catalog.gdl");
         if (!File.Exists(path))
         {
-            throw new FileNotFoundException("Missing dash.catalog SSOT.", path);
+            throw new FileNotFoundException("Missing dash.catalog.gdl SSOT.", path);
         }
 
         var result = CatalogParser.ParseFile(path, CatalogBundleLibrary.Federation);
         if (result.Document is null)
         {
             var message = string.Join("; ", result.Diagnostics.Select(static d => d.Message));
-            throw new InvalidOperationException($"dash.catalog parse failed: {message}");
+            throw new InvalidOperationException($"dash.catalog.gdl parse failed: {message}");
         }
 
         var errors = result.Diagnostics.Where(static d =>
@@ -52,7 +52,7 @@ internal static class DashboardCatalog
 
         if (errors.Count > 0)
         {
-            throw new InvalidOperationException($"dash.catalog validation failed: {string.Join("; ", errors.Select(static e => e.Message))}");
+            throw new InvalidOperationException($"dash.catalog.gdl validation failed: {string.Join("; ", errors.Select(static e => e.Message))}");
         }
 
         DashboardCatalogFlavor.ValidateAtLoad(result.Document);
