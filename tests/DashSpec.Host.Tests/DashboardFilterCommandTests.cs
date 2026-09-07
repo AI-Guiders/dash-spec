@@ -1,6 +1,6 @@
-using AIGuiders.Platform.IntermediateRepresentation.Invocation;
-using AIGuiders.Platform.CommandPlane;
-using AIGuiders.Platform.CommandPlane.ArgSuggestions;
+﻿using AIGuiders.Platform.IntermediateRepresentation.Invocation;
+using AIGuiders.Platform.Execution.CommandPlane;
+using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Host.Commands;

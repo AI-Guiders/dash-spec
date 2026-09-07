@@ -1,6 +1,6 @@
-#nullable enable
-using AIGuiders.Platform.CommandPlane;
-using AIGuiders.Platform.CommandPlane.ArgSuggestions;
+﻿#nullable enable
+using AIGuiders.Platform.Execution.CommandPlane;
+using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Host.Services.Abstractions;
 
