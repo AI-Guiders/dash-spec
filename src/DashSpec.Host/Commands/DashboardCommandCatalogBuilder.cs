@@ -1,7 +1,7 @@
-#nullable enable
+﻿#nullable enable
 
-using AIGuiders.Platform.CommandPlane;
-using AIGuiders.Platform.CommandPlane.Commands;
+using AIGuiders.Platform.Execution.CommandPlane;
+using AIGuiders.Platform.Execution.CommandPlane.Commands;
 using DashSpec.Abstractions.Plugins;
 
 namespace DashSpec.Host.Commands;
