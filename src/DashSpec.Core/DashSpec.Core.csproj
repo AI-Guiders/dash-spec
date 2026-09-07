@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -16,7 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Core\AIGuiders.Platform.Authoring.Core.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Paths\AIGuiders.Platform.Paths.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="AIGuiders.Platform.Authoring.Core" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
     <PackageReference Include="AIGuiders.Platform.Paths" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
   </ItemGroup>
