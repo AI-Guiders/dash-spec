@@ -1,7 +1,7 @@
-#nullable enable
+﻿#nullable enable
 
-using AIGuiders.Platform.CommandPlane;
-using AIGuiders.Platform.CommandPlane.ArgSuggestions;
+using AIGuiders.Platform.Execution.CommandPlane;
+using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using AIGuiders.Platform.IntermediateRepresentation.Invocation;
 
 namespace DashSpec.Host.Commands;
