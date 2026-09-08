@@ -10,7 +10,7 @@ public static class HostSurfaceCatalog
     public static IReadOnlyList<HostSurface> Surfaces { get; } =
     [
         new("dashboard", "/", "Dashboard", "Отчёты, фильтры и карточки"),
-        new("controlcenter", "/admin/access", "Control Center", "Настройки хоста и каталога"),
+        new("controlcenter", "/admin/access", "Settings", "Настройки хоста и каталога"),
     ];
 
     public static bool TryResolveRoute(string surfaceId, out string route)

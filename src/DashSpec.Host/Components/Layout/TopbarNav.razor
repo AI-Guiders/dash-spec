@@ -1,4 +1,4 @@
-@using DashSpec.Host.Components.Dashboard
+﻿@using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 @inject IWebHostEnvironment Environment
 @inject DashboardHostCommandCoordinator Coordinator
@@ -17,7 +17,7 @@
                                 ShowLabel="true" />
     }
     <a href="/">Dashboard</a>
-    <a href="/admin/access">Control Center</a>
+    <a href="/admin/access">Settings</a>
     @if (Environment.IsDevelopment())
     {
         <a href="/dev/spec">Spec</a>
