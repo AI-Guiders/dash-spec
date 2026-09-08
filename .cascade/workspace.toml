@@ -1,4 +1,4 @@
-# DashSpec correspondence — design ADRs + reverse anchors
+﻿# DashSpec correspondence — design ADRs + reverse anchors
 [workspace.adr]
 auto_include = "linked"
 max_related = 8
@@ -138,7 +138,8 @@ bracket = "F:src/DashSpec.Host/Components/Layout/MainLayout.razor"
 kind = "documents"
 
 [[workspace.correspondence.code_anchors]]
-doc = "design/DASHSPEC-ADR-0042-host-control-center-withdb.md"
+doc = "design/DASHSPEC-ADR-0042-host-control-center-witdb.md"
 file = "src/DashSpec.Host/Services/Settings/HostSettingsOverlay.cs"
 bracket = "F:src/DashSpec.Host/Services/Settings/HostSettingsOverlay.cs"
 kind = "implements"
+
