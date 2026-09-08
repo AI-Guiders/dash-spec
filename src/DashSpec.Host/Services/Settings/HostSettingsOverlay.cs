@@ -1,4 +1,4 @@
-using DashSpec.Host.Configuration;
+﻿using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
@@ -10,6 +10,8 @@ public static class HostSettingsOverlay
 {
     public const string SectionAccess = "access";
     public const string SectionCatalogGit = "catalog_git";
+    public const string SectionPresentation = "presentation";
+    public const string KeyDisplayTimeZone = "display_time_zone";
 
     public static void Apply(DashSpecTomlRoot bootstrap)
     {
@@ -35,7 +37,9 @@ public static class HostSettingsOverlay
         }
 
         ApplyAccess(bootstrap, rows);
-        ApplyCatalogGit(bootstrap, rows);
+
+
+        ApplyPresentation(bootstrap, rows);
     }
 
     private static void ApplyAccess(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
@@ -44,6 +48,15 @@ public static class HostSettingsOverlay
         if (!string.IsNullOrWhiteSpace(apiKey))
         {
             bootstrap.Access.ApiKey = apiKey;
+        }
+    }
+
+    private static void ApplyPresentation(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
+    {
+        var tz = Get(rows, SectionPresentation, KeyDisplayTimeZone);
+        if (!string.IsNullOrWhiteSpace(tz))
+        {
+            bootstrap.Presentation.DisplayTimeZone = tz.Trim();
         }
     }
 

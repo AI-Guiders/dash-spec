@@ -1,4 +1,4 @@
-namespace DashSpec.Host.Services.Settings;
+﻿namespace DashSpec.Host.Services.Settings;
 
 /// <summary>Control Center sections — List pane (ADR-0042), Forge/GH settings shape.</summary>
 public static class AdminSectionCatalog
@@ -10,6 +10,7 @@ public static class AdminSectionCatalog
         new("access", "Access", "Host API key"),
         new("catalog", "Catalog", "Git catalog clone / poll"),
         new("sync", "Sync webhook", "Inbound push URL + HMAC secret"),
+        new("presentation", "Presentation", "Display time zone (remark 25)"),
         new("export", "Export", "TOML fragment for air-gap backup"),
     ];
 
