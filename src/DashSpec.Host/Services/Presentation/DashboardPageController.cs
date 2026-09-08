@@ -1,4 +1,4 @@
-using DashSpec.Abstractions.Plugins;
+﻿using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Compilation;
 using DashSpec.Core.Layout;
@@ -120,16 +120,31 @@ public sealed class DashboardPageController : IDisposable
 
     public IDashboardSession Session => _session;
 
-    public async Task InitializeAsync(CancellationToken cancellationToken = default)
+    public async Task InitializeAsync(CancellationToken cancellationToken = default, string? requestedCatalogEntryId = null)
     {
         using var trace = _loadTrace.Begin("ui:initialize");
         var fastLoad = new SpecLoadOptions { LoadFieldOptions = false };
 
         try
         {
+            if (!string.IsNullOrWhiteSpace(requestedCatalogEntryId))
+            {
+                try
+                {
+                    await _session.LoadCatalogEntryAsync(requestedCatalogEntryId, cancellationToken, fastLoad).ConfigureAwait(false);
+                }
+                catch (Exception invalidEntry) when (invalidEntry is FileNotFoundException or KeyNotFoundException or InvalidOperationException)
+                {
+                    _logger.LogWarning(invalidEntry, "Requested catalog entry not found — falling back to default.");
+                    await _session.LoadAsync(cancellationToken: cancellationToken, options: fastLoad).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await _session.LoadAsync(cancellationToken: cancellationToken, options: fastLoad).ConfigureAwait(false);
+            }
             var loadSw = System.Diagnostics.Stopwatch.StartNew();
-            await _session.LoadAsync(cancellationToken: cancellationToken, options: fastLoad).ConfigureAwait(false);
-            loadSw.Stop();
+
             trace.Step("load_spec", loadSw.ElapsedMilliseconds, true, _session.LoadedSpecSource);
 
             LoadedSpecSource = _session.LoadedSpecSource;
