@@ -1,4 +1,4 @@
-@page "/admin"
+﻿@page "/admin"
 @page "/admin/{SectionId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using DashSpec.Host.Configuration
@@ -9,16 +9,16 @@
 @inject GitCatalogSyncService SyncService
 @inject NavigationManager Nav
 
-<PageTitle>@_section.Title — Control Center</PageTitle>
+<PageTitle>@_section.Title — Settings</PageTitle>
 
 <section class="admin">
     <header class="admin-header">
-        <h1>Control Center</h1>
+        <h1>Settings</h1>
         <p class="muted">Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery.</p>
     </header>
 
     <div class="admin-shell">
-        <nav class="admin-list" aria-label="Control Center sections">
+        <nav class="admin-list" aria-label="Settings sections">
             <p class="admin-list-heading">Settings</p>
             <ul>
                 @foreach (var item in AdminSectionCatalog.All)
