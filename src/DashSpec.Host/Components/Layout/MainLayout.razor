@@ -1,6 +1,14 @@
 @inherits LayoutComponentBase
+@using DashSpec.Host.Configuration
+@inject DashSpecTomlRoot Bootstrap
 
-<div class="page">
+@code {
+    private string Scheme => Bootstrap.Presentation.ColorScheme is "light" or "contrast"
+        ? "scheme-" + Bootstrap.Presentation.ColorScheme
+        : string.Empty;
+}
+
+<div class="page @Scheme">
     <header class="topbar">
         <div>
             <strong>DashSpec</strong>

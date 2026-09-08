@@ -1,4 +1,4 @@
-﻿namespace DashSpec.Host.Configuration;
+namespace DashSpec.Host.Configuration;
 
 public sealed class DashSpecTomlRoot
 {
@@ -27,6 +27,9 @@ public sealed class PresentationTomlSection
 {
     /// <summary>Display time zone for report/table output (remark 25). IANA id; default Europe/Moscow.</summary>
     public string DisplayTimeZone { get; set; } = string.Empty;
+
+    /// <summary>UI color scheme (remark 24): dark default | light | contrast. Empty = dark.</summary>
+    public string ColorScheme { get; set; } = string.Empty;
 }
 
 public sealed class AccessTomlSection
