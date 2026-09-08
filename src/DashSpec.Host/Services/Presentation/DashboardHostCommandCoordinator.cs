@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using DashSpec.Core.Model;
 using DashSpec.Host.Commands;
 using Microsoft.AspNetCore.Components;
@@ -49,6 +49,22 @@ public sealed class DashboardHostCommandCoordinator
         {
             await _dashboard.SelectCatalogEntryAsync(entryId).ConfigureAwait(false);
             CommandError = _dashboard.CommandError;
+            if (Uri.TryCreate(_navigation.Uri, UriKind.Absolute, out var navUri))
+            {
+                var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(navUri.Query);
+                var pairs = new List<KeyValuePair<string, string?>>();
+                foreach (var kv in qs)
+                {
+                    if (!string.Equals(kv.Key, "report", StringComparison.OrdinalIgnoreCase))
+                    {
+                        foreach (var v in kv.Value) { pairs.Add(new(kv.Key, v)); }
+                    }
+                }
+                pairs.Add(new("report", entryId));
+                var targetPath = navUri.GetComponents(UriComponents.Path, UriFormat.Unescaped);
+                var rebuilt = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(targetPath, pairs);
+                _navigation.NavigateTo(rebuilt, replace: true);
+            }
             Notify();
         }
     }
