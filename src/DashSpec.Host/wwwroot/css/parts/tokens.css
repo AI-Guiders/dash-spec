@@ -23,3 +23,32 @@ body {
   color: var(--text);
   line-height: 1.45;
 }
+/* Color schemes (remark 24): typical presets via .page theme class. */
+.page.scheme-light {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --border: #cbd4de;
+  --text: #111827;
+  --muted: #5a6b7e;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --danger: #dc2626;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.page.scheme-contrast {
+  --bg: #000000;
+  --surface: #0b0b0b;
+  --surface-2: #161616;
+  --border: #7a7a7a;
+  --text: #ffffff;
+  --muted: #cfd4da;
+  --accent: #ffd400;
+  --accent-hover: #eab308;
+  --danger: #ff6b6b;
+  background: var(--bg);
+  min-height: 100vh;
+}
