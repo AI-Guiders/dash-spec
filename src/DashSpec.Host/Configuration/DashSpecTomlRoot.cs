@@ -1,4 +1,4 @@
-namespace DashSpec.Host.Configuration;
+﻿namespace DashSpec.Host.Configuration;
 
 public sealed class DashSpecTomlRoot
 {
@@ -9,6 +9,7 @@ public sealed class DashSpecTomlRoot
     public CatalogGitTomlSection CatalogGit { get; set; } = new();
 
     public AccessTomlSection Access { get; set; } = new();
+    public PresentationTomlSection Presentation { get; set; } = new();
 
     public Dictionary<string, ConnectorTomlSection> Connectors { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
@@ -20,6 +21,12 @@ public sealed class HostTomlSection
 {
     /// <summary>WitDB path for Control Center settings (ADR-0042). Default: %ProgramData%\DashSpec\host-settings.witdb</summary>
     public string DatabasePath { get; set; } = string.Empty;
+}
+
+public sealed class PresentationTomlSection
+{
+    /// <summary>Display time zone for report/table output (remark 25). IANA id; default Europe/Moscow.</summary>
+    public string DisplayTimeZone { get; set; } = string.Empty;
 }
 
 public sealed class AccessTomlSection
