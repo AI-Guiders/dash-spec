@@ -1,9 +1,39 @@
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace DashSpec.Core.Runtime;
 
 public static class LabelFormat
 {
+    /// <summary>Display time zone for output conversion (remark 25: stored UTC → display TZ). Set at host startup; null = no conversion.</summary>
+    public static TimeZoneInfo? DisplayTimeZone { get; set; } = null;
+
+    internal static TimeZoneInfo? SafeZone(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return null;
+        }
+
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(id.Trim());
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static DateTime ToDisplay(DateTime dt)
+    {
+        if (DisplayTimeZone is null || dt == default || dt.Kind == DateTimeKind.Local)
+        {
+            return dt;
+        }
+
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(dt, DateTimeKind.Utc), DisplayTimeZone);
+    }
+
     public static string Format(string raw, string? format)
     {
         if (string.IsNullOrWhiteSpace(raw))
@@ -25,10 +55,10 @@ public static class LabelFormat
     }
 
     private static string FormatTimeShort(string raw) =>
-        TryParseDateTime(raw, out var dt) ? dt.ToString("HH:mm") : raw;
+        TryParseDateTime(raw, out var dt) ? ToDisplay(dt).ToString("HH:mm") : raw;
 
     private static string FormatDateTimeShort(string raw) =>
-        TryParseDateTime(raw, out var dt) ? dt.ToString("dd.MM HH:mm") : raw;
+        TryParseDateTime(raw, out var dt) ? ToDisplay(dt).ToString("dd.MM HH:mm") : raw;
 
     private static bool TryParseDateTime(string raw, out DateTime dt) =>
         DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out dt)

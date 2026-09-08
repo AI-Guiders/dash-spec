@@ -85,6 +85,9 @@ if (!string.IsNullOrWhiteSpace(envKey))
 
 builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
 
+DashSpec.Core.Runtime.LabelFormat.DisplayTimeZone = DashboardCultureAmbient.ResolveTimeZone(
+    bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p ? p.DisplayTimeZone : null);
+
 builder.Services.AddSingleton(bootstrap);
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
