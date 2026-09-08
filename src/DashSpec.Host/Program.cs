@@ -1,4 +1,4 @@
-using DashSpec.Core.Parsing;
+﻿using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Commands.Constructors;
@@ -138,7 +138,10 @@ builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
-builder.Services.AddScoped<IDashboardCultureAmbient, DashboardCultureAmbient>();
+builder.Services.AddScoped<IDashboardCultureAmbient>(_ =>
+    new DashboardCultureAmbient(System.Globalization.CultureInfo.CurrentCulture, bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p
+        ? DashboardCultureAmbient.ResolveTimeZone(p.DisplayTimeZone)
+        : null));
 builder.Services.AddScoped<DashboardSlashConstructorHost>();
 builder.Services.AddScoped<DashboardCommandSession>();
 builder.Services.AddScoped<DashboardRefreshCoordinator>();

@@ -133,6 +133,18 @@
                     <button type="button" class="btn" @onclick="GenerateSecret">Generate secret</button>
                 </div>
             }
+            else if (IsSection("presentation"))
+            {
+                <EditForm model="_presentation" OnValidSubmit="SavePresentationAsync" class="admin-form">
+                    <DataAnnotationsValidator />
+                    <div class="field">
+                        <label>Display time zone (IANA id, e.g. Europe/Moscow; stored UTC &rarr; display TZ; remark 25)</label>
+                        <InputText @bind-Value="_presentation.DisplayTimeZone" class="input" />
+                        <span class="muted">Applied on host restart. Empty = Europe/Moscow.</span>
+                    </div>
+                    <button type="submit" class="btn">Save presentation</button>
+                </EditForm>
+            }
             else if (IsSection("export"))
             {
                 <p class="muted">Redacted TOML fragment from WitDB for air-gap backup (does not write <code>local.toml</code>).</p>
@@ -185,6 +197,25 @@
         _catalog.Username = git.Username;
         _catalog.SyncRepoSlug = git.SyncRepoSlug;
         _catalog.SyncAllowUnsigned = git.SyncAllowUnsigned;
+    }    private readonly PresentationForm _presentation = new()
+    {
+        DisplayTimeZone = "Europe/Moscow",
+    };
+
+    private Task SavePresentationAsync()
+    {
+        ClearFlash();
+        try
+        {
+            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyDisplayTimeZone, _presentation.DisplayTimeZone ?? "");
+            _message = "Presentation saved. Restart host to apply new time zone.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        return Task.CompletedTask;
     }
 
     private bool IsSection(string id) =>
@@ -268,6 +299,11 @@
     {
         _message = null;
         _error = null;
+    }
+
+    private sealed class PresentationForm
+    {
+        public string DisplayTimeZone { get; set; } = "";
     }
 
     private sealed class AccessForm
