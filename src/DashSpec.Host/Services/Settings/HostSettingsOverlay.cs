@@ -1,4 +1,4 @@
-﻿using DashSpec.Host.Configuration;
+using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
@@ -12,6 +12,7 @@ public static class HostSettingsOverlay
     public const string SectionCatalogGit = "catalog_git";
     public const string SectionPresentation = "presentation";
     public const string KeyDisplayTimeZone = "display_time_zone";
+    public const string KeyColorScheme = "color_scheme";
 
     public static void Apply(DashSpecTomlRoot bootstrap)
     {
@@ -57,6 +58,12 @@ public static class HostSettingsOverlay
         if (!string.IsNullOrWhiteSpace(tz))
         {
             bootstrap.Presentation.DisplayTimeZone = tz.Trim();
+        }
+
+        var scheme = Get(rows, SectionPresentation, KeyColorScheme);
+        if (!string.IsNullOrWhiteSpace(scheme))
+        {
+            bootstrap.Presentation.ColorScheme = scheme.Trim().ToLowerInvariant();
         }
     }
 
