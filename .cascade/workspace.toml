@@ -94,3 +94,51 @@ doc = "design/DASHSPEC-ADR-0003-diagram-kinds-registry.md"
 file = "src/DashSpec.Host/Program.cs"
 bracket = "F:src/DashSpec.Host/Program.cs"
 kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0014-chart-series-colors.md"
+file = "src/DashSpec.Core/Runtime/ChartColorResolver.cs"
+bracket = "F:src/DashSpec.Core/Runtime/ChartColorResolver.cs"
+kind = "implements"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md"
+file = "src/DashSpec.Core/Runtime/CategoryChartPayloadBuilder.cs"
+bracket = "F:src/DashSpec.Core/Runtime/CategoryChartPayloadBuilder.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0014-chart-series-colors.md"
+file = "src/DashSpec.Core/Resolution/SpecResolveExporter.cs"
+bracket = "F:src/DashSpec.Core/Resolution/SpecResolveExporter.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0017-file-includes-and-stdlib.md"
+file = "src/DashSpec.Core/Parsing/SpecIncludeResolver.cs"
+bracket = "F:src/DashSpec.Core/Parsing/SpecIncludeResolver.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0014-chart-series-colors.md"
+file = "src/DashSpec.Core/Parsing/PaletteModuleParser.cs"
+bracket = "F:src/DashSpec.Core/Parsing/PaletteModuleParser.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md"
+file = "src/DashSpec.Core/Runtime/CategoryChartPayloadBuilder.cs"
+bracket = "F:src/DashSpec.Core/Runtime/CategoryChartPayloadBuilder.cs"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0022-presentation-layout-and-cards.md"
+file = "src/DashSpec.Host/Components/Layout/MainLayout.razor"
+bracket = "F:src/DashSpec.Host/Components/Layout/MainLayout.razor"
+kind = "documents"
+
+[[workspace.correspondence.code_anchors]]
+doc = "design/DASHSPEC-ADR-0042-host-control-center-withdb.md"
+file = "src/DashSpec.Host/Services/Settings/HostSettingsOverlay.cs"
+bracket = "F:src/DashSpec.Host/Services/Settings/HostSettingsOverlay.cs"
+kind = "implements"
