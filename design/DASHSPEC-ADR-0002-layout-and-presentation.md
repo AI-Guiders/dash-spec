@@ -1,5 +1,7 @@
 # DASHSPEC-ADR-0002: Layout и presentation в spec
 
+**Status:** Accepted
+
 ## Контекст
 
 Dashboard с 10+ сериями на одном line chart нечитаем: легенда «размазана», линии накладываются.
