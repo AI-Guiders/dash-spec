@@ -113,16 +113,22 @@ public sealed record MatrixPayload(
     IReadOnlyList<double>? ColMins = null,
     IReadOnlyList<double>? ColMaxs = null)
 {
-    public (double Min, double Max) ColorRangeForCell(int yi, int xi) => ColorNormalize switch
+    public (double Min, double Max) ColorRangeForCell(int yi, int xi)
     {
-        MatrixColorNormalize.Row when RowMins is not null && RowMaxs is not null &&
-            (uint)yi < (uint)RowMins.Count && (uint)yi < (uint)RowMaxs.Count
-            => (RowMins[yi], RowMaxs[yi]),
-        MatrixColorNormalize.Column when ColMins is not null && ColMaxs is not null &&
-            (uint)xi < (uint)ColMins.Count && (uint)xi < (uint)ColMaxs.Count
-            => (ColMins[xi], ColMaxs[xi]),
-        _ => (Min, Max),
-    };
+        var (cellMin, cellMax) = ColorNormalize switch
+        {
+            MatrixColorNormalize.Row when RowMins is not null && RowMaxs is not null &&
+                (uint)yi < (uint)RowMins.Count && (uint)yi < (uint)RowMaxs.Count
+                => (RowMins[yi], RowMaxs[yi]),
+            MatrixColorNormalize.Column when ColMins is not null && ColMaxs is not null &&
+                (uint)xi < (uint)ColMins.Count && (uint)xi < (uint)ColMaxs.Count
+                => (ColMins[xi], ColMaxs[xi]),
+            _ => (Min, Max),
+        };
+
+        // Row/column normalize with a single distinct value yields min==max (flat blue). Fall back to matrix range.
+        return cellMax <= cellMin ? (Min, Max) : (cellMin, cellMax);
+    }
 
     public (double Min, double Max) ColorRangeForRow(int yi) => ColorRangeForCell(yi, 0);
 }
