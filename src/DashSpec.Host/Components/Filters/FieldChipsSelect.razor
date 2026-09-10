@@ -1,6 +1,7 @@
 @namespace DashSpec.Host.Components.Filters
+@using DashSpec.Host.Services.Presentation
 
-<div class="filter filter-chips @(Compact ? "filter-chips-compact" : null)">
+<div class="filter filter-chips @(Compact ? "filter-chips-compact" : null) @(FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
     @if (!string.IsNullOrWhiteSpace(Label))
     {
         <span class="filter-label">@Label</span>

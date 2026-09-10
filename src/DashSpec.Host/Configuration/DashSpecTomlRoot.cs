@@ -30,6 +30,12 @@ public sealed class PresentationTomlSection
 
     /// <summary>UI color scheme (remark 24): dark default | light | contrast. Empty = dark.</summary>
     public string ColorScheme { get; set; } = string.Empty;
+
+    /// <summary>UI language (remark 23): ru | en. Empty = ru.</summary>
+    public string Language { get; set; } = string.Empty;
+
+    /// <summary>Long field filter layout (remark 7): scroll | expand. Empty = scroll.</summary>
+    public string LargeFieldFilterLayout { get; set; } = string.Empty;
 }
 
 public sealed class AccessTomlSection

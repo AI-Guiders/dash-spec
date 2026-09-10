@@ -1,8 +1,9 @@
-﻿@page "/admin"
+@page "/admin"
 @page "/admin/{SectionId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Git
+@using DashSpec.Host.Services.Presentation
 @using DashSpec.Host.Services.Settings
 @inject HostSettingsService Settings
 @inject DashSpecTomlRoot Bootstrap
@@ -142,6 +143,22 @@
                         <InputText @bind-Value="_presentation.DisplayTimeZone" class="input" />
                         <span class="muted">Applied on host restart. Empty = Europe/Moscow.</span>
                     </div>
+                    <div class="field">
+                        <label>Interface language (remark 23)</label>
+                        <InputSelect @bind-Value="_presentation.Language" class="input">
+                            <option value="ru">Русский</option>
+                            <option value="en">English</option>
+                        </InputSelect>
+                        <span class="muted">Applied on host restart. Empty = ru-RU.</span>
+                    </div>
+                    <div class="field">
+                        <label>Long product filter lists (&gt;80 items; remark 7)</label>
+                        <InputSelect @bind-Value="_presentation.LargeFieldFilterLayout" class="input">
+                            <option value="scroll">Scroll in a fixed area (default)</option>
+                            <option value="expand">Expand downward (full chip list)</option>
+                        </InputSelect>
+                        <span class="muted">Applies immediately after save. Affects chips / multi-select filters with more than 80 options.</span>
+                    </div>
                     <button type="submit" class="btn">Save presentation</button>
                 </EditForm>
             }
@@ -197,9 +214,18 @@
         _catalog.Username = git.Username;
         _catalog.SyncRepoSlug = git.SyncRepoSlug;
         _catalog.SyncAllowUnsigned = git.SyncAllowUnsigned;
-    }    private readonly PresentationForm _presentation = new()
+        _presentation.DisplayTimeZone = string.IsNullOrWhiteSpace(Bootstrap.Presentation.DisplayTimeZone)
+            ? "Europe/Moscow"
+            : Bootstrap.Presentation.DisplayTimeZone;
+        _presentation.Language = Bootstrap.Presentation.Language ?? "";
+        _presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(Bootstrap.Presentation.LargeFieldFilterLayout);
+    }
+
+    private readonly PresentationForm _presentation = new()
     {
         DisplayTimeZone = "Europe/Moscow",
+        Language = "",
+        LargeFieldFilterLayout = FilterLargeListOptions.Scroll,
     };
 
     private Task SavePresentationAsync()
@@ -208,7 +234,12 @@
         try
         {
             Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyDisplayTimeZone, _presentation.DisplayTimeZone ?? "");
-            _message = "Presentation saved. Restart host to apply new time zone.";
+            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyLanguage, _presentation.Language ?? "");
+            Settings.Upsert(
+                HostSettingsOverlay.SectionPresentation,
+                HostSettingsOverlay.KeyLargeFieldFilterLayout,
+                FilterLargeListOptions.Normalize(_presentation.LargeFieldFilterLayout));
+            _message = "Presentation saved. Time zone / language apply after host restart; long filter layout applies immediately.";
         }
         catch (Exception ex)
         {
@@ -304,6 +335,8 @@
     private sealed class PresentationForm
     {
         public string DisplayTimeZone { get; set; } = "";
+        public string Language { get; set; } = "";
+        public string LargeFieldFilterLayout { get; set; } = FilterLargeListOptions.Scroll;
     }
 
     private sealed class AccessForm
