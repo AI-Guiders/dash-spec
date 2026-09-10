@@ -1,5 +1,7 @@
 # DASHSPEC-ADR-0020: Card `ref` and tab layout board
 
+**Status:** Accepted
+
 ## Контекст
 
 Длинные `card stakeholder_peak_by_app` неудобны в layout. Metabase-стиль ASCII-сетки (`[Q E] / [T F]`) читается в git лучше, чем только `place { row col span }` на каждой карточке.
