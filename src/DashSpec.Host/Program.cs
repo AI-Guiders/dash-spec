@@ -20,7 +20,11 @@ using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using DashSpec.Host.Services.Diagnostics;
+using DashSpec.Host.Services.Localization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
+using System.Globalization;
 using Microsoft.Extensions.Logging.Abstractions;
 using OutWit.Database.EntityFramework.Extensions;
 
@@ -88,6 +92,22 @@ builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecT
 DashSpec.Core.Runtime.LabelFormat.DisplayTimeZone = DashboardCultureAmbient.ResolveTimeZone(
     bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p ? p.DisplayTimeZone : null);
 
+static CultureInfo ResolveUiCulture(string? language) =>
+    string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
+        ? CultureInfo.GetCultureInfo("en-US")
+        : CultureInfo.GetCultureInfo("ru-RU");
+
+var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
+
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supported = new[] { CultureInfo.GetCultureInfo("ru-RU"), CultureInfo.GetCultureInfo("en-US") };
+    options.SupportedCultures = supported;
+    options.SupportedUICultures = supported;
+    options.DefaultRequestCulture = new RequestCulture(uiCulture);
+});
+
 builder.Services.AddSingleton(bootstrap);
 builder.Services.AddSingleton<HostPresentationSignals>();
 builder.Services.AddSingleton(catalogState);
@@ -143,9 +163,10 @@ builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
 builder.Services.AddScoped<IDashboardCultureAmbient>(_ =>
-    new DashboardCultureAmbient(System.Globalization.CultureInfo.CurrentCulture, bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p
+    new DashboardCultureAmbient(uiCulture, bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p
         ? DashboardCultureAmbient.ResolveTimeZone(p.DisplayTimeZone)
         : null));
+builder.Services.AddScoped<DashboardLocalizer>();
 builder.Services.AddScoped<DashboardSlashConstructorHost>();
 builder.Services.AddScoped<DashboardCommandSession>();
 builder.Services.AddScoped<DashboardRefreshCoordinator>();
@@ -188,6 +209,7 @@ if (urlsEnv.Contains("https://", StringComparison.OrdinalIgnoreCase))
 }
 
 app.UseMiddleware<DashSpecAccessMiddleware>();
+app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseAntiforgery();
 app.UseStaticFiles();
 app.MapStaticAssets();

@@ -5,6 +5,7 @@
 @using DashSpec.Host.Commands
 @using DashSpec.Host.Services.Presentation
 @inject IWebHostEnvironment HostEnvironment
+@inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
 
 <PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
 
@@ -16,7 +17,7 @@
 @if (!string.IsNullOrEmpty(Page.Error))
 {
     <div class="alert" role="alert">
-        <strong>Не удалось загрузить dashboard</strong>
+        <strong>@Loc.T("Failed to load dashboard")</strong>
         <p>@Page.Error</p>
     </div>
 }
@@ -24,7 +25,7 @@ else if (!Page.Loaded)
 {
     <div class="page-loading">
         <div class="spinner" aria-hidden="true"></div>
-        <span>Загрузка спецификации…</span>
+        <span>@Loc.T("Loading specification…")</span>
     </div>
 }
 else
