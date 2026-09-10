@@ -48,8 +48,10 @@ window.dashSpecCharts = {
     const fillArea = !isBar && !!(options && options.fill);
     const sparkline = !!(options && options.sparkline);
     const horizontal = isBar && !!(options && options.horizontal);
+    const detailView = !!(options && options.detailView);
     const categoryLabels = labels || [];
     const categoryAxis = horizontal ? "y" : "x";
+    const denseHorizontal = horizontal && categoryLabels.length > 12;
     const longCategoryLabels = categoryLabels.some((l) => String(l).length > 6);
     const referenceValues = (options && options.referenceValues) || null;
     const referenceLabel = (options && options.referenceLabel) || "Куплено";
@@ -77,6 +79,9 @@ window.dashSpecCharts = {
         tension: isBar ? 0 : 0.15,
         spanGaps: !isBar,
         fill: fillArea ? "origin" : false,
+        ...(isBar && detailView && denseHorizontal
+          ? { categoryPercentage: 0.82, barPercentage: 0.9, maxBarThickness: 22 }
+          : {}),
       };
     });
 
@@ -345,14 +350,11 @@ window.dashSpecCharts = {
             ticks: {
               maxRotation: 0,
               minRotation: 0,
-              autoSkip: horizontal,
+              autoSkip: horizontal && !detailView,
               autoSkipPadding: horizontal ? 4 : 6,
-              maxTicksLimit: horizontal
-                ? categoryLabels.length > 24
-                  ? 24
-                  : undefined
-                : undefined,
-              font: { size: 10 },
+              maxTicksLimit:
+                horizontal && !detailView && categoryLabels.length > 24 ? 24 : undefined,
+              font: { size: detailView && denseHorizontal ? 11 : 10 },
               ...(horizontal ? {} : valueTicks),
             },
             grid: { color: "#2a354455" },

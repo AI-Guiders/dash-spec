@@ -10,6 +10,7 @@ public sealed record CardRenderResult(
     DiagramDataFamily DataFamily,
     string RenderPluginId,
     ChartPayload? Chart = null,
+    ChartPayload? DetailChart = null,
     TablePayload? Table = null,
     string? Number = null,
     string? NumberDelta = null,
@@ -22,6 +23,7 @@ public sealed record CardRenderResult(
     IReadOnlyDictionary<string, PlacementDefinition>? InteriorPlacements = null,
     ChartPresentation? ChartPresentation = null,
     MatrixPayload? Matrix = null,
+    MatrixPayload? DetailMatrix = null,
     MatrixPresentation? MatrixPresentation = null,
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
@@ -32,4 +34,16 @@ public sealed record CardRenderResult(
     string? OversizeMessage = null,
     string? FilterLinkHint = null,
     string? FilterLinkCssClass = null,
-    string? TopFilterScopeHint = null);
+    string? TopFilterScopeHint = null)
+{
+    public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
+
+    public CardRenderResult ForView(bool detailView) =>
+        !detailView || !HasExpandedPayload
+            ? this
+            : this with
+            {
+                Chart = DetailChart ?? Chart,
+                Matrix = DetailMatrix ?? Matrix,
+            };
+}

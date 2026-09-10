@@ -46,6 +46,9 @@
     public bool CategoryClickEnabled { get; set; }
 
     [Parameter]
+    public bool DetailView { get; set; }
+
+    [Parameter]
     public EventCallback<(int Index, string Label)> OnCategorySelected { get; set; }
 
     private DotNetObjectReference<ChartCanvas>? _dotNetRef;
@@ -60,6 +63,7 @@
     private string? _previousValueAxisLabel;
     private double? _previousValueAxisMax;
     private bool _previousCategoryClickEnabled;
+    private bool _previousDetailView;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,7 +87,8 @@
             string.Equals(CategoryAxisLabel, _previousCategoryAxisLabel, StringComparison.Ordinal) &&
             string.Equals(ValueAxisLabel, _previousValueAxisLabel, StringComparison.Ordinal) &&
             ValueAxisMax == _previousValueAxisMax &&
-            CategoryClickEnabled == _previousCategoryClickEnabled)
+            CategoryClickEnabled == _previousCategoryClickEnabled &&
+            DetailView == _previousDetailView)
         {
             return;
         }
@@ -99,6 +104,7 @@
         _previousValueAxisLabel = ValueAxisLabel;
         _previousValueAxisMax = ValueAxisMax;
         _previousCategoryClickEnabled = CategoryClickEnabled;
+        _previousDetailView = DetailView;
         await Js.InvokeVoidAsync(
             "dashSpecCharts.render",
             ChartId,
@@ -128,6 +134,7 @@
                 valueAxisLabel = ValueAxisLabel,
                 valueAxisMax = ValueAxisMax,
                 categoryClickEnabled = CategoryClickEnabled,
+                detailView = DetailView,
                 dotNetRef = CategoryClickEnabled ? _dotNetRef : null,
             });
     }
