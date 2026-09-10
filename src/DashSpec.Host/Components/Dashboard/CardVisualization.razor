@@ -29,6 +29,8 @@ else
     [Parameter] public double MatrixMax { get; set; }
     [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
 
+    [Parameter] public bool DetailView { get; set; }
+
     [Inject] private CardVizComponentRegistry VizComponents { get; set; } = default!;
 
     private Type? _componentType;
@@ -43,6 +45,7 @@ else
             ["Context"] = new CardVizRenderContext
             {
                 Card = Card,
+                DetailView = DetailView,
                 MatrixMin = MatrixMin,
                 MatrixMax = MatrixMax,
                 OnHeatmapCellSelected = OnHeatmapCellSelected,

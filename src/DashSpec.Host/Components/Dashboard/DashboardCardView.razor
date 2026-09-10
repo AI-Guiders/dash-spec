@@ -149,8 +149,9 @@
             </header>
             <div class="card-fullscreen-body">
                 <CardVisualization Card="Card"
-                                   MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                                   MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                                   DetailView="true"
+                                   MatrixMin="@DetailMatrixMin"
+                                   MatrixMax="@DetailMatrixMax"
                                    OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
             </div>
         </div>
@@ -195,6 +196,10 @@
     private bool CanFullscreen =>
         !Card.IsVisibilityPlaceholder &&
         Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table;
+
+    private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
+
+    private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
 
     private Task ExportCsvAsync() =>
         OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "csv_export", new Dictionary<string, string>()));
@@ -242,7 +247,8 @@
             Card.Title,
             Card.FilterLinkCssClass,
             _selection?.Xi,
-            _selection?.Yi);
+            _selection?.Yi,
+            _fullscreen);
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -261,7 +267,8 @@
         string Title,
         string? FilterLinkCssClass,
         int? SelectionXi,
-        int? SelectionYi);
+        int? SelectionYi,
+        bool Fullscreen);
 
     protected override void OnParametersSet()
     {

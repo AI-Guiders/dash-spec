@@ -509,6 +509,10 @@ public class ChartDataBuilderTests
         Assert.Equal(50d, payload.Series[0].Values[0]);
         Assert.Equal(40d, payload.Series[0].Values[1]);
         Assert.Equal(40d, payload.Series[0].Values[2]);
+
+        var detail = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
+        Assert.Equal(["a", "b", "c", "d"], detail.Labels);
+        Assert.DoesNotContain("Other", detail.Labels);
     }
 
     [Fact]

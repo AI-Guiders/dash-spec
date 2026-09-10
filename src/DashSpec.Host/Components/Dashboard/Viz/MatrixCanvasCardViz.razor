@@ -3,25 +3,42 @@
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Services.Presentation
 
-@if (Context.Card.Matrix is not null)
+@if (Context.EffectiveCard.Matrix is not null)
 {
-    <MatrixCanvasView HostId="@DashboardLayoutHelper.MatrixHostDomId(Context.Card.Id)"
-                      CanvasId="@DashboardLayoutHelper.MatrixCanvasDomId(Context.Card.Id)"
-                      Payload="Context.Card.Matrix"
-                      HeightPx="@(Context.Card.MatrixPresentation?.HeightPx ?? 320)"
-                      XAxisLabel="@Context.Card.MatrixPresentation?.XLabel"
-                      YAxisLabel="@Context.Card.MatrixPresentation?.YLabel"
-                      ValueLabel="@Context.Card.MatrixPresentation?.ValueLabel"
-                      XFormat="@(Context.Card.MatrixPresentation?.XFormat ?? "date.short")"
-                      YFormat="@(Context.Card.MatrixPresentation?.YFormat ?? "user.short")"
-                      ColorScale="@(Context.Card.MatrixPresentation?.ColorScale ?? "heat")"
-                      LegendMinText="@Context.Card.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
-                      LegendMaxText="@Context.Card.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
-                      Limits="Context.Card.MatrixLimits"
-                      OversizeMessage="Context.Card.OversizeMessage"
+    <MatrixCanvasView HostId="@DashboardLayoutHelper.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
+                      CanvasId="@DashboardLayoutHelper.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
+                      Payload="Context.EffectiveCard.Matrix"
+                      HeightPx="@ResolveMatrixHeightPx()"
+                      XAxisLabel="@Context.EffectiveCard.MatrixPresentation?.XLabel"
+                      YAxisLabel="@Context.EffectiveCard.MatrixPresentation?.YLabel"
+                      ValueLabel="@Context.EffectiveCard.MatrixPresentation?.ValueLabel"
+                      XFormat="@(Context.EffectiveCard.MatrixPresentation?.XFormat ?? "date.short")"
+                      YFormat="@(Context.EffectiveCard.MatrixPresentation?.YFormat ?? "user.short")"
+                      ColorScale="@(Context.EffectiveCard.MatrixPresentation?.ColorScale ?? "heat")"
+                      LegendMinText="@Context.EffectiveCard.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
+                      LegendMaxText="@Context.EffectiveCard.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                      Limits="Context.EffectiveCard.MatrixLimits"
+                      OversizeMessage="Context.EffectiveCard.OversizeMessage"
                       OnCellSelected="Context.OnHeatmapCellSelected" />
 }
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private int ResolveMatrixHeightPx()
+    {
+        var baseHeight = Context.EffectiveCard.MatrixPresentation?.HeightPx ?? 320;
+        if (!Context.DetailView)
+        {
+            return baseHeight;
+        }
+
+        var rowCount = Context.EffectiveCard.Matrix?.YLabels.Count ?? 0;
+        if (rowCount <= 0)
+        {
+            return Math.Max(baseHeight, 480);
+        }
+
+        return Math.Clamp(rowCount * 22 + 96, Math.Max(baseHeight, 480), 2400);
+    }
 }

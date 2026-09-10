@@ -140,6 +140,11 @@
   min-height: min(72vh, 720px);
 }
 
+.card-fullscreen-body .chart-wrap-detail,
+.card-fullscreen-body .matrix-wrap-detail {
+  min-height: 0;
+}
+
 .card-kpi .card-head {
   align-items: flex-start;
   flex-shrink: 0;
