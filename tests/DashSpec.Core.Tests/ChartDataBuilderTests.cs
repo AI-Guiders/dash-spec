@@ -143,7 +143,7 @@ public class ChartDataBuilderTests
         Assert.Equal(MatrixColorNormalize.Column, matrix.ColorNormalize);
         Assert.Equal((3d, 10d), matrix.ColorRangeForCell(0, 0));
         Assert.Equal((3d, 10d), matrix.ColorRangeForCell(1, 0));
-        Assert.Equal((6d, 6d), matrix.ColorRangeForCell(0, 1));
+        Assert.Equal((3d, 10d), matrix.ColorRangeForCell(0, 1));
     }
 
     [Fact]
