@@ -62,3 +62,5 @@ Bar и line — одинаково. Matrix по-прежнему `color_scale`.
 - LUS: `[palette.lus_apps]` в `lus-diagram-library.toml`
 - Demo: `[palette.demo_apps]`
 - Новые продукты — строка в palette TOML, без правки Host
+
+**Category charts (bar/pie/…):** канон цвета — [ADR-0050](DASHSPEC-ADR-0050-category-chart-color-column.md) (`color = column` из SQL); palette — optional legacy fallback.
