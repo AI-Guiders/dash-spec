@@ -27,6 +27,67 @@
   color: var(--muted);
 }
 
+.topbar-nav .help-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.topbar-nav .help-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.help-page {
+  max-width: 52rem;
+}
+
+.help-header h1 {
+  margin: 0 0 0.35rem;
+}
+
+.help-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.25rem 0 1rem;
+}
+
+.help-tab {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+}
+
+.help-tab-active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.help-body h2 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.help-body ul,
+.help-body ol {
+  margin: 0.35rem 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.help-body li + li {
+  margin-top: 0.25rem;
+}
+
 .dash-toolbar {
   display: flex;
   align-items: center;
