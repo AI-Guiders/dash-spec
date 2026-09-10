@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-08-27 |
-| **Relates to** | [ADR-0025](DASHSPEC-ADR-0025-git-catalog.md), [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md), Forge [ADR-0057](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0057-instance-settings-and-control-center.md) |
+| **Relates to** | [ADR-0049](DASHSPEC-ADR-0049-git-catalog.md), [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md), Forge [ADR-0057](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0057-instance-settings-and-control-center.md) |
 
 ## Context
 

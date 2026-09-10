@@ -4,11 +4,11 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-08-27 |
-| **Relates to** | [ADR-0025](DASHSPEC-ADR-0025-git-catalog.md), Forge [ADR-0005](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0005-ci-webhook-bridge.md), Forge [ADR-0067](../../../../agent-forge/design/FORGE-ADR-0067-outbound-push-fanout.md) (sibling repo) |
+| **Relates to** | [ADR-0049](DASHSPEC-ADR-0049-git-catalog.md), Forge [ADR-0005](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0005-ci-webhook-bridge.md), Forge [ADR-0067](../../../../agent-forge/design/FORGE-ADR-0067-outbound-push-fanout.md) (sibling repo) |
 
 ## Context
 
-[ADR-0025](DASHSPEC-ADR-0025-git-catalog.md) задаёт `GitCatalogSyncBackgroundService` с **`pull_interval_minutes = 15`**. Для каталога отчётов это перебор: большинство тиков — no-op, а после push оператор всё равно ждёт до четверти часа.
+[ADR-0049](DASHSPEC-ADR-0049-git-catalog.md) задаёт `GitCatalogSyncBackgroundService` с **`pull_interval_minutes = 15`**. Для каталога отчётов это перебор: большинство тиков — no-op, а после push оператор всё равно ждёт до четверти часа.
 
 Forge уже эмитит outbound `push` (post-receive → CI webhook, [FORGE-ADR-0005](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0005-ci-webhook-bridge.md): `X-Forge-Event`, `X-Forge-Signature`). Нужен **точечный** consumer на стороне Host: «пришёл push → sync сейчас», без platform event bus.
 
