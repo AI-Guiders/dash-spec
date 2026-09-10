@@ -1,4 +1,7 @@
-<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null)">
+@namespace DashSpec.Host.Components.Filters
+@using DashSpec.Host.Services.Presentation
+
+<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null) @(FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
     @if (NativeSelect)
     {
         @if (Compact)

@@ -1,5 +1,6 @@
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Host.Services.Presentation;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
 
@@ -13,6 +14,8 @@ public static class HostSettingsOverlay
     public const string SectionPresentation = "presentation";
     public const string KeyDisplayTimeZone = "display_time_zone";
     public const string KeyColorScheme = "color_scheme";
+    public const string KeyLanguage = "language";
+    public const string KeyLargeFieldFilterLayout = "large_field_filter_layout";
 
     public static void Apply(DashSpecTomlRoot bootstrap)
     {
@@ -52,7 +55,7 @@ public static class HostSettingsOverlay
         }
     }
 
-    private static void ApplyPresentation(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
+private static void ApplyPresentation(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
     {
         var tz = Get(rows, SectionPresentation, KeyDisplayTimeZone);
         if (!string.IsNullOrWhiteSpace(tz))
@@ -64,6 +67,18 @@ public static class HostSettingsOverlay
         if (!string.IsNullOrWhiteSpace(scheme))
         {
             bootstrap.Presentation.ColorScheme = scheme.Trim().ToLowerInvariant();
+        }
+
+        var language = Get(rows, SectionPresentation, KeyLanguage);
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            bootstrap.Presentation.Language = language.Trim().ToLowerInvariant();
+        }
+
+        var largeLayout = Get(rows, SectionPresentation, KeyLargeFieldFilterLayout);
+        if (!string.IsNullOrWhiteSpace(largeLayout))
+        {
+            bootstrap.Presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(largeLayout);
         }
     }
 

@@ -748,6 +748,24 @@ button.secondary:disabled {
   padding: 0.15rem 0;
 }
 
+.page.filter-large-expand .filter-large-list .filter-chips-row,
+.page.filter-large-expand .filter-large-list .chip-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.filters-bar .filter-large-list .filter-chips-row,
+.filters-bar .filter-large-list .chip-list {
+  max-height: 2.6rem;
+  overflow-y: auto;
+}
+
+.page.filter-large-expand .filters-bar .filter-large-list .filter-chips-row,
+.page.filter-large-expand .filters-bar .filter-large-list .chip-list {
+  max-height: none;
+  overflow: visible;
+}
+
 .filter-chip {
   border: 1px solid var(--border);
   background: var(--surface-2);

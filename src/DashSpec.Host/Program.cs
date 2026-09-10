@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Parsing;
+using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Commands.Constructors;
@@ -89,6 +89,7 @@ DashSpec.Core.Runtime.LabelFormat.DisplayTimeZone = DashboardCultureAmbient.Reso
     bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p ? p.DisplayTimeZone : null);
 
 builder.Services.AddSingleton(bootstrap);
+builder.Services.AddSingleton<HostPresentationSignals>();
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
 builder.Services.AddSingleton<DashSpecAccessValidator>();

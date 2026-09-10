@@ -1,18 +1,32 @@
 @inherits LayoutComponentBase
 @using DashSpec.Host.Configuration
+@using DashSpec.Host.Services.Presentation
 @inject DashSpecTomlRoot Bootstrap
+@inject HostPresentationSignals PresentationSignals
+@implements IDisposable
 
 @code {
     private string Scheme => Bootstrap.Presentation.ColorScheme is "light" or "contrast"
         ? "scheme-" + Bootstrap.Presentation.ColorScheme
         : string.Empty;
+
+    private string LargeFilterLayoutClass =>
+        FilterLargeListOptions.IsExpand(Bootstrap.Presentation.LargeFieldFilterLayout)
+            ? "filter-large-expand"
+            : string.Empty;
+
+    protected override void OnInitialized() =>
+        PresentationSignals.Changed += OnPresentationChanged;
+
+    private void OnPresentationChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => PresentationSignals.Changed -= OnPresentationChanged;
 }
 
-<div class="page @Scheme">
+<div class="page @Scheme @LargeFilterLayoutClass">
     <header class="topbar">
         <div>
             <strong>DashSpec</strong>
-            <span class="muted">DashSpec</span>
         </div>
         <TopbarNav />
     </header>
