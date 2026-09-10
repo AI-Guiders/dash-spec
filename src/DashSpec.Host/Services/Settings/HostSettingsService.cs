@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Host.Services.Presentation;
 using Microsoft.EntityFrameworkCore;
 
 namespace DashSpec.Host.Services.Settings;
@@ -9,7 +10,8 @@ namespace DashSpec.Host.Services.Settings;
 public sealed class HostSettingsService(
     DashSpecHostDbContext db,
     DashSpecTomlRoot bootstrap,
-    DashSpecAccessOptions accessOptions)
+    DashSpecAccessOptions accessOptions,
+    HostPresentationSignals presentationSignals)
 {
     public IReadOnlyDictionary<string, string> GetSection(string section) =>
         db.HostSettings.AsNoTracking()
@@ -85,6 +87,12 @@ public sealed class HostSettingsService(
             return;
         }
 
+        if (string.Equals(section, HostSettingsOverlay.SectionPresentation, StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyPresentationLive(key, value);
+            return;
+        }
+
         if (!string.Equals(section, HostSettingsOverlay.SectionCatalogGit, StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -126,6 +134,16 @@ public sealed class HostSettingsService(
             case "sync_allow_unsigned" when bool.TryParse(value, out var unsigned):
                 git.SyncAllowUnsigned = unsigned;
                 break;
+        }
+    }
+
+    private void ApplyPresentationLive(string key, string value)
+    {
+        var presentation = bootstrap.Presentation;
+        if (string.Equals(key, HostSettingsOverlay.KeyLargeFieldFilterLayout, StringComparison.OrdinalIgnoreCase))
+        {
+            presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(value);
+            presentationSignals.NotifyChanged();
         }
     }
 
