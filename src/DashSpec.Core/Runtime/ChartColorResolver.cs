@@ -33,7 +33,7 @@ public static class ChartColorResolver
         }
 
         var paletteScheme = ResolveScheme(card, library, dashboardColorPalette);
-        return labels.Select(paletteScheme.Resolve).ToList();
+        return labels.Select((label, index) => paletteScheme.ResolveAt(index, label)).ToList();
     }
 
     private static ChartColorScheme ResolveScheme(
@@ -204,6 +204,28 @@ public static class ChartColorResolver
             }
 
             return ordered[StablePaletteIndex(seriesName, ordered.Count)];
+        }
+
+        /// <summary>Category axis: stable order → round-robin palette (avoids hash collisions on long label lists).</summary>
+        public string ResolveAt(int index, string seriesName)
+        {
+            if (TryResolveMapped(seriesName, out var mapped))
+            {
+                return mapped;
+            }
+
+            if (string.Equals(seriesName, "default", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(seriesName, "Other", StringComparison.OrdinalIgnoreCase))
+            {
+                return defaultColor;
+            }
+
+            if (ordered.Count == 0)
+            {
+                return defaultColor;
+            }
+
+            return ordered[((index % ordered.Count) + ordered.Count) % ordered.Count];
         }
 
         private bool TryResolveMapped(string seriesName, out string color)
