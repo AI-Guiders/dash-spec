@@ -58,6 +58,8 @@ public sealed class DashSpecActionDispatcher
 
     internal static DashSpecActionContext BuildContext(CardRenderResult card)
     {
+        card = card.HasExpandedPayload ? card.ForView(detailView: true) : card;
+
         if (card.Table is { Columns.Count: > 0 } table)
         {
             return new DashSpecActionContext(

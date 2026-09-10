@@ -7,9 +7,13 @@ public sealed class CardVizRenderContext
 {
     public required CardRenderResult Card { get; init; }
 
+    public bool DetailView { get; init; }
+
     public double MatrixMin { get; init; }
 
     public double MatrixMax { get; init; }
 
     public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; init; }
+
+    public CardRenderResult EffectiveCard => Card.ForView(DetailView);
 }

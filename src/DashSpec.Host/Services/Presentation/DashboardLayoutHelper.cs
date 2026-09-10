@@ -1,19 +1,20 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
+using DashSpec.Core.Runtime;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Presentation;
 
 internal static class DashboardLayoutHelper
 {
-    public static string ChartDomId(string cardId) =>
-        "chart-" + DomIdHash(cardId);
+    public static string ChartDomId(string cardId, bool detailView = false) =>
+        "chart-" + DomIdHash(detailView ? cardId + ":detail" : cardId);
 
-    public static string MatrixHostDomId(string cardId) =>
-        "matrix-host-" + DomIdHash(cardId);
+    public static string MatrixHostDomId(string cardId, bool detailView = false) =>
+        "matrix-host-" + DomIdHash(detailView ? cardId + ":detail" : cardId);
 
-    public static string MatrixCanvasDomId(string cardId) =>
-        "matrix-canvas-" + DomIdHash(cardId);
+    public static string MatrixCanvasDomId(string cardId, bool detailView = false) =>
+        "matrix-canvas-" + DomIdHash(detailView ? cardId + ":detail" : cardId);
 
     private static string DomIdHash(string value) =>
         Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
@@ -34,8 +35,36 @@ internal static class DashboardLayoutHelper
             : $"grid-column:span {span};";
     }
 
-    public static string ChartHeightStyle(CardRenderResult card) =>
-        $"height:{card.ChartPresentation?.HeightPx ?? 280}px;";
+    public static string ChartHeightStyle(CardRenderResult card, bool detailView = false)
+    {
+        var baseHeight = card.ChartPresentation?.HeightPx ?? 280;
+        if (!detailView)
+        {
+            return $"height:{baseHeight}px;";
+        }
+
+        var chart = card.ForView(detailView).Chart ?? card.Chart;
+        if (chart is null)
+        {
+            return $"height:{Math.Max(baseHeight, 420)}px;";
+        }
+
+        var categoryCount = chart.Labels.Count;
+        var isHorizontal = card.ChartPresentation?.Orientation is ChartOrientation.Horizontal;
+
+        if (isHorizontal && categoryCount > 0)
+        {
+            var expanded = Math.Clamp(categoryCount * 26 + 64, baseHeight, 2400);
+            return $"height:{expanded}px;min-height:{baseHeight}px;";
+        }
+
+        if (categoryCount > 24 || chart.Series.Count > 8)
+        {
+            return $"height:{Math.Max(baseHeight, 480)}px;";
+        }
+
+        return $"height:{Math.Max(baseHeight, 420)}px;";
+    }
 
     public static string FilterPlacementStyle(
         string filterName,
