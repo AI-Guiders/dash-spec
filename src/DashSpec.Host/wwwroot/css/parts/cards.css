@@ -77,6 +77,69 @@
   margin-bottom: 0.75rem;
 }
 
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.card-fullscreen-btn,
+.card-export-btn {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.card-fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 6, 23, 0.72);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.card-fullscreen-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(96vw, 1400px);
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+
+.card-fullscreen-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-fullscreen-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.card-fullscreen-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.75rem 1rem 1rem;
+  overflow: auto;
+}
+
+.card-fullscreen-body .chart-wrap,
+.card-fullscreen-body .matrix-wrap {
+  min-height: min(72vh, 720px);
+}
+
 .card-kpi .card-head {
   align-items: flex-start;
   flex-shrink: 0;

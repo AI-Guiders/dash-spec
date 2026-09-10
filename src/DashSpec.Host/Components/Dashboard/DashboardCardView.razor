@@ -5,6 +5,8 @@
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Plugins.Builtins
 @using DashSpec.Host.Services.Presentation
+@using DashSpec.Host.Services.Localization
+@inject DashboardLocalizer Loc
 
 <article class="@CardCssClass" style="@PlacementStyle">
     <div class="card-head">
@@ -26,7 +28,7 @@
                         <button class="secondary card-filter-apply"
                                 disabled="@Card.Loading"
                                 @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                            Применить
+                            @Loc.T("Apply")
                         </button>
                     }
                 </div>
@@ -41,18 +43,41 @@
                 </div>
             }
         </div>
-        <CardExtensionChrome Blocks="Card.ExtensionBlocks"
-                               Card="Card"
-                               ActiveViewId="@ActiveViewId"
-                               OnAction="OnCardAction" />
-        @if (Card.Loading)
-        {
-            <span class="card-status muted">загрузка…</span>
-        }
-        else if (!string.IsNullOrEmpty(Card.Error))
-        {
-            <span class="card-status card-status-error">ошибка</span>
-        }
+        <div class="card-head-actions">
+            @if (CanExport)
+            {
+                <button type="button"
+                        class="secondary card-export-btn"
+                        title="@Loc.T("Export CSV")"
+                        disabled="@Card.Loading"
+                        @onclick="ExportCsvAsync">
+                    @Loc.T("Export CSV")
+                </button>
+            }
+            @if (CanFullscreen)
+            {
+                <button type="button"
+                        class="secondary card-fullscreen-btn"
+                        title="@Loc.T("Expand diagram")"
+                        disabled="@Card.Loading"
+                        aria-pressed="@_fullscreen"
+                        @onclick="ToggleFullscreen">
+                    @(_fullscreen ? Loc.T("Collapse") : Loc.T("Expand"))
+                </button>
+            }
+            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
+                                   Card="Card"
+                                   ActiveViewId="@ActiveViewId"
+                                   OnAction="OnCardAction" />
+            @if (Card.Loading)
+            {
+                <span class="card-status muted">@Loc.T("Loading…")</span>
+            }
+            else if (!string.IsNullOrEmpty(Card.Error))
+            {
+                <span class="card-status card-status-error">@Loc.T("Error")</span>
+            }
+        </div>
     </div>
 
     @if (Card.IsVisibilityPlaceholder)
@@ -73,11 +98,11 @@
             @if (ShowLocalApplyButton)
             {
                 <div class="card-interior-filter-slot card-interior-apply">
-                    <button class="secondary card-filter-apply"
-                            disabled="@Card.Loading"
-                            @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                        Применить
-                    </button>
+                        <button class="secondary card-filter-apply"
+                                disabled="@Card.Loading"
+                                @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                            @Loc.T("Apply")
+                        </button>
                 </div>
             }
             <div class="card-diagram-slot" style="@DiagramSlotStyle">
@@ -103,6 +128,35 @@
     }
 </article>
 
+@if (_fullscreen && CanFullscreen)
+{
+    <div class="card-fullscreen-backdrop" @onclick="CloseFullscreen">
+        <div class="card-fullscreen-panel"
+             role="dialog"
+             aria-modal="true"
+             aria-label="@Card.Title"
+             tabindex="-1"
+             @ref="_fullscreenPanel"
+             @onclick:stopPropagation="true"
+             @onkeydown="OnFullscreenKeyDown">
+            <header class="card-fullscreen-head">
+                <h2><RichTextView Text="@Card.Title" /></h2>
+                <button type="button"
+                        class="secondary card-fullscreen-close"
+                        @onclick="CloseFullscreen">
+                    @Loc.T("Collapse")
+                </button>
+            </header>
+            <div class="card-fullscreen-body">
+                <CardVisualization Card="Card"
+                                   MatrixMin="@(Card.Matrix?.Min ?? 0)"
+                                   MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                                   OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
     [Parameter] public string PlacementStyle { get; set; } = string.Empty;
@@ -126,6 +180,56 @@
 
     private HeatmapCellContext? _selection;
     private RenderSnapshot _renderSnapshot;
+    private bool _fullscreen;
+    private ElementReference _fullscreenPanel;
+
+    private bool CanExport =>
+        !Card.IsVisibilityPlaceholder &&
+        !Card.Loading &&
+        string.IsNullOrEmpty(Card.Error) &&
+        Card.DataFamily is not DiagramDataFamily.Scalar &&
+        (Card.Table is { Columns.Count: > 0 } ||
+         Card.Matrix is not null ||
+         Card.Chart is { Labels.Count: > 0 });
+
+    private bool CanFullscreen =>
+        !Card.IsVisibilityPlaceholder &&
+        Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table;
+
+    private Task ExportCsvAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "csv_export", new Dictionary<string, string>()));
+
+    private void ToggleFullscreen()
+    {
+        _fullscreen = !_fullscreen;
+        if (_fullscreen)
+        {
+            _ = FocusFullscreenAsync();
+        }
+    }
+
+    private void CloseFullscreen() => _fullscreen = false;
+
+    private async Task FocusFullscreenAsync()
+    {
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await _fullscreenPanel.FocusAsync();
+        }
+        catch
+        {
+            // Focus is best-effort for keyboard dismiss.
+        }
+    }
+
+    private void OnFullscreenKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.OrdinalIgnoreCase))
+        {
+            CloseFullscreen();
+        }
+    }
 
     protected override bool ShouldRender()
     {
