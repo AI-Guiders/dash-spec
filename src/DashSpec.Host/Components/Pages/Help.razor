@@ -1,0 +1,72 @@
+@page "/help"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Справка — DashSpec</PageTitle>
+
+<section class="help-page">
+    <header class="help-header">
+        <h1>Справка DashSpec</h1>
+        <p class="muted">License Usage — отчёты по запускам САПР на рабочих станциях.</p>
+    </header>
+
+    <nav class="help-tabs" aria-label="Разделы справки">
+        <button type="button" class="help-tab @(_tab == "user" ? "help-tab-active" : null)" @onclick='() => _tab = "user"'>Пользователь</button>
+        <button type="button" class="help-tab @(_tab == "admin" ? "help-tab-active" : null)" @onclick='() => _tab = "admin"'>Администратор</button>
+    </nav>
+
+    @if (_tab == "user")
+    {
+        <article class="help-body">
+            <h2>Как открыть</h2>
+            <ol>
+                <li>Браузер Edge или Chrome.</li>
+                <li>Адрес выдаёт администратор (например <code>http://&lt;сервер&gt;:5295/</code>).</li>
+                <li>Если запросит ключ — страница <a href="/access">/access</a>.</li>
+            </ol>
+
+            <h2>Экран</h2>
+            <ul>
+                <li><strong>Отчёт</strong> — выпадающий список вверху (License Usage, Отчёты заказчика, Обзор, Детализация).</li>
+                <li><strong>Вкладки и страницы</strong> — переключение без потери фильтров там, где это задумано.</li>
+                <li><strong>Фильтры</strong> — дата, продукты, пользователь, масштаб (день/месяц/год), период, топ N.</li>
+            </ul>
+
+            <h2>Типовые сценарии</h2>
+            <ul>
+                <li>Закупка и утилизация — вкладка «Отчёты заказчика», страница №1.</li>
+                <li>Сводка для руководства — «Отчёты заказчика» → «Сводка» (по умолчанию полный предыдущий день).</li>
+                <li>Операционный обзор — «Обзор»: пики и активность за день (масштаб 1 ч / 5 мин / 4 ч).</li>
+                <li>Кто когда запускал — «Детализация», сузить дату и пользователя.</li>
+            </ul>
+
+            <h2>Важно</h2>
+            <p>Цифры отражают <strong>факт запуска процесса на ПК</strong>, а не всегда занятую сетевую лицензию вендора. Для закупки и разговора с пользователями — ориентир, не юридический отчёт вендору.</p>
+            <p class="muted">Полное руководство: <code>URSA.LicenseUsage/docs/infra/DashSpec_UserGuide_RU.md</code> в репозитории проекта.</p>
+        </article>
+    }
+    else
+    {
+        <article class="help-body">
+            <h2>Настройки хоста</h2>
+            <p><a href="/admin/access">Settings</a> — API key, git-каталог, часовой пояс, язык, длинные списки фильтра ПО (&gt;80).</p>
+
+            <h2>Каталог отчётов</h2>
+            <ul>
+                <li>Спеки <code>.dashspec</code> и <code>.dashcatalog</code> — в репозитории URSA (<code>docs/dashspec/</code>).</li>
+                <li>После обновления спек — redeploy DashSpec Host или git sync каталога.</li>
+                <li>Warm layer: перед демо stakeholder/overview нужен backfill agg (<code>validate-dashspec-ready.ps1</code>).</li>
+            </ul>
+
+            <h2>Установка</h2>
+            <ul>
+                <li><code>docs/infra/INSTALL_DashSpec_RU.md</code> — сервер отчётов.</li>
+                <li><code>docs/infra/INSTALL_Api_RU.md</code> + <code>INSTALL_Agent_RU.md</code> — сбор данных.</li>
+                <li><code>docs/infra/DashSpec_AuthorGuide_RU.md</code> — авторинг спек (не эта страница).</li>
+            </ul>
+        </article>
+    }
+</section>
+
+@code {
+    private string _tab = "user";
+}

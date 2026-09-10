@@ -10,6 +10,7 @@ public static class HostSurfaceCatalog
     public static IReadOnlyList<HostSurface> Surfaces { get; } =
     [
         new("dashboard", "/", "Dashboard", "Отчёты, фильтры и карточки"),
+        new("help", "/help", "Help", "Справка пользователя и администратора"),
         new("controlcenter", "/admin/access", "Settings", "Настройки хоста и каталога"),
     ];
 
