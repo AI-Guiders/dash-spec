@@ -5,11 +5,7 @@ namespace DashSpec.Core.Runtime;
 
 public static class ChartColorResolver
 {
-    private static readonly string[] DefaultPalette =
-    [
-        "#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#a78bfa", "#fb7185", "#38bdf8", "#4ade80",
-        "#f97316", "#14b8a6", "#e879f9", "#84cc16", "#0ea5e9", "#ef4444", "#6366f1", "#eab308",
-    ];
+    private static readonly string[] DefaultPalette = ChartDefaultPalette.Values.ToArray();
 
     public static IReadOnlyList<ChartSeries> ApplySeriesColors(
         IReadOnlyList<ChartSeries> series,
