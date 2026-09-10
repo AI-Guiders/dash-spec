@@ -8,16 +8,9 @@ public static class HeatmapColorScale
     public static string CellBackground(string? scale, double value, double min, double max)
     {
         var normalized = Normalize(scale);
-        if (max <= min)
-        {
-            return normalized switch
-            {
-                "mono" => "hsl(210, 70%, 45%)",
-                _ => "hsl(210, 80%, 48%)",
-            };
-        }
-
-        var t = (value - min) / (max - min);
+        var t = max <= min
+            ? (value <= min ? 0d : 1d)
+            : (value - min) / (max - min);
         return normalized switch
         {
             "mono" => Mono(t),
@@ -27,12 +20,9 @@ public static class HeatmapColorScale
 
     public static string CellText(string? scale, double value, double min, double max)
     {
-        if (max <= min)
-        {
-            return "#f8fafc";
-        }
-
-        var t = (value - min) / (max - min);
+        var t = max <= min
+            ? (value <= min ? 0d : 1d)
+            : (value - min) / (max - min);
         return t >= 0.45 ? "#0f172a" : "#f8fafc";
     }
 

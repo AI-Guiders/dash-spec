@@ -9,10 +9,7 @@ window.dashSpecMatrix = {
 
   cellBackground(scale, value, min, max) {
     const normalized = (scale || "heat").toLowerCase();
-    if (max <= min) {
-      return normalized === "mono" ? "hsl(210, 70%, 45%)" : "hsl(210, 80%, 48%)";
-    }
-    const t = (value - min) / (max - min);
+    const t = max <= min ? (value <= min ? 0 : 1) : (value - min) / (max - min);
     if (normalized === "mono") {
       const lightness = 28 + t * 24;
       return `hsl(210, 65%, ${lightness.toFixed(0)}%)`;
@@ -24,10 +21,7 @@ window.dashSpecMatrix = {
   },
 
   cellText(value, min, max) {
-    if (max <= min) {
-      return "#f8fafc";
-    }
-    const t = (value - min) / (max - min);
+    const t = max <= min ? (value <= min ? 0 : 1) : (value - min) / (max - min);
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
@@ -90,6 +84,10 @@ window.dashSpecMatrix = {
         } else if (colorNormalize === "column") {
           if (Array.isArray(colMins) && colMins[xi] != null) cellMin = colMins[xi];
           if (Array.isArray(colMaxs) && colMaxs[xi] != null) cellMax = colMaxs[xi];
+        }
+        if (cellMax <= cellMin) {
+          cellMin = min;
+          cellMax = max;
         }
 
         if (value == null) {
