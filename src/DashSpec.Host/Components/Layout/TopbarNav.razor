@@ -1,7 +1,8 @@
-﻿@using DashSpec.Host.Components.Dashboard
+@using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Services.Presentation
 @inject IWebHostEnvironment Environment
 @inject DashboardHostCommandCoordinator Coordinator
+@inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @implements IDisposable
 
@@ -16,11 +17,12 @@
                                 Inline="true"
                                 ShowLabel="true" />
     }
-    <a href="/">Dashboard</a>
-    <a href="/admin/access">Settings</a>
+    <a href="/">@Loc.T("Dashboard")</a>
+    <a href="/help" class="help-link" title="Справка">?</a>
+    <a href="/admin/access">@Loc.T("Settings")</a>
     @if (Environment.IsDevelopment())
     {
-        <a href="/dev/spec">Spec</a>
+        <a href="/dev/spec">@Loc.T("Spec")</a>
     }
 </nav>
 
