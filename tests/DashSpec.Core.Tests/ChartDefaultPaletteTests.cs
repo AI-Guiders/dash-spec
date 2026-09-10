@@ -19,7 +19,7 @@ public sealed class ChartDefaultPaletteTests
     }
 
     [Fact]
-    public void Resolver_draws_from_large_default_palette()
+    public void ResolveLabelColors_uses_round_robin_for_category_labels()
     {
         var card = new CardDefinition(
             "c",
@@ -37,16 +37,8 @@ public sealed class ChartDefaultPaletteTests
             null,
             null);
 
-        var colors = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        for (var i = 0; i < 256; i++)
-        {
-            var colored = ChartColorResolver.ApplySeriesColors(
-                [new ChartSeries($"probe_{i:x4}", [i])],
-                card,
-                library: null);
-            colors.Add(colored[0].Color!);
-        }
-
-        Assert.True(colors.Count >= 200, $"expected wide spread, got {colors.Count} unique colors");
+        var labels = Enumerable.Range(0, 256).Select(i => $"app_{i}").ToList();
+        var colors = ChartColorResolver.ResolveLabelColors(labels, card, library: null, dashboardColorPalette: null);
+        Assert.Equal(256, colors.Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 }
