@@ -144,6 +144,15 @@ public sealed class HostSettingsService(
         {
             presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(value);
             presentationSignals.NotifyChanged();
+            return;
+        }
+
+        if (string.Equals(key, HostSettingsOverlay.KeyLanguage, StringComparison.OrdinalIgnoreCase))
+        {
+            presentation.Language = string.IsNullOrWhiteSpace(value)
+                ? "ru"
+                : value.Trim().ToLowerInvariant();
+            presentationSignals.NotifyChanged();
         }
     }
 
