@@ -106,6 +106,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     kind.DataFamily,
                     renderPluginId,
                     Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
+                    DetailChart: seriesTransform is null
+                        ? null
+                        : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
@@ -147,6 +150,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     kind.DataFamily,
                     renderPluginId,
                     Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip),
+                    DetailMatrix: seriesTransform is null
+                        ? null
+                        : ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, null, effective.Tooltip),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
                     MatrixPresentation: matrixPresentation,

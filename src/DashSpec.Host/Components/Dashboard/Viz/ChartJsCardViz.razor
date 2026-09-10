@@ -5,25 +5,26 @@
 @using DashSpec.Host.Services.Models
 @using DashSpec.Host.Services.Presentation
 
-@if (Context.Card.Chart is null || IsEmpty(Context.Card.Chart))
+@if (Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart))
 {
     <p class="empty-state">Нет данных за выбранный период</p>
 }
 else
 {
-    <div class="chart-wrap" style="@DashboardLayoutHelper.ChartHeightStyle(Context.Card)">
-        <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Context.Card.Id)"
-                     ChartType="@ResolveChartJsType(Context.Card.DiagramKind)"
-                     Payload="Context.Card.Chart"
-                     Legend="@(Context.Card.ChartPresentation?.Legend ?? "bottom")"
-                     Stacked="@(Context.Card.ChartPresentation?.Stacked ?? false)"
-                     FillArea="@(Context.Card.ChartPresentation?.FillArea ?? false)"
-                     Sparkline="@(Context.Card.ChartPresentation?.Sparkline ?? false)"
-                     Orientation="@(Context.Card.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
-                     ValueAxisScale="@(Context.Card.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
-                     CategoryAxisLabel="@Context.Card.ChartPresentation?.CategoryAxisLabel"
-                     ValueAxisLabel="@Context.Card.ChartPresentation?.ValueAxisLabel"
-                     ValueAxisMax="@Context.Card.ChartPresentation?.ValueAxisMax"
+    <div class="chart-wrap @ChartWrapCssClass" style="@DashboardLayoutHelper.ChartHeightStyle(Context.Card, Context.DetailView)">
+        <ChartCanvas ChartId="@DashboardLayoutHelper.ChartDomId(Context.Card.Id, Context.DetailView)"
+                     ChartType="@ResolveChartJsType(Context.EffectiveCard.DiagramKind)"
+                     Payload="Context.EffectiveCard.Chart"
+                     Legend="@(Context.EffectiveCard.ChartPresentation?.Legend ?? "bottom")"
+                     Stacked="@(Context.EffectiveCard.ChartPresentation?.Stacked ?? false)"
+                     FillArea="@(Context.EffectiveCard.ChartPresentation?.FillArea ?? false)"
+                     Sparkline="@(Context.EffectiveCard.ChartPresentation?.Sparkline ?? false)"
+                     Orientation="@(Context.EffectiveCard.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
+                     ValueAxisScale="@(Context.EffectiveCard.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
+                     CategoryAxisLabel="@Context.EffectiveCard.ChartPresentation?.CategoryAxisLabel"
+                     ValueAxisLabel="@Context.EffectiveCard.ChartPresentation?.ValueAxisLabel"
+                     ValueAxisMax="@Context.EffectiveCard.ChartPresentation?.ValueAxisMax"
+                     DetailView="@Context.DetailView"
                      CategoryClickEnabled="@CategoryClickEnabled"
                      OnCategorySelected="HandleCategorySelectedAsync" />
     </div>
@@ -52,9 +53,9 @@ else
 
     private bool CategoryClickEnabled =>
         Context.OnHeatmapCellSelected.HasDelegate &&
-        Context.Card.ClickBehaviour is not null &&
-        (Interactions.HasNavigationEffects(Context.Card.ClickBehaviour) ||
-         Interactions.ResolveShowEffect(Context.Card.ClickBehaviour) is not null);
+        Context.EffectiveCard.ClickBehaviour is not null &&
+        (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
+         Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null);
 
     private Task HandleCategorySelectedAsync((int Index, string Label) args)
     {
@@ -74,4 +75,6 @@ else
 
         return Context.OnHeatmapCellSelected.InvokeAsync(context);
     }
+
+    private string ChartWrapCssClass => Context.DetailView ? "chart-wrap-detail" : string.Empty;
 }
