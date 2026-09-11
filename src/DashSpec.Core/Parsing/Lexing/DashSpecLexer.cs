@@ -46,12 +46,6 @@ internal static class DashSpecLexer
                     $"Unexpected '/' at position {i}. Use // line comments at line start or /* */ block comments.");
             }
 
-            if (atLineStart && text[i] is '#')
-            {
-                SkipToEndOfLine(text, ref i);
-                continue;
-            }
-
             var start = i;
             if (text[i] is '@')
             {
@@ -369,7 +363,7 @@ internal static class DashSpecLexer
         if (hexLen is not (3 or 6))
         {
             throw new DashSpecParseException(
-                $"Invalid hex color at position {start}. Use #rgb or #rrggbb, or a line comment with # at the beginning of the line.");
+                $"Invalid hex color at position {start}. Use #rgb or #rrggbb (not at line start as comment — use // or /* */).");
         }
 
         return new Token(TokenKind.HexColor, text[start..i], start, i - start);
