@@ -232,11 +232,27 @@ internal static class PaletteModuleParser
     private static string ReadColorOperand(TokenReader reader)
     {
         reader.SkipNewlines();
+        if (reader.IsAt(TokenKind.Ident))
+        {
+            var saved = reader.SavePosition();
+            var name = reader.ReadIdent();
+            if (name.Equals("color", StringComparison.OrdinalIgnoreCase) && reader.IsAt(TokenKind.LParen))
+            {
+                reader.Expect(TokenKind.LParen);
+                var inner = ReadColorOperand(reader);
+                reader.Expect(TokenKind.RParen);
+                return inner;
+            }
+
+            reader.RestorePosition(saved);
+        }
+
         return reader.CurrentKind switch
         {
             TokenKind.String => reader.ReadString(),
+            TokenKind.HexColor => reader.ReadHexColor(),
             TokenKind.Ident => reader.ReadIdent(),
-            _ => throw reader.Unexpected("color literal, CSS name, or const reference"),
+            _ => throw reader.Unexpected("color literal (#rrggbb), CSS name, const reference, or color(...)"),
         };
     }
 }

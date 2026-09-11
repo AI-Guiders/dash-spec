@@ -16,6 +16,7 @@ internal enum TokenKind
     RParen,
     Ident,
     String,
+    HexColor,
     Raw,
     Newline,
     Eof,
