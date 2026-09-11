@@ -218,6 +218,11 @@ public static class QueryCompiler
             parts.Add($"MAX({reference}) AS {reference}");
         }
 
+        if (DiagramBindings.TryGetColumn(diagram, "color", out var color))
+        {
+            parts.Add($"MAX({color}) AS {color}");
+        }
+
         selectList = string.Join(", ", parts);
         groupBy = "GROUP BY " + string.Join(", ", groupParts);
         return true;
