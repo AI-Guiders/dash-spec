@@ -375,12 +375,12 @@ public class SpecModulesTests
     }
 
     [Fact]
-    public void PaletteModuleParser_treats_line_start_hash_as_comment()
+    public void PaletteModuleParser_treats_line_start_slash_slash_as_comment()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette brand
             
-            # not a color — line comment
+            // not a color — line comment
             palette
               default = "#999999"
               colors = [#e11d48]
@@ -391,18 +391,18 @@ public class SpecModulesTests
     }
 
     [Fact]
-    public void PaletteModuleParser_line_start_hash_hex_is_not_a_color_entry()
+    public void PaletteModuleParser_line_start_hash_hex_is_color_not_comment()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette brand
             palette
-              colors = [
-                #e11d48
-              ]
+              accent = #e11d48
+              colors = [#2563eb]
             end palette
-            """)));
+            """));
 
-        Assert.Contains("at least one entry", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("#e11d48", library.TryGetPalette("brand")!["accent"]);
+        Assert.Equal("#2563eb", library.TryGetPalette("brand")!["colors"]);
     }
 
     [Fact]
