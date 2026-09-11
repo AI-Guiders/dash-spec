@@ -375,7 +375,7 @@ public class SpecModulesTests
     }
 
     [Fact]
-    public void PaletteModuleParser_treats_invalid_hash_line_as_comment()
+    public void PaletteModuleParser_treats_line_start_hash_as_comment()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
             @palette brand
@@ -388,6 +388,21 @@ public class SpecModulesTests
             """));
 
         Assert.Equal("#e11d48", library.TryGetPalette("brand")!["colors"]);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_line_start_hash_hex_is_not_a_color_entry()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette brand
+            palette
+              colors = [
+                #e11d48
+              ]
+            end palette
+            """)));
+
+        Assert.Contains("at least one entry", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
