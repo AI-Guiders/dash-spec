@@ -454,4 +454,51 @@ public class ChartRuntimeTests
         Assert.Equal("#ef4444", payload.Series[0].PointColors![0]);
         Assert.Equal("#60a5fa", payload.Series[0].PointColors![1]);
     }
+
+    [Fact]
+    public void CategoryChartPayloadBuilder_uses_color_column_when_bound()
+    {
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+              configuration
+              diagramlibrary = "lib.toml"
+              end configuration
+              report
+              title = "T"
+              card c as "C"
+              diagram bar
+              category = app_name
+              value = utilization_pct
+              color = chart_color
+              end bar
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+            """).Cards[0];
+
+        var resolved = CardDiagramResolver.Resolve(card, library: null).Card;
+        var payload = ChartDataBuilder.BuildLineOrBar(
+            [
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["app_name"] = "Tekla",
+                    ["utilization_pct"] = 120d,
+                    ["chart_color"] = "#e11d48",
+                },
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["app_name"] = "AVEVA",
+                    ["utilization_pct"] = 80d,
+                    ["chart_color"] = "#2563eb",
+                },
+            ],
+            resolved.Diagram,
+            seriesTransform: null,
+            resolved,
+            library: null);
+
+        Assert.Equal("#e11d48", payload.Series[0].PointColors![0]);
+        Assert.Equal("#2563eb", payload.Series[0].PointColors![1]);
+    }
 }
