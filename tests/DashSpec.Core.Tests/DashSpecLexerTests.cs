@@ -63,8 +63,39 @@ public sealed class DashSpecLexerTests
     {
         var tokens = DashSpecLexer.Tokenize("note = \"\"\"\n# not a comment inside multiline\n// also preserved\n\"\"\"");
 
-        var value = Assert.Single(tokens.Where(t => t.Kind is TokenKind.String)).Value;
+        var value = Assert.Single(tokens, t => t.Kind is TokenKind.String).Value;
         Assert.Contains("# not a comment", value, StringComparison.Ordinal);
         Assert.Contains("// also preserved", value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Block_comment_spans_lines()
+    {
+        var tokens = DashSpecLexer.Tokenize("""
+            /*
+              ADR note
+              # not a line comment
+              // also text
+            */
+            title = "T"
+            """);
+
+        Assert.DoesNotContain(tokens, t => t.Kind is TokenKind.Ident && t.Value == "ADR");
+        Assert.Contains(tokens, t => t.Kind is TokenKind.String && t.Value == "T");
+    }
+
+    [Fact]
+    public void Block_comment_mid_line_before_tokens()
+    {
+        var tokens = DashSpecLexer.Tokenize("colors = [ /* cycle */ #e11d48]");
+
+        Assert.Contains(tokens, t => t.Kind is TokenKind.HexColor && t.Value == "#e11d48");
+    }
+
+    [Fact]
+    public void Unterminated_block_comment_throws()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecLexer.Tokenize("/* oops"));
+        Assert.Contains("block comment", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -30,8 +30,25 @@ internal static class DashSpecLexer
                 continue;
             }
 
-            if (atLineStart && TrySkipLineComment(text, ref i))
+            if (text[i] is '/')
             {
+                if (TrySkipBlockComment(text, ref i, ref atLineStart))
+                {
+                    continue;
+                }
+
+                if (atLineStart && TrySkipSlashSlashComment(text, ref i))
+                {
+                    continue;
+                }
+
+                throw new DashSpecParseException(
+                    $"Unexpected '/' at position {i}. Use // line comments at line start or /* */ block comments.");
+            }
+
+            if (atLineStart && text[i] is '#')
+            {
+                SkipToEndOfLine(text, ref i);
                 continue;
             }
 
@@ -216,28 +233,61 @@ internal static class DashSpecLexer
         return tokens;
     }
 
-    /// <summary><c>#</c> or <c>//</c> at line start (after whitespace) — comment to EOL.</summary>
-    private static bool TrySkipLineComment(string text, ref int i)
+    /// <summary><c>//</c> at line start (after whitespace) — comment to EOL.</summary>
+    private static bool TrySkipSlashSlashComment(string text, ref int i)
     {
-        if (text[i] is '/')
-        {
-            if (i + 1 >= text.Length || text[i + 1] is not '/')
-            {
-                return false;
-            }
-
-            i += 2;
-            SkipToEndOfLine(text, ref i);
-            return true;
-        }
-
-        if (text[i] is not '#')
+        if (i + 1 >= text.Length || text[i + 1] is not '/')
         {
             return false;
         }
 
+        i += 2;
         SkipToEndOfLine(text, ref i);
         return true;
+    }
+
+    /// <summary><c>/* … */</c> block comment; may span lines; allowed mid-line.</summary>
+    private static bool TrySkipBlockComment(string text, ref int i, ref bool atLineStart)
+    {
+        if (i + 1 >= text.Length || text[i + 1] is not '*')
+        {
+            return false;
+        }
+
+        i += 2;
+        while (i < text.Length)
+        {
+            if (text[i] is '\r' or '\n')
+            {
+                if (text[i] is '\r')
+                {
+                    i++;
+                }
+
+                if (i < text.Length && text[i] is '\n')
+                {
+                    i++;
+                }
+
+                atLineStart = true;
+                continue;
+            }
+
+            if (text[i] is '*' && i + 1 < text.Length && text[i + 1] is '/')
+            {
+                i += 2;
+                if (i < text.Length && text[i] is not '\r' and not '\n')
+                {
+                    atLineStart = false;
+                }
+
+                return true;
+            }
+
+            i++;
+        }
+
+        throw new DashSpecParseException("Unterminated block comment (/* … */).");
     }
 
     private static void SkipToEndOfLine(string text, ref int i)
