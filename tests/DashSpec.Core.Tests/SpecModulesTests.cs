@@ -339,6 +339,58 @@ public class SpecModulesTests
     }
 
     [Fact]
+    public void PaletteModuleParser_parses_bare_hex_in_colors_list()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette brand
+            
+            palette
+              default = "#999999"
+              colors = [#e11d48, #2563eb, #fff]
+            end palette
+            """));
+
+        Assert.Equal("#999999", library.TryGetPalette("brand")!["default"]);
+        Assert.Equal("#e11d48,#2563eb,#ffffff", library.TryGetPalette("brand")!["colors"]);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_accepts_color_call_syntax()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette brand
+            
+            const tekla = "#e11d48"
+            
+            palette
+              Tekla = color(tekla)
+              colors = [color(#0000ff), green]
+            end palette
+            """));
+
+        var palette = library.TryGetPalette("brand");
+        Assert.NotNull(palette);
+        Assert.Equal("#e11d48", palette!["Tekla"]);
+        Assert.Equal("#0000ff,#008000", palette["colors"]);
+    }
+
+    [Fact]
+    public void PaletteModuleParser_treats_invalid_hash_line_as_comment()
+    {
+        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+            @palette brand
+            
+            # not a color — line comment
+            palette
+              default = "#999999"
+              colors = [#e11d48]
+            end palette
+            """));
+
+        Assert.Equal("#e11d48", library.TryGetPalette("brand")!["colors"]);
+    }
+
+    [Fact]
     public void SpecLibraryComposer_merges_palette_with_diagram_library()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));

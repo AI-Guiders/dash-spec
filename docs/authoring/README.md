@@ -17,13 +17,23 @@
 ## Обновить справочник
 
 ```powershell
-cd D:\Experiments\PersonalCursorFolder\Financial\software\open\dash-spec
+cd D:\Experiments\Personal Cursor Folder\open\dash-spec
 dotnet build src/DashSpec.Core/DashSpec.Core.csproj -c Release
 dotnet run --project src/DashSpec.DocGen -- .
 ```
 
 Править тексты в `src/DashSpec.Core/Authoring/AuthoringCatalog.cs` (XML `///` на nested types).
 Парсер-специфичные детали — в `///` на классах в `DashSpec.Core/Parsing/*.cs` (подтягиваются в IDE, при необходимости дублируй кратко в catalog).
+
+### Цвета в `.dashpalette`
+
+| Форма | Пример |
+|-------|--------|
+| quoted hex | `Tekla = "#e11d48"` |
+| bare hex (DashSpec ≥ develop) | `colors = [#e11d48, #2563eb]` |
+| const ref | `const tekla = "#e11d48"` → `Tekla = tekla` |
+| explicit call | `Tekla = color(tekla)` |
+| line comment | `# note` — только если после `#` не `#rgb` / `#rrggbb` |
 
 ## LUS
 

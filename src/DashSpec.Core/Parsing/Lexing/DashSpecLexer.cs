@@ -30,6 +30,22 @@ internal static class DashSpecLexer
 
             if (text[i] is '#')
             {
+                var hashStart = i;
+                i++;
+                var hexStart = i;
+                while (i < text.Length && Uri.IsHexDigit(text[i]))
+                {
+                    i++;
+                }
+
+                var hexLen = i - hexStart;
+                if (hexLen is 3 or 6)
+                {
+                    tokens.Add(new Token(TokenKind.HexColor, text[hashStart..i], hashStart, i - hashStart));
+                    continue;
+                }
+
+                i = hashStart + 1;
                 while (i < text.Length && text[i] is not '\r' and not '\n')
                 {
                     i++;
