@@ -16,9 +16,10 @@ internal static class CategoryChartPayloadBuilder
         var xColumn = DiagramBindings.Column(diagram, "x");
         var yColumn = DiagramBindings.Column(diagram, "y");
         var hasReference = DiagramBindings.TryGetColumn(diagram, "reference", out var referenceColumn);
+        var hasColorColumn = DiagramBindings.TryGetColumn(diagram, "color", out var colorColumn);
         var referenceLabel = DiagramBindings.Label(diagram, "reference") ?? "Куплено";
 
-        var ordered = new List<(string Label, double? Value, double? Reference)>();
+        var ordered = new List<(string Label, double? Value, double? Reference, string? Color)>();
         var indexByLabel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var row in rows)
@@ -33,20 +34,27 @@ internal static class CategoryChartPayloadBuilder
             var reference = hasReference
                 ? PayloadRowFormatters.ToDouble(row.GetValueOrDefault(referenceColumn))
                 : null;
+            var color = hasColorColumn
+                ? PayloadRowFormatters.FormatValue(row.GetValueOrDefault(colorColumn))
+                : null;
 
             if (indexByLabel.TryGetValue(label, out var existingIndex))
             {
                 var existing = ordered[existingIndex].Value;
                 if (value is not null && (existing is null || value > existing))
                 {
-                    ordered[existingIndex] = (label, value, reference ?? ordered[existingIndex].Reference);
+                    ordered[existingIndex] = (
+                        label,
+                        value,
+                        reference ?? ordered[existingIndex].Reference,
+                        color ?? ordered[existingIndex].Color);
                 }
 
                 continue;
             }
 
             indexByLabel[label] = ordered.Count;
-            ordered.Add((label, value, reference));
+            ordered.Add((label, value, reference, color));
         }
 
         var labels = ordered.Select(x => x.Label).ToList();
@@ -54,10 +62,15 @@ internal static class CategoryChartPayloadBuilder
         var references = hasReference
             ? ordered.Select(x => x.Reference).ToList()
             : null;
+        var columnColors = hasColorColumn
+            ? ordered.Select(x => x.Color).ToList()
+            : null;
         var pointColors = ResolveBarPointColors(
             labels,
             values,
             references,
+            columnColors,
+            hasColorColumn,
             diagram,
             card,
             library,
@@ -78,6 +91,8 @@ internal static class CategoryChartPayloadBuilder
         IReadOnlyList<string> labels,
         IReadOnlyList<double?> values,
         IReadOnlyList<double?>? references,
+        IReadOnlyList<string?>? columnColors,
+        bool hasColorColumn,
         DiagramDefinition diagram,
         CardDefinition card,
         SpecLibrary? library,
@@ -94,6 +109,15 @@ internal static class CategoryChartPayloadBuilder
         for (var i = 0; i < labels.Count; i++)
         {
             var value = values[i];
+            var explicitColor = hasColorColumn && columnColors is not null && i < columnColors.Count
+                ? NormalizeHexColor(columnColors[i])
+                : null;
+
+            if (explicitColor is not null)
+            {
+                colors[i] = explicitColor;
+                continue;
+            }
 
             if (references is not null && references.Count == values.Count)
             {
@@ -113,6 +137,19 @@ internal static class CategoryChartPayloadBuilder
         }
 
         return colors;
+    }
+
+    private static string? NormalizeHexColor(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length == 7 && trimmed[0] == '#'
+            ? trimmed
+            : null;
     }
 
     private static double? TryReadPercentCap(IReadOnlyDictionary<string, string> properties)

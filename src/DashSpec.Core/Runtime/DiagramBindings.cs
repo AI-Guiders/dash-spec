@@ -28,7 +28,7 @@ public static class DiagramBindings
     public static IEnumerable<string> SelectColumnRoles(string? kind) =>
         kind?.ToLowerInvariant() switch
         {
-            "bar" or "pie" or "donut" or "doughnut" or "treemap" or "windrose" or "wind_rose" => ["x", "y", "reference", "series"],
+            "bar" or "pie" or "donut" or "doughnut" or "treemap" or "windrose" or "wind_rose" => ["x", "y", "reference", "series", "color"],
             "line" or "area" or "sparkline" => ["x", "y", "series"],
             "scatter" => ["x", "y", "size"],
             "histogram" => ["value", "x"],
