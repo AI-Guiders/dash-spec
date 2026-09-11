@@ -25,15 +25,18 @@ dotnet run --project src/DashSpec.DocGen -- .
 Править тексты в `src/DashSpec.Core/Authoring/AuthoringCatalog.cs` (XML `///` на nested types).
 Парсер-специфичные детали — в `///` на классах в `DashSpec.Core/Parsing/*.cs` (подтягиваются в IDE, при необходимости дублируй кратко в catalog).
 
-### Цвета в `.dashpalette`
+### Комментарии и цвета в `.dashpalette`
 
-| Форма | Пример |
-|-------|--------|
+| Правило | Пример |
+|---------|--------|
+| `#` **в начале строки** (после пробелов) | `# note` → комментарий до EOL |
+| `//` **в начале строки** | `// note` → комментарий до EOL |
+| bare `#rrggbb` **не в начале строки** | `colors = [#e11d48, #2563eb]` |
 | quoted hex | `Tekla = "#e11d48"` |
-| bare hex (DashSpec ≥ develop) | `colors = [#e11d48, #2563eb]` |
-| const ref | `const tekla = "#e11d48"` → `Tekla = tekla` |
-| explicit call | `Tekla = color(tekla)` |
-| line comment | `# note` — только если после `#` не `#rgb` / `#rrggbb` |
+| multiline string | `note = """` … `#` внутри не комментарий … `"""` |
+| const / call | `const tekla = "#e11d48"`, `color(tekla)` |
+
+Строка, начинающаяся с `#e11d48`, — **комментарий**, не цвет. Для многострочного списка используй `"#rrggbb"` на каждой строке или одну строку `[#e11d48, …]`.
 
 ## LUS
 
