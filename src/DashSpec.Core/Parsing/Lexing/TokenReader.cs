@@ -296,6 +296,19 @@ internal sealed class TokenReader
         return value;
     }
 
+    public string ReadHexColor()
+    {
+        SkipNewlines();
+        if (Current.Kind is not TokenKind.HexColor)
+        {
+            throw Unexpected("#rrggbb or #rgb hex color");
+        }
+
+        var value = Current.Value;
+        _index++;
+        return value;
+    }
+
     public string ReadScalarValue()
     {
         SkipNewlines();
