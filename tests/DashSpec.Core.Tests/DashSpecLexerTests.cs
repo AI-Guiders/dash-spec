@@ -6,18 +6,6 @@ namespace DashSpec.Core.Tests;
 public sealed class DashSpecLexerTests
 {
     [Fact]
-    public void Line_comment_hash_at_line_start_is_skipped()
-    {
-        var tokens = DashSpecLexer.Tokenize("""
-            # full-line comment
-            title = "T"
-            """);
-
-        Assert.DoesNotContain(tokens, t => t.Kind is TokenKind.Ident && t.Value == "full-line");
-        Assert.Contains(tokens, t => t.Kind is TokenKind.String && t.Value == "T");
-    }
-
-    [Fact]
     public void Line_comment_slash_slash_at_line_start_is_skipped()
     {
         var tokens = DashSpecLexer.Tokenize("""
@@ -30,14 +18,21 @@ public sealed class DashSpecLexerTests
     }
 
     [Fact]
-    public void Hash_at_line_start_is_comment_even_for_hex_shape()
+    public void Hash_at_line_start_is_hex_not_comment()
     {
         var tokens = DashSpecLexer.Tokenize("""
-            #e11d48 looks like hex but is a line comment
+            #e11d48
             title = "T"
             """);
 
-        Assert.DoesNotContain(tokens, t => t.Kind is TokenKind.HexColor);
+        Assert.Contains(tokens, t => t.Kind is TokenKind.HexColor && t.Value == "#e11d48");
+    }
+
+    [Fact]
+    public void Hash_text_at_line_start_is_invalid_hex()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecLexer.Tokenize("# not a comment\n"));
+        Assert.Contains("Invalid hex color", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -59,7 +54,7 @@ public sealed class DashSpecLexerTests
     }
 
     [Fact]
-    public void Multiline_string_preserves_line_comments_inside()
+    public void Multiline_string_preserves_hash_and_slashes_inside()
     {
         var tokens = DashSpecLexer.Tokenize("note = \"\"\"\n# not a comment inside multiline\n// also preserved\n\"\"\"");
 
@@ -74,8 +69,8 @@ public sealed class DashSpecLexerTests
         var tokens = DashSpecLexer.Tokenize("""
             /*
               ADR note
-              # not a line comment
-              // also text
+              # hash inside block
+              // slashes inside block
             */
             title = "T"
             """);
