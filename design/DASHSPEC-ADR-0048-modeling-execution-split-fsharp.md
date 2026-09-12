@@ -5,7 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-02 |
 | **Tags** | #dashspec #planet #modeling #execution #fsharp #dsl #parse |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild) · [GUIDERS-ADR-0061](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0061-language-resolver-center.md) (LRC) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-resolver-center-cdp-host.md) (CDP host) |
+| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild) · [GUIDERS-ADR-0061](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0061-language-resolver-center.md) (LRC) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-resolver-center-cdp-host.md) (CDP host) |
 
 ## Context
 
@@ -107,14 +107,14 @@ DashSpec **does not** copy `GdlFragment` or adopt federation quarry names in thi
 
 ### 5. F# rationale (planet choice)
 
-F# is **recommended** for `DashSpec.Modeling.*`, not mandated for Execution:
+**Normative first principle:** [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) — hard model (parse, graph algebra, IR laws) → F# because language fit; mechanics → C#. Same rule as [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) §13. This section records planet-specific consequences only:
 
 - block/module grammar is **algebraic** — DU + exhaustive `match` vs 900-line `TryKeyword` ladders;
 - diagnostic accumulation (ref list, partial AST) vs throw-on-error;
 - planet-owned **token lexer** — no forced fit to federation line-level `BlockReader`;
 - Host / Blazor / connectors stay idiomatic C# with `[<CLIMutable>]` or thin mapper at the boundary.
 
-**Language per layer is a planet decision** — federation precedent is F# Modeling + C# Execution, not a platform law for sovereign DSLs.
+Package map and migration: this ADR ([0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md)); **why** F#/C#: [0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md).
 
 ### 6. Public API stability
 
