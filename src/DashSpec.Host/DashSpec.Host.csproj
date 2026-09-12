@@ -8,11 +8,27 @@
     <RootNamespace>DashSpec.Host</RootNamespace>
     <Version>0.2.3</Version>
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
+    <AuthoringToolchainRoot Condition="'$(AuthoringToolchainRoot)' == ''">..\..\..\authoring-toolchain</AuthoringToolchainRoot>
     <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
+  </PropertyGroup>
+
+  <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
+
+  <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
+    <GdlEmitInput>$(MSBuildProjectDirectory)\Catalog\dash.catalog.gdl</GdlEmitInput>
+    <GdlEmitKind>catalog</GdlEmitKind>
+    <GdlEmitNamespace>DashSpec.Generated</GdlEmitNamespace>
+    <GdlEmitClass>DashCatalog</GdlEmitClass>
+    <GdlEmitOutputDir>$(MSBuildProjectDirectory)\Generated</GdlEmitOutputDir>
+    <GdlEmitWorkspace>$(MSBuildThisFileDirectory)..\..</GdlEmitWorkspace>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="DashSpec.Host.Tests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalGuidersPlatform)' == 'true'">
+    <Using Include="AIGuiders.Platform.Authoring.Command.Catalog" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +44,7 @@
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Catalog\AIGuiders.Platform.Authoring.Command.Catalog.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Bundles\AIGuiders.Platform.Authoring.Command.Bundles.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />

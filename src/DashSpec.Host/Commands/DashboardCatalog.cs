@@ -13,7 +13,7 @@ internal static class DashboardCatalog
 
     public static CatalogDocument Current => Document.Value;
 
-    public static IReadOnlyList<string> FederationSurfaces => Current.FederationSurfaces();
+    public static IReadOnlyList<string> FederationSurfaces => Generated.DashCatalog.FederationSurfaces;
 
     public static IReadOnlyList<CatalogPhrase> Phrases => Current.Phrases;
 
@@ -21,11 +21,7 @@ internal static class DashboardCatalog
 
     public static string Summary => CatalogSummary.Format(Current);
 
-    public static CatalogPhraseSlotIndex PhraseSlots => PhraseSlotIndex.Value;
-
-    static readonly Lazy<CatalogPhraseSlotIndex> PhraseSlotIndex = new(
-        () => CatalogPhraseSlotIndex.FromDocument(Current),
-        isThreadSafe: true);
+    public static CatalogPhraseSlotIndex PhraseSlots => Generated.DashCatalog.PhraseSlots;
 
     static CatalogDocument Load()
     {
