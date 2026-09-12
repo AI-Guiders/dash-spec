@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0050**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0052**.
 
 ## Индекс
 
@@ -56,3 +56,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) | Modeling vs Execution — planet DSL split (F# parse) | Accepted |
 | [0049](DASHSPEC-ADR-0049-git-catalog.md) | Git catalog source | Accepted |
 | [0050](DASHSPEC-ADR-0050-category-chart-color-column.md) | Category chart color — column binding | Accepted |
+| [0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) | Language affinity — Modeling (F#) vs Execution (C#) | Accepted |
