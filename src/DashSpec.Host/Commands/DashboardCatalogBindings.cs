@@ -13,7 +13,7 @@ internal static class DashboardCatalogBindings
     public static string ChordRootGesture =>
         ResolveRoleGesture(ChordRootRole)
         ?? DashboardCatalog.Current.Defaults.BindingChordRoot
-        ?? "Ctrl+K";
+        ?? throw new InvalidOperationException("dash.catalog missing chord-root gesture.");
 
     public static string? SuggestDismissGesture =>
         ResolveRoleGesture(SuggestDismissRole);

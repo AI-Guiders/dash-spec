@@ -6,7 +6,18 @@ using AIGuiders.Platform.Authoring.Core;
 
 namespace DashSpec.Host.Commands;
 
-/// <summary>Loads <c>Catalog/dash.catalog.gdl</c> — federation SSOT for surfaces and notation contract.</summary>
+/// <summary>
+/// Loads <c>Catalog/dash.catalog.gdl</c> — federation SSOT for surfaces and notation contract.
+/// <para>
+/// <b>Generated</b> (<c>Generated/DashCatalog.g.cs</c>, regen via MSBuild or
+/// <c>gdlc emit --project authoring/dashspec.gdlproj</c>): <c>FederationSurfaces</c>,
+/// <c>PhraseSlots</c>, wire command ids, MCP expose list.
+/// </para>
+/// <para>
+/// <b>Runtime parse</b> (this loader): phrases, bindings, channels, defaults (flavor, chord-root),
+/// commands/profiles — needed for CommandPlane expansion and flavor validation.
+/// </para>
+/// </summary>
 internal static class DashboardCatalog
 {
     static readonly Lazy<CatalogDocument> Document = new(Load, isThreadSafe: true);
