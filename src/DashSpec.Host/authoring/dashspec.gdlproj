@@ -1,0 +1,6 @@
+# DashSpec Host declare entry — GUIDERS-ADR-0051 / 0059 Phase I2
+# Regen: gdlc emit --lang=cs --project authoring/dashspec.gdlproj --out Generated/
+#        (from DashSpec.Host; or use MSBuild Platform.Gdl.Emit on dotnet build)
+project dashspec
+
+document ../Catalog/dash.catalog.gdl
