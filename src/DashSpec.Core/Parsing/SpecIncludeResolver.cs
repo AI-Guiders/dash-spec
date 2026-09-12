@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using DashSpec.Execution.Authoring;
 
 namespace DashSpec.Core.Parsing;
 
@@ -12,27 +13,10 @@ internal sealed record SpecIncludeFragment(
 
 internal static class SpecIncludeResolver
 {
-    private static string? _stdlibRootOverride;
+    internal static void SetStdlibRootForTests(string? path) => SpecFragmentPaths.SetStdlibRootForTests(path);
 
-    internal static void SetStdlibRootForTests(string? path) => _stdlibRootOverride = path;
-
-    public static string ResolvePath(string reference, string specDirectory)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
-        ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
-
-        if (IsStdlibReference(reference))
-        {
-            var inner = reference[1..^1].Trim().Replace('/', Path.DirectorySeparatorChar);
-            return Path.Combine(GetStdlibRoot(), inner);
-        }
-
-        var combined = Path.IsPathRooted(reference)
-            ? reference
-            : Path.GetFullPath(Path.Combine(specDirectory, reference));
-
-        return combined;
-    }
+    public static string ResolvePath(string reference, string specDirectory) =>
+        SpecFragmentPaths.ResolvePath(reference, specDirectory);
 
     public static SpecIncludeFragment Load(string includeKind, string reference, string specDirectory)
     {
@@ -84,47 +68,6 @@ internal static class SpecIncludeResolver
             MergeSeriesTransform(current.SeriesTransform, incoming.SeriesTransform),
             MergeTooltips(current.Tooltips, incoming.Tooltips),
             InspectPresentationParser.Merge(current.Inspect, incoming.Inspect));
-    }
-
-    private static bool IsStdlibReference(string reference) =>
-        reference.Length >= 2 && reference[0] is '<' && reference[^1] is '>';
-
-    private static string GetStdlibRoot()
-    {
-        if (!string.IsNullOrWhiteSpace(_stdlibRootOverride))
-        {
-            return _stdlibRootOverride;
-        }
-
-        var assemblyDir = Path.GetDirectoryName(typeof(SpecIncludeResolver).Assembly.Location);
-        if (!string.IsNullOrWhiteSpace(assemblyDir))
-        {
-            var nextToAssembly = Path.Combine(assemblyDir, "stdlib");
-            if (Directory.Exists(nextToAssembly))
-            {
-                return nextToAssembly;
-            }
-        }
-
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            var candidate = Path.Combine(dir.FullName, "stdlib");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            var coreCandidate = Path.Combine(dir.FullName, "src", "DashSpec.Core", "stdlib");
-            if (Directory.Exists(coreCandidate))
-            {
-                return coreCandidate;
-            }
-
-            dir = dir.Parent;
-        }
-
-        throw new InvalidOperationException("DashSpec stdlib directory was not found.");
     }
 
     private static string ResolveExistingFile(string path, string includeKind)
