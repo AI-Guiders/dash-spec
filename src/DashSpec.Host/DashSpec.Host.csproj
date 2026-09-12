@@ -12,16 +12,13 @@
     <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
   </PropertyGroup>
 
-  <!-- Catalog emit: MSBuild BeforeCompile (default) or gdlc emit with authoring/dashspec.gdlproj -->
+  <!-- Catalog emit: GdlEmitProject → authoring/dashspec.gdlproj (Wave 2.5; requires authoring-toolchain main 3b8cd8b+) -->
   <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
 
   <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
-    <GdlEmitInput>$(MSBuildProjectDirectory)\Catalog\dash.catalog.gdl</GdlEmitInput>
-    <GdlEmitKind>catalog</GdlEmitKind>
+    <GdlEmitProject>$(MSBuildProjectDirectory)\authoring\dashspec.gdlproj</GdlEmitProject>
     <GdlEmitNamespace>DashSpec.Generated</GdlEmitNamespace>
-    <GdlEmitClass>DashCatalog</GdlEmitClass>
     <GdlEmitOutputDir>$(MSBuildProjectDirectory)\Generated</GdlEmitOutputDir>
-    <GdlEmitWorkspace>$(MSBuildThisFileDirectory)..\..</GdlEmitWorkspace>
   </PropertyGroup>
 
   <ItemGroup>
