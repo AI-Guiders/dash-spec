@@ -154,6 +154,7 @@ Long-term: expose Modeling IR types to Studio/LSP; C# `DashboardDocument` become
 ```text
 M0  ADR-0048 + solution scaffold (first F# projects in dash-spec)
 M1  DashSpec.Modeling.Core — diagnostic + span types; parity with DashSpecDiagnostic
+    · **M1 (Execution, Phase II II1):** `DashSpec.Execution.Core` scaffold — `DashSpecProject` + `SpecFragmentPaths` extracted from `DashSpec.Core` (2026-09-12)
 M2  DashSpec.Modeling.Parse — pilot: .dashlayout or .dashcatalog (smallest roots)
 M3  Execution.Core extracts SpecResolver; references Modeling.Parse
 M4  Port .dashspec / @dashboard / @card (largest surface — incremental per parser file)

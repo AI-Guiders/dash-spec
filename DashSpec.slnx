@@ -1,9 +1,11 @@
 <Solution>
   <Project Path="src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
   <Project Path="src\DashSpec.Core\DashSpec.Core.csproj" />
+  <Project Path="src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
   <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
   <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
   <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
+  <Project Path="tests\DashSpec.Execution.Core.Tests\DashSpec.Execution.Core.Tests.csproj" />
 </Solution>
