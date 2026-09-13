@@ -57,7 +57,7 @@ end tab
         Assert.Equal("Q", doc.Cards[0].LayoutRef);
         Assert.NotNull(doc.Tabs[0].LayoutBoard);
         Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
-        Assert.Equal(2, doc.Tabs[0].LayoutBoard.ColumnCount);
+        Assert.Equal(2, doc.Tabs[0].LayoutBoard!.ColumnCount);
     }
 
     [Fact]
@@ -208,7 +208,7 @@ end tab
 """);
 
         Assert.Equal(3, doc.Tabs[0].LayoutBoard!.RowCount);
-        Assert.Equal(3, doc.Tabs[0].LayoutBoard.ColumnCount);
+        Assert.Equal(3, doc.Tabs[0].LayoutBoard!.ColumnCount);
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
 

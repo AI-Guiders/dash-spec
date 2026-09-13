@@ -32,7 +32,6 @@ public class DirectiveParserTests
             """;
 
         Assert.Equal("demo.toml", DashSpecParser.ReadRuntimePath(text));
-        Assert.Equal("demo.toml", DashSpecParser.ReadConfigPath(text));
         var doc = DashSpecParser.Parse(text);
         Assert.Equal("t", doc.Id);
         Assert.Equal("T", doc.Title);
@@ -40,7 +39,7 @@ public class DirectiveParserTests
     }
 
     [Fact]
-    public void ReadConfigPath_accepts_deprecated_alias()
+    public void ReadRuntimePath_reads_manifest_from_runtime_block()
     {
         const string text = """
             @dashboard t

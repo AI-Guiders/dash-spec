@@ -58,8 +58,9 @@ internal static class DashboardCommandEntityResolver
         }
 
         var matches = context.CatalogEntries
-            .Where(entry => entry.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
-                            || entry.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => !string.IsNullOrEmpty(entry.Title)
+                            && (entry.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                                || entry.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         return matches.Count == 1 ? matches[0].Id : null;
     }
@@ -80,8 +81,9 @@ internal static class DashboardCommandEntityResolver
         }
 
         var matches = context.ReportPages
-            .Where(page => page.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
-                           || page.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            .Where(page => !string.IsNullOrEmpty(page.Title)
+                           && (page.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                               || page.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         return matches.Count == 1 ? matches[0].Id : null;
     }
