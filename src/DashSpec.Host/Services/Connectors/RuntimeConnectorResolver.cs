@@ -1,9 +1,7 @@
 using System.Collections.Concurrent;
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Connector.SqlServer;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
-using Microsoft.Extensions.Options;
 
 namespace DashSpec.Host.Services.Connectors;
 
@@ -58,18 +56,7 @@ public sealed class RuntimeConnectorResolver(
                 $"Available: {(string.IsNullOrEmpty(available) ? "(none)" : available)}.");
         }
 
-        if (!connectorId.Equals("sqlserver", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Per-entry runtime binding supports connector 'sqlserver' only (got '{connectorId}').");
-        }
-
-        return new SqlServerConnector(Options.Create(new SqlServerConnectorOptions
-        {
-            ConnectionString = section.ConnectionString,
-            CommandTimeoutSeconds = section.CommandTimeoutSeconds,
-            MaxRows = section.MaxRows,
-        }));
+        return ConnectorInstanceFactory.Create(connectorId, section);
     }
 
     private static bool TryGetConnectorSection(
