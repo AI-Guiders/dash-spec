@@ -51,4 +51,3 @@ public static partial class DashCatalog
     public static CatalogPhraseSlotIndex PhraseSlots =>
         CatalogPhraseSlotIndex.FromEmitted(PhraseSlotCommands, PhraseSlotLabels);
 }
-
