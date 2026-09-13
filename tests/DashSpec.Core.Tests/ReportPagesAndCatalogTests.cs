@@ -34,6 +34,7 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
+        Assert.NotNull(doc.Pages);
         Assert.Equal(2, doc.Pages.Count);
         Assert.Equal("overview", doc.Cards[0].PageId);
         Assert.Equal("detail", doc.Cards[1].PageId);
@@ -141,6 +142,7 @@ public sealed class ReportPagesAndCatalogTests
               dashspec "soak.dashspec"
             """);
 
+        Assert.NotNull(catalog.Groups);
         Assert.Single(catalog.Groups);
         Assert.Equal("stakeholder", catalog.Groups[0].Id);
         Assert.Equal("Заказчик", catalog.Groups[0].Title);
@@ -196,6 +198,7 @@ public sealed class ReportPagesAndCatalogTests
                 """, dir);
 
             Assert.Equal(2, doc.Tabs.Count);
+            Assert.NotNull(doc.Pages);
             Assert.Single(doc.Pages);
             Assert.Equal("stakeholder", doc.Pages[0].TabId);
             Assert.Null(doc.Cards.First(c => c.Id == "plain").PageId);
@@ -243,6 +246,7 @@ public sealed class ReportPagesAndCatalogTests
                 end tab
                 """, dir);
 
+            Assert.NotNull(doc.Pages);
             Assert.Equal(LayoutScope.Page, doc.Pages[0].LayoutBoard!.ModuleScope);
         }
         finally

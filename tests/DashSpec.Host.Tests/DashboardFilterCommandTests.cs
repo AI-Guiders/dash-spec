@@ -23,7 +23,7 @@ public class DashboardFilterCommandTests
     [InlineData("2026-q2")]
     [InlineData("Q3")]
     [InlineData("2026-07-01..2026-07-15")]
-    public void SelectDateFilterCommand_applies_range(string argTail)
+    public async Task SelectDateFilterCommand_applies_range(string argTail)
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(uiState, ["usage_date"]);
@@ -31,7 +31,7 @@ public class DashboardFilterCommandTests
         context.ArgTail = argTail;
 
         var command = new SelectDateFilterCommand();
-        var outcome = command.ExecuteAsync(context).AsTask().GetAwaiter().GetResult();
+        var outcome = await command.ExecuteAsync(context).AsTask();
 
         Assert.True(outcome.Success, outcome.Error);
         Assert.True(uiState.DateFrom.ContainsKey("usage_date"));
@@ -47,14 +47,14 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void ShowHostSurfaceCommand_sets_pending_route()
+    public async Task ShowHostSurfaceCommand_sets_pending_route()
     {
         var context = CreateContext(new DashboardFilterUiState(), []);
         context.CanonicalPath = ShowCommandPaths.SurfacePath("controlcenter");
         context.ArgTail = "";
 
         var command = new ShowHostSurfaceCommand();
-        var outcome = command.ExecuteAsync(context).AsTask().GetAwaiter().GetResult();
+        var outcome = await command.ExecuteAsync(context).AsTask();
 
         Assert.True(outcome.Success, outcome.Error);
         Assert.Equal("/admin/access", context.PendingHostRoute);
@@ -158,7 +158,7 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
-    public void SelectFieldFilterCommand_applies_single_value_by_filter_id()
+    public async Task SelectFieldFilterCommand_applies_single_value_by_filter_id()
     {
         var uiState = new DashboardFilterUiState();
         var context = CreateContext(
@@ -172,7 +172,7 @@ public class DashboardFilterCommandTests
         context.ArgTail = "AutoCAD";
 
         var command = new SelectFieldFilterCommand("app_name");
-        var outcome = command.ExecuteAsync(context).AsTask().GetAwaiter().GetResult();
+        var outcome = await command.ExecuteAsync(context).AsTask();
 
         Assert.True(outcome.Success, outcome.Error);
         Assert.Equal(["AutoCAD"], uiState.SelectedFields["app_name"]);
@@ -189,9 +189,9 @@ public class DashboardFilterCommandTests
         Assert.Equal(SelectDateFilterCommand.Id, route.CommandId);
         Assert.Equal(CommandArgTailKind.Picker, route.ArgTailKind);
         Assert.Contains(
-            route.ResolvedConstructors,
+            route.ResolvedConstructors(),
             binding => binding.ConstructorId == DateConstructorCatalog.DateTodayId);
-        Assert.Empty(route.ResolvedPickerChoices);
+        Assert.Empty(route.ResolvedPickerChoices());
     }
 
     [Fact]
@@ -930,7 +930,6 @@ public class DashboardFilterCommandTests
     static DashboardFilterCommandService CreateCommandService(DashboardFilterUiState uiState) =>
         new(
             new StubDashboardSession(),
-            uiState,
             new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
             DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
             new DashSpecCommandPluginRegistry(),

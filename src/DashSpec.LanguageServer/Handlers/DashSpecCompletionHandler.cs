@@ -91,8 +91,10 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
         return Task.FromResult(new CompletionList(items));
     }
 
+#pragma warning disable VSTHRD200 // IRequestHandler<CompletionItem, CompletionItem> contract uses Handle
     public Task<CompletionItem> Handle(CompletionItem item, CancellationToken cancellationToken) =>
         Task.FromResult(item);
+#pragma warning restore VSTHRD200
 
     private static List<CompletionItem> BuildIdItems(
         IEnumerable<string> ids,
