@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -27,6 +27,7 @@
 
   <ItemGroup Condition="'$(UseLocalGuidersPlatform)' == 'true'">
     <Using Include="AIGuiders.Platform.Authoring.Command.Catalog" />
+    <Using Include="AIGuiders.Platform.Modeling.Gdl.Command" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,7 +62,7 @@
 
   <ItemGroup>
     <None Update="Catalog\dash.catalog.gdl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="dash-spec.toml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
