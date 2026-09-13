@@ -8,6 +8,16 @@ namespace DashSpec.Host.Commands;
 internal static class DashboardCatalogPhrases
 {
     public const string ShowHostPhrase = "show-host";
+    public const string PickViewPhrase = "pick-view";
+
+    public static string ViewPath(string cardId, string viewId) =>
+        Materialize(
+            PickViewPhrase,
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["card"] = cardId,
+                ["view"] = viewId,
+            });
 
     public static string Materialize(string phraseName, IReadOnlyDictionary<string, string> slots)
     {
