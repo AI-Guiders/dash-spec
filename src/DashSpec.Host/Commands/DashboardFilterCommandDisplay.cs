@@ -63,7 +63,7 @@ internal static class DashboardFilterCommandDisplay
         }
 
         if (item.StepSegment.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
-            || item.StepSegment.Equals(ViewCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
+            || item.StepSegment.Equals(DashboardCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
             || item.StepSegment.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
             || item.StepSegment.Equals(ShowCommandPaths.HostBranch, StringComparison.OrdinalIgnoreCase)
             || item.StepSegment.Equals(FilterCommandPaths.FilterBranch, StringComparison.OrdinalIgnoreCase)

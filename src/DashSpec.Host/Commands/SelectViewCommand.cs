@@ -6,14 +6,15 @@ namespace DashSpec.Host.Commands;
 
 internal sealed class SelectViewCommand : PlatformCommand<DashboardFilterContext>
 {
-    public const string Id = "dash.view.card";
+    public const string Id = "dash.card.view";
 
     public override string CommandId => Id;
 
     protected override CommandOutcome Execute(DashboardFilterContext context)
     {
-        var cardId = ViewCommandPaths.ReadCardId(context.CanonicalPath);
-        var viewId = ViewCommandPaths.ReadViewId(context.CanonicalPath) ?? context.ArgTail.Trim();
+        var slots = DashboardCatalog.PhraseSlots;
+        var cardId = slots.ReadBoundSlotValue(context.CanonicalPath, Id, "card");
+        var viewId = slots.ReadBoundSlotValue(context.CanonicalPath, Id, "view") ?? context.ArgTail.Trim();
         if (string.IsNullOrWhiteSpace(cardId) || string.IsNullOrWhiteSpace(viewId))
         {
             return CommandOutcome.Fail("Укажите карточку и представление.");

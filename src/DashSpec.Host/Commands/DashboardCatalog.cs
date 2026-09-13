@@ -34,6 +34,14 @@ internal static class DashboardCatalog
 
     public static CatalogPhraseSlotIndex PhraseSlots => Generated.DashCatalog.PhraseSlots;
 
+    public const string CardViewCatalogCommand = "card.view";
+
+    public static string CardViewWireCommandId => Generated.DashCatalog.WireCommandIds[CardViewCatalogCommand];
+
+    public static CatalogPhraseSlotCommand CardViewPhrase =>
+        PhraseSlots.Commands.First(command =>
+            command.CatalogCommand.Equals(CardViewCatalogCommand, StringComparison.OrdinalIgnoreCase));
+
     static CatalogDocument Load()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Catalog", "dash.catalog.gdl");
