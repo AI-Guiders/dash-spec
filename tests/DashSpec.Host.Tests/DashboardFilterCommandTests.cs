@@ -741,7 +741,7 @@ public class DashboardFilterCommandTests
 
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == FilterCommandPaths.RootVerb);
-        Assert.Contains(result.Items, item => item.StepSegment == ViewCommandPaths.RootVerb);
+        Assert.Contains(result.Items, item => item.StepSegment == DashboardCatalog.CardViewPhrase.LiteralPrefix);
         Assert.Contains(result.Items, item => item.StepSegment == ShowCommandPaths.RootVerb);
     }
 
@@ -765,7 +765,7 @@ public class DashboardFilterCommandTests
         Assert.Contains(cardStep.Items, item => item.StepSegment == "heatmap_card");
         var cardItem = cardStep.Items.First(item => item.StepSegment == "heatmap_card");
         Assert.Equal("card", cardItem.ActiveSlot);
-        Assert.Equal("dash.view.card", cardItem.CommandId);
+        Assert.Equal(DashboardCatalog.CardViewWireCommandId, cardItem.CommandId);
         var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context, "view ");
         Assert.Equal("Heatmap", cardParts.Primary);
         Assert.Equal("heatmap_card", cardParts.Secondary);

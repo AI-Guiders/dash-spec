@@ -56,7 +56,7 @@ internal static class DashboardCommandCatalogExpander
             descriptors.AddRange(CommandDescriptorRows.Map(
                 SelectViewCommand.Id,
                 card.Views,
-                view => ViewCommandPaths.ViewPath(card.CardId, view.ViewId),
+                view => DashboardCatalogPhrases.ViewPath(card.CardId, view.ViewId),
                 view => $"{card.Title} — {view.Label}",
                 (builder, _) => DashboardDefaults(builder).Group("View")));
         }
