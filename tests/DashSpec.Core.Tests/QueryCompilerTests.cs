@@ -163,6 +163,33 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_postgres_table_uses_trailing_limit()
+    {
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+              configuration
+              sqldialect = postgres
+              end configuration
+              report
+              title = "T"
+              card events as "Events"
+              diagram table
+              columns = id, name
+              limit = 100
+              end table
+              datasource view public.events
+              end card
+              end report
+            end dashboard
+""").Cards[0];
+
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), SqlDialect.Postgres);
+
+        Assert.Contains("LIMIT 100", query.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("TOP", query.Sql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Compile_table_uses_bound_top_filter()
     {
         var doc = DashSpecParser.Parse("""
