@@ -412,7 +412,7 @@ public class DashboardParseTests
         var props = doc.Cards[0].Diagram.Properties;
         Assert.Equal("viridis", props["color_scale"]);
         Assert.Equal("list", doc.Cards[0].Inspect!.Format);
-        Assert.Equal(", ", doc.Cards[0].Inspect.Split);
+        Assert.Equal(", ", doc.Cards[0].Inspect!.Split);
     }
 
     [Fact]

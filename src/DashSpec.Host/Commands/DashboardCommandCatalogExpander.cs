@@ -27,14 +27,14 @@ internal static class DashboardCommandCatalogExpander
             SelectReportCommand.Id,
             context.CatalogEntries,
             entry => $"select report {entry.Id}",
-            entry => entry.Title,
+            entry => entry.Title ?? entry.Id,
             (builder, _) => DashboardDefaults(builder)));
 
         descriptors.AddRange(CommandDescriptorRows.Map(
             SelectPageCommand.Id,
             context.ReportPages,
             page => $"select page {page.Id}",
-            page => page.Title,
+            page => page.Title ?? page.Id,
             (builder, _) => DashboardDefaults(builder)));
 
         foreach (var filterName in context.ToolbarFilterNames)

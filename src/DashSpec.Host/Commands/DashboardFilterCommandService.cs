@@ -11,7 +11,6 @@ namespace DashSpec.Host.Commands;
 
 public sealed class DashboardFilterCommandService(
     IDashboardSession session,
-    DashboardFilterUiState uiState,
     DashboardCommandExecutor executor,
     DashSpecContributorRegistry pluginRegistry,
     DashSpecCommandPluginRegistry commandPluginRegistry,
