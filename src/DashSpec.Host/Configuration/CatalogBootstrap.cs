@@ -3,7 +3,7 @@ using DashSpec.Core.Parsing;
 
 namespace DashSpec.Host.Configuration;
 
-public sealed record CatalogBootstrap(CatalogDocument Document, string FullPath)
+public sealed record CatalogBootstrap(DashSpec.Core.Model.CatalogDocument Document, string FullPath)
 {
     public CatalogEntryDefinition RequireEntry(string entryId) =>
         Document.Entries.FirstOrDefault(e => string.Equals(e.Id, entryId, StringComparison.OrdinalIgnoreCase))
