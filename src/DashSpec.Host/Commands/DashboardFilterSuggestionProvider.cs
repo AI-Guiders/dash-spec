@@ -1,9 +1,10 @@
-﻿#nullable enable
+#nullable enable
 using AIGuiders.Platform.Execution.CommandPlane;
 using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Host.Services.Abstractions;
 
+using AIGuiders.Platform.IntermediateRepresentation.Command;
 namespace DashSpec.Host.Commands;
 
 public sealed class DashboardFilterSuggestionProvider(
@@ -29,7 +30,7 @@ public sealed class DashboardFilterSuggestionProvider(
         var options = session.GetFieldOptions(filterName);
         return options
             .Where(option => Matches(option, request.Partial))
-            .Select(option => new CommandPickerChoice { Value = option, Label = option })
+            .Select(option => CommandPickerChoiceInterop.FromValue(option, option))
             .ToList();
     }
 
