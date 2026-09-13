@@ -266,6 +266,17 @@ Legacy `toolbar { usage_date, app_name }` — одна неявная строк
 dotnet test DashSpec.slnx
 ```
 
+### Catalog emit drift gate (W0)
+
+Committed `src/DashSpec.Host/Generated/DashCatalog.g.cs` must match `gdlc emit` from `dash.catalog.gdl`. Requires sibling [`authoring-toolchain`](../authoring-toolchain).
+
+```powershell
+dotnet msbuild src/DashSpec.Host/DashSpec.Host.csproj -p:Configuration=Release -t:GdlEmitVerify
+# or: dotnet test tests/DashSpec.GdlEmit.Tests --filter DashCatalogEmitDrift
+```
+
+See [ADR-0052](design/DASHSPEC-ADR-0052-catalog-emit-drift-gate.md).
+
 ## Лицензия
 
 Software: [MIT](LICENSE) ([текст OSI](https://opensource.org/license/MIT)) · Ethical use: [declaration](https://github.com/AI-Guiders/licensing/blob/main/docs/ethical-use.md)
