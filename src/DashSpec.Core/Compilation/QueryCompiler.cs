@@ -13,11 +13,20 @@ public static class QueryCompiler
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         SqlDialect sqlDialect = SqlDialect.TSql,
+        string? specDirectory = null) =>
+        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory);
+
+    public static CompiledQuery Compile(
+        CardDefinition card,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
+        ISqlDialectBackend dialect,
         string? specDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
         ArgumentNullException.ThrowIfNull(filterDefinitions);
+        ArgumentNullException.ThrowIfNull(dialect);
 
         var fromClause = card.DataSource.Kind switch
         {
@@ -29,7 +38,7 @@ public static class QueryCompiler
 
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
-        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, sqlDialect);
+        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect);
 
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
             ? ResolveTableLimit(card, filters, filterDefinitions)
@@ -45,7 +54,7 @@ public static class QueryCompiler
                     groupBy: null,
                     orderBy: string.Empty,
                     tableLimit,
-                    sqlDialect),
+                    dialect),
                 parameters);
         }
 
@@ -60,7 +69,7 @@ public static class QueryCompiler
                     groupBy,
                     ResolveOrderBy(card),
                     tableLimit,
-                    sqlDialect),
+                    dialect),
                 parameters);
         }
 
@@ -72,7 +81,7 @@ public static class QueryCompiler
                 groupBy: null,
                 ResolveOrderBy(card),
                 tableLimit,
-                sqlDialect),
+                dialect),
             parameters);
     }
 
@@ -83,39 +92,12 @@ public static class QueryCompiler
         string? groupBy,
         string orderBy,
         int tableLimit,
-        SqlDialect sqlDialect)
+        ISqlDialectBackend dialect)
     {
         var sql = new StringBuilder();
-        if (tableLimit > 0 && sqlDialect is SqlDialect.Postgres)
-        {
-            sql.Append("SELECT ").Append(selectList);
-            sql.Append(" FROM ").Append(fromClause);
-            sql.Append(' ').Append(whereClause);
-            if (!string.IsNullOrEmpty(groupBy))
-            {
-                sql.Append(' ').Append(groupBy);
-            }
-
-            sql.Append(' ').Append(orderBy);
-            sql.Append(" LIMIT ").Append(tableLimit);
-            return sql.ToString();
-        }
-
-        sql.Append("SELECT ");
-        if (tableLimit > 0)
-        {
-            sql.Append("TOP ").Append(tableLimit).Append(' ');
-        }
-
-        sql.Append(selectList);
-        sql.Append(" FROM ").Append(fromClause);
-        sql.Append(' ').Append(whereClause);
-        if (!string.IsNullOrEmpty(groupBy))
-        {
-            sql.Append(' ').Append(groupBy);
-        }
-
-        sql.Append(' ').Append(orderBy);
+        dialect.AppendSelect(
+            sql,
+            new SqlSelectParts(selectList, fromClause, whereClause, groupBy, orderBy, tableLimit));
         return sql.ToString();
     }
 
@@ -417,7 +399,7 @@ public static class QueryCompiler
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         List<QueryParameter> parameters,
-        SqlDialect sqlDialect)
+        ISqlDialectBackend dialect)
     {
         foreach (var filterName in card.BoundFilters)
         {
@@ -427,7 +409,7 @@ public static class QueryCompiler
                 continue;
             }
 
-            var clause = BuildClause(definition, filters, parameters, sqlDialect);
+            var clause = BuildClause(definition, filters, parameters, dialect);
             if (clause is null)
             {
                 continue;
@@ -441,11 +423,11 @@ public static class QueryCompiler
         FilterDefinition definition,
         FilterState filters,
         List<QueryParameter> parameters,
-        SqlDialect sqlDialect)
+        ISqlDialectBackend dialect)
     {
         return definition.Kind switch
         {
-            FilterKind.Date => BuildDateClause(filters.GetDate(definition.Name), definition, filters, parameters, sqlDialect),
+            FilterKind.Date => BuildDateClause(filters.GetDate(definition.Name), definition, filters, parameters, dialect),
             FilterKind.Field => BuildFieldClause(filters.GetField(definition.Name), definition, parameters),
             _ => null,
         };
@@ -467,7 +449,7 @@ public static class QueryCompiler
         FilterDefinition definition,
         FilterState filters,
         List<QueryParameter> parameters,
-        SqlDialect sqlDialect)
+        ISqlDialectBackend dialect)
     {
         if (range is null)
         {
@@ -491,12 +473,7 @@ public static class QueryCompiler
         parameters.Add(new QueryParameter(fromParam, range.Value.From));
         parameters.Add(new QueryParameter(toParam, range.Value.To));
 
-        var upperExclusive = sqlDialect switch
-        {
-            SqlDialect.Postgres => $"({toParam}::date + INTERVAL '1 day')",
-            SqlDialect.TSql or SqlDialect.Generic => $"DATEADD(day, 1, {toParam})",
-            _ => $"DATEADD(day, 1, {toParam})",
-        };
+        var upperExclusive = dialect.FormatDateRangeUpperExclusive(toParam);
 
         return $"{column} >= {fromParam} AND {column} < {upperExclusive}";
     }
