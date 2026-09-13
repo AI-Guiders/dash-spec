@@ -8,4 +8,5 @@
   <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
   <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
   <Project Path="tests\DashSpec.Execution.Core.Tests\DashSpec.Execution.Core.Tests.csproj" />
+  <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
 </Solution>

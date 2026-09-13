@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0052**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0053**.
 
 ## Индекс
 
@@ -57,3 +57,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0049](DASHSPEC-ADR-0049-git-catalog.md) | Git catalog source | Accepted |
 | [0050](DASHSPEC-ADR-0050-category-chart-color-column.md) | Category chart color — column binding | Accepted |
 | [0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) | Language affinity — Modeling (F#) vs Execution (C#) | Accepted |
+| [0052](DASHSPEC-ADR-0052-catalog-emit-drift-gate.md) | Catalog emit drift gate — `DashCatalog.g.cs` vs `gdlc emit` (W0) | Accepted |
