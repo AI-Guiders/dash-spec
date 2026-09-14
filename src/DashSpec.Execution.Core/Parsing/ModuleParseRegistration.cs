@@ -24,6 +24,7 @@ internal static class ModuleParseRegistration
 {
     static ModuleParseRegistration()
     {
+        DocumentParseRegistration.Register();
         RegisterLayout();
         RegisterTooltip();
         RegisterCatalog();
