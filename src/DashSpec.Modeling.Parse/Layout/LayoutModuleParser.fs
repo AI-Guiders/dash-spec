@@ -1,27 +1,47 @@
 namespace DashSpec.Modeling.Parse.Layout
 
-open DashSpec.Core.Parsing
+open System
+open DashSpec.Modeling.Core
+open DashSpec.Modeling.Parse
+open DashSpec.Modeling.Parse.Lexing
 
-/// <summary>
-/// M2 pilot entry — delegates lex+parse to canonical C# <see cref="LayoutModuleParser"/>.
-/// F# owns IR mapping; no duplicate token layer until Modeling lex spine lands (M4+).
-/// </summary>
+/// <summary>M2 pilot — F# lex + parse SSOT for <c>.dashlayout</c> (ADR-0048).</summary>
 module LayoutModuleParser =
 
-    let private mapScope (scope: DashSpec.Core.Model.LayoutScope) =
-        match scope with
-        | DashSpec.Core.Model.LayoutScope.Toolbar -> LayoutScope.Toolbar
-        | DashSpec.Core.Model.LayoutScope.Tab -> LayoutScope.Tab
-        | DashSpec.Core.Model.LayoutScope.Page -> LayoutScope.Page
-        | DashSpec.Core.Model.LayoutScope.Card -> LayoutScope.Card
-        | _ -> LayoutScope.Toolbar
+    let private parseMandatoryScope (reader: TokenReader) =
+        if not (reader.TryKeyword "scope") then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card after @layout <id>."))
 
-    let private fromCore (board: DashSpec.Core.Model.LayoutBoardDefinition) : LayoutBoardDefinition =
-        { Rows = board.Rows
-          ModuleScope = board.ModuleScope |> Option.ofNullable |> Option.map mapScope }
+        let kind = reader.ReadIdent()
 
-    /// <summary>Parse a <c>.dashlayout</c> file body via transitional C# parser.</summary>
+        if String.IsNullOrWhiteSpace kind then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card after @layout <id>."))
+
+        match kind.ToLowerInvariant() with
+        | "toolbar" -> LayoutScope.Toolbar
+        | "tab" -> LayoutScope.Tab
+        | "page" -> LayoutScope.Page
+        | "card" -> LayoutScope.Card
+        | _ ->
+            raise (DashSpec.Modeling.Core.DashSpecParseException($"Layout module scope must be toolbar, tab, page, or card; got '{kind}'."))
+
+    /// <summary>Parse a <c>.dashlayout</c> file body.</summary>
     let parseLayoutFile (text: string) : LayoutBoardDefinition =
-        text
-        |> DashSpec.Core.Parsing.LayoutModuleParser.ParseLayoutFile
-        |> fromCore
+        if String.IsNullOrWhiteSpace text then
+            invalidArg "text" "Layout text is required."
+
+        let reader = ParserUtilities.createReader text
+        reader.SkipFileDirectives()
+        reader.Expect TokenKind.At
+        reader.ExpectKeyword "layout"
+
+        let id = reader.ReadIdent()
+
+        if String.IsNullOrWhiteSpace id then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires @layout <id>."))
+
+        reader.SkipNewlines()
+        let scope = parseMandatoryScope reader
+        reader.SkipNewlines()
+        let board = LayoutParser.parseBoardRows reader None None
+        { board with ModuleScope = Some scope }

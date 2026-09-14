@@ -2,7 +2,7 @@ namespace DashSpec.Modeling.Parse.Tests
 
 open System
 open Xunit
-open DashSpec.Core.Parsing
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Layout
 
 type LayoutModuleParserTests() =
@@ -15,7 +15,7 @@ type LayoutModuleParserTests() =
                 [ Q ]
                 """
 
-        let ex = Assert.Throws<DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
+        let ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
         Assert.Contains("requires scope", ex.Message, StringComparison.OrdinalIgnoreCase)
 
     [<Fact>]
@@ -46,5 +46,5 @@ type LayoutModuleParserTests() =
                 [ Q ]
                 """
 
-        let ex = Assert.Throws<DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
+        let ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
         Assert.Contains("toolbar, tab, page, or card", ex.Message, StringComparison.OrdinalIgnoreCase)
