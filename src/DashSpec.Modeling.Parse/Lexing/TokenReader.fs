@@ -126,6 +126,23 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
             value
         | _ -> raise (this.Unexpected "scalar value")
 
+    member this.ReadHexColor() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.HexColor then
+            raise (this.Unexpected "#rrggbb or #rgb hex color")
+        let value = tokens.[index].Value
+        index <- index + 1
+        value
+
+    member this.ReadQualifiedName() =
+        this.SkipNewlines()
+        match tokens.[index].Kind with
+        | TokenKind.Ident | TokenKind.Raw ->
+            let value = tokens.[index].Value
+            index <- index + 1
+            value
+        | _ -> raise (this.Unexpected "qualified name")
+
     member this.TryPeekIdent() =
         this.SkipNewlines()
         if tokens.[index].Kind <> TokenKind.Ident then None

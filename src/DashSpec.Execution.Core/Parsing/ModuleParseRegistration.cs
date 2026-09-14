@@ -10,6 +10,9 @@ using FsharpBoard = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
 using FsharpScope = DashSpec.Modeling.Parse.Layout.LayoutScope;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
+using FsharpPalette = DashSpec.Modeling.Parse.Palette.PaletteDocument;
+using FsharpPresentation = DashSpec.Modeling.Parse.Presentation.PresentationModuleDocument;
+using FsharpPresentationBlock = DashSpec.Modeling.Parse.Presentation.PresentationBlock;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -22,6 +25,8 @@ internal static class ModuleParseRegistration
         RegisterTooltip();
         RegisterCatalog();
         RegisterTransform();
+        RegisterPalette();
+        RegisterPresentation();
     }
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
@@ -111,6 +116,75 @@ internal static class ModuleParseRegistration
         };
     }
 
+    private static void RegisterPalette()
+    {
+        PaletteParseBridge.ParsePaletteFile = text =>
+        {
+            try
+            {
+                var doc = DashSpec.Modeling.Parse.Palette.PaletteModuleParser.parsePaletteFile(text);
+                return (doc.Id, ToCore(doc));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
+    }
+
+    private static void RegisterPresentation()
+    {
+        PresentationParseBridge.ParsePresentationFile = (text, baseDirectory) =>
+            ParsePresentationModule(text, baseDirectory).Block;
+
+        PresentationParseBridge.ParsePresentationFileWithId = (text, baseDirectory) =>
+        {
+            var result = ParsePresentationModule(text, baseDirectory);
+            return (result.Id, result.Block);
+        };
+    }
+
+    private static (string Id, PresentationBlock Block) ParsePresentationModule(string text, string? baseDirectory)
+    {
+        try
+        {
+            var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
+            PresentationBlock? merged = null;
+
+            foreach (var include in doc.Includes)
+            {
+                if (string.IsNullOrWhiteSpace(baseDirectory))
+                {
+                    throw new DashSpecParseException(
+                        "Presentation include requires a base directory (parse from file path).");
+                }
+
+                if (!PresentationModuleParser.IsChartChromeIncludeKind(include.Kind))
+                {
+                    throw new DashSpecParseException(
+                        $"@presentation module only supports include presentation/chrome, got '{include.Kind}'.");
+                }
+
+                var fragment = SpecIncludeResolver.Load(include.Kind, include.Reference, baseDirectory);
+                merged = SpecIncludeResolver.Merge(
+                    new SpecIncludeFragment(null, merged, null),
+                    fragment).Presentation;
+            }
+
+            var localItems = OptionModule.ToArray(doc.Local);
+            PresentationBlock? local = localItems.Length > 0 ? ToCore(localItems[0]) : null;
+            var block = SpecIncludeResolver.Merge(
+                new SpecIncludeFragment(null, merged, null),
+                new SpecIncludeFragment(null, local, null)).Presentation;
+
+            return (doc.Id, block ?? throw new DashSpecParseException("@presentation module requires at least one property."));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
     private static TooltipDefinition ToCore(FsharpTooltip tooltip)
     {
         var definition = new TooltipDefinition(tooltip.Id, tooltip.Variables, tooltip.Template);
@@ -153,6 +227,14 @@ internal static class ModuleParseRegistration
             OptionModule.ToArray(transform.UsePreset).FirstOrDefault(),
             OptionModule.ToArray(transform.Max).FirstOrDefault(),
             OptionModule.ToArray(transform.OtherLabel).FirstOrDefault());
+
+    private static IReadOnlyDictionary<string, string> ToCore(FsharpPalette palette) =>
+        palette.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+
+    private static PresentationBlock ToCore(FsharpPresentationBlock block) =>
+        new(
+            OptionModule.ToArray(block.UsePreset).FirstOrDefault(),
+            block.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase));
 
     private static LayoutScope? MapScope(FsharpScope scope)
     {

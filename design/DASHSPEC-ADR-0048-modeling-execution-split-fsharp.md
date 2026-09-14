@@ -166,6 +166,23 @@ M8  optional CDP LRC backend for `.dashspec` (planet extension; not federation s
 
 **Non-big-bang:** new grammar work lands in F# Modeling from M2 onward; C# parsers touched only for bugfix until ported.
 
+### M5 progress (2026-09-14)
+
+Fragment roots wired through `ModuleParseRegistration` (F# SSOT → Execution bridge → Core shim):
+
+| Root | F# SSOT | Bridge | Notes |
+|------|---------|--------|-------|
+| `.dashlayout` | ✅ | ✅ | M2 pilot |
+| `.dashcatalog` | ✅ | ✅ | M2 |
+| `.dashtooltip` | ✅ | ✅ | file + inline body slice |
+| `.dashtransform` | ✅ | ✅ | PropertyBlockParser spine |
+| `.dashpalette` | ✅ | ✅ | const/color resolver + mappings |
+| `.dashpresentation` | ✅ | ✅ | includes merged in Execution (`SpecIncludeResolver`) |
+| `.dashdiagram` | — | — | **M5 remainder** — needs ColumnBinding / CommaList / RestOfLine in F# PropertyBlockParser |
+| `@tab` / shell | — | — | **M4** — blocked on `DashboardShellParser` |
+
+**Phase II transition (M2–M5 spine):** complete for standalone fragment kinds above; `.dashspec` body (`@dashboard`, `@card`) remains **M4**; duplicate C# parser bodies removal remains **M6**.
+
 ## Consequences
 
 - Clear seam aligned with federation Modeling/Execution — easier for operators moving between guiders-fsharp and dash-spec.
