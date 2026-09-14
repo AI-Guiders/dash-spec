@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>DashSpec.Modeling.Language.Adapters.DashSpec</RootNamespace>
+    <AssemblyName>DashSpec.Modeling.Language.Adapters.DashSpec</AssemblyName>
+    <Description>DashSpec planet backend for Language Resolver Center (ADR-0048 M8).</Description>
+    <PackageId>DashSpec.Modeling.Language.Adapters.DashSpec</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GuidersFSharpRoot Condition="'$(GuidersFSharpRoot)' == ''">..\..\..\guiders-fsharp</GuidersFSharpRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DashSpecLanguageBackend.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Language\AIGuiders.Platform.Modeling.Language.fsproj" />
+  </ItemGroup>
+</Project>

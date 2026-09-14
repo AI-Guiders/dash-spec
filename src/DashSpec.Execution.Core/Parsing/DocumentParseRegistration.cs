@@ -15,6 +15,11 @@ internal static class DocumentParseRegistration
 {
     internal static void Register()
     {
+        FsharpDocument.DashboardValidationBridge.registerAction(document =>
+        {
+            DashboardValidator.Validate(DocumentModelMapper.ToCore(document));
+        });
+
         DocumentParseBridge.Parse = (text, specDirectory, parseOptions) =>
         {
             try
@@ -23,9 +28,7 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                var core = DocumentModelMapper.ToCore(document);
-                DashboardValidator.Validate(core);
-                return core;
+                return DocumentModelMapper.ToCore(document);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {

@@ -1,6 +1,6 @@
 namespace DashSpec.Modeling.Parse.Document
 
-/// <summary>Cross-field dashboard validation — stub until Analysis port.</summary>
+/// <summary>Cross-field dashboard validation — delegates to Execution bridge when registered.</summary>
 module DashboardValidator =
 
-    let validate (_document: DashboardDocument) = ()
+    let validate document = DashboardValidationBridge.validate document
