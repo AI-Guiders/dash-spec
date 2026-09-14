@@ -1,5 +1,8 @@
-namespace DashSpec.Modeling.Core
+namespace DashSpec.Modeling.Core.Tests
 
+open DashSpec.Modeling.Core
+
+/// <summary>Test-only bridge to transitional C# diagnostics (ADR-0048 §7).</summary>
 module DiagnosticInterop =
     type LegacyDiagnostic = DashSpec.Core.Validation.DashSpecDiagnostic
     type LegacySeverity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity
@@ -17,7 +20,6 @@ module DiagnosticInterop =
         | LegacySeverity.Information -> DashSpecDiagnosticSeverity.Information
         | _ -> DashSpecDiagnosticSeverity.Error
 
-    /// <summary>Project F# diagnostic to transitional C# record.</summary>
     let toLegacy (diagnostic: DashSpecDiagnostic) : LegacyDiagnostic =
         LegacyDiagnostic(
             diagnostic.Span.Line,
@@ -27,7 +29,6 @@ module DiagnosticInterop =
             diagnostic.Message,
             toLegacySeverity diagnostic.Severity)
 
-    /// <summary>Import C# diagnostic into F# Modeling SSOT.</summary>
     let fromLegacy (diagnostic: LegacyDiagnostic) : DashSpecDiagnostic =
         { Span =
             { Line = diagnostic.Line
