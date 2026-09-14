@@ -1,4 +1,4 @@
-namespace DashSpec.Execution.Authoring;
+namespace DashSpec.Core.Authoring;
 
 /// <summary>Resolve fragment include paths for project graph expansion and parse-time includes.</summary>
 public static class SpecFragmentPaths

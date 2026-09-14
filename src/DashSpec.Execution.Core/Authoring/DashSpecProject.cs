@@ -1,4 +1,5 @@
 using AIGuiders.Platform.Authoring.Core;
+using DashSpec.Core.Authoring;
 
 namespace DashSpec.Execution.Authoring;
 
