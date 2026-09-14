@@ -147,6 +147,98 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
         this.SkipNewlines()
         if tokens.[index].Kind <> TokenKind.Ident then None
         else Some tokens.[index].Value
+
+    member this.ReadRawBlock() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.Raw then
+            raise (this.Unexpected "[[ … ]] raw block")
+        let value = tokens.[index].Value
+        index <- index + 1
+        value
+
+    member private this.ReadRelativeDay() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.RelativeDay then
+            raise (this.Unexpected "relative day")
+        let value = tokens.[index].Value
+        index <- index + 1
+        value
+
+    member private this.ReadDateBoundToken() =
+        this.SkipNewlines()
+        match tokens.[index].Kind with
+        | TokenKind.RelativeDay -> this.ReadRelativeDay()
+        | TokenKind.Ident -> this.ReadIdent()
+        | _ -> raise (this.Unexpected "date bound (today, -Nd, yyyy-MM-dd)")
+
+    member this.ReadDateDefaultValue() =
+        let from = this.ReadDateBoundToken()
+        if this.RawKind <> TokenKind.DotDot then from
+        else
+            index <- index + 1
+            let toValue = this.ReadDateBoundToken()
+            $"{from}..{toValue}"
+
+    member private this.ReadListItem() =
+        this.SkipNewlines()
+        match tokens.[index].Kind with
+        | TokenKind.Ident -> this.ReadIdent()
+        | TokenKind.String -> this.ReadString()
+        | _ -> raise (this.Unexpected "list item")
+
+    member this.ReadCommaSeparatedValues() =
+        let parts = ResizeArray<string>()
+        parts.Add(this.ReadListItem())
+        while this.CurrentKind = TokenKind.Comma do
+            index <- index + 1
+            parts.Add(this.ReadListItem())
+        String.Join(", ", parts)
+
+    member this.ReadCommaListInline() =
+        let names = ResizeArray<string>()
+        names.Add(this.ReadIdent())
+        while this.CurrentKind = TokenKind.Comma do
+            index <- index + 1
+            names.Add(this.ReadIdent())
+        names :> IReadOnlyList<_>
+
+    member this.ReadColumnBinding() =
+        let column = this.ReadQualifiedName()
+        if this.TryKeyword "as" then
+            { Column = column; Alias = Some(this.ReadString()) }
+        elif tokens.[index].Kind = TokenKind.Ident && not (this.IsOnNewline()) then
+            let saved = this.SavePosition()
+            let alias = this.ReadIdent()
+            if this.RawKind = TokenKind.Eq then
+                this.RestorePosition saved
+                { Column = column; Alias = None }
+            elif String.Equals(alias, "end", StringComparison.OrdinalIgnoreCase) then
+                this.RestorePosition saved
+                { Column = column; Alias = None }
+            else
+                { Column = column; Alias = Some alias }
+        else
+            { Column = column; Alias = None }
+
+    member this.ReadRestOfLine() =
+        let parts = ResizeArray<string>()
+        while tokens.[index].Kind = TokenKind.Ident || tokens.[index].Kind = TokenKind.Raw do
+            parts.Add(tokens.[index].Value)
+            index <- index + 1
+        String.Join(' ', parts)
+
+    member this.TryModuleInclude() =
+        this.SkipNewlines()
+        if this.TryKeyword "import" then
+            Some(this.ReadString())
+        elif not (this.IsAt TokenKind.Bang) then
+            None
+        else
+            this.Advance()
+            if not (this.TryKeyword "include") then
+                raise (DashSpecParseException("Expected 'include' after '!'."))
+            Some(this.ReadString())
+
     member this.SkipFileDirectives() =
         this.SkipNewlines()
         let mutable continueDirectives = true
