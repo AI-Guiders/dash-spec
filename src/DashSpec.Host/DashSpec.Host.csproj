@@ -99,7 +99,7 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="10.1.400" PrivateAssets="build;analyzers" />
+    <PackageReference Include="FSharp.Core" Version="10.1.401" PrivateAssets="build;analyzers" />
   </ItemGroup>
 
 </Project>
