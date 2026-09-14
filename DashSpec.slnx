@@ -12,6 +12,8 @@
 
   <Project Path="src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
 
+  <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
+
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
 
   <Project Path="connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
