@@ -34,5 +34,10 @@
     <Compile Include="Palette\PaletteModuleParser.fs" />
     <Compile Include="Presentation\PresentationTypes.fs" />
     <Compile Include="Presentation\PresentationModuleParser.fs" />
+    <Compile Include="Diagram\DiagramTypes.fs" />
+    <Compile Include="Diagram\DiagramKindRegistry.fs" />
+    <Compile Include="Diagram\DiagramParser.fs" />
+    <Compile Include="Diagram\InspectPresentationParser.fs" />
+    <Compile Include="Diagram\DiagramModuleParser.fs" />
   </ItemGroup>
 </Project>
