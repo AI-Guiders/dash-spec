@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>DashSpec.Modeling.Parse</RootNamespace>
+    <AssemblyName>DashSpec.Modeling.Parse</AssemblyName>
+    <Description>DashSpec Modeling parse spine — layout pilot (ADR-0048 M2).</Description>
+    <PackageId>DashSpec.Modeling.Parse</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
+    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Layout\LayoutTypes.fs" />
+    <Compile Include="Layout\LayoutModuleParser.fs" />
+  </ItemGroup>
+</Project>

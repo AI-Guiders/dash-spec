@@ -1,5 +1,5 @@
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Resolution;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Configuration;

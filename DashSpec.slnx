@@ -1,15 +1,36 @@
-<Solution>
-  <Project Path="src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
-  <Project Path="src\DashSpec.Core\DashSpec.Core.csproj" />
-  <Project Path="src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
-  <Project Path="src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
-  <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
-  <Project Path="connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
-  <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
-  <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
-  <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
-  <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
-  <Project Path="tests\DashSpec.Execution.Core.Tests\DashSpec.Execution.Core.Tests.csproj" />
-  <Project Path="tests\DashSpec.Modeling.Core.Tests\DashSpec.Modeling.Core.Tests.fsproj" />
-  <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
-</Solution>
+<Solution>
+
+  <Project Path="src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+
+  <Project Path="src\DashSpec.Core\DashSpec.Core.csproj" />
+
+  <Project Path="src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+  <Project Path="src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+  <Project Path="src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
+
+  <Project Path="src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
+
+  <Project Path="src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
+
+  <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
+
+  <Project Path="connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
+
+  <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
+
+  <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
+
+  <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
+
+  <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
+
+  <Project Path="tests\DashSpec.Execution.Core.Tests\DashSpec.Execution.Core.Tests.csproj" />
+
+  <Project Path="tests\DashSpec.Modeling.Core.Tests\DashSpec.Modeling.Core.Tests.fsproj" />
+
+  <Project Path="tests\DashSpec.Modeling.Parse.Tests\DashSpec.Modeling.Parse.Tests.fsproj" />
+
+  <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
+
+</Solution>
+

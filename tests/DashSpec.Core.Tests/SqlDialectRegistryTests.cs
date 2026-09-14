@@ -1,7 +1,7 @@
 using System.Text;
 using DashSpec.Abstractions.Query;
-using DashSpec.Core.Compilation;
-using DashSpec.Core.Compilation.Dialects;
+using DashSpec.Execution.Compilation;
+using DashSpec.Execution.Compilation.Dialects;
 using DashSpec.Core.Model;
 using Xunit;
 

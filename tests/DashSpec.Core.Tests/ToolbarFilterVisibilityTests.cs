@@ -1,4 +1,4 @@
-using DashSpec.Core.Compilation;
+using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 using Xunit;
