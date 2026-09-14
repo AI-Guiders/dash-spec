@@ -8,6 +8,8 @@
   <Project Path="src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
   <Project Path="src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
 
+  <Project Path="src\DashSpec.Presentation\DashSpec.Presentation.csproj" />
+
   <Project Path="src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
 
   <Project Path="src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
