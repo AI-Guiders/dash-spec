@@ -1,5 +1,6 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
+using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Components;

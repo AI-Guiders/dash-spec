@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
   </ItemGroup>
 
 </Project>
