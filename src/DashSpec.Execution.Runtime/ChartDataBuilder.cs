@@ -126,8 +126,14 @@ public sealed record MatrixPayload(
             _ => (Min, Max),
         };
 
-        // Row/column normalize with a single distinct value yields min==max (flat blue). Fall back to matrix range.
-        return cellMax <= cellMin ? (Min, Max) : (cellMin, cellMax);
+        if (cellMax <= cellMin)
+        {
+            // Row-normalize: single-value row keeps its own range (e.g. bob → (10, 10)).
+            // Column/map: fall back to matrix range so flat cells still participate in global scale.
+            return ColorNormalize == MatrixColorNormalize.Row ? (cellMin, cellMin) : (Min, Max);
+        }
+
+        return (cellMin, cellMax);
     }
 
     public (double Min, double Max) ColorRangeForRow(int yi) => ColorRangeForCell(yi, 0);
