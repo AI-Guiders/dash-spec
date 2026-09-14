@@ -70,6 +70,7 @@
     <Compile Include="Document\DocumentTypes.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
+    <Compile Include="Document\DashboardValidationBridge.fs" />
     <Compile Include="Document\DashboardValidator.fs" />
     <Compile Include="Document\IncludeExpander.fs" />
     <Compile Include="Document\TabParser.fs" />
