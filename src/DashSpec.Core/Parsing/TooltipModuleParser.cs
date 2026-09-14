@@ -5,25 +5,26 @@ namespace DashSpec.Core.Parsing;
 
 internal static class TooltipModuleParser
 {
-    public static TooltipDefinition ParseTooltipFile(string text) =>
-        ParseTooltipFileWithId(text).Definition;
+    public static TooltipDefinition ParseTooltipFile(string text)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        if (TooltipParseBridge.ParseTooltipFile is { } parse)
+        {
+            return parse(text);
+        }
+
+        throw new InvalidOperationException("Tooltip parse bridge not registered.");
+    }
 
     public static (string Id, TooltipDefinition Definition) ParseTooltipFileWithId(string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-
-        var reader = ParserUtilities.CreateReader(text);
-        reader.SkipFileDirectives();
-        reader.Expect(TokenKind.At);
-        reader.ExpectKeyword("tooltip");
-        var id = reader.ReadIdent();
-        if (string.IsNullOrWhiteSpace(id))
+        if (TooltipParseBridge.ParseTooltipFileWithId is { } parse)
         {
-            throw new DashSpecParseException("@tooltip module requires @tooltip <id>.");
+            return parse(text);
         }
 
-        reader.SkipNewlines();
-        return (id, ParseBody(reader, id));
+        throw new InvalidOperationException("Tooltip parse bridge not registered.");
     }
 
     public static TooltipDefinition ParseInline(TokenReader reader, string id)

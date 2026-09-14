@@ -9,7 +9,10 @@ namespace DashSpec.Execution.Parsing;
 /// </summary>
 public static class DashSpecParser
 {
-    static DashSpecParser() => LayoutParseRegistration.EnsureRegistered();
+    static DashSpecParser() => ModuleParseRegistration.EnsureRegistered();
+
+    /// <summary>Register F# fragment parse bridges (tests and hosts without full parse).</summary>
+    public static void EnsureModuleParsersRegistered() => ModuleParseRegistration.EnsureRegistered();
 
     public static string? ReadRuntimePath(string text) => Core.Parsing.DashSpecParser.ReadRuntimePath(text);
 

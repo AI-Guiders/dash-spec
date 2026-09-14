@@ -3,7 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>DashSpec.Modeling.Parse</RootNamespace>
     <AssemblyName>DashSpec.Modeling.Parse</AssemblyName>
-    <Description>DashSpec Modeling parse spine — layout pilot (ADR-0048 M2).</Description>
+    <Description>DashSpec Modeling parse spine (ADR-0048).</Description>
     <PackageId>DashSpec.Modeling.Parse</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
@@ -21,5 +21,9 @@
     <Compile Include="Layout\LayoutTypes.fs" />
     <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
+    <Compile Include="Tooltip\TooltipTypes.fs" />
+    <Compile Include="Tooltip\TooltipModuleParser.fs" />
+    <Compile Include="Catalog\CatalogTypes.fs" />
+    <Compile Include="Catalog\CatalogParser.fs" />
   </ItemGroup>
 </Project>
