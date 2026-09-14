@@ -8,6 +8,13 @@ open DashSpec.Modeling.Core
 type TokenReader(tokens: IReadOnlyList<Token>) =
     let mutable index = 0
     let blockCloseStyles = Stack<BlockCloseStyle>()
+    let mutable consumedRuntimePath: string option = None
+    let mutable consumedDiagramLibraryPath: string option = None
+    let mutable consumedPalettePath: string option = None
+
+    member _.ConsumedRuntimePath = consumedRuntimePath
+    member _.ConsumedDiagramLibraryPath = consumedDiagramLibraryPath
+    member _.ConsumedPalettePath = consumedPalettePath
 
     member _.Current = tokens.[index]
 
@@ -131,19 +138,27 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
             this.Advance()
 
             if this.TryKeyword "runtime" || this.TryKeyword "config" then
-                if this.IsAt TokenKind.String then this.Advance() |> ignore
+                if consumedRuntimePath.IsSome then
+                    raise (DashSpecParseException("Only one @runtime directive is allowed per .dashspec file."))
+                if this.IsAt TokenKind.String then
+                    consumedRuntimePath <- Some(this.ReadString())
                 this.SkipNewlines()
             elif this.TryKeyword "sqldialect" then
                 this.ReadIdent() |> ignore
                 this.SkipNewlines()
             elif this.TryKeyword "diagramlibrary" then
-                if this.IsAt TokenKind.String then this.Advance() |> ignore
+                if consumedDiagramLibraryPath.IsSome then
+                    raise (DashSpecParseException("Only one @diagramlibrary directive is allowed per .dashspec file."))
+                if this.IsAt TokenKind.String then
+                    consumedDiagramLibraryPath <- Some(this.ReadString())
                 this.SkipNewlines()
             elif this.TryKeyword "palette" then
                 this.SkipNewlines()
 
                 if this.RawKind = TokenKind.String then
-                    this.Advance() |> ignore
+                    if consumedPalettePath.IsSome then
+                        raise (DashSpecParseException("Only one @palette file directive is allowed per .dashspec file."))
+                    consumedPalettePath <- Some(this.ReadString())
                     this.SkipNewlines()
                 else
                     index <- index - 2
