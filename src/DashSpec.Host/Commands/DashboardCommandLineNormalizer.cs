@@ -23,7 +23,7 @@ internal static class DashboardCommandLineNormalizer
             return NormalizeSelect(tokens, context);
         }
 
-        if (tokens[0].Equals(DashboardCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase))
+        if (tokens[0].Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return NormalizeView(tokens, context);
         }

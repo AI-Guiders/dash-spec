@@ -21,7 +21,7 @@ internal static class DashboardSlotNouns
 
         if (slotName.Equals("view", StringComparison.OrdinalIgnoreCase))
         {
-            var cardId = DashboardCatalog.PhraseSlots.ReadBoundSlotValue(typedBody, commandId, "card");
+            var cardId = DashCatalog.PhraseSlots.ReadBoundSlotValue(typedBody, commandId, "card");
             var card = context.SwitchableCards.FirstOrDefault(target =>
                 cardId is not null
                 && target.CardId.Equals(cardId, StringComparison.OrdinalIgnoreCase));
@@ -58,7 +58,7 @@ internal static class DashboardSlotNouns
 
         if (slotName.Equals("view", StringComparison.OrdinalIgnoreCase))
         {
-            var cardId = DashboardCatalog.PhraseSlots.ReadBoundSlotValue(typedBody, commandId, "card");
+            var cardId = DashCatalog.PhraseSlots.ReadBoundSlotValue(typedBody, commandId, "card");
             var card = context.SwitchableCards.FirstOrDefault(target =>
                 cardId is not null
                 && target.CardId.Equals(cardId, StringComparison.OrdinalIgnoreCase));

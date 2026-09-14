@@ -13,13 +13,13 @@ internal static class DashboardCatalogFlavor
     public const string SlashGrammar = "command-slash";
 
     public static string InvokerFlavor =>
-        ReadInvokerFlavor(DashboardCatalog.Current);
+        ReadInvokerFlavor(DashCatalog.Document);
 
     public static bool IsConsole =>
         InvokerFlavor.Equals(Console, StringComparison.OrdinalIgnoreCase);
 
     public static CatalogChannel CclFilterChannel =>
-        ResolveCclFilterChannel(DashboardCatalog.Current);
+        ResolveCclFilterChannel(DashCatalog.Document);
 
     public static string CclCommandGrammar =>
         CclFilterChannel.CommandGrammar ?? ConsoleGrammar;

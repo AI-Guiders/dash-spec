@@ -4,6 +4,7 @@ using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Generated;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Services.Presentation;
@@ -742,7 +743,7 @@ public class DashboardFilterCommandTests
 
         Assert.Equal(3, result.Items.Count);
         Assert.Contains(result.Items, item => item.StepSegment == FilterCommandPaths.RootVerb);
-        Assert.Contains(result.Items, item => item.StepSegment == DashboardCatalog.CardViewPhrase.LiteralPrefix);
+        Assert.Contains(result.Items, item => item.StepSegment == DashCatalog.CardViewPhrase.LiteralPrefix);
         Assert.Contains(result.Items, item => item.StepSegment == ShowCommandPaths.RootVerb);
     }
 
@@ -766,7 +767,7 @@ public class DashboardFilterCommandTests
         Assert.Contains(cardStep.Items, item => item.StepSegment == "heatmap_card");
         var cardItem = cardStep.Items.First(item => item.StepSegment == "heatmap_card");
         Assert.Equal("card", cardItem.ActiveSlot);
-        Assert.Equal(DashboardCatalog.CardViewWireCommandId, cardItem.CommandId);
+        Assert.Equal(DashCatalog.CardViewWireCommandId, cardItem.CommandId);
         var cardParts = DashboardFilterCommandDisplay.FormatSuggestionParts(cardItem, context, "view ");
         Assert.Equal("Heatmap", cardParts.Primary);
         Assert.Equal("heatmap_card", cardParts.Secondary);

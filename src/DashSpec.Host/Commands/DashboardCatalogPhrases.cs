@@ -32,7 +32,7 @@ internal static class DashboardCatalogPhrases
     }
 
     public static string ResolvePhrase(string phraseName) =>
-        DashboardCatalog.Current.Phrases
+        DashCatalog.Phrases
             .FirstOrDefault(phrase => string.Equals(phrase.Name, phraseName, StringComparison.OrdinalIgnoreCase))
             ?.Phrase
         ?? throw new InvalidOperationException($"dash.catalog missing phrase '{phraseName}'.");
