@@ -63,3 +63,16 @@ module InspectPresentationParser =
           Label = label
           Format = resolvedFormat
           Split = resolvedSplit }
+
+    let merge (left: InspectPresentation option) (right: InspectPresentation option) =
+        match right with
+        | None -> left
+        | Some r ->
+            match left with
+            | None -> Some r
+            | Some l ->
+                Some
+                    { TooltipId = r.TooltipId |> Option.orElse l.TooltipId
+                      Label = r.Label |> Option.orElse l.Label
+                      Format = if String.IsNullOrWhiteSpace r.Format then l.Format else r.Format
+                      Split = if r.Split <> ", " then r.Split else l.Split }

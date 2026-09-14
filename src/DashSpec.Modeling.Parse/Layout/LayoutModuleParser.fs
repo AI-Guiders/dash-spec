@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Layout
 
 open System
+open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
@@ -45,3 +46,16 @@ module LayoutModuleParser =
         reader.SkipNewlines()
         let board = LayoutParser.parseBoardRows reader None None
         { board with ModuleScope = Some scope }
+
+    let load (reference: string) (specDirectory: string) =
+        if String.IsNullOrWhiteSpace reference then
+            invalidArg "reference" "Layout reference is required."
+        if String.IsNullOrWhiteSpace specDirectory then
+            invalidArg "specDirectory" "Spec directory is required."
+
+        let path = SpecIncludeResolver.resolvePath reference specDirectory |> SpecIncludeResolver.resolveLayoutFile
+
+        if not (File.Exists path) then
+            raise (FileNotFoundException($"Include layout not found: '{reference}' (resolved: {path}).", path))
+
+        parseLayoutFile (File.ReadAllText path)
