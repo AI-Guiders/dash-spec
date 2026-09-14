@@ -5,10 +5,15 @@ namespace DashSpec.Core.Parsing;
 internal sealed class TokenReader
 {
     private readonly IReadOnlyList<Token> _tokens;
+    private readonly string? _sourceText;
     private readonly Stack<BlockCloseStyle> _blockCloseStyles = new();
     private int _index;
 
-    public TokenReader(IReadOnlyList<Token> tokens) => _tokens = tokens;
+    public TokenReader(IReadOnlyList<Token> tokens, string? sourceText = null)
+    {
+        _tokens = tokens;
+        _sourceText = sourceText;
+    }
 
     internal void PushBlockClose(BlockCloseStyle style) => _blockCloseStyles.Push(style);
 
@@ -461,4 +466,88 @@ internal sealed class TokenReader
     public int SavePosition() => _index;
 
     public void RestorePosition(int position) => _index = position;
+
+    /// <summary>Consumes inline tooltip body tokens and returns the source slice (F# SSOT parse).</summary>
+    public string ReadTooltipBodySource()
+    {
+        if (_sourceText is null)
+        {
+            throw new InvalidOperationException(
+                "Tooltip inline parse requires source text on TokenReader.");
+        }
+
+        SkipNewlines();
+        var start = Current.Start;
+        var bodyEnd = start;
+
+        while (!IsEof)
+        {
+            SkipNewlines();
+            if (IsEof)
+            {
+                break;
+            }
+
+            if (TryKeyword("variables"))
+            {
+                SkipVariablesBlock(ref bodyEnd);
+                continue;
+            }
+
+            if (TryKeyword("tooltip"))
+            {
+                Expect(TokenKind.Eq);
+                _ = ReadString();
+                bodyEnd = EndOffset(_index - 1);
+                continue;
+            }
+
+            if (TryKeyword("source"))
+            {
+                Expect(TokenKind.Eq);
+                _ = ReadIdent();
+                bodyEnd = EndOffset(_index - 1);
+                continue;
+            }
+
+            if (TryKeyword("end") && TryKeyword("tooltip"))
+            {
+                break;
+            }
+
+            throw Unexpected();
+        }
+
+        return _sourceText.Substring(start, bodyEnd - start);
+    }
+
+    private int EndOffset(int tokenIndex) =>
+        _tokens[tokenIndex].Start + _tokens[tokenIndex].Length;
+
+    private void SkipVariablesBlock(ref int bodyEnd)
+    {
+        BlockSyntax.BeginBlock(this);
+        SkipNewlines();
+
+        while (!BlockSyntax.IsBlockEnd(this, "variables") && !IsEof)
+        {
+            SkipNewlines();
+            if (BlockSyntax.IsBlockEnd(this, "variables"))
+            {
+                break;
+            }
+
+            _ = ReadIdent();
+            Expect(TokenKind.Eq);
+            _ = ReadIdent();
+            bodyEnd = EndOffset(_index - 1);
+            SkipNewlines();
+        }
+
+        BlockSyntax.ExpectBlockEnd(this, "variables");
+        if (_index > 0)
+        {
+            bodyEnd = EndOffset(_index - 1);
+        }
+    }
 }
