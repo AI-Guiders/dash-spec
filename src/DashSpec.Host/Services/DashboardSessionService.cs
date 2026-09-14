@@ -3,6 +3,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Loading;

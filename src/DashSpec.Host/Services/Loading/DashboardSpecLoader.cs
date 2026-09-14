@@ -1,9 +1,10 @@
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Core.Compilation;
+using DashSpec.Execution.Compilation;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Resolution;
 using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
