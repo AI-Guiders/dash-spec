@@ -10,7 +10,7 @@ namespace DashSpec.Host.Commands;
 /// <summary>Context-bound catalog rows — federation builder, product data (GUIDERS-ADR-0045).</summary>
 internal static class DashboardCommandCatalogExpander
 {
-    internal static IReadOnlyList<string> FederationSurfaces => DashboardCatalog.FederationSurfaces;
+    internal static IReadOnlyList<string> FederationSurfaces => DashCatalog.FederationSurfaces;
 
     public static IReadOnlyList<CommandDescriptor> Expand(DashboardFilterContext context)
     {

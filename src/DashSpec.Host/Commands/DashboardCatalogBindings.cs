@@ -12,7 +12,7 @@ internal static class DashboardCatalogBindings
 
     public static string ChordRootGesture =>
         ResolveRoleGesture(ChordRootRole)
-        ?? DashboardCatalog.Current.Defaults.BindingChordRoot
+        ?? DashCatalog.Document.Defaults.BindingChordRoot
         ?? throw new InvalidOperationException("dash.catalog missing chord-root gesture.");
 
     public static string? SuggestDismissGesture =>
@@ -72,7 +72,7 @@ internal static class DashboardCatalogBindings
     }
 
     static string? ResolveRoleGesture(string role) =>
-        DashboardCatalog.Current.Bindings
+        DashCatalog.Document.Bindings
             .FirstOrDefault(row => string.Equals(row.Role, role, StringComparison.OrdinalIgnoreCase))
             ?.Gesture;
 }

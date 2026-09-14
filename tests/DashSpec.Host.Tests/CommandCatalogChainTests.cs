@@ -1,6 +1,7 @@
 ﻿#nullable enable
 
 using AIGuiders.Platform.Execution.CommandPlane;
+using DashSpec.Generated;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Services.Presentation;
 using Xunit;
@@ -16,7 +17,7 @@ public sealed class CommandCatalogChainTests
     [Fact]
     public void Federation_catalog_loads_surfaces_from_dash_catalog()
     {
-        var surfaces = DashboardCatalog.FederationSurfaces;
+        var surfaces = DashCatalog.FederationSurfaces;
         Assert.Contains("slash.bar", surfaces);
         Assert.Contains("ccl.filter", surfaces);
     }
