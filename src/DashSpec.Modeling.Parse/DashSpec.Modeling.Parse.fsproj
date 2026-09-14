@@ -17,6 +17,7 @@
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
     <Compile Include="BlockSyntax.fs" />
+    <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
     <Compile Include="Layout\LayoutParser.fs" />
@@ -25,5 +26,7 @@
     <Compile Include="Tooltip\TooltipModuleParser.fs" />
     <Compile Include="Catalog\CatalogTypes.fs" />
     <Compile Include="Catalog\CatalogParser.fs" />
+    <Compile Include="Transform\TransformTypes.fs" />
+    <Compile Include="Transform\TransformModuleParser.fs" />
   </ItemGroup>
 </Project>

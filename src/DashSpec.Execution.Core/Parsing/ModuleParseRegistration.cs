@@ -7,6 +7,7 @@ using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
 using FsharpCatalogEntry = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
 using FsharpCatalogGroup = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
+using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -18,6 +19,7 @@ internal static class ModuleParseRegistration
         RegisterLayout();
         RegisterTooltip();
         RegisterCatalog();
+        RegisterTransform();
     }
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
@@ -67,6 +69,21 @@ internal static class ModuleParseRegistration
         };
     }
 
+    private static void RegisterTransform()
+    {
+        TransformParseBridge.ParseTransformFile = text =>
+        {
+            try
+            {
+                return ToCore(DashSpec.Modeling.Parse.Transform.TransformModuleParser.parseTransformFile(text));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
+    }
+
     private static TooltipDefinition ToCore(FsharpTooltip tooltip)
     {
         var definition = new TooltipDefinition(tooltip.Id, tooltip.Variables, tooltip.Template);
@@ -103,4 +120,10 @@ internal static class ModuleParseRegistration
 
         return new CatalogDocument(catalog.Id, catalog.DefaultEntryId, entries, groups);
     }
+
+    private static SeriesTransformBlock ToCore(FsharpTransform transform) =>
+        new(
+            OptionModule.ToArray(transform.UsePreset).FirstOrDefault(),
+            OptionModule.ToArray(transform.Max).FirstOrDefault(),
+            OptionModule.ToArray(transform.OtherLabel).FirstOrDefault());
 }

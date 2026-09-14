@@ -98,6 +98,27 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
         index <- index + 1
         value
 
+    member this.CurrentKind =
+        this.SkipNewlines()
+        tokens.[index].Kind
+
+    member this.ReadPropertyKey(?allowQuoted: bool) =
+        let allowQuoted = defaultArg allowQuoted false
+        this.SkipNewlines()
+        if allowQuoted && tokens.[index].Kind = TokenKind.String then this.ReadString()
+        else this.ReadIdent()
+
+    member this.ReadScalarValue() =
+        this.SkipNewlines()
+        match tokens.[index].Kind with
+        | TokenKind.String -> this.ReadString()
+        | TokenKind.Ident -> this.ReadIdent()
+        | TokenKind.RelativeDay ->
+            let value = tokens.[index].Value
+            index <- index + 1
+            value
+        | _ -> raise (this.Unexpected "scalar value")
+
     member this.TryPeekIdent() =
         this.SkipNewlines()
         if tokens.[index].Kind <> TokenKind.Ident then None
