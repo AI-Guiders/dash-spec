@@ -101,3 +101,8 @@ module TooltipModuleParser =
         let reader = ParserUtilities.createReader bodyText
         reader.SkipNewlines()
         parseBody reader id
+
+    /// <summary>Parse inline tooltip from current reader position (@diagram / @card).</summary>
+    let parseInline (reader: TokenReader) (id: string) : TooltipDefinition =
+        if String.IsNullOrWhiteSpace id then invalidArg "id" "Tooltip id is required."
+        parseBody reader id

@@ -6,3 +6,5 @@ type Token =
       Value: string
       Start: int
       Length: int }
+
+type ColumnBindingValue = { Column: string; Alias: string option }
