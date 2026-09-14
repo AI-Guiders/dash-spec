@@ -9,6 +9,8 @@ namespace DashSpec.Execution.Parsing;
 /// </summary>
 public static class DashSpecParser
 {
+    static DashSpecParser() => LayoutParseRegistration.EnsureRegistered();
+
     public static string? ReadRuntimePath(string text) => Core.Parsing.DashSpecParser.ReadRuntimePath(text);
 
     [Obsolete("Use ReadRuntimePath. @config is a deprecated alias for @runtime.")]

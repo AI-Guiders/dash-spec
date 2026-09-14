@@ -9,10 +9,17 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
-    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Lexing\TokenKind.fs" />
+    <Compile Include="Lexing\Token.fs" />
+    <Compile Include="Lexing\BlockCloseStyle.fs" />
+    <Compile Include="Lexing\DashSpecLexer.fs" />
+    <Compile Include="Lexing\TokenReader.fs" />
+    <Compile Include="BlockSyntax.fs" />
+    <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
+    <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
   </ItemGroup>
 </Project>

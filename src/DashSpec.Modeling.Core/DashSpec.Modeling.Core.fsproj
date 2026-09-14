@@ -11,6 +11,7 @@
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ParseErrors.fs" />
     <Compile Include="Diagnostics.fs" />
     <Compile Include="DiagnosticInterop.fs" />
   </ItemGroup>
