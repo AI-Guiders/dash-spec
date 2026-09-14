@@ -17,6 +17,7 @@
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
     <Compile Include="BlockSyntax.fs" />
+    <Compile Include="PropertySchemas.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
