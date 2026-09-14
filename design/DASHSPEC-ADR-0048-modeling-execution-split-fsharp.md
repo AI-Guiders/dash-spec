@@ -99,7 +99,7 @@ Execution **maps** Modeling IR to runtime DTOs — does not re-parse text except
 | Modeling packages | `Platform.Modeling.Gdl.*` | `DashSpec.Modeling.*` |
 | Block / parse kit | `BlockReader` (line-level; catalog quarries) | **not used** — premature; own token layer |
 | Project imports | `AuthoringProjectLoader` / `GdlProject` | `DashSpecProject` may keep thin C# shim → federation |
-| CDP LRC | `Platform.Execution.Language` + `Adapters.Gdl` | — (dashspec not in federation LRC v1) |
+| CDP LRC | `Platform.Execution.Language` + `Adapters.Gdl` | `DashSpec.Modeling.Language.Adapters.DashSpec` (planet LRC backend) |
 
 DashSpec **does not** take a dependency on federation Block Kit in M0–M6. Lexical overlap (`end keyword`, `#` comments) is coincidental, not a shared library contract. If GDL later needs token-aware blocks (`end card id`, `@` roots), federation **may** study DashSpec Modeling — not the other way around today.
 
@@ -161,7 +161,7 @@ M4  Port .dashspec / @dashboard / @card (largest surface — incremental per par
 M5  Port fragment kinds (.dashdiagram, .dashpalette, …)
 M6  Remove C# Parsing/*; DashSpec.Core shim → split packages
 M7  Modeling.Validation + CLI `dashspec validate` ([ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) v1.1)
-M8  optional CDP LRC backend for `.dashspec` (planet extension; not federation scope)
+M8  CDP LRC backend for `.dashspec` (planet extension; federation LRC baseline)
 ```
 
 **Non-big-bang:** new grammar work lands in F# Modeling from M2 onward; C# parsers touched only for bugfix until ported.
@@ -195,6 +195,22 @@ Deleted duplicate C# document parse bodies (F# `DashSpec.Modeling.Parse` is SSOT
 
 **Tests:** `DashSpec.Core.Tests` 266/267 pass (known pre-existing heatmap pivot fail).
 
+### M7 progress (2026-09-14)
+
+F# parse path invokes cross-field validation via `DashboardValidationBridge` → Execution maps IR → Core `Analysis/*` (`ToolbarAnalyzer`, `FilterPlacementAnalyzer`, `PageAnalyzer`, `TabAnalyzer`). CLI `DashSpec.Host validate` unchanged (orchestrates parse + validation).
+
+### M8 progress (2026-09-14)
+
+Planet LRC backend shipped:
+
+| Component | Location |
+|-----------|----------|
+| `DashSpecLanguageBackend` | `DashSpec.Modeling.Language.Adapters.DashSpec` |
+| Federation path id | `LanguageIds.Dashspec` + `LanguagePathRules` (`.dashspec`, `.dashdiagram`, …) |
+| CDP host registration | `CdpLanguageResolverHost` + `BufferLanguageRules.IsLrcLanguage` |
+
+Verbs v1: `get_diagnostics`, `get_document_symbols` (dashboard outline on `.dashspec`).
+
 **Phase II transition status (2026-09-14):**
 
 | Phase | Status | Remaining |
@@ -203,7 +219,8 @@ Deleted duplicate C# document parse bodies (F# `DashSpec.Modeling.Parse` is SSOT
 | M5 fragments | ✅ | — |
 | M4 `.dashspec` body | ✅ | F# SSOT + `DocumentParseBridge` |
 | M6 C# parser removal | ✅ | ~4.7k LOC duplicate document-layer parsers removed; lexing + bridges + `SpecIncludeResolver` / `DiagramKindRegistry` / `PropertyBlockParser` retained |
-| M7 Validation | ❌ | F# `DashboardValidator` stub; Core `Analysis/*` runs post-map today |
+| M7 Validation | ✅ | F# `DashboardValidationBridge` → Core Analysis; CLI validate |
+| M8 LRC backend | ✅ | `DashSpecLanguageBackend` in federation LRC + CDP host |
 
 **Phase II gate (ADR-0051 §4b):** Execution routes `@dashboard` / `@tab` through F# `DashboardComposer.parse` → `DocumentModelMapper` — **met** (2026-09-14).
 
