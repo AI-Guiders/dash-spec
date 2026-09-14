@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>DashSpec.Modeling.Core</RootNamespace>
+    <AssemblyName>DashSpec.Modeling.Core</AssemblyName>
+    <Description>DashSpec Modeling spine — diagnostics and source spans (ADR-0048 M0/M1).</Description>
+    <PackageId>DashSpec.Modeling.Core</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Diagnostics.fs" />
+    <Compile Include="DiagnosticInterop.fs" />
+  </ItemGroup>
+</Project>

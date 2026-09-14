@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Core\AIGuiders.Platform.Authoring.Core.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="AIGuiders.Platform.Authoring.Core" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
   </ItemGroup>

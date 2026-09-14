@@ -1,5 +1,6 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Host.Services.Settings;
+using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Configuration;
 

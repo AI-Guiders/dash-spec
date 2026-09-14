@@ -4,6 +4,7 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
+using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
