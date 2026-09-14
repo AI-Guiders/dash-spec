@@ -16,6 +16,18 @@ module PropertySchemas =
           { Name = "max"; ValueType = Scalar }
           { Name = "other"; ValueType = String } ]
 
+    let presentation =
+        [ { Name = "use"; ValueType = Scalar }
+          { Name = "legend"; ValueType = Scalar }
+          { Name = "height"; ValueType = Scalar }
+          { Name = "stacked"; ValueType = Scalar }
+          { Name = "fill"; ValueType = Scalar }
+          { Name = "color_mode"; ValueType = Scalar }
+          { Name = "scale_value"; ValueType = Scalar }
+          { Name = "y_max"; ValueType = Scalar }
+          { Name = "default"; ValueType = Scalar }
+          { Name = "colors"; ValueType = Scalar } ]
+
     /// Mirrors Core PropertyBlockParser.ResolveEndKind for block containers.
     let resolveEndKind (blockName: string) =
         let parts = blockName.Split(' ', StringSplitOptions.RemoveEmptyEntries)

@@ -29,5 +29,10 @@
     <Compile Include="Catalog\CatalogParser.fs" />
     <Compile Include="Transform\TransformTypes.fs" />
     <Compile Include="Transform\TransformModuleParser.fs" />
+    <Compile Include="Palette\PaletteTypes.fs" />
+    <Compile Include="Palette\PaletteColorResolver.fs" />
+    <Compile Include="Palette\PaletteModuleParser.fs" />
+    <Compile Include="Presentation\PresentationTypes.fs" />
+    <Compile Include="Presentation\PresentationModuleParser.fs" />
   </ItemGroup>
 </Project>
