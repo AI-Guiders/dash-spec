@@ -1,5 +1,5 @@
+using DashSpec.Core.Authoring;
 using DashSpec.Core.Model;
-using DashSpec.Execution.Authoring;
 
 namespace DashSpec.Core.Parsing;
 

@@ -1,3 +1,4 @@
+using DashSpec.Core.Authoring;
 using DashSpec.Execution.Authoring;
 using Xunit;
 

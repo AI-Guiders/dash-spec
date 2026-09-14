@@ -2,7 +2,9 @@ using DashSpec.Core.Model;
 
 namespace DashSpec.Core.Parsing;
 
-/// <summary>Public entry point for parsing .dashspec files.</summary>
+/// <summary>
+/// Transitional parse entry in Core. Prefer Execution.Parsing.DashSpecParser for new code (ADR-0048 §6).
+/// </summary>
 public static class DashSpecParser
 {
     public static string? ReadRuntimePath(string text) => DashboardParser.ReadRuntimePath(text);
