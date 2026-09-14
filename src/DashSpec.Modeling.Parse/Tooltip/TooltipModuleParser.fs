@@ -36,7 +36,9 @@ module TooltipModuleParser =
         let mutable template: string option = None
         let mutable source: string option = None
 
-        while not reader.IsEof do
+        let mutable finished = false
+
+        while not finished && not reader.IsEof do
             reader.SkipNewlines()
             if reader.IsEof then ()
             elif reader.TryKeyword "variables" then
@@ -53,11 +55,9 @@ module TooltipModuleParser =
                     raise (DashSpecParseException($"Tooltip '{id}': source requires a column name."))
                 source <- Some col
             elif reader.TryKeyword "end" && reader.TryKeyword "tooltip" then
-                ()
-            elif not reader.IsEof then
-                raise (reader.Unexpected())
+                finished <- true
             else
-                ()
+                raise (reader.Unexpected())
 
         let variables, template =
             match source with
