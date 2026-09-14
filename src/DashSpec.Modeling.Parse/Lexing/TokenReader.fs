@@ -90,6 +90,18 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
             | None -> $"Unexpected token '{token.Value}' ({token.Kind}) at position {token.Start}."
         DashSpec.Modeling.Core.DashSpecParseException(message, token.Start)
 
+    member this.ReadString() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.String then
+            raise (this.Unexpected "string")
+        let value = tokens.[index].Value
+        index <- index + 1
+        value
+
+    member this.TryPeekIdent() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.Ident then None
+        else Some tokens.[index].Value
     member this.SkipFileDirectives() =
         this.SkipNewlines()
         let mutable continueDirectives = true
