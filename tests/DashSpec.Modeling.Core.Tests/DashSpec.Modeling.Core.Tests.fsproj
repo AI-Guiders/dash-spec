@@ -13,9 +13,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DiagnosticInterop.fs" />
     <Compile Include="DiagnosticsTests.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
   </ItemGroup>
 </Project>
