@@ -32,6 +32,8 @@
 
   <Project Path="tests\DashSpec.Modeling.Parse.Tests\DashSpec.Modeling.Parse.Tests.fsproj" />
 
+  <Project Path="tests\DashSpec.Modeling.Language.Adapters.DashSpec.Tests\DashSpec.Modeling.Language.Adapters.DashSpec.Tests.fsproj" />
+
   <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
 
 </Solution>

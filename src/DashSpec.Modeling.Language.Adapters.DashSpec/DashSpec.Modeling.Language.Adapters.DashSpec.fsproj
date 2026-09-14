@@ -9,11 +9,13 @@
     <GuidersFSharpRoot Condition="'$(GuidersFSharpRoot)' == ''">..\..\..\guiders-fsharp</GuidersFSharpRoot>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DashSpecSymbolIndex.fs" />
     <Compile Include="DashSpecLanguageBackend.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Language\AIGuiders.Platform.Modeling.Language.fsproj" />
   </ItemGroup>
 </Project>

@@ -168,17 +168,35 @@ type DashSpecLanguageBackend() =
                 else
                     Task.FromResult { Root = fileRoot path }
 
-        member _.GoToDefinitionAsync(_req, ct) =
+        member _.GoToDefinitionAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<LanguageNavigation>(ct)
-            else
+            elif not (isDashSpecPath req.FilePath)
+                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
                 Task.FromResult(emptyNavigation ())
+            else
+                let path = req.FilePath
+                let text = readSource req
 
-        member _.FindUsagesAsync(_req, ct) =
+                match DashSpecSymbolIndex.goToDefinition path text req.Line req.Column with
+                | None -> Task.FromResult(emptyNavigation ())
+                | Some definition ->
+                    Task.FromResult
+                        { Definition = definition
+                          Declarations = [| definition |] }
+
+        member _.FindUsagesAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<FindUsagesResult>(ct)
-            else
+            elif not (isDashSpecPath req.FilePath)
+                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
                 Task.FromResult { References = [||] }
+            else
+                let path = req.FilePath
+                let text = readSource req
+                let references = DashSpecSymbolIndex.findReferences path text req.Line req.Column
+
+                Task.FromResult { References = references }
 
         member _.GetCompletionsAsync(_req, ct) =
             if ct.IsCancellationRequested then
@@ -186,16 +204,36 @@ type DashSpecLanguageBackend() =
             else
                 Task.FromResult { Items = [||] }
 
-        member _.GetSymbolAtPositionAsync(_req, ct) =
+        member _.GetSymbolAtPositionAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<SymbolAtPositionResult>(ct)
-            else
+            elif not (isDashSpecPath req.FilePath)
+                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
                 Task.FromResult(Unchecked.defaultof<SymbolAtPositionResult>)
+            else
+                let path = req.FilePath
+                let text = readSource req
+
+                match DashSpecSymbolIndex.resolveSymbolAt path text req.Line req.Column with
+                | None -> Task.FromResult(Unchecked.defaultof<SymbolAtPositionResult>)
+                | Some symbol ->
+                    Task.FromResult
+                        { Kind = symbol.Kind
+                          Name = symbol.Name
+                          QualifiedName = symbol.QualifiedName
+                          Span = symbol.Span }
 
         member _.RenameSymbolAsync(renameReq, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<RenameSymbolResult>(ct)
-            else
+            elif not (isDashSpecPath renameReq.Request.FilePath)
+                 || not (
+                     String.Equals(
+                         Path.GetExtension renameReq.Request.FilePath,
+                         ".dashspec",
+                         StringComparison.OrdinalIgnoreCase
+                     )
+                 ) then
                 Task.FromResult
                     { OldName = ""
                       NewName = renameReq.NewName
@@ -204,3 +242,63 @@ type DashSpecLanguageBackend() =
                       Message = ""
                       Files = [||]
                       Changes = [||] }
+            elif String.IsNullOrWhiteSpace renameReq.NewName then
+                Task.FromResult
+                    { OldName = ""
+                      NewName = renameReq.NewName
+                      SymbolKind = ""
+                      Applied = false
+                      Message = "new_name is required."
+                      Files = [||]
+                      Changes = [||] }
+            else
+                let req = renameReq.Request
+                let path = req.FilePath
+                let text = readSource req
+
+                match DashSpecSymbolIndex.resolveSymbolAt path text req.Line req.Column with
+                | None ->
+                    Task.FromResult
+                        { OldName = ""
+                          NewName = renameReq.NewName
+                          SymbolKind = ""
+                          Applied = false
+                          Message = "No symbol at position."
+                          Files = [||]
+                          Changes = [||] }
+                | Some symbol when symbol.Kind = "reference" ->
+                    Task.FromResult
+                        { OldName = symbol.Name
+                          NewName = renameReq.NewName
+                          SymbolKind = symbol.Kind
+                          Applied = false
+                          Message = "Rename is only supported for declared card, filter, tab, dashboard, and diagram ids."
+                          Files = [||]
+                          Changes = [||] }
+                | Some symbol ->
+                    let newText =
+                        System.Text.RegularExpressions.Regex.Replace(
+                            text,
+                            $"\\b{System.Text.RegularExpressions.Regex.Escape symbol.Name}\\b",
+                            renameReq.NewName,
+                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                        )
+
+                    let changes =
+                        if renameReq.Apply && not (String.Equals(text, newText, StringComparison.Ordinal)) then
+                            if File.Exists path then File.WriteAllText(path, newText)
+
+                            [| { Path = path; NewText = newText } |]
+                        else
+                            [| { Path = path; NewText = newText } |]
+
+                    Task.FromResult
+                        { OldName = symbol.Name
+                          NewName = renameReq.NewName
+                          SymbolKind = symbol.Kind
+                          Applied =
+                              renameReq.Apply
+                              && not (String.Equals(text, newText, StringComparison.Ordinal))
+                          Message = ""
+                          Files = [| path |]
+                          Changes = changes }
