@@ -12,7 +12,7 @@ internal sealed class SelectViewCommand : PlatformCommand<DashboardFilterContext
 
     protected override CommandOutcome Execute(DashboardFilterContext context)
     {
-        var slots = DashboardCatalog.PhraseSlots;
+        var slots = DashCatalog.PhraseSlots;
         var cardId = slots.ReadBoundSlotValue(context.CanonicalPath, Id, "card");
         var viewId = slots.ReadBoundSlotValue(context.CanonicalPath, Id, "view") ?? context.ArgTail.Trim();
         if (string.IsNullOrWhiteSpace(cardId) || string.IsNullOrWhiteSpace(viewId))

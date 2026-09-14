@@ -42,7 +42,7 @@ internal static class DashboardCommandTrailFormatter
             }
         }
 
-        if (tokens[0].Equals(DashboardCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase) && tokens.Length >= 2)
+        if (tokens[0].Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase) && tokens.Length >= 2)
         {
             var card = DashboardCommandEntityResolver.ResolveCard(tokens[1], context);
             segments.Add(new(card?.Title ?? tokens[1], card?.CardId ?? tokens[1]));

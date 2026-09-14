@@ -31,7 +31,7 @@ internal static class DashboardCommandHighlightResolver
             return ResolveSelect(tokens, context);
         }
 
-        if (tokens[0].Equals(DashboardCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase))
+        if (tokens[0].Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return ResolveView(tokens, context);
         }
