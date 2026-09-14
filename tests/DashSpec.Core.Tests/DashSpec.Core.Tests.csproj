@@ -20,6 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
   </ItemGroup>
 
 </Project>

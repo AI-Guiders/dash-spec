@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Host.Commands;
 
