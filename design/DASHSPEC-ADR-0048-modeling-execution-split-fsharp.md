@@ -183,14 +183,26 @@ Fragment roots wired through `ModuleParseRegistration` (F# SSOT → Execution br
 
 **M5:** complete (all standalone fragment roots).
 
+### M6 progress (2026-09-14)
+
+Deleted duplicate C# document parse bodies (F# `DashSpec.Modeling.Parse` is SSOT):
+
+| Removed (C#) | Kept in C# (not SSOT) |
+|--------------|------------------------|
+| `CardParser`, `FilterParser`, `DashboardShellParser`, `TabParser`, `TabModuleParser` | `DocumentParseBridge`, `*ModuleParser` shims, `DashSpecParser`, `DashboardComposer` |
+| `IncludeExpander`, card sub-parsers, `DiagramParser`, `DataSourceParser`, chrome/toolbar layout parsers | `Lexing/*`, `ParserUtilities`, `PropertyBlockParser` (LSP/tests) |
+| `PaletteColorResolver` (duplicate of F# palette resolver) | `SpecIncludeResolver`, `SpecLibrary*`, `DiagramKindRegistry`, `InspectPresentationParser`, SQL validators |
+
+**Tests:** `DashSpec.Core.Tests` 266/267 pass (known pre-existing heatmap pivot fail).
+
 **Phase II transition status (2026-09-14):**
 
 | Phase | Status | Remaining |
 |-------|--------|-----------|
 | M0–M3 scaffold | ✅ | — |
 | M5 fragments | ✅ | — |
-| M4 `.dashspec` body | ✅ | F# SSOT + `DocumentParseBridge`; C# bodies remain as shims until M6 |
-| M6 C# parser removal | ❌ | delete duplicate C# `Parsing/*` bodies after parity soak |
+| M4 `.dashspec` body | ✅ | F# SSOT + `DocumentParseBridge` |
+| M6 C# parser removal | ✅ | ~4.7k LOC duplicate document-layer parsers removed; lexing + bridges + `SpecIncludeResolver` / `DiagramKindRegistry` / `PropertyBlockParser` retained |
 | M7 Validation | ❌ | F# `DashboardValidator` stub; Core `Analysis/*` runs post-map today |
 
 **Phase II gate (ADR-0051 §4b):** Execution routes `@dashboard` / `@tab` through F# `DashboardComposer.parse` → `DocumentModelMapper` — **met** (2026-09-14).
