@@ -50,7 +50,6 @@ module TransformModuleParser =
                     reader
                     PropertyBlockParser.seriesTransformSchema
                     "transform series"
-                    "series"
                     false
                     false
             else

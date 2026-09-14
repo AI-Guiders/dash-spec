@@ -5,7 +5,7 @@ internal static class ParserUtilities
     public static TokenReader CreateReader(string text)
     {
         var tokens = DashSpecLexer.Tokenize(text);
-        return new TokenReader(tokens);
+        return new TokenReader(tokens, text);
     }
 
     public static IReadOnlyList<string> ParseFilterPlacementList(

@@ -94,3 +94,10 @@ module TooltipModuleParser =
     let parseTooltipFileWithId (text: string) =
         let def = parseTooltipFile text
         def.Id, def
+
+    /// <summary>Parse inline tooltip body embedded in @card / @diagram (ADR-0048).</summary>
+    let parseTooltipInlineBody (id: string) (bodyText: string) : TooltipDefinition =
+        if String.IsNullOrWhiteSpace id then invalidArg "id" "Tooltip id is required."
+        let reader = ParserUtilities.createReader bodyText
+        reader.SkipNewlines()
+        parseBody reader id

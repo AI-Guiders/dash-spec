@@ -6,12 +6,14 @@ using Microsoft.FSharp.Core;
 using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
 using FsharpCatalogEntry = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
 using FsharpCatalogGroup = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
+using FsharpBoard = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
+using FsharpScope = DashSpec.Modeling.Parse.Layout.LayoutScope;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
 
 namespace DashSpec.Execution.Parsing;
 
-/// <summary>Wire F# fragment parsers into Core bridges (ADR-0048 M5).</summary>
+/// <summary>Wire F# fragment parsers into Core bridges (ADR-0048 M2–M5).</summary>
 internal static class ModuleParseRegistration
 {
     static ModuleParseRegistration()
@@ -24,7 +26,20 @@ internal static class ModuleParseRegistration
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
 
-    private static void RegisterLayout() => LayoutParseRegistration.EnsureRegistered();
+    private static void RegisterLayout()
+    {
+        LayoutParseBridge.ParseLayoutFile = text =>
+        {
+            try
+            {
+                return ToCore(DashSpec.Modeling.Parse.Layout.LayoutModuleParser.parseLayoutFile(text));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
+    }
 
     private static void RegisterTooltip()
     {
@@ -46,6 +61,18 @@ internal static class ModuleParseRegistration
             {
                 var (id, def) = DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFileWithId(text);
                 return (id, ToCore(def));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
+
+        TooltipParseBridge.ParseTooltipBody = (id, body) =>
+        {
+            try
+            {
+                return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipInlineBody(id, body));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -126,4 +153,20 @@ internal static class ModuleParseRegistration
             OptionModule.ToArray(transform.UsePreset).FirstOrDefault(),
             OptionModule.ToArray(transform.Max).FirstOrDefault(),
             OptionModule.ToArray(transform.OtherLabel).FirstOrDefault());
+
+    private static LayoutScope? MapScope(FsharpScope scope)
+    {
+        if (scope.Equals(FsharpScope.Toolbar)) return LayoutScope.Toolbar;
+        if (scope.Equals(FsharpScope.Tab)) return LayoutScope.Tab;
+        if (scope.Equals(FsharpScope.Page)) return LayoutScope.Page;
+        if (scope.Equals(FsharpScope.Card)) return LayoutScope.Card;
+        return null;
+    }
+
+    private static LayoutBoardDefinition ToCore(FsharpBoard board)
+    {
+        var scopes = OptionModule.ToArray(board.ModuleScope);
+        LayoutScope? moduleScope = scopes.Length > 0 ? MapScope(scopes[0]) : null;
+        return new LayoutBoardDefinition(board.Rows, moduleScope);
+    }
 }

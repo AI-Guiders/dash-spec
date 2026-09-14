@@ -5,24 +5,20 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Lexing
 
-/// Minimal schema-driven property blocks for fragment parsers (ADR-0048 M5).
+/// Schema-driven property blocks for fragment parsers (ADR-0048 M5).
 module PropertyBlockParser =
 
-    type PropertyValueType =
-        | Scalar
-        | String
+    type PropertyValueType = PropertySchemas.PropertyValueType
+    type PropertySpec = PropertySchemas.PropertySpec
 
-    type PropertySpec = { Name: string; ValueType: PropertyValueType }
+    let seriesTransformSchema = PropertySchemas.seriesTransform
 
-    let seriesTransformSchema: PropertySpec list =
-        [ { Name = "use"; ValueType = Scalar }
-          { Name = "max"; ValueType = Scalar }
-          { Name = "other"; ValueType = String } ]
+    let resolveEndKind blockName = PropertySchemas.resolveEndKind blockName
 
-    let private readTypedValue (reader: TokenReader) valueType =
+    let private readTypedValue (reader: TokenReader) (valueType: PropertyValueType) =
         match valueType with
-        | Scalar -> reader.ReadScalarValue()
-        | String -> reader.ReadString()
+        | PropertyValueType.Scalar -> reader.ReadScalarValue()
+        | PropertyValueType.String -> reader.ReadString()
 
     let private readPropertyEntry (reader: TokenReader) (specs: IDictionary<string, PropertySpec>) allowExtensionProperties allowQuotedKeys blockName (values: Dictionary<string, string>) =
         let key = reader.ReadPropertyKey(allowQuoted=allowQuotedKeys)
@@ -41,7 +37,7 @@ module PropertyBlockParser =
             reader.Expect TokenKind.Eq
             values.[key] <- reader.ReadScalarValue()
 
-    let parse (reader: TokenReader) (schema: PropertySpec list) blockName endKind allowExtensionProperties allowQuotedKeys =
+    let parseWithEndKind (reader: TokenReader) (schema: PropertySpec list) blockName endKind allowExtensionProperties allowQuotedKeys =
         let specs =
             schema
             |> List.map (fun s -> s.Name, s)
@@ -61,6 +57,10 @@ module PropertyBlockParser =
 
         BlockSyntax.expectBlockEnd reader endKind None
         values
+
+    let parse (reader: TokenReader) (schema: PropertySpec list) blockName allowExtensionProperties allowQuotedKeys =
+        let endKind = resolveEndKind blockName
+        parseWithEndKind reader schema blockName endKind allowExtensionProperties allowQuotedKeys
 
     let parseFlatProperties (reader: TokenReader) (schema: PropertySpec list) context allowExtensionProperties allowQuotedKeys =
         let specs =
