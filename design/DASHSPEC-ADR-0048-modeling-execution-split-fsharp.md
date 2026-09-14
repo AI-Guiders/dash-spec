@@ -178,10 +178,22 @@ Fragment roots wired through `ModuleParseRegistration` (F# SSOT → Execution br
 | `.dashtransform` | ✅ | ✅ | PropertyBlockParser spine |
 | `.dashpalette` | ✅ | ✅ | const/color resolver + mappings |
 | `.dashpresentation` | ✅ | ✅ | includes merged in Execution (`SpecIncludeResolver`) |
-| `.dashdiagram` | — | — | **M5 remainder** — needs ColumnBinding / CommaList / RestOfLine in F# PropertyBlockParser |
+| `.dashdiagram` | ✅ | ✅ | KindRegistry + include merge in Execution |
 | `@tab` / shell | — | — | **M4** — blocked on `DashboardShellParser` |
 
-**Phase II transition (M2–M5 spine):** complete for standalone fragment kinds above; `.dashspec` body (`@dashboard`, `@card`) remains **M4**; duplicate C# parser bodies removal remains **M6**.
+**M5:** complete (all standalone fragment roots).
+
+**Phase II transition status (2026-09-14):**
+
+| Phase | Status | Remaining |
+|-------|--------|-----------|
+| M0–M3 scaffold | ✅ | — |
+| M5 fragments | ✅ | — |
+| M4 `.dashspec` body | ❌ | ~4570 LOC C# (`DocumentModuleParser`, `CardParser`, `FilterParser`, …) |
+| M6 C# parser removal | ❌ | ~7500 LOC delete after M4 |
+| M7 Validation | ❌ | project not started |
+
+**Phase II gate (ADR-0051 §4b):** Execution package split + stable `DashSpecParser` facade — **not met** until M4 routes through F#.
 
 ## Consequences
 

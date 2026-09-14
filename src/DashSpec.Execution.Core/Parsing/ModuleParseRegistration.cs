@@ -13,6 +13,9 @@ using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
 using FsharpPalette = DashSpec.Modeling.Parse.Palette.PaletteDocument;
 using FsharpPresentation = DashSpec.Modeling.Parse.Presentation.PresentationModuleDocument;
 using FsharpPresentationBlock = DashSpec.Modeling.Parse.Presentation.PresentationBlock;
+using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
+using FsharpDiagramStmt = DashSpec.Modeling.Parse.Diagram.DiagramFragmentStatement;
+using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -27,6 +30,7 @@ internal static class ModuleParseRegistration
         RegisterTransform();
         RegisterPalette();
         RegisterPresentation();
+        RegisterDiagram();
     }
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
@@ -132,6 +136,97 @@ internal static class ModuleParseRegistration
         };
     }
 
+    private static void RegisterDiagram()
+    {
+        DiagramParseBridge.ParseDiagramFile = (text, baseDirectory) =>
+            FoldDiagramStatements(
+                DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text).Statements,
+                baseDirectory);
+
+        DiagramParseBridge.ParseDiagramFileWithId = (text, baseDirectory) =>
+        {
+            var (id, doc) = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModuleWithId(text);
+            return (id, FoldDiagramStatements(doc.Statements, baseDirectory));
+        };
+    }
+
+    private static SpecIncludeFragment FoldDiagramStatements(
+        IReadOnlyList<FsharpDiagramStmt> statements,
+        string? baseDirectory)
+    {
+        try
+        {
+            SpecIncludeFragment fragment = new(null, null, null);
+
+            foreach (var statement in statements)
+            {
+                switch (statement)
+                {
+                    case FsharpDiagramStmt.IncludeStatement include:
+                        if (string.IsNullOrWhiteSpace(baseDirectory))
+                        {
+                            throw new DashSpecParseException(
+                                "Diagram include requires a base directory (parse from file path).");
+                        }
+
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            SpecIncludeResolver.Load(include.Item.Kind, include.Item.Reference, baseDirectory));
+                        break;
+
+                    case FsharpDiagramStmt.DiagramStatement diagram:
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            new SpecIncludeFragment(ToCore(diagram.Item), null, null));
+                        break;
+
+                    case FsharpDiagramStmt.PresentationStatement presentation:
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            new SpecIncludeFragment(null, ToCore(presentation.Item), null));
+                        break;
+
+                    case FsharpDiagramStmt.SeriesTransformStatement transform:
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            new SpecIncludeFragment(null, null, ToCore(transform.Item)));
+                        break;
+
+                    case FsharpDiagramStmt.TooltipStatement tooltip:
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            new SpecIncludeFragment(
+                                null,
+                                null,
+                                null,
+                                new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
+                                {
+                                    [tooltip.Item1] = ToCore(tooltip.Item2),
+                                }));
+                        break;
+
+                    case FsharpDiagramStmt.InspectStatement inspect:
+                        fragment = SpecIncludeResolver.Merge(
+                            fragment,
+                            new SpecIncludeFragment(null, null, null, Inspect: ToCore(inspect.Item)));
+                        break;
+                }
+            }
+
+            if (fragment.Diagram is null)
+            {
+                throw new DashSpecParseException(
+                    "Diagram module requires a chart kind block (e.g. heatmap … end heatmap).");
+            }
+
+            return fragment;
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
     private static void RegisterPresentation()
     {
         PresentationParseBridge.ParsePresentationFile = (text, baseDirectory) =>
@@ -235,6 +330,22 @@ internal static class ModuleParseRegistration
         new(
             OptionModule.ToArray(block.UsePreset).FirstOrDefault(),
             block.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase));
+
+    private static DiagramDefinition ToCore(FsharpDiagram diagram)
+    {
+        var usePreset = OptionModule.ToArray(diagram.UsePreset).FirstOrDefault();
+        return new DiagramDefinition(
+            diagram.Kind,
+            diagram.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
+            usePreset);
+    }
+
+    private static InspectPresentation ToCore(FsharpInspect inspect) =>
+        new(
+            OptionModule.ToArray(inspect.TooltipId).FirstOrDefault(),
+            OptionModule.ToArray(inspect.Label).FirstOrDefault(),
+            inspect.Format,
+            inspect.Split);
 
     private static LayoutScope? MapScope(FsharpScope scope)
     {
