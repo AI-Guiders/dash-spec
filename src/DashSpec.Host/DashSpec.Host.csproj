@@ -56,6 +56,8 @@
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />

@@ -73,12 +73,21 @@ public static partial class TooltipTemplate
                     $"Tooltip '{tooltip.Id}': placeholder '{{{slot}}}' is not declared in variables.");
             }
 
-            sb.Append(PayloadRowFormatters.FormatHeatmapLabel(row.GetValueOrDefault(column)));
+            sb.Append(FormatCellValue(row.GetValueOrDefault(column)));
         }
 
         var text = sb.ToString();
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }
+
+    private static string FormatCellValue(object? value) =>
+        value switch
+        {
+            null => string.Empty,
+            DateTime dt => dt.ToString("yyyy-MM-dd"),
+            DateOnly d => d.ToString("yyyy-MM-dd"),
+            _ => Convert.ToString(value) ?? string.Empty,
+        };
 
     private static IEnumerable<Fragment> Parse(string template)
     {
