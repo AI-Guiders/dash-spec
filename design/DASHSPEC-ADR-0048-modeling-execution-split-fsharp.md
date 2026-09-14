@@ -179,7 +179,7 @@ Fragment roots wired through `ModuleParseRegistration` (F# SSOT → Execution br
 | `.dashpalette` | ✅ | ✅ | const/color resolver + mappings |
 | `.dashpresentation` | ✅ | ✅ | includes merged in Execution (`SpecIncludeResolver`) |
 | `.dashdiagram` | ✅ | ✅ | KindRegistry + include merge in Execution |
-| `@tab` / shell | — | — | **M4** — blocked on `DashboardShellParser` |
+| `@tab` / shell | ✅ | ✅ | M4 — `DocumentModuleParser` + `DashboardShellParser` F# SSOT |
 
 **M5:** complete (all standalone fragment roots).
 
@@ -189,11 +189,11 @@ Fragment roots wired through `ModuleParseRegistration` (F# SSOT → Execution br
 |-------|--------|-----------|
 | M0–M3 scaffold | ✅ | — |
 | M5 fragments | ✅ | — |
-| M4 `.dashspec` body | ❌ | ~4570 LOC C# (`DocumentModuleParser`, `CardParser`, `FilterParser`, …) |
-| M6 C# parser removal | ❌ | ~7500 LOC delete after M4 |
-| M7 Validation | ❌ | project not started |
+| M4 `.dashspec` body | ✅ | F# SSOT + `DocumentParseBridge`; C# bodies remain as shims until M6 |
+| M6 C# parser removal | ❌ | delete duplicate C# `Parsing/*` bodies after parity soak |
+| M7 Validation | ❌ | F# `DashboardValidator` stub; Core `Analysis/*` runs post-map today |
 
-**Phase II gate (ADR-0051 §4b):** Execution package split + stable `DashSpecParser` facade — **not met** until M4 routes through F#.
+**Phase II gate (ADR-0051 §4b):** Execution routes `@dashboard` / `@tab` through F# `DashboardComposer.parse` → `DocumentModelMapper` — **met** (2026-09-14).
 
 ## Consequences
 
