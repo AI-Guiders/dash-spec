@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
