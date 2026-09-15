@@ -8,7 +8,7 @@ Phase **II3** scaffold ([DASHSPEC-ADR-0047](../design/DASHSPEC-ADR-0047-platform
 
 | Milestone | Scope |
 |-----------|-------|
-| **Now** | Empty RCL shell + placeholder component |
+| **Now** | RCL shell + `RichTextView` (Creole-subset, [ADR-0005](../../design/DASHSPEC-ADR-0005-rich-text-creole-subset.md)) |
 | **Next** | Extract chart/card/filter components from Host |
 | **Gate** | Studio v0 references this package — not `DashSpec.Host` |
 

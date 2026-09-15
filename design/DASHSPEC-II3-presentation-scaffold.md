@@ -19,6 +19,8 @@ Create `DashSpec.Presentation` as the shared UI home for Host + Studio before co
 | `DashSpec.slnx` | project wired |
 | `IReportPreviewSession` | Abstractions port stub for Report Preview + parity fingerprint |
 | Package README | consumer map + ADR pointers |
+| `RichTextView.razor` | Creole-subset inline markup ([ADR-0005](DASHSPEC-ADR-0005-rich-text-creole-subset.md)); extracted from Host |
+| `DashSpec.Host` → `DashSpec.Presentation` | `ProjectReference`; card titles + heatmap/matrix axis/legend labels use shared component |
 
 ## Deferred (follow-up slices)
 
@@ -32,8 +34,8 @@ Create `DashSpec.Presentation` as the shared UI home for Host + Studio before co
 ## Dependency rule
 
 ```text
-DashSpec.Presentation  →  DashSpec.Abstractions
-DashSpec.Host            →  DashSpec.Presentation (future)
+DashSpec.Presentation  →  DashSpec.Abstractions, DashSpec.Execution.Runtime (CreoleSubset)
+DashSpec.Host            →  DashSpec.Presentation
 dash-spec-studio         →  DashSpec.Presentation + Execution.* (Phase III1)
 ```
 
