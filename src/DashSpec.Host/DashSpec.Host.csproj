@@ -54,6 +54,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+    <ProjectReference Include="..\DashSpec.Presentation\DashSpec.Presentation.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
