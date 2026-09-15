@@ -26,7 +26,11 @@ dotnet run --project src/DashSpec.Host
 
 → **http://localhost:5295** (по умолчанию `samples/demo/demo-catalog.dashcatalog`, entry `demo_soak`)
 
-Нужна SQL Server с demo-схемой — см. [`samples/demo/demo.toml`](samples/demo/demo.toml) и `demo.local.toml.example`.
+Нужна SQL Server с demo-схемой — см. [`samples/demo/demo.toml`](samples/demo/demo.toml) и `demo.local.toml.example`. Локальный seed:
+
+```powershell
+sqlcmd -S localhost -d DashSpecDemo -E -i samples/demo/sql/bootstrap-demo-soak.sql
+```
 
 ### Bootstrap
 

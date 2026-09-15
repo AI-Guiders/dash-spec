@@ -33,6 +33,9 @@
 git clone https://github.com/AI-Guiders/dash-spec.git
 cd dash-spec
 
+# один раз: создай БД DashSpecDemo, затем
+sqlcmd -S localhost -d DashSpecDemo -E -i samples/demo/sql/bootstrap-demo-soak.sql
+
 # connection string: samples/demo/demo.local.toml (из demo.local.toml.example)
 # либо правь samples/demo/demo.toml
 
