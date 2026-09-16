@@ -24,7 +24,7 @@ module DashSpecFormatOptions =
           DashSpecFormatOnSave = true
           DashSpecMaxConsecutiveBlankLines = 1
           DashSpecIndentBlockBody = true
-          DashSpecPreserveBlankLineBeforeEnd = true
+          DashSpecPreserveBlankLineBeforeEnd = false
           DashSpecBlankLineBetweenBlocks = true }
 
     let indentUnit (options: DashSpecFormatOptions) =

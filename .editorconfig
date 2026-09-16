@@ -13,7 +13,7 @@ tab_width = 4
 dashspec_format_on_save = true
 dashspec_max_consecutive_blank_lines = 1
 dashspec_indent_block_body = true
-dashspec_preserve_blank_line_before_end = true
+dashspec_preserve_blank_line_before_end = false
 dashspec_blank_line_between_blocks = true
 
 [*.sql]

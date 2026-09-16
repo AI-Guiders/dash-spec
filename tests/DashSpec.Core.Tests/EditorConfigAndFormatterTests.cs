@@ -58,7 +58,7 @@ public sealed class DashSpecBlockFormatterTests
             DashSpecFormatOnSave = true,
             DashSpecMaxConsecutiveBlankLines = 1,
             DashSpecIndentBlockBody = true,
-            DashSpecPreserveBlankLineBeforeEnd = true,
+            DashSpecPreserveBlankLineBeforeEnd = false,
             DashSpecBlankLineBetweenBlocks = true,
         };
 
@@ -85,11 +85,10 @@ public sealed class DashSpecBlockFormatterTests
         Assert.Equal("        card a as \"A\"", lines[2]);
         Assert.Equal("            bind", lines[3]);
         Assert.Equal("                x", lines[4]);
-        Assert.Equal("", lines[5]);
-        Assert.Equal("            end bind", lines[6]);
-        Assert.Equal("        end card", lines[7]);
-        Assert.Equal("    end report", lines[8]);
-        Assert.Equal("    end dashboard", lines[9]);
+        Assert.Equal("            end bind", lines[5]);
+        Assert.Equal("        end card", lines[6]);
+        Assert.Equal("    end report", lines[7]);
+        Assert.Equal("    end dashboard", lines[8]);
     }
 
     [Fact]
@@ -112,14 +111,12 @@ public sealed class DashSpecBlockFormatterTests
         Assert.Equal("@dashboard demo_soak", lines[0]);
         Assert.Equal("    runtime", lines[1]);
         Assert.Equal("        manifest = \"demo.toml\"", lines[2]);
-        Assert.Equal("", lines[3]);
-        Assert.Equal("    end runtime", lines[4]);
-        Assert.Equal("", lines[5]);
-        Assert.Equal("    configuration", lines[6]);
-        Assert.Equal("        sqldialect = tsql", lines[7]);
-        Assert.Equal("", lines[8]);
-        Assert.Equal("    end configuration", lines[9]);
-        Assert.Equal("    end dashboard", lines[10]);
+        Assert.Equal("    end runtime", lines[3]);
+        Assert.Equal("", lines[4]);
+        Assert.Equal("    configuration", lines[5]);
+        Assert.Equal("        sqldialect = tsql", lines[6]);
+        Assert.Equal("    end configuration", lines[7]);
+        Assert.Equal("    end dashboard", lines[8]);
     }
 
     [Fact]
@@ -147,13 +144,13 @@ public sealed class DashSpecBlockFormatterTests
         var formatted = DashSpecBlockFormatter.format(input, Options);
         var lines = formatted.Split('\n');
 
-        Assert.Equal("    end runtime", lines[4]);
-        Assert.Equal("", lines[5]);
-        Assert.Equal("    configuration", lines[6]);
-        Assert.Equal("    end configuration", lines[10]);
-        Assert.Equal("", lines[11]);
-        Assert.Equal("    !include \"diagrams/*.dashdiagram\"", lines[12]);
-        Assert.Equal("    wiring", lines[13]);
+        Assert.Equal("    end runtime", lines[3]);
+        Assert.Equal("", lines[4]);
+        Assert.Equal("    configuration", lines[5]);
+        Assert.Equal("    end configuration", lines[8]);
+        Assert.Equal("", lines[9]);
+        Assert.Equal("    !include \"diagrams/*.dashdiagram\"", lines[10]);
+        Assert.Equal("    wiring", lines[11]);
     }
 
     [Fact]
