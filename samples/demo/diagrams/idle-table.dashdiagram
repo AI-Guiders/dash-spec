@@ -1,5 +1,6 @@
 @diagram demo_idle_table
 
-table
-columns = usage_date
-end table
+    table
+    columns = usage_date
+
+    end table

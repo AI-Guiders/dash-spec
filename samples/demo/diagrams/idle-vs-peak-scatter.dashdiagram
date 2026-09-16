@@ -1,12 +1,14 @@
 @diagram demo_idle_vs_peak_scatter
 
-chrome
-  use scatter_360
-end chrome
+    chrome
+    use scatter_360
 
-scatter
-  render = "chartjs"
-  x = idle_minutes as "Idle minutes"
-  y = peak_concurrent_apps as "Peak apps"
-  size = intensity as "Intensity"
-end scatter
+    end chrome
+
+    scatter
+    render = "chartjs"
+    x = idle_minutes as "Idle minutes"
+    y = peak_concurrent_apps as "Peak apps"
+    size = intensity as "Intensity"
+
+    end scatter

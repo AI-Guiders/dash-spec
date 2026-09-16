@@ -1,4 +1,4 @@
 @presentation line_bottom_300
 
-  legend = bottom
-  height = 300
+    legend = bottom
+    height = 300

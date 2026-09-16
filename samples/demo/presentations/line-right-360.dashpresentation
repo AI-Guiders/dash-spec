@@ -1,4 +1,4 @@
 @presentation line_right_360
 
-  legend = right
-  height = 360
+    legend = right
+    height = 360
