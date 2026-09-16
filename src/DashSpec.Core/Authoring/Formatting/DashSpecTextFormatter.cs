@@ -74,13 +74,9 @@ public static class DashSpecTextFormatter
                 continue;
             }
 
-            if (TryGetBlockShape(trimmed, out var shape))
+            if (TryGetBlockShape(trimmed, out _))
             {
-                indentStack.Push(shape switch
-                {
-                    BlockShape.BodyIndented => new BlockFrame(indentUnits, indentUnits + 1),
-                    _ => new BlockFrame(indentUnits, indentUnits),
-                });
+                indentStack.Push(new BlockFrame(indentUnits, indentUnits + 1));
             }
             else if (trimmed.Contains('{') && !trimmed.Contains('}'))
             {
@@ -143,7 +139,11 @@ public static class DashSpecTextFormatter
         {
             shape = BlockShape.Container;
             return true;
+        }        if (trimmed.Contains('='))
+        {
+            return false;
         }
+
 
         var first = FirstToken(trimmed);
         if (first is null)
@@ -210,3 +210,6 @@ public static class DashSpecTextFormatter
         return span[start..i].ToString();
     }
 }
+
+
+

@@ -1,7 +1,7 @@
 @diagram demo_peak_by_app_treemap
 
     chrome
-    use treemap_360
+        use treemap_360
 
     end chrome
 

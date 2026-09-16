@@ -1,7 +1,7 @@
 @diagram demo_peak_sparkline
 
     chrome
-    use sparkline_64
+        use sparkline_64
 
     end chrome
 

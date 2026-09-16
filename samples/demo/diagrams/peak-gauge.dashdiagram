@@ -1,7 +1,7 @@
 @diagram demo_peak_gauge
 
     chrome
-    use gauge_200
+        use gauge_200
 
     end chrome
 
