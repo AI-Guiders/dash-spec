@@ -32,7 +32,7 @@ Applied to document surfaces: `*.{dashspec,dashlibrary,dashlayout,dashdiagram,da
 | `dashspec_format_on_save` | `true` | Save runs formatter + hygiene |
 | `dashspec_max_consecutive_blank_lines` | `1` | Collapse vertical whitespace |
 | `dashspec_indent_block_body` | `true` | +1 indent level after block opener lines |
-| `dashspec_preserve_blank_line_before_end` | `true` | Ensure blank line before `end …` when body non-empty |
+| `dashspec_preserve_blank_line_before_end` | `false` | Optional blank line before `end …` when body non-empty |
 | `dashspec_blank_line_between_blocks` | `true` | Blank line after `end …` before next sibling opener/content at same indent |
 
 New `dashspec_*` keys require formatter rule + test in the same PR.
