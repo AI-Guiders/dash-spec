@@ -63,14 +63,14 @@ public sealed class DashSpecTextFormatterTests
         var lines = formatted.Split('\n');
 
         Assert.Equal("@dashboard demo", lines[0]);
-        Assert.Equal("  report", lines[1]);
-        Assert.Equal("  card a as \"A\"", lines[2]);
-        Assert.Equal("  bind", lines[3]);
-        Assert.Equal("    x", lines[4]);
-        Assert.Equal("  end bind", lines[5]);
-        Assert.Equal("  end card", lines[6]);
-        Assert.Equal("  end report", lines[7]);
-        Assert.Equal("  end dashboard", lines[8]);
+        Assert.Equal("    report", lines[1]);
+        Assert.Equal("    card a as \"A\"", lines[2]);
+        Assert.Equal("    bind", lines[3]);
+        Assert.Equal("        x", lines[4]);
+        Assert.Equal("    end bind", lines[5]);
+        Assert.Equal("    end card", lines[6]);
+        Assert.Equal("    end report", lines[7]);
+        Assert.Equal("    end dashboard", lines[8]);
     }
 
     [Fact]
@@ -89,5 +89,6 @@ public sealed class DashSpecTextFormatterTests
         Assert.True(doc.Cards.Count > 0);
     }
 }
+
 
 

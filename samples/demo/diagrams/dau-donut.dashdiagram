@@ -1,18 +1,21 @@
 @diagram demo_dau_donut
 
-chrome
-  use donut_right_360
-end chrome
+    chrome
+    use donut_right_360
 
-series
-  max = 8
-  other = "Other"
-end series
+    end chrome
 
-donut
-  render = "chartjs"
-  category = app_name as "Product"
-  value = distinct_users as "Users"
-  scale_value = integer
-  order_by = "distinct_users DESC, app_name"
-end donut
+    series
+        max = 8
+        other = "Other"
+
+    end series
+
+    donut
+    render = "chartjs"
+    category = app_name as "Product"
+    value = distinct_users as "Users"
+    scale_value = integer
+    order_by = "distinct_users DESC, app_name"
+
+    end donut
