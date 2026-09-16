@@ -1,7 +1,7 @@
 @diagram demo_activity_area
 
     chrome
-    use area_bottom_320
+        use area_bottom_320
 
     end chrome
 
@@ -18,6 +18,6 @@
     y = event_count
     scale_y = integer
     series = app_name
-        fill = area
+    fill = area
 
     end area
