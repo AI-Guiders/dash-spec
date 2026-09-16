@@ -17,6 +17,9 @@
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
     <Compile Include="BlockSyntax.fs" />
+    <Compile Include="Formatting\DashSpecFormatOptions.fs" />
+    <Compile Include="Formatting\BlockFormatterRules.fs" />
+    <Compile Include="Formatting\DashSpecBlockFormatter.fs" />
     <Compile Include="PropertySchemas.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
@@ -81,3 +84,4 @@
     <Compile Include="Document\TabModuleParser.fs" />
   </ItemGroup>
 </Project>
+

@@ -19,7 +19,7 @@ public static class DashSpecDocumentPipeline
         var options = ResolveOptions(absoluteFilePath, searchRoot);
         var normalized = Formatting.DashSpecTextHygiene.NormalizeNewlines(text);
         var formatted = IsDashSpecSurface(absoluteFilePath)
-            ? Formatting.DashSpecTextFormatter.Format(normalized, options)
+            ? FormatDashSpec(normalized, options)
             : normalized;
         return Formatting.DashSpecTextHygiene.Apply(formatted, options);
     }
@@ -36,6 +36,17 @@ public static class DashSpecDocumentPipeline
             ? Format(text, absoluteFilePath, searchRoot)
             : Formatting.DashSpecTextHygiene.Apply(text, options);
         return working;
+    }
+
+    static string FormatDashSpec(string text, EditorConfig.EditorConfigOptions options)
+    {
+        if (DocumentFormatBridge.FormatDashSpec is { } format)
+        {
+            return format(text, options);
+        }
+
+        throw new InvalidOperationException(
+            "DashSpec format bridge not registered. Reference DashSpec.Execution.Core or call ModuleParseRegistration.EnsureRegistered().");
     }
 
     static bool IsDashSpecSurface(string absoluteFilePath)

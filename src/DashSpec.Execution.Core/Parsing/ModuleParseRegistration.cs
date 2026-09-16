@@ -25,6 +25,7 @@ internal static class ModuleParseRegistration
     static ModuleParseRegistration()
     {
         DocumentParseRegistration.Register();
+        DocumentFormatRegistration.Register();
         RegisterLayout();
         RegisterTooltip();
         RegisterCatalog();
@@ -364,3 +365,4 @@ internal static class ModuleParseRegistration
         return new LayoutBoardDefinition(board.Rows, moduleScope);
     }
 }
+
