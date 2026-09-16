@@ -113,5 +113,8 @@ public static class EditorConfigResolver
         DashSpecPreserveBlankLineBeforeEnd = patch.HasDashSpecPreserveBlankLineBeforeEnd
             ? patch.DashSpecPreserveBlankLineBeforeEnd
             : baseline.DashSpecPreserveBlankLineBeforeEnd,
+        DashSpecBlankLineBetweenBlocks = patch.HasDashSpecBlankLineBetweenBlocks
+            ? patch.DashSpecBlankLineBetweenBlocks
+            : baseline.DashSpecBlankLineBetweenBlocks,
     };
 }

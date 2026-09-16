@@ -11,7 +11,8 @@ type DashSpecFormatOptions =
       DashSpecFormatOnSave: bool
       DashSpecMaxConsecutiveBlankLines: int
       DashSpecIndentBlockBody: bool
-      DashSpecPreserveBlankLineBeforeEnd: bool }
+      DashSpecPreserveBlankLineBeforeEnd: bool
+      DashSpecBlankLineBetweenBlocks: bool }
 
 module DashSpecFormatOptions =
     let defaultOptions =
@@ -23,7 +24,8 @@ module DashSpecFormatOptions =
           DashSpecFormatOnSave = true
           DashSpecMaxConsecutiveBlankLines = 1
           DashSpecIndentBlockBody = true
-          DashSpecPreserveBlankLineBeforeEnd = true }
+          DashSpecPreserveBlankLineBeforeEnd = true
+          DashSpecBlankLineBetweenBlocks = true }
 
     let indentUnit (options: DashSpecFormatOptions) =
         if options.IndentStyle.Equals("tab", System.StringComparison.OrdinalIgnoreCase) then "\t"
