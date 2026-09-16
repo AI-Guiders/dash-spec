@@ -46,6 +46,7 @@ public static class DashSpecBootstrap
 
     public static CatalogBootstrap LoadCatalog(DashSpecTomlRoot bootstrap, string contentRoot)
     {
+        DashSpecParser.EnsureModuleParsersRegistered();
         var catalogPath = ResolveCatalogPath(contentRoot, bootstrap.Dashboard.CatalogPath);
         return new CatalogBootstrap(CatalogParser.ParseFile(catalogPath), catalogPath);
     }
@@ -183,3 +184,4 @@ public static class DashSpecBootstrap
         return withExt;
     }
 }
+
