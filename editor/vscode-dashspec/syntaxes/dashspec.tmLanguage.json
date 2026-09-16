@@ -4,6 +4,8 @@
   "scopeName": "source.dashspec",
   "patterns": [
     { "include": "#comments" },
+    { "include": "#tab-module-block" },
+    { "include": "#tab-inline-block" },
     { "include": "#strings" },
     { "include": "#stdlib-ref" },
     { "include": "#at-directive" },
@@ -14,6 +16,20 @@
     { "include": "#operators" }
   ],
   "repository": {
+    "block-inner": {
+      "patterns": [
+        { "include": "#comments" },
+        { "include": "#tab-module-block" },
+        { "include": "#tab-inline-block" },
+        { "include": "#strings" },
+        { "include": "#stdlib-ref" },
+        { "include": "#bang-include" },
+        { "include": "#end-block" },
+        { "include": "#keywords" },
+        { "include": "#numbers" },
+        { "include": "#operators" }
+      ]
+    },
     "comments": {
       "patterns": [
         {
@@ -65,15 +81,42 @@
       "patterns": [
         {
           "name": "keyword.control.end.dashspec",
-          "match": "\\bend\\s+\\w+"
+          "match": "\\b(end)\\s+(\\w+)",
+          "captures": {
+            "1": { "name": "keyword.control.end.dashspec" },
+            "2": { "name": "keyword.control.dashspec" }
+          }
         }
+      ]
+    },
+    "tab-module-block": {
+      "begin": "^\\s*(tab)\\s+(\\w+)\\s+(as)\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s+(dashspec)\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.dashspec" },
+        "3": { "name": "keyword.control.dashspec" },
+        "5": { "name": "keyword.control.dashspec" }
+      },
+      "end": "^\\s*end\\s+tab\\b",
+      "patterns": [
+        { "include": "#block-inner" }
+      ]
+    },
+    "tab-inline-block": {
+      "begin": "^\\s*(tab)\\s+(\\w+)\\s+(as)\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s*$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.dashspec" },
+        "3": { "name": "keyword.control.dashspec" }
+      },
+      "end": "^\\s*end\\s+tab\\b",
+      "patterns": [
+        { "include": "#block-inner" }
       ]
     },
     "keywords": {
       "patterns": [
         {
           "name": "keyword.control.dashspec",
-          "match": "\\b(?:runtime|configuration|wiring|report|extensions|connector|palette|manifest|sqldialect|diagramlibrary|toolbar|filters|filter|bind|show|card|data|view|layout|chrome|presentation|transform|series|diagram|phase|page|group|entry|default|standalone|limits|export|legend|oversize|when|focus|preserve|drill|invoke|buttons|views|widget|ref|include|use|render|orientation|category|value|order_by|message|label|action|sticky|apply|debounce_ms|columns|gap|grid|place|datasource|bind|single|max|other|color_mode|scale_value|y_max|height|stacked|legend|min|max_series)\\b"
+          "match": "\\b(?:runtime|configuration|wiring|report|extensions|connector|palette|manifest|sqldialect|diagramlibrary|toolbar|filters|filter|bind|show|card|cards|tab|as|dashspec|data|view|layout|chrome|presentation|transform|series|diagram|phase|page|group|entry|default|standalone|limits|export|legend|oversize|when|focus|preserve|drill|invoke|buttons|views|widget|ref|include|use|render|orientation|category|value|order_by|message|label|action|sticky|apply|debounce_ms|columns|gap|grid|place|datasource|single|max|other|color_mode|scale_value|y_max|height|stacked|min|max_series)\\b"
         },
         {
           "name": "keyword.control.click.dashspec",

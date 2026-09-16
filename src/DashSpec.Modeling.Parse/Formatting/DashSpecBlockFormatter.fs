@@ -48,6 +48,10 @@ module DashSpecBlockFormatter =
         then
             output.Add("")
 
+    let private dropBlankLineBeforeEnd (output: ResizeArray<string>) =
+        if output.Count > 0 && output.[output.Count - 1].Length = 0 then
+            output.RemoveAt(output.Count - 1)
+
     let format (text: string) (options: DashSpecFormatOptions) =
         if not options.DashSpecIndentBlockBody then normalizeNewlines text
         else
@@ -81,7 +85,10 @@ module DashSpecBlockFormatter =
                         match BlockFormatterRules.classifyLine trimmed with
                         | BlockFormatterRules.Blank -> output.Add("")
                         | BlockFormatterRules.End _ ->
-                            maybeInsertBlankBeforeEnd options previousNonBlank output
+                            if options.DashSpecPreserveBlankLineBeforeEnd then
+                                maybeInsertBlankBeforeEnd options previousNonBlank output
+                            else
+                                dropBlankLineBeforeEnd output
 
                             let endIndent =
                                 if stack.Count > 0 then stack.Pop().EndIndent

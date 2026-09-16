@@ -15,7 +15,7 @@ public sealed record EditorConfigOptions
     public bool DashSpecFormatOnSave { get; init; } = true;
     public int DashSpecMaxConsecutiveBlankLines { get; init; } = 1;
     public bool DashSpecIndentBlockBody { get; init; } = true;
-    public bool DashSpecPreserveBlankLineBeforeEnd { get; init; } = true;
+    public bool DashSpecPreserveBlankLineBeforeEnd { get; init; } = false;
     public bool DashSpecBlankLineBetweenBlocks { get; init; } = true;
 
     public string IndentUnit =>
