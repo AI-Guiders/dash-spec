@@ -1,7 +1,7 @@
 @diagram demo_idle_by_app_box
 
     chrome
-    use box_360
+        use box_360
 
     end chrome
 

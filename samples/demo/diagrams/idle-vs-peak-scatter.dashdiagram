@@ -1,7 +1,7 @@
 @diagram demo_idle_vs_peak_scatter
 
     chrome
-    use scatter_360
+        use scatter_360
 
     end chrome
 

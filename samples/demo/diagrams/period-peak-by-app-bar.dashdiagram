@@ -1,7 +1,7 @@
 @diagram demo_period_peak_by_app_bar
 
     chrome
-    use bar_horizontal_360
+        use bar_horizontal_360
 
     end chrome
 
