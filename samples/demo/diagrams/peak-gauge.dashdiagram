@@ -1,13 +1,15 @@
 @diagram demo_peak_gauge
 
-chrome
-  use gauge_200
-end chrome
+    chrome
+    use gauge_200
 
-gauge
-  render = "chartjs"
-  value = peak_concurrent_proxy as "Peak"
-  aggregate = max
-  min = 0
-  max = 40
-end gauge
+    end chrome
+
+    gauge
+    render = "chartjs"
+    value = peak_concurrent_proxy as "Peak"
+    aggregate = max
+    min = 0
+    max = 40
+
+    end gauge

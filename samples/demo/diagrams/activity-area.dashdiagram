@@ -1,20 +1,23 @@
 @diagram demo_activity_area
 
-chrome
-  use area_bottom_320
-end chrome
+    chrome
+    use area_bottom_320
 
-series
-  max = 5
-  other = "Other"
-end series
+    end chrome
 
-area
-  render = "chartjs"
-  x = bucket_start_utc
-  x_format = date.short
-  y = event_count
-  scale_y = integer
-  series = app_name
-  fill = area
-end area
+    series
+        max = 5
+        other = "Other"
+
+    end series
+
+    area
+    render = "chartjs"
+    x = bucket_start_utc
+    x_format = date.short
+    y = event_count
+    scale_y = integer
+    series = app_name
+        fill = area
+
+    end area

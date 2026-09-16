@@ -1,4 +1,4 @@
 @presentation bar_horizontal_320
 
-  legend = bottom
-  height = 320
+    legend = bottom
+    height = 320

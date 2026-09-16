@@ -1,112 +1,128 @@
 @tab analytics
-  runtime
+    runtime
     manifest = "demo.toml"
-  end runtime
 
-  configuration
+    end runtime
+
+    configuration
     sqldialect = tsql
     palette = "palettes/demo-apps.dashpalette"
-  end configuration
 
-  wiring
+    end configuration
+
+    wiring
     use palette demo_apps
-  end wiring
 
-  report
+    end wiring
+
+    report
     title = "Analytics"
     card period_peak_by_app as "Peak by app (period)"
-      filters
+    filters
         period_grain
         period_start
-      end filters
-      diagram demo_period_peak_by_app_bar
-      datasource view demo.v_peak_concurrent_by_period
-      bind
+
+    end filters
+    diagram demo_period_peak_by_app_bar
+    datasource view demo.v_peak_concurrent_by_period
+    bind
         period_grain, period_start, app_name
-      end bind
+
+    end bind
     end card
 
     card peak_apps_heatmap as "**Peak apps** per user"
-      diagram demo_peak_apps_heatmap
-      datasource view demo.v_daily_peak_concurrent_apps_per_user
-      bind
+    diagram demo_peak_apps_heatmap
+    datasource view demo.v_daily_peak_concurrent_apps_per_user
+    bind
         usage_date, user_name
-      end bind
-      legend
-        min = "min apps"
-        max = "max **{max}**"
-      
-      end legend
-    
+
+    end bind
+    legend
+    min = "min apps"
+    max = "max **{max}**"
+
+    end legend
+
     end card
 
     card idle_table as "Idle minutes (user × app)"
-      filters
+    filters
         idle_top
-      end filters
-      diagram demo_idle_table
-      datasource view demo.v_daily_idle_minutes_by_user_app
-      bind
+
+    end filters
+    diagram demo_idle_table
+    datasource view demo.v_daily_idle_minutes_by_user_app
+    bind
         usage_date, user_name, app_name
-      end bind
+
+    end bind
     end card
 
     card idle_histogram as "Idle minutes (histogram)"
-      diagram demo_idle_histogram
-      datasource view demo.v_daily_idle_minutes_by_user_app
-      bind
+    diagram demo_idle_histogram
+    datasource view demo.v_daily_idle_minutes_by_user_app
+    bind
         usage_date, user_name, app_name
-      end bind
+
+    end bind
     end card
 
     card idle_vs_peak_scatter as "Idle vs peak apps"
-      diagram demo_idle_vs_peak_scatter
-      datasource sql file "sql/idle-vs-peak-scatter.sql"
-      bind
+    diagram demo_idle_vs_peak_scatter
+    datasource sql file "sql/idle-vs-peak-scatter.sql"
+    bind
         usage_date, user_name, app_name
-      end bind
+
+    end bind
     end card
 
     card idle_by_app_box as "Idle minutes by app (box)"
-      diagram demo_idle_by_app_box
-      datasource view demo.v_daily_idle_minutes_by_user_app
-      bind
+    diagram demo_idle_by_app_box
+    datasource view demo.v_daily_idle_minutes_by_user_app
+    bind
         usage_date, user_name, app_name
-      end bind
+
+    end bind
     end card
 
     card peak_by_app_treemap as "Peak by app (treemap)"
-      filters
+    filters
         period_grain
         period_start
-      end filters
-      diagram demo_peak_by_app_treemap
-      datasource view demo.v_peak_concurrent_by_period
-      bind
+
+    end filters
+    diagram demo_peak_by_app_treemap
+    datasource view demo.v_peak_concurrent_by_period
+    bind
         period_grain, period_start, app_name
-      end bind
+
+    end bind
     end card
 
     card peak_gauge as "Peak concurrent (gauge)"
-      diagram demo_peak_gauge
-      datasource view demo.v_daily_peak_concurrent_proxy
-      bind
+    diagram demo_peak_gauge
+    datasource view demo.v_daily_peak_concurrent_proxy
+    bind
         usage_date, user_name, app_name
-      end bind
+
+    end bind
     end card
 
     card peak_by_app_windrose as "Peak by app (wind rose)"
-      filters
+    filters
         period_grain
         period_start
-      end filters
-      diagram demo_peak_by_app_windrose
-      datasource view demo.v_peak_concurrent_by_period
-      bind
-        period_grain, period_start, app_name
-      end bind
-    end card
-  
-  end report
 
-end tab
+    end filters
+    diagram demo_peak_by_app_windrose
+    datasource view demo.v_peak_concurrent_by_period
+    bind
+        period_grain, period_start, app_name
+
+    end bind
+    end card
+
+    end report
+
+    end tab

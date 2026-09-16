@@ -1,15 +1,17 @@
 @diagram demo_peak_concurrent_line
 
-series
-  max = 5
-  other = "Other"
-end series
+    series
+        max = 5
+        other = "Other"
 
-line
-  render = "chartjs"
-  x = usage_date
-  x_format = date.short
-  y = peak_concurrent_proxy
-  scale_y = integer
-  series = app_name
-end line
+    end series
+
+    line
+    render = "chartjs"
+    x = usage_date
+    x_format = date.short
+    y = peak_concurrent_proxy
+    scale_y = integer
+    series = app_name
+
+    end line
