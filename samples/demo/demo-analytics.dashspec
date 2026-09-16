@@ -1,18 +1,15 @@
 @tab analytics
     runtime
         manifest = "demo.toml"
-
     end runtime
 
     configuration
         sqldialect = tsql
         palette = "palettes/demo-apps.dashpalette"
-
     end configuration
 
     wiring
         use palette demo_apps
-
     end wiring
 
     report
@@ -21,14 +18,12 @@
             filters
                 period_grain
                 period_start
-
             end filters
 
             diagram demo_period_peak_by_app_bar
                 datasource view demo.v_peak_concurrent_by_period
                 bind
                     period_grain, period_start, app_name
-
                 end bind
             end card
 
@@ -37,28 +32,23 @@
                     datasource view demo.v_daily_peak_concurrent_apps_per_user
                     bind
                         usage_date, user_name
-
                     end bind
 
                     legend
                     min = "min apps"
                     max = "max **{max}**"
-
                 end legend
-
             end card
 
             card idle_table as "Idle minutes (user × app)"
                 filters
                     idle_top
-
                 end filters
 
                 diagram demo_idle_table
                     datasource view demo.v_daily_idle_minutes_by_user_app
                     bind
                         usage_date, user_name, app_name
-
                     end bind
                 end card
 
@@ -67,7 +57,6 @@
                         datasource view demo.v_daily_idle_minutes_by_user_app
                         bind
                             usage_date, user_name, app_name
-
                         end bind
                     end card
 
@@ -76,7 +65,6 @@
                             datasource sql file "sql/idle-vs-peak-scatter.sql"
                             bind
                                 usage_date, user_name, app_name
-
                             end bind
                         end card
 
@@ -85,7 +73,6 @@
                                 datasource view demo.v_daily_idle_minutes_by_user_app
                                 bind
                                     usage_date, user_name, app_name
-
                                 end bind
                             end card
 
@@ -93,14 +80,12 @@
                                 filters
                                     period_grain
                                     period_start
-
                                 end filters
 
                                 diagram demo_peak_by_app_treemap
                                     datasource view demo.v_peak_concurrent_by_period
                                     bind
                                         period_grain, period_start, app_name
-
                                     end bind
                                 end card
 
@@ -109,7 +94,6 @@
                                         datasource view demo.v_daily_peak_concurrent_proxy
                                         bind
                                             usage_date, user_name, app_name
-
                                         end bind
                                     end card
 
@@ -117,17 +101,13 @@
                                         filters
                                             period_grain
                                             period_start
-
                                         end filters
 
                                         diagram demo_peak_by_app_windrose
                                             datasource view demo.v_peak_concurrent_by_period
                                             bind
                                                 period_grain, period_start, app_name
-
                                             end bind
                                         end card
-
                                     end report
-
                                 end tab

@@ -1,13 +1,11 @@
 @dashboard demo_soak
     runtime
         manifest = "demo.toml"
-
     end runtime
 
     configuration
         sqldialect = tsql
         palette = "palettes/demo-apps.dashpalette"
-
     end configuration
 
     !include "diagrams/*.dashdiagram"
@@ -17,7 +15,6 @@
         layout grid
             columns = 12
             gap = 16
-
         end grid
     end wiring
 
@@ -36,14 +33,12 @@
             sticky = line
             apply = auto
             debounce_ms = 400
-
         end chrome
 
         toolbar
             usage_date
             user_name
             app_name
-
         end toolbar
 
         tab overview as "Overview"
@@ -56,7 +51,6 @@
                 activity_area
                 dau_by_product
                 dau_by_product_donut
-
             end cards
         end tab
 
@@ -64,7 +58,6 @@
             tab detail as "Detail"
                 cards
                     events_detail
-
                 end cards
             end tab
 
@@ -73,7 +66,6 @@
                     datasource view demo.v_daily_peak_concurrent_proxy
                     bind
                         usage_date, user_name, app_name
-
                     end bind
                 end card
 
@@ -82,7 +74,6 @@
                         datasource view demo.v_daily_peak_concurrent_proxy
                         bind
                             usage_date, user_name, app_name
-
                         end bind
                     end card
 
@@ -91,7 +82,6 @@
                             datasource view demo.v_daily_peak_concurrent_proxy
                             bind
                                 usage_date, user_name, app_name
-
                             end bind
                         end card
 
@@ -100,21 +90,18 @@
                                 datasource view demo.v_daily_peak_concurrent_proxy
                                 bind
                                     usage_date, user_name, app_name
-
                                 end bind
                             end card
 
                             card activity_5min as "Activity 5-min"
                                 filters
                                     activity_slot
-
                                 end filters
 
                                 diagram demo_activity_5min_line
                                     datasource view demo.v_five_minute_activity
                                     bind
                                         usage_date, user_name, app_name
-
                                     end bind
                                 end card
 
@@ -123,7 +110,6 @@
                                         datasource view demo.v_five_minute_activity
                                         bind
                                             usage_date, user_name, app_name
-
                                         end bind
                                     end card
 
@@ -132,7 +118,6 @@
                                             datasource view demo.v_daily_active_users
                                             bind
                                                 usage_date, user_name, app_name
-
                                             end bind
                                         end card
 
@@ -141,21 +126,18 @@
                                                 datasource view demo.v_daily_active_users
                                                 bind
                                                     usage_date, user_name, app_name
-
                                                 end bind
                                             end card
 
                                             card events_detail as "Events detail"
                                                 filters
                                                     events_top
-
                                                 end filters
 
                                                 diagram demo_events_detail_table
                                                     datasource view demo.v_events_detail
                                                     bind
                                                         app_name, user_name
-
                                                     end bind
                                                 end card
                                             end report
