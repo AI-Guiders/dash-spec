@@ -1,8 +1,10 @@
 using DashSpec.Core.Authoring;
-using DashSpec.Core.Authoring.Formatting;
 using DashSpec.Core.Authoring.EditorConfig;
-using DashSpec.Core.Parsing;
+using DashSpec.Core.Authoring.Formatting;
+using DashSpec.Execution.Parsing;
+using DashSpec.Modeling.Parse.Formatting;
 using Xunit;
+using CoreDashSpecParser = DashSpec.Core.Parsing.DashSpecParser;
 
 namespace DashSpec.Core.Tests;
 
@@ -41,8 +43,24 @@ public sealed class EditorConfigResolverTests
     }
 }
 
-public sealed class DashSpecTextFormatterTests
+public sealed class DashSpecBlockFormatterTests
 {
+    static DashSpecBlockFormatterTests() => DashSpecParser.EnsureModuleParsersRegistered();
+
+    static DashSpecFormatOptions Options =>
+        new()
+        {
+            IndentStyle = "space",
+            IndentSize = 4,
+            EndOfLine = "lf",
+            TrimTrailingWhitespace = true,
+            InsertFinalNewline = true,
+            DashSpecFormatOnSave = true,
+            DashSpecMaxConsecutiveBlankLines = 1,
+            DashSpecIndentBlockBody = true,
+            DashSpecPreserveBlankLineBeforeEnd = false,
+        };
+
     [Fact]
     public void Format_reindents_basic_like_blocks()
     {
@@ -58,8 +76,7 @@ public sealed class DashSpecTextFormatterTests
             end dashboard
             """;
 
-        var options = EditorConfigOptions.Default with { DashSpecPreserveBlankLineBeforeEnd = false };
-        var formatted = DashSpecTextFormatter.Format(input, options);
+        var formatted = DashSpecBlockFormatter.format(input, Options);
         var lines = formatted.Split('\n');
 
         Assert.Equal("@dashboard demo", lines[0]);
@@ -87,8 +104,7 @@ public sealed class DashSpecTextFormatterTests
             end dashboard
             """;
 
-        var options = EditorConfigOptions.Default with { DashSpecPreserveBlankLineBeforeEnd = false };
-        var formatted = DashSpecTextFormatter.Format(input, options);
+        var formatted = DashSpecBlockFormatter.format(input, Options);
         var lines = formatted.Split('\n');
 
         Assert.Equal("@dashboard demo_soak", lines[0]);
@@ -112,7 +128,7 @@ public sealed class DashSpecTextFormatterTests
 
         var text = File.ReadAllText(path);
         var formatted = DashSpecDocumentPipeline.Format(text, path, Path.GetDirectoryName(path));
-        var doc = DashSpecParser.Parse(formatted, Path.GetDirectoryName(path)!);
+        var doc = CoreDashSpecParser.Parse(formatted, Path.GetDirectoryName(path)!);
         Assert.Equal("demo_soak", doc.Id);
         Assert.True(doc.Cards.Count > 0);
     }
