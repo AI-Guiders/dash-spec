@@ -17,7 +17,7 @@ DashSpec uses Basic-like blocks (`card` … `end card`, `report` … `end report
 | Layer | Source | Responsibility |
 |-------|--------|----------------|
 | **Universal floor** | `.editorconfig` | `indent_*`, `end_of_line`, `trim_trailing_whitespace`, `insert_final_newline` |
-| **DashSpec opinion** | `DashSpecTextFormatter` in `DashSpec.Core` | Basic-like block reindent + blank-line policy |
+| **DashSpec opinion** | `DashSpecBlockFormatter` in `DashSpec.Modeling.Parse` (bridge via `DocumentFormatBridge`) | Block-aware reindent + blank-line policy |
 
 No custom brace-alignment keys — DashSpec is not brace-primary (ADR-0036 `end` syntax).
 
@@ -62,3 +62,4 @@ LSP `textDocument/formatting` should call the same pipeline (thin glue, non-goal
 
 - `DashSpec.Core.Tests`: resolver glob merge, formatter golden, `demo-soak.dashspec` parse round-trip after format.
 - Studio: save + Ctrl+Shift+F (STUDIO-ADR-0004).
+
