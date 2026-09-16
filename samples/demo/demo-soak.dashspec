@@ -3,11 +3,13 @@
         manifest = "demo.toml"
 
     end runtime
+
     configuration
         sqldialect = tsql
         palette = "palettes/demo-apps.dashpalette"
 
     end configuration
+
     !include "diagrams/*.dashdiagram"
     wiring
         use connector sqlserver
@@ -18,6 +20,7 @@
 
         end grid
     end wiring
+
     report
         title = "DashSpec — Demo soak"
         filter date usage_date on usage_date as "Report date" default -7d..today
@@ -35,12 +38,14 @@
             debounce_ms = 400
 
         end chrome
+
         toolbar
             usage_date
             user_name
             app_name
 
         end toolbar
+
         tab overview as "Overview"
             cards
                 peak_concurrent_kpi
@@ -54,6 +59,7 @@
 
             end cards
         end tab
+
         tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
             tab detail as "Detail"
                 cards
@@ -61,85 +67,96 @@
 
                 end cards
             end tab
+
             card peak_concurrent_kpi as "Peak concurrent (max)"
                 diagram demo_peak_kpi
-                datasource view demo.v_daily_peak_concurrent_proxy
-                bind
-                    usage_date, user_name, app_name
+                    datasource view demo.v_daily_peak_concurrent_proxy
+                    bind
+                        usage_date, user_name, app_name
 
-                end bind
-            end card
-            card peak_sparkline as "Peak trend"
-                diagram demo_peak_sparkline
-                datasource view demo.v_daily_peak_concurrent_proxy
-                bind
-                    usage_date, user_name, app_name
+                    end bind
+                end card
 
-                end bind
-            end card
-            card peak_concurrent_proxy as "Peak concurrent (proxy)"
-                diagram demo_peak_concurrent_line
-                datasource view demo.v_daily_peak_concurrent_proxy
-                bind
-                    usage_date, user_name, app_name
+                card peak_sparkline as "Peak trend"
+                    diagram demo_peak_sparkline
+                        datasource view demo.v_daily_peak_concurrent_proxy
+                        bind
+                            usage_date, user_name, app_name
 
-                end bind
-            end card
-            card peak_stacked_bar as "Peak by product (stacked)"
-                diagram demo_peak_stacked_bar
-                datasource view demo.v_daily_peak_concurrent_proxy
-                bind
-                    usage_date, user_name, app_name
+                        end bind
+                    end card
 
-                end bind
-            end card
-            card activity_5min as "Activity 5-min"
-                filters
-                    activity_slot
+                    card peak_concurrent_proxy as "Peak concurrent (proxy)"
+                        diagram demo_peak_concurrent_line
+                            datasource view demo.v_daily_peak_concurrent_proxy
+                            bind
+                                usage_date, user_name, app_name
 
-                end filters
-                diagram demo_activity_5min_line
-                datasource view demo.v_five_minute_activity
-                bind
-                    usage_date, user_name, app_name
+                            end bind
+                        end card
 
-                end bind
-            end card
-            card activity_area as "Activity (area)"
-                diagram demo_activity_area
-                datasource view demo.v_five_minute_activity
-                bind
-                    usage_date, user_name, app_name
+                        card peak_stacked_bar as "Peak by product (stacked)"
+                            diagram demo_peak_stacked_bar
+                                datasource view demo.v_daily_peak_concurrent_proxy
+                                bind
+                                    usage_date, user_name, app_name
 
-                end bind
-            end card
-            card dau_by_product as "DAU by product"
-                diagram demo_dau_bar
-                datasource view demo.v_daily_active_users
-                bind
-                    usage_date, user_name, app_name
+                                end bind
+                            end card
 
-                end bind
-            end card
-            card dau_by_product_donut as "DAU by product (donut)"
-                diagram demo_dau_donut
-                datasource view demo.v_daily_active_users
-                bind
-                    usage_date, user_name, app_name
+                            card activity_5min as "Activity 5-min"
+                                filters
+                                    activity_slot
 
-                end bind
-            end card
-            card events_detail as "Events detail"
-                filters
-                    events_top
+                                end filters
 
-                end filters
-                diagram demo_events_detail_table
-                datasource view demo.v_events_detail
-                bind
-                    app_name, user_name
+                                diagram demo_activity_5min_line
+                                    datasource view demo.v_five_minute_activity
+                                    bind
+                                        usage_date, user_name, app_name
 
-                end bind
-            end card
-        end report
-    end dashboard
+                                    end bind
+                                end card
+
+                                card activity_area as "Activity (area)"
+                                    diagram demo_activity_area
+                                        datasource view demo.v_five_minute_activity
+                                        bind
+                                            usage_date, user_name, app_name
+
+                                        end bind
+                                    end card
+
+                                    card dau_by_product as "DAU by product"
+                                        diagram demo_dau_bar
+                                            datasource view demo.v_daily_active_users
+                                            bind
+                                                usage_date, user_name, app_name
+
+                                            end bind
+                                        end card
+
+                                        card dau_by_product_donut as "DAU by product (donut)"
+                                            diagram demo_dau_donut
+                                                datasource view demo.v_daily_active_users
+                                                bind
+                                                    usage_date, user_name, app_name
+
+                                                end bind
+                                            end card
+
+                                            card events_detail as "Events detail"
+                                                filters
+                                                    events_top
+
+                                                end filters
+
+                                                diagram demo_events_detail_table
+                                                    datasource view demo.v_events_detail
+                                                    bind
+                                                        app_name, user_name
+
+                                                    end bind
+                                                end card
+                                            end report
+                                        end dashboard

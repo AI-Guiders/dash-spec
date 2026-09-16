@@ -22,6 +22,8 @@ internal sealed class EditorConfigPatch
     public bool DashSpecIndentBlockBody { get; private set; }
     public bool HasDashSpecPreserveBlankLineBeforeEnd { get; private set; }
     public bool DashSpecPreserveBlankLineBeforeEnd { get; private set; }
+    public bool HasDashSpecBlankLineBetweenBlocks { get; private set; }
+    public bool DashSpecBlankLineBetweenBlocks { get; private set; }
 
     public void Set(string key, string value)
     {
@@ -66,6 +68,10 @@ internal sealed class EditorConfigPatch
             case "dashspec_preserve_blank_line_before_end":
                 HasDashSpecPreserveBlankLineBeforeEnd = true;
                 DashSpecPreserveBlankLineBeforeEnd = ParseBool(value);
+                break;
+            case "dashspec_blank_line_between_blocks":
+                HasDashSpecBlankLineBetweenBlocks = true;
+                DashSpecBlankLineBetweenBlocks = ParseBool(value);
                 break;
         }
     }

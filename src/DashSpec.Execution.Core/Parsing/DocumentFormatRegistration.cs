@@ -25,5 +25,6 @@ internal static class DocumentFormatRegistration
             DashSpecMaxConsecutiveBlankLines = options.DashSpecMaxConsecutiveBlankLines,
             DashSpecIndentBlockBody = options.DashSpecIndentBlockBody,
             DashSpecPreserveBlankLineBeforeEnd = options.DashSpecPreserveBlankLineBeforeEnd,
+            DashSpecBlankLineBetweenBlocks = options.DashSpecBlankLineBetweenBlocks,
         };
 }
