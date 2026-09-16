@@ -19,6 +19,35 @@ module DashSpecBlockFormatter =
         elif moduleStarted then 1
         else 0
 
+    let private maybeInsertBlankBetweenBlocks
+        (options: DashSpecFormatOptions)
+        (previousNonBlank: string)
+        (previousNonBlankIndent: int)
+        (currentIndent: int)
+        (output: ResizeArray<string>)
+        =
+        if not options.DashSpecBlankLineBetweenBlocks then ()
+        elif String.IsNullOrWhiteSpace previousNonBlank then ()
+        elif not (previousNonBlank.StartsWith("end ", StringComparison.OrdinalIgnoreCase)) then ()
+        elif previousNonBlankIndent <> currentIndent then ()
+        elif output.Count = 0 then ()
+        elif output.[output.Count - 1].Length = 0 then ()
+        else output.Add("")
+
+    let private maybeInsertBlankBeforeEnd
+        (options: DashSpecFormatOptions)
+        (previousNonBlank: string)
+        (output: ResizeArray<string>)
+        =
+        if
+            options.DashSpecPreserveBlankLineBeforeEnd
+            && output.Count > 0
+            && output.[output.Count - 1].Length > 0
+            && not (String.IsNullOrWhiteSpace previousNonBlank)
+            && not (previousNonBlank.StartsWith("end ", StringComparison.OrdinalIgnoreCase))
+        then
+            output.Add("")
+
     let format (text: string) (options: DashSpecFormatOptions) =
         if not options.DashSpecIndentBlockBody then normalizeNewlines text
         else
@@ -28,6 +57,20 @@ module DashSpecBlockFormatter =
             let stack = Stack<BlockFrame>()
             let mutable moduleStarted = false
             let mutable previousNonBlank = ""
+            let mutable previousNonBlankIndent = 0
+
+            let trackLine indentUnits trimmed =
+                previousNonBlank <- trimmed
+                previousNonBlankIndent <- indentUnits
+
+            let emitOpenedLine indentUnits trimmed =
+                maybeInsertBlankBetweenBlocks options previousNonBlank previousNonBlankIndent indentUnits output
+                output.Add(pad indentUnits unit trimmed)
+                trackLine indentUnits trimmed
+
+            let emitClosedLine indentUnits trimmed =
+                output.Add(pad indentUnits unit trimmed)
+                trackLine indentUnits trimmed
 
             for rawLine in rawLines do
                 if rawLine.Length = 0 then output.Add("")
@@ -38,49 +81,36 @@ module DashSpecBlockFormatter =
                         match BlockFormatterRules.classifyLine trimmed with
                         | BlockFormatterRules.Blank -> output.Add("")
                         | BlockFormatterRules.End _ ->
-                            if
-                                options.DashSpecPreserveBlankLineBeforeEnd
-                                && output.Count > 0
-                                && output.[output.Count - 1].Length > 0
-                                && not (String.IsNullOrWhiteSpace previousNonBlank)
-                                && not (previousNonBlank.StartsWith("end ", StringComparison.OrdinalIgnoreCase))
-                            then
-                                output.Add("")
+                            maybeInsertBlankBeforeEnd options previousNonBlank output
 
                             let endIndent =
                                 if stack.Count > 0 then stack.Pop().EndIndent
                                 elif moduleStarted then 1
                                 else 0
 
-                            output.Add(pad endIndent unit trimmed)
-                            previousNonBlank <- trimmed
+                            emitClosedLine endIndent trimmed
                         | BlockFormatterRules.BraceClose ->
                             let closeIndent =
                                 if stack.Count > 0 then stack.Pop().EndIndent
                                 elif moduleStarted then 1
                                 else 0
 
-                            output.Add(pad closeIndent unit trimmed)
-                            previousNonBlank <- trimmed
+                            emitClosedLine closeIndent trimmed
                         | BlockFormatterRules.ModuleHeader _ ->
                             let indentUnits = resolveContentIndent stack moduleStarted
-                            output.Add(pad indentUnits unit trimmed)
+                            emitOpenedLine indentUnits trimmed
                             moduleStarted <- true
                             stack.Push({ EndIndent = 1; ContentIndent = 1 })
-                            previousNonBlank <- trimmed
                         | BlockFormatterRules.BlockOpener _ ->
                             let indentUnits = resolveContentIndent stack moduleStarted
-                            output.Add(pad indentUnits unit trimmed)
+                            emitOpenedLine indentUnits trimmed
                             stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                            previousNonBlank <- trimmed
                         | BlockFormatterRules.BraceOpen ->
                             let indentUnits = resolveContentIndent stack moduleStarted
-                            output.Add(pad indentUnits unit trimmed)
+                            emitOpenedLine indentUnits trimmed
                             stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                            previousNonBlank <- trimmed
                         | BlockFormatterRules.Content ->
                             let indentUnits = resolveContentIndent stack moduleStarted
-                            output.Add(pad indentUnits unit trimmed)
-                            previousNonBlank <- trimmed
+                            emitOpenedLine indentUnits trimmed
 
             String.Join('\n', output)
