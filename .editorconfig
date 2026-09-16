@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{dashspec,dashlibrary,dashlayout,dashdiagram,dashpalette,dashcatalog,dashtooltip,dashpresentation}]
+indent_style = space
+indent_size = 2
+tab_width = 2
+dashspec_format_on_save = true
+dashspec_max_consecutive_blank_lines = 1
+dashspec_indent_block_body = true
+dashspec_preserve_blank_line_before_end = true
+
+[*.sql]
+indent_size = 2
+
+[*.toml]
+indent_size = 2
