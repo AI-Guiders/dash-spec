@@ -1,12 +1,14 @@
 @diagram demo_peak_sparkline
 
-chrome
-  use sparkline_64
-end chrome
+    chrome
+    use sparkline_64
 
-sparkline
-  render = "chartjs"
-  x = usage_date
-  y = peak_concurrent_proxy
-  scale_y = integer
-end sparkline
+    end chrome
+
+    sparkline
+    render = "chartjs"
+    x = usage_date
+    y = peak_concurrent_proxy
+    scale_y = integer
+
+    end sparkline

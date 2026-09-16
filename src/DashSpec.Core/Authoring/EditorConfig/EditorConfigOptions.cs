@@ -6,8 +6,8 @@ public sealed record EditorConfigOptions
     public static EditorConfigOptions Default { get; } = new();
 
     public string IndentStyle { get; init; } = "space";
-    public int IndentSize { get; init; } = 2;
-    public int TabWidth { get; init; } = 2;
+    public int IndentSize { get; init; } = 4;
+    public int TabWidth { get; init; } = 4;
     public string EndOfLine { get; init; } = "lf";
     public bool TrimTrailingWhitespace { get; init; } = true;
     public bool InsertFinalNewline { get; init; } = true;
@@ -31,4 +31,5 @@ public sealed record EditorConfigOptions
 
     
 }
+
 
