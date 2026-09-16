@@ -16,6 +16,7 @@ public sealed record EditorConfigOptions
     public int DashSpecMaxConsecutiveBlankLines { get; init; } = 1;
     public bool DashSpecIndentBlockBody { get; init; } = true;
     public bool DashSpecPreserveBlankLineBeforeEnd { get; init; } = true;
+    public bool DashSpecBlankLineBetweenBlocks { get; init; } = true;
 
     public string IndentUnit =>
         IndentStyle.Equals("tab", StringComparison.OrdinalIgnoreCase)
