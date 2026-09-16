@@ -1,7 +1,7 @@
 @diagram demo_peak_by_app_windrose
 
     chrome
-    use windrose_360
+        use windrose_360
 
     end chrome
 

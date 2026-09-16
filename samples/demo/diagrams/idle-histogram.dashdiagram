@@ -1,7 +1,7 @@
 @diagram demo_idle_histogram
 
     chrome
-    use histogram_320
+        use histogram_320
 
     end chrome
 

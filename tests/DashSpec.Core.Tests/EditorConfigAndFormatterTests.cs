@@ -64,13 +64,41 @@ public sealed class DashSpecTextFormatterTests
 
         Assert.Equal("@dashboard demo", lines[0]);
         Assert.Equal("    report", lines[1]);
-        Assert.Equal("    card a as \"A\"", lines[2]);
-        Assert.Equal("    bind", lines[3]);
-        Assert.Equal("        x", lines[4]);
-        Assert.Equal("    end bind", lines[5]);
-        Assert.Equal("    end card", lines[6]);
+        Assert.Equal("        card a as \"A\"", lines[2]);
+        Assert.Equal("            bind", lines[3]);
+        Assert.Equal("                x", lines[4]);
+        Assert.Equal("            end bind", lines[5]);
+        Assert.Equal("        end card", lines[6]);
         Assert.Equal("    end report", lines[7]);
         Assert.Equal("    end dashboard", lines[8]);
+    }
+
+    [Fact]
+    public void Format_indents_block_bodies_one_level_deeper_than_opener()
+    {
+        const string input = """
+            @dashboard demo_soak
+            runtime
+            manifest = "demo.toml"
+            end runtime
+            configuration
+            sqldialect = tsql
+            end configuration
+            end dashboard
+            """;
+
+        var options = EditorConfigOptions.Default with { DashSpecPreserveBlankLineBeforeEnd = false };
+        var formatted = DashSpecTextFormatter.Format(input, options);
+        var lines = formatted.Split('\n');
+
+        Assert.Equal("@dashboard demo_soak", lines[0]);
+        Assert.Equal("    runtime", lines[1]);
+        Assert.Equal("        manifest = \"demo.toml\"", lines[2]);
+        Assert.Equal("    end runtime", lines[3]);
+        Assert.Equal("    configuration", lines[4]);
+        Assert.Equal("        sqldialect = tsql", lines[5]);
+        Assert.Equal("    end configuration", lines[6]);
+        Assert.Equal("    end dashboard", lines[7]);
     }
 
     [Fact]
@@ -89,6 +117,3 @@ public sealed class DashSpecTextFormatterTests
         Assert.True(doc.Cards.Count > 0);
     }
 }
-
-
-

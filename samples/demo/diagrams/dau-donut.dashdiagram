@@ -1,7 +1,7 @@
 @diagram demo_dau_donut
 
     chrome
-    use donut_right_360
+        use donut_right_360
 
     end chrome
 
