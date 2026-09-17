@@ -22,8 +22,11 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
 
     member _.IsOnNewline() = tokens.[index].Kind = TokenKind.Newline
 
+    member private _.IsTrivia kind =
+        kind = TokenKind.Newline || kind = TokenKind.LineComment || kind = TokenKind.BlockComment
+
     member this.SkipNewlines() =
-        while tokens.[index].Kind = TokenKind.Newline do
+        while this.IsTrivia tokens.[index].Kind do
             index <- index + 1
 
     member this.Advance() = index <- index + 1

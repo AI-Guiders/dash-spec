@@ -17,5 +17,7 @@ type TokenKind =
     | String
     | HexColor
     | Raw
+    | LineComment
+    | BlockComment
     | Newline
     | Eof
