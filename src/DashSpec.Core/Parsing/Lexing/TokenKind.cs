@@ -8,6 +8,8 @@ internal enum TokenKind
     RBrace,
     Eq,
     DotDot,
+    Dot,
+    Slash,
     RelativeDay,
     Comma,
     LBracket,
@@ -21,3 +23,4 @@ internal enum TokenKind
     Newline,
     Eof,
 }
+

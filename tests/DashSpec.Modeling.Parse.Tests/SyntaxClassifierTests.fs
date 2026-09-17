@@ -22,3 +22,9 @@ module SyntaxClassifierTests =
         Assert.True(List.contains DashSpecSyntaxKind.Comment kinds)
         Assert.True(List.contains DashSpecSyntaxKind.ModuleHeader kinds)
         Assert.True(List.contains DashSpecSyntaxKind.EndKeyword kinds)
+
+    [<Fact>]
+    let ``incomplete edit characters do not crash classify`` () =
+        for text in [ "."; "/"; "//"; ".foo" ] do
+            let spans = DashSpecSyntaxClassifier.classify text
+            Assert.NotEmpty(spans)
