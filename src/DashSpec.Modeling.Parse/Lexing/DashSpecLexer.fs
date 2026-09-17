@@ -127,7 +127,9 @@ module DashSpecLexer =
                         tokens.Add comment
                         i <- ii
                     | None ->
-                        raise (DashSpecParseException($"Unexpected '/' at position {i}. Use // line comments at line start or /* */ block comments."))
+                        tokens.Add({ Kind = TokenKind.Slash; Value = "/"; Start = i; Length = 1 })
+                        i <- i + 1
+                        atLineStart <- false
             else
                 let start = i
                 match text.[i] with
@@ -140,7 +142,9 @@ module DashSpecLexer =
                     if i + 1 < text.Length && text.[i + 1] = '.' then
                         tokens.Add({ Kind = TokenKind.DotDot; Value = ".."; Start = start; Length = 2 }); i <- i + 2; atLineStart <- false
                     else
-                        raise (DashSpecParseException($"Unexpected '.' at position {i}. Use '..' for date ranges."))
+                        tokens.Add({ Kind = TokenKind.Dot; Value = "."; Start = start; Length = 1 })
+                        i <- i + 1
+                        atLineStart <- false
                 | '-' ->
                     let relStart = i
                     i <- i + 1
@@ -183,3 +187,4 @@ module DashSpecLexer =
                 | c -> raise (DashSpecParseException($"Unexpected character '{c}' at position {i}.", i))
         tokens.Add({ Kind = TokenKind.Eof; Value = ""; Start = text.Length; Length = 0 })
         tokens :> IReadOnlyList<Token>
+
