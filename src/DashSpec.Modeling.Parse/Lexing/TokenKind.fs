@@ -7,6 +7,8 @@ type TokenKind =
     | RBrace
     | Eq
     | DotDot
+    | Dot
+    | Slash
     | RelativeDay
     | Comma
     | LBracket
@@ -21,3 +23,4 @@ type TokenKind =
     | BlockComment
     | Newline
     | Eof
+

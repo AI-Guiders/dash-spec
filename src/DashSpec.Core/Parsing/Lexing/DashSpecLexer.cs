@@ -42,8 +42,10 @@ internal static class DashSpecLexer
                     continue;
                 }
 
-                throw new DashSpecParseException(
-                    $"Unexpected '/' at position {i}. Use // line comments at line start or /* */ block comments.");
+                tokens.Add(new Token(TokenKind.Slash, "/", i, 1));
+                i++;
+                atLineStart = false;
+                continue;
             }
 
             var start = i;
@@ -97,7 +99,10 @@ internal static class DashSpecLexer
                     continue;
                 }
 
-                throw new DashSpecParseException($"Unexpected '.' at position {i}. Use '..' for date ranges.");
+                tokens.Add(new Token(TokenKind.Dot, ".", start, 1));
+                i++;
+                atLineStart = false;
+                continue;
             }
 
             if (text[i] is '-')
@@ -373,3 +378,4 @@ internal static class DashSpecLexer
 
     private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '.';
 }
+
