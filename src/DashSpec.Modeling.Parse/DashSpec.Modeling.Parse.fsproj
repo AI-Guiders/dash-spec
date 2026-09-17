@@ -18,11 +18,17 @@
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
     <Compile Include="Syntax\DashSpecSyntaxKind.fs" />
-    <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
+    <Compile Include="Syntax\TextSpan.fs" />
+    <Compile Include="Syntax\SyntaxToken.fs" />
+    <Compile Include="Syntax\SyntaxNode.fs" />
+    <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />
     <Compile Include="Formatting\BlockFormatterRules.fs" />
     <Compile Include="Formatting\DashSpecBlockFormatter.fs" />
+    <Compile Include="Syntax\SyntaxTreeParser.fs" />
+    <Compile Include="Syntax\SyntaxTree.fs" />
+    <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
     <Compile Include="PropertySchemas.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
@@ -87,4 +93,5 @@
     <Compile Include="Document\TabModuleParser.fs" />
   </ItemGroup>
 </Project>
+
 
