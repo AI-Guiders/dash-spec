@@ -5,7 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-09-12 |
 | **Tags** | #dashspec #modeling #execution #fsharp #csharp #language #parse #graph |
-| **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) §13 · [GUIDERS-ADR-0059](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0059-gdl-hyperlane.md) (`gdlc` emit) · [GUIDERS-ADR-0047](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0047-command-for-doi.md) (`.catalog`) |
+| **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) §13 · [GUIDERS-ADR-0059](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0059-gdl-hyperlane.md) (`gdlc` emit) · [GUIDERS-ADR-0047](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0047-command-for-doi.md) (`.catalog`) · [GUIDERS-ADR-0067](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0067-language-profile-federation-model.md) (planet instance target) |
 
 ## Context
 
