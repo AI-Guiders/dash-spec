@@ -107,7 +107,7 @@ module DashSpecBlockFormatter =
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
                             moduleStarted <- true
-                            stack.Push({ EndIndent = 1; ContentIndent = 1 })
+                            stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
                         | BlockFormatterRules.BlockOpener _ ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
