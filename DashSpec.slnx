@@ -14,6 +14,10 @@
 
   <Project Path="src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
 
+  <Project Path="src\DashSpec.Modeling.LanguageEditor\DashSpec.Modeling.LanguageEditor.fsproj" />
+
+  <Project Path="src\DashSpec.Execution.LanguageEditor\DashSpec.Execution.LanguageEditor.csproj" />
+
   <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
 
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
@@ -34,9 +38,12 @@
 
   <Project Path="tests\DashSpec.Modeling.Parse.Tests\DashSpec.Modeling.Parse.Tests.fsproj" />
 
+  <Project Path="tests\DashSpec.Modeling.LanguageEditor.Tests\DashSpec.Modeling.LanguageEditor.Tests.fsproj" />
+
   <Project Path="tests\DashSpec.Modeling.Language.Adapters.DashSpec.Tests\DashSpec.Modeling.Language.Adapters.DashSpec.Tests.fsproj" />
 
   <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
 
 </Solution>
+
 
