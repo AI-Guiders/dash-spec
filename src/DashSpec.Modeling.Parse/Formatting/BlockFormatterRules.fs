@@ -18,7 +18,11 @@ module BlockFormatterRules =
         if String.IsNullOrWhiteSpace trimmed then []
         else
             DashSpecLexer.tokenize trimmed
-            |> Seq.filter (fun t -> t.Kind <> TokenKind.Newline && t.Kind <> TokenKind.Eof)
+            |> Seq.filter (fun t ->
+                t.Kind <> TokenKind.Newline
+                && t.Kind <> TokenKind.Eof
+                && t.Kind <> TokenKind.LineComment
+                && t.Kind <> TokenKind.BlockComment)
             |> Seq.toList
 
     let private tryReadOptionalId (tokens: Token list) =
@@ -28,17 +32,6 @@ module BlockFormatterRules =
 
     let private hasEquals (tokens: Token list) =
         tokens |> List.exists (fun t -> t.Kind = TokenKind.Eq)
-
-    let private isBlockKeyword (value: string) =
-        match value.ToLowerInvariant() with
-        | "runtime" | "configuration" | "wiring" | "report" | "extensions"
-        | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
-        | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
-        | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
-        | "diagramlibrary" | "group" | "phase" | "diagram"
-        | "heatmap" | "bar" | "line" | "area" | "pie" | "donut" | "gauge" | "kpi"
-        | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" -> true
-        | _ -> false
 
     let classifyLine (trimmed: string) =
         if String.IsNullOrWhiteSpace trimmed then Blank
@@ -70,7 +63,7 @@ module BlockFormatterRules =
             | { Kind = TokenKind.Ident; Value = "group" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 BlockOpener("group", Some id)
             | tokens when hasEquals tokens -> Content
-            | { Kind = TokenKind.Ident; Value = kw } :: _ when isBlockKeyword kw ->
+            | { Kind = TokenKind.Ident; Value = kw } :: _ when DashSpecKeywords.isBlockKeyword kw ->
                 BlockOpener(kw, None)
             | { Kind = TokenKind.Ident; Value = "filter" } :: _ -> Content
             | { Kind = TokenKind.Bang } :: _ -> Content

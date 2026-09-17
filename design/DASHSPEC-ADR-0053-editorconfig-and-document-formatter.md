@@ -63,4 +63,7 @@ LSP `textDocument/formatting` should call the same pipeline (thin glue, non-goal
 
 - `DashSpec.Core.Tests`: resolver glob merge, formatter golden, `demo-soak.dashspec` parse round-trip after format.
 - Studio: save + Ctrl+Shift+F (STUDIO-ADR-0004).
+### 7. Syntax classification (Studio / LSP)
 
+- `DashSpecSyntaxClassifier` in `DashSpec.Modeling.Parse` classifies lexer token spans (`DashSpecSyntaxPipeline.Classify`).
+- TextMate / tmLanguage remains best-effort for VS Code stub; Studio uses the classifier bridge, not a duplicate grammar.
