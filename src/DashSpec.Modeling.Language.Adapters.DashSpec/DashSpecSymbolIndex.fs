@@ -54,7 +54,7 @@ module DashSpecSymbolIndex =
     let private skipToIndex (tokens: Token[]) index =
         let mutable i = index
 
-        while i < tokens.Length && tokens.[i].Kind = TokenKind.Newline do
+        while i < tokens.Length && (tokens.[i].Kind = TokenKind.Newline || tokens.[i].Kind = TokenKind.LineComment || tokens.[i].Kind = TokenKind.BlockComment) do
             i <- i + 1
 
         i
@@ -70,7 +70,7 @@ module DashSpecSymbolIndex =
     let private prevNonNewlineIndex (tokens: Token[]) index =
         let mutable i = index - 1
 
-        while i >= 0 && tokens.[i].Kind = TokenKind.Newline do
+        while i >= 0 && (tokens.[i].Kind = TokenKind.Newline || tokens.[i].Kind = TokenKind.LineComment || tokens.[i].Kind = TokenKind.BlockComment) do
             i <- i - 1
 
         if i >= 0 then Some i else None
