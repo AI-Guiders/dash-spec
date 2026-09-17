@@ -88,7 +88,7 @@ public sealed class DashSpecBlockFormatterTests
         Assert.Equal("            end bind", lines[5]);
         Assert.Equal("        end card", lines[6]);
         Assert.Equal("    end report", lines[7]);
-        Assert.Equal("    end dashboard", lines[8]);
+        Assert.Equal("end dashboard", lines[8]);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public sealed class DashSpecBlockFormatterTests
         Assert.Equal("    configuration", lines[5]);
         Assert.Equal("        sqldialect = tsql", lines[6]);
         Assert.Equal("    end configuration", lines[7]);
-        Assert.Equal("    end dashboard", lines[8]);
+        Assert.Equal("end dashboard", lines[8]);
     }
 
     [Fact]
