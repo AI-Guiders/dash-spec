@@ -18,6 +18,8 @@
 
   <Project Path="src\DashSpec.Execution.LanguageEditor\DashSpec.Execution.LanguageEditor.csproj" />
 
+  <Project Path="src\DashSpec.CodeCenter.Plugin\DashSpec.CodeCenter.Plugin.csproj" />
+
   <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
 
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
