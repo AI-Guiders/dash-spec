@@ -1,0 +1,22 @@
+# DashSpec planet bundle for federation Code Center (ship-63).
+plugin_id = "dashspec.codecenter"
+language_id = "dashspec"
+
+[[projection]]
+kind = "Tree"
+
+[[projection]]
+kind = "Diagram"
+
+[[projection]]
+kind = "Form"
+
+[[projection]]
+kind = "Preview"
+
+[theme]
+"@dashboard" = "DashSpec.Dashboard"
+tab = "DashSpec.Tab"
+
+[commands]
+insert-tab = "Insert tab block at anchor"
