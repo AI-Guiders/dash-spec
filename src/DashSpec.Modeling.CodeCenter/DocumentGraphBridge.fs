@@ -34,7 +34,7 @@ module DashSpecDocumentGraph =
         |> Option.map (fun token -> token.Text)
         |> Option.defaultValue "@module"
 
-    let private blockKind (node: SyntaxNode) =
+    let private blockLabel (node: SyntaxNode) =
         if node.Tokens |> Array.exists (fun (token: SyntaxToken) -> token.Text = "tab") then
             "tab"
         else
@@ -49,7 +49,7 @@ module DashSpecDocumentGraph =
     let private foldName (node: SyntaxNode) =
         match node.Kind with
         | SyntaxNodeKind.ModuleDeclaration -> moduleHeaderKind node + " " + firstIdent node
-        | SyntaxNodeKind.Block -> blockKind node + " " + firstIdent node
+        | SyntaxNodeKind.Block -> blockLabel node + " " + firstIdent node
         | SyntaxNodeKind.EndBlock -> "end " + endBlockName node
         | _ -> node.Kind.ToString()
 
@@ -89,7 +89,7 @@ module DashSpecDocumentGraph =
 
                 let docNode =
                     ({ Id = id
-                       Kind = moduleHeaderKind node
+                       Kind = GraphNodeKind.Module
                        Name = firstIdent node
                        Start = node.Span.Start
                        End = node.Span.End
@@ -106,7 +106,7 @@ module DashSpecDocumentGraph =
 
                 let docNode =
                     ({ Id = id
-                       Kind = blockKind node
+                       Kind = GraphNodeKind.Block
                        Name = firstIdent node
                        Start = node.Span.Start
                        End = node.Span.End
@@ -122,7 +122,7 @@ module DashSpecDocumentGraph =
 
                 let docNode =
                     ({ Id = id
-                       Kind = "end"
+                       Kind = GraphNodeKind.EndMarker
                        Name = endBlockName node
                        Start = node.Span.Start
                        End = node.Span.End

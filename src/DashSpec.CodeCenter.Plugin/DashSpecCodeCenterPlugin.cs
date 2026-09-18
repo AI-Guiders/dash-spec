@@ -43,7 +43,7 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
                 return false;
             }
 
-            var edit = StructuralEditBridge.insertBlock(nodeId, "tab", "newTab as \"New\"");
+            var edit = StructuralEditBridge.insertBlock(nodeId, GraphNodeKind.Block, "tab newTab as \"New\"");
             return federation.TryApplyStructural(edit);
         });
     }
