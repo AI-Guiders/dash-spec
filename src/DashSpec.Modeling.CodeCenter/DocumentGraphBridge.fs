@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
+open AIGuiders.Platform.Modeling.LanguageIntelligence.Relations
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Syntax
 
@@ -60,8 +61,7 @@ module DashSpecDocumentGraph =
             | SyntaxNodeKind.ModuleDeclaration
             | SyntaxNodeKind.Block when node.Children.Length > 0 && node.Span.Length > 1 ->
                 regions.Add(
-                    ({ Start = node.Span.Start
-                       End = node.Span.End
+                    ({ Range = LineRange.create node.Span.Start node.Span.End
                        Name = foldName node }
                      : FoldingRegion))
             | _ -> ()
