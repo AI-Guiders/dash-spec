@@ -14,4 +14,4 @@ module DashSpecCompletion =
         | Some node ->
             [ { Label = "Insert tab block"
                 Description = "Insert tab after current block"
-                Edit = InsertBlock(node.Id, "tab", "newTab as \"New\"") } ]
+                Edit = InsertBlock(node.Id, GraphNodeKind.Block, "tab newTab as \"New\"") } ]
