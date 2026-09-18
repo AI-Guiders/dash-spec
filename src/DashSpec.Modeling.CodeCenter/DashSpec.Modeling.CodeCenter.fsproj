@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>DashSpec.Modeling.CodeCenter</RootNamespace>
+    <AssemblyName>DashSpec.Modeling.CodeCenter</AssemblyName>
+    <Description>DashSpec AST graph bridge for federation CodeCenter session (D41).</Description>
+    <PackageId>DashSpec.Modeling.CodeCenter</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
+    <ProjectReference Include="..\..\..\guiders-fsharp\src\AIGuiders.Platform.Modeling.CodeCenter\AIGuiders.Platform.Modeling.CodeCenter.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DocumentGraphBridge.fs" />
+    <Compile Include="DashSpecCompletion.fs" />
+    <Compile Include="CodeCenterSessionFactory.fs" />
+  </ItemGroup>
+</Project>
