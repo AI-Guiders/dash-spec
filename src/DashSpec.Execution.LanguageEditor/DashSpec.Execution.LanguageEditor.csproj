@@ -12,6 +12,7 @@
     <GuidersFSharpRoot Condition="'$(GuidersFSharpRoot)' == ''">..\..\..\guiders-fsharp</GuidersFSharpRoot>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Modeling.CodeCenter\DashSpec.Modeling.CodeCenter.fsproj" />
     <ProjectReference Include="..\DashSpec.Modeling.LanguageEditor\DashSpec.Modeling.LanguageEditor.fsproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.Abstractions\AIGuiders.Surface.Wpf.Abstractions.csproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.CodeCenter\AIGuiders.Surface.Wpf.CodeCenter.csproj" />
