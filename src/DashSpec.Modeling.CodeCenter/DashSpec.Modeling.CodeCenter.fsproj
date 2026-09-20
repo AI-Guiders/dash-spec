@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DocumentGraphBridge.fs" />
+    <Compile Include="DashSpecDocumentLanguageProfile.fs" />
     <Compile Include="DashSpecCompletion.fs" />
     <Compile Include="CodeCenterSessionFactory.fs" />
   </ItemGroup>
