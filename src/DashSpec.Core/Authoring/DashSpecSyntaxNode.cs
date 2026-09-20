@@ -4,7 +4,7 @@ namespace DashSpec.Core.Authoring;
 public sealed class DashSpecSyntaxNode
 {
     public DashSpecSyntaxNode(
-        DashSpecSyntaxNodeKind kind,
+        DashSpecAstNodeKind kind,
         int start,
         int length,
         IReadOnlyList<DashSpecSyntaxTreeToken> tokens,
@@ -17,7 +17,7 @@ public sealed class DashSpecSyntaxNode
         Children = children;
     }
 
-    public DashSpecSyntaxNodeKind Kind { get; }
+    public DashSpecAstNodeKind Kind { get; }
 
     public int Start { get; }
 

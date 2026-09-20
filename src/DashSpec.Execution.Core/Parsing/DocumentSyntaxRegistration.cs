@@ -19,17 +19,20 @@ internal static class DocumentSyntaxRegistration
     static DashSpecSyntaxTree MapTree(FsharpSyntax.ParseTree tree) =>
         new(tree.Text, MapNode(tree.Root));
 
-    static DashSpecSyntaxNode MapNode(FsharpSyntax.SyntaxNode node) =>
-        new(
-            (DashSpecSyntaxNodeKind)node.Kind,
-            node.Span.Start,
-            node.Span.Length,
-            node.Tokens
+    static DashSpecSyntaxNode MapNode(FsharpSyntax.DashSpecAstNode node)
+    {
+        var span = FsharpSyntax.DashSpecAst.span(node);
+        return new(
+            (DashSpecAstNodeKind)FsharpSyntax.DashSpecAst.nodeKind(node),
+            span.Start,
+            span.Length,
+            FsharpSyntax.DashSpecAst.tokens(node)
                 .Select(token => new DashSpecSyntaxTreeToken(
                     token.Span.Start,
                     token.Span.Length,
                     token.Text,
                     (DashSpecSyntaxKind)token.Kind))
                 .ToArray(),
-            node.Children.Select(MapNode).ToArray());
+            FsharpSyntax.DashSpecAst.members(node).Select(MapNode).ToArray());
+    }
 }
