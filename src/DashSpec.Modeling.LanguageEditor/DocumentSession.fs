@@ -39,10 +39,12 @@ type DocumentSession(documentId: string, initialText: string) =
         match SyntaxTree.findNodeAt (SyntaxTree.parse text) offset with
         | None -> None
         | Some node ->
+            let span = DashSpecAst.span node
+
             Some
-                { Start = node.Span.Start
-                  End = node.Span.End
+                { Start = span.Start
+                  End = span.End
                   Tier = "Syntax"
-                  SymbolId = Some(node.Kind.ToString()) }
+                  SymbolId = Some(DashSpecAst.outlineLabel node) }
 
     static member Create(documentId: string, text: string) = DocumentSession(documentId, text)
