@@ -12,14 +12,26 @@ module SyntaxTreeTests =
     let ``parse builds nested block nodes`` () =
         let tree = SyntaxTree.parse nestedTabText
         let blocks =
-            tree.Root.Children
-            |> Array.filter (fun node -> node.Kind = SyntaxNodeKind.Block)
+            DashSpecAst.descendants tree.Root
+            |> Seq.filter (function DashSpecAstNode.BlockDeclaration _ -> true | _ -> false)
+            |> Seq.toArray
 
-        Assert.True(blocks.Length >= 1)
-        let outerTab = blocks.[0]
-        Assert.True(outerTab.Children.Length >= 1)
-        let innerTab = outerTab.Children |> Array.find (fun node -> node.Kind = SyntaxNodeKind.Block)
-        Assert.True(innerTab.Children |> Array.exists (fun node -> node.Kind = SyntaxNodeKind.Block))
+        Assert.True(blocks.Length >= 2)
+        Assert.Contains(blocks, fun node ->
+            match node with
+            | DashSpecAstNode.BlockDeclaration { Opener = DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, "detail") } -> true
+            | _ -> false)
+
+    [<Fact>]
+    let ``parse builds card reference inside cards block`` () =
+        let tree = SyntaxTree.parse nestedTabText
+
+        Assert.Contains(
+            DashSpecAst.descendants tree.Root,
+            fun node ->
+                match node with
+                | DashSpecAstNode.CardReference { CardId = "events_detail" } -> true
+                | _ -> false)
 
     [<Fact>]
     let ``findNodeAt resolves nested tab line`` () =
@@ -28,10 +40,10 @@ module SyntaxTreeTests =
         Assert.True(offset >= 0)
 
         match SyntaxTree.findNodeAt tree offset with
-        | Some node ->
-            Assert.Equal(SyntaxNodeKind.Block, node.Kind)
-            Assert.True(node.Tokens |> Array.exists (fun token -> token.Text = "tab"))
-        | None -> Assert.Fail("expected block node at nested tab offset")
+        | Some(DashSpecAstNode.BlockDeclaration block) ->
+            Assert.Equal(DashSpecBlockKeyword.Tab, match block.Opener with | DashSpecBlockOpener.Named(k, _) -> k | _ -> failwith "expected named tab")
+            Assert.True(block.Tokens |> Array.exists (fun token -> token.Text = "tab"))
+        | _ -> Assert.Fail("expected block node at nested tab offset")
 
     [<Fact>]
     let ``classified spans match classifier projection`` () =
