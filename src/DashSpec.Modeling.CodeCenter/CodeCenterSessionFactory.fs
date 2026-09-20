@@ -8,6 +8,6 @@ module DashSpecCodeCenterSession =
         DocumentSession.createWithProviders
             documentId
             text
-            DashSpecDocumentGraph.rebuildFromText
+            DashSpecDocumentLanguageProfile.instance
             DashSpecCompletion.getCompletions
             DashSpecCompletion.getStructuralCompletions
