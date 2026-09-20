@@ -1,6 +1,7 @@
 using AIGuiders.Platform.Modeling.CodeCenter;
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
+using AIGuiders.Surface.Wpf.CodeCenter.Plugins;
 using DashSpec.Modeling.CodeCenter;
 
 namespace DashSpec.CodeCenter.Plugin;
@@ -8,14 +9,10 @@ namespace DashSpec.CodeCenter.Plugin;
 /// <summary>DashSpec planet bundle for federation Code Center (ship-63 gate).</summary>
 public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
 {
-    public string PluginId => "dashspec.codecenter";
+    public string Id => "dashspec.codecenter";
 
     public void RegisterProjectionPlugins(ICodeCenterProjectionRegistry registry)
     {
-        registry.Register(ProjectionKind.Tree, session => new TreeProjectionSurface(session));
-        registry.Register(ProjectionKind.Diagram, session => new DiagramProjectionSurface(session));
-        registry.Register(ProjectionKind.Form, session => new FormProjectionSurface(session));
-        registry.Register(ProjectionKind.Preview, session => new PreviewProjectionSurface(session));
     }
 
     public void RegisterTheme(ICodeCenterThemeRegistry registry)
@@ -43,7 +40,7 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
                 return false;
             }
 
-            var edit = StructuralEditBridge.insertBlock(nodeId, GraphNodeKind.Block, "tab newTab as \"New\"");
+            var edit = StructuralEditBridge.insertBlock(nodeId, "tab newTab as \"New\"");
             return federation.TryApplyStructural(edit);
         });
     }
@@ -68,5 +65,8 @@ public static class CodeCenterPluginBootstrap
     public static CodeCenterPluginRuntime CreateRuntime() =>
         CodeCenterPluginHostLoader.LoadPlugins(
             AppContext.BaseDirectory,
-            [new DashSpecCodeCenterPlugin()]);
+            [
+                ..CodeCenterCorePluginBootstrap.CorePlugins,
+                new DashSpecCodeCenterPlugin()
+            ]);
 }

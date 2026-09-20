@@ -12,7 +12,6 @@ module DashSpecDocumentGraph =
 
     type private OutlineRegion =
         { Label: string
-          Kind: GraphNodeKind
           Start: int
           End: int
           ParentIndex: int option }
@@ -49,16 +48,10 @@ module DashSpecDocumentGraph =
                     if stack.Count = 0 then None
                     else Some(stack.Peek())
 
-                let kind =
-                    match node with
-                    | DashSpecAstNode.ModuleDeclaration _ -> GraphNodeKind.Module
-                    | _ -> GraphNodeKind.Block
-
                 let index = regions.Count
 
                 regions.Add(
                     { Label = DashSpecAst.outlineLabel node
-                      Kind = kind
                       Start = (DashSpecAst.span node).Start
                       End = regionEnd node
                       ParentIndex = parentIndex })
@@ -94,7 +87,6 @@ module DashSpecDocumentGraph =
 
             idByIndex.[index],
             ({ Id = idByIndex.[index]
-               Kind = region.Kind
                Name = region.Label
                Start = region.Start
                End = region.End
