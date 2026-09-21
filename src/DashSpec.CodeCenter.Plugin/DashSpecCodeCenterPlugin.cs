@@ -1,8 +1,11 @@
+using AIGuiders.Platform.Execution.Language;
 using AIGuiders.Platform.Modeling.CodeCenter;
+using AIGuiders.Platform.Modeling.Language;
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
 using AIGuiders.Surface.Wpf.CodeCenter.Plugins;
 using DashSpec.Modeling.CodeCenter;
+using DashSpec.Modeling.Language.Adapters.DashSpec;
 
 namespace DashSpec.CodeCenter.Plugin;
 
@@ -56,23 +59,24 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
 
     public void RegisterLanguageBackends(ICodeCenterLanguageBackendRegistry registry) =>
         registry.Register(new DashSpecCodeCenterLanguageBackend());
+
+    public void RegisterLanguageResolverBackends(ILanguageResolverBackendRegistry registry) =>
+        registry.Register(new DashSpecLanguageBackend());
 }
 
 /// <summary>DashSpec planet language activation for Code Center document open.</summary>
 public sealed class DashSpecCodeCenterLanguageBackend : ICodeCenterLanguageBackend
 {
-    static readonly string[] Extensions = [".dash", ".dashspec"];
-
-    public string LanguageId => "dashspec";
+    public string LanguageId => AIGuiders.Platform.Modeling.Language.LanguageIds.Dashspec;
 
     public string ProfileId => "dashspec.block";
 
-    public IReadOnlyList<string> FileExtensions => Extensions;
+    public IReadOnlyList<string> FileExtensions => DashSpecPathRules.extensions;
 
     public bool IsFallback => false;
 
     public bool MatchesDocument(string documentPathOrId) =>
-        CodeCenterLanguageBackendPatterns.HasAnyExtension(documentPathOrId, FileExtensions)
+        DashSpecPathRules.isDashSpecPath(documentPathOrId)
         || documentPathOrId.StartsWith("doc://dash", StringComparison.OrdinalIgnoreCase);
 
     public IDocumentSession CreateSession(string documentId, string text) =>
@@ -89,4 +93,8 @@ public static class CodeCenterPluginBootstrap
                 ..CodeCenterCorePluginBootstrap.CorePlugins,
                 new DashSpecCodeCenterPlugin()
             ]);
+
+    public static LanguageResolverCenter CreateLanguageResolver(
+        Action<LanguageResolverBuilder>? configure = null) =>
+        CreateRuntime().CreateLanguageResolver(configure);
 }
