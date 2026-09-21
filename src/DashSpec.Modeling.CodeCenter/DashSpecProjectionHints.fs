@@ -2,56 +2,10 @@ namespace DashSpec.Modeling.CodeCenter
 
 open System
 open AIGuiders.Platform.Modeling.CodeCenter
+open AIGuiders.Platform.Modeling.Core.Identity
 
-/// Planet-owned projection classification for DashSpec outline labels (ADR-0067 ProjectionHints).
+/// Planet projection visitors over concept graph (ADR-0067 ProjectionHints).
 module DashSpecProjectionHints =
-
-    let private tryKeyword (label: string) =
-        if String.IsNullOrWhiteSpace label then
-            None
-        elif label.StartsWith("@", StringComparison.Ordinal) then
-            Some "module"
-        else
-            match label.IndexOf(' ') with
-            | -1 -> Some label
-            | index -> Some(label.Substring(0, index))
-
-    let isDiagramBox (name: string) =
-        match tryKeyword name with
-        | Some "module"
-        | Some "tab"
-        | Some "card"
-        | Some "page"
-        | Some "phase"
-        | Some "group"
-        | Some "cards"
-        | Some "views"
-        | Some "layout"
-        | Some "chrome"
-        | Some "diagram" -> true
-        | _ -> false
-
-    let isFormField (name: string) =
-        match tryKeyword name with
-        | Some "data"
-        | Some "filter"
-        | Some "series"
-        | Some "datasource"
-        | Some "transform"
-        | Some "variables"
-        | Some "presentation"
-        | Some "wiring"
-        | Some "runtime"
-        | Some "configuration"
-        | Some "report"
-        | Some "bind"
-        | Some "import" -> true
-        | _ -> false
-
-    let formatPreviewLabel (name: string) =
-        match tryKeyword name with
-        | Some keyword -> $"[{keyword}] {name}"
-        | None -> name
 
     let availableProjections () : ProjectionDescriptor list =
         List.append
@@ -69,40 +23,70 @@ module DashSpecProjectionHints =
                 NodeId = None
                 Dialect = None } ]
 
+    let nodesByRole (graph: DashSpecConceptGraph) (role: DashSpecProjectionRole) =
+        graph.Nodes
+        |> Map.toList
+        |> List.choose (fun (_, node) ->
+            if node.ProjectionRole = role then Some node else None)
+        |> List.sortBy (fun node -> node.Span.Start)
+
+    let diagramNodes graph = nodesByRole graph DashSpecProjectionRole.Diagram
+
+    let formFieldNodes graph = nodesByRole graph DashSpecProjectionRole.FormField
+
+    let formatPreviewLabel (node: DashSpecConceptNode) =
+        let role =
+            match node.ProjectionRole with
+            | DashSpecProjectionRole.Diagram -> "diagram"
+            | DashSpecProjectionRole.FormField -> "form"
+            | DashSpecProjectionRole.Outline -> "outline"
+
+        $"[{role}] {node.Label}"
+
+    let buildPreviewOutline (graph: DashSpecConceptGraph) =
+        let depthByAstId =
+            let parents =
+                graph.Edges
+                |> List.groupBy (fun edge -> edge.ChildAstId)
+                |> List.map (fun (child, edges) -> child, edges |> List.map (fun edge -> edge.ParentAstId))
+                |> Map.ofList
+
+            let rec depth astId =
+                match Map.tryFind astId parents with
+                | None -> 0
+                | Some parentIds ->
+                    parentIds |> List.map (fun parentId -> depth parentId + 1) |> List.max
+
+            graph.Nodes |> Map.map (fun _ node -> depth node.AstId)
+
+        graph.Nodes
+        |> Map.toList
+        |> List.sortBy (fun (_, node) -> node.Span.Start)
+        |> List.map (fun (_, node) ->
+            let indent = depthByAstId.[node.AstId]
+            $"{String(' ', indent * 2)}{formatPreviewLabel node}")
+        |> String.concat Environment.NewLine
+
 module DashSpecProjectionBridge =
 
-    let isDiagramBox (name: string) = DashSpecProjectionHints.isDiagramBox name
+    let buildConceptGraph (text: string) = DashSpecConceptGraphBuilder.buildFromText text
 
-    let isFormField (name: string) = DashSpecProjectionHints.isFormField name
+    let nodeIdFromAst (astId: uint32) : NodeId = DashSpecProfileRebuild.nodeIdFromAst astId
 
-    let availableProjections () = DashSpecProjectionHints.availableProjections ()
+    let diagramNodeIds (graph: DashSpecConceptGraph) =
+        DashSpecProjectionHints.diagramNodes graph
+        |> List.map (fun node -> nodeIdFromAst node.AstId)
 
-    let buildPreviewOutline (snapshot: DocumentSnapshot) =
-        let nodes = DocumentGraph.listNodes snapshot
+    let formFieldNodeIds (graph: DashSpecConceptGraph) =
+        DashSpecProjectionHints.formFieldNodes graph
+        |> List.map (fun node -> nodeIdFromAst node.AstId)
 
-        if List.isEmpty nodes then
-            String.Empty
-        else
-            let byId =
-                nodes |> List.map (fun node -> node.Id, node) |> Map.ofList
+    let containsDiagramNode (graph: DashSpecConceptGraph) (nodeId: NodeId) =
+        diagramNodeIds graph |> List.exists (fun id -> id = nodeId)
 
-            let depth (nodeId, node) =
-                let rec walk id depth =
-                    match Map.tryFind id byId with
-                    | None -> depth
-                    | Some n ->
-                        match n.Parent with
-                        | None -> depth
-                        | Some parentId -> walk parentId (depth + 1)
-
-                walk nodeId 0
-
-            nodes
-            |> List.sortBy (fun node -> node.Range.Start)
-            |> List.map (fun node ->
-                let indent = depth (node.Id, node)
-                $"{String(' ', indent * 2)}{DashSpecProjectionHints.formatPreviewLabel node.Name}")
-            |> String.concat Environment.NewLine
+    let containsFormFieldNode (graph: DashSpecConceptGraph) (nodeId: NodeId) =
+        formFieldNodeIds graph |> List.exists (fun id -> id = nodeId)
 
     let buildPreviewOutlineFromText (text: string) =
-        buildPreviewOutline (DashSpecDocumentGraph.rebuildFromText text)
+        let graph = DashSpecConceptGraphBuilder.buildFromText text
+        DashSpecProjectionHints.buildPreviewOutline graph

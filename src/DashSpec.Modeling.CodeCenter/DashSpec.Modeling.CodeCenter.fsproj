@@ -8,10 +8,16 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
     <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="..\..\..\guiders-fsharp\src\AIGuiders.Platform.Modeling.CodeCenter\AIGuiders.Platform.Modeling.CodeCenter.fsproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DashSpecConceptOntology.fs" />
+    <Compile Include="DashSpecConceptGraphBuilder.fs" />
+    <Compile Include="DashSpecInvariantLaws.fs" />
+    <Compile Include="DashSpecSerializeRules.fs" />
+    <Compile Include="DashSpecProfileRebuild.fs" />
     <Compile Include="DocumentGraphBridge.fs" />
     <Compile Include="DashSpecProjectionHints.fs" />
     <Compile Include="DashSpecDocumentLanguageProfile.fs" />
