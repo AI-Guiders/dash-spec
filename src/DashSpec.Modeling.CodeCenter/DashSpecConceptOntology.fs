@@ -26,6 +26,7 @@ type DashSpecConceptNode =
       Kind: DashSpecConceptKind
       Span: TextSpan
       Label: string
+      Title: string option
       ProjectionRole: DashSpecProjectionRole }
 
 type DashSpecConceptEdge =
