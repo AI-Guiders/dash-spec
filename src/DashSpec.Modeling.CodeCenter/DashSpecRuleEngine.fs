@@ -77,7 +77,7 @@ module DashSpecRuleEngine =
     let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (astId: uint32) =
         match Map.tryFind astId graph.Nodes with
         | Some concept when concept.Span.End <= concept.Span.Start ->
-            Some(DashSpecRuleViolation.EmptyOutlineSpan(concept.Label, concept.Span))
+            Some(DashSpecRuleViolation.EmptyOutlineSpan(DashSpecConceptOntology.outlineCaption concept.Kind, concept.Span))
         | _ -> None
 
     /// Predicate: card reference concept is not nested under a `cards` block.
