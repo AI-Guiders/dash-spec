@@ -21,12 +21,12 @@ type DashSpecAstNode =
     | BlankLine of BlankLineSyntax
 
 and CompilationUnitSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       Members: DashSpecAstNode[] }
 
 and ModuleDeclarationSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       Directive: DashSpecModuleDirective
       HeaderSpan: TextSpan
@@ -34,7 +34,7 @@ and ModuleDeclarationSyntax =
       Members: DashSpecAstNode[] }
 
 and BlockDeclarationSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       Opener: DashSpecBlockOpener
       HeaderSpan: TextSpan
@@ -42,24 +42,24 @@ and BlockDeclarationSyntax =
       Members: DashSpecAstNode[] }
 
 and EndBlockSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       EndKeyword: DashSpecBlockKeyword
       EndId: string option
       Tokens: SyntaxToken[] }
 
 and CardReferenceSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       CardId: string
       Tokens: SyntaxToken[] }
 
 and LineSyntax =
-    { Id: uint32
+    { Id: AstNodeId
       Span: TextSpan
       Tokens: SyntaxToken[] }
 
-and BlankLineSyntax = { Id: uint32; Span: TextSpan }
+and BlankLineSyntax = { Id: AstNodeId; Span: TextSpan }
 
 [<CLIMutable>]
 type ParseTree =

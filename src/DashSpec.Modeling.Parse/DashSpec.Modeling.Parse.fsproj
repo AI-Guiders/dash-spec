@@ -21,6 +21,7 @@
     <Compile Include="Syntax\TextSpan.fs" />
     <Compile Include="Syntax\SyntaxToken.fs" />
     <Compile Include="Syntax\DashSpecBlockKeyword.fs" />
+    <Compile Include="Syntax\AstNodeId.fs" />
     <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />
