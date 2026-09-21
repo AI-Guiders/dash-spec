@@ -20,6 +20,7 @@
     <Compile Include="DashSpecInvariantLaws.fs" />
     <Compile Include="DashSpecSerializeRules.fs" />
     <Compile Include="DashSpecProfileRebuild.fs" />
+    <Compile Include="DashSpecStructuralPlanner.fs" />
     <Compile Include="DocumentGraphBridge.fs" />
     <Compile Include="DashSpecProjectionHints.fs" />
     <Compile Include="DashSpecDocumentLanguageProfile.fs" />
