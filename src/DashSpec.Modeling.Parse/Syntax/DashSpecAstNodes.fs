@@ -1,5 +1,7 @@
 namespace DashSpec.Modeling.Parse.Syntax
 
+open AIGuiders.Platform.Modeling.Core.Identity
+
 [<RequireQualifiedAccess>]
 type DashSpecModuleDirective =
     | Dashboard of identifier: string
@@ -21,12 +23,12 @@ type DashSpecAstNode =
     | BlankLine of BlankLineSyntax
 
 and CompilationUnitSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       Members: DashSpecAstNode[] }
 
 and ModuleDeclarationSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       Directive: DashSpecModuleDirective
       HeaderSpan: TextSpan
@@ -34,7 +36,7 @@ and ModuleDeclarationSyntax =
       Members: DashSpecAstNode[] }
 
 and BlockDeclarationSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       Opener: DashSpecBlockOpener
       HeaderSpan: TextSpan
@@ -42,24 +44,24 @@ and BlockDeclarationSyntax =
       Members: DashSpecAstNode[] }
 
 and EndBlockSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       EndKeyword: DashSpecBlockKeyword
       EndId: string option
       Tokens: SyntaxToken[] }
 
 and CardReferenceSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       CardId: string
       Tokens: SyntaxToken[] }
 
 and LineSyntax =
-    { Id: AstNodeId
+    { Id: NodeId
       Span: TextSpan
       Tokens: SyntaxToken[] }
 
-and BlankLineSyntax = { Id: AstNodeId; Span: TextSpan }
+and BlankLineSyntax = { Id: NodeId; Span: TextSpan }
 
 [<CLIMutable>]
 type ParseTree =

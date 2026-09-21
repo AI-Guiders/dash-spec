@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
+    <ProjectReference Include="..\..\..\guiders-fsharp\src\AIGuiders.Platform.Modeling.Core\AIGuiders.Platform.Modeling.Core.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Lexing\TokenKind.fs" />
@@ -21,7 +22,6 @@
     <Compile Include="Syntax\TextSpan.fs" />
     <Compile Include="Syntax\SyntaxToken.fs" />
     <Compile Include="Syntax\DashSpecBlockKeyword.fs" />
-    <Compile Include="Syntax\AstNodeId.fs" />
     <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />

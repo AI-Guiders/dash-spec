@@ -1,8 +1,9 @@
 namespace DashSpec.Modeling.CodeCenter
 
+open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Syntax
 
-/// Planet concept ontology for DashSpec block surface (GUIDERS-ADR-0067 §2).
+/// Planet tiers over the shared AST (GUIDERS-ADR-0067 §2).
 [<RequireQualifiedAccess>]
 type DashSpecProjectionRole =
     | Outline
@@ -21,22 +22,24 @@ type DashSpecConceptKind =
 type DashSpecConceptEdgeKind =
     | Contains
 
-type DashSpecConceptNode =
-    { AstId: AstNodeId
+/// Semantic tier attached to an AST outline node.
+type DashSpecConceptTier =
+    { Id: NodeId
       Kind: DashSpecConceptKind
       Span: TextSpan
       Title: string option
       ProjectionRole: DashSpecProjectionRole }
 
 type DashSpecConceptEdge =
-    { ParentAstId: AstNodeId
-      ChildAstId: AstNodeId
+    { ParentId: NodeId
+      ChildId: NodeId
       Kind: DashSpecConceptEdgeKind }
 
+/// AST + planet tiers (same node ids end-to-end).
 type DashSpecConceptGraph =
     { Tree: ParseTree
-      RootAstId: AstNodeId
-      Nodes: Map<AstNodeId, DashSpecConceptNode>
+      RootId: NodeId
+      Tiers: Map<NodeId, DashSpecConceptTier>
       Edges: DashSpecConceptEdge list }
 
 type ProfileLawDiagnostic =
@@ -76,7 +79,6 @@ module DashSpecConceptOntology =
         | DashSpecAstNode.CardReference n -> DashSpecConceptKind.CardReference n.CardId
         | _ -> failwith "not a concept-bearing AST node"
 
-    /// Outline caption derived from typed kind (not stored on the node).
     let outlineCaption (kind: DashSpecConceptKind) =
         match kind with
         | DashSpecConceptKind.CompilationUnit -> "unit"
@@ -87,8 +89,7 @@ module DashSpecConceptOntology =
         | DashSpecConceptKind.Block(keyword, None) -> DashSpecBlockKeyword.toEndName keyword
         | DashSpecConceptKind.CardReference cardId -> $"card {cardId}"
 
-    /// Federation tree caption: title when present, else structural kind caption.
-    let treeCaption (node: DashSpecConceptNode) =
-        match node.Title with
+    let treeCaption (tier: DashSpecConceptTier) =
+        match tier.Title with
         | Some title -> title
-        | None -> outlineCaption node.Kind
+        | None -> outlineCaption tier.Kind
