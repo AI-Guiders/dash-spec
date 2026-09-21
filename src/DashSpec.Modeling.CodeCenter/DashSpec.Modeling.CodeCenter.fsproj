@@ -15,6 +15,8 @@
   <ItemGroup>
     <Compile Include="DashSpecConceptOntology.fs" />
     <Compile Include="DashSpecConceptGraphBuilder.fs" />
+    <Compile Include="DashSpecDiagnosticRules.fs" />
+    <Compile Include="DashSpecRuleEngine.fs" />
     <Compile Include="DashSpecInvariantLaws.fs" />
     <Compile Include="DashSpecSerializeRules.fs" />
     <Compile Include="DashSpecProfileRebuild.fs" />
