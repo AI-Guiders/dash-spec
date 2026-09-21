@@ -1,6 +1,7 @@
 # DashSpec planet bundle for federation Code Center (ship-63).
 plugin_id = "dashspec.codecenter"
 language_id = "dashspec"
+file_extensions = [".dash", ".dashspec"]
 
 [[projection]]
 kind = "Tree"
