@@ -95,7 +95,7 @@ module DashSpecRuleEngine =
         | None -> None
 
     /// One document-order pass: block-balance stack machine + concept graph predicates.
-    let evaluate (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
+    let evaluateViolations (graph: DashSpecConceptGraph) : DashSpecRuleViolation list =
         let violations = ResizeArray<DashSpecRuleViolation>()
         let blockStack = Stack<BlockFrame>()
         let ancestors = parentIndex graph.Edges
@@ -154,9 +154,12 @@ module DashSpecRuleEngine =
             let frame = blockStack.Peek()
             signal (DashSpecRuleViolation.UnclosedBlock(frame.Keyword, frame.Span))
 
-        violations |> Seq.map DashSpecDiagnosticCatalog.toDiagnostic |> List.ofSeq
+        violations |> Seq.toList
 
-    let blockBalanceCodes = Set.ofList [ "DS002"; "DS003"; "DS004"; "DS005" ]
+    let evaluate (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
+        evaluateViolations graph |> List.map DashSpecDiagnosticCatalog.toDiagnostic
 
     let evaluateBlockBalance (graph: DashSpecConceptGraph) =
-        evaluate graph |> List.filter (fun diagnostic -> blockBalanceCodes.Contains diagnostic.Code)
+        evaluateViolations graph
+        |> List.filter DashSpecRuleRegistry.isBlockBalance
+        |> List.map DashSpecDiagnosticCatalog.toDiagnostic
