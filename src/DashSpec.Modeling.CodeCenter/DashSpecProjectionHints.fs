@@ -3,6 +3,7 @@ namespace DashSpec.Modeling.CodeCenter
 open System
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
+open DashSpec.Modeling.Parse.Syntax
 
 /// Planet projection visitors over concept graph (ADR-0067 ProjectionHints).
 module DashSpecProjectionHints =
@@ -71,7 +72,7 @@ module DashSpecProjectionBridge =
 
     let buildConceptGraph (text: string) = DashSpecConceptGraphBuilder.buildFromText text
 
-    let nodeIdFromAst (astId: uint32) : NodeId = DashSpecProfileRebuild.nodeIdFromAst astId
+    let nodeIdFromAst (astId: AstNodeId) : NodeId = DashSpecProfileRebuild.nodeIdFromAst astId
 
     let diagramNodeIds (graph: DashSpecConceptGraph) =
         DashSpecProjectionHints.diagramNodes graph

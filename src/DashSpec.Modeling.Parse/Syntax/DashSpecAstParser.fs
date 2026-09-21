@@ -35,7 +35,7 @@ module DashSpecAstParser =
 
     type private MutableNode =
         { Kind: DashSpecAstNodeKind
-          Id: uint32
+          Id: AstNodeId
           Span: TextSpan
           Directive: DashSpecModuleDirective option
           Opener: DashSpecBlockOpener option
@@ -46,7 +46,7 @@ module DashSpecAstParser =
           Children: ResizeArray<MutableNode> }
 
     let private nextId (counter: int ref) =
-        let id = uint32 counter.Value
+        let id = AstNodeId.create (uint32 counter.Value)
         counter.Value <- counter.Value + 1
         id
 

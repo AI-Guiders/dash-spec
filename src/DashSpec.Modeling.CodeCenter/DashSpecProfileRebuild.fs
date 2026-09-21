@@ -9,8 +9,8 @@ open DashSpec.Modeling.Parse.Syntax
 /// Rebuild federation snapshot from DashSpec concept graph (planet SSOT pipeline).
 module DashSpecProfileRebuild =
 
-    let nodeIdFromAst (astId: uint32) : NodeId =
-        NodeId.mint (NumericId.ofCounter (int64 astId))
+    let nodeIdFromAst (astId: AstNodeId) : NodeId =
+        NodeId.mint (NumericId.ofCounter (int64 (AstNodeId.value astId)))
 
     let private syntaxKindToString (kind: DashSpecSyntaxKind) = kind.ToString()
 
@@ -79,8 +79,8 @@ module DashSpecProfileRebuild =
             snapshot, graph, diagnostics
         with :? DashSpecParseException ->
             let emptyGraph =
-                { Tree = { Text = text; Root = DashSpecAstNode.CompilationUnit { Id = 0u; Span = TextSpan.Create 0 0; Members = Array.empty }; Tokens = Array.empty }
-                  RootAstId = 0u
+                { Tree = { Text = text; Root = DashSpecAstNode.CompilationUnit { Id = AstNodeId.zero; Span = TextSpan.Create 0 0; Members = Array.empty }; Tokens = Array.empty }
+                  RootAstId = AstNodeId.zero
                   Nodes = Map.empty
                   Edges = [] }
 
