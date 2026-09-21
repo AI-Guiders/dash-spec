@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Syntax
 
 open System
+open DashSpec.Modeling.Parse.Lexing
 
 module DashSpecAst =
 
@@ -87,6 +88,39 @@ module DashSpecAst =
         | DashSpecAstNode.BlockDeclaration _
         | DashSpecAstNode.CardReference _ -> true
         | _ -> false
+
+    let private unwrapStringLiteral (text: string) =
+        if text.Length >= 2 && text.[0] = '"' && text.[text.Length - 1] = '"' then
+            text.Substring(1, text.Length - 2)
+        else
+            text
+
+    /// Display title from `as "…"` on the opener/header line, when present.
+    let tryTitle (node: DashSpecAstNode) =
+        let tokens = tokens node
+
+        tokens
+        |> Array.tryFindIndex (fun token -> token.Text = "as")
+        |> Option.bind (fun index ->
+            if index + 1 < tokens.Length then
+                let next = tokens.[index + 1]
+
+                if next.LexKind = TokenKind.String then
+                    Some(unwrapStringLiteral next.Text)
+                else
+                    None
+            else
+                None)
+
+    let rec hasClosingEndBlock (node: DashSpecAstNode) (keyword: DashSpecBlockKeyword) (identifier: string option) =
+        match node with
+        | DashSpecAstNode.EndBlock n when n.EndKeyword = keyword ->
+            match identifier, n.EndId with
+            | Some openerId, Some endId -> String.Equals(openerId, endId, StringComparison.Ordinal)
+            | Some _, None -> true
+            | None, Some _ -> false
+            | None, None -> true
+        | _ -> members node |> Array.exists (fun child -> hasClosingEndBlock child keyword identifier)
 
     let rec descendants (node: DashSpecAstNode) =
         seq {
