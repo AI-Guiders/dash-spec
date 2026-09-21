@@ -23,7 +23,7 @@ module DashSpecConceptGraphBuilder =
         else
             span
 
-    let private addConcept (nodes: Map<uint32, DashSpecConceptNode>) (edges: DashSpecConceptEdge list) (parentAstId: uint32 option) (node: DashSpecAstNode) =
+    let private addConcept (nodes: Map<AstNodeId, DashSpecConceptNode>) (edges: DashSpecConceptEdge list) (parentAstId: AstNodeId option) (node: DashSpecAstNode) =
         if not (DashSpecAst.isOutlineNode node) then
             nodes, edges
         else
@@ -53,7 +53,7 @@ module DashSpecConceptGraphBuilder =
         let edges = []
         let rootAstId = DashSpecAst.id tree.Root
 
-        let rec walk (parentAstId: uint32 option) (nodes, edges) (node: DashSpecAstNode) =
+        let rec walk (parentAstId: AstNodeId option) (nodes, edges) (node: DashSpecAstNode) =
             let nodes, edges = addConcept nodes edges parentAstId node
             let parentForChildren =
                 if DashSpecAst.isOutlineNode node then Some(DashSpecAst.id node)
