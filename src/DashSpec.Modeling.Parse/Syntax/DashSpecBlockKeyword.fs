@@ -87,6 +87,39 @@ module DashSpecBlockKeyword =
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
 
+    let isDiagramContainer (keyword: DashSpecBlockKeyword) =
+        match keyword with
+        | DashSpecBlockKeyword.Tab
+        | DashSpecBlockKeyword.Card
+        | DashSpecBlockKeyword.Page
+        | DashSpecBlockKeyword.Phase
+        | DashSpecBlockKeyword.Group
+        | DashSpecBlockKeyword.Cards
+        | DashSpecBlockKeyword.Views
+        | DashSpecBlockKeyword.Layout
+        | DashSpecBlockKeyword.Chrome
+        | DashSpecBlockKeyword.Diagram
+        | DashSpecBlockKeyword.Filters
+        | DashSpecBlockKeyword.Grid -> true
+        | _ -> false
+
+    let isFormField (keyword: DashSpecBlockKeyword) =
+        match keyword with
+        | DashSpecBlockKeyword.Data
+        | DashSpecBlockKeyword.Filter
+        | DashSpecBlockKeyword.Series
+        | DashSpecBlockKeyword.Datasource
+        | DashSpecBlockKeyword.Transform
+        | DashSpecBlockKeyword.Variables
+        | DashSpecBlockKeyword.Presentation
+        | DashSpecBlockKeyword.Wiring
+        | DashSpecBlockKeyword.Runtime
+        | DashSpecBlockKeyword.Configuration
+        | DashSpecBlockKeyword.Report
+        | DashSpecBlockKeyword.Bind
+        | DashSpecBlockKeyword.Import -> true
+        | _ -> false
+
     let toEndName (keyword: DashSpecBlockKeyword) =
         match keyword with
         | DashSpecBlockKeyword.Grid -> "grid"
