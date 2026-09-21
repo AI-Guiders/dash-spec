@@ -4,6 +4,16 @@ open System
 
 module DashSpecAst =
 
+    let id (node: DashSpecAstNode) =
+        match node with
+        | DashSpecAstNode.CompilationUnit n -> n.Id
+        | DashSpecAstNode.ModuleDeclaration n -> n.Id
+        | DashSpecAstNode.BlockDeclaration n -> n.Id
+        | DashSpecAstNode.CardReference n -> n.Id
+        | DashSpecAstNode.EndBlock n -> n.Id
+        | DashSpecAstNode.Line n -> n.Id
+        | DashSpecAstNode.BlankLine n -> n.Id
+
     let span (node: DashSpecAstNode) =
         match node with
         | DashSpecAstNode.CompilationUnit n -> n.Span
