@@ -33,6 +33,7 @@ module DashSpecConceptGraphBuilder =
                   Kind = kind
                   Span = conceptSpan node
                   Label = DashSpecAst.outlineLabel node
+                  Title = DashSpecAst.tryTitle node
                   ProjectionRole = DashSpecConceptOntology.projectionRole kind }
 
             let nodes = nodes |> Map.add concept.AstId concept

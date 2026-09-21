@@ -34,15 +34,15 @@ module DashSpecRuleEngine =
               Identifier = None
               Span = span }
 
-    /// Tab lines with `as "title"` are header-only and do not take a matching `end tab`.
-    let private isHeaderOnlyTab (node: DashSpecAstNode) =
+    /// Tab blocks without a matching `end tab` in the subtree are registry headers, not balance frames.
+    let private participatesInBlockBalance (node: DashSpecAstNode) =
         match node with
         | DashSpecAstNode.BlockDeclaration n ->
             match n.Opener with
-            | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, _) ->
-                n.Tokens |> Array.exists (fun token -> token.Text = "as")
-            | _ -> false
-        | _ -> false
+            | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, id) ->
+                DashSpecAst.hasClosingEndBlock node DashSpecBlockKeyword.Tab (Some id)
+            | _ -> true
+        | _ -> true
 
     let private parentIndex (edges: DashSpecConceptEdge list) =
         let ancestors = Dictionary<uint32, uint32 list>()
@@ -122,7 +122,7 @@ module DashSpecRuleEngine =
                     walk child
 
             | DashSpecAstNode.BlockDeclaration n ->
-                if not (isHeaderOnlyTab node) then
+                if participatesInBlockBalance node then
                     blockStack.Push(blockFrame n.Opener n.Span)
 
                 for child in DashSpecAst.members node do
