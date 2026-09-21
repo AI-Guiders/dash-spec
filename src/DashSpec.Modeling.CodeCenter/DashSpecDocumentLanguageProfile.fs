@@ -8,7 +8,7 @@ type DashSpecDocumentLanguageProfile() =
         member _.ProfileRef = { ProfileId = "dashspec.block"; Flavour = None }
         member _.Surface = SurfaceFamily.BlockText
         member _.Rebuild text = DashSpecDocumentGraph.rebuildFromText text
-        member _.PlanStructural snapshot edit = StructuralPlanGraph.plan snapshot edit
+        member _.PlanStructural snapshot edit = DashSpecStructuralPlanner.plan snapshot edit
 
         member _.AvailableProjections () = DashSpecProjectionHints.availableProjections ()
 
