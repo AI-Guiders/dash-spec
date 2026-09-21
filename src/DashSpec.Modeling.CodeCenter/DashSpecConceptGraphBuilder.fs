@@ -32,7 +32,6 @@ module DashSpecConceptGraphBuilder =
                 { AstId = DashSpecAst.id node
                   Kind = kind
                   Span = conceptSpan node
-                  Label = DashSpecAst.outlineLabel node
                   Title = DashSpecAst.tryTitle node
                   ProjectionRole = DashSpecConceptOntology.projectionRole kind }
 

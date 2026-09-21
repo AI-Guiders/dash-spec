@@ -25,7 +25,6 @@ type DashSpecConceptNode =
     { AstId: uint32
       Kind: DashSpecConceptKind
       Span: TextSpan
-      Label: string
       Title: string option
       ProjectionRole: DashSpecProjectionRole }
 
@@ -76,3 +75,20 @@ module DashSpecConceptOntology =
             | DashSpecBlockOpener.Anonymous keyword -> DashSpecConceptKind.Block(keyword, None)
         | DashSpecAstNode.CardReference n -> DashSpecConceptKind.CardReference n.CardId
         | _ -> failwith "not a concept-bearing AST node"
+
+    /// Outline caption derived from typed kind (not stored on the node).
+    let outlineCaption (kind: DashSpecConceptKind) =
+        match kind with
+        | DashSpecConceptKind.CompilationUnit -> "unit"
+        | DashSpecConceptKind.DashboardModule id -> $"@dashboard {id}"
+        | DashSpecConceptKind.TabModule id -> $"@tab {id}"
+        | DashSpecConceptKind.Block(keyword, Some identifier) ->
+            $"{DashSpecBlockKeyword.toEndName keyword} {identifier}"
+        | DashSpecConceptKind.Block(keyword, None) -> DashSpecBlockKeyword.toEndName keyword
+        | DashSpecConceptKind.CardReference cardId -> $"card {cardId}"
+
+    /// Federation tree caption: title when present, else structural kind caption.
+    let treeCaption (node: DashSpecConceptNode) =
+        match node.Title with
+        | Some title -> title
+        | None -> outlineCaption node.Kind
