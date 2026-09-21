@@ -6,21 +6,18 @@ open AIGuiders.Platform.Modeling.LanguageIntelligence.Relations
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Syntax
 
-/// Rebuild federation snapshot from DashSpec concept graph (planet SSOT pipeline).
+/// Rebuild federation snapshot from AST + planet tiers.
 module DashSpecProfileRebuild =
-
-    let nodeIdFromAst (astId: AstNodeId) : NodeId =
-        NodeId.mint (NumericId.ofCounter (int64 (AstNodeId.value astId)))
 
     let private syntaxKindToString (kind: DashSpecSyntaxKind) = kind.ToString()
 
     let private tokenSpans (tree: ParseTree) (graph: DashSpecConceptGraph) =
         let nodeIdAt offset =
-            graph.Nodes
+            graph.Tiers
             |> Map.toList
-            |> List.tryFind (fun (_, concept) ->
-                concept.Span.Start <= offset && offset < concept.Span.End)
-            |> Option.map (fun (_, concept) -> nodeIdFromAst concept.AstId)
+            |> List.tryFind (fun (_, tier) ->
+                tier.Span.Start <= offset && offset < tier.Span.End)
+            |> Option.map (fun (_, tier) -> tier.Id)
 
         SyntaxTree.classifiedSpans tree
         |> Seq.map (fun (span: DashSpecSyntaxSpan) ->
@@ -32,33 +29,33 @@ module DashSpecProfileRebuild =
         |> List.ofSeq
 
     let private federationNodes (graph: DashSpecConceptGraph) =
-        graph.Nodes
+        graph.Tiers
         |> Map.toList
-        |> List.sortBy (fun (_, node) -> node.Span.Start)
-        |> List.map (fun (_, concept) ->
+        |> List.sortBy (fun (_, tier) -> tier.Span.Start)
+        |> List.map (fun (_, tier) ->
             let parent =
                 graph.Edges
-                |> List.tryFind (fun edge -> edge.ChildAstId = concept.AstId)
-                |> Option.map (fun edge -> nodeIdFromAst edge.ParentAstId)
+                |> List.tryFind (fun edge -> edge.ChildId = tier.Id)
+                |> Option.map (fun edge -> edge.ParentId)
 
-            nodeIdFromAst concept.AstId,
-            ({ Id = nodeIdFromAst concept.AstId
-               Name = DashSpecConceptOntology.treeCaption concept
-               Start = concept.Span.Start
-               End = concept.Span.End
+            tier.Id,
+            ({ Id = tier.Id
+               Name = DashSpecConceptOntology.treeCaption tier
+               Start = tier.Span.Start
+               End = tier.Span.End
                Parent = parent }
              : DocumentNode))
 
     let private foldingRegions (graph: DashSpecConceptGraph) =
-        graph.Nodes
+        graph.Tiers
         |> Map.toList
-        |> List.choose (fun (_, concept) ->
-            if concept.Span.End <= concept.Span.Start then
+        |> List.choose (fun (_, tier) ->
+            if tier.Span.End <= tier.Span.Start then
                 None
             else
                 Some
-                    ({ Range = LineRange.create concept.Span.Start concept.Span.End
-                       Name = DashSpecConceptOntology.treeCaption concept }
+                    ({ Range = LineRange.create tier.Span.Start tier.Span.End
+                       Name = DashSpecConceptOntology.treeCaption tier }
                      : FoldingRegion))
 
     let rebuild (text: string) : DocumentSnapshot * DashSpecConceptGraph * ProfileLawDiagnostic list =
@@ -78,10 +75,12 @@ module DashSpecProfileRebuild =
 
             snapshot, graph, diagnostics
         with :? DashSpecParseException ->
+            let emptyId = NodeId.mint (NumericId.ofCounter 0L)
+
             let emptyGraph =
-                { Tree = { Text = text; Root = DashSpecAstNode.CompilationUnit { Id = AstNodeId.zero; Span = TextSpan.Create 0 0; Members = Array.empty }; Tokens = Array.empty }
-                  RootAstId = AstNodeId.zero
-                  Nodes = Map.empty
+                { Tree = { Text = text; Root = DashSpecAstNode.CompilationUnit { Id = emptyId; Span = TextSpan.Create 0 0; Members = Array.empty }; Tokens = Array.empty }
+                  RootId = emptyId
+                  Tiers = Map.empty
                   Edges = [] }
 
             let snapshot =
