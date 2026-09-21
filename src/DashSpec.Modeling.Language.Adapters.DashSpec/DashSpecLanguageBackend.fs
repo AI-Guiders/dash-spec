@@ -14,24 +14,7 @@ type DashSpecLanguageBackend() =
 
     static let languageId = LanguageIds.Dashspec
 
-    static let dashSpecExtensions =
-        set
-            [ ".dashspec"
-              ".dashdiagram"
-              ".dashlayout"
-              ".dashpalette"
-              ".dashpresentation"
-              ".dashtransform"
-              ".dashcatalog"
-              ".dashtooltip"
-              ".dashinclude" ]
-
-    static let isDashSpecPath (path: string) =
-        if String.IsNullOrWhiteSpace path then
-            false
-        else
-            let ext = Path.GetExtension path
-            dashSpecExtensions.Contains(ext.ToLowerInvariant())
+    static let isDashSpecPath (path: string) = DashSpecPathRules.isDashSpecPath path
 
     static let readSource (req: LanguageRequest) =
         if not (String.IsNullOrWhiteSpace req.SourceText) then
