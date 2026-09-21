@@ -103,11 +103,20 @@ module DashSpecStructuralPlanner =
         | Error message -> Error message
         | Ok(offset, indent) ->
             let newText = insertSourceLine before.Text offset indent sourceLine
+            let after = rebuildSnapshot newText
 
-            Ok
-                { Snapshot = rebuildSnapshot newText
-                  Inverse = None
-                  InverseQuality = InverseQuality.Unspecified }
+            let inserted =
+                after.Nodes
+                |> Map.toList
+                |> List.tryFind (fun (id, _) -> not (Map.containsKey id before.Nodes))
+
+            match inserted with
+            | Some(nodeId, _) ->
+                Ok
+                    { Snapshot = after
+                      Inverse = Some(RemoveBlock nodeId)
+                      InverseQuality = InverseQuality.Exact }
+            | None -> Error "insert block did not create a node"
 
     let private planRenameMember (before: DocumentSnapshot) (nodeId: NodeId) (newName: string) =
         match DocumentGraph.renameNode before nodeId newName with
