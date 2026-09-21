@@ -43,7 +43,7 @@ module DashSpecProfileRebuild =
 
             nodeIdFromAst concept.AstId,
             ({ Id = nodeIdFromAst concept.AstId
-               Name = concept.Label
+               Name = DashSpecConceptOntology.treeCaption concept
                Start = concept.Span.Start
                End = concept.Span.End
                Parent = parent }
@@ -58,7 +58,7 @@ module DashSpecProfileRebuild =
             else
                 Some
                     ({ Range = LineRange.create concept.Span.Start concept.Span.End
-                       Name = concept.Label }
+                       Name = DashSpecConceptOntology.treeCaption concept }
                      : FoldingRegion))
 
     let rebuild (text: string) : DocumentSnapshot * DashSpecConceptGraph * ProfileLawDiagnostic list =

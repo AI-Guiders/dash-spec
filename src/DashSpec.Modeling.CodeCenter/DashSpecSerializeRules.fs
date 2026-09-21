@@ -33,7 +33,8 @@ module DashSpecSerializeRules =
                 g.Nodes
                 |> Map.toList
                 |> List.sortBy (fun (_, node) -> node.Span.Start)
-                |> List.map (fun (_, node) -> $"{node.AstId}:{node.Label}:{node.ProjectionRole}")
+                |> List.map (fun (_, node) ->
+                    $"{node.AstId}:{DashSpecConceptOntology.outlineCaption node.Kind}:{node.ProjectionRole}")
 
             if outlineSignature graph = outlineSignature (fst reparsed) then
                 Ok graph
