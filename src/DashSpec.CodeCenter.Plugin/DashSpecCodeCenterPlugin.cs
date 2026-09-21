@@ -13,6 +13,9 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
 
     public void RegisterProjectionPlugins(ICodeCenterProjectionRegistry registry)
     {
+        registry.Register("dashspec.diagram", ProjectionKind.Diagram, _ => new DashSpecDiagramProjectionContribution());
+        registry.Register("dashspec.form", ProjectionKind.Form, _ => new DashSpecFormProjectionContribution());
+        registry.Register("dashspec.preview", ProjectionKind.Preview, _ => new DashSpecPreviewProjectionContribution());
     }
 
     public void RegisterTheme(ICodeCenterThemeRegistry registry)
