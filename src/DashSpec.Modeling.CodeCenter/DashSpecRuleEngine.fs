@@ -45,7 +45,7 @@ module DashSpecRuleEngine =
         | _ -> true
 
     let private parentIndex (edges: DashSpecConceptEdge list) =
-        let ancestors = Dictionary<uint32, uint32 list>()
+        let ancestors = Dictionary<AstNodeId, AstNodeId list>()
 
         for edge in edges do
             match ancestors.TryGetValue edge.ChildAstId with
@@ -54,8 +54,8 @@ module DashSpecRuleEngine =
 
         ancestors
 
-    let private hasCardsAncestor (graph: DashSpecConceptGraph) (ancestors: Dictionary<uint32, uint32 list>) (astId: uint32) =
-        let rec walk (currentId: uint32) (visited: Set<uint32>) =
+    let private hasCardsAncestor (graph: DashSpecConceptGraph) (ancestors: Dictionary<AstNodeId, AstNodeId list>) (astId: AstNodeId) =
+        let rec walk (currentId: AstNodeId) (visited: Set<AstNodeId>) =
             if Set.contains currentId visited then
                 false
             else
@@ -74,7 +74,7 @@ module DashSpecRuleEngine =
         walk astId Set.empty
 
     /// Predicate: concept outline span is empty in the built graph.
-    let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (astId: uint32) =
+    let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (astId: AstNodeId) =
         match Map.tryFind astId graph.Nodes with
         | Some concept when concept.Span.End <= concept.Span.Start ->
             Some(DashSpecRuleViolation.EmptyOutlineSpan(DashSpecConceptOntology.outlineCaption concept.Kind, concept.Span))
@@ -83,8 +83,8 @@ module DashSpecRuleEngine =
     /// Predicate: card reference concept is not nested under a `cards` block.
     let private whenCardOutsideCards
         (graph: DashSpecConceptGraph)
-        (ancestors: Dictionary<uint32, uint32 list>)
-        (astId: uint32)
+        (ancestors: Dictionary<AstNodeId, AstNodeId list>)
+        (astId: AstNodeId)
         =
         match Map.tryFind astId graph.Nodes with
         | Some concept ->

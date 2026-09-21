@@ -22,21 +22,21 @@ type DashSpecConceptEdgeKind =
     | Contains
 
 type DashSpecConceptNode =
-    { AstId: uint32
+    { AstId: AstNodeId
       Kind: DashSpecConceptKind
       Span: TextSpan
       Title: string option
       ProjectionRole: DashSpecProjectionRole }
 
 type DashSpecConceptEdge =
-    { ParentAstId: uint32
-      ChildAstId: uint32
+    { ParentAstId: AstNodeId
+      ChildAstId: AstNodeId
       Kind: DashSpecConceptEdgeKind }
 
 type DashSpecConceptGraph =
     { Tree: ParseTree
-      RootAstId: uint32
-      Nodes: Map<uint32, DashSpecConceptNode>
+      RootAstId: AstNodeId
+      Nodes: Map<AstNodeId, DashSpecConceptNode>
       Edges: DashSpecConceptEdge list }
 
 type ProfileLawDiagnostic =
