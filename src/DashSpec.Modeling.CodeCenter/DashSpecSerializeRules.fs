@@ -1,5 +1,6 @@
 namespace DashSpec.Modeling.CodeCenter
 
+open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Formatting
 open DashSpec.Modeling.Parse.Syntax
 
@@ -30,11 +31,12 @@ module DashSpecSerializeRules =
             let reparsed = parseAndBuild (serializePreserve graph)
 
             let outlineSignature (g: DashSpecConceptGraph) =
-                g.Nodes
+                g.Tiers
                 |> Map.toList
-                |> List.sortBy (fun (_, node) -> node.Span.Start)
-                |> List.map (fun (_, node) ->
-                    $"{node.AstId}:{DashSpecConceptOntology.outlineCaption node.Kind}:{node.ProjectionRole}")
+                |> List.sortBy (fun (_, tier) -> tier.Span.Start)
+                |> List.map (fun (_, tier) ->
+                    let id = NumericId.value (NodeId.carrier tier.Id)
+                    $"{id}:{DashSpecConceptOntology.outlineCaption tier.Kind}:{tier.ProjectionRole}")
 
             if outlineSignature graph = outlineSignature (fst reparsed) then
                 Ok graph

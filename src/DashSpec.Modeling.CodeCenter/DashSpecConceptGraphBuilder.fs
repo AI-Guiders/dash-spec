@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.CodeCenter
 
 open System.Collections.Generic
+open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Syntax
 
 module DashSpecConceptGraphBuilder =
@@ -23,55 +24,55 @@ module DashSpecConceptGraphBuilder =
         else
             span
 
-    let private addConcept (nodes: Map<AstNodeId, DashSpecConceptNode>) (edges: DashSpecConceptEdge list) (parentAstId: AstNodeId option) (node: DashSpecAstNode) =
+    let private addTier (tiers: Map<NodeId, DashSpecConceptTier>) (edges: DashSpecConceptEdge list) (parentId: NodeId option) (node: DashSpecAstNode) =
         if not (DashSpecAst.isOutlineNode node) then
-            nodes, edges
+            tiers, edges
         else
             let kind = DashSpecConceptOntology.kindFromAst node
-            let concept =
-                { AstId = DashSpecAst.id node
+            let tier =
+                { Id = DashSpecAst.id node
                   Kind = kind
                   Span = conceptSpan node
                   Title = DashSpecAst.tryTitle node
                   ProjectionRole = DashSpecConceptOntology.projectionRole kind }
 
-            let nodes = nodes |> Map.add concept.AstId concept
+            let tiers = tiers |> Map.add tier.Id tier
 
             let edges =
-                match parentAstId with
+                match parentId with
                 | None -> edges
-                | Some parentId ->
-                    { ParentAstId = parentId
-                      ChildAstId = concept.AstId
+                | Some parent ->
+                    { ParentId = parent
+                      ChildId = tier.Id
                       Kind = DashSpecConceptEdgeKind.Contains }
                     :: edges
 
-            nodes, edges
+            tiers, edges
 
     let build (tree: ParseTree) : DashSpecConceptGraph =
-        let nodes = Map.empty
+        let tiers = Map.empty
         let edges = []
-        let rootAstId = DashSpecAst.id tree.Root
+        let rootId = DashSpecAst.id tree.Root
 
-        let rec walk (parentAstId: AstNodeId option) (nodes, edges) (node: DashSpecAstNode) =
-            let nodes, edges = addConcept nodes edges parentAstId node
+        let rec walk (parentId: NodeId option) (tiers, edges) (node: DashSpecAstNode) =
+            let tiers, edges = addTier tiers edges parentId node
             let parentForChildren =
                 if DashSpecAst.isOutlineNode node then Some(DashSpecAst.id node)
-                else parentAstId
+                else parentId
 
-            let nodes, edges =
+            let tiers, edges =
                 DashSpecAst.members node
                 |> Array.fold (fun state child ->
                     if DashSpecAst.isEndBlock child then state
-                    else walk parentForChildren state child) (nodes, edges)
+                    else walk parentForChildren state child) (tiers, edges)
 
-            nodes, edges
+            tiers, edges
 
-        let nodes, edges = walk None (nodes, edges) tree.Root
+        let tiers, edges = walk None (tiers, edges) tree.Root
 
         { Tree = tree
-          RootAstId = rootAstId
-          Nodes = nodes
+          RootId = rootId
+          Tiers = tiers
           Edges = edges }
 
     let buildFromText (text: string) =

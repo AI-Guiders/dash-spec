@@ -3,9 +3,8 @@ namespace DashSpec.Modeling.CodeCenter
 open System
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
-open DashSpec.Modeling.Parse.Syntax
 
-/// Planet projection visitors over concept graph (ADR-0067 ProjectionHints).
+/// Planet projection visitors over AST tiers (ADR-0067 ProjectionHints).
 module DashSpecProjectionHints =
 
     let availableProjections () : ProjectionDescriptor list =
@@ -24,63 +23,59 @@ module DashSpecProjectionHints =
                 NodeId = None
                 Dialect = None } ]
 
-    let nodesByRole (graph: DashSpecConceptGraph) (role: DashSpecProjectionRole) =
-        graph.Nodes
+    let tiersByRole (graph: DashSpecConceptGraph) (role: DashSpecProjectionRole) =
+        graph.Tiers
         |> Map.toList
-        |> List.choose (fun (_, node) ->
-            if node.ProjectionRole = role then Some node else None)
-        |> List.sortBy (fun node -> node.Span.Start)
+        |> List.choose (fun (_, tier) ->
+            if tier.ProjectionRole = role then Some tier else None)
+        |> List.sortBy (fun tier -> tier.Span.Start)
 
-    let diagramNodes graph = nodesByRole graph DashSpecProjectionRole.Diagram
+    let diagramTiers graph = tiersByRole graph DashSpecProjectionRole.Diagram
 
-    let formFieldNodes graph = nodesByRole graph DashSpecProjectionRole.FormField
+    let formFieldTiers graph = tiersByRole graph DashSpecProjectionRole.FormField
 
-    let formatPreviewLabel (node: DashSpecConceptNode) =
+    let formatPreviewLabel (tier: DashSpecConceptTier) =
         let role =
-            match node.ProjectionRole with
+            match tier.ProjectionRole with
             | DashSpecProjectionRole.Diagram -> "diagram"
             | DashSpecProjectionRole.FormField -> "form"
             | DashSpecProjectionRole.Outline -> "outline"
 
-        $"[{role}] {DashSpecConceptOntology.treeCaption node}"
+        $"[{role}] {DashSpecConceptOntology.treeCaption tier}"
 
     let buildPreviewOutline (graph: DashSpecConceptGraph) =
-        let depthByAstId =
+        let depthById =
             let parents =
                 graph.Edges
-                |> List.groupBy (fun edge -> edge.ChildAstId)
-                |> List.map (fun (child, edges) -> child, edges |> List.map (fun edge -> edge.ParentAstId))
+                |> List.groupBy (fun edge -> edge.ChildId)
+                |> List.map (fun (child, edges) -> child, edges |> List.map (fun edge -> edge.ParentId))
                 |> Map.ofList
 
-            let rec depth astId =
-                match Map.tryFind astId parents with
+            let rec depth nodeId =
+                match Map.tryFind nodeId parents with
                 | None -> 0
                 | Some parentIds ->
                     parentIds |> List.map (fun parentId -> depth parentId + 1) |> List.max
 
-            graph.Nodes |> Map.map (fun _ node -> depth node.AstId)
+            graph.Tiers |> Map.map (fun _ tier -> depth tier.Id)
 
-        graph.Nodes
+        graph.Tiers
         |> Map.toList
-        |> List.sortBy (fun (_, node) -> node.Span.Start)
-        |> List.map (fun (_, node) ->
-            let indent = depthByAstId.[node.AstId]
-            $"{String(' ', indent * 2)}{formatPreviewLabel node}")
+        |> List.sortBy (fun (_, tier) -> tier.Span.Start)
+        |> List.map (fun (_, tier) ->
+            let indent = depthById.[tier.Id]
+            $"{String(' ', indent * 2)}{formatPreviewLabel tier}")
         |> String.concat Environment.NewLine
 
 module DashSpecProjectionBridge =
 
     let buildConceptGraph (text: string) = DashSpecConceptGraphBuilder.buildFromText text
 
-    let nodeIdFromAst (astId: AstNodeId) : NodeId = DashSpecProfileRebuild.nodeIdFromAst astId
-
     let diagramNodeIds (graph: DashSpecConceptGraph) =
-        DashSpecProjectionHints.diagramNodes graph
-        |> List.map (fun node -> nodeIdFromAst node.AstId)
+        DashSpecProjectionHints.diagramTiers graph |> List.map (fun tier -> tier.Id)
 
     let formFieldNodeIds (graph: DashSpecConceptGraph) =
-        DashSpecProjectionHints.formFieldNodes graph
-        |> List.map (fun node -> nodeIdFromAst node.AstId)
+        DashSpecProjectionHints.formFieldTiers graph |> List.map (fun tier -> tier.Id)
 
     let containsDiagramNode (graph: DashSpecConceptGraph) (nodeId: NodeId) =
         diagramNodeIds graph |> List.exists (fun id -> id = nodeId)
