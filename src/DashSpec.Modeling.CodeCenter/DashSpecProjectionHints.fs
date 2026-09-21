@@ -41,7 +41,7 @@ module DashSpecProjectionHints =
             | DashSpecProjectionRole.FormField -> "form"
             | DashSpecProjectionRole.Outline -> "outline"
 
-        $"[{role}] {node.Label}"
+        $"[{role}] {DashSpecConceptOntology.treeCaption node}"
 
     let buildPreviewOutline (graph: DashSpecConceptGraph) =
         let depthByAstId =
