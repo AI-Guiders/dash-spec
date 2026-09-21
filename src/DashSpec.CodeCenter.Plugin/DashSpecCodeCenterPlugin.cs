@@ -55,12 +55,29 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
     }
 
     public void RegisterLanguageBackends(ICodeCenterLanguageBackendRegistry registry) =>
-        registry.Register("dashspec", new DashSpecLanguageBackend());
+        registry.Register(new DashSpecCodeCenterLanguageBackend());
 }
 
-public sealed class DashSpecLanguageBackend
+/// <summary>DashSpec planet language activation for Code Center document open.</summary>
+public sealed class DashSpecCodeCenterLanguageBackend : ICodeCenterLanguageBackend
 {
+    static readonly string[] Extensions = [".dash", ".dashspec"];
+
     public string LanguageId => "dashspec";
+
+    public string ProfileId => "dashspec.block";
+
+    public IReadOnlyList<string> FileExtensions => Extensions;
+
+    public bool IsFallback => false;
+
+    public bool MatchesDocument(string documentPathOrId) =>
+        CodeCenterLanguageBackendPatterns.HasAnyExtension(documentPathOrId, FileExtensions)
+        || documentPathOrId.StartsWith("doc://dash", StringComparison.OrdinalIgnoreCase);
+
+    public IDocumentSession CreateSession(string documentId, string text) =>
+        new FederationCodeCenterSession(
+            DashSpecCodeCenterSession.createDocumentSession(documentId, text));
 }
 
 public static class CodeCenterPluginBootstrap
