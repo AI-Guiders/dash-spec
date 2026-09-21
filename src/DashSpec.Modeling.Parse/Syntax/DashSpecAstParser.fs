@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open DashSpec.Modeling.Parse.Formatting
 open DashSpec.Modeling.Parse.Lexing
+open AIGuiders.Platform.Modeling.Core.Identity
 
 module DashSpecBlockOpenerSyntax =
 
@@ -35,7 +36,7 @@ module DashSpecAstParser =
 
     type private MutableNode =
         { Kind: DashSpecAstNodeKind
-          Id: AstNodeId
+          Id: NodeId
           Span: TextSpan
           Directive: DashSpecModuleDirective option
           Opener: DashSpecBlockOpener option
@@ -46,7 +47,7 @@ module DashSpecAstParser =
           Children: ResizeArray<MutableNode> }
 
     let private nextId (counter: int ref) =
-        let id = AstNodeId.create (uint32 counter.Value)
+        let id = NodeId.mint (NumericId.ofCounter (int64 counter.Value))
         counter.Value <- counter.Value + 1
         id
 

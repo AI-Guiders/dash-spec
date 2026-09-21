@@ -2,6 +2,7 @@ namespace DashSpec.Modeling.CodeCenter
 
 open System
 open System.Collections.Generic
+open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Syntax
 
 /// Single-pass rule engine over concept graph (AST walk + graph predicates).
@@ -45,17 +46,17 @@ module DashSpecRuleEngine =
         | _ -> true
 
     let private parentIndex (edges: DashSpecConceptEdge list) =
-        let ancestors = Dictionary<AstNodeId, AstNodeId list>()
+        let ancestors = Dictionary<NodeId, NodeId list>()
 
         for edge in edges do
-            match ancestors.TryGetValue edge.ChildAstId with
-            | true, existing -> ancestors.[edge.ChildAstId] <- edge.ParentAstId :: existing
-            | false, _ -> ancestors.[edge.ChildAstId] <- [ edge.ParentAstId ]
+            match ancestors.TryGetValue edge.ChildId with
+            | true, existing -> ancestors.[edge.ChildId] <- edge.ParentId :: existing
+            | false, _ -> ancestors.[edge.ChildId] <- [ edge.ParentId ]
 
         ancestors
 
-    let private hasCardsAncestor (graph: DashSpecConceptGraph) (ancestors: Dictionary<AstNodeId, AstNodeId list>) (astId: AstNodeId) =
-        let rec walk (currentId: AstNodeId) (visited: Set<AstNodeId>) =
+    let private hasCardsAncestor (graph: DashSpecConceptGraph) (ancestors: Dictionary<NodeId, NodeId list>) (nodeId: NodeId) =
+        let rec walk (currentId: NodeId) (visited: Set<NodeId>) =
             if Set.contains currentId visited then
                 false
             else
@@ -64,18 +65,18 @@ module DashSpecRuleEngine =
                 | true, parents ->
                     parents
                     |> List.exists (fun parentId ->
-                        match Map.tryFind parentId graph.Nodes with
+                        match Map.tryFind parentId graph.Tiers with
                         | Some node ->
                             match node.Kind with
                             | DashSpecConceptKind.Block(DashSpecBlockKeyword.Cards, _) -> true
                             | _ -> walk parentId (Set.add currentId visited)
                         | None -> false)
 
-        walk astId Set.empty
+        walk nodeId Set.empty
 
     /// Predicate: concept outline span is empty in the built graph.
-    let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (astId: AstNodeId) =
-        match Map.tryFind astId graph.Nodes with
+    let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (nodeId: NodeId) =
+        match Map.tryFind nodeId graph.Tiers with
         | Some concept when concept.Span.End <= concept.Span.Start ->
             Some(DashSpecRuleViolation.EmptyOutlineSpan(DashSpecConceptOntology.outlineCaption concept.Kind, concept.Span))
         | _ -> None
@@ -83,14 +84,14 @@ module DashSpecRuleEngine =
     /// Predicate: card reference concept is not nested under a `cards` block.
     let private whenCardOutsideCards
         (graph: DashSpecConceptGraph)
-        (ancestors: Dictionary<AstNodeId, AstNodeId list>)
-        (astId: AstNodeId)
+        (ancestors: Dictionary<NodeId, NodeId list>)
+        (nodeId: NodeId)
         =
-        match Map.tryFind astId graph.Nodes with
-        | Some concept ->
-            match concept.Kind with
-            | DashSpecConceptKind.CardReference cardId when not (hasCardsAncestor graph ancestors astId) ->
-                Some(DashSpecRuleViolation.CardReferenceOutsideCards(cardId, concept.Span))
+        match Map.tryFind nodeId graph.Tiers with
+        | Some tier ->
+            match tier.Kind with
+            | DashSpecConceptKind.CardReference cardId when not (hasCardsAncestor graph ancestors nodeId) ->
+                Some(DashSpecRuleViolation.CardReferenceOutsideCards(cardId, tier.Span))
             | _ -> None
         | None -> None
 
@@ -104,13 +105,13 @@ module DashSpecRuleEngine =
 
         let rec walk (node: DashSpecAstNode) =
             if DashSpecAst.isOutlineNode node then
-                let astId = DashSpecAst.id node
+                let nodeId = DashSpecAst.id node
 
-                match whenEmptyOutlineSpan graph astId with
+                match whenEmptyOutlineSpan graph nodeId with
                 | Some violation -> signal violation
                 | None -> ()
 
-                match whenCardOutsideCards graph ancestors astId with
+                match whenCardOutsideCards graph ancestors nodeId with
                 | Some violation -> signal violation
                 | None -> ()
 
