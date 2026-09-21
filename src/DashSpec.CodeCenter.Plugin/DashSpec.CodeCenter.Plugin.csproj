@@ -9,11 +9,13 @@
     <AssemblyName>DashSpec.CodeCenter.Plugin</AssemblyName>
     <GuidersWpfRoot Condition="'$(GuidersWpfRoot)' == ''">..\..\..\guiders-wpf</GuidersWpfRoot>
     <GuidersFSharpRoot Condition="'$(GuidersFSharpRoot)' == ''">..\..\..\guiders-fsharp</GuidersFSharpRoot>
+    <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Modeling.CodeCenter\DashSpec.Modeling.CodeCenter.fsproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.Abstractions\AIGuiders.Surface.Wpf.Abstractions.csproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.CodeCenter\AIGuiders.Surface.Wpf.CodeCenter.csproj" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.Language\AIGuiders.Platform.Execution.Language.csproj" />
     <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.CodeCenter\AIGuiders.Platform.Modeling.CodeCenter.fsproj" />
     <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Language\AIGuiders.Platform.Modeling.Language.fsproj" />
     <ProjectReference Include="..\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
