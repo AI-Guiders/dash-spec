@@ -15,5 +15,7 @@
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.Abstractions\AIGuiders.Surface.Wpf.Abstractions.csproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.CodeCenter\AIGuiders.Surface.Wpf.CodeCenter.csproj" />
     <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.CodeCenter\AIGuiders.Platform.Modeling.CodeCenter.fsproj" />
+    <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Language\AIGuiders.Platform.Modeling.Language.fsproj" />
+    <ProjectReference Include="..\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
   </ItemGroup>
 </Project>
