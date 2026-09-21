@@ -10,5 +10,7 @@ type DashSpecDocumentLanguageProfile() =
         member _.Rebuild text = DashSpecDocumentGraph.rebuildFromText text
         member _.PlanStructural snapshot edit = StructuralPlanGraph.plan snapshot edit
 
+        member _.AvailableProjections () = DashSpecProjectionHints.availableProjections ()
+
 module DashSpecDocumentLanguageProfile =
     let instance : IDocumentLanguageProfile = DashSpecDocumentLanguageProfile()

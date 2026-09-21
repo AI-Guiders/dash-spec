@@ -4,15 +4,19 @@ language_id = "dashspec"
 
 [[projection]]
 kind = "Tree"
+plugin_id = "tree.outline"
 
 [[projection]]
 kind = "Diagram"
+plugin_id = "dashspec.diagram"
 
 [[projection]]
 kind = "Form"
+plugin_id = "dashspec.form"
 
 [[projection]]
 kind = "Preview"
+plugin_id = "dashspec.preview"
 
 [theme]
 "@dashboard" = "DashSpec.Dashboard"

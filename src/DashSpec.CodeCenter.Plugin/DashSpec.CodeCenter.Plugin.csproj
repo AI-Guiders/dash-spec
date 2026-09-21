@@ -4,6 +4,7 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);CS0067</NoWarn>
     <RootNamespace>DashSpec.CodeCenter.Plugin</RootNamespace>
     <AssemblyName>DashSpec.CodeCenter.Plugin</AssemblyName>
     <GuidersWpfRoot Condition="'$(GuidersWpfRoot)' == ''">..\..\..\guiders-wpf</GuidersWpfRoot>
