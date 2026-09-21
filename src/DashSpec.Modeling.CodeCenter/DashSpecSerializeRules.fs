@@ -39,8 +39,6 @@ module DashSpecSerializeRules =
                 Ok graph
             else
                 Error
-                    [ { Code = "DS008"
-                        Message = "outline signature changed after preserve serialize round-trip"
-                        Start = 0
-                        Length = 1
-                        Severity = "error" } ]
+                    [ DashSpecRuleRegistry.diagnostic
+                          DashSpecRuleKind.RoundTripOutlineChanged
+                          (TextSpan.Create 0 1) ]

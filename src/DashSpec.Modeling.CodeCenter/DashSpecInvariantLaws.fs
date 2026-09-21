@@ -9,8 +9,10 @@ module DashSpecInvariantLaws =
 
     let outlineSpansAreValid (graph: DashSpecConceptGraph) =
         DashSpecRuleEngine.evaluate graph
-        |> List.filter (fun diagnostic -> diagnostic.Code = "DS006")
+        |> List.filter (fun diagnostic ->
+            diagnostic.Code = DashSpecRuleRegistry.code DashSpecRuleKind.EmptyOutlineSpan)
 
     let cardReferencesUnderCards (graph: DashSpecConceptGraph) =
         DashSpecRuleEngine.evaluate graph
-        |> List.filter (fun diagnostic -> diagnostic.Code = "DS007")
+        |> List.filter (fun diagnostic ->
+            diagnostic.Code = DashSpecRuleRegistry.code DashSpecRuleKind.CardReferenceOutsideCards)
