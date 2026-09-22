@@ -1,5 +1,5 @@
 # DashSpec planet bundle for federation Code Center (ship-63).
-plugin_id = "dashspec.codecenter"
+plugin_id = "language.dashspec"
 language_id = "dashspec"
 file_extensions = [".dash", ".dashspec"]
 
