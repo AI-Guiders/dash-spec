@@ -1,4 +1,7 @@
 using AIGuiders.Platform.Modeling.Language;
+using AIGuiders.Surface.Wpf.Abstractions;
+using AIGuiders.Surface.Wpf.CodeCenter;
+using DashSpec.Modeling.CodeCenter;
 using DashSpec.Modeling.Language.Adapters.DashSpec;
 
 namespace DashSpec.CodeCenter.Plugin;
@@ -19,4 +22,24 @@ public sealed class DashSpecLanguageFamily : AIGuiders.Platform.Execution.Langua
         || documentPathOrId.StartsWith("doc://dash", StringComparison.OrdinalIgnoreCase);
 
     public ILanguageBackend CreateLanguageBackend() => new DashSpecLanguageBackend();
+}
+
+/// <summary>Code Center document open for DashSpec (Forge vertical-slice hook on meta-plugin).</summary>
+public sealed class DashSpecCodeCenterLanguageBackend : ICodeCenterLanguageBackend
+{
+    static readonly DashSpecLanguageFamily Family = new();
+
+    public string LanguageId => Family.LanguageId;
+
+    public string ProfileId => Family.DocumentProfileId;
+
+    public IReadOnlyList<string> FileExtensions => Family.FileExtensions;
+
+    public bool IsFallback => false;
+
+    public bool MatchesDocument(string documentPathOrId) => Family.MatchesDocument(documentPathOrId);
+
+    public IDocumentSession CreateSession(string documentId, string text) =>
+        new FederationCodeCenterSession(
+            DashSpecCodeCenterSession.createDocumentSession(documentId, text));
 }
