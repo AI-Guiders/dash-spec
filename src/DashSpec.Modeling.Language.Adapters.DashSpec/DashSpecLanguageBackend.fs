@@ -181,11 +181,30 @@ type DashSpecLanguageBackend() =
 
                 Task.FromResult { References = references }
 
-        member _.GetCompletionsAsync(_req, ct) =
+        member _.GetCompletionsAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<CompletionsResult>(ct)
-            else
+            elif not (isDashSpecPath req.FilePath) then
                 Task.FromResult { Items = [||] }
+            else
+                let path = req.FilePath
+                let text = readSource req
+                let index =
+                    DashSpecEditorIntelligence.ResolveWorkspaceIndex(req.SolutionOrProjectPath, path)
+
+                let suggestions =
+                    DashSpecEditorIntelligence.GetCompletions(path, text, req.Line, req.Column, index)
+
+                let items =
+                    suggestions
+                    |> Seq.map (fun s ->
+                        { Label = s.Label
+                          Kind = if isNull s.Kind then "keyword" else s.Kind
+                          Detail = if isNull s.Detail then "" else s.Detail
+                          InsertText = s.InsertText })
+                    |> Array.ofSeq
+
+                Task.FromResult { Items = items }
 
         member _.GetSymbolAtPositionAsync(req, ct) =
             if ct.IsCancellationRequested then
