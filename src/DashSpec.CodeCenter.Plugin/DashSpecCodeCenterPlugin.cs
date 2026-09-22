@@ -1,7 +1,10 @@
 using AIGuiders.Platform.Execution.Language;
 using AIGuiders.Platform.Modeling.CodeCenter;
+using AIGuiders.Platform.Modeling.Language;
+using DashSpec.Modeling.CodeCenter;
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
+using DashSpec.Modeling.Language.Adapters.DashSpec;
 
 namespace DashSpec.CodeCenter.Plugin;
 
@@ -10,8 +13,6 @@ namespace DashSpec.CodeCenter.Plugin;
 /// </summary>
 public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
 {
-    static readonly DashSpecLanguageFamily LanguageFamily = new();
-
     public string Id => "language.dashspec";
 
     public string DisplayName => "DashSpec Code Center";
@@ -20,7 +21,7 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
         registry.Register(new DashSpecCodeCenterLanguageBackend());
 
     public void RegisterLanguageResolverBackends(ILanguageResolverBackendRegistry registry) =>
-        registry.Register(LanguageFamily.CreateLanguageBackend());
+        registry.Register(new DashSpecLanguageBackend());
 
     public void RegisterProjectionPlugins(ICodeCenterProjectionRegistry registry)
     {
@@ -64,6 +65,26 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
         registry.RegisterProvider("dashspec", (session, _) =>
             session.GetClassificationSpans().Select(s => s.Kind).Distinct().ToArray());
     }
+}
+
+/// <summary>Code Center document open for DashSpec (Forge vertical-slice hook on meta-plugin).</summary>
+public sealed class DashSpecCodeCenterLanguageBackend : ICodeCenterLanguageBackend
+{
+    public string LanguageId => AIGuiders.Platform.Modeling.Language.LanguageIds.Dashspec;
+
+    public string ProfileId => "dashspec.block";
+
+    public IReadOnlyList<string> FileExtensions => DashSpecPathRules.extensions;
+
+    public bool IsFallback => false;
+
+    public bool MatchesDocument(string documentPathOrId) =>
+        DashSpecPathRules.isDashSpecPath(documentPathOrId)
+        || documentPathOrId.StartsWith("doc://dash", StringComparison.OrdinalIgnoreCase);
+
+    public IDocumentSession CreateSession(string documentId, string text) =>
+        new FederationCodeCenterSession(
+            DashSpecCodeCenterSession.createDocumentSession(documentId, text));
 }
 
 public static class CodeCenterPluginBootstrap
