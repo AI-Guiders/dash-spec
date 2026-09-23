@@ -14,6 +14,7 @@ public class LusSpecsSyntaxTests
     [
         @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-stakeholder.dashspec",
         @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-overview.dashspec",
+        @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-versions.dashspec",
         @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-detail.dashspec",
         @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-soak.dashspec",
     ];
