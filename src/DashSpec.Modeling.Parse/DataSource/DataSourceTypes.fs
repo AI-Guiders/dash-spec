@@ -3,6 +3,7 @@ namespace DashSpec.Modeling.Parse.DataSource
 type DataSourceKind =
     | View
     | Sql
+    | Xlsx
 
 type DataSourceSqlCarrier =
     | Query
@@ -12,4 +13,5 @@ type DataSourceSqlCarrier =
 type DataSourceDefinition =
     { Kind: DataSourceKind
       Value: string
-      SqlCarrier: DataSourceSqlCarrier option }
+      SqlCarrier: DataSourceSqlCarrier option
+      Sheet: string option }

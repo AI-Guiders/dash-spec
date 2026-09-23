@@ -109,21 +109,22 @@ module FilterParser =
                 raise (DashSpecParseException($"Field filter '{name}' requires column in bind block or on <column> as \"Label\"."))
 
         | FilterKind.Top ->
+            match props.TryGetValue "min" with
+            | true, minRaw ->
+                match Int32.TryParse minRaw with
+                | true, parsedMin when parsedMin >= 0 -> minValue <- Some parsedMin
+                | _ -> raise (DashSpecParseException($"Top filter '{name}' min must be a non-negative integer (0 = no row cap)."))
+            | false, _ -> ()
+
             match defaultExpr with
             | Some expr ->
                 match Int32.TryParse expr with
                 | true, defaultTop when defaultTop > 0 -> ()
+                | true, 0 when minValue = Some 0 -> ()
                 | _ ->
-                    raise (DashSpecParseException($"Top filter '{name}' requires positive numeric default, e.g. default = 200"))
+                    raise (DashSpecParseException($"Top filter '{name}' requires positive numeric default, or 0 when min = 0 (no row cap)."))
             | None ->
-                raise (DashSpecParseException($"Top filter '{name}' requires positive numeric default, e.g. default = 200"))
-
-            match props.TryGetValue "min" with
-            | true, minRaw ->
-                match Int32.TryParse minRaw with
-                | true, parsedMin when parsedMin > 0 -> minValue <- Some parsedMin
-                | _ -> raise (DashSpecParseException($"Top filter '{name}' min must be a positive integer."))
-            | false, _ -> ()
+                raise (DashSpecParseException($"Top filter '{name}' requires numeric default, e.g. default = 200"))
 
             match props.TryGetValue "max" with
             | true, maxRaw ->

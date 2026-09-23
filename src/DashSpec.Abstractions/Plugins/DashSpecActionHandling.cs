@@ -13,6 +13,7 @@ public enum DashSpecActionOutcomeKind
 {
     None,
     DownloadText,
+    DownloadBase64,
     RefreshCard,
 }
 

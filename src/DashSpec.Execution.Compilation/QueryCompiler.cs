@@ -3,6 +3,7 @@ using DashSpec.Abstractions.Query;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
+using DashSpec.Execution.Compilation.Dialects;
 using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Compilation;
@@ -34,6 +35,7 @@ public static class QueryCompiler
             DataSourceKind.View => card.DataSource.Value,
             DataSourceKind.Sql => WrapSqlDataSource(
                 SqlDataSourceResolver.ResolveSqlBody(card.DataSource, specDirectory)),
+            DataSourceKind.Xlsx => BuildXlsxOpenRowSet(card.DataSource, specDirectory, dialect),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
 
@@ -296,6 +298,21 @@ public static class QueryCompiler
         }
 
         return true;
+    }
+
+    private static string BuildXlsxOpenRowSet(
+        DataSourceDefinition source,
+        string? specDirectory,
+        ISqlDialectBackend dialect)
+    {
+        if (!string.Equals(dialect.Id, "tsql", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "datasource xlsx is SQL Server OPENROWSET and requires sqldialect = tsql.");
+        }
+
+        var path = TSqlXlsxOpenRowSet.ResolvePath(source.Value, specDirectory);
+        return TSqlXlsxOpenRowSet.Format(path, source.Sheet);
     }
 
     private static string WrapSqlDataSource(string rawSql)

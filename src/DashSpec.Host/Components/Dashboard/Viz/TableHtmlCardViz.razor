@@ -13,12 +13,20 @@ else
                 <tr>
                     @foreach (var column in Context.Card.Table.Columns)
                     {
-                        <th>@column</th>
+                        <th>
+                            <div class="table-col-head">@column</div>
+                            <input type="search"
+                                   class="table-col-filter"
+                                   placeholder="Фильтр"
+                                   aria-label="@($"Фильтр: {column}")"
+                                   value="@GetFilter(column)"
+                                   @oninput="e => SetFilter(column, e.Value?.ToString())" />
+                        </th>
                     }
                 </tr>
             </thead>
             <tbody>
-                @foreach (var row in Context.Card.Table.Rows)
+                @foreach (var row in FilteredRows)
                 {
                     <tr>
                         @foreach (var cell in row)
@@ -30,9 +38,66 @@ else
             </tbody>
         </table>
     </div>
-    <p class="table-foot muted">Показано @Context.Card.Table.Rows.Count строк</p>
+    <p class="table-foot muted">
+        Показано @FilteredRowCount из @Context.Card.Table.Rows.Count строк
+        @if (HasActiveFilters)
+        {
+            <button type="button" class="table-filter-clear" @onclick="ClearFilters">Сбросить фильтры</button>
+        }
+    </p>
 }
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private readonly Dictionary<string, string> _columnFilters = new(StringComparer.OrdinalIgnoreCase);
+
+    private IReadOnlyList<IReadOnlyList<string>> FilteredRows
+    {
+        get
+        {
+            var table = Context.Card.Table!;
+            if (!HasActiveFilters)
+            {
+                return table.Rows;
+            }
+
+            return table.Rows.Where(MatchesFilters).ToList();
+        }
+    }
+
+    private int FilteredRowCount => FilteredRows.Count;
+
+    private bool HasActiveFilters =>
+        _columnFilters.Values.Any(value => !string.IsNullOrWhiteSpace(value));
+
+    private string GetFilter(string column) =>
+        _columnFilters.TryGetValue(column, out var value) ? value : string.Empty;
+
+    private void SetFilter(string column, string? value)
+    {
+        _columnFilters[column] = value ?? string.Empty;
+    }
+
+    private void ClearFilters() => _columnFilters.Clear();
+
+    private bool MatchesFilters(IReadOnlyList<string> row)
+    {
+        var columns = Context.Card.Table!.Columns;
+        for (var i = 0; i < columns.Count; i++)
+        {
+            if (!_columnFilters.TryGetValue(columns[i], out var needle) || string.IsNullOrWhiteSpace(needle))
+            {
+                continue;
+            }
+
+            var cell = i < row.Count ? row[i] : string.Empty;
+            if (cell is null || !cell.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
