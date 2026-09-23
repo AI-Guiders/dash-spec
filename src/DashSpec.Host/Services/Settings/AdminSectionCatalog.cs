@@ -11,6 +11,7 @@ public static class AdminSectionCatalog
         new("catalog", "Catalog", "Git catalog clone / poll"),
         new("sync", "Sync webhook", "Inbound push URL + HMAC secret"),
         new("presentation", "Presentation", "Display time zone (remark 25)"),
+        new("links", "Links", "External URLs from @runtime manifest"),
         new("export", "Export", "TOML fragment for air-gap backup"),
     ];
 

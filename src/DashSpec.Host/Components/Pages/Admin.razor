@@ -9,6 +9,8 @@
 @inject DashSpecTomlRoot Bootstrap
 @inject GitCatalogSyncService SyncService
 @inject NavigationManager Nav
+@inject HostExternalLinksProvider ExternalLinks
+@inject DashSpecHostContext HostContext
 
 <PageTitle>@_section.Title — Settings</PageTitle>
 
@@ -162,6 +164,26 @@
                     <button type="submit" class="btn">Save presentation</button>
                 </EditForm>
             }
+            else if (IsSection("links"))
+            {
+                <p class="muted">Read-only: configured in the catalog entry <code>@_runtimeManifest</code> manifest (<code>[[links]]</code>), not in WitDB.</p>
+                @if (_runtimeLinks.Count == 0)
+                {
+                    <p class="muted">No links defined.</p>
+                }
+                else
+                {
+                    <ul class="admin-links-list">
+                        @foreach (var link in _runtimeLinks.Where(static x => x.Settings))
+                        {
+                            <li>
+                                <a href="@link.Url" target="@link.Target" rel="noopener noreferrer">@link.Label</a>
+                                <span class="mono muted">@link.Url</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            }
             else if (IsSection("export"))
             {
                 <p class="muted">Redacted TOML fragment from WitDB for air-gap backup (does not write <code>local.toml</code>).</p>
@@ -180,6 +202,8 @@
     private AdminSection _section = AdminSectionCatalog.All[0];
     private readonly AccessForm _access = new();
     private readonly CatalogForm _catalog = new();
+    private IReadOnlyList<HostExternalLink> _runtimeLinks = [];
+    private string _runtimeManifest = "";
     private string? _message;
     private string? _error;
     private string? _syncResult;
@@ -205,6 +229,8 @@
     protected override void OnInitialized()
     {
         _webhookUrl = $"{Nav.BaseUri.TrimEnd('/')}/v1/admin/catalog/sync";
+        _runtimeManifest = HostContext.StartupRuntimeReference;
+        _runtimeLinks = ExternalLinks.ForStartupRuntime();
         var git = Bootstrap.CatalogGit;
         _catalog.Enabled = git.Enabled;
         _catalog.Url = git.Url;
