@@ -25,6 +25,7 @@ public sealed record CardRenderResult(
     ChartPresentation? ChartPresentation = null,
     MatrixPayload? Matrix = null,
     MatrixPayload? DetailMatrix = null,
+    GanttPayload? Gantt = null,
     MatrixPresentation? MatrixPresentation = null,
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,

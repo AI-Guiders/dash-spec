@@ -57,6 +57,17 @@ public static class DiagramKindRegistry
         new("color_normalize", PropertyValueType.Scalar),
     ];
 
+    private static readonly IReadOnlyList<PropertySpec> GanttProperties =
+    [
+        new("y", PropertyValueType.ColumnBinding),
+        new("from", PropertyValueType.ColumnBinding),
+        new("to", PropertyValueType.ColumnBinding),
+        new("color", PropertyValueType.ColumnBinding),
+        new("height", PropertyValueType.Scalar),
+        new("order_by", PropertyValueType.RestOfLine),
+        new("limit", PropertyValueType.Scalar),
+    ];
+
     private static readonly IReadOnlyDictionary<string, DiagramKindSpec> Specs =
         new Dictionary<string, DiagramKindSpec>(StringComparer.OrdinalIgnoreCase)
         {
@@ -78,6 +89,7 @@ public static class DiagramKindRegistry
             ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
             ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
             ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),
+            ["gantt"] = new("gantt", DiagramDataFamily.Gantt, GanttProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
         };
 
     public static bool TryResolve(string kind, out DiagramKindInfo info)

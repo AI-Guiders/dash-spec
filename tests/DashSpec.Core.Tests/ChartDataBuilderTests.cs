@@ -818,4 +818,51 @@ public class ChartDataBuilderTests
         Assert.Equal("hidden", spark.Legend);
         Assert.Equal(64, spark.HeightPx);
     }
+
+    [Fact]
+    public void BuildGantt_merges_segments_per_row_and_positions_on_axis()
+    {
+        var diagram = new DiagramDefinition("gantt", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["y"] = "app_name",
+            ["from"] = "segment_start_utc",
+            ["to"] = "segment_end_utc",
+            ["color"] = "chart_color",
+        });
+
+        var start = new DateTime(2026, 6, 23, 9, 0, 0);
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "AutoCAD",
+                ["segment_start_utc"] = start,
+                ["segment_end_utc"] = start.AddMinutes(10),
+                ["chart_color"] = "#ff0000",
+            },
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["app_name"] = "Revit",
+                ["segment_start_utc"] = start.AddMinutes(15),
+                ["segment_end_utc"] = start.AddMinutes(25),
+                ["chart_color"] = "#00ff00",
+            },
+        ];
+
+        var payload = ChartDataBuilder.BuildGantt(rows, diagram);
+
+        Assert.Equal(2, payload.Rows.Count);
+        Assert.Equal(start, payload.AxisStart);
+        Assert.Equal(start.AddMinutes(25), payload.AxisEnd);
+        Assert.All(payload.Rows, row => Assert.NotEmpty(row.Segments));
+        Assert.Equal("#ff0000", payload.Rows[0].Segments[0].Color);
+        Assert.True(payload.Rows[0].Segments[0].WidthPercent > 0);
+    }
+
+    [Fact]
+    public void Resolve_gantt_is_gantt_family()
+    {
+        Assert.Equal(DiagramDataFamily.Gantt, DiagramKindRegistry.Resolve("gantt").DataFamily);
+        Assert.True(DiagramKindRegistry.SupportsTopLimit("gantt"));
+    }
 }

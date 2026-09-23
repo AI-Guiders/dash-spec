@@ -6,7 +6,7 @@ namespace DashSpec.Core.Layout;
 public static class PlacementDefaults
 {
     public static PlacementDefinition ForFamily(DiagramDataFamily family, int columns) =>
-        family is DiagramDataFamily.Table or DiagramDataFamily.Matrix
+        family is DiagramDataFamily.Table or DiagramDataFamily.Matrix or DiagramDataFamily.Gantt
             ? new PlacementDefinition(Row: 1, Col: 1, Span: columns)
             : new PlacementDefinition(Span: columns / 2);
 }

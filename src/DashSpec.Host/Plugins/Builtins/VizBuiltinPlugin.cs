@@ -22,6 +22,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
         services.AddSingleton<IVizPlugin, MatrixCanvasVizPlugin>();
         services.AddSingleton<IVizPlugin, TableHtmlVizPlugin>();
         services.AddSingleton<IVizPlugin, ScalarHtmlVizPlugin>();
+        services.AddSingleton<IVizPlugin, GanttHtmlVizPlugin>();
 
         services.AddSingleton(sp =>
         {
@@ -31,6 +32,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
             registry.Register(VizPluginIds.ScalarHtml, typeof(ScalarHtmlCardViz));
             registry.Register(VizPluginIds.CssGrid, typeof(CssGridCardViz));
             registry.Register(VizPluginIds.MatrixCanvas, typeof(MatrixCanvasCardViz));
+            registry.Register(VizPluginIds.GanttHtml, typeof(GanttCardViz));
             return registry;
         });
     }
@@ -42,5 +44,6 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.MatrixCanvas, "Matrix (canvas)"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.TableHtml, "Table"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.ScalarHtml, "Scalar"));
+        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.GanttHtml, "Gantt"));
     }
 }
