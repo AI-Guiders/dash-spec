@@ -9,6 +9,8 @@ public enum MatrixValueLabelMode
 
 public static class MatrixLabelVisibilityParser
 {
+    public const int DefaultValueLabelsThresholdPx = 14;
+
     public static MatrixValueLabelMode ParseValueLabels(
         IReadOnlyDictionary<string, string> properties,
         MatrixValueLabelMode defaultMode = MatrixValueLabelMode.Auto)
@@ -45,6 +47,21 @@ public static class MatrixLabelVisibilityParser
             "show" => true,
             _ => defaultShow,
         };
+    }
+
+    /// <summary>Minimum cell width and height (px) to draw values in <c>value_labels = auto</c>.</summary>
+    public static int ParseValueLabelsThreshold(
+        IReadOnlyDictionary<string, string> properties,
+        int defaultThresholdPx = DefaultValueLabelsThresholdPx)
+    {
+        if (!properties.TryGetValue("value_labels_threshold", out var raw) ||
+            string.IsNullOrWhiteSpace(raw) ||
+            !int.TryParse(raw.Trim(), out var parsed))
+        {
+            return defaultThresholdPx;
+        }
+
+        return Math.Clamp(parsed, 6, 96);
     }
 }
 
