@@ -27,8 +27,9 @@ window.dashSpecMatrix = {
 
   syncYLabelWidth(host) {
     const col = host?.querySelector?.(".matrix-canvas-y-labels");
-    if (!col) {
-      return 144;
+    if (!col || host.classList.contains("matrix-canvas-host--hide-y-labels")) {
+      host?.style?.setProperty?.("--matrix-y-label-width", "0px");
+      return 0;
     }
 
     let maxLabel = 0;
@@ -82,7 +83,18 @@ window.dashSpecMatrix = {
     const gapPx = payload.gap ?? 2;
     const cellW = payload.cellWidth ?? 26;
     const cellH = payload.cellHeight ?? 22;
-    const showValues = payload.showValues !== false;
+    const showValues = payload.showValues ?? "auto";
+    const drawCellValues = (cellW, cellH) => {
+      if (showValues === "hide" || showValues === false) {
+        return false;
+      }
+
+      if (showValues === "show" || showValues === true) {
+        return true;
+      }
+
+      return cellW >= 14 && cellH >= 14;
+    };
 
     const width = xCount * (cellW + gapPx) + gapPx;
     const height = yCount * (cellH + gapPx) + gapPx;
@@ -132,7 +144,7 @@ window.dashSpecMatrix = {
         ctx.fillStyle = this.cellBackground(colorScale, value, cellMin, cellMax);
         ctx.fillRect(x, y, cellW, cellH);
 
-        if (showValues && cellW >= 14 && cellH >= 14) {
+        if (drawCellValues(cellW, cellH)) {
           ctx.fillStyle = this.cellText(value, cellMin, cellMax);
           const fontSize = Math.min(12, Math.max(8, Math.floor(Math.min(cellW, cellH) * 0.42)));
           ctx.font = `600 ${fontSize}px system-ui, sans-serif`;

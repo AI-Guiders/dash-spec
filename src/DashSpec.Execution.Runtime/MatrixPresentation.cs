@@ -15,6 +15,9 @@ public sealed record MatrixPresentation(
     string XFormat = "date.short",
     string YFormat = "user.short",
     string ColorScale = "heat",
+    MatrixValueLabelMode ValueLabels = MatrixValueLabelMode.Auto,
+    bool AxisLabelsX = true,
+    bool AxisLabelsY = true,
     LegendDefinition? Legend = null,
     bool HasTooltip = false)
 {
@@ -30,6 +33,9 @@ public sealed record MatrixPresentation(
         var xFormat = diagram.Properties.GetValueOrDefault("x_format") ?? "date.short";
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
         var colorScale = diagram.Properties.GetValueOrDefault("color_scale") ?? "heat";
+        var valueLabels = MatrixLabelVisibilityParser.ParseValueLabels(diagram.Properties);
+        var axisLabelsX = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_x");
+        var axisLabelsY = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_y");
 
         return new MatrixPresentation(
             height,
@@ -42,6 +48,9 @@ public sealed record MatrixPresentation(
             xFormat,
             yFormat,
             colorScale,
+            valueLabels,
+            axisLabelsX,
+            axisLabelsY,
             card.Legend,
             card.Tooltip is not null);
     }

@@ -1,5 +1,6 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using DashSpec.Core.Layout
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Host.Components.Filters
 @using DashSpec.Host.Services.Models
@@ -44,6 +45,25 @@
             }
         </div>
         <div class="card-head-actions">
+            @if (CanMatrixLabelToggles)
+            {
+                <button type="button"
+                        class="secondary card-matrix-label-btn"
+                        title="@Loc.T("Toggle cell values")"
+                        disabled="@Card.Loading"
+                        aria-pressed="@MatrixValueLabelsVisible"
+                        @onclick="ToggleMatrixValueLabelsAsync">
+                    @Loc.T("Cell values")
+                </button>
+                <button type="button"
+                        class="secondary card-matrix-label-btn"
+                        title="@Loc.T("Toggle X axis labels")"
+                        disabled="@Card.Loading"
+                        aria-pressed="@MatrixAxisLabelsXVisible"
+                        @onclick="ToggleMatrixAxisLabelsXAsync">
+                    @Loc.T("X axis labels")
+                </button>
+            }
             @if (CanExport)
             {
                 <button type="button"
@@ -197,6 +217,30 @@
         !Card.IsVisibilityPlaceholder &&
         Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table;
 
+    private bool CanMatrixLabelToggles =>
+        !Card.IsVisibilityPlaceholder &&
+        !Card.Loading &&
+        string.IsNullOrEmpty(Card.Error) &&
+        Card.Matrix is not null;
+
+    private bool MatrixValueLabelsVisible =>
+        MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
+            Card.MatrixPresentation?.ValueLabels ?? MatrixValueLabelMode.Auto,
+            MatrixDisplayState.GetValueLabelsOverride(Card.Id));
+
+    private bool MatrixAxisLabelsXVisible =>
+        MatrixLabelDisplayResolver.EffectiveAxisVisible(
+            Card.MatrixPresentation?.AxisLabelsX ?? true,
+            MatrixDisplayState.GetAxisLabelsXOverride(Card.Id));
+
+    private Task ToggleMatrixValueLabelsAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "toggle_matrix_value_labels", new Dictionary<string, string>()));
+
+    private Task ToggleMatrixAxisLabelsXAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "toggle_matrix_axis_labels_x", new Dictionary<string, string>()));
+
+    [Inject] private ICardMatrixDisplayState MatrixDisplayState { get; set; } = default!;
+
     private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
 
     private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
@@ -248,7 +292,9 @@
             Card.FilterLinkCssClass,
             _selection?.Xi,
             _selection?.Yi,
-            _fullscreen);
+            _fullscreen,
+            MatrixValueLabelsVisible,
+            MatrixAxisLabelsXVisible);
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -268,7 +314,9 @@
         string? FilterLinkCssClass,
         int? SelectionXi,
         int? SelectionYi,
-        bool Fullscreen);
+        bool Fullscreen,
+        bool MatrixValueLabelsVisible,
+        bool MatrixAxisLabelsXVisible);
 
     protected override void OnParametersSet()
     {
