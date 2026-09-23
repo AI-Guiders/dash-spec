@@ -146,7 +146,6 @@ else
         }
 
         var payloadKey = BuildPayloadKey();
-        var cellCount = Payload.XLabels.Count * Payload.YLabels.Count;
         var payloadObj = new
         {
             xCount = Payload.XLabels.Count,
@@ -161,7 +160,7 @@ else
             colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
-            showValues = cellCount <= 200,
+            showValues = true,
         };
 
         if (_mountedPayloadKey is not null &&
