@@ -25,13 +25,26 @@ window.dashSpecMatrix = {
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
-  yLabelCol(host) {
+  syncYLabelWidth(host) {
     const col = host?.querySelector?.(".matrix-canvas-y-labels");
     if (!col) {
       return 144;
     }
-    const width = Math.ceil(col.getBoundingClientRect().width);
-    return Math.max(96, width + 6);
+
+    let maxLabel = 0;
+    col.querySelectorAll(".matrix-canvas-y-label").forEach((el) => {
+      maxLabel = Math.max(maxLabel, el.scrollWidth || 0);
+    });
+    const width = Math.max(
+      96,
+      Math.ceil(col.getBoundingClientRect().width),
+      maxLabel + 8);
+    host.style.setProperty("--matrix-y-label-width", `${width}px`);
+    return width;
+  },
+
+  yLabelCol(host) {
+    return this.syncYLabelWidth(host);
   },
 
   fitCellSize(xCount, yCount, availableWidth, availableHeight, gapPx, yLabelCol = 144) {
@@ -170,6 +183,13 @@ window.dashSpecMatrix = {
         }
         host._matrixLastLayout = "";
         this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
+        requestAnimationFrame(() => {
+          if (!host._matrixPayload || !host._matrixCanvas) {
+            return;
+          }
+          host._matrixLastLayout = "";
+          this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
+        });
       });
     };
 
