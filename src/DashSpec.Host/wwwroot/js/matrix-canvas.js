@@ -25,8 +25,16 @@ window.dashSpecMatrix = {
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
-  fitCellSize(xCount, yCount, availableWidth, availableHeight, gapPx) {
-    const yLabelCol = 144;
+  yLabelCol(host) {
+    const col = host?.querySelector?.(".matrix-canvas-y-labels");
+    if (!col) {
+      return 144;
+    }
+    const width = Math.ceil(col.getBoundingClientRect().width);
+    return Math.max(96, width + 6);
+  },
+
+  fitCellSize(xCount, yCount, availableWidth, availableHeight, gapPx, yLabelCol = 144) {
     const xLabelRow = 28;
     const chrome = 16;
     const gridW = Math.max(0, availableWidth - yLabelCol - chrome);
@@ -123,12 +131,14 @@ window.dashSpecMatrix = {
     const scroll = host.querySelector(".matrix-canvas-scroll") || host;
     const width = scroll.clientWidth || host.getBoundingClientRect().width || 800;
     const maxHeight = payload.maxHeight ?? 420;
+    const labelCol = this.yLabelCol(host);
     const { cellW, cellH } = this.fitCellSize(
       payload.xCount,
       payload.yCount,
       width,
       maxHeight,
-      gapPx);
+      gapPx,
+      labelCol);
     host.style.setProperty("--matrix-cell-w", `${cellW}px`);
     host.style.setProperty("--matrix-cell-h", `${cellH}px`);
     return this.render(canvas, {
