@@ -55,7 +55,7 @@ else
                     @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
                     {
                         var yLabel = Payload.YLabels[yi];
-                        <div class="matrix-canvas-y-label" title="@yLabel">@FormatYLabel(yLabel)</div>
+                        <div class="matrix-canvas-y-label" title="@yLabel">@yLabel</div>
                     }
                 </div>
                 <canvas id="@CanvasId"

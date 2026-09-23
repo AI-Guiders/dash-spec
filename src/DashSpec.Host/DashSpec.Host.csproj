@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>14</LangVersion>
     <RootNamespace>DashSpec.Host</RootNamespace>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
     <AuthoringToolchainRoot Condition="'$(AuthoringToolchainRoot)' == ''">..\..\..\authoring-toolchain\</AuthoringToolchainRoot>
     <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
@@ -44,10 +44,10 @@
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Catalog\AIGuiders.Platform.Authoring.Command.Catalog.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Bundles\AIGuiders.Platform.Authoring.Command.Bundles.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.12" />
     <PackageReference Include="OutWit.Database.EntityFramework" Version="14.0.1" />
     <PackageReference Include="Tomlyn" Version="2.10.1" />
   </ItemGroup>
