@@ -51,6 +51,8 @@ phrases table
   | pick-report    | select report {report}   |
   | pick-page      | select page {page}       |
   | pick-view      | view {card} {view}       |
+  | toggle-matrix-values | toggle matrix values {card} |
+  | toggle-matrix-axis-x | toggle matrix axis-x {card} |
   | show-host      | show host {surface}      |
 end phrases
 
@@ -72,6 +74,8 @@ commands table
   | report.select | pick-report    |             | report-catalog         | report         |
   | page.select   | pick-page      |             | report-pages           | page           |
   | card.view     | pick-view      |             | card-views             | card, view     |
+  | card.matrix.values.toggle | toggle-matrix-values | | matrix-cards | card |
+  | card.matrix.axis_x.toggle | toggle-matrix-axis-x | | matrix-cards | card |
   | host.show     | show-host      |             | host-surfaces  | surface        |
 end commands
 

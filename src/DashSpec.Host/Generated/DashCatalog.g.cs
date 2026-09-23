@@ -28,6 +28,8 @@ public static partial class DashCatalog
         ["report.select"] = "dash.report.select",
         ["page.select"] = "dash.page.select",
         ["card.view"] = "dash.card.view",
+        ["card.matrix.values.toggle"] = "dash.card.matrix.values.toggle",
+        ["card.matrix.axis_x.toggle"] = "dash.card.matrix.axis_x.toggle",
         ["host.show"] = "dash.host.show",
     };
 
@@ -50,6 +52,8 @@ public static partial class DashCatalog
         new("report.select", "dash.report.select", "select report", ["report"]),
         new("page.select", "dash.page.select", "select page", ["page"]),
         new("card.view", "dash.card.view", "view", ["card", "view"]),
+        new("card.matrix.values.toggle", "dash.card.matrix.values.toggle", "toggle matrix values", ["card"]),
+        new("card.matrix.axis_x.toggle", "dash.card.matrix.axis_x.toggle", "toggle matrix axis-x", ["card"]),
         new("host.show", "dash.host.show", "show host", ["surface"]),
     ];
 
@@ -133,6 +137,8 @@ public static partial class DashCatalog
             new CatalogPhrase("pick-report", "select report {report}"),
             new CatalogPhrase("pick-page", "select page {page}"),
             new CatalogPhrase("pick-view", "view {card} {view}"),
+            new CatalogPhrase("toggle-matrix-values", "toggle matrix values {card}"),
+            new CatalogPhrase("toggle-matrix-axis-x", "toggle matrix axis-x {card}"),
             new CatalogPhrase("show-host", "show host {surface}"),
         ],
         Profiles =
@@ -219,6 +225,30 @@ public static partial class DashCatalog
                     ["expand"] = "card-views",
                     ["fills"] = "card, view",
                     ["phrase"] = "pick-view",
+                    ["profile"] = "",
+                },
+            },
+            new CatalogCommandRow
+            {
+                Command = "card.matrix.values.toggle",
+                Columns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["command"] = "card.matrix.values.toggle",
+                    ["expand"] = "matrix-cards",
+                    ["fills"] = "card",
+                    ["phrase"] = "toggle-matrix-values",
+                    ["profile"] = "",
+                },
+            },
+            new CatalogCommandRow
+            {
+                Command = "card.matrix.axis_x.toggle",
+                Columns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["command"] = "card.matrix.axis_x.toggle",
+                    ["expand"] = "matrix-cards",
+                    ["fills"] = "card",
+                    ["phrase"] = "toggle-matrix-axis-x",
                     ["profile"] = "",
                 },
             },

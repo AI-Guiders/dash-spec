@@ -61,6 +61,26 @@ internal static class DashboardCommandCatalogExpander
                 (builder, _) => DashboardDefaults(builder).Group("View")));
         }
 
+        foreach (var card in context.MatrixCards)
+        {
+            descriptors.Add(
+                CommandDescriptors.Describe(ToggleMatrixValueLabelsCommand.Id)
+                    .Path(DashboardCatalogPhrases.MatrixValuesTogglePath(card.CardId))
+                    .Help($"{card.Title} — переключить цифры в ячейках")
+                    .Group("Matrix")
+                    .Surfaces(FederationSurfaces)
+                    .Scope(DashSpecCommandScope.Dashboard)
+                    .Build());
+            descriptors.Add(
+                CommandDescriptors.Describe(ToggleMatrixAxisLabelsXCommand.Id)
+                    .Path(DashboardCatalogPhrases.MatrixAxisXTogglePath(card.CardId))
+                    .Help($"{card.Title} — переключить подписи оси X")
+                    .Group("Matrix")
+                    .Surfaces(FederationSurfaces)
+                    .Scope(DashSpecCommandScope.Dashboard)
+                    .Build());
+        }
+
         return descriptors;
     }
 

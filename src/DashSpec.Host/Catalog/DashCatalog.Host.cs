@@ -10,6 +10,10 @@ public static partial class DashCatalog
 {
     public const string CardViewCatalogCommand = "card.view";
 
+    public const string MatrixValuesToggleCatalogCommand = "card.matrix.values.toggle";
+
+    public const string MatrixAxisXToggleCatalogCommand = "card.matrix.axis_x.toggle";
+
     public static IReadOnlyList<CatalogPhrase> Phrases => Document.Phrases;
 
     public static IReadOnlyList<CatalogBindingRow> Bindings => Document.Bindings;
@@ -21,6 +25,14 @@ public static partial class DashCatalog
     public static CatalogPhraseSlotCommand CardViewPhrase =>
         PhraseSlots.Commands.First(command =>
             command.CatalogCommand.Equals(CardViewCatalogCommand, StringComparison.OrdinalIgnoreCase));
+
+    public static CatalogPhraseSlotCommand MatrixValuesTogglePhrase =>
+        PhraseSlots.Commands.First(command =>
+            command.CatalogCommand.Equals(MatrixValuesToggleCatalogCommand, StringComparison.OrdinalIgnoreCase));
+
+    public static CatalogPhraseSlotCommand MatrixAxisXTogglePhrase =>
+        PhraseSlots.Commands.First(command =>
+            command.CatalogCommand.Equals(MatrixAxisXToggleCatalogCommand, StringComparison.OrdinalIgnoreCase));
 
     static DashCatalog()
     {
