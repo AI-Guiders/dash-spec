@@ -38,6 +38,19 @@
                 <li>Открыть карточку и выгрузить CSV или XLSX.</li>
             </ul>
 
+            <h2>Виды диаграмм (remark 4)</h2>
+            <p>Тип задаётся в <code>.dashdiagram</code> (блок <code>bar</code>, <code>line</code>, <code>heatmap</code> и т.д.).</p>
+            <ul>
+                <li><strong>line / area / sparkline</strong> — тренд по времени или категориям.</li>
+                <li><strong>bar</strong> — столбцы (вертикальные или горизонтальные); «Развернуть» показывает все категории.</li>
+                <li><strong>pie / donut</strong> — доли; клик по сегменту может сузить фильтр.</li>
+                <li><strong>heatmap / matrix-canvas</strong> — матрица интенсивности; клик по ячейке — список пользователей (ПК) снизу.</li>
+                <li><strong>table</strong> — таблица; фильтр по каждой колонке в заголовке; TOP=0 — все строки.</li>
+                <li><strong>number</strong> — KPI (одно число).</li>
+                <li><strong>scatter / histogram / box / treemap / gauge / windrose</strong> — спец. графики по данным.</li>
+            </ul>
+            <p>Экспорт карточки: кнопки <strong>CSV</strong> и <strong>XLSX</strong> в шапке карточки.</p>
+
             <h2>Важно</h2>
             <p>Цифры на карточках берутся из источника, указанного в спецификации.</p>
             <p class="muted">Примеры спецификаций — в <code>samples/demo</code>.</p>

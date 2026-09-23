@@ -186,7 +186,8 @@ internal static class DocumentModelMapper
         new(
             ToCore(source.Kind),
             source.Value,
-            MapOptional(source.SqlCarrier, ToCore));
+            MapOptional(source.SqlCarrier, ToCore),
+            FirstOrNull(source.Sheet));
 
     private static LayoutDefinition ToCore(FsharpLayout.LayoutDefinition layout) =>
         new(layout.Columns, layout.GapPx);
@@ -259,6 +260,7 @@ internal static class DocumentModelMapper
     {
         if (kind.Equals(FsharpDataSource.DataSourceKind.View)) return DataSourceKind.View;
         if (kind.Equals(FsharpDataSource.DataSourceKind.Sql)) return DataSourceKind.Sql;
+        if (kind.Equals(FsharpDataSource.DataSourceKind.Xlsx)) return DataSourceKind.Xlsx;
         throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown data source kind.");
     }
 

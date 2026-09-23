@@ -73,6 +73,13 @@
                         @onclick="ExportCsvAsync">
                     @Loc.T("Export CSV")
                 </button>
+                <button type="button"
+                        class="secondary card-export-btn"
+                        title="@Loc.T("Export XLSX")"
+                        disabled="@Card.Loading"
+                        @onclick="ExportXlsxAsync">
+                    @Loc.T("Export XLSX")
+                </button>
             }
             @if (CanFullscreen)
             {
@@ -247,6 +254,9 @@
 
     private Task ExportCsvAsync() =>
         OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "csv_export", new Dictionary<string, string>()));
+
+    private Task ExportXlsxAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "xlsx_export", new Dictionary<string, string>()));
 
     private void ToggleFullscreen()
     {

@@ -153,6 +153,15 @@ public sealed class HostSettingsService(
                 ? "ru"
                 : value.Trim().ToLowerInvariant();
             presentationSignals.NotifyChanged();
+            return;
+        }
+
+        if (string.Equals(key, HostSettingsOverlay.KeyColorScheme, StringComparison.OrdinalIgnoreCase))
+        {
+            presentation.ColorScheme = string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().ToLowerInvariant();
+            presentationSignals.NotifyChanged();
         }
     }
 
