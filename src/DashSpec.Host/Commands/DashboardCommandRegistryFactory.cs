@@ -16,6 +16,8 @@ internal static class DashboardCommandRegistryFactory
         registry.Register(new ShowHostSurfaceCommand());
         registry.Register(new SelectDateFilterCommand());
         registry.Register(new SelectViewCommand());
+        registry.Register(new ToggleMatrixValueLabelsCommand());
+        registry.Register(new ToggleMatrixAxisLabelsXCommand());
 
         foreach (var filterName in context.ToolbarFilterNames
                      .Where(name => context.FilterIndex.TryGetValue(name, out var filter)

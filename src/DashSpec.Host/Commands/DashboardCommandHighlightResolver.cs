@@ -36,7 +36,48 @@ internal static class DashboardCommandHighlightResolver
             return ResolveView(tokens, context);
         }
 
+        if (StartsWithPhrasePrefix(body, DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix)
+            || StartsWithPhrasePrefix(body, DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix))
+        {
+            return ResolveMatrixToggle(body, context);
+        }
+
         return AllTargets(context);
+    }
+
+    static bool StartsWithPhrasePrefix(string body, string prefix) =>
+        body.Equals(prefix, StringComparison.OrdinalIgnoreCase)
+        || body.StartsWith($"{prefix} ", StringComparison.OrdinalIgnoreCase);
+
+    static CommandHighlightState ResolveMatrixToggle(string body, DashboardFilterContext context)
+    {
+        var prefix = StartsWithPhrasePrefix(body, DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix)
+            ? DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix
+            : DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix;
+        var cardToken = body.Length <= prefix.Length
+            ? string.Empty
+            : body[(prefix.Length + 1)..].Trim();
+        if (cardToken.Length == 0)
+        {
+            return new CommandHighlightState(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+                context.MatrixCards.Select(card => card.CardId).ToHashSet(StringComparer.OrdinalIgnoreCase));
+        }
+
+        var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+        if (card is null)
+        {
+            var partialCards = context.MatrixCards
+                .Where(cardTarget => MatchesPartial(cardTarget.CardId, cardToken)
+                                     || MatchesPartial(cardTarget.Title, cardToken))
+                .Select(cardTarget => cardTarget.CardId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return new CommandHighlightState(new HashSet<string>(StringComparer.OrdinalIgnoreCase), partialCards);
+        }
+
+        return new CommandHighlightState(
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase),
+            new HashSet<string>([card.CardId], StringComparer.OrdinalIgnoreCase));
     }
 
     static CommandHighlightState AllTargets(DashboardFilterContext context)
@@ -44,6 +85,7 @@ internal static class DashboardCommandHighlightResolver
         var filters = context.ToolbarFilterNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var cards = context.SwitchableCards
             .Select(card => card.CardId)
+            .Concat(context.MatrixCards.Select(card => card.CardId))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return new CommandHighlightState(filters, cards);
     }

@@ -776,6 +776,21 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        if (run.PendingCardId is not null && run.PendingCardActionId is not null)
+        {
+            var card = _refresh.Cards.FirstOrDefault(c =>
+                string.Equals(c.Id, run.PendingCardId, StringComparison.OrdinalIgnoreCase));
+            if (card is not null &&
+                TryHandleMatrixLabelToggle(
+                    new CardActionRequest(run.PendingCardId, run.PendingCardActionId, new Dictionary<string, string>()),
+                    card))
+            {
+                CommandError = null;
+                Notify();
+                return;
+            }
+        }
+
         _filters.SyncToSession(_session, PlacedFilterNames());
         SyncUsageDateFromActivePage();
         CommandError = null;
@@ -798,11 +813,19 @@ public sealed class DashboardPageController : IDisposable
             ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
             ActivePageId = ActivePageId,
             SwitchableCards = BuildSwitchableCards(),
+            MatrixCards = BuildMatrixCards(),
             Culture = _cultureAmbient.Culture,
         };
 
     IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
         DashboardCardCommandTargetsBuilder.Build(
+            VisibleCards()
+                .Select(card => FindCardDefinition(card.Id))
+                .Where(definition => definition is not null)
+                .Cast<CardDefinition>());
+
+    IReadOnlyList<DashboardCardCommandTarget> BuildMatrixCards() =>
+        DashboardCardCommandTargetsBuilder.BuildMatrix(
             VisibleCards()
                 .Select(card => FindCardDefinition(card.Id))
                 .Where(definition => definition is not null)
