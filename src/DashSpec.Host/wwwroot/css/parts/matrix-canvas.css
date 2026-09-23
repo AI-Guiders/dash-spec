@@ -16,7 +16,7 @@
 
 .matrix-canvas-layout {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: var(--matrix-y-label-width, max-content) max-content;
   grid-template-rows: auto max-content;
   gap: 4px;
   width: max-content;
@@ -80,7 +80,6 @@
   white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
-  max-width: min(42vw, 32rem);
 }
 
 .matrix-canvas {
