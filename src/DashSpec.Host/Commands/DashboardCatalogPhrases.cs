@@ -9,6 +9,8 @@ internal static class DashboardCatalogPhrases
 {
     public const string ShowHostPhrase = "show-host";
     public const string PickViewPhrase = "pick-view";
+    public const string ToggleMatrixValuesPhrase = "toggle-matrix-values";
+    public const string ToggleMatrixAxisXPhrase = "toggle-matrix-axis-x";
 
     public static string ViewPath(string cardId, string viewId) =>
         Materialize(
@@ -17,6 +19,22 @@ internal static class DashboardCatalogPhrases
             {
                 ["card"] = cardId,
                 ["view"] = viewId,
+            });
+
+    public static string MatrixValuesTogglePath(string cardId) =>
+        Materialize(
+            ToggleMatrixValuesPhrase,
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["card"] = cardId,
+            });
+
+    public static string MatrixAxisXTogglePath(string cardId) =>
+        Materialize(
+            ToggleMatrixAxisXPhrase,
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["card"] = cardId,
             });
 
     public static string Materialize(string phraseName, IReadOnlyDictionary<string, string> slots)

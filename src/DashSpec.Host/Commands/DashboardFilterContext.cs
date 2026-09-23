@@ -11,6 +11,7 @@ public sealed record CommandRunResult(
     string? PendingPageId = null,
     string? PendingCardId = null,
     string? PendingViewId = null,
+    string? PendingCardActionId = null,
     string? PendingHostRoute = null);
 
 /// <summary>Invocation payload for dashboard filter commands (DASHSPEC-ADR-0043).</summary>
@@ -55,9 +56,13 @@ public sealed class DashboardFilterContext : ICommandScopedContext
 
     public string? PendingViewId { get; set; }
 
+    public string? PendingCardActionId { get; set; }
+
     public string? PendingHostRoute { get; set; }
 
     public IReadOnlyList<DashboardCardCommandTarget> SwitchableCards { get; init; } = [];
+
+    public IReadOnlyList<DashboardCardCommandTarget> MatrixCards { get; init; } = [];
 
     public void ApplyDate(string filterName, DateOnly from, DateOnly to)
     {

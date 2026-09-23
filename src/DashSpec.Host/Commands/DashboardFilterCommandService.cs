@@ -48,6 +48,7 @@ public sealed class DashboardFilterCommandService(
             context.PendingPageId,
             context.PendingCardId,
             context.PendingViewId,
+            context.PendingCardActionId,
             context.PendingHostRoute);
     }
 

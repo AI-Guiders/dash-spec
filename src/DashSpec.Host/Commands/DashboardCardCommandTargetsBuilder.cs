@@ -38,4 +38,20 @@ internal static class DashboardCardCommandTargetsBuilder
 
         return targets;
     }
+
+    public static IReadOnlyList<DashboardCardCommandTarget> BuildMatrix(IEnumerable<CardDefinition> cards)
+    {
+        var targets = new List<DashboardCardCommandTarget>();
+        foreach (var card in cards)
+        {
+            if (!string.Equals(card.Diagram.Kind, "heatmap", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            targets.Add(new DashboardCardCommandTarget(card.Id, card.Title, []));
+        }
+
+        return targets;
+    }
 }

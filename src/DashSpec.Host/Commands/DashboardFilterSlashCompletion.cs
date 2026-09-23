@@ -69,6 +69,8 @@ internal static class DashboardFilterSlashCompletion
         var body = NormalizeBody(typedLine);
         return body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
                || body.Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+               || body.Equals(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+               || body.Equals(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
                || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
                || body.Equals($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch}", StringComparison.OrdinalIgnoreCase);
     }
@@ -146,7 +148,7 @@ internal static class DashboardFilterSlashCompletion
 
     static string? ResolvePathHint(string body) => body switch
     {
-        "" => "select · view · show",
+        "" => "select · view · toggle matrix · show",
         _ when body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase) =>
             "Срез данных — filter, report, page",
         _ when body.Equals($"select {FilterCommandPaths.FilterBranch}", StringComparison.OrdinalIgnoreCase)
@@ -154,6 +156,12 @@ internal static class DashboardFilterSlashCompletion
             "название фильтра · значение",
         _ when body.Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase) =>
             "Представление карточки — heatmap, line…",
+        _ when body.Equals(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+               || body.StartsWith($"{DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase) =>
+            "heatmap-карточка — переключить цифры",
+        _ when body.Equals(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+               || body.StartsWith($"{DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase) =>
+            "heatmap-карточка — переключить подписи X",
         _ when body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase) =>
             ShowCommandPaths.HostBranch,
         _ when body.Equals($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch}", StringComparison.OrdinalIgnoreCase)
@@ -173,6 +181,10 @@ internal static class DashboardFilterSlashCompletion
             || body.Equals(FilterCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
             || body.StartsWith($"{DashCatalog.CardViewPhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase)
             || body.Equals(DashCatalog.CardViewPhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+            || body.StartsWith($"{DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase)
+            || body.Equals(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+            || body.StartsWith($"{DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase)
+            || body.Equals(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
             || body.StartsWith($"{ShowCommandPaths.RootVerb} ", StringComparison.OrdinalIgnoreCase)
             || body.Equals(ShowCommandPaths.RootVerb, StringComparison.OrdinalIgnoreCase)
             || body.StartsWith($"{ShowCommandPaths.RootVerb} {ShowCommandPaths.HostBranch} ", StringComparison.OrdinalIgnoreCase)
