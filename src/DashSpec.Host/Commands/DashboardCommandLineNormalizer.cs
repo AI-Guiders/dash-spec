@@ -28,7 +28,40 @@ internal static class DashboardCommandLineNormalizer
             return NormalizeView(tokens, context);
         }
 
+        if (StartsWithPhrasePrefix(body, DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix))
+        {
+            return NormalizeMatrixToggle(body, context, DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix);
+        }
+
+        if (StartsWithPhrasePrefix(body, DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix))
+        {
+            return NormalizeMatrixToggle(body, context, DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix);
+        }
+
         return body;
+    }
+
+    static bool StartsWithPhrasePrefix(string body, string prefix) =>
+        body.Equals(prefix, StringComparison.OrdinalIgnoreCase)
+        || body.StartsWith($"{prefix} ", StringComparison.OrdinalIgnoreCase);
+
+    static string NormalizeMatrixToggle(string body, DashboardFilterContext context, string prefix)
+    {
+        if (!StartsWithPhrasePrefix(body, prefix))
+        {
+            return body;
+        }
+
+        var cardToken = body.Length <= prefix.Length
+            ? string.Empty
+            : body[(prefix.Length + 1)..].Trim();
+        if (cardToken.Length == 0)
+        {
+            return body;
+        }
+
+        var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+        return card is null ? body : $"{prefix} {card.CardId}";
     }
 
     static string NormalizeSelect(string[] tokens, DashboardFilterContext context)

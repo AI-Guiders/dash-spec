@@ -15,7 +15,9 @@ internal static class DashboardSlotNouns
         if (slotName.Equals("card", StringComparison.OrdinalIgnoreCase))
         {
             var card = context.SwitchableCards.FirstOrDefault(target =>
-                target.CardId.Equals(slotValue, StringComparison.OrdinalIgnoreCase));
+                target.CardId.Equals(slotValue, StringComparison.OrdinalIgnoreCase))
+                ?? context.MatrixCards.FirstOrDefault(target =>
+                    target.CardId.Equals(slotValue, StringComparison.OrdinalIgnoreCase));
             return card is not null ? (card.Title, card.CardId) : (slotValue, slotValue);
         }
 
@@ -51,9 +53,14 @@ internal static class DashboardSlotNouns
         {
             var card = context.SwitchableCards.FirstOrDefault(target =>
                 target.CardId.Equals(slotValue, StringComparison.OrdinalIgnoreCase));
-            return card is null
-                ? slotValue
-                : string.Join(" · ", card.Views.Select(view => view.Label));
+            if (card is not null)
+            {
+                return string.Join(" · ", card.Views.Select(view => view.Label));
+            }
+
+            var matrixCard = context.MatrixCards.FirstOrDefault(target =>
+                target.CardId.Equals(slotValue, StringComparison.OrdinalIgnoreCase));
+            return matrixCard?.Title ?? slotValue;
         }
 
         if (slotName.Equals("view", StringComparison.OrdinalIgnoreCase))

@@ -54,6 +54,26 @@ internal static class DashboardCommandTrailFormatter
             }
         }
 
+        if ((body.Equals(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+             || body.StartsWith($"{DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase))
+            && body.Length > DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix.Length)
+        {
+            var cardToken = body[(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
+            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            segments.Add(new("toggle matrix values", DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix));
+            segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
+        }
+
+        if ((body.Equals(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+             || body.StartsWith($"{DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase))
+            && body.Length > DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix.Length)
+        {
+            var cardToken = body[(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
+            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            segments.Add(new("toggle matrix axis-x", DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix));
+            segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
+        }
+
         return segments;
     }
 }

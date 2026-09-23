@@ -110,6 +110,28 @@ internal static class DashboardCommandEntityResolver
         return matches.Count == 1 ? matches[0] : null;
     }
 
+    public static DashboardCardCommandTarget? ResolveMatrixCard(string token, DashboardFilterContext context)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var trimmed = token.Trim();
+        var byId = context.MatrixCards.FirstOrDefault(card =>
+            card.CardId.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+        if (byId is not null)
+        {
+            return byId;
+        }
+
+        var matches = context.MatrixCards
+            .Where(card => card.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                           || card.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        return matches.Count == 1 ? matches[0] : null;
+    }
+
     public static string? ResolveViewId(DashboardCardCommandTarget card, string token)
     {
         if (string.IsNullOrWhiteSpace(token))
