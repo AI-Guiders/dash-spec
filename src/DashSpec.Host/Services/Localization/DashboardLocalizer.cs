@@ -82,6 +82,10 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Paste into Forge FORGE_DASHSPEC_WEBHOOK_URL + shared secret."] = "Вставьте в Forge FORGE_DASHSPEC_WEBHOOK_URL + общий секрет.",
             ["Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery."] = "Настройки времени выполнения в WitDB (ADR-0042). Bootstrap TOML остаётся для холодного старта / восстановления.",
             ["Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml)."] = "Отредактированный TOML-фрагмент из WitDB для резервного копирования без сети (не записывает local.toml).",
+            ["Cell values"] = "Цифры",
+            ["X axis labels"] = "Подписи X",
+            ["Toggle cell values"] = "Показать или скрыть цифры в ячейках",
+            ["Toggle X axis labels"] = "Показать или скрыть подписи оси X",
         };
 
     private static readonly IReadOnlyDictionary<string, string> _en =
@@ -151,5 +155,9 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Paste into Forge FORGE_DASHSPEC_WEBHOOK_URL + shared secret."] = "Paste into Forge FORGE_DASHSPEC_WEBHOOK_URL + shared secret.",
             ["Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery."] = "Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery.",
             ["Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml)."] = "Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml).",
+            ["Cell values"] = "Cell values",
+            ["X axis labels"] = "X axis labels",
+            ["Toggle cell values"] = "Show or hide cell values",
+            ["Toggle X axis labels"] = "Show or hide X axis labels",
         };
 }
