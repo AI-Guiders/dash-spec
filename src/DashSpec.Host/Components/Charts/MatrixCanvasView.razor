@@ -286,7 +286,7 @@ else
     {
         var yLabel = Payload.YLabels[yi];
         var xLabel = Payload.XLabels[xi];
-        var head = $"{FormatYLabel(yLabel)} · {FormatXLabel(xLabel)}: {FormatValue(value)}";
+        var head = $"{yLabel} · {FormatXLabel(xLabel)}: {FormatValue(value)}";
         return string.IsNullOrWhiteSpace(ValueLabel) ? head : $"{head} {ValueLabel}";
     }
 
