@@ -26,38 +26,44 @@ else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Coun
 else
 {
     <div id="@HostId"
-         class="matrix-canvas-host"
+         class="matrix-canvas-host @HostCssClass"
          style="@HostStyle"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
         <div class="matrix-canvas-scroll">
             <div class="matrix-canvas-layout">
                 <div class="matrix-canvas-corner">
-                    @if (!string.IsNullOrWhiteSpace(YAxisLabel))
+                    @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
                     {
                         <span class="heatmap-axis-y"><RichTextView Text="@YAxisLabel" /></span>
                     }
-                    @if (!string.IsNullOrWhiteSpace(XAxisLabel))
+                    @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(XAxisLabel))
                     {
                         <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
                     }
                 </div>
-                <div class="matrix-canvas-x-labels">
-                    @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
-                    {
-                        var show = ShouldShowXLabel(xi);
-                        <span class="matrix-canvas-x-label @(show ? null : "matrix-canvas-x-label-sparse")"
-                              title="@FormatXLabel(Payload.XLabels[xi])">
-                            @(show ? FormatXLabel(Payload.XLabels[xi]) : "")
-                        </span>
-                    }
-                </div>
-                <div class="matrix-canvas-y-labels">
-                    @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
-                    {
-                        var yLabel = Payload.YLabels[yi];
-                        <div class="matrix-canvas-y-label" title="@yLabel">@yLabel</div>
-                    }
-                </div>
+                @if (ShowAxisLabelsX)
+                {
+                    <div class="matrix-canvas-x-labels">
+                        @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
+                        {
+                            var show = ShouldShowXLabel(xi);
+                            <span class="matrix-canvas-x-label @(show ? null : "matrix-canvas-x-label-sparse")"
+                                  title="@FormatXLabel(Payload.XLabels[xi])">
+                                @(show ? FormatXLabel(Payload.XLabels[xi]) : "")
+                            </span>
+                        }
+                    </div>
+                }
+                @if (ShowAxisLabelsY)
+                {
+                    <div class="matrix-canvas-y-labels">
+                        @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
+                        {
+                            var yLabel = Payload.YLabels[yi];
+                            <div class="matrix-canvas-y-label" title="@yLabel">@yLabel</div>
+                        }
+                    </div>
+                }
                 <canvas id="@CanvasId"
                         class="matrix-canvas"
                         width="1"
@@ -121,7 +127,16 @@ else
 
     [Parameter] public string? OversizeMessage { get; set; }
 
+    [Parameter] public string ValueLabelsWire { get; set; } = "auto";
+
+    [Parameter] public bool ShowAxisLabelsX { get; set; } = true;
+
+    [Parameter] public bool ShowAxisLabelsY { get; set; } = true;
+
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
+
+    private string HostCssClass =>
+        $"{(ShowAxisLabelsX ? null : "matrix-canvas-host--hide-x-labels")} {(ShowAxisLabelsY ? null : "matrix-canvas-host--hide-y-labels")}".Trim();
 
     private string? _mountedPayloadKey;
     private (int Yi, int Xi, double? Value)? _hoverCell;
@@ -160,7 +175,8 @@ else
             colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
-            showValues = true,
+            showValues = ValueLabelsWire,
+            showAxisLabelsY = ShowAxisLabelsY,
         };
 
         if (_mountedPayloadKey is not null &&
@@ -186,7 +202,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{ValueLabelsWire}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
 
     private int ComputeCellHash()
     {
