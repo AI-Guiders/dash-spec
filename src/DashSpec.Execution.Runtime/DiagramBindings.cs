@@ -36,6 +36,7 @@ public static class DiagramBindings
             "box" or "boxplot" => ["value", "x"],
             "gauge" => ["value"],
             "heatmap" => ["x", "y", "value"],
+            "gantt" => ["y", "from", "to", "color"],
             _ => ["x", "y", "series", "value"],
         };
 

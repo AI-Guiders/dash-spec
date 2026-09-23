@@ -100,6 +100,28 @@ public sealed class DashSpecActionDispatcher
                 new DashSpecTableData(["x", "y", "value"], rows));
         }
 
+        if (card.Gantt is { Rows.Count: > 0 } gantt)
+        {
+            var columns = new List<string> { "app", "start", "end" };
+            var rows = new List<IReadOnlyList<string>>();
+            foreach (var row in gantt.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    rows.Add([
+                        row.Label,
+                        segment.Start.ToString("O", CultureInfo.InvariantCulture),
+                        segment.End.ToString("O", CultureInfo.InvariantCulture),
+                    ]);
+                }
+            }
+
+            return new DashSpecActionContext(
+                card.Id,
+                card.Title,
+                new DashSpecTableData(columns, rows));
+        }
+
         if (card.Chart is { Labels.Count: > 0 } chart)
         {
             var columns = new List<string> { "category" };

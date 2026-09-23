@@ -372,6 +372,12 @@ public static class QueryCompiler
             return $"ORDER BY {orderBy}";
         }
 
+        if (string.Equals(card.Diagram.Kind, "gantt", StringComparison.OrdinalIgnoreCase) &&
+            DiagramBindings.TryGetColumn(card.Diagram, "from", out var ganttStart))
+        {
+            return $"ORDER BY {ganttStart}";
+        }
+
         if (DiagramBindings.TryGetColumn(card.Diagram, "x", out var category))
         {
             return $"ORDER BY {category}";

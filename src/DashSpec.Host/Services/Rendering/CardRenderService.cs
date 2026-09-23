@@ -167,6 +167,26 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
+            DiagramDataFamily.Gantt =>
+                new CardRenderResult(
+                    card.Id,
+                    card.Title,
+                    effective.Diagram.Kind,
+                    kind.DataFamily,
+                    renderPluginId,
+                    Gantt: ChartDataBuilder.BuildGantt(rows, effective.Diagram),
+                    Placement: card.Placement,
+                    InteriorPlacements: interiorPlacements,
+                    BoundFilters: card.BoundFilters,
+                    LocalFilters: card.LocalFilters,
+                    ClickBehaviour: card.ClickBehaviour,
+                    ExtensionBlocks: card.ExtensionBlocks,
+                    LocalFiltersManualApply: card.LocalFiltersManualApply,
+                    MatrixLimits: card.MatrixLimits,
+                    OversizeMessage: card.OversizeMessage,
+                    FilterLinkHint: filterLinkHint,
+                    FilterLinkCssClass: filterLinkCssClass,
+                    TopFilterScopeHint: topFilterScopeHint),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         };
     }

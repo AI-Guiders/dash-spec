@@ -222,7 +222,7 @@
 
     private bool CanFullscreen =>
         !Card.IsVisibilityPlaceholder &&
-        Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table;
+        Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table or DiagramDataFamily.Gantt;
 
     private bool CanMatrixLabelToggles =>
         !Card.IsVisibilityPlaceholder &&

@@ -36,3 +36,10 @@ public sealed class ScalarHtmlVizPlugin : IVizPlugin
 
     public string DataFamily => "scalar";
 }
+
+public sealed class GanttHtmlVizPlugin : IVizPlugin
+{
+    public string Id => VizPluginIds.GanttHtml;
+
+    public string DataFamily => "gantt";
+}

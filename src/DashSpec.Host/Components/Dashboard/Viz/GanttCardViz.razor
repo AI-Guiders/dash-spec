@@ -1,0 +1,41 @@
+@namespace DashSpec.Host.Components.Dashboard.Viz
+@using DashSpec.Host.Services.Models
+@using DashSpec.Execution.Runtime
+
+@if (Context.EffectiveCard.Gantt is { Rows.Count: > 0 } gantt)
+{
+    <div class="gantt-wrap" style="@($"max-height:{gantt.HeightPx}px")">
+        @if (!string.IsNullOrWhiteSpace(gantt.YLabel))
+        {
+            <div class="gantt-y-caption muted">@gantt.YLabel</div>
+        }
+        <div class="gantt-body">
+            @foreach (var row in gantt.Rows)
+            {
+                <div class="gantt-row">
+                    <div class="gantt-label" title="@row.Label">@row.Label</div>
+                    <div class="gantt-track" aria-label="@row.Label">
+                        @foreach (var segment in row.Segments)
+                        {
+                            <div class="gantt-bar"
+                                 style="@($"left:{segment.LeftPercent:0.###}%;width:{segment.WidthPercent:0.###}%;background:{segment.Color}")"
+                                 title="@segment.Tooltip"></div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="gantt-axis muted">
+            <span>@gantt.AxisStart.ToString("dd.MM HH:mm")</span>
+            <span>@gantt.AxisEnd.ToString("dd.MM HH:mm")</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="gantt-empty muted">Нет данных для выбранного пользователя и периода.</div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+}

@@ -141,6 +141,15 @@ module PropertySchemas =
           spec "height" Scalar
           spec "color_normalize" Scalar ]
 
+    let ganttDiagram =
+        [ spec "y" ColumnBinding
+          spec "from" ColumnBinding
+          spec "to" ColumnBinding
+          spec "color" ColumnBinding
+          spec "height" Scalar
+          spec "order_by" RestOfLine
+          spec "limit" Scalar ]
+
     /// Mirrors Core PropertyBlockParser.ResolveEndKind for block containers.
     let resolveEndKind (blockName: string) =
         let parts = blockName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
