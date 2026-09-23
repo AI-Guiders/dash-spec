@@ -25,6 +25,18 @@ public sealed class MatrixLabelVisibilityTests
         Assert.Equal(expected, MatrixLabelVisibilityParser.ParseAxisLabels(props, "axis_labels_x"));
     }
 
+    [Theory]
+    [InlineData("10", 10)]
+    [InlineData("14", 14)]
+    [InlineData("3", 6)]
+    [InlineData("120", 96)]
+    [InlineData("nope", MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx)]
+    public void ParseValueLabelsThreshold_clamps_and_defaults(string raw, int expected)
+    {
+        var props = new Dictionary<string, string> { ["value_labels_threshold"] = raw };
+        Assert.Equal(expected, MatrixLabelVisibilityParser.ParseValueLabelsThreshold(props));
+    }
+
     [Fact]
     public void MatrixPresentation_reads_label_visibility_from_diagram()
     {
@@ -45,8 +57,26 @@ public sealed class MatrixLabelVisibilityTests
 
         var presentation = MatrixPresentation.FromCard(card);
         Assert.Equal(MatrixValueLabelMode.Hide, presentation.ValueLabels);
+        Assert.Equal(MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx, presentation.ValueLabelsThresholdPx);
         Assert.False(presentation.AxisLabelsX);
         Assert.True(presentation.AxisLabelsY);
+    }
+
+    [Fact]
+    public void MatrixPresentation_reads_value_labels_threshold_from_diagram()
+    {
+        var card = new CardDefinition(
+            "t",
+            "T",
+            new DiagramDefinition(
+                "heatmap",
+                new Dictionary<string, string> { ["value_labels_threshold"] = "18" }),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            BoundFilters: [],
+            LocalFilters: []);
+
+        var presentation = MatrixPresentation.FromCard(card);
+        Assert.Equal(18, presentation.ValueLabelsThresholdPx);
     }
 
     [Theory]

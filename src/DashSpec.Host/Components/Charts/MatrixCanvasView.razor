@@ -133,6 +133,8 @@ else
 
     [Parameter] public bool ShowAxisLabelsY { get; set; } = true;
 
+    [Parameter] public int ValueLabelsThresholdPx { get; set; } = MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx;
+
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
 
     private string HostCssClass =>
@@ -176,6 +178,7 @@ else
             colorScale = ColorScale,
             maxHeight = HeightPx,
             showValues = ValueLabelsWire,
+            valueLabelsThreshold = ValueLabelsThresholdPx,
             showAxisLabelsY = ShowAxisLabelsY,
         };
 
@@ -202,7 +205,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{ValueLabelsWire}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
 
     private int ComputeCellHash()
     {

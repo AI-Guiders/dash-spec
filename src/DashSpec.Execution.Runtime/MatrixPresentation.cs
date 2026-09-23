@@ -16,6 +16,7 @@ public sealed record MatrixPresentation(
     string YFormat = "user.short",
     string ColorScale = "heat",
     MatrixValueLabelMode ValueLabels = MatrixValueLabelMode.Auto,
+    int ValueLabelsThresholdPx = MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx,
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
     LegendDefinition? Legend = null,
@@ -34,6 +35,7 @@ public sealed record MatrixPresentation(
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
         var colorScale = diagram.Properties.GetValueOrDefault("color_scale") ?? "heat";
         var valueLabels = MatrixLabelVisibilityParser.ParseValueLabels(diagram.Properties);
+        var valueLabelsThreshold = MatrixLabelVisibilityParser.ParseValueLabelsThreshold(diagram.Properties);
         var axisLabelsX = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_x");
         var axisLabelsY = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_y");
 
@@ -49,6 +51,7 @@ public sealed record MatrixPresentation(
             yFormat,
             colorScale,
             valueLabels,
+            valueLabelsThreshold,
             axisLabelsX,
             axisLabelsY,
             card.Legend,
