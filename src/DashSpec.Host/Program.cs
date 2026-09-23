@@ -187,6 +187,7 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services.AddSingleton<GitCatalogSyncService>();
 builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
+builder.Services.AddSingleton<HostExternalLinksProvider>();
 
 var hostDbPath = HostSettingsPaths.ResolveDatabasePath(bootstrap);
 HostSettingsPaths.EnsureDatabase(hostDbPath);
