@@ -84,6 +84,9 @@ window.dashSpecMatrix = {
     const cellW = payload.cellWidth ?? 26;
     const cellH = payload.cellHeight ?? 22;
     const showValues = payload.showValues ?? "auto";
+    const valueLabelsThreshold = Math.max(
+      6,
+      Math.min(96, payload.valueLabelsThreshold ?? 14));
     const drawCellValues = (cellW, cellH) => {
       if (showValues === "hide" || showValues === false) {
         return false;
@@ -93,7 +96,7 @@ window.dashSpecMatrix = {
         return true;
       }
 
-      return cellW >= 14 && cellH >= 14;
+      return cellW >= valueLabelsThreshold && cellH >= valueLabelsThreshold;
     };
 
     const width = xCount * (cellW + gapPx) + gapPx;
