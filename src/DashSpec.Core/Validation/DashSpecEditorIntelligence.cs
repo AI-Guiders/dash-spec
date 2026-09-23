@@ -9,7 +9,7 @@ public static class DashSpecEditorIntelligence
     [
         "@dashboard", "@tab", "@diagram", "@presentation", "@palette",
         "card", "diagram", "filter", "chrome", "use", "include", "!include",
-        "end", "heatmap", "bar", "line", "table", "toolbar", "filters",
+        "end", "heatmap", "gantt", "bar", "line", "table", "toolbar", "filters",
         "datasource", "phase", "page", "catalog", "report", "bind", "layout",
         "presentation", "palette",
     ];

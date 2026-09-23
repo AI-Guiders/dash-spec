@@ -6,6 +6,7 @@ public enum DiagramDataFamily
     Table,
     Scalar,
     Matrix,
+    Gantt,
 }
 
 public sealed record DiagramKindInfo(

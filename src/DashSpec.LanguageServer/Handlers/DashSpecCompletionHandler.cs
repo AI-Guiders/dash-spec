@@ -26,6 +26,7 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
         "!include",
         "end",
         "heatmap",
+        "gantt",
         "bar",
         "line",
         "table",

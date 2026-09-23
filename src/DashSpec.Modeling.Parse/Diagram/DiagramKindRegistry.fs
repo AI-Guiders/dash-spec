@@ -22,6 +22,8 @@ module DiagramKindRegistry =
 
     let private heatmapProperties = PropertySchemas.heatmapDiagram
 
+    let private ganttProperties = PropertySchemas.ganttDiagram
+
     let private specs =
         dict
             [ "line", { Id = "line"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
@@ -41,7 +43,8 @@ module DiagramKindRegistry =
               "wind_rose", { Id = "wind_rose"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
               "table", { Id = "table"; Properties = tableProperties; SupportsTopLimit = true; AllowExtensionProperties = false }
               "number", { Id = "number"; Properties = numberProperties; SupportsTopLimit = false; AllowExtensionProperties = false }
-              "heatmap", { Id = "heatmap"; Properties = heatmapProperties; SupportsTopLimit = false; AllowExtensionProperties = true } ]
+              "heatmap", { Id = "heatmap"; Properties = heatmapProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "gantt", { Id = "gantt"; Properties = ganttProperties; SupportsTopLimit = true; AllowExtensionProperties = true } ]
 
     let tryResolve kind =
         specs.TryGetValue kind

@@ -15,7 +15,7 @@ module DashSpecKeywords =
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
         | "diagramlibrary" | "group" | "phase" | "diagram"
-        | "heatmap" | "bar" | "line" | "area" | "pie" | "donut" | "gauge" | "kpi"
+        | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge" | "kpi"
         | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" -> true
         | _ -> false
 

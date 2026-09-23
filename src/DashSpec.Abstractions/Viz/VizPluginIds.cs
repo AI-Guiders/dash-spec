@@ -7,4 +7,5 @@ public static class VizPluginIds
     public const string MatrixCanvas = "matrix-canvas";
     public const string TableHtml = "table-html";
     public const string ScalarHtml = "scalar-html";
+    public const string GanttHtml = "gantt-html";
 }
