@@ -51,12 +51,19 @@ window.dashSpecMatrix = {
     const xLabelRow = 28;
     const chrome = 16;
     const gridW = Math.max(0, availableWidth - yLabelCol - chrome);
-    const gridH = Math.max(0, availableHeight - xLabelRow - chrome);
-    const minCellW = xCount > 16 ? 30 : 16;
+    const minCellW = xCount > 16 ? 30 : 18;
     let cellW = Math.floor((gridW - gapPx * (xCount + 1)) / Math.max(1, xCount));
-    let cellH = Math.floor((gridH - gapPx * (yCount + 1)) / Math.max(1, yCount));
     cellW = Math.min(52, Math.max(minCellW, cellW));
-    cellH = Math.min(48, Math.max(16, cellH));
+
+    // Keep row height readable; matrix-canvas-scroll scrolls vertically when needed.
+    const preferredCellH = 22;
+    const gridH = Math.max(0, availableHeight - xLabelRow - chrome);
+    const fittedCellH = Math.floor((gridH - gapPx * (yCount + 1)) / Math.max(1, yCount));
+    let cellH = Math.min(48, Math.max(preferredCellH, fittedCellH));
+    if (yCount * (cellH + gapPx) + gapPx > gridH + gapPx) {
+      cellH = preferredCellH;
+    }
+
     return { cellW, cellH };
   },
 
@@ -125,9 +132,9 @@ window.dashSpecMatrix = {
         ctx.fillStyle = this.cellBackground(colorScale, value, cellMin, cellMax);
         ctx.fillRect(x, y, cellW, cellH);
 
-        if (showValues && cellW >= 20 && cellH >= 16) {
+        if (showValues && cellW >= 14 && cellH >= 14) {
           ctx.fillStyle = this.cellText(value, cellMin, cellMax);
-          const fontSize = Math.min(12, Math.max(9, Math.floor(Math.min(cellW, cellH) * 0.42)));
+          const fontSize = Math.min(12, Math.max(8, Math.floor(Math.min(cellW, cellH) * 0.42)));
           ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
