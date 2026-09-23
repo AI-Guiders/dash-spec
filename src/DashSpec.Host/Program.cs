@@ -194,6 +194,8 @@ HostSettingsPaths.EnsureDatabase(hostDbPath);
 builder.Services.AddDbContext<DashSpecHostDbContext>(options =>
     options.UseWitDb($"Data Source={hostDbPath}"));
 builder.Services.AddScoped<HostSettingsService>();
+builder.Services.AddScoped<CatalogUsageService>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

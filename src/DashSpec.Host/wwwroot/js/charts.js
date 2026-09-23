@@ -350,10 +350,14 @@ window.dashSpecCharts = {
             ticks: {
               maxRotation: 0,
               minRotation: 0,
-              autoSkip: horizontal && !detailView,
+              autoSkip: horizontal ? !detailView : true,
               autoSkipPadding: horizontal ? 4 : 6,
               maxTicksLimit:
-                horizontal && !detailView && categoryLabels.length > 24 ? 24 : undefined,
+                horizontal && detailView
+                  ? undefined
+                  : horizontal && categoryLabels.length > 24
+                    ? 24
+                    : undefined,
               font: { size: detailView && denseHorizontal ? 11 : 10 },
               ...(horizontal ? {} : valueTicks),
             },

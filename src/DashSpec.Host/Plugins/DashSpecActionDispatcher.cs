@@ -52,6 +52,16 @@ public sealed class DashSpecActionDispatcher
                 outcome.TextContent,
                 outcome.MimeType ?? "text/csv;charset=utf-8").ConfigureAwait(false);
         }
+        else if (outcome.Kind is DashSpecActionOutcomeKind.DownloadBase64 &&
+                 !string.IsNullOrWhiteSpace(outcome.TextContent))
+        {
+            await _js.InvokeVoidAsync(
+                "dashspecDownload.downloadBase64",
+                cancellationToken,
+                outcome.FileName ?? "export.xlsx",
+                outcome.TextContent,
+                outcome.MimeType ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").ConfigureAwait(false);
+        }
 
         return outcome;
     }

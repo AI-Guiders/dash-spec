@@ -16,6 +16,7 @@ using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Models;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
+using DashSpec.Host.Services.Settings;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components;
 
@@ -38,6 +39,8 @@ public sealed class DashboardPageController : IDisposable
     private readonly LoadTrace _loadTrace;
     private readonly ILogger<DashboardPageController> _logger;
     private readonly NavigationManager _navigation;
+    private readonly CatalogUsageService _catalogUsage;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -54,7 +57,9 @@ public sealed class DashboardPageController : IDisposable
         DevSpecReloadNotifier reloadNotifier,
         LoadTrace loadTrace,
         ILogger<DashboardPageController> logger,
-        NavigationManager navigation)
+        NavigationManager navigation,
+        CatalogUsageService catalogUsage,
+        IHttpContextAccessor httpContextAccessor)
     {
         _session = session;
         _interactions = interactions;
@@ -69,6 +74,8 @@ public sealed class DashboardPageController : IDisposable
         _loadTrace = loadTrace;
         _logger = logger;
         _navigation = navigation;
+        _catalogUsage = catalogUsage;
+        _httpContextAccessor = httpContextAccessor;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -131,11 +138,20 @@ public sealed class DashboardPageController : IDisposable
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(requestedCatalogEntryId))
+            var entryToLoad = requestedCatalogEntryId;
+            if (string.IsNullOrWhiteSpace(entryToLoad))
+            {
+                var clientId = _catalogUsage.GetOrCreateClientId(_httpContextAccessor.HttpContext);
+                entryToLoad = _catalogUsage.ResolvePreferredEntryId(
+                    clientId,
+                    _hostContext.Catalog.Document.DefaultEntryId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(entryToLoad))
             {
                 try
                 {
-                    await _session.LoadCatalogEntryAsync(requestedCatalogEntryId, cancellationToken, fastLoad).ConfigureAwait(false);
+                    await _session.LoadCatalogEntryAsync(entryToLoad, cancellationToken, fastLoad).ConfigureAwait(false);
                 }
                 catch (Exception invalidEntry) when (invalidEntry is FileNotFoundException or KeyNotFoundException or InvalidOperationException)
                 {
@@ -147,6 +163,8 @@ public sealed class DashboardPageController : IDisposable
             {
                 await _session.LoadAsync(cancellationToken: cancellationToken, options: fastLoad).ConfigureAwait(false);
             }
+
+            RecordCatalogUsage();
             var loadSw = System.Diagnostics.Stopwatch.StartNew();
 
             trace.Step("load_spec", loadSw.ElapsedMilliseconds, true, _session.LoadedSpecSource);
@@ -601,6 +619,7 @@ public sealed class DashboardPageController : IDisposable
             }
             Loaded = true;
             Notify();
+            RecordCatalogUsage();
             _ = RefreshCardsInBackgroundAsync();
             if (carriedFilters is not null)
             {
@@ -888,6 +907,18 @@ public sealed class DashboardPageController : IDisposable
         _session.Document.FiltersChrome.IsBarLayout
             ? string.Empty
             : DashboardLayoutHelper.CardsGridStyle(_session.Document.Layout);
+
+    private void RecordCatalogUsage()
+    {
+        var entryId = _session.ActiveCatalogEntryId;
+        if (string.IsNullOrWhiteSpace(entryId))
+        {
+            return;
+        }
+
+        var clientId = _catalogUsage.GetOrCreateClientId(_httpContextAccessor.HttpContext);
+        _catalogUsage.RecordSelection(clientId, entryId);
+    }
 
     public void Dispose()
     {

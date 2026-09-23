@@ -24,6 +24,32 @@ th {
   background: var(--surface-2);
   font-weight: 600;
   color: var(--muted);
+  vertical-align: bottom;
+}
+
+.table-col-head {
+  margin-bottom: 0.35rem;
+}
+
+.table-col-filter {
+  width: 100%;
+  min-width: 4.5rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.table-filter-clear {
+  margin-left: 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
 }
 
 .table-foot {
