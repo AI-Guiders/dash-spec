@@ -28,6 +28,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly OnClickInteractionService _interactions;
     private readonly DashSpecActionDispatcher _actions;
     private readonly ICardViewState _cardViewState;
+    private readonly ICardMatrixDisplayState _matrixDisplayState;
     private readonly DashSpecHostContext _hostContext;
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
@@ -43,6 +44,7 @@ public sealed class DashboardPageController : IDisposable
         OnClickInteractionService interactions,
         DashSpecActionDispatcher actions,
         ICardViewState cardViewState,
+        ICardMatrixDisplayState matrixDisplayState,
         DashSpecHostContext hostContext,
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
@@ -58,6 +60,7 @@ public sealed class DashboardPageController : IDisposable
         _interactions = interactions;
         _actions = actions;
         _cardViewState = cardViewState;
+        _matrixDisplayState = matrixDisplayState;
         _hostContext = hostContext;
         _filters = filters;
         _refresh = refresh;
@@ -386,6 +389,12 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        if (TryHandleMatrixLabelToggle(request, card))
+        {
+            Notify();
+            return;
+        }
+
         var outcome = await _actions.ExecuteAsync(
             request.ActionId,
             card,
@@ -397,6 +406,44 @@ public sealed class DashboardPageController : IDisposable
             !string.IsNullOrWhiteSpace(outcome.RefreshCardId))
         {
             await _refresh.RefreshSingleCardAsync(outcome.RefreshCardId, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private bool TryHandleMatrixLabelToggle(CardActionRequest request, CardRenderResult card)
+    {
+        if (card.Matrix is null && card.DetailMatrix is null)
+        {
+            return false;
+        }
+
+        var presentation = card.MatrixPresentation;
+        if (presentation is null)
+        {
+            return false;
+        }
+
+        switch (request.ActionId.ToLowerInvariant())
+        {
+            case "toggle_matrix_value_labels":
+                var valueVisible = MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
+                    presentation.ValueLabels,
+                    _matrixDisplayState.GetValueLabelsOverride(request.CardId));
+                _matrixDisplayState.ToggleValueLabels(request.CardId, valueVisible);
+                return true;
+            case "toggle_matrix_axis_labels_x":
+                var axisXVisible = MatrixLabelDisplayResolver.EffectiveAxisVisible(
+                    presentation.AxisLabelsX,
+                    _matrixDisplayState.GetAxisLabelsXOverride(request.CardId));
+                _matrixDisplayState.ToggleAxisLabelsX(request.CardId, axisXVisible);
+                return true;
+            case "toggle_matrix_axis_labels_y":
+                var axisYVisible = MatrixLabelDisplayResolver.EffectiveAxisVisible(
+                    presentation.AxisLabelsY,
+                    _matrixDisplayState.GetAxisLabelsYOverride(request.CardId));
+                _matrixDisplayState.ToggleAxisLabelsY(request.CardId, axisYVisible);
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -888,6 +935,7 @@ public sealed class DashboardPageController : IDisposable
         _refresh.FiltersToCards = FiltersToCards;
 
         _cardViewState.ClearAll();
+        _matrixDisplayState.ClearAll();
         _filters.LoadFromSession(_session, PlacedFilterNames());
         SnapAllGrainAnchoredDates();
         _refresh.SeedAllCardSkeletons();

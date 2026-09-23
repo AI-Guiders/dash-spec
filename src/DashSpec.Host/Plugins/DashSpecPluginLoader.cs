@@ -62,6 +62,7 @@ public static class DashSpecPluginLoader
         RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
 
         services.AddScoped<ICardViewState, CardViewStateService>();
+        services.AddScoped<ICardMatrixDisplayState, CardMatrixDisplayStateService>();
 
         var activeBundle = ResolveActiveBundle(manifest);
         var pluginIds = ResolveBundlePluginIds(manifest, activeBundle);

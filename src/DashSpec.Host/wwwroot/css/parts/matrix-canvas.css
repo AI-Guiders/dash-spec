@@ -105,6 +105,29 @@
   );
 }
 
+.matrix-canvas-host--hide-x-labels .matrix-canvas-x-labels,
+.matrix-canvas-host--hide-x-labels .heatmap-axis-x {
+  display: none;
+}
+
+.matrix-canvas-host--hide-y-labels .matrix-canvas-y-labels,
+.matrix-canvas-host--hide-y-labels .heatmap-axis-y {
+  display: none;
+}
+
+.matrix-canvas-host--hide-y-labels {
+  --matrix-y-label-width: 0px;
+}
+
+.matrix-canvas-host--hide-x-labels.matrix-canvas-host--hide-y-labels .matrix-canvas-corner:empty {
+  display: none;
+}
+
+.card-head-actions .card-matrix-label-btn[aria-pressed="true"] {
+  border-color: var(--accent, #3b82f6);
+  color: var(--accent, #3b82f6);
+}
+
 .card-viz-stack {
   display: flex;
   flex-direction: column;
