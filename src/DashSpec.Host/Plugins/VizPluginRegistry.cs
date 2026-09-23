@@ -13,6 +13,7 @@ public sealed class VizPluginRegistry
             [DiagramDataFamily.Table] = VizPluginIds.TableHtml,
             [DiagramDataFamily.Scalar] = VizPluginIds.ScalarHtml,
             [DiagramDataFamily.Matrix] = VizPluginIds.MatrixCanvas,
+            [DiagramDataFamily.Gantt] = VizPluginIds.GanttHtml,
         };
 
     public VizPluginRegistry(IEnumerable<IVizPlugin> plugins)

@@ -72,6 +72,11 @@ public static class ChartDataBuilder
         SeriesTransformSettings? seriesTransform = null,
         TooltipDefinition? tooltip = null) =>
         MatrixPayloadBuilder.Build(rows, diagram, seriesTransform, tooltip);
+
+    public static GanttPayload BuildGantt(
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        DiagramDefinition diagram) =>
+        GanttPayloadBuilder.Build(rows, diagram);
 }
 
 public sealed record ChartPayload(

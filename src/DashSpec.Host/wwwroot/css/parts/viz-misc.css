@@ -157,3 +157,65 @@ code {
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
 }
+
+.gantt-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem 0.5rem;
+  background: var(--surface-1);
+}
+
+.gantt-y-caption {
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.gantt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gantt-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) 1fr;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gantt-label {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-track {
+  position: relative;
+  height: 1.1rem;
+  background: color-mix(in srgb, var(--border) 35%, transparent);
+  border-radius: 4px;
+}
+
+.gantt-bar {
+  position: absolute;
+  top: 0.12rem;
+  bottom: 0.12rem;
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.gantt-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-top: 0.45rem;
+}
+
+.gantt-empty {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
