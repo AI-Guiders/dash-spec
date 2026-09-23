@@ -15,15 +15,19 @@ Wave 2.5 wiring (`authoring/dashspec.gdlproj`, `Platform.Gdl.Emit`) landed in Ho
 ## Decision
 
 1. **SSOT:** `src/DashSpec.Host/Catalog/dash.catalog.gdl` via `authoring/dashspec.gdlproj`.
-2. **Generated artifact:** `src/DashSpec.Host/Generated/DashCatalog.g.cs` — committed, regen via MSBuild `BeforeCompile` or CLI.
-3. **Drift gate:** MSBuild target `GdlEmitVerify` (from `authoring-toolchain/build/Platform.Gdl.Emit.targets`) re-emits to `obj/.../gdl-emit-verify` and fails on byte mismatch.
-4. **CI:** `DashSpec.GdlEmit.Tests/DashCatalogEmitDriftTests` builds `gdlc` then runs `dotnet msbuild -t:GdlEmitVerify` on `DashSpec.Host.csproj` (no Host C# compile required).
+2. **Generated artifact:** `src/DashSpec.Host/Generated/DashCatalog.g.cs` — committed, regen via MSBuild `BeforeCompile` or explicit emit target.
+3. **Emit CLI:** `-t:GdlEmit` is a dispatcher alias (input **or** project mode). For `GdlEmitProject`, stamp invalidation runs **before** the incremental check when `GdlEmitForce=true` or when `Generated/*.g.cs` is missing — so deleted generated files and force regen no longer silently skip.
+4. **Drift gate:** MSBuild target `GdlEmitVerify` (from `authoring-toolchain/build/Platform.Gdl.Emit.targets`) re-emits to `obj/.../gdl-emit-verify` and fails on byte mismatch.
+5. **CI:** `DashSpec.GdlEmit.Tests/DashCatalogEmitDriftTests` builds `gdlc` then runs `dotnet msbuild -t:GdlEmitVerify` on `DashSpec.Host.csproj` (no Host C# compile required).
 
 ## Local workflow
 
 ```powershell
 # Regen (when dash.catalog.gdl changes)
 dotnet build src/DashSpec.Host/DashSpec.Host.csproj -c Release -p:GdlEmitForce=true
+
+# Or explicit emit only (restores missing Generated/*.g.cs too)
+dotnet msbuild src/DashSpec.Host/DashSpec.Host.csproj -c Release -t:GdlEmit
 
 # Drift check (same as CI gate)
 dotnet msbuild src/DashSpec.Host/DashSpec.Host.csproj -p:Configuration=Release -t:GdlEmitVerify
