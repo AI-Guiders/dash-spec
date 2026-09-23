@@ -15,6 +15,27 @@ public sealed class DashSpecTomlRoot
         new(StringComparer.OrdinalIgnoreCase);
 
     public PluginsTomlSection Plugins { get; set; } = new();
+
+    /// <summary>External URLs from @runtime manifest (product admin, docs, …).</summary>
+    public List<ExternalLinkTomlEntry> Links { get; set; } = [];
+}
+
+public sealed class ExternalLinkTomlEntry
+{
+    public string Id { get; set; } = string.Empty;
+
+    public string Label { get; set; } = string.Empty;
+
+    public string Url { get; set; } = string.Empty;
+
+    /// <summary>HTML target; empty → _blank.</summary>
+    public string Target { get; set; } = string.Empty;
+
+    /// <summary>Show in top bar near Dashboard. Default true when omitted.</summary>
+    public bool? Topbar { get; set; }
+
+    /// <summary>Show in Settings → Links. Default true when omitted.</summary>
+    public bool? Settings { get; set; }
 }
 
 public sealed class HostTomlSection
