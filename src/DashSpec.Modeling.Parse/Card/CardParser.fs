@@ -519,7 +519,7 @@ module CardParser =
                   UsePreset = None }
           DataSource =
             dataSource.Value
-            |> Option.defaultValue { Kind = DataSourceKind.View; Value = ""; SqlCarrier = None }
+            |> Option.defaultValue { Kind = DataSourceKind.View; Value = ""; SqlCarrier = None; Sheet = None }
           BoundFilters = boundFilters :> IReadOnlyList<_>
           LocalFilters = localFilters :> IReadOnlyList<_>
           Placement = placement.Value

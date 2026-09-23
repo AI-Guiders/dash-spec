@@ -154,6 +154,15 @@
                         <span class="muted">Applied on host restart. Empty = ru-RU.</span>
                     </div>
                     <div class="field">
+                        <label>Color scheme (remark 24)</label>
+                        <InputSelect @bind-Value="_presentation.ColorScheme" class="input">
+                            <option value="">Dark (default)</option>
+                            <option value="light">Light</option>
+                            <option value="contrast">High contrast</option>
+                        </InputSelect>
+                        <span class="muted">Applies immediately after save.</span>
+                    </div>
+                    <div class="field">
                         <label>Long product filter lists (&gt;80 items; remark 7)</label>
                         <InputSelect @bind-Value="_presentation.LargeFieldFilterLayout" class="input">
                             <option value="scroll">Scroll in a fixed area (default)</option>
@@ -244,6 +253,7 @@
             ? "Europe/Moscow"
             : Bootstrap.Presentation.DisplayTimeZone;
         _presentation.Language = Bootstrap.Presentation.Language ?? "";
+        _presentation.ColorScheme = Bootstrap.Presentation.ColorScheme ?? "";
         _presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(Bootstrap.Presentation.LargeFieldFilterLayout);
     }
 
@@ -261,11 +271,12 @@
         {
             Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyDisplayTimeZone, _presentation.DisplayTimeZone ?? "");
             Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyLanguage, _presentation.Language ?? "");
+            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyColorScheme, _presentation.ColorScheme ?? "");
             Settings.Upsert(
                 HostSettingsOverlay.SectionPresentation,
                 HostSettingsOverlay.KeyLargeFieldFilterLayout,
                 FilterLargeListOptions.Normalize(_presentation.LargeFieldFilterLayout));
-            _message = "Presentation saved. Time zone / language apply after host restart; long filter layout applies immediately.";
+            _message = "Presentation saved. Time zone / language apply after host restart; color scheme and long filter layout apply immediately.";
         }
         catch (Exception ex)
         {
@@ -362,6 +373,7 @@
     {
         public string DisplayTimeZone { get; set; } = "";
         public string Language { get; set; } = "";
+        public string ColorScheme { get; set; } = "";
         public string LargeFieldFilterLayout { get; set; } = FilterLargeListOptions.Scroll;
     }
 

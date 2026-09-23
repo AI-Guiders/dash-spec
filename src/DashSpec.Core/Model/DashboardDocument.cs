@@ -117,12 +117,14 @@ public sealed record DiagramDefinition(
 public sealed record DataSourceDefinition(
     DataSourceKind Kind,
     string Value,
-    DataSourceSqlCarrier? SqlCarrier = null);
+    DataSourceSqlCarrier? SqlCarrier = null,
+    string? Sheet = null);
 
 public enum DataSourceKind
 {
     View,
     Sql,
+    Xlsx,
 }
 
 public enum DataSourceSqlCarrier

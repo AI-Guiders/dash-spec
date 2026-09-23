@@ -15,6 +15,7 @@ public sealed class ExportDashSpecPlugin : IDashSpecPlugin
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IDashSpecActionHandler, CsvExportActionHandler>();
+        services.AddSingleton<IDashSpecActionHandler, XlsxExportActionHandler>();
     }
 
     public void RegisterContributors(IDashSpecContributorRegistry registry)
@@ -29,6 +30,11 @@ public sealed class ExportDashSpecPlugin : IDashSpecPlugin
             Id,
             "csv_export",
             "Export card data as CSV"));
+
+        registry.AddActionHandler(new ActionHandlerDescriptor(
+            Id,
+            "xlsx_export",
+            "Export card data as XLSX"));
 
         registry.AddCardChrome(new CardChromeContributorDescriptor(
             Id,

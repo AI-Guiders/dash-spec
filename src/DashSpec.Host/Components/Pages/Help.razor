@@ -39,6 +39,19 @@
                 <li>Кто когда запускал — «Детализация», сузить дату и пользователя.</li>
             </ul>
 
+            <h2>Виды диаграмм (remark 4)</h2>
+            <p>Тип задаётся в <code>.dashdiagram</code> (блок <code>bar</code>, <code>line</code>, <code>heatmap</code> и т.д.).</p>
+            <ul>
+                <li><strong>line / area / sparkline</strong> — тренд по времени или категориям.</li>
+                <li><strong>bar</strong> — столбцы (вертикальные или горизонтальные); «Развернуть» показывает все категории.</li>
+                <li><strong>pie / donut</strong> — доли; клик по сегменту может сузить фильтр.</li>
+                <li><strong>heatmap / matrix-canvas</strong> — матрица интенсивности; клик по ячейке — список пользователей (ПК) снизу.</li>
+                <li><strong>table</strong> — таблица; фильтр по каждой колонке в заголовке; TOP=0 — все строки.</li>
+                <li><strong>number</strong> — KPI (одно число).</li>
+                <li><strong>scatter / histogram / box / treemap / gauge / windrose</strong> — спец. графики по данным.</li>
+            </ul>
+            <p>Экспорт карточки: кнопки <strong>CSV</strong> и <strong>XLSX</strong> в шапке карточки.</p>
+
             <h2>Важно</h2>
             <p>Цифры отражают <strong>факт запуска процесса на ПК</strong>, а не всегда занятую сетевую лицензию вендора. Для закупки и разговора с пользователями — ориентир, не юридический отчёт вендору.</p>
             <p class="muted">Полное руководство: <code>URSA.LicenseUsage/docs/infra/DashSpec_UserGuide_RU.md</code> в репозитории проекта.</p>

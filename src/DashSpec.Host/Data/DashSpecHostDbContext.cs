@@ -6,8 +6,19 @@ public sealed class DashSpecHostDbContext(DbContextOptions<DashSpecHostDbContext
 {
     public DbSet<HostSettingEntity> HostSettings => Set<HostSettingEntity>();
 
+    public DbSet<CatalogUsageEntity> CatalogUsage => Set<CatalogUsageEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CatalogUsageEntity>(e =>
+        {
+            e.ToTable("catalog_usage");
+            e.HasKey(x => new { x.ClientId, x.EntryId });
+            e.Property(x => x.ClientId).HasMaxLength(64);
+            e.Property(x => x.EntryId).HasMaxLength(128);
+            e.HasIndex(x => x.ClientId);
+        });
+
         modelBuilder.Entity<HostSettingEntity>(e =>
         {
             e.ToTable("host_settings");

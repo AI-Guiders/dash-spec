@@ -43,11 +43,11 @@ module DataSourceParser =
         if reader.TryKeyword "query" then
             let body = readSqlQueryText reader
             SqlReadOnlyValidator.validateSqlBody body
-            { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query }
+            { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None }
         elif reader.TryKeyword "file" then
             let path = readSqlFileReference reader
             validateSqlFileExists path specDirectory
-            { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File }
+            { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None }
         else
             raise (DashSpecParseException("datasource sql requires 'query' or 'file' (e.g. datasource sql query \"SELECT …\" or datasource sql file \"sql/x.sql\")."))
 
@@ -64,11 +64,11 @@ module DataSourceParser =
             elif reader.TryKeyword "query" then
                 let body = readSqlQueryText reader
                 SqlReadOnlyValidator.validateSqlBody body
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query }
+                parsed <- Some { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None }
             elif reader.TryKeyword "file" then
                 let path = readSqlFileReference reader
                 validateSqlFileExists path specDirectory
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File }
+                parsed <- Some { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None }
             else
                 raise (reader.Unexpected "query or file after from")
             reader.SkipNewlines()
@@ -79,13 +79,36 @@ module DataSourceParser =
         | Some value -> value
         | None -> raise (DashSpecParseException("datasource sql { } requires from query or from file."))
 
+    let private parseXlsxFile (reader: TokenReader) (specDirectory: string option) =
+        if not (reader.TryKeyword "file") then
+            raise (DashSpecParseException("datasource xlsx requires 'file' (e.g. datasource xlsx file \"data/book.xlsx\" sheet \"Sheet1\")."))
+        let path = readSqlFileReference reader
+        if not (path.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)) then
+            raise (DashSpecParseException("datasource xlsx file must end with .xlsx."))
+        validateSqlFileExists path specDirectory
+        reader.SkipNewlines()
+        let sheet =
+            if reader.TryKeyword "sheet" then
+                reader.SkipNewlines()
+                if reader.CurrentKind <> TokenKind.String then
+                    raise (reader.Unexpected "sheet name string")
+                let name = reader.ReadString().Trim()
+                if String.IsNullOrWhiteSpace name then
+                    raise (DashSpecParseException("datasource xlsx sheet name must not be empty."))
+                Some name
+            else
+                None
+        { Kind = DataSourceKind.Xlsx; Value = path; SqlCarrier = None; Sheet = sheet }
+
     let parse (reader: TokenReader) (specDirectory: string option) =
         if reader.TryKeyword "view" then
             let name = reader.ReadQualifiedName()
             SqlReadOnlyValidator.validateViewReference name
-            { Kind = DataSourceKind.View; Value = name; SqlCarrier = None }
+            { Kind = DataSourceKind.View; Value = name; SqlCarrier = None; Sheet = None }
         elif reader.TryKeyword "sql" then
             if reader.IsAt TokenKind.LBrace then parseSqlBlock reader specDirectory
             else parseSqlInline reader specDirectory
+        elif reader.TryKeyword "xlsx" then
+            parseXlsxFile reader specDirectory
         else
-            raise (reader.Unexpected "view or sql")
+            raise (reader.Unexpected "view, sql, or xlsx")
