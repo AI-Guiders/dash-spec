@@ -16,7 +16,7 @@
 
 .matrix-canvas-layout {
   display: grid;
-  grid-template-columns: 9rem max-content;
+  grid-template-columns: max-content max-content;
   grid-template-rows: auto max-content;
   gap: 4px;
   width: max-content;
@@ -78,8 +78,9 @@
   font-size: 0.76rem;
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: min(42vw, 32rem);
 }
 
 .matrix-canvas {
