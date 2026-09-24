@@ -551,15 +551,15 @@ module rec DocumentModuleParser =
         BlockSyntax.expectBlockEnd reader "wiring" (None: string option)
         connectorId, paletteUse, layout, layoutBoard, toolbarBoard
 
-    let private parseDefaultBlock (reader: TokenReader) (shell: DashboardShellContext) =
+    let private parseFormatDefaultsBlock (reader: TokenReader) (shell: DashboardShellContext) (blockKeyword: string) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let mutable defaults = shell.FormatDefaults
 
-        while not (BlockSyntax.isBlockEnd reader "default" None) && not reader.IsEof do
+        while not (BlockSyntax.isBlockEnd reader blockKeyword None) && not reader.IsEof do
             reader.SkipNewlines()
 
-            if BlockSyntax.isBlockEnd reader "default" None then ()
+            if BlockSyntax.isBlockEnd reader blockKeyword None then ()
             elif reader.TryKeyword "time_format" then
                 reader.Expect TokenKind.Eq
                 defaults <- { defaults with TimeFormat = Some(reader.ReadString()) }
@@ -576,7 +576,7 @@ module rec DocumentModuleParser =
                 raise (reader.Unexpected())
 
         shell.FormatDefaults <- defaults
-        BlockSyntax.expectBlockEnd reader "default" (None: string option)
+        BlockSyntax.expectBlockEnd reader blockKeyword (None: string option)
 
     let private parseReportBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) (setModuleLabel: string -> unit) =
         BlockSyntax.beginBlock reader
@@ -604,8 +604,10 @@ module rec DocumentModuleParser =
                 for pair in CommandAliasesParser.parse reader do
                     shell.CommandAliases.[pair.Key] <- pair.Value
                 reader.SkipNewlines()
+            elif reader.TryKeyword "defaults" then
+                parseFormatDefaultsBlock reader shell "defaults"
             elif reader.TryKeyword "default" then
-                parseDefaultBlock reader shell
+                parseFormatDefaultsBlock reader shell "default"
             elif reader.TryKeyword "filters" then
                 match reader.TryPeekIdent() with
                 | Some next when
