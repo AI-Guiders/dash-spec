@@ -559,18 +559,20 @@ public class DashboardParseTests
         Assert.Contains("6/15/2024", LabelFormat.FormatObject(value, "system"));
     }
 
-    [Fact]
-    public void Parse_report_default_block_sets_format_defaults()
+    [Theory]
+    [InlineData("default", "end default")]
+    [InlineData("defaults", "end defaults")]
+    public void Parse_report_format_defaults_block_sets_format_defaults(string blockKeyword, string endKeyword)
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecParser.Parse($$"""
             @dashboard t
               report
                 title = "T"
-                default
+                {{blockKeyword}}
                   time_format = "HH:mm"
                   date_format = "dd.MM.yyyy"
                   datetime_format = "dd.MM.yyyy HH:mm"
-                end default
+                {{endKeyword}}
               end report
             end dashboard
             """);
