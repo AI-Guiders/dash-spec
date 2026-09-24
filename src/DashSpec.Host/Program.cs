@@ -213,6 +213,7 @@ if (urlsEnv.Contains("https://", StringComparison.OrdinalIgnoreCase))
 }
 
 app.UseMiddleware<DashSpecAccessMiddleware>();
+app.UseMiddleware<DashSpecClientIdMiddleware>();
 app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
 app.UseAntiforgery();
 app.UseStaticFiles();
