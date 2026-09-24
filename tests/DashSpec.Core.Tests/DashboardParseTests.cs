@@ -517,6 +517,30 @@ public class DashboardParseTests
     public void LabelFormat_formats_axis_labels(string raw, string format, string expected) =>
         Assert.Equal(expected, LabelFormat.Format(raw, format));
 
+    [Fact]
+    public void LabelFormat_FormatObject_converts_utc_to_display_time_zone()
+    {
+        LabelFormat.DisplayTimeZone = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
+        try
+        {
+            var utc = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc);
+            Assert.Equal("15.06 14:05", LabelFormat.FormatObject(utc, "datetime.short"));
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = null;
+        }
+    }
+
+    [Fact]
+    public void LabelFormat_FormatObject_parses_iso_dates_without_day_month_swap()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        var value = new DateTime(2024, 6, 15, 0, 0, 0, DateTimeKind.Utc);
+        Assert.Equal("15.06.2024", LabelFormat.FormatObject(value, "date.full"));
+    }
+
     [Theory]
     [InlineData("**bold**", "<strong>bold</strong>")]
     [InlineData("a & b", "a &amp; b")]

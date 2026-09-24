@@ -7,6 +7,9 @@ namespace DashSpec.Core.Runtime;
 /// <summary>Interpolates <c>{slot}</c> placeholders against <see cref="TooltipDefinition.Variables"/>.</summary>
 public static partial class TooltipTemplate
 {
+    /// <summary>Host sets this to apply display TZ + author formats in tooltip cells (remark 25).</summary>
+    public static Func<object?, string>? CellValueFormatter { get; set; }
+
     public static IReadOnlyList<string> CollectSlots(string template)
     {
         ArgumentNullException.ThrowIfNull(template);
@@ -80,14 +83,21 @@ public static partial class TooltipTemplate
         return string.IsNullOrWhiteSpace(text) ? null : text;
     }
 
-    private static string FormatCellValue(object? value) =>
-        value switch
+    private static string FormatCellValue(object? value)
+    {
+        if (CellValueFormatter is not null)
+        {
+            return CellValueFormatter(value);
+        }
+
+        return value switch
         {
             null => string.Empty,
             DateTime dt => dt.ToString("yyyy-MM-dd"),
             DateOnly d => d.ToString("yyyy-MM-dd"),
             _ => Convert.ToString(value) ?? string.Empty,
         };
+    }
 
     private static IEnumerable<Fragment> Parse(string template)
     {
