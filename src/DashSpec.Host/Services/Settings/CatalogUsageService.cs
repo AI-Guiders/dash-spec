@@ -8,6 +8,8 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
 {
     public const string ClientCookieName = "dashspec_client_id";
 
+    private const string SessionItemsKey = "__dashspec_client_id";
+
     public string GetOrCreateClientId(HttpContext? httpContext)
     {
         if (httpContext is null)
@@ -15,13 +17,58 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
             return "anonymous";
         }
 
-        if (httpContext.Request.Cookies.TryGetValue(ClientCookieName, out var existing)
-            && !string.IsNullOrWhiteSpace(existing))
+        if (TryReadClientId(httpContext, out var existing))
         {
             return existing;
         }
 
         var clientId = Guid.NewGuid().ToString("N");
+        httpContext.Items[SessionItemsKey] = clientId;
+        TryWriteClientCookie(httpContext, clientId);
+        return clientId;
+    }
+
+    /// <summary>Call from HTTP middleware before the response starts (remark 31).</summary>
+    public void EnsureClientCookie(HttpContext httpContext)
+    {
+        if (TryReadClientId(httpContext, out _))
+        {
+            return;
+        }
+
+        var clientId = Guid.NewGuid().ToString("N");
+        httpContext.Items[SessionItemsKey] = clientId;
+        TryWriteClientCookie(httpContext, clientId);
+    }
+
+    private static bool TryReadClientId(HttpContext httpContext, out string clientId)
+    {
+        if (httpContext.Request.Cookies.TryGetValue(ClientCookieName, out var fromCookie)
+            && !string.IsNullOrWhiteSpace(fromCookie))
+        {
+            clientId = fromCookie;
+            return true;
+        }
+
+        if (httpContext.Items.TryGetValue(SessionItemsKey, out var cached)
+            && cached is string fromItems
+            && !string.IsNullOrWhiteSpace(fromItems))
+        {
+            clientId = fromItems;
+            return true;
+        }
+
+        clientId = string.Empty;
+        return false;
+    }
+
+    private static void TryWriteClientCookie(HttpContext httpContext, string clientId)
+    {
+        if (httpContext.Response.HasStarted)
+        {
+            return;
+        }
+
         httpContext.Response.Cookies.Append(
             ClientCookieName,
             clientId,
@@ -32,7 +79,6 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
                 MaxAge = TimeSpan.FromDays(400),
                 SameSite = SameSiteMode.Lax,
             });
-        return clientId;
     }
 
     public string? ResolvePreferredEntryId(string clientId, string catalogDefaultEntryId)
