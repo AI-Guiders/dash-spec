@@ -40,7 +40,14 @@ internal static class DocumentModelMapper
             ToDictionaryOrNull(document.ModuleChartChromePresets, ToCore),
             ToDictionaryOrNull(document.ModuleTooltips, ToCoreTooltip),
             ToListOrNull(document.Pages)?.Select(ToCore).ToList(),
-            ToDictionaryOrNull(document.CommandAliases, static x => x));
+            ToDictionaryOrNull(document.CommandAliases, static x => x),
+            ToCore(document.FormatDefaults));
+
+    private static ReportFormatDefaults ToCore(FsharpDocument.ReportFormatDefaults defaults) =>
+        new(
+            FirstOrNull(defaults.TimeFormat),
+            FirstOrNull(defaults.DateFormat),
+            FirstOrNull(defaults.DateTimeFormat));
 
     private static TabDefinition ToCore(FsharpDocument.TabDefinition tab) =>
         new(

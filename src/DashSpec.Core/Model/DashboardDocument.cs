@@ -20,8 +20,10 @@ public sealed record DashboardDocument(
     IReadOnlyDictionary<string, PresentationBlock>? ModuleChartChromePresets = null,
     IReadOnlyDictionary<string, TooltipDefinition>? ModuleTooltips = null,
     IReadOnlyList<ReportPageDefinition>? Pages = null,
-    IReadOnlyDictionary<string, string>? CommandAliases = null)
+    IReadOnlyDictionary<string, string>? CommandAliases = null,
+    ReportFormatDefaults? FormatDefaults = null)
 {
+    public ReportFormatDefaults ResolvedFormatDefaults => FormatDefaults ?? ReportFormatDefaults.Empty;
     public static IReadOnlyDictionary<string, string> EmptyCommandAliases { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
