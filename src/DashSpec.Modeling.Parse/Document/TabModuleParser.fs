@@ -114,7 +114,8 @@ module TabModuleParser =
                   if shell.CommandAliases.Count = 0 then
                       None
                   else
-                      Some(shell.CommandAliases :> IReadOnlyDictionary<_, _>) }
+                      Some(shell.CommandAliases :> IReadOnlyDictionary<_, _>)
+              FormatDefaults = shell.FormatDefaults }
 
         DashboardValidator.validate document
         document

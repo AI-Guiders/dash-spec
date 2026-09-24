@@ -31,7 +31,7 @@ public sealed record MatrixPresentation(
         var tooltipSplit = card.Inspect?.Split ?? ", ";
         var tooltipLabel = card.Inspect?.Label;
 
-        var xFormat = diagram.Properties.GetValueOrDefault("x_format") ?? "date.short";
+        var xFormat = LabelFormat.ResolveDateFormat(diagram.Properties.GetValueOrDefault("x_format"));
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
         var colorScale = diagram.Properties.GetValueOrDefault("color_scale") ?? "heat";
         var valueLabels = MatrixLabelVisibilityParser.ParseValueLabels(diagram.Properties);

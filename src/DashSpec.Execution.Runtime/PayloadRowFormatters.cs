@@ -21,8 +21,20 @@ internal static class PayloadRowFormatters
     public static string FormatHeatmapAxisLabel(object? value, string? format) =>
         LabelFormat.FormatObject(value, format);
 
-    public static string FormatChartAxisLabel(object? value, string? format) =>
-        LabelFormat.FormatObject(value, format);
+    public static string FormatChartAxisLabel(object? value, string? format)
+    {
+        if (string.IsNullOrWhiteSpace(format))
+        {
+            format = value switch
+            {
+                DateOnly => LabelFormat.ResolveDateFormat(null),
+                DateTime => LabelFormat.ResolveTimeFormat(null),
+                _ => null,
+            };
+        }
+
+        return LabelFormat.FormatObject(value, format);
+    }
 
     public static DateOnly? TryParseHeatmapDate(string label) =>
         DateOnly.TryParse(label, System.Globalization.CultureInfo.InvariantCulture, out var date)
