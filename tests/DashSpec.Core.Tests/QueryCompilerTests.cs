@@ -19,7 +19,7 @@ public class QueryCompilerTests
               report
               title = "T"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Usage"
               filter field app_name on demo.v_daily_active_users.app_name as "App"
@@ -71,7 +71,7 @@ public class QueryCompilerTests
               report
               title = "T"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filters dashboard
@@ -116,7 +116,7 @@ public class QueryCompilerTests
               report
               title = "T"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filters dashboard
@@ -206,7 +206,7 @@ public class QueryCompilerTests
               report
               title = "T"
               defaults
-                filter.row_limit = 250
+                filter.row_limit.limit = 250
               end defaults
               filter top row_limit as "Limit"
               card events as "Events"
@@ -282,8 +282,8 @@ public class QueryCompilerTests
               report
               title = "T"
               defaults
-                filter.usage_date = -7d..today
-                filter.row_limit = 100
+                filter.usage_date.range = -7d..today
+                filter.row_limit.limit = 100
               end defaults
               filter date usage_date on usage_date as "Дата"
               filter top row_limit as "Limit"

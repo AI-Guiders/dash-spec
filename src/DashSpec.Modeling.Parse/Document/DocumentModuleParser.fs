@@ -611,7 +611,7 @@ module rec DocumentModuleParser =
         let mutable pageLayout = None
         let mutable pageToolbar = None
         let mutable usageDateDerive = None
-        let pageFilterDefaults = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let pageFilterDefaults = FilterScopeDefaults.create ()
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -670,11 +670,7 @@ module rec DocumentModuleParser =
               TabId = shell.TabModuleId
               ToolbarBoard = pageToolbar
               UsageDateDerive = usageDateDerive
-              FilterDefaults =
-                  if pageFilterDefaults.Count = 0 then
-                      None
-                  else
-                      Some(pageFilterDefaults :> IReadOnlyDictionary<_, _>) }
+              FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults }
 
         reader.SkipNewlines()
 
@@ -696,12 +692,10 @@ module rec DocumentModuleParser =
     let private parseStandaloneBlock (reader: TokenReader) (shell: DashboardShellContext) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
-        let standaloneFilterDefaults = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let standaloneFilterDefaults = FilterScopeDefaults.create ()
 
-        let resolveFilterDefault (filterName: string) =
-            match standaloneFilterDefaults.TryGetValue filterName with
-            | true, value -> Some value
-            | false, _ -> shell.ResolveFilterDefault filterName
+        let resolveFilterProperty (filterName: string) (property: string) =
+            FilterScopeDefaults.resolveProperty [ standaloneFilterDefaults; shell.FilterDefaults ] filterName property
 
         while not (BlockSyntax.isBlockEnd reader "standalone" None) && not reader.IsEof do
             reader.SkipNewlines()
@@ -712,7 +706,7 @@ module rec DocumentModuleParser =
             elif reader.TryKeyword "default" then
                 DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
             elif reader.TryKeyword "filter" then
-                shell.Filters.Add(FilterParser.parse reader resolveFilterDefault)
+                shell.Filters.Add(FilterParser.parse reader resolveFilterProperty)
                 reader.SkipNewlines()
             elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
                 DashboardShellParser.parseFiltersChromePublic reader shell true
@@ -725,12 +719,10 @@ module rec DocumentModuleParser =
     let private skipStandaloneBlock (reader: TokenReader) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
-        let standaloneFilterDefaults = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let standaloneFilterDefaults = FilterScopeDefaults.create ()
 
-        let resolveFilterDefault (filterName: string) =
-            match standaloneFilterDefaults.TryGetValue filterName with
-            | true, value -> Some value
-            | false, _ -> None
+        let resolveFilterProperty (filterName: string) (property: string) =
+            FilterScopeDefaults.tryGet standaloneFilterDefaults filterName property
 
         while not (BlockSyntax.isBlockEnd reader "standalone" None) && not reader.IsEof do
             reader.SkipNewlines()
@@ -743,7 +735,7 @@ module rec DocumentModuleParser =
                 DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
                 reader.SkipNewlines()
             elif reader.TryKeyword "filter" then
-                FilterParser.parse reader resolveFilterDefault |> ignore
+                FilterParser.parse reader resolveFilterProperty |> ignore
                 reader.SkipNewlines()
             elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
                 if reader.TryKeyword "dashboard" then
@@ -761,12 +753,10 @@ module rec DocumentModuleParser =
     let private parseFiltersBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
-        let blockFilterDefaults = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let blockFilterDefaults = FilterScopeDefaults.create ()
 
-        let resolveFilterDefault (filterName: string) =
-            match blockFilterDefaults.TryGetValue filterName with
-            | true, value -> Some value
-            | false, _ -> shell.ResolveFilterDefault filterName
+        let resolveFilterProperty (filterName: string) (property: string) =
+            FilterScopeDefaults.resolveProperty [ blockFilterDefaults; shell.FilterDefaults ] filterName property
 
         while not (BlockSyntax.isBlockEnd reader "filters" None) && not reader.IsEof do
             reader.SkipNewlines()
@@ -779,7 +769,7 @@ module rec DocumentModuleParser =
             elif not (reader.TryKeyword "filter") then
                 raise (reader.Unexpected())
             else
-                let filter = FilterParser.parse reader resolveFilterDefault
+                let filter = FilterParser.parse reader resolveFilterProperty
 
                 if mode = ReportBodyMode.TabEmbedded then
                     shell.TabLocalFilters.Add filter
