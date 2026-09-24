@@ -15,7 +15,7 @@ public class CardClickBehaviourTests
               title = "demo"
               standalone
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               toolbar usage_date
@@ -64,7 +64,7 @@ public class CardClickBehaviourTests
               title = "T"
               standalone
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               filter field user_name on dbo.t.user as "User" widget combobox

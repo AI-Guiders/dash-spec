@@ -27,7 +27,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.activity_slot.default = today
+                filter.activity_slot = today
               end defaults
               filter date activity_slot
               column = bucket_start_utc as "Day"
@@ -49,8 +49,8 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
-                filter.activity_slot.default = today
+                filter.usage_date = -7d..today
+                filter.activity_slot = today
               end defaults
               filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
@@ -73,7 +73,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.events_top.default = 200
+                filter.events_top = 200
               end defaults
               filter top events_top as "Строк (TOP)"
               end report
@@ -92,7 +92,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.events_top.default = 200
+                filter.events_top = 200
               end defaults
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
               filter top events_top as "Строк (TOP)"
@@ -111,9 +111,9 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
-                filter.activity_slot.default = today
-                filter.period_start.default = -7d..today
+                filter.usage_date = -7d..today
+                filter.activity_slot = today
+                filter.period_start = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
@@ -139,11 +139,11 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
-                filter.activity_slot.default = today
-                filter.period_start.default = -7d..today
-                filter.events_top.default = 200
-                filter.idle_top.default = 100
+                filter.usage_date = -7d..today
+                filter.activity_slot = today
+                filter.period_start = -7d..today
+                filter.events_top = 200
+                filter.idle_top = 100
               end defaults
               filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
@@ -187,7 +187,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата отчёта"
               end report
@@ -207,7 +207,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date
               column = usage_date as "Daily"
@@ -230,7 +230,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.activity_range.default = -1d..today
+                filter.activity_range = -1d..today
               end defaults
               filter date activity_range on bucket_start_utc as "Activity 5-min"
               end report
@@ -250,8 +250,8 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.period_start.default = today
-                filter.activity_slot.default = today
+                filter.period_start = today
+                filter.activity_slot = today
               end defaults
               filter date period_start on period_start as "Период" widget day grain_filter period_grain
               filter date activity_slot on bucket_start_utc as "День" widget day
@@ -284,8 +284,8 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.activity_slot.default = today..today
-                filter.period_start.default = today
+                filter.activity_slot = today..today
+                filter.period_start = today
               end defaults
               filter date activity_slot on bucket_start_utc as "День"
               filter date period_start on period_start as "Период" widget day grain_filter period_grain
@@ -312,7 +312,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.period_grain.default = day
+                filter.period_grain = day
               end defaults
               filter field period_grain on demo.v_peak.period_grain as "Grain" widget combobox single
               card c as "C"
@@ -340,7 +340,7 @@ public class FilterParserTests
               report
               title = "T"
               defaults
-                filter.events_top.default = 200
+                filter.events_top = 200
               end defaults
               filter field period_grain on demo.v_peak.period_grain as "Grain"
               filter top events_top as "Строк (TOP)"

@@ -137,8 +137,8 @@ public class DashboardParseTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
-                filter.activity_day.default = today
+                filter.usage_date = -7d..today
+                filter.activity_day = today
               end defaults
               filter date usage_date on usage_date as "Usage"
               filter date activity_day
@@ -180,7 +180,7 @@ public class DashboardParseTests
                   report
                   title = "T"
                   defaults
-                    filter.usage_date.default = -7d..today
+                    filter.usage_date = -7d..today
                   end defaults
                   filter date usage_date on usage_date as "Usage"
                   card a as "A"
@@ -207,7 +207,7 @@ public class DashboardParseTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Usage"
               filters chrome
@@ -645,7 +645,7 @@ public class DashboardParseTests
                   report
                   title = "T"
                   defaults
-                    filter.usage_date.default = -7d..today
+                    filter.usage_date = -7d..today
                   end defaults
                   filter date usage_date on usage_date as "Дата"
                   card a as "A"
