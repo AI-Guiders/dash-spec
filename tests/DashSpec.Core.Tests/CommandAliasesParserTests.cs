@@ -16,7 +16,10 @@ public class CommandAliasesParserTests
                 date = usage_date
                 app = app_name
               end commands
-              filter date usage_date on usage_date as "Usage" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Usage"
               filter field app_name on app_name as "App"
               filters dashboard
               usage_date

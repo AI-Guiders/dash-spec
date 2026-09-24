@@ -26,9 +26,11 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
+              defaults
+                filter.activity_slot.default = today
+              end defaults
               filter date activity_slot
               column = bucket_start_utc as "Day"
-              default = today
               widget = day
               end filter
               end report
@@ -46,10 +48,13 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата отчёта" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.activity_slot.default = today
+              end defaults
+              filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
               column = bucket_start_utc as "День"
-              default = today
               widget = day
               end filter
               end report
@@ -61,13 +66,16 @@ public class FilterParserTests
     }
 
     [Fact]
-    public void Parse_top_filter_inline_default()
+    public void Parse_top_filter_defaults_block()
     {
         var doc = DashSpecParser.Parse("""
             @dashboard t
               report
               title = "T"
-              filter top events_top as "Строк (TOP)" default 200
+              defaults
+                filter.events_top.default = 200
+              end defaults
+              filter top events_top as "Строк (TOP)"
               end report
             end dashboard
 """);
@@ -83,8 +91,11 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
+              defaults
+                filter.events_top.default = 200
+              end defaults
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
-              filter top events_top as "Строк (TOP)" default 200
+              filter top events_top as "Строк (TOP)"
               end report
             end dashboard
 """);
@@ -99,13 +110,17 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата отчёта" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.activity_slot.default = today
+                filter.period_start.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
               column = bucket_start_utc as "День"
-              default = today
               widget = day
               end filter
-              filter date period_start on period_start as "Начало периода" default -7d..today
+              filter date period_start on period_start as "Начало периода"
               filter field app_name on demo.v_daily_active_users.app_name as "Продукты" widget combobox
               filter field user_name on demo.v_events_detail.user_sam as "Пользователь" widget combobox
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
@@ -123,18 +138,24 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата отчёта" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.activity_slot.default = today
+                filter.period_start.default = -7d..today
+                filter.events_top.default = 200
+                filter.idle_top.default = 100
+              end defaults
+              filter date usage_date on usage_date as "Дата отчёта"
               filter date activity_slot
               column = bucket_start_utc as "День"
-              default = today
               widget = day
               end filter
-              filter date period_start on period_start as "Начало периода" default -7d..today
+              filter date period_start on period_start as "Начало периода"
               filter field app_name on demo.v_daily_active_users.app_name as "Продукты" widget combobox
               filter field user_name on demo.v_events_detail.user_sam as "Пользователь" widget combobox
               filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
-              filter top events_top as "Строк (TOP)" default 200
-              filter top idle_top as "Строк (TOP)" default 100
+              filter top events_top as "Строк (TOP)"
+              filter top idle_top as "Строк (TOP)"
               end report
             end dashboard
 """);
@@ -144,7 +165,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_top_as_on_declaration()
     {
-        var doc = DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
             @dashboard t
               report
               title = "T"
@@ -153,11 +174,9 @@ public class FilterParserTests
               end filter
               end report
             end dashboard
-""");
+"""));
 
-        var filter = doc.Filters.Single();
-        Assert.Equal("Строк (TOP)", filter.Label);
-        Assert.Equal("200", filter.DefaultExpression);
+        Assert.Contains("defaults block", ex.Message);
     }
 
     [Fact]
@@ -167,7 +186,10 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата отчёта" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Дата отчёта"
               end report
             end dashboard
 """);
@@ -178,15 +200,17 @@ public class FilterParserTests
     }
 
     [Fact]
-    public void Parse_filter_default_does_not_swallow_label_on_same_line()
+    public void Parse_filter_default_in_defaults_block_preserves_label()
     {
         var doc = DashSpecParser.Parse("""
             @dashboard t
               report
               title = "T"
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
               filter date usage_date
               column = usage_date as "Daily"
-              default = -7d..today
               end filter
               end report
             end dashboard
@@ -205,7 +229,10 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date activity_range on bucket_start_utc as "Activity 5-min" -1d..today
+              defaults
+                filter.activity_range.default = -1d..today
+              end defaults
+              filter date activity_range on bucket_start_utc as "Activity 5-min"
               end report
             end dashboard
 """);
@@ -222,8 +249,12 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
-              filter date activity_slot on bucket_start_utc as "День" default today widget day
+              defaults
+                filter.period_start.default = today
+                filter.activity_slot.default = today
+              end defaults
+              filter date period_start on period_start as "Период" widget day grain_filter period_grain
+              filter date activity_slot on bucket_start_utc as "День" widget day
               card c as "C"
               diagram table
               columns = a
@@ -252,8 +283,12 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter date activity_slot on bucket_start_utc as "День" default today..today
-              filter date period_start on period_start as "Период" default today widget day grain_filter period_grain
+              defaults
+                filter.activity_slot.default = today..today
+                filter.period_start.default = today
+              end defaults
+              filter date activity_slot on bucket_start_utc as "День"
+              filter date period_start on period_start as "Период" widget day grain_filter period_grain
               card c as "C"
               diagram table
               columns = a
@@ -276,7 +311,10 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
-              filter field period_grain on demo.v_peak.period_grain as "Grain" default day widget combobox single
+              defaults
+                filter.period_grain.default = day
+              end defaults
+              filter field period_grain on demo.v_peak.period_grain as "Grain" widget combobox single
               card c as "C"
               diagram table
               columns = a
@@ -301,8 +339,11 @@ public class FilterParserTests
             @dashboard t
               report
               title = "T"
+              defaults
+                filter.events_top.default = 200
+              end defaults
               filter field period_grain on demo.v_peak.period_grain as "Grain"
-              filter top events_top as "Строк (TOP)" default 200
+              filter top events_top as "Строк (TOP)"
               end report
             end dashboard
 """);

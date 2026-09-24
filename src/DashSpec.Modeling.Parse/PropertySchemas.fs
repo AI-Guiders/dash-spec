@@ -50,29 +50,24 @@ module PropertySchemas =
 
     let filterDate =
         [ spec "column" ColumnBinding
-          spec "default" DateRange
           spec "widget" Scalar
           spec "grain_filter" Scalar ]
 
     let filterField =
         [ spec "column" ColumnBinding
           spec "widget" Scalar
-          spec "default" Scalar
           spec "single" Scalar ]
 
     let filterTop =
-        [ spec "default" Scalar
-          spec "min" Scalar
+        [ spec "min" Scalar
           spec "max" Scalar ]
 
     let filterBindDate =
         [ spec "column" ColumnBinding
-          spec "default" DateRange
           spec "grain_filter" Scalar ]
 
     let filterBindField =
         [ spec "column" ColumnBinding
-          spec "default" Scalar
           spec "single" Scalar ]
 
     let filterShow =

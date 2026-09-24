@@ -18,7 +18,10 @@ public class QueryCompilerTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Usage" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Usage"
               filter field app_name on demo.v_daily_active_users.app_name as "App"
               filters dashboard
               usage_date
@@ -67,7 +70,10 @@ public class QueryCompilerTests
               end configuration
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Дата"
               filters dashboard
               usage_date
               end dashboard
@@ -109,7 +115,10 @@ public class QueryCompilerTests
               end configuration
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Дата"
               filters dashboard
               usage_date
               end dashboard
@@ -196,7 +205,10 @@ public class QueryCompilerTests
             @dashboard t
               report
               title = "T"
-              filter top row_limit as "Limit" default 250
+              defaults
+                filter.row_limit.default = 250
+              end defaults
+              filter top row_limit as "Limit"
               card events as "Events"
               filters
               row_limit
@@ -269,8 +281,12 @@ public class QueryCompilerTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Дата" default -7d..today
-              filter top row_limit as "Limit" default 100
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.row_limit.default = 100
+              end defaults
+              filter date usage_date on usage_date as "Дата"
+              filter top row_limit as "Limit"
               filters dashboard
               usage_date
               end dashboard

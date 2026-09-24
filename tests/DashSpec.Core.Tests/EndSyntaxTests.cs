@@ -57,9 +57,13 @@ public sealed class EndSyntaxTests
             @tab t
               report
               title = "R"
-              filter date usage_date on usage_date as "Дата" default -7d..today
-              filter date period_start on period_start as "Период" default today..today
               standalone
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.period_start.default = today..today
+              end defaults
+              filter date usage_date on usage_date as "Дата"
+              filter date period_start on period_start as "Период"
               toolbar usage_date, period_start
               end standalone
               page p
