@@ -109,6 +109,25 @@ public class CatalogUsageServiceTests
     }
 
     [Fact]
+    public void EnsureDatabase_can_be_called_twice_without_opening_witdb_twice()
+    {
+        var dbPath = Path.Combine(Path.GetTempPath(), $"dashspec-catalog-{Guid.NewGuid():N}.witdb");
+        try
+        {
+            HostSettingsPaths.EnsureDatabase(dbPath);
+            var exception = Record.Exception(() => HostSettingsPaths.EnsureDatabase(dbPath));
+            Assert.Null(exception);
+        }
+        finally
+        {
+            if (File.Exists(dbPath))
+            {
+                File.Delete(dbPath);
+            }
+        }
+    }
+
+    [Fact]
     public void RecordSelection_after_EnsureDatabase_persists_row()
     {
         var dbPath = Path.Combine(Path.GetTempPath(), $"dashspec-catalog-{Guid.NewGuid():N}.witdb");

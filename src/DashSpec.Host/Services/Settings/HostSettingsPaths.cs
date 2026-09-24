@@ -1,4 +1,3 @@
-using System.Data;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,9 @@ namespace DashSpec.Host.Services.Settings;
 
 public static class HostSettingsPaths
 {
+    private static readonly object EnsureLock = new();
+    private static string? _ensuredDatabasePath;
+
     public static string ResolveDatabasePath(DashSpecTomlRoot bootstrap)
     {
         var env = Environment.GetEnvironmentVariable("DASHSPEC_HOST_DB");
@@ -29,13 +31,23 @@ public static class HostSettingsPaths
 
     public static void EnsureDatabase(string databasePath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-        var options = new DbContextOptionsBuilder<DashSpecHostDbContext>()
-            .UseWitDb($"Data Source={databasePath}")
-            .Options;
-        using var db = new DashSpecHostDbContext(options);
-        db.Database.EnsureCreated();
-        EnsureCatalogUsageTable(db);
+        var fullPath = Path.GetFullPath(databasePath);
+        lock (EnsureLock)
+        {
+            if (string.Equals(_ensuredDatabasePath, fullPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+            var options = new DbContextOptionsBuilder<DashSpecHostDbContext>()
+                .UseWitDb($"Data Source={fullPath}")
+                .Options;
+            using var db = new DashSpecHostDbContext(options);
+            db.Database.EnsureCreated();
+            EnsureCatalogUsageTable(db);
+            _ensuredDatabasePath = fullPath;
+        }
     }
 
     /// <summary>
