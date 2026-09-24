@@ -24,7 +24,8 @@ public static class LabelFormat
         }
     }
 
-    private static DateTime ToDisplay(DateTime dt)
+    /// <summary>UTC (or unspecified) storage → wall clock in <see cref="DisplayTimeZone"/>; no-op when unset.</summary>
+    public static DateTime ToDisplayTime(DateTime dt)
     {
         if (DisplayTimeZone is null || dt == default || dt.Kind == DateTimeKind.Local)
         {
@@ -33,6 +34,8 @@ public static class LabelFormat
 
         return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(dt, DateTimeKind.Utc), DisplayTimeZone);
     }
+
+    private static DateTime ToDisplay(DateTime dt) => ToDisplayTime(dt);
 
     public static string Format(string raw, string? format)
     {
