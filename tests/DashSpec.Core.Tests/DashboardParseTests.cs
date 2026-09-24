@@ -559,6 +559,63 @@ public class DashboardParseTests
         Assert.Contains("6/15/2024", LabelFormat.FormatObject(value, "system"));
     }
 
+    [Fact]
+    public void Parse_report_default_block_sets_format_defaults()
+    {
+        var document = DashSpecParser.Parse("""
+            @dashboard t
+              report
+                title = "T"
+                default
+                  time_format = "HH:mm"
+                  date_format = "dd.MM.yyyy"
+                  datetime_format = "dd.MM.yyyy HH:mm"
+                end default
+              end report
+            end dashboard
+            """);
+
+        Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat);
+        Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat);
+        Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat);
+    }
+
+    [Fact]
+    public void LabelFormat_report_defaults_apply_when_diagram_format_omitted()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults(
+            TimeFormat: "HH:mm",
+            DateFormat: "dd.MM.yyyy",
+            DateTimeFormat: "dd.MM.yyyy HH:mm"));
+        try
+        {
+            var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
+            Assert.Equal("15.06.2024 14:05", LabelFormat.FormatObject(value));
+            Assert.Equal("15.06.2024", LabelFormat.FormatObject(new DateOnly(2024, 6, 15)));
+            Assert.Equal("14:05", PayloadRowFormatters.FormatChartAxisLabel(value, null));
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    [Fact]
+    public void LabelFormat_diagram_format_overrides_report_default()
+    {
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults(TimeFormat: "HH:mm"));
+        try
+        {
+            var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
+            Assert.Equal("15.06 14:05", LabelFormat.FormatObject(value, LabelFormat.ResolveTimeFormat("datetime.short")));
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
     [Theory]
     [InlineData("**bold**", "<strong>bold</strong>")]
     [InlineData("a & b", "a &amp; b")]

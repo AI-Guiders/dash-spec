@@ -56,6 +56,17 @@ type ModuleDiagramDefinition =
       Tooltip: TooltipDefinition option }
 
 [<CLIMutable>]
+type ReportFormatDefaults =
+    { TimeFormat: string option
+      DateFormat: string option
+      DateTimeFormat: string option }
+
+[<RequireQualifiedAccess>]
+module ReportFormatDefaults =
+    let empty =
+        { TimeFormat = None; DateFormat = None; DateTimeFormat = None }
+
+[<CLIMutable>]
 type DashboardDocument =
     { Id: string
       Title: string
@@ -76,7 +87,8 @@ type DashboardDocument =
       ModuleChartChromePresets: IReadOnlyDictionary<string, PresentationBlock> option
       ModuleTooltips: IReadOnlyDictionary<string, TooltipDefinition> option
       Pages: IReadOnlyList<ReportPageDefinition> option
-      CommandAliases: IReadOnlyDictionary<string, string> option }
+      CommandAliases: IReadOnlyDictionary<string, string> option
+      FormatDefaults: ReportFormatDefaults }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -145,6 +157,7 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val Pages = ResizeArray<ReportPageDefinition>()
     member val ModuleExtensions = { EnabledPluginIds = []; Imports = [] } with get, set
     member val CommandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    member val FormatDefaults = ReportFormatDefaults.empty with get, set
 
     member this.CardBindValidationFilters =
         DashboardShellContext.mergeFilterScopes this.ParentFilters (this.ShellFilters :> IReadOnlyList<_>) [| this.TabLocalFilters :> IReadOnlyList<_>; this.Filters :> IReadOnlyList<_> |]

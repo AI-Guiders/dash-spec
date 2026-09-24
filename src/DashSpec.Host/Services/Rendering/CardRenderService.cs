@@ -30,6 +30,35 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         ArgumentNullException.ThrowIfNull(filterIndex);
         ArgumentNullException.ThrowIfNull(connector);
 
+        LabelFormat.SetReportDefaults(document.ResolvedFormatDefaults);
+        try
+        {
+            return await RenderCoreAsync(
+                card,
+                document,
+                filters,
+                filterIndex,
+                library,
+                connector,
+                specDirectory,
+                cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    private async Task<CardRenderResult> RenderCoreAsync(
+        CardDefinition card,
+        DashboardDocument document,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterIndex,
+        SpecLibrary? library,
+        IDataSourceConnector connector,
+        string? specDirectory,
+        CancellationToken cancellationToken)
+    {
         var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
         var effective = resolved.Card;
         var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect, specDirectory);
@@ -221,10 +250,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
 
         return value switch
         {
-            DateOnly => LabelFormat.FormatObject(value, "date.full"),
+            DateOnly => LabelFormat.FormatObject(value, LabelFormat.ResolveDateFormat(null)),
             DateTime dt => LabelFormat.FormatObject(
                 value,
-                dt.TimeOfDay == TimeSpan.Zero ? "date.short" : "datetime.short"),
+                dt.TimeOfDay == TimeSpan.Zero
+                    ? LabelFormat.ResolveDateFormat(null)
+                    : LabelFormat.ResolveDateTimeFormat(null)),
             _ => FormatScalarMeasure(value, diagram),
         };
     }
