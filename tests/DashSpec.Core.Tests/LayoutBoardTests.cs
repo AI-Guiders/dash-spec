@@ -328,7 +328,7 @@ end tab
               report
               title = "T"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date" ref D
               filter field app_name on dbo.t.app as "App" ref A widget combobox
@@ -367,7 +367,7 @@ end tab
               columns = 12
               end grid
               defaults
-                filter.d1 = -7d..today
+                filter.d1.range = -7d..today
               end defaults
               filter date d1 on c1 as "D1" ref D
               filter field f1 on c2 as "F1" ref A widget combobox
@@ -417,7 +417,7 @@ end tab
                   report
                   title = "T"
                   defaults
-                    filter.d1 = -7d..today
+                    filter.d1.range = -7d..today
                   end defaults
                   filter date d1 on c1 as "D1" ref D
                   filter field f1 on c2 as "F1" ref A widget combobox
@@ -454,7 +454,7 @@ end tab
               report
               title = "T"
               defaults
-                filter.d1 = -7d..today
+                filter.d1.range = -7d..today
               end defaults
               filter date d1 on c1 as "D1" ref D
               toolbar d1
@@ -546,7 +546,7 @@ end tab
                   report
                   title = "T"
                   defaults
-                    filter.d1 = -7d..today
+                    filter.d1.range = -7d..today
                   end defaults
                   filter date d1 on c1 as "D1" ref Q
                   card c as "C"

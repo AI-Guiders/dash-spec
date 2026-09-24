@@ -83,6 +83,7 @@
     <Compile Include="Layout\CardLayoutRefResolver.fs" />
     <Compile Include="Toolbar\CommandAliasesParser.fs" />
     <Compile Include="Toolbar\ToolbarPlacementParser.fs" />
+    <Compile Include="Document\FilterScopeDefaults.fs" />
     <Compile Include="Document\DocumentTypes.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
