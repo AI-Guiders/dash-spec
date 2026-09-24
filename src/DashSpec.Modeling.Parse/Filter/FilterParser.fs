@@ -10,7 +10,7 @@ open DashSpec.Modeling.Parse.Lexing
 module FilterParser =
 
     let private defaultsHint (filterName: string) =
-        $"defaults block: filter.{filterName}.default = …"
+        $"defaults block: filter.{filterName} = …"
 
     let private rejectInlineDefault (filterName: string) =
         raise (DashSpecParseException($"Filter '{filterName}': declare default in {defaultsHint filterName}."))
@@ -390,7 +390,7 @@ module FilterParser =
             let key = reader.ReadIdent()
 
             if key.Equals("default", StringComparison.OrdinalIgnoreCase) then
-                raise (DashSpecParseException("Filter default must be declared in defaults block: filter.<id>.default = …"))
+                raise (DashSpecParseException("Filter default must be declared in defaults block: filter.<id> = …"))
             elif key.Equals("single", StringComparison.OrdinalIgnoreCase) && reader.RawKind <> TokenKind.Eq then
                 props.[key] <- "true"
             else
