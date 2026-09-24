@@ -14,10 +14,12 @@ public class StructuredSyntaxTests
               report
                 title = "T"
                 filters
+                  defaults
+                    filter.usage_date.default = -30d..today
+                  end defaults
                   filter usage_date
                     bind date
                       column = usage_date
-                      default = -30d..today
                     end bind
                     show
                       label = "Дата отчёта"
@@ -33,6 +35,7 @@ public class StructuredSyntaxTests
         Assert.Equal(FilterKind.Date, filter.Kind);
         Assert.Equal("usage_date", filter.ColumnReference);
         Assert.Equal("Дата отчёта", filter.Label);
+        Assert.Equal("-30d..today", filter.DefaultExpression);
     }
 
     [Fact]
@@ -66,8 +69,11 @@ public class StructuredSyntaxTests
             @dashboard t
               report
                 title = "T"
+                defaults
+                  filter.usage_date.default = -7d..today
+                end defaults
                 toolbar usage_date
-                filter date usage_date on usage_date as "Дата" default -7d..today
+                filter date usage_date on usage_date as "Дата"
                 card peak
                   title = "Peak"
                   data

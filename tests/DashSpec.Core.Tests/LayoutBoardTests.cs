@@ -327,7 +327,10 @@ end tab
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Date" ref D default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date" ref D
               filter field app_name on dbo.t.app as "App" ref A widget combobox
               filter field user_name on dbo.t.user as "User" ref U widget combobox
               toolbar
@@ -363,7 +366,10 @@ end tab
               layout grid
               columns = 12
               end grid
-              filter date d1 on c1 as "D1" ref D default -7d..today
+              defaults
+                filter.d1.default = -7d..today
+              end defaults
+              filter date d1 on c1 as "D1" ref D
               filter field f1 on c2 as "F1" ref A widget combobox
               filter field f2 on c3 as "F2" ref U widget combobox
               toolbar
@@ -410,7 +416,10 @@ end tab
                   !include "layouts/tb.dashlayout"
                   report
                   title = "T"
-                  filter date d1 on c1 as "D1" ref D default -7d..today
+                  defaults
+                    filter.d1.default = -7d..today
+                  end defaults
+                  filter date d1 on c1 as "D1" ref D
                   filter field f1 on c2 as "F1" ref A widget combobox
                   filter field f2 on c3 as "F2" ref U widget combobox
                   card c as "C"
@@ -444,7 +453,10 @@ end tab
             @dashboard t
               report
               title = "T"
-              filter date d1 on c1 as "D1" ref D default -7d..today
+              defaults
+                filter.d1.default = -7d..today
+              end defaults
+              filter date d1 on c1 as "D1" ref D
               toolbar d1
               toolbar
               [ D ]
@@ -533,7 +545,10 @@ end tab
                   !include "layouts/grid.dashlayout"
                   report
                   title = "T"
-                  filter date d1 on c1 as "D1" ref Q default -7d..today
+                  defaults
+                    filter.d1.default = -7d..today
+                  end defaults
+                  filter date d1 on c1 as "D1" ref Q
                   card c as "C"
                   bind
                     d1

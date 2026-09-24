@@ -132,8 +132,18 @@ module DashboardShellParser =
                 ctx.CommandAliases.[alias] <- filterId
             reader.SkipNewlines()
             true
+        elif reader.TryKeyword "defaults" then
+            ctx.FormatDefaults <-
+                DefaultsBlockParser.parse reader "defaults" ctx.FormatDefaults ctx.FilterDefaults
+            reader.SkipNewlines()
+            true
+        elif reader.TryKeyword "default" then
+            ctx.FormatDefaults <-
+                DefaultsBlockParser.parse reader "default" ctx.FormatDefaults ctx.FilterDefaults
+            reader.SkipNewlines()
+            true
         elif reader.TryKeyword "filter" then
-            let filter = FilterParser.parse reader
+            let filter = FilterParser.parse reader ctx.ResolveFilterDefault
             if ctx.Mode = DashboardShellMode.TabModuleEmbedded then
                 ctx.ShellFilters.Add filter
             else

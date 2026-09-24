@@ -9,6 +9,12 @@ open DashSpec.Modeling.Parse.Lexing
 /// Filter declaration grammar (ADR-0010 legacy kind-first; ADR-0037 structured id-first bind/show).
 module FilterParser =
 
+    let private defaultsHint (filterName: string) =
+        $"defaults block: filter.{filterName}.default = …"
+
+    let private rejectInlineDefault (filterName: string) =
+        raise (DashSpecParseException($"Filter '{filterName}': declare default in {defaultsHint filterName}."))
+
     type private StructuredBindParse =
         { Properties: Dictionary<string, string>
           GrainLabels: IReadOnlyDictionary<string, string> option }
@@ -68,7 +74,7 @@ module FilterParser =
         match kind with
         | FilterKind.Date ->
             if defaultExpr.IsNone || String.IsNullOrWhiteSpace defaultExpr.Value then
-                raise (DashSpecParseException($"Date filter '{name}' requires default range, e.g. default = -7d..today"))
+                raise (DashSpecParseException($"Date filter '{name}' requires {defaultsHint name} (range from..to, e.g. -7d..today)."))
 
             let mutable expr = defaultExpr.Value
 
@@ -124,7 +130,7 @@ module FilterParser =
                 | _ ->
                     raise (DashSpecParseException($"Top filter '{name}' requires positive numeric default, or 0 when min = 0 (no row cap)."))
             | None ->
-                raise (DashSpecParseException($"Top filter '{name}' requires numeric default, e.g. default = 200"))
+                raise (DashSpecParseException($"Top filter '{name}' requires numeric {defaultsHint name} (e.g. 200)."))
 
             match props.TryGetValue "max" with
             | true, maxRaw ->
@@ -217,6 +223,8 @@ module FilterParser =
 
                             reader.SkipNewlines()
                             grainLabels <- Some(PropertyBlockParser.parseStringMapBlock reader "labels" $"{blockName} labels")
+                        elif key.Equals("default", StringComparison.OrdinalIgnoreCase) then
+                            rejectInlineDefault name
                         elif specs.ContainsKey key then
                             let spec = specs.[key]
                             reader.Expect TokenKind.Eq
@@ -238,7 +246,7 @@ module FilterParser =
         BlockSyntax.expectBlockEnd reader "bind" None
         { Properties = values; GrainLabels = grainLabels }
 
-    let private parseStructuredIdFirst (reader: TokenReader) (name: string) =
+    let private parseStructuredIdFirst (reader: TokenReader) (name: string) (resolveDefault: string -> string option) =
         let mutable kind: FilterKind option = None
         let bindProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let showProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -286,10 +294,10 @@ module FilterParser =
         match kind with
         | None -> raise (DashSpecParseException($"Filter '{name}': bind block is required."))
         | Some resolvedKind ->
-            let defaultExpression =
-                match bindProps.TryGetValue "default" with
-                | true, value -> Some value
-                | false, _ -> None
+            if bindProps.ContainsKey "default" then
+                rejectInlineDefault name
+
+            let defaultExpression = resolveDefault name
 
             let columnReference =
                 match bindProps.TryGetValue "column" with
@@ -347,23 +355,6 @@ module FilterParser =
             let binding = reader.ReadColumnBinding()
             Some binding.Column, binding.Alias
 
-    let private tryParseTrailingDateDefault (reader: TokenReader) (kind: FilterKind) =
-        if kind <> FilterKind.Date || reader.IsOnNewline() || reader.IsEof then
-            None
-        else
-            match reader.TryPeekIdent() with
-            | Some next when
-                next.Equals("default", StringComparison.OrdinalIgnoreCase)
-                || next.Equals("widget", StringComparison.OrdinalIgnoreCase)
-                || next.Equals("ref", StringComparison.OrdinalIgnoreCase)
-                || next.Equals("grain_filter", StringComparison.OrdinalIgnoreCase)
-                ->
-                None
-            | _ ->
-                match reader.RawKind with
-                | TokenKind.RelativeDay | TokenKind.Ident -> Some(reader.ReadDateDefaultValue())
-                | _ -> None
-
     let private hasInlineProperties (reader: TokenReader) =
         if reader.IsOnNewline() then false
         else
@@ -385,7 +376,6 @@ module FilterParser =
             | Some key when key.Equals("end", StringComparison.OrdinalIgnoreCase) -> false
             | Some key ->
                 key.Equals("column", StringComparison.OrdinalIgnoreCase)
-                || key.Equals("default", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("widget", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("grain_filter", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("single", StringComparison.OrdinalIgnoreCase)
@@ -399,19 +389,15 @@ module FilterParser =
         while hasInlineProperties reader do
             let key = reader.ReadIdent()
 
-            if key.Equals("single", StringComparison.OrdinalIgnoreCase) && reader.RawKind <> TokenKind.Eq then
+            if key.Equals("default", StringComparison.OrdinalIgnoreCase) then
+                raise (DashSpecParseException("Filter default must be declared in defaults block: filter.<id>.default = …"))
+            elif key.Equals("single", StringComparison.OrdinalIgnoreCase) && reader.RawKind <> TokenKind.Eq then
                 props.[key] <- "true"
             else
                 if reader.RawKind = TokenKind.Eq then
                     reader.Advance()
 
-                let value =
-                    if key.Equals("default", StringComparison.OrdinalIgnoreCase) && kind = FilterKind.Date then
-                        reader.ReadDateDefaultValue()
-                    else
-                        reader.ReadScalarValue()
-
-                props.[key] <- value
+                props.[key] <- reader.ReadScalarValue()
 
         reader.SkipNewlines()
         props
@@ -457,6 +443,8 @@ module FilterParser =
 
                         reader.SkipNewlines()
                         grainLabels <- Some(PropertyBlockParser.parseStringMapBlock reader "labels" $"{blockName} labels")
+                    elif key.Equals("default", StringComparison.OrdinalIgnoreCase) then
+                        rejectInlineDefault name
                     elif specs.ContainsKey key then
                         let spec = specs.[key]
                         reader.Expect TokenKind.Eq
@@ -508,7 +496,7 @@ module FilterParser =
             else
                 Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), None
 
-    let private parseLegacyKindFirst (reader: TokenReader) (kind: FilterKind) =
+    let private parseLegacyKindFirst (reader: TokenReader) (kind: FilterKind) (resolveDefault: string -> string option) =
         let name = reader.ReadIdentSameLine()
         let declarationLabel = tryParseTopLabel reader kind
         let columnFromOn, labelFromOn = tryParseOnBinding reader kind
@@ -519,8 +507,11 @@ module FilterParser =
             else
                 None
 
-        let trailingDefault = tryParseTrailingDateDefault reader kind
         let layoutRef = ParserUtilities.tryReadLayoutRef reader
+
+        if reader.TryKeywordSameLine "default" then
+            rejectInlineDefault name
+
         let props, grainLabels = parseFilterBody reader kind name columnFromOn.IsSome
 
         let columnReference =
@@ -531,10 +522,7 @@ module FilterParser =
                 | true, value -> Some value
                 | false, _ -> None
 
-        let defaultExpression =
-            match props.TryGetValue "default" with
-            | true, value -> Some value
-            | false, _ -> trailingDefault
+        let defaultExpression = resolveDefault name
 
         let label = resolveFilterLabel name kind props declarationLabel (labelFromOn |> Option.orElse trailingLabel)
 
@@ -565,11 +553,11 @@ module FilterParser =
           LayoutRef = layoutRef
           GrainLabels = grainLabels }
 
-    let parse (reader: TokenReader) =
+    let parse (reader: TokenReader) (resolveDefault: string -> string option) =
         match reader.TryPeekIdent() with
         | None -> raise (reader.Unexpected "filter id or kind (date, field, top)")
         | Some first when isFilterKind first ->
-            parseLegacyKindFirst reader (parseFilterKindFromIdent (reader.ReadIdent()))
+            parseLegacyKindFirst reader (parseFilterKindFromIdent (reader.ReadIdent())) resolveDefault
         | Some name ->
             reader.ReadIdent() |> ignore
-            parseStructuredIdFirst reader name
+            parseStructuredIdFirst reader name resolveDefault
