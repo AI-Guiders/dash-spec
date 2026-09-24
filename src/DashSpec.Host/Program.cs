@@ -90,8 +90,10 @@ if (!string.IsNullOrWhiteSpace(envKey))
 
 builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
 
-DashSpec.Execution.Runtime.LabelFormat.DisplayTimeZone = DashboardCultureAmbient.ResolveTimeZone(
-    bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p ? p.DisplayTimeZone : null);
+var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);
+DashSpec.Execution.Runtime.LabelFormat.DisplayTimeZone = displayTimeZone;
+DashSpec.Core.Runtime.TooltipTemplate.CellValueFormatter = static value =>
+    DashSpec.Execution.Runtime.LabelFormat.FormatObject(value);
 
 static CultureInfo ResolveUiCulture(string? language) =>
     string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
@@ -164,9 +166,7 @@ builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
 builder.Services.AddScoped<IDashboardCultureAmbient>(_ =>
-    new DashboardCultureAmbient(uiCulture, bootstrap.Presentation is { DisplayTimeZone.Length: > 0 } p
-        ? DashboardCultureAmbient.ResolveTimeZone(p.DisplayTimeZone)
-        : null));
+    new DashboardCultureAmbient(uiCulture, displayTimeZone));
 builder.Services.AddScoped<DashboardLocalizer>();
 builder.Services.AddScoped<DashboardSlashConstructorHost>();
 builder.Services.AddScoped<DashboardCommandSession>();
