@@ -1,7 +1,6 @@
 @namespace DashSpec.Host.Components.Dashboard.Viz
 @using DashSpec.Host.Services.Models
 @using DashSpec.Execution.Runtime
-
 @if (Context.EffectiveCard.Gantt is { Rows.Count: > 0 } gantt)
 {
     <div class="gantt-wrap" style="@($"max-height:{gantt.HeightPx}px")">
@@ -26,8 +25,8 @@
             }
         </div>
         <div class="gantt-axis muted">
-            <span>@gantt.AxisStart.ToString("dd.MM HH:mm")</span>
-            <span>@gantt.AxisEnd.ToString("dd.MM HH:mm")</span>
+            <span>@LabelFormat.FormatObject(gantt.AxisStart, "datetime.short")</span>
+            <span>@LabelFormat.FormatObject(gantt.AxisEnd, "datetime.short")</span>
         </div>
     </div>
 }
