@@ -29,8 +29,8 @@
 
   report "My tab label" {
     defaults {
-      filter.usage_date = -7d..today
-      filter.rows_top = 100
+      filter.usage_date.range = -7d..today
+      filter.rows_top.limit = 100
     }
 
     standalone {

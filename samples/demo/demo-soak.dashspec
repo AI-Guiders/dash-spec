@@ -21,12 +21,12 @@
     report
         title = "DashSpec — Demo soak"
         defaults
-            filter.usage_date = -7d..today
-            filter.activity_slot = today
-            filter.period_start = today
-            filter.period_grain = day
-            filter.events_top = 200
-            filter.idle_top = 100
+            filter.usage_date.range = -7d..today
+            filter.activity_slot.range = today
+            filter.period_start.range = today
+            filter.period_grain.scale = day
+            filter.events_top.limit = 200
+            filter.idle_top.limit = 100
         end defaults
         filter date usage_date on usage_date as "Report date"
         filter date activity_slot on bucket_start_utc as "Day" widget day

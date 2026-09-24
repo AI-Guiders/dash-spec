@@ -143,7 +143,7 @@ module DashboardShellParser =
             reader.SkipNewlines()
             true
         elif reader.TryKeyword "filter" then
-            let filter = FilterParser.parse reader ctx.ResolveFilterDefault
+            let filter = FilterParser.parse reader ctx.ResolveFilterProperty
             if ctx.Mode = DashboardShellMode.TabModuleEmbedded then
                 ctx.ShellFilters.Add filter
             else

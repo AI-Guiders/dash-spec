@@ -15,7 +15,7 @@ public class StructuredSyntaxTests
                 title = "T"
                 filters
                   defaults
-                    filter.usage_date = -30d..today
+                    filter.usage_date.range = -30d..today
                   end defaults
                   filter usage_date
                     bind date
@@ -70,7 +70,7 @@ public class StructuredSyntaxTests
               report
                 title = "T"
                 defaults
-                  filter.usage_date = -7d..today
+                  filter.usage_date.range = -7d..today
                 end defaults
                 toolbar usage_date
                 filter date usage_date on usage_date as "Дата"

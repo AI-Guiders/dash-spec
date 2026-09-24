@@ -46,7 +46,7 @@ type ReportPageDefinition =
       TabId: string option
       ToolbarBoard: LayoutBoardDefinition option
       UsageDateDerive: FilterDeriveDefinition option
-      FilterDefaults: IReadOnlyDictionary<string, string> option }
+      FilterDefaults: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> option }
 
 [<CLIMutable>]
 type ModuleDiagramDefinition =
@@ -159,12 +159,10 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val ModuleExtensions = { EnabledPluginIds = []; Imports = [] } with get, set
     member val CommandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     member val FormatDefaults = ReportFormatDefaults.empty with get, set
-    member val FilterDefaults = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    member val FilterDefaults = FilterScopeDefaults.create ()
 
-    member this.ResolveFilterDefault (filterName: string) =
-        match this.FilterDefaults.TryGetValue filterName with
-        | true, value -> Some value
-        | false, _ -> None
+    member this.ResolveFilterProperty (filterName: string) (property: string) =
+        FilterScopeDefaults.tryGet this.FilterDefaults filterName property
 
     member this.CardBindValidationFilters =
         DashboardShellContext.mergeFilterScopes this.ParentFilters (this.ShellFilters :> IReadOnlyList<_>) [| this.TabLocalFilters :> IReadOnlyList<_>; this.Filters :> IReadOnlyList<_> |]

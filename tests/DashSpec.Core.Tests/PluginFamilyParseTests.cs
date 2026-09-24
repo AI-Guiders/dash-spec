@@ -19,7 +19,7 @@ public sealed class PluginFamilyParseTests
               report
               title = "Soak"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               toolbar usage_date
@@ -57,7 +57,7 @@ public sealed class PluginFamilyParseTests
               report
               title = "Soak"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               toolbar usage_date
@@ -104,7 +104,7 @@ public sealed class PluginFamilyParseTests
               report
               title = "Soak"
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               toolbar usage_date
