@@ -221,10 +221,10 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
 
         return value switch
         {
-            DateOnly d => d.ToString("dd.MM.yyyy"),
-            DateTime dt => dt.TimeOfDay == TimeSpan.Zero
-                ? dt.ToString("dd.MM.yyyy")
-                : dt.ToString("dd.MM.yyyy HH:mm"),
+            DateOnly => LabelFormat.FormatObject(value, "date.full"),
+            DateTime dt => LabelFormat.FormatObject(
+                value,
+                dt.TimeOfDay == TimeSpan.Zero ? "date.short" : "datetime.short"),
             _ => FormatScalarMeasure(value, diagram),
         };
     }
