@@ -20,14 +20,22 @@
 
     report
         title = "DashSpec — Demo soak"
-        filter date usage_date on usage_date as "Report date" default -7d..today
-        filter date activity_slot on bucket_start_utc as "Day" default today widget day
-        filter date period_start on period_start as "Period start" default today widget day grain_filter period_grain
+        defaults
+            filter.usage_date.default = -7d..today
+            filter.activity_slot.default = today
+            filter.period_start.default = today
+            filter.period_grain.default = day
+            filter.events_top.default = 200
+            filter.idle_top.default = 100
+        end defaults
+        filter date usage_date on usage_date as "Report date"
+        filter date activity_slot on bucket_start_utc as "Day" widget day
+        filter date period_start on period_start as "Period start" widget day grain_filter period_grain
         filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
         filter field user_name on demo.v_events_detail.user_id as "User" widget combobox
-        filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year" default day widget combobox single
-        filter top events_top as "Rows (TOP)" default 200
-        filter top idle_top as "Rows (TOP)" default 100
+        filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Grain: day / month / year" widget combobox single
+        filter top events_top as "Rows (TOP)"
+        filter top idle_top as "Rows (TOP)"
         toolbar chrome
             layout = bar
             sticky = line

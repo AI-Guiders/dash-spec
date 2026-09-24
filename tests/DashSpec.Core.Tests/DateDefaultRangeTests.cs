@@ -39,7 +39,10 @@ public class DateDefaultRangeTests
                 @dashboard t
                   report
                   title = "T"
-                  filter date usage_date on usage_date as "Usage" last_7_days
+                  defaults
+                    filter.usage_date.default = last_7_days
+                  end defaults
+                  filter date usage_date on usage_date as "Usage"
                   end report
                 end dashboard
 """));

@@ -18,7 +18,10 @@ public sealed class PluginFamilyParseTests
               end extensions
               report
               title = "Soak"
-              filter date usage_date on usage_date as "Date" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
               toolbar usage_date
               card peak as "Peak"
               bind
@@ -53,7 +56,10 @@ public sealed class PluginFamilyParseTests
               end runtime
               report
               title = "Soak"
-              filter date usage_date on usage_date as "Date" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
               toolbar usage_date
               card peak as "Peak"
               buttons
@@ -97,7 +103,10 @@ public sealed class PluginFamilyParseTests
               end runtime
               report
               title = "Soak"
-              filter date usage_date on usage_date as "Date" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
               toolbar usage_date
               card peak as "Peak"
               views

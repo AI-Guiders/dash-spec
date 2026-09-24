@@ -136,10 +136,13 @@ public class DashboardParseTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Usage" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+                filter.activity_day.default = today
+              end defaults
+              filter date usage_date on usage_date as "Usage"
               filter date activity_day
               column = bucket_start_utc as "Day"
-              default = today
               widget = day
               end filter
               filter field app_name on app_name as "App"
@@ -176,7 +179,10 @@ public class DashboardParseTests
                 @dashboard t
                   report
                   title = "T"
-                  filter date usage_date on usage_date as "Usage" default -7d..today
+                  defaults
+                    filter.usage_date.default = -7d..today
+                  end defaults
+                  filter date usage_date on usage_date as "Usage"
                   card a as "A"
                   bind
                     usage_date
@@ -200,7 +206,10 @@ public class DashboardParseTests
             @dashboard t
               report
               title = "T"
-              filter date usage_date on usage_date as "Usage" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Usage"
               filters chrome
               layout = bar
               sticky = true
@@ -635,7 +644,10 @@ public class DashboardParseTests
                 @dashboard t
                   report
                   title = "T"
-                  filter date usage_date on usage_date as "Дата" default -7d..today
+                  defaults
+                    filter.usage_date.default = -7d..today
+                  end defaults
+                  filter date usage_date on usage_date as "Дата"
                   card a as "A"
                   bind
                     usage_date

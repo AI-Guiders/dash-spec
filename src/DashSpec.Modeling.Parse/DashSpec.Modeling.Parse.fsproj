@@ -90,6 +90,7 @@
     <Compile Include="Document\DashboardValidator.fs" />
     <Compile Include="Document\IncludeExpander.fs" />
     <Compile Include="Document\TabParser.fs" />
+    <Compile Include="Document\DefaultsBlockParser.fs" />
     <Compile Include="Document\DashboardShellParser.fs" />
     <Compile Include="Document\DocumentModuleParser.fs" />
     <Compile Include="Document\DashboardParser.fs" />

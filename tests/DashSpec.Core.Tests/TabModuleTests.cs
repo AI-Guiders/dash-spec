@@ -22,7 +22,10 @@ public class TabModuleTests
                 @tab extra
                   report
                   filters
-                  filter top n as "Top" default 5
+                  defaults
+                    filter.n.default = 5
+                  end defaults
+                  filter top n as "Top"
                   end filters
                   card x as "X"
                   diagram number
@@ -72,7 +75,10 @@ public class TabModuleTests
             @dashboard t
               report
               title = "T"
-              filter date period_start on p as "Period" default today widget day
+              defaults
+                filter.period_start.default = today
+              end defaults
+              filter date period_start on p as "Period" widget day
               card host as "Host"
               filters
               period_start
@@ -112,7 +118,10 @@ public class TabModuleTests
             @dashboard t
               report
               title = "T"
-              filter date period_start on p as "Period" default today widget day
+              defaults
+                filter.period_start.default = today
+              end defaults
+              filter date period_start on p as "Period" widget day
               card host as "Host"
               filters
               period_start
@@ -224,7 +233,10 @@ public class TabModuleTests
               report
               title = "Soak title"
               standalone
-              filter date usage_date on usage_date as "Date" default -7d..today
+              defaults
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
               toolbar usage_date
               end standalone
               card a as "A"

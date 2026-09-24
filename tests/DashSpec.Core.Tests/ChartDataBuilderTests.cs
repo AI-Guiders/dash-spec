@@ -54,7 +54,7 @@ public class ChartDataBuilderTests
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram, tooltip: PeakAppsTooltip);
 
-        Assert.Equal(["2026-06-23", "2026-06-25"], matrix.XLabels);
+        Assert.Equal(["23.06", "25.06"], matrix.XLabels);
         Assert.Equal(["bob", "alice"], matrix.YLabels);
         Assert.Equal(10, matrix.Cells[0][1]);
         Assert.Equal(6, matrix.Cells[1][1]);
@@ -233,10 +233,11 @@ public class ChartDataBuilderTests
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
-        Assert.Equal(["00:00"], matrix.XLabels);
+        Assert.Equal(["08:00", "14:00"], matrix.XLabels);
         Assert.Equal(["Cursor IDE", "Google Chrome"], matrix.YLabels);
-        Assert.Equal(120, matrix.Cells[0][0]);
-        Assert.Equal(15, matrix.Cells[1][0]);
+        Assert.Equal(40, matrix.Cells[0][0]);
+        Assert.Equal(120, matrix.Cells[0][1]);
+        Assert.Equal(15, matrix.Cells[1][1]);
     }
 
     [Fact]

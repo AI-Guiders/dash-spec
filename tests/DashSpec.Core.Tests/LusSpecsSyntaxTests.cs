@@ -8,6 +8,10 @@ public class LusSpecsSyntaxTests
     private static DashSpecParseOptions LusParseOptions { get; } = new()
     {
         ExtensionBlockKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "views" },
+        ExtensionBlockPluginIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["views"] = "card_views",
+        },
     };
 
     public static TheoryData<string> LusSpecPaths =>
