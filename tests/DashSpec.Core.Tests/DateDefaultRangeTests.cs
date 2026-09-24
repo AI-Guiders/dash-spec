@@ -40,7 +40,7 @@ public class DateDefaultRangeTests
                   report
                   title = "T"
                   defaults
-                    filter.usage_date.default = last_7_days
+                    filter.usage_date = last_7_days
                   end defaults
                   filter date usage_date on usage_date as "Usage"
                   end report
