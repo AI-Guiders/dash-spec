@@ -90,17 +90,17 @@ if (!string.IsNullOrWhiteSpace(envKey))
 
 builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
 
-var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);
-DashSpec.Execution.Runtime.LabelFormat.DisplayTimeZone = displayTimeZone;
-DashSpec.Core.Runtime.TooltipTemplate.CellValueFormatter = static value =>
-    DashSpec.Execution.Runtime.LabelFormat.FormatObject(value);
-
 static CultureInfo ResolveUiCulture(string? language) =>
     string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
         ? CultureInfo.GetCultureInfo("en-US")
         : CultureInfo.GetCultureInfo("ru-RU");
 
 var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
+var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);
+DashSpec.Execution.Runtime.LabelFormat.DisplayTimeZone = displayTimeZone;
+DashSpec.Execution.Runtime.LabelFormat.UiCulture = uiCulture;
+DashSpec.Core.Runtime.TooltipTemplate.CellValueFormatter = static value =>
+    DashSpec.Execution.Runtime.LabelFormat.FormatObject(value);
 
 builder.Services.AddLocalization();
 builder.Services.Configure<RequestLocalizationOptions>(options =>

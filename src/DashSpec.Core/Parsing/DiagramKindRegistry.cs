@@ -36,6 +36,7 @@ public static class DiagramKindRegistry
     private static readonly IReadOnlyList<PropertySpec> TableProperties =
     [
         new("columns", PropertyValueType.CommaList),
+        new("column_formats", PropertyValueType.RestOfLine),
         new("order_by", PropertyValueType.RestOfLine),
         new("limit", PropertyValueType.Scalar),
     ];
@@ -69,6 +70,7 @@ public static class DiagramKindRegistry
         new("step", PropertyValueType.Scalar),
         new("date_column", PropertyValueType.ColumnBinding),
         new("poll_interval_seconds", PropertyValueType.Scalar),
+        new("axis_format", PropertyValueType.Scalar),
         new("order_by", PropertyValueType.RestOfLine),
         new("limit", PropertyValueType.Scalar),
     ];

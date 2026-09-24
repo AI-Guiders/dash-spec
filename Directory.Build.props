@@ -1,7 +1,15 @@
 <Project>
+
   <PropertyGroup>
+
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
     <NoWarn>$(NoWarn);MSB3277</NoWarn>
+
     <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+
   </PropertyGroup>
+
 </Project>
+
+
