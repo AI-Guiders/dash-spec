@@ -916,8 +916,15 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var clientId = _catalogUsage.GetOrCreateClientId(_httpContextAccessor.HttpContext);
-        _catalogUsage.RecordSelection(clientId, entryId);
+        try
+        {
+            var clientId = _catalogUsage.GetOrCreateClientId(_httpContextAccessor.HttpContext);
+            _catalogUsage.RecordSelection(clientId, entryId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Catalog usage ledger write failed (remark 31, non-fatal).");
+        }
     }
 
     public void Dispose()

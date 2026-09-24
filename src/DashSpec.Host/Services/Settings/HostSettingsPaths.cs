@@ -1,3 +1,4 @@
+using System.Data;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using Microsoft.EntityFrameworkCore;
@@ -34,14 +35,62 @@ public static class HostSettingsPaths
             .Options;
         using var db = new DashSpecHostDbContext(options);
         db.Database.EnsureCreated();
+        EnsureCatalogUsageTable(db);
+    }
+
+    /// <summary>
+    /// <see cref="EnsureCreated"/> does not add new tables to an existing WitDB file.
+    /// An earlier host build created <c>catalog_usage</c> with snake_case columns via raw SQL;
+    /// EF expects PascalCase property columns — repair on startup.
+    /// </summary>
+    private static void EnsureCatalogUsageTable(DashSpecHostDbContext db)
+    {
+        if (CatalogUsageSchemaAcceptsEfWrites(db))
+        {
+            return;
+        }
+
+        db.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS catalog_usage;");
+        db.ChangeTracker.Clear();
+
         db.Database.ExecuteSqlRaw("""
-            CREATE TABLE IF NOT EXISTS catalog_usage (
-                client_id TEXT NOT NULL,
-                entry_id TEXT NOT NULL,
-                hit_count INTEGER NOT NULL DEFAULT 0,
-                last_used_at TEXT NOT NULL,
-                PRIMARY KEY (client_id, entry_id)
+            CREATE TABLE catalog_usage (
+                ClientId TEXT NOT NULL,
+                EntryId TEXT NOT NULL,
+                HitCount INTEGER NOT NULL,
+                LastUsedAt TEXT NOT NULL,
+                CONSTRAINT PK_catalog_usage PRIMARY KEY (ClientId, EntryId)
             );
             """);
+        db.Database.ExecuteSqlRaw(
+            "CREATE INDEX IF NOT EXISTS IX_catalog_usage_ClientId ON catalog_usage (ClientId);");
+    }
+
+    /// <summary>
+    /// WitDB treats legacy snake_case and EF PascalCase as the same for SELECT,
+    /// but INSERT via EF only works when physical columns match the model.
+    /// </summary>
+    private static bool CatalogUsageSchemaAcceptsEfWrites(DashSpecHostDbContext db)
+    {
+        try
+        {
+            using var tx = db.Database.BeginTransaction();
+            db.CatalogUsage.Add(new CatalogUsageEntity
+            {
+                ClientId = "__schema_probe__",
+                EntryId = "__schema_probe__",
+                HitCount = 0,
+                LastUsedAt = DateTimeOffset.UnixEpoch,
+            });
+            db.SaveChanges();
+            tx.Rollback();
+            db.ChangeTracker.Clear();
+            return true;
+        }
+        catch
+        {
+            db.ChangeTracker.Clear();
+            return false;
+        }
     }
 }
