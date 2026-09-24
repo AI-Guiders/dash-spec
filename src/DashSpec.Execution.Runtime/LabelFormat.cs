@@ -1,9 +1,11 @@
 using System.Globalization;
+using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 
 public static class LabelFormat
 {
+    private static readonly AsyncLocal<ReportFormatDefaults?> ReportDefaults = new();
     private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly string[] IsoDateTimePatterns =
     [
@@ -32,6 +34,21 @@ public static class LabelFormat
 
     /// <summary>UI culture from host localization (ru/en). Used for <c>system</c> and C# format strings.</summary>
     public static CultureInfo? UiCulture { get; set; }
+
+    public static void SetReportDefaults(ReportFormatDefaults? defaults) =>
+        ReportDefaults.Value = defaults;
+
+    public static void ClearReportDefaults() =>
+        ReportDefaults.Value = null;
+
+    public static string ResolveTimeFormat(string? diagramFormat) =>
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.TimeFormat, "time.short");
+
+    public static string ResolveDateFormat(string? diagramFormat) =>
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateFormat, "date.short");
+
+    public static string ResolveDateTimeFormat(string? diagramFormat) =>
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateTimeFormat, "datetime.short");
 
     internal static TimeZoneInfo? SafeZone(string? id)
     {
@@ -65,7 +82,7 @@ public static class LabelFormat
         {
             DateTime dt => FormatStoredDateTime(dt, format),
             DateTimeOffset dto => FormatStoredDateTime(dto.UtcDateTime, format),
-            DateOnly d => FormatDateOnly(d, format ?? "date.short"),
+            DateOnly d => FormatDateOnly(d, format ?? ResolveDateFormat(null)),
             _ => FormatScalar(value, format),
         };
     }
@@ -79,12 +96,12 @@ public static class LabelFormat
 
         if (TryParseDateTime(raw, out var dt))
         {
-            return FormatDisplayDateTime(ToDisplayTime(dt), format ?? "datetime.short");
+            return FormatDisplayDateTime(ToDisplayTime(dt), format ?? ResolveDateTimeFormat(null));
         }
 
         if (TryParseDateOnly(raw, out var date))
         {
-            return FormatDateOnly(date, format ?? "date.short");
+            return FormatDateOnly(date, format ?? ResolveDateFormat(null));
         }
 
         var normalized = (format ?? "raw").Trim();
@@ -124,8 +141,26 @@ public static class LabelFormat
         return TimeZoneInfo.ConvertTimeFromUtc(utc, DisplayTimeZone);
     }
 
-    private static string FormatStoredDateTime(DateTime stored, string? format) =>
-        FormatDisplayDateTime(ToDisplayTime(stored), string.IsNullOrWhiteSpace(format) ? "datetime.short" : format.Trim());
+    private static string FormatStoredDateTime(DateTime stored, string? format)
+    {
+        var display = ToDisplayTime(stored);
+        var resolved = string.IsNullOrWhiteSpace(format)
+            ? ResolveDefaultForDateTime(display)
+            : format.Trim();
+        return FormatDisplayDateTime(display, resolved);
+    }
+
+    private static string ResolveDefaultForDateTime(DateTime display) =>
+        display.TimeOfDay == TimeSpan.Zero
+            ? ResolveDateFormat(null)
+            : ResolveDateTimeFormat(null);
+
+    private static string CoalesceFormat(string? diagramFormat, string? reportDefault, string fallback) =>
+        !string.IsNullOrWhiteSpace(diagramFormat)
+            ? diagramFormat.Trim()
+            : !string.IsNullOrWhiteSpace(reportDefault)
+                ? reportDefault.Trim()
+                : fallback;
 
     private static string FormatDisplayDateTime(DateTime display, string format)
     {

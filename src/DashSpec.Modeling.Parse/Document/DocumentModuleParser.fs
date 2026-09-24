@@ -112,7 +112,8 @@ module rec DocumentModuleParser =
               ModuleChartChromePresets = Some(result.Shell.Includes.ExportChartChromePresets())
               ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
               Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
-              CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>) }
+              CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>)
+              FormatDefaults = result.Shell.FormatDefaults }
 
         DashboardValidator.validate document
         document
@@ -152,7 +153,8 @@ module rec DocumentModuleParser =
           ModuleChartChromePresets = Some(dashShell.Includes.ExportChartChromePresets())
           ModuleTooltips = Some(dashShell.Includes.ExportTooltips())
           Pages = Some(dashShell.Pages :> IReadOnlyList<_>)
-          CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>) }
+          CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
+          FormatDefaults = dashShell.FormatDefaults }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -549,6 +551,33 @@ module rec DocumentModuleParser =
         BlockSyntax.expectBlockEnd reader "wiring" (None: string option)
         connectorId, paletteUse, layout, layoutBoard, toolbarBoard
 
+    let private parseDefaultBlock (reader: TokenReader) (shell: DashboardShellContext) =
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let mutable defaults = shell.FormatDefaults
+
+        while not (BlockSyntax.isBlockEnd reader "default" None) && not reader.IsEof do
+            reader.SkipNewlines()
+
+            if BlockSyntax.isBlockEnd reader "default" None then ()
+            elif reader.TryKeyword "time_format" then
+                reader.Expect TokenKind.Eq
+                defaults <- { defaults with TimeFormat = Some(reader.ReadString()) }
+                reader.SkipNewlines()
+            elif reader.TryKeyword "date_format" then
+                reader.Expect TokenKind.Eq
+                defaults <- { defaults with DateFormat = Some(reader.ReadString()) }
+                reader.SkipNewlines()
+            elif reader.TryKeyword "datetime_format" then
+                reader.Expect TokenKind.Eq
+                defaults <- { defaults with DateTimeFormat = Some(reader.ReadString()) }
+                reader.SkipNewlines()
+            else
+                raise (reader.Unexpected())
+
+        shell.FormatDefaults <- defaults
+        BlockSyntax.expectBlockEnd reader "default" (None: string option)
+
     let private parseReportBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) (setModuleLabel: string -> unit) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -575,6 +604,8 @@ module rec DocumentModuleParser =
                 for pair in CommandAliasesParser.parse reader do
                     shell.CommandAliases.[pair.Key] <- pair.Value
                 reader.SkipNewlines()
+            elif reader.TryKeyword "default" then
+                parseDefaultBlock reader shell
             elif reader.TryKeyword "filters" then
                 match reader.TryPeekIdent() with
                 | Some next when

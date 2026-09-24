@@ -106,7 +106,7 @@ internal static class GanttPayloadBuilder
     }
 
     private static string ResolveAxisFormat(DiagramDefinition diagram) =>
-        diagram.Properties.GetValueOrDefault("axis_format") ?? "HH:mm";
+        LabelFormat.ResolveTimeFormat(diagram.Properties.GetValueOrDefault("axis_format"));
 
     private static TimeSpan ResolveStep(DiagramDefinition diagram)
     {
