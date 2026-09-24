@@ -8,12 +8,18 @@ public static class DashboardBootstrap
     public static FilterState CreateInitialFilters(
         DashboardDocument document,
         DateOnly todayUtc,
-        IReadOnlyDictionary<string, string>? filterDefaultOverrides = null)
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? filterDefaultOverrides = null)
     {
         var state = new FilterState();
         foreach (var filter in document.Filters)
         {
-            var defaultExpression = ResolveDefaultExpression(filter, filterDefaultOverrides);
+            IReadOnlyDictionary<string, string>? scopedOverrides = null;
+            if (filterDefaultOverrides is not null)
+            {
+                filterDefaultOverrides.TryGetValue(filter.Name, out scopedOverrides);
+            }
+
+            var defaultExpression = ResolveDefaultExpression(filter, scopedOverrides);
             if (string.IsNullOrWhiteSpace(defaultExpression))
             {
                 continue;
@@ -39,17 +45,43 @@ public static class DashboardBootstrap
 
     public static string? ResolveDefaultExpression(
         FilterDefinition filter,
-        IReadOnlyDictionary<string, string>? overrides = null)
+        IReadOnlyDictionary<string, string>? propertyOverrides = null)
     {
-        if (overrides is not null &&
-            overrides.TryGetValue(filter.Name, out var overrideValue) &&
-            !string.IsNullOrWhiteSpace(overrideValue))
+        if (propertyOverrides is not null)
         {
-            return overrideValue;
+            var scoped = ResolveInitialExpression(filter.Kind, propertyOverrides);
+            if (!string.IsNullOrWhiteSpace(scoped))
+            {
+                return scoped;
+            }
         }
 
         return filter.DefaultExpression;
     }
+
+    private static string? ResolveInitialExpression(
+        FilterKind kind,
+        IReadOnlyDictionary<string, string> properties)
+    {
+        foreach (var candidate in InitialExpressionCandidates(kind))
+        {
+            if (properties.TryGetValue(candidate, out var value) && !string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> InitialExpressionCandidates(FilterKind kind) =>
+        kind switch
+        {
+            FilterKind.Date => ["range", "value"],
+            FilterKind.Field => ["value", "scale", "selection"],
+            FilterKind.Top => ["limit", "value"],
+            _ => [],
+        };
 
     public static IReadOnlyDictionary<string, FilterDefinition> IndexFilters(DashboardDocument document) =>
         document.Filters.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);

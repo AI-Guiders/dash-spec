@@ -10,10 +10,38 @@ open DashSpec.Modeling.Parse.Lexing
 module FilterParser =
 
     let private defaultsHint (filterName: string) =
-        $"defaults block: filter.{filterName} = …"
+        $"defaults block: filter.{filterName}.<property> = … (e.g. range, scale, limit)"
 
     let private rejectInlineDefault (filterName: string) =
-        raise (DashSpecParseException($"Filter '{filterName}': declare default in {defaultsHint filterName}."))
+        raise (DashSpecParseException($"Filter '{filterName}': declare in {defaultsHint filterName}."))
+
+    let private resolveInitialExpression
+        (kind: FilterKind)
+        (name: string)
+        (resolveProperty: string -> string -> string option)
+        =
+        let candidates =
+            match kind with
+            | FilterKind.Date -> [ "range"; "value" ]
+            | FilterKind.Field -> [ "value"; "scale"; "selection" ]
+            | FilterKind.Top -> [ "limit"; "value" ]
+
+        candidates |> List.tryPick (fun prop -> resolveProperty name prop)
+
+    let private applyScopeDefaults
+        (name: string)
+        (bindProps: Dictionary<string, string>)
+        (showProps: Dictionary<string, string>)
+        (resolveProperty: string -> string -> string option)
+        =
+        let mergeInto (target: Dictionary<string, string>) (keys: string list) =
+            for key in keys do
+                match resolveProperty name key with
+                | Some value when not (target.ContainsKey key) -> target.[key] <- value
+                | _ -> ()
+
+        mergeInto bindProps [ "column"; "min"; "max"; "grain_filter"; "single" ]
+        mergeInto showProps [ "widget"; "ref"; "grain_filter" ]
 
     type private StructuredBindParse =
         { Properties: Dictionary<string, string>
@@ -74,7 +102,7 @@ module FilterParser =
         match kind with
         | FilterKind.Date ->
             if defaultExpr.IsNone || String.IsNullOrWhiteSpace defaultExpr.Value then
-                raise (DashSpecParseException($"Date filter '{name}' requires {defaultsHint name} (range from..to, e.g. -7d..today)."))
+                raise (DashSpecParseException($"Date filter '{name}' requires filter.{name}.range = … (e.g. -7d..today)."))
 
             let mutable expr = defaultExpr.Value
 
@@ -130,7 +158,7 @@ module FilterParser =
                 | _ ->
                     raise (DashSpecParseException($"Top filter '{name}' requires positive numeric default, or 0 when min = 0 (no row cap)."))
             | None ->
-                raise (DashSpecParseException($"Top filter '{name}' requires numeric {defaultsHint name} (e.g. 200)."))
+                raise (DashSpecParseException($"Top filter '{name}' requires filter.{name}.limit = … (e.g. 200)."))
 
             match props.TryGetValue "max" with
             | true, maxRaw ->
@@ -246,7 +274,7 @@ module FilterParser =
         BlockSyntax.expectBlockEnd reader "bind" None
         { Properties = values; GrainLabels = grainLabels }
 
-    let private parseStructuredIdFirst (reader: TokenReader) (name: string) (resolveDefault: string -> string option) =
+    let private parseStructuredIdFirst (reader: TokenReader) (name: string) (resolveProperty: string -> string -> string option) =
         let mutable kind: FilterKind option = None
         let bindProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let showProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -297,7 +325,8 @@ module FilterParser =
             if bindProps.ContainsKey "default" then
                 rejectInlineDefault name
 
-            let defaultExpression = resolveDefault name
+            applyScopeDefaults name bindProps showProps resolveProperty
+            let defaultExpression = resolveInitialExpression resolvedKind name resolveProperty
 
             let columnReference =
                 match bindProps.TryGetValue "column" with
@@ -376,6 +405,7 @@ module FilterParser =
             | Some key when key.Equals("end", StringComparison.OrdinalIgnoreCase) -> false
             | Some key ->
                 key.Equals("column", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("default", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("widget", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("grain_filter", StringComparison.OrdinalIgnoreCase)
                 || key.Equals("single", StringComparison.OrdinalIgnoreCase)
@@ -390,7 +420,7 @@ module FilterParser =
             let key = reader.ReadIdent()
 
             if key.Equals("default", StringComparison.OrdinalIgnoreCase) then
-                raise (DashSpecParseException("Filter default must be declared in defaults block: filter.<id> = …"))
+                raise (DashSpecParseException("Filter value must be declared in defaults block: filter.<id>.<property> = …"))
             elif key.Equals("single", StringComparison.OrdinalIgnoreCase) && reader.RawKind <> TokenKind.Eq then
                 props.[key] <- "true"
             else
@@ -496,7 +526,7 @@ module FilterParser =
             else
                 Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), None
 
-    let private parseLegacyKindFirst (reader: TokenReader) (kind: FilterKind) (resolveDefault: string -> string option) =
+    let private parseLegacyKindFirst (reader: TokenReader) (kind: FilterKind) (resolveProperty: string -> string -> string option) =
         let name = reader.ReadIdentSameLine()
         let declarationLabel = tryParseTopLabel reader kind
         let columnFromOn, labelFromOn = tryParseOnBinding reader kind
@@ -513,6 +543,7 @@ module FilterParser =
             rejectInlineDefault name
 
         let props, grainLabels = parseFilterBody reader kind name columnFromOn.IsSome
+        applyScopeDefaults name props props resolveProperty
 
         let columnReference =
             match columnFromOn with
@@ -522,7 +553,7 @@ module FilterParser =
                 | true, value -> Some value
                 | false, _ -> None
 
-        let defaultExpression = resolveDefault name
+        let defaultExpression = resolveInitialExpression kind name resolveProperty
 
         let label = resolveFilterLabel name kind props declarationLabel (labelFromOn |> Option.orElse trailingLabel)
 
@@ -553,11 +584,11 @@ module FilterParser =
           LayoutRef = layoutRef
           GrainLabels = grainLabels }
 
-    let parse (reader: TokenReader) (resolveDefault: string -> string option) =
+    let parse (reader: TokenReader) (resolveProperty: string -> string -> string option) =
         match reader.TryPeekIdent() with
         | None -> raise (reader.Unexpected "filter id or kind (date, field, top)")
         | Some first when isFilterKind first ->
-            parseLegacyKindFirst reader (parseFilterKindFromIdent (reader.ReadIdent())) resolveDefault
+            parseLegacyKindFirst reader (parseFilterKindFromIdent (reader.ReadIdent())) resolveProperty
         | Some name ->
             reader.ReadIdent() |> ignore
-            parseStructuredIdFirst reader name resolveDefault
+            parseStructuredIdFirst reader name resolveProperty

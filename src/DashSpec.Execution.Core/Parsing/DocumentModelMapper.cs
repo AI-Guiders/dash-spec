@@ -65,7 +65,7 @@ internal static class DocumentModelMapper
             FirstOrNull(page.TabId),
             MapOptional(page.ToolbarBoard, ToCore),
             MapOptional(page.UsageDateDerive, ToCore),
-            ToDictionaryOrNull(page.FilterDefaults, static x => x));
+            ToNestedFilterDefaultsOrNull(page.FilterDefaults));
 
     private static FilterDeriveDefinition ToCore(FsharpCard.FilterDeriveDefinition derive) =>
         new(
@@ -316,6 +316,24 @@ internal static class DocumentModelMapper
         FSharpOption<IReadOnlyDictionary<string, TFsharp>> option,
         Func<TFsharp, TCore> map) =>
         ToDictionaryOrNull(option, (key, value) => map(value));
+
+    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? ToNestedFilterDefaultsOrNull(
+        FSharpOption<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>> option)
+    {
+        var items = OptionModule.ToArray(option);
+        if (items.Length == 0)
+        {
+            return null;
+        }
+
+        return items[0].ToDictionary(
+            static x => x.Key,
+            static x => (IReadOnlyDictionary<string, string>)x.Value.ToDictionary(
+                static y => y.Key,
+                static y => y.Value,
+                StringComparer.OrdinalIgnoreCase),
+            StringComparer.OrdinalIgnoreCase);
+    }
 
     private static IReadOnlyDictionary<string, TCore>? ToDictionaryOrNull<TFsharp, TCore>(
         FSharpOption<IReadOnlyDictionary<string, TFsharp>> option,

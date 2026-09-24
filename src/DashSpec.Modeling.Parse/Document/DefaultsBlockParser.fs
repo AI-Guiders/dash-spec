@@ -10,18 +10,24 @@ module DefaultsBlockParser =
 
     let private filterKeyPrefix = "filter."
 
-    let tryParseFilterDefaultKey (key: string) =
+    let tryParseFilterPropertyKey (key: string) =
         if not (key.StartsWith(filterKeyPrefix, StringComparison.OrdinalIgnoreCase)) then
             None
         elif key.EndsWith(".default", StringComparison.OrdinalIgnoreCase) then
-            raise (DashSpecParseException("In defaults block use filter.<id> = … (no '.default' suffix)."))
+            raise (DashSpecParseException("In defaults block use filter.<id>.<property> (not '.default')."))
         else
-            let filterName = key.Substring(filterKeyPrefix.Length)
+            let rest = key.Substring(filterKeyPrefix.Length)
+            let parts = rest.Split('.', StringSplitOptions.RemoveEmptyEntries)
 
-            if String.IsNullOrWhiteSpace filterName || filterName.Contains '.' then
-                None
-            else
-                Some filterName
+            match parts with
+            | [| filterName; property |] when
+                not (String.IsNullOrWhiteSpace filterName) && not (String.IsNullOrWhiteSpace property)
+                ->
+                Some(filterName, property)
+            | [| filterName |] ->
+                raise (DashSpecParseException($"Filter defaults require filter.<id>.<property>, got '{key}'."))
+            | _ ->
+                raise (DashSpecParseException($"Invalid filter defaults key '{key}'."))
 
     let private readDefaultValue (reader: TokenReader) =
         match reader.RawKind with
@@ -32,7 +38,7 @@ module DefaultsBlockParser =
         (reader: TokenReader)
         (blockKeyword: string)
         (formatDefaults: ReportFormatDefaults)
-        (filterDefaults: Dictionary<string, string>)
+        (filterDefaults: FilterScopeDefaults)
         =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -58,13 +64,13 @@ module DefaultsBlockParser =
                     formats <- { formats with DateTimeFormat = Some(reader.ReadString()) }
                     reader.SkipNewlines()
                 else
-                    match tryParseFilterDefaultKey key with
-                    | Some filterName ->
+                    match tryParseFilterPropertyKey key with
+                    | Some(filterName, property) ->
                         reader.Expect TokenKind.Eq
-                        filterDefaults.[filterName] <- readDefaultValue reader
+                        FilterScopeDefaults.set filterDefaults filterName property (readDefaultValue reader)
                         reader.SkipNewlines()
                     | None ->
-                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use time_format, date_format, datetime_format, or filter.<id>."))
+                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use time_format, date_format, datetime_format, or filter.<id>.<property>."))
 
         BlockSyntax.expectBlockEnd reader blockKeyword (None: string option)
         formats

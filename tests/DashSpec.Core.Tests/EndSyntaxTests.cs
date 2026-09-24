@@ -59,8 +59,8 @@ public sealed class EndSyntaxTests
               title = "R"
               standalone
               defaults
-                filter.usage_date = -7d..today
-                filter.period_start = today..today
+                filter.usage_date.range = -7d..today
+                filter.period_start.range = today..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filter date period_start on period_start as "Период"

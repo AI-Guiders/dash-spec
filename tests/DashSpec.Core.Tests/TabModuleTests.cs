@@ -23,7 +23,7 @@ public class TabModuleTests
                   report
                   filters
                   defaults
-                    filter.n = 5
+                    filter.n.limit = 5
                   end defaults
                   filter top n as "Top"
                   end filters
@@ -76,7 +76,7 @@ public class TabModuleTests
               report
               title = "T"
               defaults
-                filter.period_start = today
+                filter.period_start.range = today
               end defaults
               filter date period_start on p as "Period" widget day
               card host as "Host"
@@ -119,7 +119,7 @@ public class TabModuleTests
               report
               title = "T"
               defaults
-                filter.period_start = today
+                filter.period_start.range = today
               end defaults
               filter date period_start on p as "Period" widget day
               card host as "Host"
@@ -234,7 +234,7 @@ public class TabModuleTests
               title = "Soak title"
               standalone
               defaults
-                filter.usage_date = -7d..today
+                filter.usage_date.range = -7d..today
               end defaults
               filter date usage_date on usage_date as "Date"
               toolbar usage_date
