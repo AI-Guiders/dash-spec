@@ -76,8 +76,10 @@ module TabParser =
                 elif reader.TryKeyword "layout" then
                     layoutBoard <- Some(LayoutParser.parseBoard reader)
                     reader.SkipNewlines()
+                elif allowFilters && reader.TryKeyword "defaults" then
+                    raise (DashSpecParseException($"Tab block does not support defaults; declare defaults in report or tab dashspec."))
                 elif allowFilters && reader.TryKeyword "filter" then
-                    filters.Add(FilterParser.parse reader)
+                    filters.Add(FilterParser.parse reader (fun _ -> None))
                     reader.SkipNewlines()
                 else
                     let key = reader.ReadIdent()

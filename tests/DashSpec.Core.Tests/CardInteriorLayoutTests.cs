@@ -13,8 +13,12 @@ public class CardInteriorLayoutTests
             @dashboard t
               report
               title = "T"
-              filter top rows_top as "Top" ref T default 100
-              filter date usage_date on usage_date as "Date" default -7d..today
+              defaults
+                filter.rows_top.default = 100
+                filter.usage_date.default = -7d..today
+              end defaults
+              filter top rows_top as "Top" ref T
+              filter date usage_date on usage_date as "Date"
               filters dashboard
               usage_date
               end dashboard

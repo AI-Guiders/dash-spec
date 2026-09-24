@@ -28,8 +28,13 @@
   }
 
   report "My tab label" {
+    defaults {
+      filter.usage_date.default = -7d..today
+      filter.rows_top.default = 100
+    }
+
     standalone {
-      filter date usage_date on usage_date as "Report date" default -7d..today
+      filter date usage_date on usage_date as "Report date"
       filter field app_name on demo.v_daily_active_users.app_name as "Products" widget combobox
 
       toolbar chrome {
@@ -46,7 +51,7 @@
     }
 
     filters {
-      filter top rows_top as "Rows (TOP)" default 100
+      filter top rows_top as "Rows (TOP)"
     }
 
     card my_card as "Example card" ref Q {

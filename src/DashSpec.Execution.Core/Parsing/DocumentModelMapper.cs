@@ -64,7 +64,8 @@ internal static class DocumentModelMapper
             MapOptional(page.LayoutBoard, ToCore),
             FirstOrNull(page.TabId),
             MapOptional(page.ToolbarBoard, ToCore),
-            MapOptional(page.UsageDateDerive, ToCore));
+            MapOptional(page.UsageDateDerive, ToCore),
+            ToDictionaryOrNull(page.FilterDefaults, static x => x));
 
     private static FilterDeriveDefinition ToCore(FsharpCard.FilterDeriveDefinition derive) =>
         new(
