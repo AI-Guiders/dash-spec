@@ -11,10 +11,18 @@ internal static class TablePayloadBuilder
         var columns = diagram.Properties.TryGetValue("columns", out var raw)
             ? raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             : rows.FirstOrDefault()?.Keys.ToArray() ?? [];
+        var columnFormats = ColumnFormatMap.Parse(
+            diagram.Properties.GetValueOrDefault("column_formats"));
 
         var tableRows = rows
             .Select(row => columns
-                .Select(column => PayloadRowFormatters.FormatValue(row.GetValueOrDefault(column)))
+                .Select(column =>
+                {
+                    var value = row.GetValueOrDefault(column);
+                    return columnFormats.TryGetValue(column, out var format)
+                        ? LabelFormat.FormatObject(value, format)
+                        : PayloadRowFormatters.FormatValue(value);
+                })
                 .ToList())
             .ToList();
 

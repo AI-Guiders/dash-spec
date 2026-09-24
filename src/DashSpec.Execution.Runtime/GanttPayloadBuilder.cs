@@ -71,7 +71,7 @@ internal static class GanttPayloadBuilder
 
         if (rowMap.Count == 0)
         {
-            return new GanttPayload([], axisStart, axisEnd, DiagramBindings.Label(diagram, "y"), heightPx);
+            return new GanttPayload([], axisStart, axisEnd, DiagramBindings.Label(diagram, "y"), heightPx, ResolveAxisFormat(diagram));
         }
 
         if (!hasFixedAxis)
@@ -101,8 +101,12 @@ internal static class GanttPayloadBuilder
             axisStart,
             axisEnd,
             DiagramBindings.Label(diagram, "y"),
-            heightPx);
+            heightPx,
+            ResolveAxisFormat(diagram));
     }
+
+    private static string ResolveAxisFormat(DiagramDefinition diagram) =>
+        diagram.Properties.GetValueOrDefault("axis_format") ?? "HH:mm";
 
     private static TimeSpan ResolveStep(DiagramDefinition diagram)
     {
@@ -233,7 +237,8 @@ public sealed record GanttPayload(
     DateTime AxisStart,
     DateTime AxisEnd,
     string? YLabel,
-    int HeightPx);
+    int HeightPx,
+    string AxisFormat);
 
 public sealed record GanttRow(string Label, IReadOnlyList<GanttSegment> Segments);
 
