@@ -8,27 +8,20 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DefaultsBlockParser =
 
-    let private filterDefaultPrefix = "filter."
-    let private filterDefaultSuffix = ".default"
+    let private filterKeyPrefix = "filter."
 
     let tryParseFilterDefaultKey (key: string) =
-        if
-            key.StartsWith(filterDefaultPrefix, StringComparison.OrdinalIgnoreCase)
-            && key.EndsWith(filterDefaultSuffix, StringComparison.OrdinalIgnoreCase)
-        then
-            let innerLength = key.Length - filterDefaultPrefix.Length - filterDefaultSuffix.Length
+        if not (key.StartsWith(filterKeyPrefix, StringComparison.OrdinalIgnoreCase)) then
+            None
+        elif key.EndsWith(".default", StringComparison.OrdinalIgnoreCase) then
+            raise (DashSpecParseException("In defaults block use filter.<id> = … (no '.default' suffix)."))
+        else
+            let filterName = key.Substring(filterKeyPrefix.Length)
 
-            if innerLength <= 0 then
+            if String.IsNullOrWhiteSpace filterName || filterName.Contains '.' then
                 None
             else
-                let filterName = key.Substring(filterDefaultPrefix.Length, innerLength)
-
-                if String.IsNullOrWhiteSpace filterName then
-                    None
-                else
-                    Some filterName
-        else
-            None
+                Some filterName
 
     let private readDefaultValue (reader: TokenReader) =
         match reader.RawKind with
@@ -71,7 +64,7 @@ module DefaultsBlockParser =
                         filterDefaults.[filterName] <- readDefaultValue reader
                         reader.SkipNewlines()
                     | None ->
-                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use time_format, date_format, datetime_format, or filter.<id>.default."))
+                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use time_format, date_format, datetime_format, or filter.<id>."))
 
         BlockSyntax.expectBlockEnd reader blockKeyword (None: string option)
         formats

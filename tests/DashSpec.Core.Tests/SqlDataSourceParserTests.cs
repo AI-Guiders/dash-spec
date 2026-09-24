@@ -19,7 +19,7 @@ public class SqlDataSourceParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filters dashboard
@@ -57,7 +57,7 @@ public class SqlDataSourceParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filters dashboard
@@ -89,7 +89,7 @@ public class SqlDataSourceParserTests
               report
               title = "T"
               defaults
-                filter.usage_date.default = -7d..today
+                filter.usage_date = -7d..today
               end defaults
               filter date usage_date on usage_date as "Дата"
               filters dashboard
