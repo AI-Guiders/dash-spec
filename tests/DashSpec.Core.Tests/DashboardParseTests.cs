@@ -1,3 +1,4 @@
+using System.Globalization;
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
@@ -539,6 +540,23 @@ public class DashboardParseTests
         LabelFormat.DisplayTimeZone = null;
         var value = new DateTime(2024, 6, 15, 0, 0, 0, DateTimeKind.Utc);
         Assert.Equal("15.06.2024", LabelFormat.FormatObject(value, "date.full"));
+    }
+
+    [Fact]
+    public void LabelFormat_FormatObject_supports_csharp_custom_pattern()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Utc);
+        Assert.Equal("15.06.2024 14:05", LabelFormat.FormatObject(value, "dd.MM.yyyy HH:mm"));
+    }
+
+    [Fact]
+    public void LabelFormat_FormatObject_system_uses_ui_culture()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        LabelFormat.UiCulture = CultureInfo.GetCultureInfo("en-US");
+        var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
+        Assert.Contains("6/15/2024", LabelFormat.FormatObject(value, "system"));
     }
 
     [Theory]
