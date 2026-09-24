@@ -25,8 +25,8 @@
             }
         </div>
         <div class="gantt-axis muted">
-            <span>@LabelFormat.FormatObject(gantt.AxisStart, "datetime.short")</span>
-            <span>@LabelFormat.FormatObject(gantt.AxisEnd, "datetime.short")</span>
+            <span>@LabelFormat.FormatObject(gantt.AxisStart, gantt.AxisFormat)</span>
+            <span>@LabelFormat.FormatObject(gantt.AxisEnd, gantt.AxisFormat)</span>
         </div>
     </div>
 }

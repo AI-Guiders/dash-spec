@@ -4,7 +4,7 @@ namespace DashSpec.Execution.Runtime;
 
 public static class LabelFormat
 {
-    private static readonly CultureInfo DisplayCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly string[] IsoDateTimePatterns =
     [
         "yyyy-MM-dd",
@@ -14,8 +14,24 @@ public static class LabelFormat
         "O",
     ];
 
+    private static readonly HashSet<string> NamedPresets = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "date.short",
+        "date.full",
+        "date.iso",
+        "time.short",
+        "datetime.short",
+        "datetime.iso",
+        "user.short",
+        "raw",
+        "system",
+    };
+
     /// <summary>Display time zone for output conversion (remark 25: stored UTC → display TZ). Set at host startup.</summary>
     public static TimeZoneInfo? DisplayTimeZone { get; set; }
+
+    /// <summary>UI culture from host localization (ru/en). Used for <c>system</c> and C# format strings.</summary>
+    public static CultureInfo? UiCulture { get; set; }
 
     internal static TimeZoneInfo? SafeZone(string? id)
     {
@@ -34,7 +50,10 @@ public static class LabelFormat
         }
     }
 
-    /// <summary>Format a cell/axis value. Author diagram formats (<c>date.short</c>, <c>time.short</c>, …) apply here.</summary>
+    /// <summary>
+    /// Format a cell/axis value.
+    /// <paramref name="format"/> — preset (<c>date.short</c>, <c>system</c>, …) or C# pattern (<c>dd.MM.yyyy HH:mm</c>).
+    /// </summary>
     public static string FormatObject(object? value, string? format = null)
     {
         if (value is null or DBNull)
@@ -58,32 +77,29 @@ public static class LabelFormat
             return string.Empty;
         }
 
-        var normalized = (format ?? "raw").Trim().ToLowerInvariant();
-        if (normalized is "date.short" or "date.iso" or "time.short" or "datetime.short" or "datetime.iso")
+        if (TryParseDateTime(raw, out var dt))
         {
-            if (TryParseDateTime(raw, out var dt))
-            {
-                return FormatDisplayDateTime(ToDisplayTime(dt), normalized);
-            }
-
-            if (TryParseDateOnly(raw, out var date))
-            {
-                return FormatDateOnly(date, normalized);
-            }
+            return FormatDisplayDateTime(ToDisplayTime(dt), format ?? "datetime.short");
         }
 
-        return normalized switch
+        if (TryParseDateOnly(raw, out var date))
         {
-            "date.short" => FormatDateShort(raw),
-            "date.iso" => FormatDateIso(raw),
-            "time.short" => FormatTimeShort(raw),
-            "datetime.short" => FormatDateTimeShort(raw),
-            "datetime.iso" => FormatDateTimeIso(raw),
-            "user.short" => FormatUserShort(raw),
-            "truncate.22" => Truncate(raw, 22),
-            "raw" => raw,
-            _ => raw,
-        };
+            return FormatDateOnly(date, format ?? "date.short");
+        }
+
+        var normalized = (format ?? "raw").Trim();
+        if (IsNamedPreset(normalized))
+        {
+            return normalized.ToLowerInvariant() switch
+            {
+                "user.short" => FormatUserShort(raw),
+                "truncate.22" => Truncate(raw, 22),
+                "raw" => raw,
+                _ => raw,
+            };
+        }
+
+        return raw;
     }
 
     /// <summary>UTC (or unspecified storage) → wall clock in <see cref="DisplayTimeZone"/>.</summary>
@@ -108,50 +124,106 @@ public static class LabelFormat
         return TimeZoneInfo.ConvertTimeFromUtc(utc, DisplayTimeZone);
     }
 
-    private static string FormatStoredDateTime(DateTime stored, string? format)
+    private static string FormatStoredDateTime(DateTime stored, string? format) =>
+        FormatDisplayDateTime(ToDisplayTime(stored), string.IsNullOrWhiteSpace(format) ? "datetime.short" : format.Trim());
+
+    private static string FormatDisplayDateTime(DateTime display, string format)
     {
-        var normalized = string.IsNullOrWhiteSpace(format) ? "datetime.short" : format.Trim().ToLowerInvariant();
-        return FormatDisplayDateTime(ToDisplayTime(stored), normalized);
+        if (format.Equals("system", StringComparison.OrdinalIgnoreCase))
+        {
+            return display.ToString("G", ResolveCulture(forSystem: true));
+        }
+
+        if (IsNamedPreset(format))
+        {
+            return format.ToLowerInvariant() switch
+            {
+                "date.short" => display.ToString("dd.MM", DefaultCulture),
+                "date.full" => display.ToString("dd.MM.yyyy", DefaultCulture),
+                "date.iso" => display.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                "time.short" => display.ToString("HH:mm", DefaultCulture),
+                "datetime.short" => display.ToString("dd.MM HH:mm", DefaultCulture),
+                "datetime.iso" => display.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+                _ => display.ToString("G", ResolveCulture(forSystem: true)),
+            };
+        }
+
+        return ApplyCustomFormat(display, format);
     }
 
-    private static string FormatDisplayDateTime(DateTime display, string format) =>
-        format switch
+    private static string FormatDateOnly(DateOnly date, string format)
+    {
+        if (format.Equals("system", StringComparison.OrdinalIgnoreCase))
         {
-            "date.short" => display.ToString("dd.MM", DisplayCulture),
-            "date.full" => display.ToString("dd.MM.yyyy", DisplayCulture),
-            "date.iso" => display.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            "time.short" => display.ToString("HH:mm", DisplayCulture),
-            "datetime.short" => display.ToString("dd.MM HH:mm", DisplayCulture),
-            "datetime.iso" => display.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-            _ => display.ToString("dd.MM.yyyy HH:mm", DisplayCulture),
-        };
+            return date.ToString("d", ResolveCulture(forSystem: true));
+        }
 
-    private static string FormatDateOnly(DateOnly date, string format) =>
-        format switch
+        if (IsNamedPreset(format))
         {
-            "date.short" => date.ToString("dd.MM", DisplayCulture),
-            "date.full" => date.ToString("dd.MM.yyyy", DisplayCulture),
-            "date.iso" or "datetime.iso" => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            "datetime.short" => date.ToString("dd.MM", DisplayCulture),
-            _ => date.ToString("dd.MM.yyyy", DisplayCulture),
-        };
+            return format.ToLowerInvariant() switch
+            {
+                "date.short" => date.ToString("dd.MM", DefaultCulture),
+                "date.full" => date.ToString("dd.MM.yyyy", DefaultCulture),
+                "date.iso" or "datetime.iso" => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                "datetime.short" => date.ToString("dd.MM", DefaultCulture),
+                _ => date.ToString("d", ResolveCulture(forSystem: true)),
+            };
+        }
+
+        return ApplyCustomFormat(date, format);
+    }
+
+    private static string ApplyCustomFormat(DateTime display, string format)
+    {
+        try
+        {
+            return display.ToString(format, ResolveCulture(forSystem: false));
+        }
+        catch (FormatException)
+        {
+            return display.ToString("G", ResolveCulture(forSystem: true));
+        }
+    }
+
+    private static string ApplyCustomFormat(DateOnly date, string format)
+    {
+        try
+        {
+            return date.ToString(format, ResolveCulture(forSystem: false));
+        }
+        catch (FormatException)
+        {
+            return date.ToString("d", ResolveCulture(forSystem: true));
+        }
+    }
+
+    private static CultureInfo ResolveCulture(bool forSystem)
+    {
+        if (forSystem)
+        {
+            return UiCulture ?? CultureInfo.CurrentCulture;
+        }
+
+        return UiCulture ?? DefaultCulture;
+    }
 
     private static string FormatScalar(object value, string? format)
     {
-        var text = Convert.ToString(value, DisplayCulture) ?? string.Empty;
+        var text = Convert.ToString(value, UiCulture ?? DefaultCulture) ?? string.Empty;
         return string.IsNullOrWhiteSpace(format) || format.Equals("raw", StringComparison.OrdinalIgnoreCase)
             ? text
             : Format(text, format);
     }
 
-    private static string FormatTimeShort(string raw) =>
-        TryParseDateTime(raw, out var dt) ? FormatDisplayDateTime(ToDisplayTime(dt), "time.short") : raw;
+    private static bool IsNamedPreset(string format)
+    {
+        if (NamedPresets.Contains(format))
+        {
+            return true;
+        }
 
-    private static string FormatDateTimeShort(string raw) =>
-        TryParseDateTime(raw, out var dt) ? FormatDisplayDateTime(ToDisplayTime(dt), "datetime.short") : raw;
-
-    private static string FormatDateTimeIso(string raw) =>
-        TryParseDateTime(raw, out var dt) ? FormatDisplayDateTime(ToDisplayTime(dt), "datetime.iso") : raw;
+        return format.StartsWith("truncate.", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool TryParseDateTime(string raw, out DateTime dt)
     {
@@ -170,18 +242,12 @@ public static class LabelFormat
             return true;
         }
 
-        return DateTime.TryParse(raw, DisplayCulture, DateTimeStyles.None, out dt);
+        return DateTime.TryParse(raw, DefaultCulture, DateTimeStyles.None, out dt);
     }
 
     private static bool TryParseDateOnly(string raw, out DateOnly date) =>
         DateOnly.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
-        || DateOnly.TryParse(raw, DisplayCulture, DateTimeStyles.None, out date);
-
-    private static string FormatDateShort(string raw) =>
-        TryParseDateOnly(raw, out var date) ? FormatDateOnly(date, "date.short") : raw;
-
-    private static string FormatDateIso(string raw) =>
-        TryParseDateOnly(raw, out var date) ? FormatDateOnly(date, "date.iso") : raw;
+        || DateOnly.TryParse(raw, DefaultCulture, DateTimeStyles.None, out date);
 
     private static string FormatUserShort(string raw)
     {
