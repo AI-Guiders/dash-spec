@@ -860,6 +860,41 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildGantt_with_agent_schedule_axis_uses_poll_step_width()
+    {
+        var diagram = new DiagramDefinition("gantt", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["y"] = "app_name",
+            ["from"] = "segment_start_utc",
+            ["to"] = "segment_end_utc",
+            ["date_column"] = "usage_date",
+            ["axis_from"] = "08:00",
+            ["axis_to"] = "18:00",
+            ["step"] = "5m",
+        });
+
+        var day = new DateOnly(2026, 9, 24);
+        var start = new DateTime(2026, 9, 24, 9, 5, 0, DateTimeKind.Utc);
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = day,
+                ["app_name"] = "AutoCAD",
+                ["segment_start_utc"] = start,
+                ["segment_end_utc"] = start.AddMinutes(5),
+                ["chart_color"] = "#ff0000",
+            },
+        ];
+
+        var payload = ChartDataBuilder.BuildGantt(rows, diagram);
+
+        Assert.Equal(new DateTime(2026, 9, 24, 8, 0, 0), payload.AxisStart);
+        Assert.Equal(new DateTime(2026, 9, 24, 18, 0, 0), payload.AxisEnd);
+        Assert.InRange(payload.Rows[0].Segments[0].WidthPercent, 0.7, 0.9);
+    }
+
+    [Fact]
     public void Resolve_gantt_is_gantt_family()
     {
         Assert.Equal(DiagramDataFamily.Gantt, DiagramKindRegistry.Resolve("gantt").DataFamily);

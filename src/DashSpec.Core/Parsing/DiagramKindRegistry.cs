@@ -64,6 +64,11 @@ public static class DiagramKindRegistry
         new("to", PropertyValueType.ColumnBinding),
         new("color", PropertyValueType.ColumnBinding),
         new("height", PropertyValueType.Scalar),
+        new("axis_from", PropertyValueType.Scalar),
+        new("axis_to", PropertyValueType.Scalar),
+        new("step", PropertyValueType.Scalar),
+        new("date_column", PropertyValueType.ColumnBinding),
+        new("poll_interval_seconds", PropertyValueType.Scalar),
         new("order_by", PropertyValueType.RestOfLine),
         new("limit", PropertyValueType.Scalar),
     ];
