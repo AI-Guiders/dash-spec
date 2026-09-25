@@ -10,17 +10,33 @@ public static class ReportFormatReadingGuide
     private static readonly DateOnly SampleDate = new(2026, 8, 3);
     private static readonly DateTime SampleClock = new(2026, 8, 3, 14, 5, 0, DateTimeKind.Unspecified);
 
-    public static string Build(ReportFormatDefaults? defaults, TimeZoneInfo? displayTimeZone)
+    public static ReportFormatReadingGuideModel BuildModel(
+        ReportFormatDefaults? defaults,
+        TimeZoneInfo? displayTimeZone)
     {
         var dateFormat = ResolveDateFormat(defaults);
         var timeFormat = ResolveTimeFormat(defaults);
-        var datePattern = DescribePattern(dateFormat, isTime: false);
-        var timePattern = DescribePattern(timeFormat, isTime: true);
-        var dateExample = FormatSampleDate(dateFormat);
-        var timeExample = FormatSampleTime(timeFormat);
-        var zone = DescribeTimeZone(displayTimeZone);
 
-        return $"Даты: {datePattern} (напр. {dateExample}) · Время: {timePattern} (напр. {timeExample}) · {zone}";
+        return new ReportFormatReadingGuideModel(
+            [
+                new ReportFormatGuideRow(
+                    "Даты",
+                    DescribePattern(dateFormat, isTime: false),
+                    FormatSampleDate(dateFormat)),
+                new ReportFormatGuideRow(
+                    "Время",
+                    DescribePattern(timeFormat, isTime: true),
+                    FormatSampleTime(timeFormat)),
+            ],
+            DescribeTimeZone(displayTimeZone));
+    }
+
+    public static string Build(ReportFormatDefaults? defaults, TimeZoneInfo? displayTimeZone)
+    {
+        var model = BuildModel(defaults, displayTimeZone);
+        var date = model.Rows[0];
+        var time = model.Rows[1];
+        return $"Даты: {date.Pattern} (напр. {date.Example}) · Время: {time.Pattern} (напр. {time.Example}) · {model.TimeZoneLabel}";
     }
 
     internal static string ResolveDateFormat(ReportFormatDefaults? defaults) =>
