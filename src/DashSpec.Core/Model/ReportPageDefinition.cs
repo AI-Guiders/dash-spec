@@ -8,4 +8,5 @@ public sealed record ReportPageDefinition(
     string? TabId = null,
     LayoutBoardDefinition? ToolbarBoard = null,
     FilterDeriveDefinition? UsageDateDerive = null,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? FilterDefaults = null);
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? FilterDefaults = null,
+    DisplayBindingDefinition? DisplayBindings = null);

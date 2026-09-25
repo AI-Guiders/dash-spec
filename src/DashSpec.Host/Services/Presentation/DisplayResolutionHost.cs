@@ -1,5 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Resolution;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
@@ -26,15 +27,26 @@ internal static class DisplayResolutionHost
     public static CardRenderResult ApplyCardChrome(
         ResolutionContext context,
         CardDefinition card,
-        CardRenderResult render)
+        CardRenderResult render,
+        FilterDisplayContext? filterDisplay = null,
+        IReadOnlyDictionary<string, string>? displayBindings = null)
     {
         var chrome = DisplayResolution.ResolveCardChrome(context, card);
+        var title = filterDisplay is null
+            ? chrome.Title
+            : DisplayTitleResolver.Resolve(chrome.Title, displayBindings, filterDisplay) ?? chrome.Title;
         return render with
         {
-            Title = chrome.Title,
+            Title = title,
             ShowChromeTitle = chrome.ShowChromeTitle,
         };
     }
+
+    public static string? ResolveDisplayTitle(
+        string? template,
+        FilterDisplayContext filterDisplay,
+        IReadOnlyDictionary<string, string>? displayBindings = null) =>
+        DisplayTitleResolver.Resolve(template, displayBindings, filterDisplay);
 
     public static string ResolveTabLabel(ResolutionContext context) =>
         DisplayResolution.ResolveTabLabel(context);

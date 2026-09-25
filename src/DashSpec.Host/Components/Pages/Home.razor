@@ -127,7 +127,7 @@ else
                     <section class="card-group" style="@DashboardLayoutHelper.GroupOuterStyle(groupPlacement.OuterRow)">
                         @if (!string.IsNullOrWhiteSpace(groupPlacement.Title))
                         {
-                            <h3 class="card-group-title">@groupPlacement.Title</h3>
+                            <h3 class="card-group-title">@Page.ResolveDisplayTitle(groupPlacement.Title)</h3>
                         }
                         <div class="card-group-cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)">
                             @foreach (var (card, innerPlacement) in Page.CardsForGroup(group))
