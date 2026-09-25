@@ -67,6 +67,11 @@ module ReportFormatDefaults =
     let empty =
         { TimeFormat = None; DateFormat = None; DateTimeFormat = None }
 
+    let merge (baseFmt: ReportFormatDefaults) (overlay: ReportFormatDefaults) =
+        { TimeFormat = overlay.TimeFormat |> Option.orElse baseFmt.TimeFormat
+          DateFormat = overlay.DateFormat |> Option.orElse baseFmt.DateFormat
+          DateTimeFormat = overlay.DateTimeFormat |> Option.orElse baseFmt.DateTimeFormat }
+
 [<CLIMutable>]
 type DashboardDocument =
     { Id: string
@@ -131,7 +136,8 @@ type TabModuleContent =
       ModuleDiagrams: IReadOnlyDictionary<string, ModuleDiagramDefinition> option
       ModuleChartChromePresets: IReadOnlyDictionary<string, PresentationBlock> option
       ModuleTooltips: IReadOnlyDictionary<string, TooltipDefinition> option
-      Pages: IReadOnlyList<ReportPageDefinition> option }
+      Pages: IReadOnlyList<ReportPageDefinition> option
+      FormatDefaults: ReportFormatDefaults }
 
 type DashboardShellContext(mode: DashboardShellMode) =
     member val Mode = mode with get, set

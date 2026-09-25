@@ -66,8 +66,23 @@ public static class GrainFilterPresentation
         {
             "month" => from.ToString("yyyy-MM"),
             "year" => from.Year.ToString(),
-            _ => from == to ? from.ToString("yyyy-MM-dd") : $"{from:yyyy-MM-dd}…{to:yyyy-MM-dd}",
+            _ => FormatDayChipValue(from, to),
         };
+
+    private static string FormatDayChipValue(DateOnly from, DateOnly to)
+    {
+        var dateFormat = LabelFormat.ResolveDateFormat(null);
+        if (!string.Equals(dateFormat, "date.short", StringComparison.OrdinalIgnoreCase))
+        {
+            return from == to
+                ? LabelFormat.FormatObject(from, dateFormat)
+                : $"{LabelFormat.FormatObject(from, dateFormat)}…{LabelFormat.FormatObject(to, dateFormat)}";
+        }
+
+        return from == to
+            ? from.ToString("yyyy-MM-dd")
+            : $"{from:yyyy-MM-dd}…{to:yyyy-MM-dd}";
+    }
 
     public static void NormalizeAnchoredDates(
         string grainFilterName,

@@ -216,7 +216,8 @@ module rec DocumentModuleParser =
           ModuleDiagrams = Some(exportModuleDiagrams result.Shell.Includes)
           ModuleChartChromePresets = Some(result.Shell.Includes.ExportChartChromePresets())
           ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
-          Pages = Some(result.Shell.Pages :> IReadOnlyList<_>) }
+          Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
+          FormatDefaults = result.Shell.FormatDefaults }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None
@@ -763,9 +764,11 @@ module rec DocumentModuleParser =
 
             if BlockSyntax.isBlockEnd reader "filters" None then ()
             elif reader.TryKeyword "defaults" then
-                DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty blockFilterDefaults |> ignore
+                shell.FormatDefaults <-
+                    DefaultsBlockParser.parse reader "defaults" shell.FormatDefaults blockFilterDefaults
             elif reader.TryKeyword "default" then
-                DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty blockFilterDefaults |> ignore
+                shell.FormatDefaults <-
+                    DefaultsBlockParser.parse reader "default" shell.FormatDefaults blockFilterDefaults
             elif not (reader.TryKeyword "filter") then
                 raise (reader.Unexpected())
             else

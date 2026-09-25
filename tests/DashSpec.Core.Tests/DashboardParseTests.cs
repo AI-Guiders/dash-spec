@@ -605,6 +605,9 @@ public class DashboardParseTests
             Assert.Equal("15.06.2024 14:05", LabelFormat.FormatObject(value));
             Assert.Equal("15.06.2024", LabelFormat.FormatObject(new DateOnly(2024, 6, 15)));
             Assert.Equal("14:05", PayloadRowFormatters.FormatChartAxisLabel(value, null));
+            var midnight = new DateTime(2024, 6, 15, 0, 0, 0, DateTimeKind.Unspecified);
+            Assert.Equal("15.06.2024", PayloadRowFormatters.FormatChartAxisLabel(midnight, null));
+            Assert.Equal("15.06.2024", PayloadRowFormatters.FormatHeatmapLabel(new DateOnly(2024, 6, 15)));
         }
         finally
         {
