@@ -6,7 +6,7 @@ using OutWit.Database.EntityFramework.Extensions;
 
 namespace DashSpec.Host.Services.Settings;
 
-/// <summary>Apply WitDB host_settings onto bootstrap (DASHSPEC-ADR-0042). Env still wins later.</summary>
+/// <summary>Apply WitDB host_settings onto bootstrap (DASHSPEC-ADR-0042).</summary>
 public static class HostSettingsOverlay
 {
     public const string SectionAccess = "access";

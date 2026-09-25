@@ -25,17 +25,15 @@ username = "<user>"
 password = "<secret>"
 ```
 
-Env: `DASHSPEC_CATALOG_GIT_URL`, `DASHSPEC_CATALOG_GIT_BRANCH`, `DASHSPEC_CATALOG_GIT_PATH`, `DASHSPEC_CATALOG_GIT_USERNAME`, `DASHSPEC_CATALOG_GIT_PASSWORD`, `DASHSPEC_CATALOG_GIT_PULL_MINUTES`.
-
 При `enabled = true` Host:
 
-1. **Cold start** — использует `[dashboard] catalog_path` (вшитый fallback / bootstrap). Git **не блокирует** подъём службы.
+1. **Cold start** — catalog из `.dashhost` (Setup snapshot). Git **не блокирует** подъём службы.
 2. **Первый sync** — сразу после старта (`GitCatalogSyncBackgroundService`) + **Sync now** в Control Center + webhook (ADR-0041).
 3. `git clone` / `git fetch + reset` в `%ProgramData%\DashSpec\git-catalogs\<hash>` при успешном sync
 4. `catalogState` hot-reload при изменении `.dashcatalog`
 5. `GitCatalogSyncBackgroundService` — периодический pull + reload UI при изменении catalog
 
-`catalog_path` остаётся fallback (dev без git).
+Ops secrets — только TOML / WitDB; `DASHSPEC_*` env overrides удалены.
 
 ## Non-goals
 
