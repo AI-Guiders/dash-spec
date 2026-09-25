@@ -140,7 +140,7 @@ database_path = ""   # WitDB, ADR-0042 — обычно в dash-spec.local.toml
 5. `product_title`, `catalog_label`, links только из dashhost
 6. Hard reject: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]`
 7. Ops TOML-only: `[host] dashhost`, `[access]`, `[catalog_git]`, `database_path` — без `DASHSPEC_*` env
-8. SSCAD: `sscad-prod.dashhost` + `layouts/host-topbar.dashlayout`; handoff zip собран
+8. SSCAD: `sscad-prod.dashhost` + `layouts/host-topbar.dashlayout`; Setup.exe через `build-dashspec-setup.ps1`
 
 ## Non-goals
 
