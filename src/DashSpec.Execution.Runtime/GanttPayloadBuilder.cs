@@ -1,5 +1,6 @@
 using System.Globalization;
 using DashSpec.Core.Model;
+using DashSpec.Core.Runtime;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -178,7 +179,7 @@ internal static class GanttPayloadBuilder
                     return date;
                 case DateTime dt:
                     return DateOnly.FromDateTime(dt);
-                case string text when DateOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed):
+                case string text when DateValueCodec.TryParseWireDay(text, out var parsed):
                     return parsed;
             }
         }

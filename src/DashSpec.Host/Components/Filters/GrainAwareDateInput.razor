@@ -3,7 +3,6 @@
 @using DashSpec.Core.Model
 
 @using DashSpec.Core.Runtime
-
 @using DashSpec.Host.Services.Presentation
 
 
@@ -201,7 +200,7 @@ else
 
 
 
-    private static string FormatDay(DateOnly day) => day.ToString("yyyy-MM-dd");
+    private static string FormatDay(DateOnly day) => DateValueCodec.FormatWireDay(day);
 
 
 
@@ -305,9 +304,7 @@ else
 
         var raw = args.Value?.ToString();
 
-        if (!string.IsNullOrWhiteSpace(raw) &&
-
-            DateOnly.TryParse($"{raw}-01", out var parsed) &&
+        if (DateValueCodec.TryParseWireMonthAnchor(raw, out var parsed) &&
 
             SqlDateTimeRange.IsQueryable(parsed))
 
@@ -401,57 +398,9 @@ else
 
 
 
-    private static bool TryParseDay(string? raw, out DateOnly day)
+    private static bool TryParseDay(string? raw, out DateOnly day) =>
 
-    {
-
-        day = default;
-
-        if (string.IsNullOrWhiteSpace(raw))
-
-        {
-
-            return false;
-
-        }
-
-
-
-        if (DateOnly.TryParseExact(
-
-                raw,
-
-                "yyyy-MM-dd",
-
-                System.Globalization.CultureInfo.InvariantCulture,
-
-                System.Globalization.DateTimeStyles.None,
-
-                out day)
-
-            && SqlDateTimeRange.IsQueryable(day))
-
-        {
-
-            return true;
-
-        }
-
-
-
-        return DateOnly.TryParse(
-
-                   raw,
-
-                   System.Globalization.CultureInfo.InvariantCulture,
-
-                   System.Globalization.DateTimeStyles.None,
-
-                   out day)
-
-               && SqlDateTimeRange.IsQueryable(day);
-
-    }
+        DateValueCodec.TryParseWireDay(raw, out day) && SqlDateTimeRange.IsQueryable(day);
 
 }
 

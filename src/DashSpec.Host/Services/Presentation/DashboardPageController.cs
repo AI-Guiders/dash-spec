@@ -508,7 +508,7 @@ public sealed class DashboardPageController : IDisposable
 
         switch (filter.Kind)
         {
-            case FilterKind.Date when DateOnly.TryParse(raw, out var day):
+            case FilterKind.Date when DateValueCodec.TryParseWireDay(raw, out var day):
                 DateFrom[effect.FilterName] = day;
                 DateTo[effect.FilterName] = day;
                 break;

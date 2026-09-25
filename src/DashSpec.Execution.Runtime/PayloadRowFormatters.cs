@@ -1,3 +1,5 @@
+using DashSpec.Core.Runtime;
+
 namespace DashSpec.Execution.Runtime;
 
 internal static class PayloadRowFormatters
@@ -33,11 +35,7 @@ internal static class PayloadRowFormatters
     }
 
     public static DateOnly? TryParseHeatmapDate(string label) =>
-        DateOnly.TryParse(label, System.Globalization.CultureInfo.InvariantCulture, out var date)
-            ? date
-            : DateOnly.TryParse(label, out date)
-                ? date
-                : null;
+        DateValueCodec.TryParseStoredDateOnly(label, out var date) ? date : null;
 
     public static string MergeTooltipStrings(string? left, string right, string split)
     {
