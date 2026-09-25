@@ -60,12 +60,17 @@ wiring { use connector, palette, layout grid }
 report / body { filters, toolbar, tabs, cards }
 ```
 
-Host bootstrap смотрит на **catalog**, не на один файл:
+Host bootstrap смотрит на **`.dashhost`** (planet chrome), не на один `.dashspec`:
 
 ```toml
-# dash-spec.toml / dash-spec.local.toml
-[dashboard]
-catalog_path = "…/my.dashcatalog"
+# dash-spec.toml
+[host]
+dashhost = "dashspec/my_prod.dashhost"
+```
+
+```text
+# my_prod.dashhost
+catalog "catalogs/my_prod.dashcatalog"
 ```
 
 ---
