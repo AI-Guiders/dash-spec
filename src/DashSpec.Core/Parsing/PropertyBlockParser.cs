@@ -425,6 +425,7 @@ internal static class PropertySchemas
         new("use", PropertyValueType.Scalar),
         new("legend", PropertyValueType.Scalar),
         new("height", PropertyValueType.Scalar),
+        new("viewport_y", PropertyValueType.Scalar),
         new("stacked", PropertyValueType.Scalar),
         new("fill", PropertyValueType.Scalar),
         new("color_mode", PropertyValueType.Scalar),
