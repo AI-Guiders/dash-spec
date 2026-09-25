@@ -27,6 +27,23 @@
         @if (HasHeadToolbar)
         {
             <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
+            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+            {
+                <div class="card-head-toolbar-filters">
+                    @foreach (var filterName in OrderedLocalFilters)
+                    {
+                        @RenderLocalFilter(filterName, placementStyle: null)
+                    }
+                    @if (ShowLocalApplyButton)
+                    {
+                        <button class="secondary card-filter-apply"
+                                disabled="@Card.Loading"
+                                @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                            @Loc.T("Apply")
+                        </button>
+                    }
+                </div>
+            }
             @if (CanMatrixLabelToggles)
             {
                 <label class="card-matrix-toggle" title="@Loc.T("Toggle cell values")">
@@ -146,22 +163,6 @@
     else if (UsesInteriorLayout)
     {
         <div class="card-interior-grid" style="@InteriorGridStyle">
-            @foreach (var filterName in OrderedLocalFilters)
-            {
-                <div class="card-interior-filter-slot" style="@InteriorSlotStyle(filterName)">
-                    @RenderLocalFilter(filterName, placementStyle: null)
-                </div>
-            }
-            @if (ShowLocalApplyButton)
-            {
-                <div class="card-interior-filter-slot card-interior-apply">
-                        <button class="secondary card-filter-apply"
-                                disabled="@Card.Loading"
-                                @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                            @Loc.T("Apply")
-                        </button>
-                </div>
-            }
             <div class="card-diagram-slot" style="@DiagramSlotStyle">
                 <div class="card-viz-stack">
                     <CardVisualization Card="Card"
@@ -253,6 +254,7 @@
         CanExport ||
         CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
+        (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
         Card.Loading ||
         !string.IsNullOrEmpty(Card.Error);
 
