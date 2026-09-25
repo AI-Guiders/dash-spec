@@ -1,25 +1,44 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Host.Services.Settings;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
-
 namespace DashSpec.Host.Configuration;
 
-/// <summary>Host bootstrap: dash-spec.toml → catalog → default entry @runtime TOML.</summary>
+/// <summary>Host bootstrap: dash-spec.toml → optional .dashhost → catalog → default entry @runtime TOML.</summary>
 public static class DashSpecBootstrap
 {
-    public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment)
+    public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
+        LoadBootstrapWithHost(environment).Bootstrap;
+
+    public static (DashSpecTomlRoot Bootstrap, HostShellBootstrap? HostShell) LoadBootstrapWithHost(
+        IHostEnvironment environment)
     {
         var contentRoot = environment.ContentRootPath;
         var bootstrapPath = Path.Combine(contentRoot, "dash-spec.toml");
         if (!File.Exists(bootstrapPath))
         {
             throw new InvalidOperationException(
-                "Host requires dash-spec.toml with [dashboard] catalog_path pointing to a .dashcatalog file.");
+                "Host requires dash-spec.toml with [host] dashhost or [dashboard] catalog_path.");
         }
 
         var bootstrap = DashSpecTomlLoader.LoadFile(bootstrapPath);
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
+
+        var envDashhost = Environment.GetEnvironmentVariable("DASHSPEC_DASHHOST");
+        if (!string.IsNullOrWhiteSpace(envDashhost))
+        {
+            bootstrap.Host.Dashhost = envDashhost;
+        }
+
+        HostShellBootstrap? hostShell = null;
+        var dashhostPath = ResolveDashhostPath(contentRoot, bootstrap.Host.Dashhost);
+        if (!string.IsNullOrWhiteSpace(dashhostPath))
+        {
+            DashSpecParser.EnsureModuleParsersRegistered();
+            var document = HostModuleParser.ParseFile(dashhostPath);
+            hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
+            ApplyHostShell(bootstrap, hostShell);
+        }
 
         var envCatalogPath = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_PATH");
         if (!string.IsNullOrWhiteSpace(envCatalogPath))
@@ -30,18 +49,17 @@ public static class DashSpecBootstrap
         if (string.IsNullOrWhiteSpace(bootstrap.Dashboard.CatalogPath))
         {
             throw new InvalidOperationException(
-                "dash-spec.toml: set [dashboard] catalog_path to your .dashcatalog file.");
+                "dash-spec.toml: set [host] dashhost or [dashboard] catalog_path to your .dashcatalog file.");
         }
 
         ApplyAccessEnvOverride(bootstrap);
 
         HostSettingsOverlay.Apply(bootstrap);
-        // Env break-glass after WitDB (ADR-0042). Access env re-applied; catalog env inside PrepareDeferredSync.
         ApplyAccessEnvOverride(bootstrap);
 
         GitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
-        return bootstrap;
+        return (bootstrap, hostShell);
     }
 
     public static CatalogBootstrap LoadCatalog(DashSpecTomlRoot bootstrap, string contentRoot)
@@ -77,6 +95,37 @@ public static class DashSpecBootstrap
     {
         var bootstrap = LoadBootstrap(environment);
         return new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
+    }
+
+    private static void ApplyHostShell(DashSpecTomlRoot bootstrap, HostShellBootstrap hostShell)
+    {
+        var host = hostShell.Document;
+        var hostDirectory = Path.GetDirectoryName(hostShell.FullPath)!;
+        bootstrap.Dashboard.CatalogPath = ResolveCatalogPath(hostDirectory, host.CatalogPath);
+
+        if (host.Configuration.TryGetValue("language", out var language)
+            && !string.IsNullOrWhiteSpace(language))
+        {
+            bootstrap.Presentation.Language = language.Trim();
+        }
+
+        if (host.Configuration.TryGetValue("display_timezone", out var timeZone)
+            && !string.IsNullOrWhiteSpace(timeZone))
+        {
+            bootstrap.Presentation.DisplayTimeZone = timeZone.Trim();
+        }
+
+        if (host.Presentation.TryGetValue("color_scheme", out var colorScheme)
+            && !string.IsNullOrWhiteSpace(colorScheme))
+        {
+            bootstrap.Presentation.ColorScheme = colorScheme.Trim();
+        }
+
+        if (host.Presentation.TryGetValue("large_field_filter_layout", out var filterLayout)
+            && !string.IsNullOrWhiteSpace(filterLayout))
+        {
+            bootstrap.Presentation.LargeFieldFilterLayout = filterLayout.Trim();
+        }
     }
 
     private static void ApplyAccessEnvOverride(DashSpecTomlRoot bootstrap)
@@ -183,5 +232,22 @@ public static class DashSpecBootstrap
 
         return withExt;
     }
-}
 
+    public static string? ResolveDashhostPath(string contentRoot, string? dashhostReference)
+    {
+        if (string.IsNullOrWhiteSpace(dashhostReference))
+        {
+            return null;
+        }
+
+        var path = SpecPathResolver.ResolveFromContentRoot(contentRoot, dashhostReference);
+        if (File.Exists(path))
+        {
+            return path;
+        }
+
+        const string extension = ".dashhost";
+        var withExt = path.EndsWith(extension, StringComparison.OrdinalIgnoreCase) ? path : path + extension;
+        return File.Exists(withExt) ? withExt : null;
+    }
+}

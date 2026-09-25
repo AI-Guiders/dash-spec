@@ -31,6 +31,7 @@ internal static class LayoutModuleScopeValidator
             LayoutScope.Tab => "tab",
             LayoutScope.Page => "page",
             LayoutScope.Card => "card",
+            LayoutScope.Host => "host",
             _ => scope.ToString(),
         };
 }

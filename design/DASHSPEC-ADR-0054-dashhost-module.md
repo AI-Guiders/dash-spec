@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted |
 | **Date** | 2026-09-25 |
 | **Relates to** | [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md), [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md), [ADR-0026](DASHSPEC-ADR-0026-layout-module-scope.md), [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md), [ADR-0049](DASHSPEC-ADR-0049-git-catalog.md) |
 

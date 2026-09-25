@@ -47,4 +47,4 @@ type LayoutModuleParserTests() =
                 """
 
         let ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
-        Assert.Contains("toolbar, tab, page, or card", ex.Message, StringComparison.OrdinalIgnoreCase)
+        Assert.Contains("toolbar, tab, page, card, or host", ex.Message, StringComparison.OrdinalIgnoreCase)

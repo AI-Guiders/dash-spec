@@ -5,7 +5,7 @@ namespace DashSpec.Host.Services.Presentation;
 
 public sealed record HostExternalLink(string Label, string Url, string Target, bool Topbar, bool Settings);
 
-/// <summary>Resolves [[links]] from the active catalog entry @runtime TOML.</summary>
+/// <summary>External topbar links from <c>.dashhost</c> with runtime TOML fallback.</summary>
 public sealed class HostExternalLinksProvider(DashSpecHostContext hostContext)
 {
     private readonly ConcurrentDictionary<string, IReadOnlyList<HostExternalLink>> _cache =
@@ -17,11 +17,23 @@ public sealed class HostExternalLinksProvider(DashSpecHostContext hostContext)
     public IReadOnlyList<HostExternalLink> ForRuntimePath(string runtimeConfigPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(runtimeConfigPath);
-        return _cache.GetOrAdd(runtimeConfigPath, static path => Load(path));
+        return _cache.GetOrAdd(runtimeConfigPath, path => Load(path, hostContext.HostShell));
     }
 
-    private static IReadOnlyList<HostExternalLink> Load(string runtimeConfigPath)
+    private static IReadOnlyList<HostExternalLink> Load(string runtimeConfigPath, HostShellBootstrap? hostShell)
     {
+        if (hostShell?.Document.Links.Count > 0)
+        {
+            return hostShell.Document.Links
+                .Select(link => new HostExternalLink(
+                    link.Label.Trim(),
+                    link.Url.Trim(),
+                    string.IsNullOrWhiteSpace(link.Target) ? "_blank" : link.Target.Trim(),
+                    link.Topbar,
+                    link.Settings))
+                .ToList();
+        }
+
         var root = DashSpecTomlLoader.LoadFile(runtimeConfigPath);
         var links = new List<HostExternalLink>();
         foreach (var entry in root.Links)

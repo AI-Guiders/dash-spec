@@ -8,6 +8,7 @@ type LayoutScope =
     | Tab
     | Page
     | Card
+    | Host
 
 /// <summary>Grid placement for a card or filter (row/col/span).</summary>
 [<CLIMutable>]
