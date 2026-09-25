@@ -1,4 +1,5 @@
-using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace DashSpec.Host.Tests;
@@ -8,6 +9,9 @@ public sealed class DashSpecBootstrapDashhostTests
     [Fact]
     public void ResolveDashhostPath_requires_explicit_reference()
     {
+        using var provider = HostTestServices.CreateProvider();
+        var pathResolver = provider.GetRequiredService<IHostPathResolver>();
+
         var root = Path.Combine(Path.GetTempPath(), "dashhost-explicit-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
         Directory.CreateDirectory(dashspecDir);
@@ -16,10 +20,10 @@ public sealed class DashSpecBootstrapDashhostTests
 
         try
         {
-            Assert.Null(DashSpecBootstrap.ResolveDashhostPath(root, null));
+            Assert.Null(pathResolver.ResolveDashhostPath(root, null));
             Assert.Equal(
                 dashhostPath,
-                DashSpecBootstrap.ResolveDashhostPath(root, "dashspec/sscad-prod.dashhost"));
+                pathResolver.ResolveDashhostPath(root, "dashspec/sscad-prod.dashhost"));
         }
         finally
         {
@@ -30,6 +34,9 @@ public sealed class DashSpecBootstrapDashhostTests
     [Fact]
     public void LoadBootstrap_rejects_legacy_catalog_path_in_toml()
     {
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+
         var root = Path.Combine(Path.GetTempPath(), "dashhost-legacy-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         File.WriteAllText(
@@ -45,8 +52,7 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var hostDatabase = HostTestServices.CreateHostDatabase();
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
+            var ex = Assert.Throws<InvalidOperationException>(() => hostBootstrap.LoadBootstrapWithHost(environment));
             Assert.Contains("catalog_path", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -58,6 +64,9 @@ public sealed class DashSpecBootstrapDashhostTests
     [Fact]
     public void LoadBootstrap_rejects_presentation_in_local_toml()
     {
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+
         var root = Path.Combine(Path.GetTempPath(), "dashhost-pres-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
         Directory.CreateDirectory(dashspecDir);
@@ -80,8 +89,7 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var hostDatabase = HostTestServices.CreateHostDatabase();
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
+            var ex = Assert.Throws<InvalidOperationException>(() => hostBootstrap.LoadBootstrapWithHost(environment));
             Assert.Contains("presentation", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -93,6 +101,9 @@ public sealed class DashSpecBootstrapDashhostTests
     [Fact]
     public void LoadBootstrap_rejects_links_in_ops_toml()
     {
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+
         var root = Path.Combine(Path.GetTempPath(), "dashhost-links-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
         Directory.CreateDirectory(dashspecDir);
@@ -114,8 +125,7 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var hostDatabase = HostTestServices.CreateHostDatabase();
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
+            var ex = Assert.Throws<InvalidOperationException>(() => hostBootstrap.LoadBootstrapWithHost(environment));
             Assert.Contains("links", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -127,6 +137,9 @@ public sealed class DashSpecBootstrapDashhostTests
     [Fact]
     public void LoadBootstrapWithHost_applies_catalog_from_explicit_dashhost_pointer()
     {
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+
         var root = Path.Combine(Path.GetTempPath(), "dashhost-boot-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
         var catalogsDir = Path.Combine(dashspecDir, "catalogs");
@@ -157,8 +170,7 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var hostDatabase = HostTestServices.CreateHostDatabase();
-            var (_, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase);
+            var (_, hostShell) = hostBootstrap.LoadBootstrapWithHost(environment);
             Assert.NotNull(hostShell);
             Assert.EndsWith("demo.dashcatalog", hostShell!.Document.CatalogPath, StringComparison.OrdinalIgnoreCase);
         }
@@ -167,5 +179,4 @@ public sealed class DashSpecBootstrapDashhostTests
             Directory.Delete(root, recursive: true);
         }
     }
-
 }

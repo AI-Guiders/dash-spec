@@ -56,7 +56,7 @@
             {
                 <EditForm Model="_access" OnValidSubmit="SaveAccessAsync">
                     <div class="field">
-                        <label>API key @(Settings.HasSecret(HostSettingsOverlay.SectionAccess, "api_key") ? "(set — leave blank to keep)" : "")</label>
+                        <label>API key @(Settings.HasSecret(HostSettingsSections.SectionAccess, "api_key") ? "(set — leave blank to keep)" : "")</label>
                         <InputText type="password" @bind-Value="_access.ApiKey" class="input" autocomplete="new-password" />
                     </div>
                     <button type="submit" class="btn">Save access</button>
@@ -89,7 +89,7 @@
                         <InputText @bind-Value="_catalog.Username" class="input" />
                     </div>
                     <div class="field">
-                        <label>Git password @(Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "password") ? "(set — leave blank to keep)" : "")</label>
+                        <label>Git password @(Settings.HasSecret(HostSettingsSections.SectionCatalogGit, "password") ? "(set — leave blank to keep)" : "")</label>
                         <InputText type="password" @bind-Value="_catalog.Password" class="input" autocomplete="new-password" />
                     </div>
                     <div class="field">
@@ -118,7 +118,7 @@
                 <p class="muted">Paste into Forge <code>FORGE_DASHSPEC_WEBHOOK_URL</code> + shared secret.</p>
                 <p>
                     Secret:
-                    @if (Settings.HasSecret(HostSettingsOverlay.SectionCatalogGit, "sync_webhook_secret"))
+                    @if (Settings.HasSecret(HostSettingsSections.SectionCatalogGit, "sync_webhook_secret"))
                     {
                         <strong>set</strong>
                     }
@@ -269,12 +269,12 @@
         ClearFlash();
         try
         {
-            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyDisplayTimeZone, _presentation.DisplayTimeZone ?? "");
-            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyLanguage, _presentation.Language ?? "");
-            Settings.Upsert(HostSettingsOverlay.SectionPresentation, HostSettingsOverlay.KeyColorScheme, _presentation.ColorScheme ?? "");
+            Settings.Upsert(HostSettingsSections.SectionPresentation, HostSettingsSections.KeyDisplayTimeZone, _presentation.DisplayTimeZone ?? "");
+            Settings.Upsert(HostSettingsSections.SectionPresentation, HostSettingsSections.KeyLanguage, _presentation.Language ?? "");
+            Settings.Upsert(HostSettingsSections.SectionPresentation, HostSettingsSections.KeyColorScheme, _presentation.ColorScheme ?? "");
             Settings.Upsert(
-                HostSettingsOverlay.SectionPresentation,
-                HostSettingsOverlay.KeyLargeFieldFilterLayout,
+                HostSettingsSections.SectionPresentation,
+                HostSettingsSections.KeyLargeFieldFilterLayout,
                 FilterLargeListOptions.Normalize(_presentation.LargeFieldFilterLayout));
             _message = "Presentation saved. Time zone / language apply after host restart; color scheme and long filter layout apply immediately.";
         }
@@ -294,7 +294,7 @@
         ClearFlash();
         try
         {
-            Settings.UpsertSecret(HostSettingsOverlay.SectionAccess, "api_key", _access.ApiKey);
+            Settings.UpsertSecret(HostSettingsSections.SectionAccess, "api_key", _access.ApiKey);
             _access.ApiKey = "";
             _message = "Access saved.";
         }
@@ -311,15 +311,15 @@
         ClearFlash();
         try
         {
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "enabled", _catalog.Enabled ? "true" : "false");
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "url", _catalog.Url ?? "");
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "branch", string.IsNullOrWhiteSpace(_catalog.Branch) ? "main" : _catalog.Branch);
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "path", _catalog.Path ?? "");
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "pull_interval_minutes", Math.Max(1, _catalog.PullIntervalMinutes).ToString());
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "username", _catalog.Username ?? "");
-            Settings.UpsertSecret(HostSettingsOverlay.SectionCatalogGit, "password", _catalog.Password);
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "sync_repo_slug", _catalog.SyncRepoSlug ?? "");
-            Settings.Upsert(HostSettingsOverlay.SectionCatalogGit, "sync_allow_unsigned", _catalog.SyncAllowUnsigned ? "true" : "false");
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "enabled", _catalog.Enabled ? "true" : "false");
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "url", _catalog.Url ?? "");
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "branch", string.IsNullOrWhiteSpace(_catalog.Branch) ? "main" : _catalog.Branch);
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "path", _catalog.Path ?? "");
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "pull_interval_minutes", Math.Max(1, _catalog.PullIntervalMinutes).ToString());
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "username", _catalog.Username ?? "");
+            Settings.UpsertSecret(HostSettingsSections.SectionCatalogGit, "password", _catalog.Password);
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "sync_repo_slug", _catalog.SyncRepoSlug ?? "");
+            Settings.Upsert(HostSettingsSections.SectionCatalogGit, "sync_allow_unsigned", _catalog.SyncAllowUnsigned ? "true" : "false");
             _catalog.Password = "";
             _message = "Catalog settings saved (WitDB). Sync now applies immediately; poll picks up interval changes.";
         }

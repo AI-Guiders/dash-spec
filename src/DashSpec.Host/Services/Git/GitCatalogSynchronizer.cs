@@ -1,17 +1,16 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
 
-namespace DashSpec.Host.Configuration;
+namespace DashSpec.Host.Services.Git;
 
 /// <summary>Clone/pull git-репозитория со specs и возврат пути к .dashcatalog.</summary>
-public static class GitCatalogSynchronizer
+public sealed class GitCatalogSynchronizer(ILogger<GitCatalogSynchronizer> logger) : IGitCatalogSynchronizer
 {
-    /// <summary>
-    /// Applies env overrides and validates git catalog config.
-    /// Does not clone/pull — deferred to <see cref="Services.Git.GitCatalogSyncService"/> (boot uses catalog from <c>.dashhost</c>).
-    /// </summary>
-    public static bool PrepareDeferredSync(DashSpecTomlRoot bootstrap, ILogger? logger = null)
+    /// <inheritdoc />
+    public bool PrepareDeferredSync(DashSpecTomlRoot bootstrap)
     {
         if (!bootstrap.CatalogGit.Enabled || string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Url))
         {
@@ -23,28 +22,29 @@ public static class GitCatalogSynchronizer
             throw new InvalidOperationException("catalog_git.path is required when catalog_git.enabled = true.");
         }
 
-        logger?.LogInformation(
+        logger.LogInformation(
             "Git catalog configured ({Url}); Host starts on .dashhost catalog until sync succeeds.",
             bootstrap.CatalogGit.Url);
         return true;
     }
 
-    /// <summary>Clone/pull and return catalog file path (on-demand / background sync).</summary>
-    public static bool TryApply(DashSpecTomlRoot bootstrap, string contentRoot, ILogger? logger = null)
+    /// <inheritdoc />
+    public bool TryApply(DashSpecTomlRoot bootstrap, string contentRoot)
     {
-        if (!PrepareDeferredSync(bootstrap, logger))
+        if (!PrepareDeferredSync(bootstrap))
         {
             return false;
         }
 
         var git = bootstrap.CatalogGit;
         var cacheDir = ResolveCacheDirectory(git, contentRoot);
-        var catalogFullPath = SyncRepository(git, cacheDir, logger);
+        var catalogFullPath = SyncRepository(git, cacheDir);
         bootstrap.Dashboard.CatalogPath = catalogFullPath;
         return true;
     }
 
-    public static string SyncRepository(CatalogGitTomlSection git, string cacheDir, ILogger? logger = null)
+    /// <inheritdoc />
+    public string SyncRepository(CatalogGitTomlSection git, string cacheDir)
     {
         Directory.CreateDirectory(cacheDir);
         var repoUrl = BuildAuthenticatedUrl(git);
@@ -52,14 +52,14 @@ public static class GitCatalogSynchronizer
 
         if (!Directory.Exists(Path.Combine(cacheDir, ".git")))
         {
-            logger?.LogInformation("Git catalog: cloning {Url} → {Dir}", git.Url, cacheDir);
-            RunGit($"clone --branch {Quote(branch)} --single-branch {Quote(repoUrl)} {Quote(cacheDir)}", logger);
+            logger.LogInformation("Git catalog: cloning {Url} → {Dir}", git.Url, cacheDir);
+            RunGit($"clone --branch {Quote(branch)} --single-branch {Quote(repoUrl)} {Quote(cacheDir)}");
         }
         else
         {
-            logger?.LogInformation("Git catalog: pulling {Branch} in {Dir}", branch, cacheDir);
-            RunGit($"-C {Quote(cacheDir)} fetch origin {Quote(branch)}", logger);
-            RunGit($"-C {Quote(cacheDir)} reset --hard FETCH_HEAD", logger);
+            logger.LogInformation("Git catalog: pulling {Branch} in {Dir}", branch, cacheDir);
+            RunGit($"-C {Quote(cacheDir)} fetch origin {Quote(branch)}");
+            RunGit($"-C {Quote(cacheDir)} reset --hard FETCH_HEAD");
         }
 
         var catalogFullPath = Path.GetFullPath(Path.Combine(cacheDir, git.Path.Replace('/', Path.DirectorySeparatorChar)));
@@ -76,7 +76,8 @@ public static class GitCatalogSynchronizer
         return catalogFullPath;
     }
 
-    public static string ResolveCacheDirectory(CatalogGitTomlSection git, string contentRoot)
+    /// <inheritdoc />
+    public string ResolveCacheDirectory(CatalogGitTomlSection git, string contentRoot)
     {
         if (!string.IsNullOrWhiteSpace(git.CacheDirectory))
         {
@@ -116,7 +117,7 @@ public static class GitCatalogSynchronizer
         return builder.Uri.ToString();
     }
 
-    private static void RunGit(string arguments, ILogger? logger)
+    private void RunGit(string arguments)
     {
         var psi = new ProcessStartInfo
         {
@@ -143,7 +144,7 @@ public static class GitCatalogSynchronizer
 
         if (!string.IsNullOrWhiteSpace(stdout))
         {
-            logger?.LogDebug("git: {Output}", stdout.Trim());
+            logger.LogDebug("git: {Output}", stdout.Trim());
         }
     }
 

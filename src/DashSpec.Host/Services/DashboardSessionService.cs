@@ -14,7 +14,8 @@ public sealed class DashboardSessionService(
     ICardRenderer cardRenderService,
     ICardViewState cardViewState,
     CatalogSourceState catalogState,
-    IWebHostEnvironment environment) : IDashboardSession
+    IWebHostEnvironment environment,
+    IHostPathResolver pathResolver) : IDashboardSession
 {
     private DashboardDocument? _document;
     private IDataSourceConnector? _connector;
@@ -58,7 +59,7 @@ public sealed class DashboardSessionService(
         }
 
         relative = relative.Replace('\\', '/');
-        var path = DashSpecBootstrap.ResolveSpecPath(environment.ContentRootPath, relative);
+        var path = pathResolver.ResolveSpecPath(environment.ContentRootPath, relative);
         if (!File.Exists(path))
         {
             throw new FileNotFoundException("DashSpec file not found.", path);
@@ -76,7 +77,7 @@ public sealed class DashboardSessionService(
     {
         var specFullPath = catalogState.Current.ResolveEntrySpecFullPath(entryId);
         _activeCatalogEntryId = entryId;
-        _currentSpecReference = DashSpecBootstrap.ToHostSpecReference(environment.ContentRootPath, specFullPath);
+        _currentSpecReference = pathResolver.ToHostSpecReference(environment.ContentRootPath, specFullPath);
         var text = await File.ReadAllTextAsync(specFullPath, cancellationToken).ConfigureAwait(false);
         await LoadFromTextAsync(text, specFullPath, Path.GetFileName(specFullPath), cancellationToken, options)
             .ConfigureAwait(false);

@@ -17,6 +17,7 @@ namespace DashSpec.Host.Services.Loading;
 public sealed class DashboardSpecLoader(
     RuntimeConnectorResolver runtimeConnectorResolver,
     DashSpecHostContext hostContext,
+    IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider,
     IFieldOptionsCache fieldOptionsCache,
     ILogger<DashboardSpecLoader> logger) : IDashboardSpecLoader
@@ -36,7 +37,7 @@ public sealed class DashboardSpecLoader(
                 "В .dashspec нет @runtime — укажите runtime { manifest = \"...\" } в блоке @dashboard/@tab.");
         }
 
-        var configPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
+        var configPath = pathResolver.ResolveRuntimeConfigPath(
             specFullPath,
             text,
             hostContext.DefaultSpecDirectory);
