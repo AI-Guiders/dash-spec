@@ -19,7 +19,7 @@
 | | |
 |---|---|
 | Engine | **WitDB** via `OutWit.Database.EntityFramework` **14.0.1** (align Forge / CDP) |
-| File | `%ProgramData%\DashSpec\host-settings.witdb` (override: `[host] database_path` / `DASHSPEC_HOST_DB`) |
+| File | `%ProgramData%\DashSpec\host-settings.witdb` (override: `[host] database_path` в local TOML) |
 | Table | `host_settings` — `(section, key)` PK, `value` text, `updated_at`, `updated_by` |
 
 Sections v1:
@@ -33,9 +33,9 @@ Secrets: UI write-only (empty field = keep existing). Never echo plaintext passw
 
 ### 2. Merge order (low → high)
 
-1. `dash-spec.toml` (+ `dev` / `local` overlays) — bootstrap / disaster recovery  
-2. **WitDB `host_settings`** — live SSOT after first Control Center save  
-3. **Env** — break-glass (`DASHSPEC_*`) wins over WitDB  
+1. `.dashhost` — planet-content (catalog, chrome)  
+2. `dash-spec.toml` (+ `dev` / `local` overlays) — ops bootstrap / disaster recovery  
+3. **WitDB `host_settings`** — live override ops after first Control Center save  
 
 Export: Control Center «Download TOML fragment» for air-gap backup (non-goal: auto-write `local.toml`).
 
