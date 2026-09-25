@@ -150,6 +150,20 @@ public static class LabelFormat
         return FormatDisplayDateTime(display, resolved);
     }
 
+    public static string ResolveChartAxisFormat(object? value) =>
+        value switch
+        {
+            DateOnly => ResolveDateFormat(null),
+            DateTime dt => ResolveChartAxisDateTimeFormat(ToDisplayTime(dt)),
+            DateTimeOffset dto => ResolveChartAxisDateTimeFormat(ToDisplayTime(dto.UtcDateTime)),
+            _ => ResolveDateFormat(null),
+        };
+
+    private static string ResolveChartAxisDateTimeFormat(DateTime display) =>
+        display.TimeOfDay == TimeSpan.Zero
+            ? ResolveDateFormat(null)
+            : ResolveTimeFormat(null);
+
     private static string ResolveDefaultForDateTime(DateTime display) =>
         display.TimeOfDay == TimeSpan.Zero
             ? ResolveDateFormat(null)

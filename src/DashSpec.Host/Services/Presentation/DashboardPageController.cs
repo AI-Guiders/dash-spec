@@ -278,6 +278,7 @@ public sealed class DashboardPageController : IDisposable
         ResetActivePageForTab();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
+        ApplyReportFormatDefaults();
         Notify();
         await Task.CompletedTask;
     }
@@ -933,6 +934,7 @@ public sealed class DashboardPageController : IDisposable
 
     public void Dispose()
     {
+        LabelFormat.ClearReportDefaults();
         _refresh.StateChanged -= OnRefreshStateChanged;
         if (_reloadNotifier is not null)
         {
@@ -995,6 +997,7 @@ public sealed class DashboardPageController : IDisposable
         ResetActivePageForTab();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
+        ApplyReportFormatDefaults();
         FiltersToCards = FilterBinding.MapFiltersToCards(_session.Document, _session.SpecLibrary)
             .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         _refresh.FiltersToCards = FiltersToCards;
@@ -1007,6 +1010,9 @@ public sealed class DashboardPageController : IDisposable
 
         await Task.CompletedTask;
     }
+
+    private void ApplyReportFormatDefaults() =>
+        LabelFormat.SetReportDefaults(_session.Document.ResolvedFormatDefaults);
 
     private bool IsCardLocalManualApply(string cardId) =>
         _session.Document.Cards.Any(card =>
