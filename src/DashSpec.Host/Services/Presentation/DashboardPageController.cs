@@ -151,6 +151,20 @@ public sealed class DashboardPageController : IDisposable
     public string ResolvePageNavTitle(ReportPageDefinition page) =>
         DisplayResolutionHost.ResolvePageNavTitle(page);
 
+    public string? ResolveDisplayTitle(string? template) =>
+        DisplayResolutionHost.ResolveDisplayTitle(
+            template,
+            BuildFilterDisplayContext(),
+            ActivePage()?.DisplayBindings?.Slots);
+
+    public FilterDisplayContext BuildFilterDisplayContext() =>
+        new(
+            _session.FilterIndex,
+            DateFrom,
+            DateTo,
+            SelectedFields,
+            TopLimits);
+
     private ResolutionContext DisplayContext =>
         DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, ActiveTabId);
 
@@ -1232,7 +1246,15 @@ public sealed class DashboardPageController : IDisposable
         {
             _refresh.DisplayContext = null;
         }
+
+        _refresh.PageDisplayBindings = ActivePage()?.DisplayBindings?.Slots;
+        _refresh.FilterDisplayFactory = BuildFilterDisplayContext;
     }
+
+    private ReportPageDefinition? ActivePage() =>
+        ResolveActiveTabPages()
+            .FirstOrDefault(page =>
+                string.Equals(page.Id, ActivePageId, StringComparison.OrdinalIgnoreCase));
 
     private void RecomputeTabPlacements()
     {

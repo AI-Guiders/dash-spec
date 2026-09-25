@@ -65,7 +65,8 @@ internal static class DocumentModelMapper
             FirstOrNull(page.TabId),
             MapOptional(page.ToolbarBoard, ToCore),
             MapOptional(page.UsageDateDerive, ToCore),
-            ToNestedFilterDefaultsOrNull(page.FilterDefaults));
+            ToNestedFilterDefaultsOrNull(page.FilterDefaults),
+            ToDisplayBindingsOrNull(page.DisplayBindings));
 
     private static FilterDeriveDefinition ToCore(FsharpCard.FilterDeriveDefinition derive) =>
         new(
@@ -365,5 +366,21 @@ internal static class DocumentModelMapper
             static x => x.Key,
             x => map(x.Key, x.Value),
             StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static DisplayBindingDefinition? ToDisplayBindingsOrNull(
+        FSharpOption<IReadOnlyDictionary<string, string>> option)
+    {
+        var items = OptionModule.ToArray(option);
+        if (items.Length == 0 || items[0].Count == 0)
+        {
+            return null;
+        }
+
+        return new DisplayBindingDefinition(
+            items[0].ToDictionary(
+                static x => x.Key,
+                static x => x.Value,
+                StringComparer.OrdinalIgnoreCase));
     }
 }

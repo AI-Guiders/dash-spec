@@ -46,7 +46,8 @@ type ReportPageDefinition =
       TabId: string option
       ToolbarBoard: LayoutBoardDefinition option
       UsageDateDerive: FilterDeriveDefinition option
-      FilterDefaults: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> option }
+      FilterDefaults: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> option
+      DisplayBindings: IReadOnlyDictionary<string, string> option }
 
 [<CLIMutable>]
 type ModuleDiagramDefinition =

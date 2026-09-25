@@ -612,6 +612,7 @@ module rec DocumentModuleParser =
         let mutable pageLayout = None
         let mutable pageToolbar = None
         let mutable usageDateDerive = None
+        let mutable pageDisplayBindings: IReadOnlyDictionary<string, string> option = None
         let pageFilterDefaults = FilterScopeDefaults.create ()
 
         BlockSyntax.beginBlock reader
@@ -635,6 +636,14 @@ module rec DocumentModuleParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "derive" then
                 usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
+            elif reader.TryKeyword "bind" then
+                if not (reader.TryKeyword "display") then
+                    raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
+
+                if pageDisplayBindings.IsSome then
+                    raise (DashSpecParseException($"Page '{pageId}': duplicate bind display block."))
+
+                pageDisplayBindings <- Some(Display.DisplayBindingParser.parse reader pageId)
             elif reader.TryKeyword "defaults" then
                 DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty pageFilterDefaults |> ignore
             elif reader.TryKeyword "default" then
@@ -671,7 +680,8 @@ module rec DocumentModuleParser =
               TabId = shell.TabModuleId
               ToolbarBoard = pageToolbar
               UsageDateDerive = usageDateDerive
-              FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults }
+              FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults
+              DisplayBindings = pageDisplayBindings }
 
         reader.SkipNewlines()
 

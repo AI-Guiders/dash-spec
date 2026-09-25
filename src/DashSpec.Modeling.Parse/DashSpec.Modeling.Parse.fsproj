@@ -79,6 +79,7 @@
     <Compile Include="Card\CardLimitsParser.fs" />
     <Compile Include="Card\CardVisibilityParser.fs" />
     <Compile Include="Card\CardChromeParser.fs" />
+    <Compile Include="Display\DisplayBindingParser.fs" />
     <Compile Include="Card\CardDiagramOverrideParser.fs" />
     <Compile Include="Card\CardClickParser.fs" />
     <Compile Include="Card\CardParser.fs" />
