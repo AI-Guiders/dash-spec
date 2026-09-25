@@ -25,9 +25,9 @@ public static class DashSpecTomlLoader
 
     public static DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
     {
-        if (!string.IsNullOrWhiteSpace(overlay.Dashboard.CatalogPath))
+        if (!string.IsNullOrWhiteSpace(overlay.Host.Dashhost))
         {
-            root.Dashboard.CatalogPath = overlay.Dashboard.CatalogPath;
+            root.Host.Dashhost = overlay.Host.Dashhost;
         }
 
         if (!string.IsNullOrWhiteSpace(overlay.Host.DatabasePath))
