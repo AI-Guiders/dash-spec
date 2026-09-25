@@ -42,6 +42,23 @@ public static class CardChromeResolver
         return 320;
     }
 
+    public static int? ResolveMatrixViewportYRows(CardDefinition card, SpecLibrary? library)
+    {
+        var props = ChartChromeProperties.Merge(card, library);
+        if (TryParsePositiveInt(props, "viewport_y", out var fromChrome))
+        {
+            return fromChrome;
+        }
+
+        if (TryParsePositiveInt(card.Diagram.Properties, "viewport_y", out var fromDiagram))
+        {
+            return fromDiagram;
+        }
+
+        var series = ResolveSeriesTransform(card, library);
+        return series is { Max: > 0 } ? series.Max : null;
+    }
+
     public static SeriesTransformSettings? ResolveSeriesTransform(
         CardDefinition card,
         SpecLibrary? library)
@@ -85,5 +102,16 @@ public static class CardChromeResolver
         }
 
         return null;
+    }
+
+    private static bool TryParsePositiveInt(
+        IReadOnlyDictionary<string, string> properties,
+        string key,
+        out int value)
+    {
+        value = 0;
+        return properties.TryGetValue(key, out var raw) &&
+               int.TryParse(raw, out value) &&
+               value > 0;
     }
 }
