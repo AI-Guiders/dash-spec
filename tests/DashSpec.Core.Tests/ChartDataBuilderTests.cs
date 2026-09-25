@@ -273,6 +273,35 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_series_max_keeps_all_y_rows_for_viewport_scroll()
+    {
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "usage_date",
+            ["y"] = "app_name",
+            ["value"] = "peak_concurrent_proxy",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows = Enumerable.Range(1, 12)
+            .Select(i => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["usage_date"] = new DateOnly(2026, 6, 23),
+                ["app_name"] = $"product-{i:D2}",
+                ["peak_concurrent_proxy"] = i,
+            })
+            .ToArray();
+
+        var matrix = ChartDataBuilder.BuildHeatmap(
+            rows,
+            diagram,
+            new SeriesTransformSettings(8, "Other"));
+
+        Assert.Equal(12, matrix.YLabels.Count);
+        Assert.Equal("product-12", matrix.YLabels[0]);
+        Assert.Equal("product-01", matrix.YLabels[^1]);
+    }
+
+    [Fact]
     public void BuildLineOrBar_fills_five_minute_grid_when_x_step_set()
     {
         var diagram = new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

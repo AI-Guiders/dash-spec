@@ -74,6 +74,7 @@ public static class SpecResolveExporter
             matrixPresentation = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["height_px"] = matrix.HeightPx.ToString(),
+                ["viewport_y"] = matrix.ViewportYRows?.ToString() ?? string.Empty,
                 ["x_format"] = matrix.XFormat,
                 ["y_format"] = matrix.YFormat,
                 ["color_scale"] = matrix.ColorScale,

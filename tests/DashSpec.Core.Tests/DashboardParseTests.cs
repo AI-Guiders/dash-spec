@@ -519,6 +519,37 @@ public class DashboardParseTests
         Assert.Equal("до 5", presentation.FormatLegendMax(1, 5));
     }
 
+    [Fact]
+    public void MatrixPresentation_reads_viewport_y_from_chrome_and_series_max_fallback()
+    {
+        var cardWithChrome = new CardDefinition(
+            "t",
+            "T",
+            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            BoundFilters: [],
+            LocalFilters: [],
+            Presentation: new PresentationBlock(
+                null,
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["viewport_y"] = "6",
+                }));
+
+        Assert.Equal(6, MatrixPresentation.FromCard(cardWithChrome).ViewportYRows);
+
+        var cardWithSeries = new CardDefinition(
+            "t",
+            "T",
+            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            BoundFilters: [],
+            LocalFilters: [],
+            SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));
+
+        Assert.Equal(8, MatrixPresentation.FromCard(cardWithSeries).ViewportYRows);
+    }
+
     [Theory]
     [InlineData("2024-06-15", "date.short", "15.06")]
     [InlineData("2024-06-15 14:05:00", "time.short", "14:05")]

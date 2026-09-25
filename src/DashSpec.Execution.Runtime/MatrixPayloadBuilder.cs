@@ -68,7 +68,6 @@ internal static class MatrixPayloadBuilder
         }
 
         yLabels.Sort((a, b) => yTotals.GetValueOrDefault(b).CompareTo(yTotals.GetValueOrDefault(a)));
-        TruncateYLabels(yLabels, seriesTransform);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
@@ -221,7 +220,6 @@ internal static class MatrixPayloadBuilder
         }
 
         yLabels.Sort((a, b) => yTotals.GetValueOrDefault(b).CompareTo(yTotals.GetValueOrDefault(a)));
-        TruncateYLabels(yLabels, seriesTransform);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
@@ -436,13 +434,4 @@ internal static class MatrixPayloadBuilder
         });
     }
 
-    private static void TruncateYLabels(List<string> yLabels, SeriesTransformSettings? seriesTransform)
-    {
-        if (seriesTransform is null || yLabels.Count <= seriesTransform.Max)
-        {
-            return;
-        }
-
-        yLabels.RemoveRange(seriesTransform.Max, yLabels.Count - seriesTransform.Max);
-    }
 }

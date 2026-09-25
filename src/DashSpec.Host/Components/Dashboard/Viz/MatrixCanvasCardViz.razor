@@ -21,6 +21,7 @@
                       CanvasId="@DashboardLayoutHelper.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
                       Payload="Context.EffectiveCard.Matrix"
                       HeightPx="@ResolveMatrixHeightPx()"
+                      ViewportYRows="@presentation?.ViewportYRows"
                       XAxisLabel="@presentation?.XLabel"
                       YAxisLabel="@presentation?.YLabel"
                       ValueLabel="@presentation?.ValueLabel"
@@ -39,22 +40,36 @@
 }
 
 @code {
+    private const int CellHeightPx = 22;
+    private const int MatrixChromePx = 96;
+
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
 
     private int ResolveMatrixHeightPx()
     {
-        var baseHeight = Context.EffectiveCard.MatrixPresentation?.HeightPx ?? 320;
-        if (!Context.DetailView)
-        {
-            return baseHeight;
-        }
-
+        var presentation = Context.EffectiveCard.MatrixPresentation;
+        var baseHeight = presentation?.HeightPx ?? 320;
+        var viewportY = presentation?.ViewportYRows;
         var rowCount = Context.EffectiveCard.Matrix?.YLabels.Count ?? 0;
-        if (rowCount <= 0)
+
+        if (viewportY is int vy)
         {
-            return Math.Max(baseHeight, 480);
+            if (Context.DetailView)
+            {
+                var expandedRows = rowCount > 0
+                    ? Math.Min(rowCount, Math.Max(vy * 2, 16))
+                    : Math.Max(vy * 2, 16);
+                return Math.Clamp(expandedRows * CellHeightPx + MatrixChromePx, Math.Max(baseHeight, 480), 720);
+            }
+
+            return Math.Clamp(vy * CellHeightPx + MatrixChromePx, 160, 800);
         }
 
-        return Math.Clamp(rowCount * 22 + 96, Math.Max(baseHeight, 480), 2400);
+        if (Context.DetailView)
+        {
+            return Math.Max(baseHeight, 560);
+        }
+
+        return baseHeight;
     }
 }
