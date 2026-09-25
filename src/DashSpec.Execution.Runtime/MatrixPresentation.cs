@@ -6,6 +6,7 @@ namespace DashSpec.Execution.Runtime;
 
 public sealed record MatrixPresentation(
     int HeightPx = 320,
+    int? ViewportYRows = null,
     string? XLabel = null,
     string? YLabel = null,
     string? ValueLabel = null,
@@ -26,6 +27,7 @@ public sealed record MatrixPresentation(
     {
         var diagram = card.Diagram;
         var height = CardChromeResolver.ResolveMatrixHeightPx(card, library);
+        var viewportYRows = CardChromeResolver.ResolveMatrixViewportYRows(card, library);
 
         var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect);
         var tooltipSplit = card.Inspect?.Split ?? ", ";
@@ -41,6 +43,7 @@ public sealed record MatrixPresentation(
 
         return new MatrixPresentation(
             height,
+            viewportYRows,
             DiagramBindings.Label(diagram, "x"),
             DiagramBindings.Label(diagram, "y"),
             DiagramBindings.Label(diagram, "value"),
