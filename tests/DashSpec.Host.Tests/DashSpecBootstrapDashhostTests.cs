@@ -30,6 +30,33 @@ public sealed class DashSpecBootstrapDashhostTests
     }
 
     [Fact]
+    public void LoadBootstrap_rejects_legacy_catalog_path_in_toml()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "dashhost-legacy-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        File.WriteAllText(
+            Path.Combine(root, "dash-spec.toml"),
+            """
+            [host]
+            dashhost = "dashspec/demo.dashhost"
+
+            [dashboard]
+            catalog_path = "catalogs/demo.dashcatalog"
+            """);
+
+        try
+        {
+            var environment = new TestHostEnvironment { ContentRootPath = root };
+            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment));
+            Assert.Contains("catalog_path", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void LoadBootstrapWithHost_applies_catalog_from_explicit_dashhost_pointer()
     {
         var root = Path.Combine(Path.GetTempPath(), "dashhost-boot-" + Guid.NewGuid().ToString("N"));

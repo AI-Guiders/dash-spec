@@ -15,5 +15,5 @@ public sealed class DashSpecHostContext
 
     public required CatalogBootstrap Catalog { get; init; }
 
-    public HostShellBootstrap? HostShell { get; init; }
+    public required HostShellBootstrap HostShell { get; init; }
 }

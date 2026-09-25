@@ -1,6 +1,6 @@
 namespace DashSpec.Host.Configuration;
 
-/// <summary>Host access gate — [access] api_key in dash-spec.toml or DASHSPEC_API_KEY env.</summary>
+/// <summary>Host access gate — [access] api_key in ops TOML or WitDB Control Center.</summary>
 public sealed class DashSpecAccessOptions
 {
     public const string HeaderName = "X-Api-Key";
