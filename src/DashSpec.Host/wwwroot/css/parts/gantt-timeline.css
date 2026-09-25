@@ -1,0 +1,163 @@
+.gantt-timeline {
+  --gantt-sidebar-width: min(34rem, 52vw);
+  --gantt-body-height: 280px;
+  --gantt-track-min-width: 720px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-1);
+  overflow: hidden;
+}
+
+.gantt-timeline-head {
+  display: grid;
+  grid-template-columns: var(--gantt-sidebar-width) minmax(var(--gantt-track-min-width), 1fr);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-1) 92%, var(--bg));
+}
+
+.gantt-timeline-sidebar-head,
+.gantt-timeline-sidebar {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1.4fr) minmax(4.5rem, 0.95fr) minmax(4.5rem, 0.95fr) minmax(3rem, 0.65fr);
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.74rem;
+}
+
+.gantt-timeline-sidebar-head {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-right: 1px solid var(--border);
+}
+
+.gantt-timeline-ruler-wrap {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.gantt-timeline-ruler {
+  position: relative;
+  min-width: var(--gantt-track-min-width);
+  height: 2.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.gantt-timeline-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  transform: translateX(-50%);
+}
+
+.gantt-timeline-tick-major {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+.gantt-timeline-tick-label {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.gantt-timeline-scroll {
+  max-height: var(--gantt-body-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+}
+
+.gantt-timeline-body {
+  min-width: calc(var(--gantt-sidebar-width) + var(--gantt-track-min-width));
+}
+
+.gantt-timeline-row {
+  display: grid;
+  grid-template-columns: var(--gantt-sidebar-width) minmax(var(--gantt-track-min-width), 1fr);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.gantt-timeline-row:last-child {
+  border-bottom: none;
+}
+
+.gantt-timeline-sidebar {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border);
+}
+
+.gantt-timeline-col-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.gantt-timeline-col-start,
+.gantt-timeline-col-end,
+.gantt-timeline-col-duration {
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  white-space: nowrap;
+}
+
+.gantt-timeline-track-wrap {
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+}
+
+.gantt-timeline-track {
+  position: relative;
+  min-width: var(--gantt-track-min-width);
+  height: 1.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--border) 30%, transparent);
+}
+
+.gantt-timeline-bar {
+  position: absolute;
+  top: 0.14rem;
+  bottom: 0.14rem;
+  border-radius: 3px;
+  min-width: 2px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+}
+
+.gantt-timeline-today {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, #a855f7 85%, #fff);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.gantt-timeline-today-row {
+  top: -0.15rem;
+  bottom: -0.15rem;
+  opacity: 0.85;
+}
+
+.gantt-timeline-ruler .gantt-timeline-today::before {
+  content: "Сегодня";
+  position: absolute;
+  top: -1.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: color-mix(in srgb, #a855f7 80%, var(--text));
+  white-space: nowrap;
+}

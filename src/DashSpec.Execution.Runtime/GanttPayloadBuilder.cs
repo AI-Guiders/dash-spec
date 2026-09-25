@@ -238,7 +238,8 @@ public sealed record GanttPayload(
     DateTime AxisEnd,
     string? YLabel,
     int HeightPx,
-    string AxisFormat);
+    string AxisFormat,
+    int? VisibleRows = null);
 
 public sealed record GanttRow(string Label, IReadOnlyList<GanttSegment> Segments);
 

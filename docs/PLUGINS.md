@@ -55,7 +55,7 @@ Use **underscores** in ids (`card_export`, `drill_down`, `csv_export`). Unquoted
 |-----------|------|-------------------|
 | `diagram_builtin` | core | diagram kinds: line, bar, heatmap, … |
 | `on_click_default` | core | `selection_list`, `drill_down` |
-| `viz_builtin` | core | chartjs, css-grid, table-html, scalar-html |
+| `viz_builtin` | core | chartjs, css-grid, matrix-canvas, table-html, scalar-html, gantt-html, gantt-timeline |
 | `card_export` | extended | block `buttons`; action `csv_export` |
 | `card_views` | extended | block `views`; action `switch_view`; segmented diagram toggle |
 | `dashspec_diagnostics` | extended | HTTP `/diagnostics/*` — load timings, connector ping, capabilities, UI load trace |

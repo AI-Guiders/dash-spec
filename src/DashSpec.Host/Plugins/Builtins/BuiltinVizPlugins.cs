@@ -43,3 +43,10 @@ public sealed class GanttHtmlVizPlugin : IVizPlugin
 
     public string DataFamily => "gantt";
 }
+
+public sealed class GanttTimelineVizPlugin : IVizPlugin
+{
+    public string Id => VizPluginIds.GanttTimeline;
+
+    public string DataFamily => "gantt";
+}

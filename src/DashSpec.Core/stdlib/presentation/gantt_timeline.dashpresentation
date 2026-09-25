@@ -1,0 +1,4 @@
+@presentation gantt_timeline
+
+  height = 420
+  visible_rows = 8
