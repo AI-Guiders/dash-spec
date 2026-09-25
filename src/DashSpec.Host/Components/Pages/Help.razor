@@ -46,7 +46,8 @@
                 <li><strong>bar</strong> — столбцы (вертикальные или горизонтальные); «Развернуть» показывает все категории.</li>
                 <li><strong>pie / donut</strong> — доли; клик по сегменту может сузить фильтр.</li>
                 <li><strong>heatmap / matrix-canvas</strong> — матрица интенсивности; клик по ячейке — список пользователей (ПК) снизу.</li>
-                <li><strong>gantt / gantt-html</strong> — таймлайн по приложениям: <code>from</code>/<code>to</code>, <code>axis_from</code>/<code>axis_to</code> (окно агента), <code>step</code> = интервал опроса (например <code>5m</code>).</li>
+                <li><strong>gantt / gantt-html</strong> — компактные полоски активности: <code>from</code>/<code>to</code>, <code>axis_from</code>/<code>axis_to</code>, <code>step</code> (например <code>5m</code>).</li>
+                <li><strong>gantt-timeline</strong> — split grid + ruler (chrome <code>gantt_timeline</code>): колонки начало/конец/длительность, шкала времени, <code>visible_rows</code> для скролла.</li>
                 <li>Блок <code>defaults</code> (как в GDL): <code>time_format</code>, <code>date_format</code>, <code>datetime_format</code>, <code>filter.&lt;id&gt;.&lt;property&gt;</code> (например <code>filter.usage_date.range</code>, <code>filter.period_grain.scale</code>, <code>filter.events_top.limit</code>) — report / standalone / page / tab.</li>
                 <li><strong>table</strong> — таблица; фильтр по каждой колонке в заголовке; TOP=0 — все строки.</li>
                 <li><strong>number</strong> — KPI (одно число).</li>
