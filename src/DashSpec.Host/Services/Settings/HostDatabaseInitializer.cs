@@ -1,16 +1,17 @@
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Host.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
 
 namespace DashSpec.Host.Services.Settings;
 
-public static class HostSettingsPaths
+public sealed class HostDatabaseInitializer : IHostDatabaseInitializer
 {
-    private static readonly object EnsureLock = new();
-    private static string? _ensuredDatabasePath;
+    private readonly object _ensureLock = new();
+    private string? _ensuredDatabasePath;
 
-    public static string ResolveDatabasePath(DashSpecTomlRoot bootstrap)
+    public string ResolveDatabasePath(DashSpecTomlRoot bootstrap)
     {
         if (!string.IsNullOrWhiteSpace(bootstrap.Host.DatabasePath))
         {
@@ -23,10 +24,10 @@ public static class HostSettingsPaths
             "host-settings.witdb");
     }
 
-    public static void EnsureDatabase(string databasePath)
+    public void EnsureDatabase(string databasePath)
     {
         var fullPath = Path.GetFullPath(databasePath);
-        lock (EnsureLock)
+        lock (_ensureLock)
         {
             if (string.Equals(_ensuredDatabasePath, fullPath, StringComparison.OrdinalIgnoreCase))
             {

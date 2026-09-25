@@ -11,11 +11,11 @@ using DashSpec.Host.Plugins;
 using DashSpec.Host.Security;
 using DashSpec.Host.Services;
 using DashSpec.Host.Services.Abstractions;
+using DashSpec.Host.Services.Settings;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Dev;
 using DashSpec.Host.Services.Git;
 using DashSpec.Host.Data;
-using DashSpec.Host.Services.Settings;
 using Microsoft.EntityFrameworkCore;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
@@ -73,12 +73,13 @@ if (OperatingSystem.IsWindows())
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
 }
 
-var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment);
+var hostDatabase = new HostDatabaseInitializer();
+var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment, hostDatabase);
 
 var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
 var catalogState = new CatalogSourceState(catalog);
 var defaultSpecPath = DashSpecBootstrap.ResolveActiveSpecFullPath(catalog);
-var dashSpecToml = DashSpecBootstrap.Load(builder.Environment);
+var dashSpecToml = DashSpecBootstrap.Load(builder.Environment, hostDatabase);
 var defaultSpecText = File.ReadAllText(defaultSpecPath);
 var startupConfigPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
     defaultSpecPath,
@@ -191,8 +192,9 @@ builder.Services.AddSingleton<GitCatalogSyncService>();
 builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
 builder.Services.AddSingleton<HostExternalLinksProvider>();
 
-var hostDbPath = HostSettingsPaths.ResolveDatabasePath(bootstrap);
-HostSettingsPaths.EnsureDatabase(hostDbPath);
+builder.Services.AddSingleton<IHostDatabaseInitializer>(hostDatabase);
+var hostDbPath = hostDatabase.ResolveDatabasePath(bootstrap);
+hostDatabase.EnsureDatabase(hostDbPath);
 builder.Services.AddDbContext<DashSpecHostDbContext>(options =>
     options.UseWitDb($"Data Source={hostDbPath}"));
 builder.Services.AddScoped<HostSettingsService>();
