@@ -31,7 +31,10 @@
         </div>
         <TopbarNav />
     </header>
-    <HostCommandBar />
+    @if (HostShell.ShowsSurface("command_bar"))
+    {
+        <HostCommandBar />
+    }
     <main class="content">
         @Body
     </main>

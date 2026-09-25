@@ -70,7 +70,7 @@ Surface: page `<h1>`, document title, catalog picker label (entry).
 
 | Mode | Chain | Fallback |
 |------|-------|----------|
-| `catalog.prod` | `catalog.entry.title` | `tab.id` |
+| `catalog.prod` | `tab.title` (multi-tab report) or `catalog.entry.title` (single-tab) | `tab.id` |
 | `dashboard.embed` | `tab.title` → `catalog.entry.title` | `tab.id` |
 | `soak.dev` | `tab.title` | `tab.id` |
 
