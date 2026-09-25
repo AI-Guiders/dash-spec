@@ -219,7 +219,11 @@ else
     private static string FormatValue(double? value) =>
         value is null ? "—" : value.Value.ToString("0");
 
-    private string FormatXLabel(string label) => LabelFormat.Format(label, XFormat);
+    private string FormatXLabel(string label) =>
+        string.Equals(XFormat, "time.short", StringComparison.OrdinalIgnoreCase)
+            && LabelFormat.LooksLikePreformattedTimeLabel(label)
+            ? label
+            : LabelFormat.Format(label, XFormat);
 
     private string FormatYLabel(string label) => LabelFormat.Format(label, YFormat);
 

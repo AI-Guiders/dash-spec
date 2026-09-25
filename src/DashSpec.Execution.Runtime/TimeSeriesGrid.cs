@@ -45,9 +45,49 @@ internal static partial class TimeSeriesGrid
         {
             null => null,
             DateTime dt => dt,
-            DateOnly d => d.ToDateTime(TimeOnly.MinValue),
-            _ => DateTime.TryParse(Convert.ToString(value), out var parsed) ? parsed : null,
+            DateTimeOffset dto => dto.UtcDateTime,
+            DateOnly d => d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
+            _ => TryParseBucketString(Convert.ToString(value)),
         };
+
+    static DateTime? TryParseBucketString(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        string[] patterns =
+        [
+            "yyyy-MM-dd HH:mm:ss.FFFFFFF",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-ddTHH:mm:ss.FFFFFFF",
+            "yyyy-MM-ddTHH:mm:ss",
+            "yyyy-MM-dd",
+            "O",
+        ];
+
+        if (DateTime.TryParseExact(
+                raw,
+                patterns,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var exact))
+        {
+            return exact;
+        }
+
+        if (DateTime.TryParse(
+                raw,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out exact))
+        {
+            return exact;
+        }
+
+        return null;
+    }
 
     public static DateTime Floor(DateTime value, TimeSpan step)
     {

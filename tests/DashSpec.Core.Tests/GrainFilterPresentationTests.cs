@@ -56,7 +56,7 @@ public class GrainFilterPresentationTests
     [Theory]
     [InlineData("month", "2026-06-01", "2026-06")]
     [InlineData("year", "2026-01-01", "2026")]
-    [InlineData("day", "2026-06-24", "2026-06-24")]
+    [InlineData("day", "2026-06-24", "24.06")]
     public void FormatChipValue_shows_matching_part(string grain, string date, string expected)
     {
         var day = DateOnly.Parse(date);
