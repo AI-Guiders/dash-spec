@@ -9,12 +9,10 @@ public static class GitCatalogSynchronizer
 {
     /// <summary>
     /// Applies env overrides and validates git catalog config.
-    /// Does not clone/pull — deferred to <see cref="Services.Git.GitCatalogSyncService"/> (boot uses <c>[dashboard] catalog_path</c>).
+    /// Does not clone/pull — deferred to <see cref="Services.Git.GitCatalogSyncService"/> (boot uses catalog from <c>.dashhost</c>).
     /// </summary>
     public static bool PrepareDeferredSync(DashSpecTomlRoot bootstrap, ILogger? logger = null)
     {
-        ApplyCatalogGitEnvOverrides(bootstrap.CatalogGit);
-
         if (!bootstrap.CatalogGit.Enabled || string.IsNullOrWhiteSpace(bootstrap.CatalogGit.Url))
         {
             return false;
@@ -26,7 +24,7 @@ public static class GitCatalogSynchronizer
         }
 
         logger?.LogInformation(
-            "Git catalog configured ({Url}); Host starts on [dashboard] catalog_path until sync succeeds.",
+            "Git catalog configured ({Url}); Host starts on .dashhost catalog until sync succeeds.",
             bootstrap.CatalogGit.Url);
         return true;
     }
@@ -93,64 +91,6 @@ public static class GitCatalogSynchronizer
             "DashSpec",
             "git-catalogs");
         return Path.Combine(baseDir, hash);
-    }
-
-    private static void ApplyCatalogGitEnvOverrides(CatalogGitTomlSection git)
-    {
-        var url = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_URL");
-        if (!string.IsNullOrWhiteSpace(url))
-        {
-            git.Enabled = true;
-            git.Url = url;
-        }
-
-        var branch = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_BRANCH");
-        if (!string.IsNullOrWhiteSpace(branch))
-        {
-            git.Branch = branch;
-        }
-
-        var path = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_PATH");
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            git.Path = path;
-        }
-
-        var password = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_PASSWORD");
-        if (!string.IsNullOrWhiteSpace(password))
-        {
-            git.Password = password;
-        }
-
-        var username = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_USERNAME");
-        if (!string.IsNullOrWhiteSpace(username))
-        {
-            git.Username = username;
-        }
-
-        var interval = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_GIT_PULL_MINUTES");
-        if (int.TryParse(interval, out var minutes) && minutes > 0)
-        {
-            git.PullIntervalMinutes = minutes;
-        }
-
-        var syncSecret = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_SECRET");
-        if (!string.IsNullOrWhiteSpace(syncSecret))
-        {
-            git.SyncWebhookSecret = syncSecret;
-        }
-
-        var syncRepo = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_REPO_SLUG");
-        if (!string.IsNullOrWhiteSpace(syncRepo))
-        {
-            git.SyncRepoSlug = syncRepo;
-        }
-
-        var allowUnsigned = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_SYNC_ALLOW_UNSIGNED");
-        if (bool.TryParse(allowUnsigned, out var unsigned))
-        {
-            git.SyncAllowUnsigned = unsigned;
-        }
     }
 
     private static string BuildAuthenticatedUrl(CatalogGitTomlSection git)

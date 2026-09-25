@@ -254,12 +254,6 @@ public static class DashSpecPluginLoader
 
     private static string ResolveActiveBundle(DashSpecPluginManifest manifest)
     {
-        var envBundle = Environment.GetEnvironmentVariable("DASHSPEC_PLUGIN_BUNDLE");
-        if (!string.IsNullOrWhiteSpace(envBundle))
-        {
-            return envBundle;
-        }
-
         return string.IsNullOrWhiteSpace(manifest.ActiveBundle) ? "standard" : manifest.ActiveBundle;
     }
 

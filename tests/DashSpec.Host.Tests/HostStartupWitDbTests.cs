@@ -23,13 +23,12 @@ public sealed class HostStartupWitDbTests
     public void Production_startup_sequence_does_not_throw(WitDbScenario scenario)
     {
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
-        var previousDb = Environment.GetEnvironmentVariable("DASHSPEC_HOST_DB");
+        var contentRoot = PrepareTestContentRoot(witdb);
         try
         {
             SeedWitDb(witdb, scenario);
-            Environment.SetEnvironmentVariable("DASHSPEC_HOST_DB", witdb);
 
-            var environment = CreateProductionEnvironment(HandoffRoot);
+            var environment = CreateProductionEnvironment(contentRoot);
             var exception = Record.Exception(() =>
             {
                 var bootstrap = DashSpecBootstrap.LoadBootstrap(environment);
@@ -41,7 +40,7 @@ public sealed class HostStartupWitDbTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("DASHSPEC_HOST_DB", previousDb);
+            TryDeleteDirectory(contentRoot);
             TryDeleteWitDb(witdb);
         }
     }
@@ -50,13 +49,12 @@ public sealed class HostStartupWitDbTests
     public void Production_startup_allows_catalog_usage_write_after_sequence()
     {
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
-        var previousDb = Environment.GetEnvironmentVariable("DASHSPEC_HOST_DB");
+        var contentRoot = PrepareTestContentRoot(witdb);
         try
         {
             SeedWitDb(witdb, WitDbScenario.LegacyCatalogUsage);
-            Environment.SetEnvironmentVariable("DASHSPEC_HOST_DB", witdb);
 
-            var environment = CreateProductionEnvironment(HandoffRoot);
+            var environment = CreateProductionEnvironment(contentRoot);
             var bootstrap = DashSpecBootstrap.LoadBootstrap(environment);
             HostSettingsPaths.EnsureDatabase(HostSettingsPaths.ResolveDatabasePath(bootstrap));
 
@@ -69,8 +67,41 @@ public sealed class HostStartupWitDbTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("DASHSPEC_HOST_DB", previousDb);
+            TryDeleteDirectory(contentRoot);
             TryDeleteWitDb(witdb);
+        }
+    }
+
+    private static string PrepareTestContentRoot(string witdbPath)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"dashspec-handoff-{Guid.NewGuid():N}");
+        CopyDirectory(HandoffRoot, root);
+        var witdb = witdbPath.Replace('\\', '/');
+        File.WriteAllText(
+            Path.Combine(root, "dash-spec.local.toml"),
+            $"""
+            [host]
+            database_path = "{witdb}"
+
+            [access]
+            api_key = "test"
+            """);
+        return root;
+    }
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        Directory.CreateDirectory(destination);
+        foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(directory.Replace(source, destination));
+        }
+
+        foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var target = file.Replace(source, destination);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target, true);
         }
     }
 
@@ -139,12 +170,21 @@ public sealed class HostStartupWitDbTests
 
     private static void TryDeleteWitDb(string witdbPath)
     {
+        TryDeleteDirectory(Path.GetDirectoryName(witdbPath));
+    }
+
+    private static void TryDeleteDirectory(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
         try
         {
-            var dir = Path.GetDirectoryName(witdbPath);
-            if (dir is not null && Directory.Exists(dir))
+            if (Directory.Exists(path))
             {
-                Directory.Delete(dir, recursive: true);
+                Directory.Delete(path, recursive: true);
             }
         }
         catch

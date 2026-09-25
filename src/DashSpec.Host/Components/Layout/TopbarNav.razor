@@ -1,91 +1,181 @@
-@using DashSpec.Host.Components.Dashboard
-@using DashSpec.Host.Configuration
-@using DashSpec.Host.Services.Presentation
-@inject IWebHostEnvironment Environment
-@inject DashboardHostCommandCoordinator Coordinator
-@inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
-@inject HostPresentationSignals PresentationSignals
-@inject HostExternalLinksProvider ExternalLinks
-@inject HostShellBootstrap? HostShell
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
-@implements IDisposable
-
-<nav class="topbar-nav">
-    @foreach (var slot in _slots)
-    {
-        @if (slot == HostTopbarSlots.Catalog && Coordinator.HasCatalog)
-        {
-            <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
-                                    Groups="Coordinator.CatalogGroups"
-                                    ActiveEntryId="Coordinator.ActiveCatalogEntryId"
-                                    Busy="Coordinator.CatalogBusy"
-                                    OnSelect="Coordinator.SelectCatalogEntryAsync"
-                                    Inline="true"
-                                    ShowLabel="true"
-                                    CatalogLabel="@(HostShell?.CatalogLabel ?? "Отчёт")" />
-        }
-        else if (slot == HostTopbarSlots.Nav)
-        {
-            <a href="/">@Loc.T("Dashboard")</a>
-        }
-        else if (slot == HostTopbarSlots.ExternalLinks)
-        {
-            @foreach (var link in _topbarLinks)
-            {
-                <a href="@link.Url" target="@link.Target" rel="noopener noreferrer" class="external-link">@link.Label</a>
-            }
-        }
-        else if (slot == HostTopbarSlots.Help && ShowsSurface("help"))
-        {
-            <a href="/help" class="help-link" title="@Loc.T("Help")">?</a>
-        }
-        else if (slot == HostTopbarSlots.Settings && ShowsSurface("settings"))
-        {
-            <a href="/admin/access">@Loc.T("Settings")</a>
-        }
-        else if (slot == HostTopbarSlots.SpecDev && Environment.IsDevelopment() && ShowsSurface("spec_dev"))
-        {
-            <a href="/dev/spec">@Loc.T("Spec")</a>
-        }
-    }
-</nav>
-
-@code {
-    IReadOnlyList<HostExternalLink> _topbarLinks = [];
-    IReadOnlyList<string> _slots = HostTopbarLayoutResolver.DefaultSlots;
-
-    protected override void OnInitialized()
-    {
-        Coordinator.Changed += OnCoordinatorChanged;
-        PresentationSignals.Changed += OnPresentationChanged;
-        RefreshLayout();
-        RefreshLinks();
-    }
-
-    void RefreshLayout() =>
-        _slots = HostShell?.TopbarSlots ?? HostTopbarLayoutResolver.DefaultSlots;
-
-    void RefreshLinks()
-    {
-        _topbarLinks = ExternalLinks.ForStartupRuntime()
-            .Where(static link => link.Topbar)
-            .ToList();
-    }
-
-    void OnCoordinatorChanged() => _ = InvokeAsync(() =>
-    {
-        RefreshLinks();
-        StateHasChanged();
-    });
-
-    void OnPresentationChanged() => _ = InvokeAsync(StateHasChanged);
-
-    bool ShowsSurface(string surface) => HostShell?.ShowsSurface(surface) ?? true;
-
-    public void Dispose()
-    {
-        Coordinator.Changed -= OnCoordinatorChanged;
-        PresentationSignals.Changed -= OnPresentationChanged;
-    }
-}
-
+@using DashSpec.Host.Components.Dashboard
+
+@using DashSpec.Host.Configuration
+
+@using DashSpec.Host.Services.Presentation
+
+@inject IWebHostEnvironment Environment
+
+@inject DashboardHostCommandCoordinator Coordinator
+
+@inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
+
+@inject HostPresentationSignals PresentationSignals
+
+@inject HostExternalLinksProvider ExternalLinks
+
+@inject HostShellBootstrap HostShell
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@implements IDisposable
+
+
+
+<nav class="topbar-nav">
+
+    @foreach (var slot in _slots)
+
+    {
+
+        @if (slot == HostTopbarSlots.Catalog && Coordinator.HasCatalog)
+
+        {
+
+            <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
+
+                                    Groups="Coordinator.CatalogGroups"
+
+                                    ActiveEntryId="Coordinator.ActiveCatalogEntryId"
+
+                                    Busy="Coordinator.CatalogBusy"
+
+                                    OnSelect="Coordinator.SelectCatalogEntryAsync"
+
+                                    Inline="true"
+
+                                    ShowLabel="true"
+
+                                    CatalogLabel="@HostShell.CatalogLabel" />
+
+        }
+
+        else if (slot == HostTopbarSlots.Nav)
+
+        {
+
+            <a href="/">@Loc.T("Dashboard")</a>
+
+        }
+
+        else if (slot == HostTopbarSlots.ExternalLinks)
+
+        {
+
+            @foreach (var link in _topbarLinks)
+
+            {
+
+                <a href="@link.Url" target="@link.Target" rel="noopener noreferrer" class="external-link">@link.Label</a>
+
+            }
+
+        }
+
+        else if (slot == HostTopbarSlots.Help && ShowsSurface("help"))
+
+        {
+
+            <a href="/help" class="help-link" title="@Loc.T("Help")">?</a>
+
+        }
+
+        else if (slot == HostTopbarSlots.Settings && ShowsSurface("settings"))
+
+        {
+
+            <a href="/admin/access">@Loc.T("Settings")</a>
+
+        }
+
+        else if (slot == HostTopbarSlots.SpecDev && Environment.IsDevelopment() && ShowsSurface("spec_dev"))
+
+        {
+
+            <a href="/dev/spec">@Loc.T("Spec")</a>
+
+        }
+
+    }
+
+</nav>
+
+
+
+@code {
+
+    IReadOnlyList<HostExternalLink> _topbarLinks = [];
+
+    IReadOnlyList<string> _slots = [];
+
+
+
+    protected override void OnInitialized()
+
+    {
+
+        Coordinator.Changed += OnCoordinatorChanged;
+
+        PresentationSignals.Changed += OnPresentationChanged;
+
+        RefreshLayout();
+
+        RefreshLinks();
+
+    }
+
+
+
+    void RefreshLayout() =>
+
+        _slots = HostShell.TopbarSlots;
+
+
+
+    void RefreshLinks()
+
+    {
+
+        _topbarLinks = ExternalLinks.ForStartupRuntime()
+
+            .Where(static link => link.Topbar)
+
+            .ToList();
+
+    }
+
+
+
+    void OnCoordinatorChanged() => _ = InvokeAsync(() =>
+
+    {
+
+        RefreshLinks();
+
+        StateHasChanged();
+
+    });
+
+
+
+    void OnPresentationChanged() => _ = InvokeAsync(StateHasChanged);
+
+
+
+    bool ShowsSurface(string surface) => HostShell.ShowsSurface(surface);
+
+
+
+    public void Dispose()
+
+    {
+
+        Coordinator.Changed -= OnCoordinatorChanged;
+
+        PresentationSignals.Changed -= OnPresentationChanged;
+
+    }
+
+}
+
+
