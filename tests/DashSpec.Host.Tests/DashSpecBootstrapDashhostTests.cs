@@ -1,6 +1,4 @@
 using DashSpec.Host.Configuration;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace DashSpec.Host.Tests;
@@ -47,7 +45,8 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment));
+            var hostDatabase = HostTestServices.CreateHostDatabase();
+            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
             Assert.Contains("catalog_path", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -81,7 +80,8 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment));
+            var hostDatabase = HostTestServices.CreateHostDatabase();
+            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
             Assert.Contains("presentation", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -114,7 +114,8 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment));
+            var hostDatabase = HostTestServices.CreateHostDatabase();
+            var ex = Assert.Throws<InvalidOperationException>(() => DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase));
             Assert.Contains("links", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -156,7 +157,8 @@ public sealed class DashSpecBootstrapDashhostTests
         try
         {
             var environment = new TestHostEnvironment { ContentRootPath = root };
-            var (_, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(environment);
+            var hostDatabase = HostTestServices.CreateHostDatabase();
+            var (_, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(environment, hostDatabase);
             Assert.NotNull(hostShell);
             Assert.EndsWith("demo.dashcatalog", hostShell!.Document.CatalogPath, StringComparison.OrdinalIgnoreCase);
         }
@@ -166,11 +168,4 @@ public sealed class DashSpecBootstrapDashhostTests
         }
     }
 
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = Environments.Production;
-        public string ApplicationName { get; set; } = "DashSpec.Host.Tests";
-        public string ContentRootPath { get; set; } = string.Empty;
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }
