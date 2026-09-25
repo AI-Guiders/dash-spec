@@ -38,13 +38,15 @@ internal static class MatrixPayloadBuilder
 
         var xLabels = new List<string>();
         var xIndex = new Dictionary<string, int>(StringComparer.Ordinal);
+        var xSortKeys = new Dictionary<string, DateTime>(StringComparer.Ordinal);
         var yLabels = new List<string>();
         var yIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var yTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var row in rows)
         {
-            var x = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(xColumn), xFormat);
+            var rawX = row.GetValueOrDefault(xColumn);
+            var x = PayloadRowFormatters.FormatHeatmapAxisLabel(rawX, xFormat);
             var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(yColumn), yFormat);
             if (string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y))
             {
@@ -55,6 +57,15 @@ internal static class MatrixPayloadBuilder
             {
                 xIndex[x] = xLabels.Count;
                 xLabels.Add(x);
+                xSortKeys[x] = AxisLabelSort.ResolveSortKey(rawX, xFormat);
+            }
+            else
+            {
+                var sortKey = AxisLabelSort.ResolveSortKey(rawX, xFormat);
+                if (sortKey < xSortKeys[x])
+                {
+                    xSortKeys[x] = sortKey;
+                }
             }
 
             if (!yIndex.ContainsKey(y))
@@ -74,7 +85,7 @@ internal static class MatrixPayloadBuilder
             yIndex[yLabels[i]] = i;
         }
 
-        SortHeatmapXLabels(xLabels);
+        xLabels.Sort((a, b) => xSortKeys[a].CompareTo(xSortKeys[b]));
 
         xIndex.Clear();
         for (var i = 0; i < xLabels.Count; i++)
@@ -412,26 +423,6 @@ internal static class MatrixPayloadBuilder
         }
 
         return (colMins, colMaxs);
-    }
-
-    private static void SortHeatmapXLabels(List<string> xLabels)
-    {
-        xLabels.Sort((a, b) =>
-        {
-            if (TimeOnly.TryParse(a, out var aTime) && TimeOnly.TryParse(b, out var bTime))
-            {
-                return aTime.CompareTo(bTime);
-            }
-
-            var aDate = PayloadRowFormatters.TryParseHeatmapDate(a);
-            var bDate = PayloadRowFormatters.TryParseHeatmapDate(b);
-            if (aDate.HasValue && bDate.HasValue)
-            {
-                return aDate.Value.CompareTo(bDate.Value);
-            }
-
-            return string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
-        });
     }
 
 }
