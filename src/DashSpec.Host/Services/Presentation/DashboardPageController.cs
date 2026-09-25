@@ -3,6 +3,7 @@ using DashSpec.Core.Analysis;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
@@ -137,6 +138,14 @@ public sealed class DashboardPageController : IDisposable
     public string? ActiveCatalogEntryId => _session.ActiveCatalogEntryId;
 
     public IDashboardSession Session => _session;
+
+    public string ResolvedReportTitle =>
+        !Loaded
+            ? "DashSpec"
+            : DisplayResolutionHost.ResolveReportHeaderTitle(DisplayContext);
+
+    private ResolutionContext DisplayContext =>
+        DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, ActiveTabId);
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default, string? requestedCatalogEntryId = null)
     {
@@ -1203,8 +1212,24 @@ public sealed class DashboardPageController : IDisposable
         return DeriveToolbarExpander.Expand(visible, derive, _session.FilterIndex);
     }
 
+    private void SyncDisplayContext()
+    {
+        try
+        {
+            _refresh.DisplayContext = DisplayResolutionHost.CreateContext(
+                _session,
+                _hostContext.Catalog,
+                ActiveTabId);
+        }
+        catch (InvalidOperationException)
+        {
+            _refresh.DisplayContext = null;
+        }
+    }
+
     private void RecomputeTabPlacements()
     {
+        SyncDisplayContext();
         TabPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
         TabLayoutPlan = null;
         if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
