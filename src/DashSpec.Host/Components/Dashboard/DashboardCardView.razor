@@ -11,43 +11,22 @@
 
 <article class="@CardCssClass" style="@PlacementStyle">
     <div class="card-head">
-        <div class="card-head-main">
-            @if (Card.ShowChromeTitle)
-            {
-                <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
-            }
-            @if (!string.IsNullOrWhiteSpace(Card.FilterLinkHint))
-            {
-                <p class="card-link-hint muted">@Card.FilterLinkHint</p>
-            }
-            @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
-            {
-                <div class="card-filters card-filters-local">
-                    @foreach (var filterName in Card.LocalFilters)
-                    {
-                        @RenderLocalFilter(filterName, placementStyle: null)
-                    }
-                    @if (ShowLocalApplyButton)
-                    {
-                        <button class="secondary card-filter-apply"
-                                disabled="@Card.Loading"
-                                @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                            @Loc.T("Apply")
-                        </button>
-                    }
-                </div>
-            }
-            @if (DashboardBoundFilters.Count > 0)
-            {
-                <div class="card-filters">
-                    @foreach (var filterName in DashboardBoundFilters)
-                    {
-                        <span class="scope-chip">@FilterUiHelpers.FormatActiveChip(filterName, FilterIndex, DateFrom, DateTo, SelectedFields)</span>
-                    }
-                </div>
-            }
-        </div>
-        <div class="card-head-actions">
+        @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
+        {
+            <div class="card-head-title">
+                @if (Card.ShowChromeTitle)
+                {
+                    <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
+                }
+                @if (!string.IsNullOrWhiteSpace(Card.FilterLinkHint))
+                {
+                    <p class="card-link-hint muted">@Card.FilterLinkHint</p>
+                }
+            </div>
+        }
+        @if (HasHeadToolbar)
+        {
+            <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
             @if (CanMatrixLabelToggles)
             {
                 <label class="card-matrix-toggle" title="@Loc.T("Toggle cell values")">
@@ -123,7 +102,39 @@
             {
                 <span class="card-status card-status-error">@Loc.T("Error")</span>
             }
-        </div>
+            </div>
+        }
+        @if (HasHeadMeta)
+        {
+            <div class="card-head-meta">
+                @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+                {
+                    <div class="card-filters card-filters-local">
+                        @foreach (var filterName in Card.LocalFilters)
+                        {
+                            @RenderLocalFilter(filterName, placementStyle: null)
+                        }
+                        @if (ShowLocalApplyButton)
+                        {
+                            <button class="secondary card-filter-apply"
+                                    disabled="@Card.Loading"
+                                    @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                                @Loc.T("Apply")
+                            </button>
+                        }
+                    </div>
+                }
+                @if (DashboardBoundFilters.Count > 0)
+                {
+                    <div class="card-filters">
+                        @foreach (var filterName in DashboardBoundFilters)
+                        {
+                            <span class="scope-chip">@FilterUiHelpers.FormatActiveChip(filterName, FilterIndex, DateFrom, DateTo, SelectedFields)</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     @if (Card.IsVisibilityPlaceholder)
@@ -236,6 +247,18 @@
     private RenderSnapshot _renderSnapshot;
     private bool _fullscreen;
     private ElementReference _fullscreenPanel;
+
+    private bool HasHeadToolbar =>
+        CanMatrixLabelToggles ||
+        CanExport ||
+        CanFullscreen ||
+        Card.ExtensionBlocks is { Count: > 0 } ||
+        Card.Loading ||
+        !string.IsNullOrEmpty(Card.Error);
+
+    private bool HasHeadMeta =>
+        (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
+        DashboardBoundFilters.Count > 0;
 
     private bool CanExport =>
         !Card.IsVisibilityPlaceholder &&

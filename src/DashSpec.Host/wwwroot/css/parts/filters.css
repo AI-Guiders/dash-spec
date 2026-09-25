@@ -443,7 +443,8 @@
   color: var(--muted);
 }
 
-.card-head-main {
+.card-head-title,
+.card-head-meta {
   min-width: 0;
 }
 
