@@ -88,19 +88,19 @@ scope host
 
 ### 3. Bootstrap: pointer под `[host]`, не `[dashboard]`
 
-Минимальный ops TOML (или env):
+Минимальный ops TOML:
 
 ```toml
 [host]
 dashhost = "dashspec/sscad-prod.dashhost"
-database_path = ""   # WitDB, ADR-0042
+database_path = ""   # WitDB, ADR-0042 — обычно в dash-spec.local.toml
 ```
 
-Разрешение `.dashhost` — только `[host] dashhost` в ops TOML (`dash-spec.toml` / `dash-spec.local.toml`). Без env и без автопоиска.
+Разрешение `.dashhost` — **только** `[host] dashhost` в `dash-spec.toml` / `dash-spec.local.toml`. Без env, без автопоиска.
 
-Из распарсенного `.dashhost` Host получает `catalog_path`, presentation, links, layout.
+Из `.dashhost` Host получает catalog, presentation, links, layout.
 
-**`[dashboard]` в TOML — deprecated:** catalog только из `.dashhost`. Handoff zip без `dash-spec.toml` возможен (только binary + specs + `.dashhost`).
+**`[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` — удалены** (parse error). Catalog только из `.dashhost`.
 
 ### 4. Merge order (низ → высокий приоритет)
 
@@ -109,19 +109,19 @@ database_path = ""   # WitDB, ADR-0042
 3. WitDB `host_settings` — live override ops ([ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md))
 4. WitDB Control Center — live override ops (api_key, theme/TZ для оператора)
 
-`[presentation]` в TOML — deprecated в favor of `.dashhost`; WitDB может override theme/TZ для оператора.
+`[presentation]` и `[[links]]` в ops/runtime TOML — **ошибка загрузки**; WitDB может override theme/TZ для оператора.
 
-### 5. Что остаётся в TOML / env / WitDB
+### 5. Что остаётся в ops TOML / WitDB
 
 | Ключ | Где | Почему не `.dashhost` |
 |------|-----|------------------------|
-| `api_key` | WitDB / env | секрет |
-| `catalog_git` url, password, webhook | WitDB / env | секрет + deploy |
-| `database_path` | `[host]` TOML / env | машинный путь |
-| connection_string | `*-runtime.toml` + env | секрет (v2: connector ref + env) |
+| `api_key` | `dash-spec.local.toml` / WitDB | секрет |
+| `catalog_git` url, password, webhook | `dash-spec.local.toml` / WitDB | секрет + deploy |
+| `database_path` | `[host]` в local TOML | машинный путь |
+| connection_string | `*-runtime.toml` | секрет (per-report @runtime) |
 | Kestrel port | `appsettings` | .NET host |
 
-Цель: **git handoff без planet TOML**; ops-слой тонкий или только env.
+Цель: planet-content в git (`.dashhost` + specs); ops — тонкий TOML на сервере + WitDB live override.
 
 ## Consequences
 
@@ -137,9 +137,10 @@ database_path = ""   # WitDB, ADR-0042
 2. `include layout` and `!include "*.dashlayout"` with mandatory `scope host`
 3. `[host] dashhost` in ops TOML only
 4. `scope host` layout → `TopbarNav` slot order (`HostTopbarLayoutResolver`)
-5. `product_title`, `catalog_label`, links from dashhost; runtime `[[links]]` fallback + deprecation warning
-6. Hard reject: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` — только `.dashhost`
-7. Ops `dash-spec.toml` / `dash-spec.local.toml` with required `[host] dashhost`
+5. `product_title`, `catalog_label`, links только из dashhost
+6. Hard reject: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]`
+7. Ops TOML-only: `[host] dashhost`, `[access]`, `[catalog_git]`, `database_path` — без `DASHSPEC_*` env
+8. SSCAD: `sscad-prod.dashhost` + `layouts/host-topbar.dashlayout`; handoff zip собран
 
 ## Non-goals
 
@@ -148,6 +149,6 @@ database_path = ""   # WitDB, ADR-0042
 
 ## Open questions
 
-1. Имя ключа: `dashhost` vs `presentation_path` в `[host]`?
+1. ~~Имя ключа: `dashhost` vs `presentation_path`~~ → **`dashhost`** (решено)
 2. `surfaces` — whitelist или opt-out (`hide spec_dev`)?
 3. Connection strings: оставить `*-runtime.toml` или `connectors` block в `.dashhost` с env substitution?

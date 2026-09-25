@@ -34,7 +34,7 @@ sqlcmd -S localhost -d DashSpecDemo -E -i samples/demo/sql/bootstrap-demo-soak.s
 
 ### Bootstrap
 
-1. Host `dash-spec.toml` — `[dashboard] catalog_path` → `.dashcatalog`
+1. Host `dash-spec.toml` — `[host] dashhost` → `.dashhost` → `.dashcatalog`
 2. `.dashcatalog` — whitelist отчётов; `default` entry → первый экран
 3. `.dashspec` — `@module` + `runtime { manifest = "…" }`, `configuration { }`, `body` / `dashboard { }` ([ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md)); legacy: flat `@runtime`, `@sqldialect`
 4. TOML из `runtime.manifest` — connectors + plugins (deployment manifest, не DSL)
@@ -66,7 +66,7 @@ assembly = "DashSpec.Connector.SqlServer.dll"
 api_key = "CHANGE_ME"
 ```
 
-Или env `DASHSPEC_API_KEY`. Пустой ключ — host открыт (dev по умолчанию).
+Пустой ключ — host открыт (dev по умолчанию).
 
 - Браузер: `/access` → ключ → HttpOnly cookie на 30 дней
 - API/скрипты: заголовок `X-Api-Key`
@@ -192,8 +192,8 @@ entry stakeholder as "Отчёты заказчика"
 Host bootstrap:
 
 ```toml
-[dashboard]
-catalog_path = "path/to/catalogs/lus-dev.dashcatalog"
+[host]
+dashhost = "path/to/planet.dashhost"
 ```
 
 Зритель переключает отчёт в dropdown; автор добавляет `entry` в git.

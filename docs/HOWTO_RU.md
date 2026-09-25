@@ -44,11 +44,11 @@ dotnet run --project src/DashSpec.Host
 
 Открой **http://localhost:5295**.
 
-По умолчанию Host смотрит на catalog demo (`samples/demo/…`). Путь catalog задаётся в `src/DashSpec.Host/dash-spec.toml` / `dash-spec.local.toml`:
+По умолчанию Host смотрит на demo planet (`samples/demo/…`). Bootstrap в `src/DashSpec.Host/dash-spec.toml`:
 
 ```toml
-[dashboard]
-catalog_path = "…/samples/demo/demo-catalog.dashcatalog"
+[host]
+dashhost = "../../samples/demo/demo.dashhost"
 ```
 
 `dash-spec.local.toml` — локальные секреты; **не коммить** connection string с паролем.
@@ -306,11 +306,17 @@ entry utilities as "Запуск утилит"
   dashspec "luf/luf-overview.dashspec"
 ```
 
-В host TOML:
+В `.dashhost`:
+
+```text
+catalog "catalogs/my_prod.dashcatalog"
+```
+
+В host ops TOML:
 
 ```toml
-[dashboard]
-catalog_path = "D:/…/catalogs/my_prod.dashcatalog"
+[host]
+dashhost = "dashspec/my_prod.dashhost"
 ```
 
 Зритель переключает entry в UI. Новый отчёт = новый `entry` + файл в git.
@@ -337,7 +343,7 @@ Host (с 0.2.1+) резолвит connector **на entry**: SqlServer CS из TO
 |------|------------|
 | `lus-runtime.toml` | БД лицензий |
 | `luf-runtime.toml` | БД LogUseFunc |
-| `dash-spec.local.toml` | catalog_path, `[access]`, порты — не секреты продукта в git |
+| `dash-spec.local.toml` | `[access]`, `[catalog_git]`, WitDB path — ops, не planet-content |
 
 RO-login для prod-viewers; db_owner только для наката view.
 
@@ -352,7 +358,7 @@ RO-login для prod-viewers; db_owner только для наката view.
 api_key = "CHANGE_ME"
 ```
 
-или env `DASHSPEC_API_KEY`.
+Пустой ключ — dev без авторизации.
 
 | Клиент | Как |
 |--------|-----|
