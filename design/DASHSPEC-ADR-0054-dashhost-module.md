@@ -135,19 +135,20 @@ database_path = ""   # WitDB, ADR-0042
 - Studio v2: visual editor для host chrome рядом с catalog.
 - Amends [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md): catalog path может задаваться из `.dashhost`, не только из TOML.
 
-## v1 scope (implementation)
+## Implementation status (2026-09-25)
 
-1. Parse `@host` + `catalog` + `presentation` + `links` (subset)
-2. `[host] dashhost` в bootstrap; load catalog from dashhost
-3. `scope host` layout → `TopbarNav` slot order
-4. `product_title`, `catalog_label` вместо хардкода
-5. Deprecation warning: `[dashboard] catalog_path`, `[presentation]` in TOML
+1. Parse `@host` + `catalog` + `configuration` + `presentation` + `links` + `surfaces`
+2. `include layout` and `!include "*.dashlayout"` with mandatory `scope host`
+3. `[host] dashhost` / `DASHSPEC_DASHHOST` / `DASHSPEC_DEPLOY_ID` / single `dashspec/*.dashhost` convention
+4. `scope host` layout → `TopbarNav` slot order (`HostTopbarLayoutResolver`)
+5. `product_title`, `catalog_label`, links from dashhost; runtime `[[links]]` fallback + deprecation warning
+6. Deprecation warnings: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` when dashhost defines them
+7. Ops-only `dash-spec.toml` (optional if convention resolves dashhost)
 
-## Non-goals v1
+## Non-goals
 
 - WitDB UI для presentation (только ops keys)
 - Per-catalog-entry разные host shells (один `.dashhost` на deploy)
-- Удаление `dash-spec.toml` loader (backward compat до миграции fleet)
 
 ## Open questions
 
