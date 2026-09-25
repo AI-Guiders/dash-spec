@@ -176,13 +176,14 @@ Explicit `place { }` on card — **override** поверх board ([ADR-0020](DAS
 | `DashSpec.Core.Layout.LayoutPlacementResolution` | `place { }` override over board | §7 |
 | `DashSpec.Execution.Runtime.CompositionResolution` | Chart chrome / series transform facade | §6 |
 | `DashSpec.Host` `DisplayResolutionHost` | Session + catalog wiring | §4–§5 host surfaces |
+| `DashSpec.Core.Resolution.ResolutionLint` | Duplicate strong-source warnings (P2) | §4–§7 |
 | Parse / expand | IR only; no duplicate merge policy | — |
 | Host | Resolved IR + live `host.*` via `HostOpsResolution` | — |
 
 **Phase P0:** registry document — **Done**.  
 **Phase P1:** `DisplayResolution` + `DisplayResolutionHost` (report header, card chrome) — **Done**.  
 **Phase P1.5:** remaining resolver modules + host wiring (filter/tab/page/catalog labels, groups, gate message, composition/placement/include/host ops) — **Done**.  
-**Phase P2:** lint — два strong source на один слот без `override` → warning (follow-up).
+**Phase P2:** `DashSpec.Core.Resolution.ResolutionLint` + warnings в `DashSpecDiagnosticService` / `dashspec validate` — **Done**.
 
 ### 10. Authoring flexibility (одна политика)
 

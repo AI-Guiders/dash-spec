@@ -1,4 +1,6 @@
+using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Core.Validation;
 
@@ -37,8 +39,7 @@ public static class DashSpecDiagnosticService
 
         try
         {
-            ValidateByExtension(text, filePath, specDirectory, parseOptions);
-            return Array.Empty<DashSpecDiagnostic>();
+            return ValidateByExtension(text, filePath, specDirectory, parseOptions);
         }
         catch (DashSpecParseException ex)
         {
@@ -86,7 +87,7 @@ public static class DashSpecDiagnosticService
         return end > start ? message[(start + 1)..end] : null;
     }
 
-    private static void ValidateByExtension(
+    private static IReadOnlyList<DashSpecDiagnostic> ValidateByExtension(
         string text,
         string filePath,
         string specDirectory,
@@ -95,26 +96,64 @@ public static class DashSpecDiagnosticService
         switch (Path.GetExtension(filePath).ToLowerInvariant())
         {
             case ".dashcatalog":
-                CatalogParser.Parse(text);
-                break;
+                return LintCatalog(text, filePath, specDirectory, parseOptions);
             case ".dashdiagram":
                 DiagramModuleParser.ParseDiagramFile(text, specDirectory);
-                break;
+                return [];
             case ".dashpresentation":
                 PresentationModuleParser.ParsePresentationFile(text, specDirectory);
-                break;
+                return [];
             case ".dashpalette":
                 PaletteModuleParser.ParsePaletteFile(text);
-                break;
+                return [];
             case ".dashtransform":
                 TransformModuleParser.ParseTransformFile(text);
-                break;
+                return [];
             case ".dashlayout":
                 LayoutModuleParser.ParseLayoutFile(text);
-                break;
+                return [];
             default:
-                _ = DashSpecParser.Parse(text, specDirectory, parseOptions);
-                break;
+                var document = DashSpecParser.Parse(text, specDirectory, parseOptions);
+                return ToDiagnostics(ResolutionLint.Analyze(document));
         }
+    }
+
+    private static IReadOnlyList<DashSpecDiagnostic> LintCatalog(
+        string text,
+        string catalogPath,
+        string specDirectory,
+        DashSpecParseOptions parseOptions)
+    {
+        var catalog = CatalogParser.Parse(text);
+        var findings = new List<ResolutionLintFinding>();
+        foreach (var entry in catalog.Entries)
+        {
+            var specPath = CatalogParser.ResolveEntrySpecPath(catalogPath, entry.DashspecPath);
+            var specDirectoryForEntry = Path.GetDirectoryName(specPath)!;
+            var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectoryForEntry, parseOptions);
+            findings.AddRange(ResolutionLint.Analyze(document, entry));
+        }
+
+        return ToDiagnostics(findings);
+    }
+
+    private static IReadOnlyList<DashSpecDiagnostic> ToDiagnostics(IReadOnlyList<ResolutionLintFinding> findings)
+    {
+        if (findings.Count == 0)
+        {
+            return [];
+        }
+
+        return findings
+            .Select(finding => new DashSpecDiagnostic(
+                0,
+                0,
+                0,
+                1,
+                finding.FormatMessage(),
+                finding.Severity == ResolutionLintSeverity.Information
+                    ? DashSpecDiagnosticSeverity.Information
+                    : DashSpecDiagnosticSeverity.Warning))
+            .ToList();
     }
 }
