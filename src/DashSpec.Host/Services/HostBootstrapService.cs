@@ -1,4 +1,5 @@
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Resolution;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
@@ -96,7 +97,14 @@ public sealed class HostBootstrapService(
     {
         var host = hostShell.Document;
         var hostDirectory = Path.GetDirectoryName(hostShell.FullPath)!;
-        bootstrap.Dashboard.CatalogPath = pathResolver.ResolveCatalogPath(hostDirectory, host.CatalogPath);
+        var tomlCatalog = bootstrap.Dashboard.CatalogPath;
+        var dashhostCatalog = string.IsNullOrWhiteSpace(host.CatalogPath)
+            ? null
+            : pathResolver.ResolveCatalogPath(hostDirectory, host.CatalogPath);
+        bootstrap.Dashboard.CatalogPath = HostOpsResolution.ResolveCatalogPath(
+            tomlCatalog,
+            dashhostCatalog,
+            tomlCatalog);
 
         if (host.Configuration.TryGetValue("language", out var language)
             && !string.IsNullOrWhiteSpace(language))

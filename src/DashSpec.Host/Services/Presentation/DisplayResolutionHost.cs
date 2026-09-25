@@ -36,6 +36,21 @@ internal static class DisplayResolutionHost
         };
     }
 
+    public static string ResolveTabLabel(ResolutionContext context) =>
+        DisplayResolution.ResolveTabLabel(context);
+
+    public static string ResolvePageNavTitle(ReportPageDefinition page) =>
+        DisplayResolution.ResolvePageNavTitle(page);
+
+    public static string ResolveFilterLabel(FilterDefinition filter) =>
+        DisplayResolution.ResolveFilterLabel(filter);
+
+    public static string ResolveCatalogEntryTitle(CatalogEntryDefinition entry) =>
+        DisplayResolution.ResolveCatalogEntryTitle(entry);
+
+    public static string ResolveCatalogGroupTitle(CatalogGroupDefinition group) =>
+        DisplayResolution.ResolveCatalogGroupTitle(group);
+
     private static CatalogEntryDefinition? ResolveCatalogEntry(
         IDashboardSession session,
         DashSpec.Core.Model.CatalogDocument catalogDocument)

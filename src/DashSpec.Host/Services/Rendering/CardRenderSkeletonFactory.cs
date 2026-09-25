@@ -36,7 +36,7 @@ public static class CardRenderSkeletonFactory
             Placement: effective.Placement,
             InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
-                ? CardChromeResolver.ResolveChartPresentation(effective, library)
+                ? CompositionResolution.ResolveChartPresentation(effective, library)
                 : null,
             MatrixPresentation: kind.DataFamily is DiagramDataFamily.Matrix
                 ? MatrixPresentation.FromCard(effective, library)
@@ -92,7 +92,7 @@ public static class CardRenderSkeletonFactory
             Placement: effective.Placement,
             InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
-                ? CardChromeResolver.ResolveChartPresentation(effective, library)
+                ? CompositionResolution.ResolveChartPresentation(effective, library)
                 : null,
             MatrixPresentation: kind.DataFamily is DiagramDataFamily.Matrix
                 ? MatrixPresentation.FromCard(effective, library)

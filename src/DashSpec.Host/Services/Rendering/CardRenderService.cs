@@ -65,10 +65,10 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
-            ? CardChromeResolver.ResolveChartPresentation(effective, library)
+            ? CompositionResolution.ResolveChartPresentation(effective, library)
             : null;
         var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix
-            ? CardChromeResolver.ResolveSeriesTransform(effective, library)
+            ? CompositionResolution.ResolveSeriesTransform(effective, library)
             : null;
         var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
             ? MatrixPresentation.FromCard(effective, library)
@@ -297,6 +297,6 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
         SpecLibrary? library) =>
         payload with
         {
-            VisibleRows = CardChromeResolver.ResolveVisibleRows(card, library),
+            VisibleRows = CompositionResolution.ResolveVisibleRows(card, library),
         };
 }
