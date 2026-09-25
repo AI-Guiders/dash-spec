@@ -443,7 +443,7 @@
   color: var(--muted);
 }
 
-.card-head > div:first-child {
+.card-head-main {
   min-width: 0;
 }
 
