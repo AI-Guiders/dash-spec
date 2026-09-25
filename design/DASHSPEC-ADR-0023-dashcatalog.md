@@ -40,11 +40,16 @@ Title entry (`title = "…"` in entry block) — display в catalog picker; дл
 ### Host bootstrap
 
 ```toml
-[dashboard]
-catalog_path = "path/to/catalogs/lus-dev.dashcatalog"
+[host]
+dashhost = "dashspec/planet.dashhost"
 ```
 
-Env: `DASHSPEC_CATALOG_PATH`. Host **требует** catalog; `spec_path` удалён.
+```text
+# planet.dashhost
+catalog "catalogs/lus-dev.dashcatalog"
+```
+
+Catalog path — только из `.dashhost` ([ADR-0054](DASHSPEC-ADR-0054-dashhost-module.md)); `spec_path` удалён.
 
 ### UI
 
