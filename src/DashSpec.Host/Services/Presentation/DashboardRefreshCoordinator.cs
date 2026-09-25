@@ -1,6 +1,7 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Core.Resolution;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
@@ -40,6 +41,10 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     public List<CardRenderResult> Cards { get; } = [];
 
     public ResolutionContext? DisplayContext { get; set; }
+
+    public IReadOnlyDictionary<string, string>? PageDisplayBindings { get; set; }
+
+    public Func<FilterDisplayContext>? FilterDisplayFactory { get; set; }
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
@@ -316,10 +321,21 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
     private bool IsCurrentRefresh(long generation) => generation == _refreshGeneration;
 
-    private CardRenderResult EnrichCard(CardDefinition card, CardRenderResult render) =>
-        DisplayContext is null
-            ? render
-            : DisplayResolutionHost.ApplyCardChrome(DisplayContext, card, render);
+    private CardRenderResult EnrichCard(CardDefinition card, CardRenderResult render)
+    {
+        if (DisplayContext is null)
+        {
+            return render;
+        }
+
+        var filterDisplay = FilterDisplayFactory?.Invoke();
+        return DisplayResolutionHost.ApplyCardChrome(
+            DisplayContext,
+            card,
+            render,
+            filterDisplay,
+            PageDisplayBindings);
+    }
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)
     {
