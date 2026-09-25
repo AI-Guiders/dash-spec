@@ -106,31 +106,39 @@
 
 .card-head {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0;
   margin-bottom: 0.75rem;
 }
 
-.card-head-main {
-  flex: 1 1 auto;
-  min-width: 0;
+.card-head-title {
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.card-head-actions {
+.card-head-toolbar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.35rem;
-  flex: 0 0 auto;
-  flex-shrink: 0;
-  flex-wrap: nowrap;
-  align-self: flex-start;
-  margin-left: auto;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-head-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.45rem;
+}
+
+.card-head:not(:has(.card-head-toolbar)) .card-head-title {
+  margin-bottom: 0;
 }
 
 .card-title {
   overflow-wrap: anywhere;
-  padding-right: 0.15rem;
 }
 
 .card-export-btn {
@@ -211,15 +219,16 @@
 }
 
 .card-kpi .card-head {
-  align-items: flex-start;
   flex-shrink: 0;
-  min-height: 2.75rem;
   margin-bottom: 0.35rem;
 }
 
-.card-kpi .card-head-main {
-  flex: 1;
-  min-width: 0;
+.card-kpi .card-head-title {
+  padding-bottom: 0.3rem;
+}
+
+.card-kpi .card-head-toolbar {
+  padding: 0.25rem 0;
 }
 
 .card h2 {
