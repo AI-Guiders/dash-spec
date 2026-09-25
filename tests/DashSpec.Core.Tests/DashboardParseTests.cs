@@ -520,7 +520,7 @@ public class DashboardParseTests
     }
 
     [Fact]
-    public void MatrixPresentation_reads_viewport_y_from_chrome_and_series_max_fallback()
+    public void MatrixPresentation_reads_visible_rows_from_chrome_preset_and_series_fallback()
     {
         var cardWithChrome = new CardDefinition(
             "t",
@@ -533,10 +533,10 @@ public class DashboardParseTests
                 null,
                 new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    ["viewport_y"] = "6",
+                    ["visible_rows"] = "6",
                 }));
 
-        Assert.Equal(6, MatrixPresentation.FromCard(cardWithChrome).ViewportYRows);
+        Assert.Equal(6, MatrixPresentation.FromCard(cardWithChrome).VisibleRows);
 
         var cardWithSeries = new CardDefinition(
             "t",
@@ -547,7 +547,7 @@ public class DashboardParseTests
             LocalFilters: [],
             SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));
 
-        Assert.Equal(8, MatrixPresentation.FromCard(cardWithSeries).ViewportYRows);
+        Assert.Equal(8, MatrixPresentation.FromCard(cardWithSeries).VisibleRows);
     }
 
     [Theory]
