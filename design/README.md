@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0053**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0055**.
 
 ## Индекс
 
@@ -58,3 +58,5 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0050](DASHSPEC-ADR-0050-category-chart-color-column.md) | Category chart color — column binding | Accepted |
 | [0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) | Language affinity — Modeling (F#) vs Execution (C#) | Accepted |
 | [0052](DASHSPEC-ADR-0052-catalog-emit-drift-gate.md) | Catalog emit drift gate — `DashCatalog.g.cs` vs `gdlc emit` (W0) | Accepted |
+| [0053](DASHSPEC-ADR-0053-editorconfig-and-document-formatter.md) | EditorConfig and document formatter | Accepted |
+| [0054](DASHSPEC-ADR-0054-dashhost-module.md) | `.dashhost` — planet-content Host shell | Proposed |
