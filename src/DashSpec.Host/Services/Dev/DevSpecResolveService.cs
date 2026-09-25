@@ -3,12 +3,14 @@ using DashSpec.Execution.Resolution;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
 
 namespace DashSpec.Host.Services.Dev;
 
 public sealed class DevSpecResolveService(
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
+    IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider)
 {
     public DevSpecResolveResult ResolveConfiguredSpec()
@@ -19,7 +21,7 @@ public sealed class DevSpecResolveService(
             return DevSpecResolveResult.Fail("Dashboard spec path is not configured.");
         }
 
-        var specPath = DashSpecBootstrap.ResolveSpecPath(environment.ContentRootPath, relative);
+        var specPath = pathResolver.ResolveSpecPath(environment.ContentRootPath, relative);
         return ResolveFile(specPath);
     }
 

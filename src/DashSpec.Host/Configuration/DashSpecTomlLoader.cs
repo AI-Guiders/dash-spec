@@ -1,17 +1,18 @@
 using System.Text;
 using System.Text.Json;
+using DashSpec.Host.Services.Abstractions;
 using Tomlyn;
 
 namespace DashSpec.Host.Configuration;
 
-public static class DashSpecTomlLoader
+public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
 {
     private static readonly TomlSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
-    public static DashSpecTomlRoot LoadFile(string path)
+    public DashSpecTomlRoot LoadFile(string path)
     {
         if (!File.Exists(path))
         {
@@ -23,7 +24,7 @@ public static class DashSpecTomlLoader
             ?? new DashSpecTomlRoot();
     }
 
-    public static DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
+    public DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
     {
         if (!string.IsNullOrWhiteSpace(overlay.Host.Dashhost))
         {
@@ -89,7 +90,7 @@ public static class DashSpecTomlLoader
         return root;
     }
 
-    public static IEnumerable<KeyValuePair<string, string?>> Flatten(DashSpecTomlRoot root)
+    public IEnumerable<KeyValuePair<string, string?>> Flatten(DashSpecTomlRoot root)
     {
         if (!string.IsNullOrWhiteSpace(root.Dashboard.CatalogPath))
         {

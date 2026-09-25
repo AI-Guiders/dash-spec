@@ -26,6 +26,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using System.Globalization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using OutWit.Database.EntityFramework.Extensions;
 
@@ -73,15 +74,26 @@ if (OperatingSystem.IsWindows())
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
 }
 
-var hostDatabase = new HostDatabaseInitializer();
-var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment, hostDatabase);
+var bootstrapServices = new ServiceCollection();
+bootstrapServices.AddLogging();
+bootstrapServices.AddDashSpecHostInfrastructure();
+#pragma warning disable ASP0000 // Cold-start bootstrap before WebApplication DI; same instances re-registered below.
+await using var bootstrapProvider = bootstrapServices.BuildServiceProvider();
+#pragma warning restore ASP0000
 
-var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
+var hostBootstrap = bootstrapProvider.GetRequiredService<IHostBootstrap>();
+var hostDatabase = bootstrapProvider.GetRequiredService<IHostDatabaseInitializer>();
+var tomlLoader = bootstrapProvider.GetRequiredService<IDashSpecTomlLoader>();
+var pathResolver = bootstrapProvider.GetRequiredService<IHostPathResolver>();
+
+var (bootstrap, hostShell) = hostBootstrap.LoadBootstrapWithHost(builder.Environment);
+
+var catalog = hostBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
 var catalogState = new CatalogSourceState(catalog);
-var defaultSpecPath = DashSpecBootstrap.ResolveActiveSpecFullPath(catalog);
-var dashSpecToml = DashSpecBootstrap.Load(builder.Environment, hostDatabase);
+var defaultSpecPath = hostBootstrap.ResolveActiveSpecFullPath(catalog);
+var dashSpecToml = hostBootstrap.Load(builder.Environment);
 var defaultSpecText = File.ReadAllText(defaultSpecPath);
-var startupConfigPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
+var startupConfigPath = pathResolver.ResolveRuntimeConfigPath(
     defaultSpecPath,
     defaultSpecText);
 var startupRuntimeReference = DashSpecParser.ReadRuntimePath(defaultSpecText)
@@ -89,7 +101,7 @@ var startupRuntimeReference = DashSpecParser.ReadRuntimePath(defaultSpecText)
 
 var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
 
-builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
+builder.Configuration.AddInMemoryCollection(tomlLoader.Flatten(dashSpecToml));
 
 static CultureInfo ResolveUiCulture(string? language) =>
     string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
@@ -123,7 +135,7 @@ builder.Services.AddSingleton(new DashSpecHostContext
 {
     StartupRuntimeConfigPath = startupConfigPath,
     StartupRuntimeReference = startupRuntimeReference,
-    DefaultSpecRelativePath = DashSpecBootstrap.ToHostSpecReference(
+    DefaultSpecRelativePath = pathResolver.ToHostSpecReference(
         builder.Environment.ContentRootPath,
         defaultSpecPath),
     DefaultSpecDirectory = Path.GetDirectoryName(defaultSpecPath)!,
@@ -192,7 +204,8 @@ builder.Services.AddSingleton<GitCatalogSyncService>();
 builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
 builder.Services.AddSingleton<HostExternalLinksProvider>();
 
-builder.Services.AddSingleton<IHostDatabaseInitializer>(hostDatabase);
+builder.Services.AddSingleton(hostDatabase);
+builder.Services.AddDashSpecHostInfrastructure();
 var hostDbPath = hostDatabase.ResolveDatabasePath(bootstrap);
 hostDatabase.EnsureDatabase(hostDbPath);
 builder.Services.AddDbContext<DashSpecHostDbContext>(options =>

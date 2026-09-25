@@ -1,6 +1,6 @@
-using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Host.Services.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using DashSpec.Host.Services.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +10,7 @@ using Xunit;
 namespace DashSpec.Host.Tests;
 
 /// <summary>
-/// Mirrors production startup: HostSettingsOverlay.Apply then Program EnsureDatabase on one witdb path.
+/// Mirrors production startup: overlay WitDB then Program EnsureDatabase on one witdb path.
 /// </summary>
 public sealed class HostStartupWitDbTests
 {
@@ -20,7 +20,10 @@ public sealed class HostStartupWitDbTests
     [InlineData(WitDbScenario.Repaired)]
     public void Production_startup_sequence_does_not_throw(WitDbScenario scenario)
     {
-        var hostDatabase = HostTestServices.CreateHostDatabase();
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+        var hostDatabase = provider.GetRequiredService<IHostDatabaseInitializer>();
+
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
         var contentRoot = PrepareMinimalContentRoot(witdb);
         try
@@ -30,7 +33,7 @@ public sealed class HostStartupWitDbTests
             var environment = CreateProductionEnvironment(contentRoot);
             var exception = Record.Exception(() =>
             {
-                var bootstrap = DashSpecBootstrap.LoadBootstrap(environment, hostDatabase);
+                var bootstrap = hostBootstrap.LoadBootstrap(environment);
                 var hostDbPath = hostDatabase.ResolveDatabasePath(bootstrap);
                 hostDatabase.EnsureDatabase(hostDbPath);
             });
@@ -47,7 +50,10 @@ public sealed class HostStartupWitDbTests
     [Fact]
     public void Production_startup_allows_catalog_usage_write_after_sequence()
     {
-        var hostDatabase = HostTestServices.CreateHostDatabase();
+        using var provider = HostTestServices.CreateProvider();
+        var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
+        var hostDatabase = provider.GetRequiredService<IHostDatabaseInitializer>();
+
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
         var contentRoot = PrepareMinimalContentRoot(witdb);
         try
@@ -55,7 +61,7 @@ public sealed class HostStartupWitDbTests
             SeedWitDb(hostDatabase, witdb, WitDbScenario.LegacyCatalogUsage);
 
             var environment = CreateProductionEnvironment(contentRoot);
-            var bootstrap = DashSpecBootstrap.LoadBootstrap(environment, hostDatabase);
+            var bootstrap = hostBootstrap.LoadBootstrap(environment);
             hostDatabase.EnsureDatabase(hostDatabase.ResolveDatabasePath(bootstrap));
 
             var options = new DbContextOptionsBuilder<DashSpecHostDbContext>()

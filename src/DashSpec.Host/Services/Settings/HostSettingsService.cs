@@ -63,7 +63,7 @@ public sealed class HostSettingsService(
     public string GenerateSyncWebhookSecret()
     {
         var secret = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-        Upsert(HostSettingsOverlay.SectionCatalogGit, "sync_webhook_secret", secret);
+        Upsert(HostSettingsSections.SectionCatalogGit, "sync_webhook_secret", secret);
         return secret;
     }
 
@@ -72,14 +72,14 @@ public sealed class HostSettingsService(
         var rows = db.HostSettings.AsNoTracking().ToList();
         var sb = new StringBuilder();
         sb.AppendLine("# DashSpec Host settings export (WitDB)");
-        WriteSection(sb, rows, HostSettingsOverlay.SectionAccess, "access", redact: true);
-        WriteSection(sb, rows, HostSettingsOverlay.SectionCatalogGit, "catalog_git", redact: true);
+        WriteSection(sb, rows, HostSettingsSections.SectionAccess, "access", redact: true);
+        WriteSection(sb, rows, HostSettingsSections.SectionCatalogGit, "catalog_git", redact: true);
         return sb.ToString();
     }
 
     private void ApplyLive(string section, string key, string value)
     {
-        if (string.Equals(section, HostSettingsOverlay.SectionAccess, StringComparison.OrdinalIgnoreCase)
+        if (string.Equals(section, HostSettingsSections.SectionAccess, StringComparison.OrdinalIgnoreCase)
             && string.Equals(key, "api_key", StringComparison.OrdinalIgnoreCase))
         {
             bootstrap.Access.ApiKey = value;
@@ -87,13 +87,13 @@ public sealed class HostSettingsService(
             return;
         }
 
-        if (string.Equals(section, HostSettingsOverlay.SectionPresentation, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(section, HostSettingsSections.SectionPresentation, StringComparison.OrdinalIgnoreCase))
         {
             ApplyPresentationLive(key, value);
             return;
         }
 
-        if (!string.Equals(section, HostSettingsOverlay.SectionCatalogGit, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(section, HostSettingsSections.SectionCatalogGit, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -140,14 +140,14 @@ public sealed class HostSettingsService(
     private void ApplyPresentationLive(string key, string value)
     {
         var presentation = bootstrap.Presentation;
-        if (string.Equals(key, HostSettingsOverlay.KeyLargeFieldFilterLayout, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(key, HostSettingsSections.KeyLargeFieldFilterLayout, StringComparison.OrdinalIgnoreCase))
         {
             presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(value);
             presentationSignals.NotifyChanged();
             return;
         }
 
-        if (string.Equals(key, HostSettingsOverlay.KeyLanguage, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(key, HostSettingsSections.KeyLanguage, StringComparison.OrdinalIgnoreCase))
         {
             presentation.Language = string.IsNullOrWhiteSpace(value)
                 ? "ru"
@@ -156,7 +156,7 @@ public sealed class HostSettingsService(
             return;
         }
 
-        if (string.Equals(key, HostSettingsOverlay.KeyColorScheme, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(key, HostSettingsSections.KeyColorScheme, StringComparison.OrdinalIgnoreCase))
         {
             presentation.ColorScheme = string.IsNullOrWhiteSpace(value)
                 ? string.Empty
