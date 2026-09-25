@@ -602,7 +602,6 @@ public sealed class DashboardPageController : IDisposable
         }
 
         Switching = true;
-        Loaded = false;
         Error = null;
         _refresh.CancelPendingApplies();
         Notify();
@@ -617,7 +616,12 @@ public sealed class DashboardPageController : IDisposable
                 _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
                 _filters.SyncToSession(_session, PlacedFilterNames());
             }
-            Loaded = true;
+
+            if (!Loaded)
+            {
+                Loaded = true;
+            }
+
             Notify();
             RecordCatalogUsage();
             _ = RefreshCardsInBackgroundAsync();
