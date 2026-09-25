@@ -36,7 +36,8 @@ public sealed record CardRenderResult(
     string? OversizeMessage = null,
     string? FilterLinkHint = null,
     string? FilterLinkCssClass = null,
-    string? TopFilterScopeHint = null)
+    string? TopFilterScopeHint = null,
+    bool ShowChromeTitle = true)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 

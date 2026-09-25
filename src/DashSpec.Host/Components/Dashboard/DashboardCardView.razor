@@ -12,7 +12,10 @@
 <article class="@CardCssClass" style="@PlacementStyle">
     <div class="card-head">
         <div>
-            <h2><RichTextView Text="@Card.Title" /></h2>
+            @if (Card.ShowChromeTitle)
+            {
+                <h2><RichTextView Text="@Card.Title" /></h2>
+            }
             @if (!string.IsNullOrWhiteSpace(Card.FilterLinkHint))
             {
                 <p class="card-link-hint muted">@Card.FilterLinkHint</p>

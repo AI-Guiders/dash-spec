@@ -8,7 +8,7 @@
 @inject IWebHostEnvironment HostEnvironment
 @inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
 
-<PageTitle>@(Page.Loaded ? Page.Session.Document.Title : "DashSpec")</PageTitle>
+<PageTitle>@Page.ResolvedReportTitle</PageTitle>
 
 <div class="dash-home">
 <DashboardToolbar Busy="Page.Switching"
