@@ -175,7 +175,7 @@ Explicit `place { }` on card — **override** поверх board ([ADR-0020](DAS
 | Host | `Resolve` или pre-merged IR; WitDB только для `host.*` slots |
 
 **Phase P0 (this ADR):** registry document; прочие ADR ссылаются §4–§8 вместо повторения merge.  
-**Phase P1:** `ResolutionRegistry` + тесты на таблицы prod/soak.  
+**Phase P1:** `DashSpec.Core.Resolution.DisplayResolution` + `DisplayResolutionHost` + unit tests — **Done**.  
 **Phase P2:** lint — два strong source на один слот без `override` → warning.
 
 ### 10. Authoring flexibility (одна политика)
