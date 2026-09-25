@@ -1,5 +1,6 @@
 using AIGuiders.Platform.Authoring.Core;
 using DashSpec.Core.Authoring;
+using DashSpec.Core.Parsing;
 
 namespace DashSpec.Execution.Authoring;
 
@@ -48,7 +49,7 @@ public static class DashSpecProject
             yield break;
         }
 
-        foreach (var path in Directory.GetFiles(directory, pattern).OrderBy(static p => p, StringComparer.OrdinalIgnoreCase))
+        foreach (var path in IncludeMergePolicy.OrderGlobPaths(Directory.GetFiles(directory, pattern)))
         {
             yield return path;
         }

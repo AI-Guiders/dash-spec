@@ -1,7 +1,7 @@
 #nullable enable
 
 using DashSpec.Core.Model;
-
+using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 
@@ -23,7 +23,7 @@ internal static class DashboardFilterSlashLabels
 
         {
 
-            return FirstNonEmpty(filter.Label, filter.Name, filterName);
+            return DisplayResolution.ResolveFilterLabel(filter);
 
         }
 

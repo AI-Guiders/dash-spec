@@ -144,6 +144,13 @@ public sealed class DashboardPageController : IDisposable
             ? "DashSpec"
             : DisplayResolutionHost.ResolveReportHeaderTitle(DisplayContext);
 
+    public string ResolveTabLabel(TabDefinition tab) =>
+        DisplayResolutionHost.ResolveTabLabel(
+            DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, tab.Id));
+
+    public string ResolvePageNavTitle(ReportPageDefinition page) =>
+        DisplayResolutionHost.ResolvePageNavTitle(page);
+
     private ResolutionContext DisplayContext =>
         DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, ActiveTabId);
 

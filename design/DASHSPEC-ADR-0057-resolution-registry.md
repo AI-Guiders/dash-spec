@@ -167,16 +167,22 @@ Explicit `place { }` on card — **override** поверх board ([ADR-0020](DAS
 
 ### 9. Implementation
 
-| Layer | Responsibility |
-|-------|----------------|
-| `design/DASHSPEC-ADR-0057-resolution-registry.md` | Canonical tables (this ADR) |
-| `DashSpec.Core.Resolution` (C#) | `Resolve(slot, mode, context)` — **target** |
-| Parse / expand | Заполняют IR; не дублируют policy в Host |
-| Host | `Resolve` или pre-merged IR; WitDB только для `host.*` slots |
+| Layer | Module | Slots |
+|-------|--------|-------|
+| `design/DASHSPEC-ADR-0057-resolution-registry.md` | Canonical tables (this ADR) | all |
+| `DashSpec.Core.Resolution.DisplayResolution` | Display titles, labels, gate messages | §4–§5 |
+| `DashSpec.Core.Resolution.HostOpsResolution` | WitDB / dashhost / TOML bootstrap | §8 `host.*` |
+| `DashSpec.Core.Parsing.IncludeMergePolicy` | Glob order + duplicate module id | §include |
+| `DashSpec.Core.Layout.LayoutPlacementResolution` | `place { }` override over board | §7 |
+| `DashSpec.Execution.Runtime.CompositionResolution` | Chart chrome / series transform facade | §6 |
+| `DashSpec.Host` `DisplayResolutionHost` | Session + catalog wiring | §4–§5 host surfaces |
+| Parse / expand | IR only; no duplicate merge policy | — |
+| Host | Resolved IR + live `host.*` via `HostOpsResolution` | — |
 
-**Phase P0 (this ADR):** registry document; прочие ADR ссылаются §4–§8 вместо повторения merge.  
-**Phase P1:** `DashSpec.Core.Resolution.DisplayResolution` + `DisplayResolutionHost` + unit tests — **Done**.  
-**Phase P2:** lint — два strong source на один слот без `override` → warning.
+**Phase P0:** registry document — **Done**.  
+**Phase P1:** `DisplayResolution` + `DisplayResolutionHost` (report header, card chrome) — **Done**.  
+**Phase P1.5:** remaining resolver modules + host wiring (filter/tab/page/catalog labels, groups, gate message, composition/placement/include/host ops) — **Done**.  
+**Phase P2:** lint — два strong source на один слот без `override` → warning (follow-up).
 
 ### 10. Authoring flexibility (одна политика)
 

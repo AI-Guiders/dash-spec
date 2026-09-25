@@ -10,7 +10,7 @@
                     class="dash-tab @(active ? "dash-tab-active" : null)"
                     aria-selected="@active"
                     @onclick="() => OnSelect.InvokeAsync(tab.Id)">
-                @(tab.Label ?? tab.Id)
+                @(ResolveLabel?.Invoke(tab) ?? tab.Label ?? tab.Id)
             </button>
         }
     </nav>
@@ -18,6 +18,7 @@
 
 @code {
     [Parameter] public IReadOnlyList<TabDefinition> Tabs { get; set; } = [];
+    [Parameter] public Func<TabDefinition, string>? ResolveLabel { get; set; }
     [Parameter] public string? ActiveTabId { get; set; }
     [Parameter] public bool Sticky { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
