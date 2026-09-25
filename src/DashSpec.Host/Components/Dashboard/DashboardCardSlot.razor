@@ -1,0 +1,39 @@
+@using DashSpec.Host.Commands
+@using DashSpec.Host.Services.Presentation
+@using DashSpec.Host.Services.Models
+
+<CommandTargetShell TargetId="@Card.Id" Kind="CommandTargetKind.Card">
+    <DashboardCardView @key="Card.Id"
+                       Card="Card"
+                       PlacementStyle="@PlacementStyle"
+                       GridColumns="@Page.Session.Document.Layout.Columns"
+                       DashboardBoundFilters="Page.DashboardBoundForCard(Card)"
+                       FilterIndex="Page.Session.FilterIndex"
+                       DateFrom="Page.DateFrom"
+                       DateTo="Page.DateTo"
+                       SelectedFields="Page.SelectedFields"
+                       TopLimits="Page.TopLimits"
+                       GetFieldOptions="Page.Session.GetFieldOptions"
+                       AutoApply="AutoApply"
+                       ActiveViewId="@Page.GetCardActiveView(Card.Id)"
+                       OnApplyCard="Page.ApplyCardFiltersAsync"
+                       OnScheduleCardApply="Page.ScheduleCardApplyAsync"
+                       OnCardDayChanged="Page.OnCardDayChanged"
+                       OnCardFieldChanged="Page.OnCardFieldChanged"
+                       OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
+                       OnCardAction="Page.ExecuteCardActionAsync" />
+</CommandTargetShell>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardRenderResult Card { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string PlacementStyle { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public DashboardPageController Page { get; set; } = default!;
+
+    [Parameter]
+    public bool AutoApply { get; set; }
+}

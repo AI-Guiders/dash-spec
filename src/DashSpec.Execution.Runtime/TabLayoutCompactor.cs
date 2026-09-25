@@ -7,15 +7,21 @@ using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Layout;
 
+/// <summary>Resolved tab cards and layout board for placement.</summary>
+public sealed record TabLayoutContext(
+    TabDefinition Tab,
+    IReadOnlyList<CardDefinition> TabCards,
+    LayoutBoardDefinition? Board,
+    int Columns);
+
 /// <summary>
 /// Per-tab grid placement: bracket board, explicit place, or auto compaction.
 /// </summary>
 public static class TabLayoutCompactor
 {
-    public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
+    public static TabLayoutContext ResolveContext(
         DashboardDocument document,
         string tabId,
-        SpecLibrary? library = null,
         string? activePageId = null)
     {
         var tab = document.Tabs.Single(t =>
@@ -47,9 +53,6 @@ public static class TabLayoutCompactor
                 .ToList();
         }
 
-        var columns = document.Layout.Columns;
-        Dictionary<string, PlacementDefinition> result;
-
         var board = tab.LayoutBoard;
         if (!string.IsNullOrWhiteSpace(effectivePageId))
         {
@@ -60,6 +63,30 @@ public static class TabLayoutCompactor
                 board = page.LayoutBoard;
             }
         }
+
+        return new TabLayoutContext(tab, tabCards, board, document.Layout.Columns);
+    }
+
+    public static TabLayoutPlan? TryBuildLayoutPlan(TabLayoutContext context) =>
+        context.Board is null
+            ? null
+            : TabLayoutPlanner.Plan(context.Board, context.TabCards, context.Columns, context.Tab.Id);
+
+    public static string ResolveCardRef(TabLayoutContext context, string token) =>
+        CardLayoutRefResolver.Resolve(token, context.TabCards, $"Tab '{context.Tab.Id}' layout");
+
+    public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
+        DashboardDocument document,
+        string tabId,
+        SpecLibrary? library = null,
+        string? activePageId = null)
+    {
+        var context = ResolveContext(document, tabId, activePageId);
+        var tab = context.Tab;
+        var tabCards = context.TabCards;
+        var columns = context.Columns;
+        Dictionary<string, PlacementDefinition> result;
+        var board = context.Board;
 
         if (board is not null)
         {

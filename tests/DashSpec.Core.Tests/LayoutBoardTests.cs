@@ -570,4 +570,68 @@ end tab
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void TabLayoutPlanner_places_group_inner_cards_and_top_level_rows()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-group-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "layouts", "grouped.dashlayout"), """
+                @layout grouped
+                scope tab
+
+                group distribution {
+                  title = "Distribution"
+                  [ Q E ]
+                }
+                [ T ]
+                """);
+
+            var doc = DashSpecParser.Parse("""
+                @tab demo
+                  !include "layouts/grouped.dashlayout"
+                  report
+                  title = "demo"
+                  card a as "A" ref Q
+                  diagram bar
+                  x = a y
+                  end bar
+                  datasource view dbo.t
+                  end card
+                  card b as "B" ref E
+                  diagram bar
+                  x = a y
+                  end bar
+                  datasource view dbo.t
+                  end card
+                  card c as "C" ref T
+                  diagram bar
+                  x = a y
+                  end bar
+                  datasource view dbo.t
+                  end card
+                  end report
+                end tab
+                """, dir);
+
+            var context = TabLayoutCompactor.ResolveContext(doc, "demo");
+            var plan = TabLayoutCompactor.TryBuildLayoutPlan(context);
+
+            Assert.NotNull(plan);
+            Assert.Equal(2, plan!.Entries.Count);
+            Assert.True(plan.Groups.ContainsKey("distribution"));
+            var group = plan.Groups["distribution"];
+            Assert.Equal("Distribution", group.Title);
+            Assert.Equal(1, group.OuterRow);
+            Assert.Equal(new PlacementDefinition(1, 1, 6), group.InnerPlacements["a"]);
+            Assert.Equal(new PlacementDefinition(1, 7, 6), group.InnerPlacements["b"]);
+            Assert.Equal(new PlacementDefinition(2, 1, 12), plan.TopLevelPlacements["c"]);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }

@@ -109,6 +109,8 @@ public sealed class DashboardPageController : IDisposable
         new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, PlacementDefinition> TabPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
+
+    public TabLayoutPlan? TabLayoutPlan { get; private set; }
     public Dictionary<string, PlacementDefinition> ToolbarPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
@@ -649,6 +651,49 @@ public sealed class DashboardPageController : IDisposable
         }
     }
 
+    public CardRenderResult? FindVisibleCard(string cardId) =>
+        VisibleCards().FirstOrDefault(card =>
+            string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+
+    public string ResolveLayoutCardRef(string token)
+    {
+        if (string.IsNullOrWhiteSpace(ActiveTabId))
+        {
+            return token;
+        }
+
+        var context = TabLayoutCompactor.ResolveContext(_session.Document, ActiveTabId, ActivePageId);
+        return TabLayoutCompactor.ResolveCardRef(context, token);
+    }
+
+    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForGroup(
+        LayoutBoardGroupDefinition group)
+    {
+        if (TabLayoutPlan is null ||
+            !TabLayoutPlan.Groups.TryGetValue(group.Id, out var groupPlacement))
+        {
+            yield break;
+        }
+
+        foreach (var row in group.Rows)
+        {
+            foreach (var token in row)
+            {
+                var cardId = ResolveLayoutCardRef(token);
+                if (!groupPlacement.InnerPlacements.TryGetValue(cardId, out var placement))
+                {
+                    continue;
+                }
+
+                var card = FindVisibleCard(cardId);
+                if (card is not null)
+                {
+                    yield return (card, placement);
+                }
+            }
+        }
+    }
+
     public IEnumerable<CardRenderResult> VisibleCards()
     {
         IEnumerable<CardRenderResult> cards;
@@ -1161,10 +1206,14 @@ public sealed class DashboardPageController : IDisposable
     private void RecomputeTabPlacements()
     {
         TabPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        TabLayoutPlan = null;
         if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
         {
             return;
         }
+
+        var context = TabLayoutCompactor.ResolveContext(_session.Document, ActiveTabId, ActivePageId);
+        TabLayoutPlan = TabLayoutCompactor.TryBuildLayoutPlan(context);
 
         foreach (var (title, placement) in TabLayoutCompactor.Compact(
                      _session.Document,
