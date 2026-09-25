@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
+using DashSpec.Host.Services.Abstractions;
 
 namespace DashSpec.Host.Services.Connectors;
 
@@ -12,7 +13,8 @@ namespace DashSpec.Host.Services.Connectors;
 public sealed class RuntimeConnectorResolver(
     ConnectorRegistry connectorRegistry,
     ConnectorPluginManifest pluginManifest,
-    DashSpecHostContext hostContext)
+    DashSpecHostContext hostContext,
+    IDashSpecTomlLoader tomlLoader)
 {
     private readonly ConcurrentDictionary<string, IDataSourceConnector> _byKey =
         new(StringComparer.OrdinalIgnoreCase);
@@ -43,7 +45,7 @@ public sealed class RuntimeConnectorResolver(
         var runtimeConfigPath = key[..sep];
         var connectorId = key[(sep + 2)..];
 
-        var runtime = DashSpecTomlLoader.LoadFile(runtimeConfigPath);
+        var runtime = tomlLoader.LoadFile(runtimeConfigPath);
 
         if (!TryGetConnectorSection(runtime, connectorId, out var section) ||
             string.IsNullOrWhiteSpace(section.ConnectionString))
