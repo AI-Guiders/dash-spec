@@ -42,15 +42,15 @@ public static class CardChromeResolver
         return 320;
     }
 
-    public static int? ResolveMatrixViewportYRows(CardDefinition card, SpecLibrary? library)
+    public static int? ResolveMatrixVisibleRows(CardDefinition card, SpecLibrary? library)
     {
         var props = ChartChromeProperties.Merge(card, library);
-        if (TryParsePositiveInt(props, "viewport_y", out var fromChrome))
+        if (TryParsePositiveInt(props, "visible_rows", out var fromChrome))
         {
             return fromChrome;
         }
 
-        if (TryParsePositiveInt(card.Diagram.Properties, "viewport_y", out var fromDiagram))
+        if (TryParsePositiveInt(card.Diagram.Properties, "visible_rows", out var fromDiagram))
         {
             return fromDiagram;
         }

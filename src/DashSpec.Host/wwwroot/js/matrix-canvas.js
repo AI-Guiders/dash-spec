@@ -48,14 +48,14 @@ window.dashSpecMatrix = {
     return this.syncYLabelWidth(host);
   },
 
-  fitCellSize(xCount, yCount, availableWidth, availableHeight, gapPx, yLabelCol = 144, viewportYRows = null) {
+  fitCellSize(xCount, yCount, availableWidth, availableHeight, gapPx, yLabelCol = 144, visibleRows = null) {
     const gap = gapPx ?? 2;
     const xLabelRow = 28;
     const chrome = 16;
     const preferredCellW = 28;
     const preferredCellH = 22;
     const growThreshold = 10;
-    const viewportY = viewportYRows > 0 ? viewportYRows : growThreshold;
+    const scrollRowCap = visibleRows > 0 ? visibleRows : growThreshold;
 
     const gridW = Math.max(0, availableWidth - yLabelCol - chrome);
     const gridH = Math.max(0, availableHeight - xLabelRow - chrome);
@@ -64,9 +64,9 @@ window.dashSpecMatrix = {
 
     // Wide/tall matrices: fixed readable cell size; .matrix-canvas-scroll handles overflow.
     if (
-      viewportYRows > 0 ||
+      visibleRows > 0 ||
       xCount > growThreshold ||
-      yCount > viewportY ||
+      yCount > scrollRowCap ||
       naturalW > gridW ||
       naturalH > gridH
     ) {
@@ -186,7 +186,7 @@ window.dashSpecMatrix = {
       maxHeight,
       gapPx,
       labelCol,
-      payload.viewportYRows ?? null);
+      payload.visibleRows ?? null);
     host.style.setProperty("--matrix-cell-w", `${cellW}px`);
     host.style.setProperty("--matrix-cell-h", `${cellH}px`);
     return this.render(canvas, {

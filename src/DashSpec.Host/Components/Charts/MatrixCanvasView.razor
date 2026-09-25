@@ -105,7 +105,7 @@ else
 
     [Parameter] public int HeightPx { get; set; } = 320;
 
-    [Parameter] public int? ViewportYRows { get; set; }
+    [Parameter] public int? VisibleRows { get; set; }
 
     [Parameter] public string? XAxisLabel { get; set; }
 
@@ -179,7 +179,7 @@ else
             colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
-            viewportYRows = ViewportYRows,
+            visibleRows = VisibleRows,
             showValues = ValueLabelsWire,
             valueLabelsThreshold = ValueLabelsThresholdPx,
             showAxisLabelsY = ShowAxisLabelsY,
@@ -208,7 +208,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{ViewportYRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
 
     private int ComputeCellHash()
     {

@@ -21,7 +21,7 @@
                       CanvasId="@DashboardLayoutHelper.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
                       Payload="Context.EffectiveCard.Matrix"
                       HeightPx="@ResolveMatrixHeightPx()"
-                      ViewportYRows="@presentation?.ViewportYRows"
+                      VisibleRows="@presentation?.VisibleRows"
                       XAxisLabel="@presentation?.XLabel"
                       YAxisLabel="@presentation?.YLabel"
                       ValueLabel="@presentation?.ValueLabel"
@@ -49,10 +49,10 @@
     {
         var presentation = Context.EffectiveCard.MatrixPresentation;
         var baseHeight = presentation?.HeightPx ?? 320;
-        var viewportY = presentation?.ViewportYRows;
+        var visibleRows = presentation?.VisibleRows;
         var rowCount = Context.EffectiveCard.Matrix?.YLabels.Count ?? 0;
 
-        if (viewportY is int vy)
+        if (visibleRows is int vy)
         {
             if (Context.DetailView)
             {
