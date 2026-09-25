@@ -48,3 +48,31 @@ type LayoutModuleParserTests() =
 
         let ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () -> LayoutModuleParser.parseLayoutFile text |> ignore)
         Assert.Contains("toolbar, tab, page, card, or host", ex.Message, StringComparison.OrdinalIgnoreCase)
+
+    [<Fact>]
+    member _.``Parse_tab_layout_module_with_card_group`` () =
+        let text =
+            """
+                @layout g
+                scope tab
+                
+                group distribution {
+                  title = "Distribution"
+                  [ A B ]
+                }
+                [ C ]
+                """
+
+        let board = LayoutModuleParser.parseLayoutFile text
+
+        Assert.Equal(2, board.RowCount)
+        match board.Entries[0] with
+        | GroupRow group ->
+            Assert.Equal("distribution", group.Id)
+            Assert.Equal(Some "Distribution", group.Title)
+            Assert.Equal<string list>([ "A"; "B" ], group.Rows[0] |> Seq.toList)
+        | _ -> Assert.Fail("Expected group row")
+
+        match board.Entries[1] with
+        | CardRow cells -> Assert.Equal<string list>([ "C" ], cells |> Seq.toList)
+        | _ -> Assert.Fail("Expected card row")

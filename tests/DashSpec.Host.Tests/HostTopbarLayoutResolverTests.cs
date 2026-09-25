@@ -9,7 +9,7 @@ public sealed class HostTopbarLayoutResolverTests
     [Fact]
     public void Resolve_flattens_scope_host_board()
     {
-        var board = new LayoutBoardDefinition(
+        var board = LayoutBoardDefinition.FromCardRows(
             [
                 ["catalog"],
                 ["nav", "external_links"],
@@ -33,7 +33,7 @@ public sealed class HostTopbarLayoutResolverTests
     [Fact]
     public void Resolve_normalizes_report_picker_and_dashboard_aliases()
     {
-        var board = new LayoutBoardDefinition(
+        var board = LayoutBoardDefinition.FromCardRows(
             [["report_picker", "dashboard"]],
             LayoutScope.Host);
 

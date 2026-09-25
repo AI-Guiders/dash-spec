@@ -23,20 +23,54 @@ module LayoutParser =
             raise (DashSpec.Modeling.Core.DashSpecParseException("Layout board row [ … ] must list at least one card ref or id."))
         cells :> IReadOnlyList<string>
 
-    /// Bracket rows until EOF or end kind (for .dashlayout modules).
-    let parseBoardRows (reader: TokenReader) (endKind: string option) (endId: string option) =
+    let private parseGroupBlock (reader: TokenReader) =
+        let groupId = reader.ReadIdent()
+        if String.IsNullOrWhiteSpace groupId then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout group requires an id."))
+
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let mutable groupTitle: string option = None
         let rows = ResizeArray<IReadOnlyList<string>>()
+
+        while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "group" (Some groupId)) do
+            reader.SkipNewlines()
+            if BlockSyntax.isBlockEnd reader "group" (Some groupId) then ()
+            elif reader.TryKeyword "title" then
+                reader.Expect TokenKind.Eq
+                groupTitle <- Some(reader.ReadString())
+            elif reader.IsAt TokenKind.LBracket then
+                rows.Add(parseBoardRow reader)
+            else
+                raise (reader.Unexpected("[ or title"))
+
+        BlockSyntax.expectBlockEnd reader "group" (Some groupId)
+
+        if rows.Count = 0 then
+            raise (DashSpec.Modeling.Core.DashSpecParseException($"Layout group '{groupId}' requires at least one row [ … ]."))
+
+        GroupRow
+            { Id = groupId
+              Title = groupTitle
+              Rows = rows :> IReadOnlyList<_> }
+
+    let private parseBoardEntry (reader: TokenReader) =
+        if reader.IsAt TokenKind.LBracket then CardRow(parseBoardRow reader)
+        elif reader.TryKeyword "group" then parseGroupBlock reader
+        else raise (reader.Unexpected("[ or group"))
+
+    /// Bracket rows and optional groups until EOF or end kind (for .dashlayout modules).
+    let parseBoardRows (reader: TokenReader) (endKind: string option) (endId: string option) =
+        let entries = ResizeArray<LayoutBoardEntry>()
         reader.SkipNewlines()
         while not reader.IsEof
               && not (reader.IsAt TokenKind.RBrace)
               && (endKind.IsNone || not (BlockSyntax.isBlockEnd reader endKind.Value endId)) do
-            if not (reader.IsAt TokenKind.LBracket) then
-                raise (reader.Unexpected("["))
-            rows.Add(parseBoardRow reader)
+            entries.Add(parseBoardEntry reader)
             reader.SkipNewlines()
-        if rows.Count = 0 then
-            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout board requires at least one row [ … ]."))
-        { Rows = rows :> IReadOnlyList<_>; ModuleScope = None }
+        if entries.Count = 0 then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout board requires at least one row [ … ] or group { … }."))
+        { Entries = entries :> IReadOnlyList<_>; ModuleScope = None }
 
     let parseGrid (reader: TokenReader) =
         match reader.ReadIdent() with
