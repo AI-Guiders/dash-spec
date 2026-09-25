@@ -19,11 +19,13 @@ public static class DashSpecBootstrap
         var bootstrap = File.Exists(bootstrapPath)
             ? DashSpecTomlLoader.LoadFile(bootstrapPath)
             : new DashSpecTomlRoot();
+        if (File.Exists(bootstrapPath))
+        {
+            HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(bootstrap, bootstrapPath);
+        }
 
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
-
-        HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(bootstrap);
 
         if (string.IsNullOrWhiteSpace(bootstrap.Host.Dashhost))
         {
@@ -120,7 +122,9 @@ public static class DashSpecBootstrap
             return root;
         }
 
-        return DashSpecTomlLoader.Merge(root, DashSpecTomlLoader.LoadFile(path));
+        var overlay = DashSpecTomlLoader.LoadFile(path);
+        HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(overlay, path);
+        return DashSpecTomlLoader.Merge(root, overlay);
     }
 
     public static DashSpecTomlRoot Load(IHostEnvironment environment)

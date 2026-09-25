@@ -16,7 +16,7 @@ public sealed class DashSpecTomlRoot
 
     public PluginsTomlSection Plugins { get; set; } = new();
 
-    /// <summary>External URLs from @runtime manifest (product admin, docs, …).</summary>
+    /// <summary>Legacy TOML [[links]] — rejected at load; links live in <c>.dashhost</c>.</summary>
     public List<ExternalLinkTomlEntry> Links { get; set; } = [];
 }
 
