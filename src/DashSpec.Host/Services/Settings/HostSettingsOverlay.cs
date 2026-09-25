@@ -1,5 +1,6 @@
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Presentation;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
@@ -17,12 +18,12 @@ public static class HostSettingsOverlay
     public const string KeyLanguage = "language";
     public const string KeyLargeFieldFilterLayout = "large_field_filter_layout";
 
-    public static void Apply(DashSpecTomlRoot bootstrap)
+    public static void Apply(DashSpecTomlRoot bootstrap, IHostDatabaseInitializer hostDatabase)
     {
-        var dbPath = HostSettingsPaths.ResolveDatabasePath(bootstrap);
+        var dbPath = hostDatabase.ResolveDatabasePath(bootstrap);
         try
         {
-            HostSettingsPaths.EnsureDatabase(dbPath);
+            hostDatabase.EnsureDatabase(dbPath);
         }
         catch
         {

@@ -1,10 +1,9 @@
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Settings;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using NSubstitute;
 using OutWit.Database.EntityFramework.Extensions;
 using Xunit;
 
@@ -21,18 +20,19 @@ public sealed class HostStartupWitDbTests
     [InlineData(WitDbScenario.Repaired)]
     public void Production_startup_sequence_does_not_throw(WitDbScenario scenario)
     {
+        var hostDatabase = HostTestServices.CreateHostDatabase();
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
         var contentRoot = PrepareMinimalContentRoot(witdb);
         try
         {
-            SeedWitDb(witdb, scenario);
+            SeedWitDb(hostDatabase, witdb, scenario);
 
             var environment = CreateProductionEnvironment(contentRoot);
             var exception = Record.Exception(() =>
             {
-                var bootstrap = DashSpecBootstrap.LoadBootstrap(environment);
-                var hostDbPath = HostSettingsPaths.ResolveDatabasePath(bootstrap);
-                HostSettingsPaths.EnsureDatabase(hostDbPath);
+                var bootstrap = DashSpecBootstrap.LoadBootstrap(environment, hostDatabase);
+                var hostDbPath = hostDatabase.ResolveDatabasePath(bootstrap);
+                hostDatabase.EnsureDatabase(hostDbPath);
             });
 
             Assert.Null(exception);
@@ -47,15 +47,16 @@ public sealed class HostStartupWitDbTests
     [Fact]
     public void Production_startup_allows_catalog_usage_write_after_sequence()
     {
+        var hostDatabase = HostTestServices.CreateHostDatabase();
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
         var contentRoot = PrepareMinimalContentRoot(witdb);
         try
         {
-            SeedWitDb(witdb, WitDbScenario.LegacyCatalogUsage);
+            SeedWitDb(hostDatabase, witdb, WitDbScenario.LegacyCatalogUsage);
 
             var environment = CreateProductionEnvironment(contentRoot);
-            var bootstrap = DashSpecBootstrap.LoadBootstrap(environment);
-            HostSettingsPaths.EnsureDatabase(HostSettingsPaths.ResolveDatabasePath(bootstrap));
+            var bootstrap = DashSpecBootstrap.LoadBootstrap(environment, hostDatabase);
+            hostDatabase.EnsureDatabase(hostDatabase.ResolveDatabasePath(bootstrap));
 
             var options = new DbContextOptionsBuilder<DashSpecHostDbContext>()
                 .UseWitDb($"Data Source={witdb}")
@@ -107,17 +108,14 @@ public sealed class HostStartupWitDbTests
         return root;
     }
 
-    private static IHostEnvironment CreateProductionEnvironment(string contentRoot)
-    {
-        var environment = Substitute.For<IHostEnvironment>();
-        environment.ContentRootPath.Returns(contentRoot);
-        environment.EnvironmentName.Returns(Environments.Production);
-        environment.ApplicationName.Returns("DashSpec.Host.Tests");
-        environment.ContentRootFileProvider.Returns(new PhysicalFileProvider(contentRoot));
-        return environment;
-    }
+    private static TestHostEnvironment CreateProductionEnvironment(string contentRoot) =>
+        new()
+        {
+            ContentRootPath = contentRoot,
+            EnvironmentName = Environments.Production,
+        };
 
-    private static void SeedWitDb(string witdbPath, WitDbScenario scenario)
+    private static void SeedWitDb(IHostDatabaseInitializer hostDatabase, string witdbPath, WitDbScenario scenario)
     {
         if (scenario == WitDbScenario.Fresh)
         {
@@ -145,7 +143,7 @@ public sealed class HostStartupWitDbTests
             return;
         }
 
-        HostSettingsPaths.EnsureDatabase(witdbPath);
+        hostDatabase.EnsureDatabase(witdbPath);
     }
 
     private static void TryDeleteWitDb(string witdbPath)

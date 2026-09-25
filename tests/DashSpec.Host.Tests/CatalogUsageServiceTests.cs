@@ -93,7 +93,7 @@ public class CatalogUsageServiceTests
                     """);
             }
 
-            HostSettingsPaths.EnsureDatabase(dbPath);
+            HostTestServices.CreateHostDatabase().EnsureDatabase(dbPath);
 
             using var db2 = new DashSpecHostDbContext(options);
             new CatalogUsageService(db2).RecordSelection("client-a", "stakeholder");
@@ -114,8 +114,9 @@ public class CatalogUsageServiceTests
         var dbPath = Path.Combine(Path.GetTempPath(), $"dashspec-catalog-{Guid.NewGuid():N}.witdb");
         try
         {
-            HostSettingsPaths.EnsureDatabase(dbPath);
-            var exception = Record.Exception(() => HostSettingsPaths.EnsureDatabase(dbPath));
+            var hostDatabase = HostTestServices.CreateHostDatabase();
+            hostDatabase.EnsureDatabase(dbPath);
+            var exception = Record.Exception(() => hostDatabase.EnsureDatabase(dbPath));
             Assert.Null(exception);
         }
         finally
@@ -133,7 +134,7 @@ public class CatalogUsageServiceTests
         var dbPath = Path.Combine(Path.GetTempPath(), $"dashspec-catalog-{Guid.NewGuid():N}.witdb");
         try
         {
-            HostSettingsPaths.EnsureDatabase(dbPath);
+            HostTestServices.CreateHostDatabase().EnsureDatabase(dbPath);
 
             var options = new DbContextOptionsBuilder<DashSpecHostDbContext>()
                 .UseWitDb($"Data Source={dbPath}")
