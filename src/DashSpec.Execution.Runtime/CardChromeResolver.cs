@@ -42,7 +42,7 @@ public static class CardChromeResolver
         return 320;
     }
 
-    public static int? ResolveMatrixVisibleRows(CardDefinition card, SpecLibrary? library)
+    public static int? ResolveVisibleRows(CardDefinition card, SpecLibrary? library)
     {
         var props = ChartChromeProperties.Merge(card, library);
         if (TryParsePositiveInt(props, "visible_rows", out var fromChrome))

@@ -23,6 +23,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
         services.AddSingleton<IVizPlugin, TableHtmlVizPlugin>();
         services.AddSingleton<IVizPlugin, ScalarHtmlVizPlugin>();
         services.AddSingleton<IVizPlugin, GanttHtmlVizPlugin>();
+        services.AddSingleton<IVizPlugin, GanttTimelineVizPlugin>();
 
         services.AddSingleton(sp =>
         {
@@ -33,6 +34,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
             registry.Register(VizPluginIds.CssGrid, typeof(CssGridCardViz));
             registry.Register(VizPluginIds.MatrixCanvas, typeof(MatrixCanvasCardViz));
             registry.Register(VizPluginIds.GanttHtml, typeof(GanttCardViz));
+            registry.Register(VizPluginIds.GanttTimeline, typeof(GanttTimelineCardViz));
             return registry;
         });
     }
@@ -44,6 +46,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.MatrixCanvas, "Matrix (canvas)"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.TableHtml, "Table"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.ScalarHtml, "Scalar"));
-        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.GanttHtml, "Gantt"));
+        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.GanttHtml, "Gantt (compact)"));
+        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.GanttTimeline, "Gantt (timeline)"));
     }
 }

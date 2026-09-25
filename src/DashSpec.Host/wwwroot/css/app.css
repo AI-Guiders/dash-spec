@@ -6,5 +6,6 @@
 @import url("parts/heatmap.css");
 @import url("parts/matrix-canvas.css");
 @import url("parts/viz-misc.css");
+@import url("parts/gantt-timeline.css");
 @import url("parts/spec-inspector.css");
 @import url("parts/command-palette.css");

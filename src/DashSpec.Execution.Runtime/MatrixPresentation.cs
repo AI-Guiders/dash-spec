@@ -27,7 +27,7 @@ public sealed record MatrixPresentation(
     {
         var diagram = card.Diagram;
         var height = CardChromeResolver.ResolveMatrixHeightPx(card, library);
-        var visibleRows = CardChromeResolver.ResolveMatrixVisibleRows(card, library);
+        var visibleRows = CardChromeResolver.ResolveVisibleRows(card, library);
 
         var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect);
         var tooltipSplit = card.Inspect?.Split ?? ", ";

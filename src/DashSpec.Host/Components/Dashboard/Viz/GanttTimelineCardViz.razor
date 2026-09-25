@@ -1,0 +1,97 @@
+@namespace DashSpec.Host.Components.Dashboard.Viz
+@using DashSpec.Host.Services.Models
+@using DashSpec.Host.Services.Presentation
+@using DashSpec.Execution.Runtime
+@if (Context.EffectiveCard.Gantt is { Rows.Count: > 0 } gantt)
+{
+    var ticks = GanttTimelineScale.BuildTicks(gantt.AxisStart, gantt.AxisEnd, gantt.AxisFormat);
+    var todayLeft = GanttTimelineScale.TodayLeftPercent(gantt.AxisStart, gantt.AxisEnd);
+    var trackMinWidth = GanttTimelineScale.ResolveTrackMinWidthPx(gantt.AxisStart, gantt.AxisEnd);
+    var bodyHeight = ResolveBodyHeightPx(gantt);
+    var yCaption = gantt.YLabel ?? "Название";
+
+    <div class="gantt-timeline"
+         style="@($"--gantt-body-height:{bodyHeight}px;--gantt-track-min-width:{trackMinWidth}px")">
+        <div class="gantt-timeline-head">
+            <div class="gantt-timeline-sidebar-head" aria-hidden="true">
+                <span class="gantt-timeline-col-name">@yCaption</span>
+                <span class="gantt-timeline-col-start">Начало</span>
+                <span class="gantt-timeline-col-end">Конец</span>
+                <span class="gantt-timeline-col-duration">Длит.</span>
+            </div>
+            <div class="gantt-timeline-ruler-wrap">
+                <div class="gantt-timeline-ruler">
+                    @foreach (var tick in ticks)
+                    {
+                        <span class="gantt-timeline-tick @(tick.Major ? "gantt-timeline-tick-major" : null)"
+                              style="@($"left:{tick.LeftPercent:0.###}%")"
+                              title="@tick.Label">
+                            <span class="gantt-timeline-tick-label">@tick.Label</span>
+                        </span>
+                    }
+                    @if (todayLeft is double today)
+                    {
+                        <span class="gantt-timeline-today" style="@($"left:{today:0.###}%")" title="Сегодня"></span>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="gantt-timeline-scroll">
+            <div class="gantt-timeline-body">
+                @foreach (var row in gantt.Rows)
+                {
+                    var summary = GanttTimelineScale.SummarizeRow(row);
+                    <div class="gantt-timeline-row">
+                        <div class="gantt-timeline-sidebar">
+                            <span class="gantt-timeline-col-name" title="@row.Label">@row.Label</span>
+                            <span class="gantt-timeline-col-start">@FormatTime(summary.Start, gantt.AxisFormat)</span>
+                            <span class="gantt-timeline-col-end">@FormatTime(summary.End, gantt.AxisFormat)</span>
+                            <span class="gantt-timeline-col-duration">@summary.DurationText</span>
+                        </div>
+                        <div class="gantt-timeline-track-wrap">
+                            <div class="gantt-timeline-track" aria-label="@row.Label">
+                                @if (todayLeft is double todayRow)
+                                {
+                                    <span class="gantt-timeline-today gantt-timeline-today-row"
+                                          style="@($"left:{todayRow:0.###}%")"
+                                          aria-hidden="true"></span>
+                                }
+                                @foreach (var segment in row.Segments)
+                                {
+                                    <div class="gantt-timeline-bar"
+                                         style="@($"left:{segment.LeftPercent:0.###}%;width:{segment.WidthPercent:0.###}%;background:{segment.Color}")"
+                                         title="@segment.Tooltip"></div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="gantt-empty muted">Нет данных для выбранного пользователя и периода.</div>
+}
+
+@code {
+    private const int RowHeightPx = 34;
+    private const int HeadHeightPx = 52;
+
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private static string FormatTime(DateTime? value, string axisFormat) =>
+        value is null ? "—" : LabelFormat.FormatObject(value, axisFormat);
+
+    private static int ResolveBodyHeightPx(GanttPayload gantt)
+    {
+        var visibleRows = gantt.VisibleRows;
+        if (visibleRows is int rows && rows > 0)
+        {
+            return Math.Clamp(rows * RowHeightPx + 4, RowHeightPx + 4, 800);
+        }
+
+        return Math.Clamp(gantt.HeightPx - HeadHeightPx, RowHeightPx * 2, 720);
+    }
+}

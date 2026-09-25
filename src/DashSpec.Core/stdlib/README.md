@@ -26,5 +26,6 @@ end chrome
 | `scatter_360` | scatter chrome, height 360 |
 | `histogram_320` | histogram bar, height 320 |
 | `heatmap_tall` | matrix chrome; `visible_rows = 8` (scroll, all Y categories) |
+| `gantt_timeline` | gantt split grid + ruler; `visible_rows = 8` |
 
 Roadmap kinds: [docs/DIAGRAM_KINDS_ROADMAP_RU.md](../../../docs/DIAGRAM_KINDS_ROADMAP_RU.md).

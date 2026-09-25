@@ -203,7 +203,10 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Gantt: ChartDataBuilder.BuildGantt(rows, effective.Diagram),
+                    Gantt: EnrichGanttPayload(
+                        ChartDataBuilder.BuildGantt(rows, effective.Diagram),
+                        effective,
+                        library),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
                     BoundFilters: card.BoundFilters,
@@ -287,4 +290,13 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             _ => Convert.ToString(value, culture) ?? "—",
         };
     }
+
+    private static GanttPayload EnrichGanttPayload(
+        GanttPayload payload,
+        CardDefinition card,
+        SpecLibrary? library) =>
+        payload with
+        {
+            VisibleRows = CardChromeResolver.ResolveVisibleRows(card, library),
+        };
 }
