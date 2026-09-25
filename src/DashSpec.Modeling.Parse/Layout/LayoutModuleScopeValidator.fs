@@ -11,6 +11,7 @@ module LayoutModuleScopeValidator =
         | LayoutScope.Tab -> "tab"
         | LayoutScope.Page -> "page"
         | LayoutScope.Card -> "card"
+        | LayoutScope.Host -> "host"
 
     let ensureMatchesIncludeSite (board: LayoutBoardDefinition) (expected: LayoutScope) (context: string) =
         if String.IsNullOrWhiteSpace context then

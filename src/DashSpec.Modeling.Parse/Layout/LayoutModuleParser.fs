@@ -11,20 +11,21 @@ module LayoutModuleParser =
 
     let private parseMandatoryScope (reader: TokenReader) =
         if not (reader.TryKeyword "scope") then
-            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card after @layout <id>."))
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card|host after @layout <id>."))
 
         let kind = reader.ReadIdent()
 
         if String.IsNullOrWhiteSpace kind then
-            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card after @layout <id>."))
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module requires scope toolbar|tab|page|card|host after @layout <id>."))
 
         match kind.ToLowerInvariant() with
         | "toolbar" -> LayoutScope.Toolbar
         | "tab" -> LayoutScope.Tab
         | "page" -> LayoutScope.Page
         | "card" -> LayoutScope.Card
+        | "host" -> LayoutScope.Host
         | _ ->
-            raise (DashSpec.Modeling.Core.DashSpecParseException($"Layout module scope must be toolbar, tab, page, or card; got '{kind}'."))
+            raise (DashSpec.Modeling.Core.DashSpecParseException($"Layout module scope must be toolbar, tab, page, card, or host; got '{kind}'."))
 
     /// <summary>Parse a <c>.dashlayout</c> file body.</summary>
     let parseLayoutFile (text: string) : LayoutBoardDefinition =

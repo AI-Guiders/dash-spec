@@ -12,7 +12,7 @@
 
         @if (!Inline || ShowLabel)
         {
-            <span class="filter-inline-label">Отчёт</span>
+            <span class="filter-inline-label">@CatalogLabel</span>
         }
 
         <select class="dash-catalog-select"
@@ -80,6 +80,8 @@
     [Parameter] public bool Inline { get; set; }
 
     [Parameter] public bool ShowLabel { get; set; }
+
+    [Parameter] public string CatalogLabel { get; set; } = "Отчёт";
 
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 

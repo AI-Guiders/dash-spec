@@ -2,6 +2,7 @@
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Presentation
 @inject DashSpecTomlRoot Bootstrap
+@inject HostShellBootstrap? HostShell
 @inject HostPresentationSignals PresentationSignals
 @implements IDisposable
 
@@ -26,7 +27,7 @@
 <div class="page @Scheme @LargeFilterLayoutClass">
     <header class="topbar">
         <div>
-            <strong>DashSpec</strong>
+            <strong>@(HostShell?.ProductTitle ?? "DashSpec")</strong>
         </div>
         <TopbarNav />
     </header>

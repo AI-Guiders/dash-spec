@@ -59,4 +59,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) | Language affinity — Modeling (F#) vs Execution (C#) | Accepted |
 | [0052](DASHSPEC-ADR-0052-catalog-emit-drift-gate.md) | Catalog emit drift gate — `DashCatalog.g.cs` vs `gdlc emit` (W0) | Accepted |
 | [0053](DASHSPEC-ADR-0053-editorconfig-and-document-formatter.md) | EditorConfig and document formatter | Accepted |
-| [0054](DASHSPEC-ADR-0054-dashhost-module.md) | `.dashhost` — planet-content Host shell | Proposed |
+| [0054](DASHSPEC-ADR-0054-dashhost-module.md) | `.dashhost` — planet-content Host shell | Accepted |

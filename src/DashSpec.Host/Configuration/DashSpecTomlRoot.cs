@@ -40,6 +40,9 @@ public sealed class ExternalLinkTomlEntry
 
 public sealed class HostTomlSection
 {
+    /// <summary>Planet-content shell module (<c>.dashhost</c>, ADR-0054).</summary>
+    public string Dashhost { get; set; } = string.Empty;
+
     /// <summary>WitDB path for Control Center settings (ADR-0042). Default: %ProgramData%\DashSpec\host-settings.witdb</summary>
     public string DatabasePath { get; set; } = string.Empty;
 }
