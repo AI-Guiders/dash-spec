@@ -50,7 +50,7 @@ internal sealed class SelectDateFilterCommand : PlatformCommand<DashboardFilterC
 
 
 
-        if (!DateFilterPresets.TryResolve(context.ArgTail, context.TodayUtc, out var range, out var error))
+        if (!DateFilterPresets.TryResolve(context.ArgTail, context.TodayUtc, out var range, out var error, context.Culture))
 
         {
 

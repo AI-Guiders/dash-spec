@@ -396,6 +396,27 @@ public class DashboardFilterCommandTests
     }
 
     [Fact]
+    public void DateFilterPresets_resolves_iso_day_and_locale_day_tokens()
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("ru-RU");
+        Assert.True(
+            DateFilterPresets.TryResolve("2026-08-03", new DateOnly(2026, 6, 24), out var iso, out var isoError, culture),
+            isoError);
+        Assert.Equal(new DateOnly(2026, 8, 3), iso.From);
+        Assert.Equal(iso.From, iso.To);
+
+        Assert.True(
+            DateFilterPresets.TryResolve("03.08.2026", new DateOnly(2026, 6, 24), out var dotted, out var dottedError, culture),
+            dottedError);
+        Assert.Equal(new DateOnly(2026, 8, 3), dotted.From);
+
+        Assert.True(
+            DateFilterPresets.TryResolve("0003-08-2026", new DateOnly(2026, 6, 24), out var misordered, out var misorderedError, culture),
+            misorderedError);
+        Assert.Equal(new DateOnly(2026, 8, 3), misordered.From);
+    }
+
+    [Fact]
     public void DateFilterPresets_resolves_quarter_to_calendar_bounds()
     {
         Assert.True(
