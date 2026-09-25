@@ -1,9 +1,10 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 
-public static class LabelFormat
+public static partial class LabelFormat
 {
     private static readonly AsyncLocal<ReportFormatDefaults?> ReportDefaults = new();
     private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("ru-RU");
@@ -50,6 +51,31 @@ public static class LabelFormat
     public static string ResolveDateTimeFormat(string? diagramFormat) =>
         CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateTimeFormat, "datetime.short");
 
+    public static string ResolveAxisFormat(string? diagramFormat)
+    {
+        if (string.IsNullOrWhiteSpace(diagramFormat))
+        {
+            return ResolveDateFormat(null);
+        }
+
+        var trimmed = diagramFormat.Trim();
+        if (trimmed.Equals("time.short", StringComparison.OrdinalIgnoreCase))
+        {
+            return ResolveTimeFormat(trimmed);
+        }
+
+        if (trimmed.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase))
+        {
+            return ResolveDateTimeFormat(trimmed);
+        }
+
+        return ResolveDateFormat(trimmed);
+    }
+
+    public static bool LooksLikePreformattedTimeLabel(string? raw) =>
+        !string.IsNullOrWhiteSpace(raw) && PreformattedTimeLabelPattern().IsMatch(raw.Trim());
+
     internal static TimeZoneInfo? SafeZone(string? id)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -94,6 +120,13 @@ public static class LabelFormat
             return string.Empty;
         }
 
+        var normalized = (format ?? "raw").Trim();
+        if (normalized.Equals("time.short", StringComparison.OrdinalIgnoreCase)
+            && LooksLikePreformattedTimeLabel(raw))
+        {
+            return raw;
+        }
+
         if (TryParseDateTime(raw, out var dt))
         {
             return FormatDisplayDateTime(ToDisplayTime(dt), format ?? ResolveDateTimeFormat(null));
@@ -104,7 +137,6 @@ public static class LabelFormat
             return FormatDateOnly(date, format ?? ResolveDateFormat(null));
         }
 
-        var normalized = (format ?? "raw").Trim();
         if (IsNamedPreset(normalized))
         {
             return normalized.ToLowerInvariant() switch
@@ -291,12 +323,15 @@ public static class LabelFormat
             return true;
         }
 
-        return DateTime.TryParse(raw, DefaultCulture, DateTimeStyles.None, out dt);
+        return false;
     }
 
     private static bool TryParseDateOnly(string raw, out DateOnly date) =>
-        DateOnly.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
-        || DateOnly.TryParse(raw, DefaultCulture, DateTimeStyles.None, out date);
+        DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
+        || DateOnly.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+
+    [GeneratedRegex(@"^\d{1,2}:\d{2}$")]
+    private static partial Regex PreformattedTimeLabelPattern();
 
     private static string FormatUserShort(string raw)
     {
