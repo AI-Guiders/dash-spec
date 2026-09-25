@@ -96,13 +96,7 @@ dashhost = "dashspec/sscad-prod.dashhost"
 database_path = ""   # WitDB, ADR-0042
 ```
 
-Разрешение `.dashhost` (только явный путь):
-
-1. `[host] dashhost` в ops TOML
-2. env `DASHSPEC_DASHHOST` (break-glass / CI)
-3. иначе — ошибка с подсказкой
-
-Автопоиск по deploy id или «единственный файл в dashspec/» **не** используется (явное лучше неявного).
+Разрешение `.dashhost` — только `[host] dashhost` в ops TOML (`dash-spec.toml` / `dash-spec.local.toml`). Без env и без автопоиска.
 
 Из распарсенного `.dashhost` Host получает `catalog_path`, presentation, links, layout.
 
@@ -113,7 +107,7 @@ database_path = ""   # WitDB, ADR-0042
 1. `.dashhost` (git / catalog_git) — planet-content SSOT
 2. `dash-spec.toml` / `dash-spec.local.toml` — **только ops**: `[host] database_path`, `[access]`, `[catalog_git]`
 3. WitDB `host_settings` — live override ops ([ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md))
-4. env `DASHSPEC_*` — break-glass
+4. env `DASHSPEC_API_KEY`, `DASHSPEC_HOST_DB`, `DASHSPEC_CATALOG_GIT_*` — только ops-секреты (не planet-content)
 
 `[presentation]` в TOML — deprecated в favor of `.dashhost`; WitDB может override theme/TZ для оператора.
 
@@ -141,7 +135,7 @@ database_path = ""   # WitDB, ADR-0042
 
 1. Parse `@host` + `catalog` + `configuration` + `presentation` + `links` + `surfaces`
 2. `include layout` and `!include "*.dashlayout"` with mandatory `scope host`
-3. `[host] dashhost` / `DASHSPEC_DASHHOST` (explicit only)
+3. `[host] dashhost` in ops TOML only
 4. `scope host` layout → `TopbarNav` slot order (`HostTopbarLayoutResolver`)
 5. `product_title`, `catalog_label`, links from dashhost; runtime `[[links]]` fallback + deprecation warning
 6. Deprecation warnings: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` when dashhost defines them
