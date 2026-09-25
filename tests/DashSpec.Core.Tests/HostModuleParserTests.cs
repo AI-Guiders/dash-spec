@@ -1,3 +1,4 @@
+using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
@@ -55,6 +56,40 @@ public sealed class HostModuleParserTests
         Assert.Equal("Портал", host.Links[0].Label);
         Assert.Contains("help", host.Surfaces);
         Assert.Contains("settings", host.Surfaces);
+    }
+
+    [Fact]
+    public void Parse_host_with_bang_include_layout()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashhost-include-" + Guid.NewGuid().ToString("N"));
+        var layoutsDir = Path.Combine(dir, "layouts");
+        Directory.CreateDirectory(layoutsDir);
+        File.WriteAllText(
+            Path.Combine(layoutsDir, "host-topbar.dashlayout"),
+            """
+            @layout tb
+            scope host
+            [ catalog nav ]
+            """);
+
+        const string text = """
+            @host demo
+            catalog "catalogs/demo.dashcatalog"
+            !include "layouts/host-topbar.dashlayout"
+            end host
+            """;
+
+        try
+        {
+            var host = HostModuleParser.Parse(text, dir);
+            Assert.NotNull(host.TopbarLayout);
+            Assert.Equal(LayoutScope.Host, host.TopbarLayout!.ModuleScope);
+            Assert.Equal(["catalog", "nav"], host.TopbarLayout!.Rows[0]);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
