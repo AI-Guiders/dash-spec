@@ -1,6 +1,7 @@
 @implements IDisposable
 @page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DashSpec.Core.Model
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Commands
 @using DashSpec.Host.Services.Presentation
@@ -77,29 +78,54 @@ else
     </p>
 
     <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
-        @foreach (var card in Page.VisibleCards())
+        @if (Page.TabLayoutPlan is { } layoutPlan)
         {
-            <CommandTargetShell TargetId="@card.Id" Kind="CommandTargetKind.Card">
-                <DashboardCardView @key="card.Id"
-                                   Card="card"
-                                   PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)"
-                                   GridColumns="@Page.Session.Document.Layout.Columns"
-                                   DashboardBoundFilters="Page.DashboardBoundForCard(card)"
-                                   FilterIndex="Page.Session.FilterIndex"
-                                   DateFrom="Page.DateFrom"
-                                   DateTo="Page.DateTo"
-                                   SelectedFields="Page.SelectedFields"
-                                   TopLimits="Page.TopLimits"
-                                   GetFieldOptions="Page.Session.GetFieldOptions"
+            @foreach (var entry in layoutPlan.Entries)
+            {
+                @if (entry is LayoutBoardCardRow cardRow)
+                {
+                    @foreach (var token in cardRow.CardIds)
+                    {
+                        var card = Page.FindVisibleCard(Page.ResolveLayoutCardRef(token));
+                        if (card is not null && layoutPlan.TopLevelPlacements.TryGetValue(card.Id, out var placement))
+                        {
+                            <DashboardCardSlot Card="card"
+                                               Page="Page"
+                                               AutoApply="chrome.IsAutoApply"
+                                               PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(placement, Page.Session.Document.Layout.Columns)" />
+                        }
+                    }
+                }
+                else if (entry is LayoutBoardGroupRow { Group: var group }
+                         && layoutPlan.Groups.TryGetValue(group.Id, out var groupPlacement))
+                {
+                    <section class="card-group" style="@DashboardLayoutHelper.GroupOuterStyle(groupPlacement.OuterRow)">
+                        @if (!string.IsNullOrWhiteSpace(groupPlacement.Title))
+                        {
+                            <h3 class="card-group-title">@groupPlacement.Title</h3>
+                        }
+                        <div class="card-group-cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)">
+                            @foreach (var (card, innerPlacement) in Page.CardsForGroup(group))
+                            {
+                                <DashboardCardSlot Card="card"
+                                                   Page="Page"
+                                                   AutoApply="chrome.IsAutoApply"
+                                                   PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(innerPlacement, Page.Session.Document.Layout.Columns)" />
+                            }
+                        </div>
+                    </section>
+                }
+            }
+        }
+        else
+        {
+            @foreach (var card in Page.VisibleCards())
+            {
+                <DashboardCardSlot Card="card"
+                                   Page="Page"
                                    AutoApply="chrome.IsAutoApply"
-                                   ActiveViewId="@Page.GetCardActiveView(card.Id)"
-                                   OnApplyCard="Page.ApplyCardFiltersAsync"
-                                   OnScheduleCardApply="Page.ScheduleCardApplyAsync"
-                                   OnCardDayChanged="Page.OnCardDayChanged"
-                                   OnCardFieldChanged="Page.OnCardFieldChanged"
-                                   OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
-                                   OnCardAction="Page.ExecuteCardActionAsync" />
-            </CommandTargetShell>
+                                   PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)" />
+            }
         }
     </section>
 }

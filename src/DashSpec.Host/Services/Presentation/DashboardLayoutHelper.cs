@@ -27,14 +27,19 @@ internal static class DashboardLayoutHelper
     public static string CardPlacementStyle(
         CardRenderResult card,
         LayoutDefinition layout,
-        IReadOnlyDictionary<string, PlacementDefinition> tabPlacements)
+        IReadOnlyDictionary<string, PlacementDefinition> tabPlacements) =>
+        PlacementGridStyle(ResolvePlacement(card, layout.Columns, tabPlacements), layout.Columns);
+
+    public static string PlacementGridStyle(PlacementDefinition placement, int layoutColumns)
     {
-        var placement = ResolvePlacement(card, layout.Columns, tabPlacements);
-        var span = Math.Min(placement.Span, layout.Columns);
+        var span = Math.Min(placement.Span, layoutColumns);
         return placement.Row > 0
             ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
             : $"grid-column:span {span};";
     }
+
+    public static string GroupOuterStyle(int outerRow) =>
+        $"grid-column:1 / -1;grid-row:{outerRow};";
 
     public static string ChartHeightStyle(CardRenderResult card, bool detailView = false)
     {

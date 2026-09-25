@@ -7,6 +7,7 @@ using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
 using FsharpCatalogEntry = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
 using FsharpCatalogGroup = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
 using FsharpBoard = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
+using FsharpLayout = DashSpec.Modeling.Parse.Layout;
 using FsharpScope = DashSpec.Modeling.Parse.Layout.LayoutScope;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
@@ -413,7 +414,25 @@ internal static class ModuleParseRegistration
     {
         var scopes = OptionModule.ToArray(board.ModuleScope);
         LayoutScope? moduleScope = scopes.Length > 0 ? MapScope(scopes[0]) : null;
-        return new LayoutBoardDefinition(board.Rows, moduleScope);
+        return new LayoutBoardDefinition(
+            board.Entries.Select(ToLayoutEntry).ToList(),
+            moduleScope);
     }
+
+    private static LayoutBoardEntry ToLayoutEntry(FsharpLayout.LayoutBoardEntry entry) =>
+        entry switch
+        {
+            FsharpLayout.LayoutBoardEntry.CardRow cardRow =>
+                new LayoutBoardCardRow(cardRow.Item.ToList()),
+            FsharpLayout.LayoutBoardEntry.GroupRow groupRow =>
+                new LayoutBoardGroupRow(ToLayoutGroup(groupRow.Item)),
+            _ => throw new InvalidOperationException($"Unknown layout board entry: {entry}")
+        };
+
+    private static LayoutBoardGroupDefinition ToLayoutGroup(FsharpLayout.LayoutBoardGroupDefinition group) =>
+        new(
+            group.Id,
+            OptionModule.ToArray(group.Title).FirstOrDefault(),
+            group.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
 }
 

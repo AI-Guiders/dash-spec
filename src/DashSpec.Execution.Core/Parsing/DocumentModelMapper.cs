@@ -208,9 +208,25 @@ internal static class DocumentModelMapper
         var scopes = OptionModule.ToArray(board.ModuleScope);
         LayoutScope? moduleScope = scopes.Length > 0 ? MapScope(scopes[0]) : null;
         return new LayoutBoardDefinition(
-            board.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList(),
+            board.Entries.Select(ToCore).ToList(),
             moduleScope);
     }
+
+    private static LayoutBoardEntry ToCore(FsharpLayout.LayoutBoardEntry entry) =>
+        entry switch
+        {
+            FsharpLayout.LayoutBoardEntry.CardRow cardRow =>
+                new LayoutBoardCardRow(cardRow.Item.ToList()),
+            FsharpLayout.LayoutBoardEntry.GroupRow groupRow =>
+                new LayoutBoardGroupRow(ToCore(groupRow.Item)),
+            _ => throw new InvalidOperationException($"Unknown layout board entry: {entry}")
+        };
+
+    private static LayoutBoardGroupDefinition ToCore(FsharpLayout.LayoutBoardGroupDefinition group) =>
+        new(
+            group.Id,
+            FirstOrNull(group.Title),
+            group.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
 
     private static PresentationBlock ToCore(FsharpPresentation.PresentationBlock block) =>
         new(
