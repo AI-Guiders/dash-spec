@@ -183,16 +183,19 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                         _session.Document) with { Loading = false }));
                 }
 
-                if (visibility is CardVisibilityOutcome.Placeholder &&
-                    !string.IsNullOrWhiteSpace(card.Visibility?.Message))
+                if (visibility is CardVisibilityOutcome.Placeholder)
                 {
-                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreatePlaceholder(
-                        card,
-                        _session.SpecLibrary,
-                        _vizPlugins,
-                        dashboardFilters,
-                        card.Visibility.Message,
-                        _session.Document)));
+                    var gateMessage = DisplayResolution.ResolveGateMessage(card.Visibility);
+                    if (!string.IsNullOrWhiteSpace(gateMessage))
+                    {
+                        return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreatePlaceholder(
+                            card,
+                            _session.SpecLibrary,
+                            _vizPlugins,
+                            dashboardFilters,
+                            gateMessage,
+                            _session.Document)));
+                    }
                 }
 
                 try

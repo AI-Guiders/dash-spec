@@ -1,6 +1,7 @@
 @namespace DashSpec.Host.Components.Dashboard
 
 @using DashSpec.Core.Model
+@using DashSpec.Host.Services.Presentation
 
 
 
@@ -29,7 +30,7 @@
 
             {
 
-                <optgroup label="@group.Title">
+                <optgroup label="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)">
 
                     @foreach (var entry in Entries.Where(entry =>
 
@@ -37,7 +38,7 @@
 
                     {
 
-                        <option value="@entry.Id">@entry.Title</option>
+                        <option value="@entry.Id">@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)</option>
 
                     }
 
@@ -49,7 +50,7 @@
 
             {
 
-                <option value="@entry.Id">@entry.Title</option>
+                <option value="@entry.Id">@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)</option>
 
             }
 

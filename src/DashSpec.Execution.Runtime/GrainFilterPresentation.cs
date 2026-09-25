@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -151,7 +152,5 @@ public static class GrainFilterPresentation
     }
 
     private static string StaticLabel(FilterDefinition filter) =>
-        !string.IsNullOrWhiteSpace(filter.Label)
-            ? filter.Label
-            : filter.Name.Replace('_', ' ');
+        DisplayResolution.ResolveFilterLabel(filter);
 }

@@ -35,6 +35,7 @@ else
 
     <DashboardTabBar Tabs="Page.Session.Document.Tabs"
                      ActiveTabId="Page.ActiveTabId"
+                     ResolveLabel="Page.ResolveTabLabel"
                      Sticky="chrome.IsSticky"
                      OnSelect="Page.SelectTab" />
 
@@ -42,6 +43,7 @@ else
     {
         <DashboardPagePicker Pages="Page.ActiveTabPages()"
                              ActivePageId="Page.ActivePageId"
+                             ResolveLabel="Page.ResolvePageNavTitle"
                              OnSelect="Page.SelectPageAsync" />
     }
 

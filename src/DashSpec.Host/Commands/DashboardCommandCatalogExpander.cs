@@ -3,6 +3,7 @@
 using AIGuiders.Platform.Execution.CommandPlane;
 using AIGuiders.Platform.IntermediateRepresentation.Command;
 using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
 using DashSpec.Host.Commands.Constructors;
 
 namespace DashSpec.Host.Commands;
@@ -27,14 +28,14 @@ internal static class DashboardCommandCatalogExpander
             SelectReportCommand.Id,
             context.CatalogEntries,
             entry => $"select report {entry.Id}",
-            entry => entry.Title ?? entry.Id,
+            entry => DisplayResolution.ResolveCatalogEntryTitle(entry),
             (builder, _) => DashboardDefaults(builder)));
 
         descriptors.AddRange(CommandDescriptorRows.Map(
             SelectPageCommand.Id,
             context.ReportPages,
             page => $"select page {page.Id}",
-            page => page.Title ?? page.Id,
+            page => DisplayResolution.ResolvePageNavTitle(page),
             (builder, _) => DashboardDefaults(builder)));
 
         foreach (var filterName in context.ToolbarFilterNames)

@@ -11,7 +11,7 @@
                     class="dash-tab @(active ? "dash-tab-active" : null)"
                     aria-selected="@active"
                     @onclick="() => OnSelect.InvokeAsync(page.Id)">
-                @(page.Title ?? page.Id)
+                @(ResolveLabel?.Invoke(page) ?? page.Title ?? page.Id)
             </button>
         }
     </nav>
@@ -19,7 +19,8 @@
 
 @code {
     [Parameter] public IReadOnlyList<ReportPageDefinition> Pages { get; set; } = [];
+    [Parameter] public Func<ReportPageDefinition, string>? ResolveLabel { get; set; }
     [Parameter] public string? ActivePageId { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 }
-
+

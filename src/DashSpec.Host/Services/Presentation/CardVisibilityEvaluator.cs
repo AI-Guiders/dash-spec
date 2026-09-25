@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Host.Services.Presentation;
 
@@ -50,7 +51,7 @@ public static class CardVisibilityEvaluator
             return null;
         }
 
-        return card.Visibility?.Message;
+        return DisplayResolution.ResolveGateMessage(card.Visibility);
     }
 
     public static bool FilterHasSelection(

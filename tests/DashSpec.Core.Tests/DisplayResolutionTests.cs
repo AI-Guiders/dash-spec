@@ -121,4 +121,45 @@ public sealed class DisplayResolutionTests
         Assert.Equal(ResolutionMode.SoakDev, DisplayResolution.InferMode(null, true));
         Assert.Equal(ResolutionMode.SoakDev, DisplayResolution.InferMode("peak_by_app", false));
     }
+
+    [Fact]
+    public void Filter_label_humanizes_name_when_label_missing()
+    {
+        var filter = new FilterDefinition(FilterKind.Field, "project_name", "all", "project");
+        Assert.Equal("project name", DisplayResolution.ResolveFilterLabel(filter));
+    }
+
+    [Fact]
+    public void Filter_label_prefers_explicit_label()
+    {
+        var filter = new FilterDefinition(FilterKind.Field, "project_name", "all", "project", Label: "Проект");
+        Assert.Equal("Проект", DisplayResolution.ResolveFilterLabel(filter));
+    }
+
+    [Fact]
+    public void Catalog_entry_title_falls_back_to_id()
+    {
+        var entry = new CatalogEntryDefinition("overview", "", "overview.dashspec");
+        Assert.Equal("overview", DisplayResolution.ResolveCatalogEntryTitle(entry));
+    }
+
+    [Fact]
+    public void Tab_label_catalog_prod_prefers_entry_title()
+    {
+        var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry, StakeholderDoc.Tabs[0]);
+        Assert.Equal("№1 Пик одновременности по ПО", DisplayResolution.ResolveTabLabel(context));
+    }
+
+    [Fact]
+    public void Page_nav_title_falls_back_to_id()
+    {
+        var page = new ReportPageDefinition("details", null, TabId: "stakeholder");
+        Assert.Equal("details", DisplayResolution.ResolvePageNavTitle(page));
+    }
+
+    [Fact]
+    public void Gate_message_returns_empty_when_missing()
+    {
+        Assert.Equal(string.Empty, DisplayResolution.ResolveGateMessage(null));
+    }
 }
