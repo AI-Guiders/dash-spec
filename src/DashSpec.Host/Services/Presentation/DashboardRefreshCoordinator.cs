@@ -1,5 +1,6 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
@@ -38,6 +39,8 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
     public List<CardRenderResult> Cards { get; } = [];
 
+    public ResolutionContext? DisplayContext { get; set; }
+
     public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -45,12 +48,14 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     {
         var dashboardFilters = _session.Document.DashboardFilters;
         Cards.Clear();
-        Cards.AddRange(_session.Document.Cards.Select(card => CardRenderSkeletonFactory.CreateLoading(
+        Cards.AddRange(_session.Document.Cards.Select(card => EnrichCard(
             card,
-            _session.SpecLibrary,
-            _vizPlugins,
-            dashboardFilters,
-            _session.Document)));
+            CardRenderSkeletonFactory.CreateLoading(
+                card,
+                _session.SpecLibrary,
+                _vizPlugins,
+                dashboardFilters,
+                _session.Document))));
     }
 
     public void ScheduleDashboardApply()
@@ -170,30 +175,30 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                     ActivePhaseId);
                 if (visibility is CardVisibilityOutcome.Hidden)
                 {
-                    return (card.Id, CardRenderSkeletonFactory.CreateLoading(
+                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreateLoading(
                         card,
                         _session.SpecLibrary,
                         _vizPlugins,
                         dashboardFilters,
-                        _session.Document) with { Loading = false });
+                        _session.Document) with { Loading = false }));
                 }
 
                 if (visibility is CardVisibilityOutcome.Placeholder &&
                     !string.IsNullOrWhiteSpace(card.Visibility?.Message))
                 {
-                    return (card.Id, CardRenderSkeletonFactory.CreatePlaceholder(
+                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreatePlaceholder(
                         card,
                         _session.SpecLibrary,
                         _vizPlugins,
                         dashboardFilters,
                         card.Visibility.Message,
-                        _session.Document));
+                        _session.Document)));
                 }
 
                 try
                 {
                     var result = await _session.RenderCardAsync(card, token).ConfigureAwait(false);
-                    return (card.Id, result);
+                    return (card.Id, EnrichCard(card, result));
                 }
                 catch (OperationCanceledException)
                 {
@@ -201,13 +206,13 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    return (card.Id, CardRenderSkeletonFactory.CreateError(
+                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreateError(
                         card,
                         _session.SpecLibrary,
                         _vizPlugins,
                         dashboardFilters,
                         ex.Message,
-                        _session.Document));
+                        _session.Document)));
                 }
             })).ConfigureAwait(false);
 
@@ -253,12 +258,14 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                     }
 
                     var card = _session.Document.Cards[index];
-                    Cards[index] = CardRenderSkeletonFactory.CreateLoading(
+                    Cards[index] = EnrichCard(
                         card,
-                        _session.SpecLibrary,
-                        _vizPlugins,
-                        dashboardFilters,
-                        _session.Document);
+                        CardRenderSkeletonFactory.CreateLoading(
+                            card,
+                            _session.SpecLibrary,
+                            _vizPlugins,
+                            dashboardFilters,
+                            _session.Document));
                 }
             }
 
@@ -305,6 +312,11 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     }
 
     private bool IsCurrentRefresh(long generation) => generation == _refreshGeneration;
+
+    private CardRenderResult EnrichCard(CardDefinition card, CardRenderResult render) =>
+        DisplayContext is null
+            ? render
+            : DisplayResolutionHost.ApplyCardChrome(DisplayContext, card, render);
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)
     {
