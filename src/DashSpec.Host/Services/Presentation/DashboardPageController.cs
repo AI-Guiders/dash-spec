@@ -119,6 +119,11 @@ public sealed class DashboardPageController : IDisposable
 
     public bool HasCatalog => CatalogEntries.Count > 1;
 
+    /// <summary>How to read date/time labels for the active report (from <c>defaults</c> + display TZ).</summary>
+    public string FormatReadingGuide => ReportFormatReadingGuide.Build(
+        _session.Document.ResolvedFormatDefaults,
+        _cultureAmbient.DisplayTimeZone);
+
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
         _hostContext.Catalog.Document.Groups ?? [];
 
