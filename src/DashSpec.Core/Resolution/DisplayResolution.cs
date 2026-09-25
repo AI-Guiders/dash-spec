@@ -84,11 +84,44 @@ public static class DisplayResolution
         return suppress ? ResolvedCardChrome.Suppressed(title) : ResolvedCardChrome.Visible(title);
     }
 
+    public static string ResolveCatalogEntryTitle(CatalogEntryDefinition entry) =>
+        ResolveChain(entry.Id, entry.Title);
+
+    public static string ResolveCatalogGroupTitle(CatalogGroupDefinition group) =>
+        ResolveChain(group.Id, group.Title);
+
     public static string ResolveFilterLabel(FilterDefinition filter) =>
-        ResolveChain(filter.Name, filter.Label);
+        ResolveChain(HumanizeFilterName(filter.Name), filter.Label);
+
+    public static string ResolveGateMessage(CardVisibilityRule? visibility) =>
+        string.IsNullOrWhiteSpace(visibility?.Message) ? string.Empty : visibility.Message;
+
+    public static string ResolveDiagramAxisLabel(
+        IReadOnlyDictionary<string, string> diagramProperties,
+        string bindingKey,
+        string fallbackBindingName)
+    {
+        var labelKey = $"{bindingKey}_label";
+        if (diagramProperties.TryGetValue(labelKey, out var axisLabel) &&
+            !string.IsNullOrWhiteSpace(axisLabel))
+        {
+            return axisLabel;
+        }
+
+        if (diagramProperties.TryGetValue("label", out var generic) &&
+            !string.IsNullOrWhiteSpace(generic))
+        {
+            return generic;
+        }
+
+        return HumanizeFilterName(fallbackBindingName);
+    }
+
+    public static string HumanizeFilterName(string name) =>
+        name.Replace('_', ' ');
 
     /// <summary>Weak → strong; rightmost non-empty wins; else <paramref name="fallback"/>.</summary>
-    internal static string ResolveChain(string fallback, params string?[] weakToStrong)
+    public static string ResolveChain(string fallback, params string?[] weakToStrong)
     {
         for (var i = weakToStrong.Length - 1; i >= 0; i--)
         {

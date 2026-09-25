@@ -120,13 +120,7 @@ public static class TabLayoutCompactor
             return result;
         }
 
-        foreach (var card in tabCards)
-        {
-            if (card.Placement is not null)
-            {
-                result[card.Id] = card.Placement;
-            }
-        }
+        LayoutPlacementResolution.ApplyExplicitPlacementOverrides(tabCards, result);
 
         return result;
     }

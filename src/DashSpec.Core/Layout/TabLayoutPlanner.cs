@@ -1,5 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Core.Layout;
 
@@ -54,7 +55,11 @@ public static class TabLayoutPlanner
                         $"{context} group '{group.Id}'",
                         token => CardLayoutRefResolver.Resolve(token, tabCards, context));
 
-                    groups[group.Id] = new LayoutGroupPlacement(group.Id, group.Title, outerRow, inner);
+                    groups[group.Id] = new LayoutGroupPlacement(
+                        group.Id,
+                        DisplayResolution.TryResolveLayoutGroupChromeTitle(group),
+                        outerRow,
+                        inner);
                     foreach (var (cardId, placement) in inner)
                     {
                         allCards[cardId] = placement;

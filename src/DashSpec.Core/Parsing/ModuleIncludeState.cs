@@ -26,38 +26,31 @@ internal sealed class ModuleIncludeState
     public bool TryGetDiagram(string id, out SpecIncludeFragment fragment) =>
         _diagrams.TryGetValue(id, out fragment!);
 
-    public void RegisterDiagram(string id, SpecIncludeFragment fragment)
+    private readonly HashSet<string> _diagramIds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _tooltipIds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _chartChromePresetIds = new(StringComparer.OrdinalIgnoreCase);
+
+    public void RegisterDiagram(string id, SpecIncludeFragment fragment, string? sourcePath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        if (_diagrams.ContainsKey(id))
-        {
-            throw new DashSpecParseException($"Duplicate diagram id '{id}' in module includes.");
-        }
-
+        ArgumentNullException.ThrowIfNull(fragment);
+        IncludeMergePolicy.EnsureUniqueModuleId(id, sourcePath ?? id, _diagramIds);
         _diagrams[id] = fragment;
     }
 
-    public void RegisterTooltip(string id, TooltipDefinition definition)
+    public void RegisterTooltip(string id, TooltipDefinition definition, string? sourcePath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(definition);
-        if (_tooltips.ContainsKey(id))
-        {
-            throw new DashSpecParseException($"Duplicate tooltip id '{id}' in module includes.");
-        }
-
+        IncludeMergePolicy.EnsureUniqueModuleId(id, sourcePath ?? id, _tooltipIds);
         _tooltips[id] = definition;
     }
 
-    public void RegisterChartChromePreset(string id, PresentationBlock block)
+    public void RegisterChartChromePreset(string id, PresentationBlock block, string? sourcePath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(block);
-        if (_chartChromePresets.ContainsKey(id))
-        {
-            throw new DashSpecParseException($"Duplicate chart chrome preset '{id}' in module includes.");
-        }
-
+        IncludeMergePolicy.EnsureUniqueModuleId(id, sourcePath ?? id, _chartChromePresetIds);
         _chartChromePresets[id] = block;
     }
 
