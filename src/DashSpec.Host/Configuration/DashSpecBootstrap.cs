@@ -61,8 +61,7 @@ public static class DashSpecBootstrap
                 """
                 Host bootstrap requires a catalog source:
                   [host] dashhost = "dashspec/<id>.dashhost"
-                  or DASHSPEC_DASHHOST / DASHSPEC_DEPLOY_ID
-                  or a single dashspec/*.dashhost under content root
+                  or env DASHSPEC_DASHHOST
                   or legacy [dashboard] catalog_path in dash-spec.toml.
                 """);
         }
@@ -248,40 +247,8 @@ public static class DashSpecBootstrap
         return withExt;
     }
 
-    public static string? ResolveDashhostPath(string contentRoot, string? dashhostReference)
-    {
-        var explicitPath = ResolveDashhostFile(contentRoot, dashhostReference);
-        if (!string.IsNullOrWhiteSpace(explicitPath))
-        {
-            return explicitPath;
-        }
-
-        var deployId = Environment.GetEnvironmentVariable("DASHSPEC_DEPLOY_ID");
-        if (!string.IsNullOrWhiteSpace(deployId))
-        {
-            foreach (var candidate in new[]
-                     {
-                         $"dashspec/{deployId}.dashhost",
-                         $"dashspec/{deployId}-prod.dashhost",
-                     })
-            {
-                explicitPath = ResolveDashhostFile(contentRoot, candidate);
-                if (!string.IsNullOrWhiteSpace(explicitPath))
-                {
-                    return explicitPath;
-                }
-            }
-        }
-
-        var dashspecDir = Path.Combine(contentRoot, "dashspec");
-        if (!Directory.Exists(dashspecDir))
-        {
-            return null;
-        }
-
-        var hosts = Directory.GetFiles(dashspecDir, "*.dashhost", SearchOption.TopDirectoryOnly);
-        return hosts.Length == 1 ? hosts[0] : null;
-    }
+    public static string? ResolveDashhostPath(string contentRoot, string? dashhostReference) =>
+        ResolveDashhostFile(contentRoot, dashhostReference);
 
     private static string? ResolveDashhostFile(string contentRoot, string? dashhostReference)
     {
