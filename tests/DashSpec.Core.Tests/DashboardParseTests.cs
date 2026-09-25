@@ -583,6 +583,39 @@ public class DashboardParseTests
     }
 
     [Fact]
+    public void LabelFormat_Format_skips_reformat_for_preformatted_time_labels()
+    {
+        LabelFormat.DisplayTimeZone = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
+        try
+        {
+            Assert.Equal("14:05", LabelFormat.Format("14:05", "time.short"));
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = null;
+        }
+    }
+
+    [Fact]
+    public void GrainFilterPresentation_chip_uses_report_date_format_not_iso()
+    {
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults(DateFormat: "dd.MM"));
+        try
+        {
+            var chip = GrainFilterPresentation.FormatChipValue(
+                new DateOnly(2026, 8, 3),
+                new DateOnly(2026, 8, 3),
+                "day");
+            Assert.Equal("03.08", chip);
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    [Fact]
     public void LabelFormat_FormatObject_supports_csharp_custom_pattern()
     {
         LabelFormat.DisplayTimeZone = null;

@@ -72,16 +72,9 @@ public static class GrainFilterPresentation
     private static string FormatDayChipValue(DateOnly from, DateOnly to)
     {
         var dateFormat = LabelFormat.ResolveDateFormat(null);
-        if (!string.Equals(dateFormat, "date.short", StringComparison.OrdinalIgnoreCase))
-        {
-            return from == to
-                ? LabelFormat.FormatObject(from, dateFormat)
-                : $"{LabelFormat.FormatObject(from, dateFormat)}…{LabelFormat.FormatObject(to, dateFormat)}";
-        }
-
         return from == to
-            ? from.ToString("yyyy-MM-dd")
-            : $"{from:yyyy-MM-dd}…{to:yyyy-MM-dd}";
+            ? LabelFormat.FormatObject(from, dateFormat)
+            : $"{LabelFormat.FormatObject(from, dateFormat)}…{LabelFormat.FormatObject(to, dateFormat)}";
     }
 
     public static void NormalizeAnchoredDates(
