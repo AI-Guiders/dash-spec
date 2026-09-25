@@ -53,7 +53,8 @@ module TabModuleParser =
           ModuleDiagrams = None
           ModuleChartChromePresets = None
           ModuleTooltips = None
-          Pages = if shell.Pages.Count = 0 then None else Some(shell.Pages :> IReadOnlyList<_>) }
+          Pages = if shell.Pages.Count = 0 then None else Some(shell.Pages :> IReadOnlyList<_>)
+          FormatDefaults = shell.FormatDefaults }
 
     let composeStandalone (text: string) (specDirectory: string option) =
         if String.IsNullOrWhiteSpace text then

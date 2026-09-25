@@ -16,7 +16,8 @@ internal static class PayloadRowFormatters
 
     public static string FormatValue(object? value) => LabelFormat.FormatObject(value);
 
-    public static string FormatHeatmapLabel(object? value) => LabelFormat.FormatObject(value, "date.short");
+    public static string FormatHeatmapLabel(object? value) =>
+        LabelFormat.FormatObject(value, LabelFormat.ResolveDateFormat(null));
 
     public static string FormatHeatmapAxisLabel(object? value, string? format) =>
         LabelFormat.FormatObject(value, format);
@@ -25,12 +26,7 @@ internal static class PayloadRowFormatters
     {
         if (string.IsNullOrWhiteSpace(format))
         {
-            format = value switch
-            {
-                DateOnly => LabelFormat.ResolveDateFormat(null),
-                DateTime => LabelFormat.ResolveTimeFormat(null),
-                _ => null,
-            };
+            format = LabelFormat.ResolveChartAxisFormat(value);
         }
 
         return LabelFormat.FormatObject(value, format);
