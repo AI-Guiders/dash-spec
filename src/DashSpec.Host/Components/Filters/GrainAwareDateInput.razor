@@ -407,11 +407,49 @@ else
 
         day = default;
 
-        return !string.IsNullOrWhiteSpace(raw) &&
+        if (string.IsNullOrWhiteSpace(raw))
 
-               DateOnly.TryParse(raw, out day) &&
+        {
 
-               SqlDateTimeRange.IsQueryable(day);
+            return false;
+
+        }
+
+
+
+        if (DateOnly.TryParseExact(
+
+                raw,
+
+                "yyyy-MM-dd",
+
+                System.Globalization.CultureInfo.InvariantCulture,
+
+                System.Globalization.DateTimeStyles.None,
+
+                out day)
+
+            && SqlDateTimeRange.IsQueryable(day))
+
+        {
+
+            return true;
+
+        }
+
+
+
+        return DateOnly.TryParse(
+
+                   raw,
+
+                   System.Globalization.CultureInfo.InvariantCulture,
+
+                   System.Globalization.DateTimeStyles.None,
+
+                   out day)
+
+               && SqlDateTimeRange.IsQueryable(day);
 
     }
 

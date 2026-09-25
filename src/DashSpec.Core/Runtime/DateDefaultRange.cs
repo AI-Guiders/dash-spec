@@ -1,3 +1,4 @@
+using System.Globalization;
 using DashSpec.Core.Parsing;
 
 namespace DashSpec.Core.Runtime;
@@ -69,7 +70,8 @@ public static partial class DateDefaultRange
             return BoundKind.RelativeDay;
         }
 
-        if (DateOnly.TryParse(token, out _))
+        if (DateOnly.TryParseExact(token, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)
+            || DateOnly.TryParse(token, CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
         {
             return BoundKind.Absolute;
         }
@@ -83,7 +85,14 @@ public static partial class DateDefaultRange
         {
             BoundKind.Today => todayUtc,
             BoundKind.RelativeDay => ResolveRelativeDay(token, todayUtc),
-            BoundKind.Absolute => DateOnly.Parse(token),
+            BoundKind.Absolute => DateOnly.TryParseExact(
+                    token,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var absolute)
+                ? absolute
+                : DateOnly.Parse(token, CultureInfo.InvariantCulture),
             _ => throw new DashSpecParseException($"Unknown date bound '{token}'."),
         };
 
