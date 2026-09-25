@@ -168,7 +168,7 @@ internal static class DocumentModelMapper
             FirstOrNull(rule.Message));
 
     private static CardChromeDefinition ToCore(FsharpCard.CardChromeDefinition chrome) =>
-        new((CardBoundFilterChrome)(int)chrome.BoundFilters);
+        new((CardBoundFilterChrome)(int)chrome.BoundFilters, chrome.HideTitle);
 
     private static MatrixRenderLimitsDefinition ToCore(FsharpCard.MatrixRenderLimitsDefinition limits) =>
         new(FirstOrNull(limits.MaxCells), FirstOrNull(limits.MaxAxisLabels));

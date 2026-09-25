@@ -7,4 +7,6 @@ public enum CardBoundFilterChrome
     ToolbarOnly,
 }
 
-public sealed record CardChromeDefinition(CardBoundFilterChrome BoundFilters = CardBoundFilterChrome.Chips);
+public sealed record CardChromeDefinition(
+    CardBoundFilterChrome BoundFilters = CardBoundFilterChrome.Chips,
+    bool HideTitle = false);
