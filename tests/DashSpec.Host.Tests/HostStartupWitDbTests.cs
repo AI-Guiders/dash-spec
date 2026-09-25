@@ -4,6 +4,7 @@ using DashSpec.Host.Services.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using NSubstitute;
 using OutWit.Database.EntityFramework.Extensions;
 using Xunit;
 
@@ -14,8 +15,6 @@ namespace DashSpec.Host.Tests;
 /// </summary>
 public sealed class HostStartupWitDbTests
 {
-    private static readonly string HandoffRoot = ResolveHandoffRoot();
-
     [Theory]
     [InlineData(WitDbScenario.Fresh)]
     [InlineData(WitDbScenario.LegacyCatalogUsage)]
@@ -23,7 +22,7 @@ public sealed class HostStartupWitDbTests
     public void Production_startup_sequence_does_not_throw(WitDbScenario scenario)
     {
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
-        var contentRoot = PrepareTestContentRoot(witdb);
+        var contentRoot = PrepareMinimalContentRoot(witdb);
         try
         {
             SeedWitDb(witdb, scenario);
@@ -49,7 +48,7 @@ public sealed class HostStartupWitDbTests
     public void Production_startup_allows_catalog_usage_write_after_sequence()
     {
         var witdb = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}", "host-settings.witdb");
-        var contentRoot = PrepareTestContentRoot(witdb);
+        var contentRoot = PrepareMinimalContentRoot(witdb);
         try
         {
             SeedWitDb(witdb, WitDbScenario.LegacyCatalogUsage);
@@ -72,15 +71,34 @@ public sealed class HostStartupWitDbTests
         }
     }
 
-    private static string PrepareTestContentRoot(string witdbPath)
+    private static string PrepareMinimalContentRoot(string witdbPath)
     {
-        var root = Path.Combine(Path.GetTempPath(), $"dashspec-handoff-{Guid.NewGuid():N}");
-        CopyDirectory(HandoffRoot, root);
+        var root = Path.Combine(Path.GetTempPath(), $"dashspec-startup-{Guid.NewGuid():N}");
+        var dashspecDir = Path.Combine(root, "dashspec");
+        var catalogsDir = Path.Combine(dashspecDir, "catalogs");
+        Directory.CreateDirectory(catalogsDir);
+
+        File.WriteAllText(
+            Path.Combine(catalogsDir, "demo.dashcatalog"),
+            """
+            @catalog demo
+            entry overview dashspec "overview.dashspec"
+            """);
+
+        File.WriteAllText(
+            Path.Combine(dashspecDir, "demo.dashhost"),
+            """
+            @host demo
+            catalog "catalogs/demo.dashcatalog"
+            end host
+            """);
+
         var witdb = witdbPath.Replace('\\', '/');
         File.WriteAllText(
             Path.Combine(root, "dash-spec.local.toml"),
             $"""
             [host]
+            dashhost = "dashspec/demo.dashhost"
             database_path = "{witdb}"
 
             [access]
@@ -89,30 +107,14 @@ public sealed class HostStartupWitDbTests
         return root;
     }
 
-    private static void CopyDirectory(string source, string destination)
-    {
-        Directory.CreateDirectory(destination);
-        foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
-        {
-            Directory.CreateDirectory(directory.Replace(source, destination));
-        }
-
-        foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
-        {
-            var target = file.Replace(source, destination);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.Copy(file, target, true);
-        }
-    }
-
     private static IHostEnvironment CreateProductionEnvironment(string contentRoot)
     {
-        return new TestHostEnvironment
-        {
-            ContentRootPath = contentRoot,
-            EnvironmentName = Environments.Production,
-            ContentRootFileProvider = new PhysicalFileProvider(contentRoot),
-        };
+        var environment = Substitute.For<IHostEnvironment>();
+        environment.ContentRootPath.Returns(contentRoot);
+        environment.EnvironmentName.Returns(Environments.Production);
+        environment.ApplicationName.Returns("DashSpec.Host.Tests");
+        environment.ContentRootFileProvider.Returns(new PhysicalFileProvider(contentRoot));
+        return environment;
     }
 
     private static void SeedWitDb(string witdbPath, WitDbScenario scenario)
@@ -146,28 +148,6 @@ public sealed class HostStartupWitDbTests
         HostSettingsPaths.EnsureDatabase(witdbPath);
     }
 
-    private static string ResolveHandoffRoot()
-    {
-        var candidates = new[]
-        {
-            @"D:\SSCADRepo\LogUseFunc.DashSpec\publish\handoff",
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "LogUseFunc.DashSpec", "publish", "handoff")),
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (Directory.Exists(candidate)
-                && File.Exists(Path.Combine(candidate, "dash-spec.toml"))
-                && File.Exists(Path.Combine(candidate, "DashSpec.Host.dll")))
-            {
-                return candidate;
-            }
-        }
-
-        throw new InvalidOperationException(
-            "Handoff publish folder not found. Run URSA build-dashspec-setup.ps1 before HostStartupWitDbTests.");
-    }
-
     private static void TryDeleteWitDb(string witdbPath)
     {
         TryDeleteDirectory(Path.GetDirectoryName(witdbPath));
@@ -198,16 +178,5 @@ public sealed class HostStartupWitDbTests
         Fresh,
         LegacyCatalogUsage,
         Repaired,
-    }
-
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = Environments.Production;
-
-        public string ApplicationName { get; set; } = "DashSpec.Host.Tests";
-
-        public string ContentRootPath { get; set; } = string.Empty;
-
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }
