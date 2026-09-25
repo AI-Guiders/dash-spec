@@ -11,10 +11,10 @@
 
 <article class="@CardCssClass" style="@PlacementStyle">
     <div class="card-head">
-        <div>
+        <div class="card-head-main">
             @if (Card.ShowChromeTitle)
             {
-                <h2><RichTextView Text="@Card.Title" /></h2>
+                <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
             }
             @if (!string.IsNullOrWhiteSpace(Card.FilterLinkHint))
             {
@@ -68,18 +68,30 @@
             @if (CanExport)
             {
                 <button type="button"
-                        class="secondary card-export-btn"
+                        class="secondary card-icon-btn card-export-btn card-export-csv"
                         title="@Loc.T("Export CSV")"
+                        aria-label="@Loc.T("Export CSV")"
                         disabled="@Card.Loading"
                         @onclick="ExportCsvAsync">
-                    @Loc.T("Export CSV")
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <path d="M8 13h8" />
+                        <path d="M8 17h5" />
+                        <path d="M8 9h2" />
+                    </svg>
                 </button>
                 <button type="button"
-                        class="secondary card-export-btn"
+                        class="secondary card-icon-btn card-export-btn card-export-xlsx"
                         title="@Loc.T("Export XLSX")"
+                        aria-label="@Loc.T("Export XLSX")"
                         disabled="@Card.Loading"
                         @onclick="ExportXlsxAsync">
-                    @Loc.T("Export XLSX")
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
+                        <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 11h2v2H8zM11 11h2v2h-2zM14 11h2v2h-2zM8 14h2v2H8zM11 14h2v2h-2zM14 14h2v2h-2z" fill="currentColor" stroke="none" />
+                    </svg>
                 </button>
             }
             @if (CanFullscreen)
