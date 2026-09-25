@@ -277,6 +277,18 @@
   border-right: none;
 }
 
+.filters-bar .toolbar-filter-cell.toolbar-filter-apply {
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 6.5rem;
+  border-right: none;
+}
+
+.filters-bar .toolbar-filter-cell.toolbar-filter-apply .primary {
+  width: 100%;
+  min-height: 2rem;
+}
+
 .filters-bar .toolbar-filter-cell.toolbar-filter-date {
   flex: 1.6 1 16rem;
   min-width: min(100%, 16rem);
