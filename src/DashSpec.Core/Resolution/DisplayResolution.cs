@@ -79,9 +79,10 @@ public static class DisplayResolution
             _ => ResolveChain(card.Id, card.Title),
         };
 
-        var suppress = context.Mode == ResolutionMode.CatalogProd
-                       && entry is not null
-                       && string.Equals(card.Id, entry.Id, StringComparison.OrdinalIgnoreCase);
+        var suppress = card.Chrome?.HideTitle == true
+                       || (context.Mode == ResolutionMode.CatalogProd
+                           && entry is not null
+                           && string.Equals(card.Id, entry.Id, StringComparison.OrdinalIgnoreCase));
 
         return suppress ? ResolvedCardChrome.Suppressed(title) : ResolvedCardChrome.Visible(title);
     }

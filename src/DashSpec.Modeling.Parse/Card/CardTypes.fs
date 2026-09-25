@@ -45,7 +45,9 @@ type CardBoundFilterChrome =
     | ToolbarOnly = 2
 
 [<CLIMutable>]
-type CardChromeDefinition = { BoundFilters: CardBoundFilterChrome }
+type CardChromeDefinition =
+    { BoundFilters: CardBoundFilterChrome
+      HideTitle: bool }
 
 type CardVisibilityMode =
     | WhenEmpty = 0

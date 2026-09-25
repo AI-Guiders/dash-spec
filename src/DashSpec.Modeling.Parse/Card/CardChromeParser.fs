@@ -12,6 +12,7 @@ module CardChromeParser =
     let parse (reader: TokenReader) (cardId: string) =
         BlockSyntax.beginBlock reader
         let mutable boundFilters = CardBoundFilterChrome.Chips
+        let mutable hideTitle = false
 
         while not (BlockSyntax.isBlockEnd reader "chrome" None) do
             reader.SkipNewlines()
@@ -26,11 +27,19 @@ module CardChromeParser =
                     | raw ->
                         raise (DashSpecParseException($"Card '{cardId}': chrome bound_filters must be chips, hidden, or toolbar_only; got '{raw}'."))
                 reader.SkipNewlines()
+            elif reader.TryKeyword "title" then
+                reader.Expect TokenKind.Eq
+                hideTitle <-
+                    match reader.ReadIdent().Trim().ToLowerInvariant() with
+                    | "hidden" | "omit" | "suppress" -> true
+                    | raw ->
+                        raise (DashSpecParseException($"Card '{cardId}': chrome title must be hidden, omit, or suppress; got '{raw}'."))
+                reader.SkipNewlines()
             else
                 raise (reader.Unexpected "chrome property")
 
         BlockSyntax.expectBlockEnd reader "chrome" None
-        { BoundFilters = boundFilters }
+        { BoundFilters = boundFilters; HideTitle = hideTitle }
 
 module FilterDeriveParser =
 

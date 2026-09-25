@@ -104,6 +104,19 @@ public sealed class DisplayResolutionTests
     }
 
     [Fact]
+    public void Card_chrome_title_hidden_when_chrome_requests_it()
+    {
+        var card = StakeholderDoc.Cards[1] with
+        {
+            Chrome = new CardChromeDefinition(CardBoundFilterChrome.Hidden, HideTitle: true),
+        };
+        var context = ResolutionContext.ForSoak(StakeholderDoc);
+        var resolved = DisplayResolution.ResolveCardChrome(context, card);
+        Assert.Equal("Detail slice", resolved.Title);
+        Assert.False(resolved.ShowChromeTitle);
+    }
+
+    [Fact]
     public void Layout_group_title_resolves_from_group_block()
     {
         var group = new LayoutBoardGroupDefinition(
