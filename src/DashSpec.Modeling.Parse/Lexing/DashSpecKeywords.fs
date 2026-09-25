@@ -10,7 +10,7 @@ module DashSpecKeywords =
 
     let isBlockKeyword (value: string) =
         match value.ToLowerInvariant() with
-        | "runtime" | "configuration" | "wiring" | "report" | "extensions"
+        | "runtime" | "configuration" | "wiring" | "report" | "extensions" | "links" | "surfaces"
         | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
@@ -23,11 +23,11 @@ module DashSpecKeywords =
         match value.ToLowerInvariant() with
         | "tab" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
         | "include" | "import" | "on" | "goto" | "page" | "phase" | "group"
-        | "connector" | "palette" | "manifest" | "sqldialect" | "datasource"
+        | "connector" | "palette" | "manifest" | "sqldialect" | "datasource" | "link" | "catalog"
         | "diagram" | "end" -> true
         | _ -> isBlockKeyword value
 
     let isModuleDirective (value: string) =
         match value.ToLowerInvariant() with
-        | "dashboard" | "tab" | "catalog" | "diagram" | "presentation" -> true
+        | "dashboard" | "tab" | "catalog" | "diagram" | "presentation" | "host" | "layout" -> true
         | _ -> false

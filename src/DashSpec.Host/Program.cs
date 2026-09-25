@@ -38,6 +38,11 @@ if (args is ["validate", var validatePath, ..])
         {
             DashSpecValidator.ValidateCatalog(fullPath);
         }
+        else if (fullPath.EndsWith(".dashhost", StringComparison.OrdinalIgnoreCase))
+        {
+            DashSpecParser.EnsureModuleParsersRegistered();
+            HostModuleParser.ParseFile(fullPath);
+        }
         else
         {
             var registry = DashSpecBuiltinContributorRegistrar.RegisterBuiltins();
@@ -68,7 +73,7 @@ if (OperatingSystem.IsWindows())
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
 }
 
-var bootstrap = DashSpecBootstrap.LoadBootstrap(builder.Environment);
+var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment);
 
 var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
 var catalogState = new CatalogSourceState(catalog);
@@ -112,6 +117,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 builder.Services.AddSingleton(bootstrap);
+if (hostShell is not null)
+{
+    builder.Services.AddSingleton(hostShell);
+}
 builder.Services.AddSingleton<HostPresentationSignals>();
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
@@ -126,6 +135,7 @@ builder.Services.AddSingleton(new DashSpecHostContext
         defaultSpecPath),
     DefaultSpecDirectory = Path.GetDirectoryName(defaultSpecPath)!,
     Catalog = catalog,
+    HostShell = hostShell,
 });
 
 builder.Services.AddRazorComponents()

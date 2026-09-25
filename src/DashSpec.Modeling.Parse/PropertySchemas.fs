@@ -94,6 +94,22 @@ module PropertySchemas =
           spec "palette" String
           spec "diagramlibrary" String ]
 
+    let hostConfiguration =
+        [ spec "language" Scalar
+          spec "display_timezone" Scalar ]
+
+    let hostPresentation =
+        [ spec "product_title" String
+          spec "catalog_label" String
+          spec "color_scheme" Scalar
+          spec "large_field_filter_layout" Scalar ]
+
+    let hostLink =
+        [ spec "url" String
+          spec "target" String
+          spec "topbar" Scalar
+          spec "settings" Scalar ]
+
     let palette =
         [ spec "colors" String
           spec "default" String ]

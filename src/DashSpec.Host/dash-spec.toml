@@ -1,7 +1,7 @@
-# Host bootstrap — [dashboard] catalog_path → .dashcatalog whitelist.
+# Host bootstrap — [host] dashhost → planet-content shell (ADR-0054).
 
-[dashboard]
-catalog_path = "../../samples/demo/demo-catalog.dashcatalog"
+[host]
+dashhost = "../../samples/demo/demo.dashhost"
 
 [plugins]
 default_connector_id = "sqlserver"
