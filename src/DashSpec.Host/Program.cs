@@ -73,12 +73,15 @@ if (OperatingSystem.IsWindows())
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
 }
 
-var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment);
+using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("DashSpec.Bootstrap");
+var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment, bootstrapLogger);
 
 var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
 var catalogState = new CatalogSourceState(catalog);
 var defaultSpecPath = DashSpecBootstrap.ResolveActiveSpecFullPath(catalog);
-var dashSpecToml = DashSpecBootstrap.Load(builder.Environment);
+var dashSpecToml = DashSpecBootstrap.Load(builder.Environment, bootstrapLogger);
+HostBootstrapDeprecation.WarnRuntimeLinks(bootstrapLogger, hostShell, dashSpecToml);
 var defaultSpecText = File.ReadAllText(defaultSpecPath);
 var startupConfigPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
     defaultSpecPath,

@@ -13,6 +13,8 @@ presentation
   color_scheme = dark
 end presentation
 
+!include "layouts/host-topbar.dashlayout"
+
 surfaces
   show help, settings, spec_dev
 end surfaces
