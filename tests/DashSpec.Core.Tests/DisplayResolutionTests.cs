@@ -144,10 +144,24 @@ public sealed class DisplayResolutionTests
     }
 
     [Fact]
-    public void Tab_label_catalog_prod_prefers_entry_title()
+    public void Tab_label_catalog_prod_prefers_entry_title_for_single_tab()
     {
         var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry, StakeholderDoc.Tabs[0]);
         Assert.Equal("№1 Пик одновременности по ПО", DisplayResolution.ResolveTabLabel(context));
+    }
+
+    [Fact]
+    public void Tab_label_catalog_prod_uses_tab_title_for_multi_tab_hub()
+    {
+        TabDefinition[] soakTabs =
+        [
+            new TabDefinition("overview", "Обзор", []),
+            new TabDefinition("detail", "Детализация", []),
+        ];
+        var soakDoc = StakeholderDoc with { Tabs = soakTabs };
+        var soakEntry = new CatalogEntryDefinition("soak", "License Usage", "lus-dev-soak.dashspec");
+        var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
+        Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));
     }
 
     [Fact]

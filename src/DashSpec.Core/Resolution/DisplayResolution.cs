@@ -51,7 +51,9 @@ public static class DisplayResolution
         return context.Mode switch
         {
             ResolutionMode.CatalogProd when entry is not null =>
-                ResolveChain(fallback, entry.Title),
+                context.Document.Tabs.Count > 1
+                    ? ResolveChain(fallback, tab?.Label)
+                    : ResolveChain(fallback, entry.Title),
             ResolutionMode.DashboardEmbed =>
                 ResolveChain(fallback, tab?.Label, entry?.Title),
             _ => ResolveChain(fallback, tab?.Label),
