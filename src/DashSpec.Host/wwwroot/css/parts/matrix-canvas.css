@@ -150,7 +150,7 @@
   display: none;
 }
 
-.card-head-actions .card-matrix-toggle {
+.card-head-toolbar .card-matrix-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -160,12 +160,12 @@
   user-select: none;
 }
 
-.card-head-actions .card-matrix-toggle input {
+.card-head-toolbar .card-matrix-toggle input {
   margin: 0;
   accent-color: var(--accent, #3b82f6);
 }
 
-.card-head-actions .card-matrix-toggle:has(input:disabled) {
+.card-head-toolbar .card-matrix-toggle:has(input:disabled) {
   opacity: 0.55;
   cursor: not-allowed;
 }
