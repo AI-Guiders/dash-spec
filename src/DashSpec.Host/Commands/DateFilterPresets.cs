@@ -136,12 +136,7 @@ internal static partial class DateFilterPresets
     {
         range = default;
 
-        if (DateOnly.TryParseExact(
-                token,
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var isoDay))
+        if (DateValueCodec.TryParseWireDay(token, out var isoDay))
         {
             range = new DateRangeValue(isoDay, isoDay);
             return true;
@@ -152,7 +147,7 @@ internal static partial class DateFilterPresets
         {
             if (completeness == LocaleDateCompleteness.CompleteDate
                 && LocaleDateParser.TryToDayWire(parts, out var dayWire)
-                && DateOnly.TryParse(dayWire, CultureInfo.InvariantCulture, DateTimeStyles.None, out var localeDay))
+                && DateValueCodec.TryParseWireDay(dayWire, out var localeDay))
             {
                 range = new DateRangeValue(localeDay, localeDay);
                 return true;
@@ -166,36 +161,13 @@ internal static partial class DateFilterPresets
             }
         }
 
-        var misordered = MisorderedDayMonthYearPattern().Match(token);
-        if (misordered.Success
-            && int.TryParse(misordered.Groups["year"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var year)
-            && int.TryParse(misordered.Groups["month"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var month)
-            && int.TryParse(misordered.Groups["day"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var day)
-            && TryCreateDateOnly(year, month, day, out var corrected))
+        if (DateValueCodec.TryParseDashedDayMonthYear(token, out var corrected))
         {
             range = new DateRangeValue(corrected, corrected);
             return true;
         }
 
         return false;
-    }
-
-    private static bool TryCreateDateOnly(int year, int month, int day, out DateOnly value)
-    {
-        value = default;
-        if (year is < 1 or > 9999 || month is < 1 or > 12)
-        {
-            return false;
-        }
-
-        var daysInMonth = DateTime.DaysInMonth(year, month);
-        if (day < 1 || day > daysInMonth)
-        {
-            return false;
-        }
-
-        value = new DateOnly(year, month, day);
-        return true;
     }
 
     static bool TryResolveMonthWeek(int year, int month, int week, out DateRangeValue range, out string? error)
@@ -273,7 +245,4 @@ internal static partial class DateFilterPresets
     [GeneratedRegex(@"^Q(?<quarter>[1-4])$", RegexOptions.IgnoreCase)]
     private static partial Regex QuarterOnlyPattern();
 
-    /// <summary>Legacy/wire typo: day-month-year with dashes (e.g. 03-08-2026).</summary>
-    [GeneratedRegex(@"^(?<day>\d{1,4})-(?<month>\d{1,2})-(?<year>\d{4})$")]
-    private static partial Regex MisorderedDayMonthYearPattern();
 }

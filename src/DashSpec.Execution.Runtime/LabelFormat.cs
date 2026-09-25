@@ -1,22 +1,15 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using DashSpec.Core.Model;
+using DashSpec.Core.Runtime;
 
 namespace DashSpec.Execution.Runtime;
 
+/// <summary>SSOT for display: presets, report defaults, TZ conversion. Parsing raw strings delegates to Core <see cref="DateValueCodec"/>.</summary>
 public static partial class LabelFormat
 {
     private static readonly AsyncLocal<ReportFormatDefaults?> ReportDefaults = new();
     private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("ru-RU");
-    private static readonly string[] IsoDateTimePatterns =
-    [
-        "yyyy-MM-dd",
-        "yyyy-MM-dd HH:mm:ss",
-        "yyyy-MM-ddTHH:mm:ss",
-        "yyyy-MM-ddTHH:mm:ss.FFFFFFF",
-        "O",
-    ];
-
     private static readonly HashSet<string> NamedPresets = new(StringComparer.OrdinalIgnoreCase)
     {
         "date.short",
@@ -306,29 +299,11 @@ public static partial class LabelFormat
         return format.StartsWith("truncate.", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool TryParseDateTime(string raw, out DateTime dt)
-    {
-        if (DateTime.TryParseExact(
-                raw,
-                IsoDateTimePatterns,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                out dt))
-        {
-            return true;
-        }
-
-        if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out dt))
-        {
-            return true;
-        }
-
-        return false;
-    }
+    private static bool TryParseDateTime(string raw, out DateTime dt) =>
+        DateValueCodec.TryParseStoredDateTime(raw, out dt);
 
     private static bool TryParseDateOnly(string raw, out DateOnly date) =>
-        DateOnly.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
-        || DateOnly.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+        DateValueCodec.TryParseStoredDateOnly(raw, out date);
 
     [GeneratedRegex(@"^\d{1,2}:\d{2}$")]
     private static partial Regex PreformattedTimeLabelPattern();
