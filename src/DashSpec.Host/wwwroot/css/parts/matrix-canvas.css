@@ -9,6 +9,7 @@
 
 .matrix-canvas-scroll {
   overflow: auto;
+  overscroll-behavior: contain;
   width: 100%;
   max-width: 100%;
   max-height: var(--matrix-max-height, 420px);
@@ -123,9 +124,24 @@
   display: none;
 }
 
-.card-head-actions .card-matrix-label-btn[aria-pressed="true"] {
-  border-color: var(--accent, #3b82f6);
-  color: var(--accent, #3b82f6);
+.card-head-actions .card-matrix-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-head-actions .card-matrix-toggle input {
+  margin: 0;
+  accent-color: var(--accent, #3b82f6);
+}
+
+.card-head-actions .card-matrix-toggle:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .card-viz-stack {
