@@ -27,7 +27,7 @@ module PropertySchemas =
         [ spec "use" Scalar
           spec "legend" Scalar
           spec "height" Scalar
-          spec "viewport_y" Scalar
+          spec "visible_rows" Scalar
           spec "stacked" Scalar
           spec "fill" Scalar
           spec "color_mode" Scalar
@@ -151,7 +151,7 @@ module PropertySchemas =
           spec "y" ColumnBinding
           spec "value" ColumnBinding
           spec "height" Scalar
-          spec "viewport_y" Scalar
+          spec "visible_rows" Scalar
           spec "color_normalize" Scalar ]
 
     let ganttDiagram =

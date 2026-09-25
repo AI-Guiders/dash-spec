@@ -1,3 +1,4 @@
 @presentation heatmap_tall
 
   height = 420
+  visible_rows = 8
