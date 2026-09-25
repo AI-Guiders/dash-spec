@@ -47,7 +47,7 @@ Use **underscores** in ids (`card_export`, `drill_down`, `csv_export`). Unquoted
 | `extended` | Optional capability DLLs (`card_export`, …) |
 | `product` | Rare third-party / bespoke DLLs (same contract, your bundle) |
 
-`active_bundle` in TOML or `DASHSPEC_PLUGIN_BUNDLE` env.
+`active_bundle` in runtime TOML (`[plugins]` section of `*-runtime.toml`).
 
 ## Shipped with this repo
 
