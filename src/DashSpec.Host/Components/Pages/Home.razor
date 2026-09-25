@@ -72,6 +72,10 @@ else
                              OnTopChanged="Page.OnDashboardTopChanged"
                              GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
 
+    <p class="report-format-guide muted" title="@Page.FormatReadingGuide">
+        @Page.FormatReadingGuide
+    </p>
+
     <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
         @foreach (var card in Page.VisibleCards())
         {
