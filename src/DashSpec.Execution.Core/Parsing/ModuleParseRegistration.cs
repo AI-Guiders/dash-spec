@@ -13,6 +13,8 @@ using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
 using FsharpPalette = DashSpec.Modeling.Parse.Palette.PaletteDocument;
 using FsharpPresentation = DashSpec.Modeling.Parse.Presentation.PresentationModuleDocument;
 using FsharpPresentationBlock = DashSpec.Modeling.Parse.Presentation.PresentationBlock;
+using FsharpHost = DashSpec.Modeling.Parse.Host.HostDocument;
+using FsharpHostLink = DashSpec.Modeling.Parse.Host.HostLinkDefinition;
 using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
 using FsharpDiagramStmt = DashSpec.Modeling.Parse.Diagram.DiagramFragmentStatement;
 using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
@@ -30,6 +32,7 @@ internal static class ModuleParseRegistration
         RegisterLayout();
         RegisterTooltip();
         RegisterCatalog();
+        RegisterHost();
         RegisterTransform();
         RegisterPalette();
         RegisterPresentation();
@@ -100,6 +103,23 @@ internal static class ModuleParseRegistration
             try
             {
                 return ToCore(DashSpec.Modeling.Parse.Catalog.CatalogParser.parse(text));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
+    }
+
+    private static void RegisterHost()
+    {
+        HostParseBridge.Parse = (text, specDirectory) =>
+        {
+            try
+            {
+                var directory =
+                    string.IsNullOrWhiteSpace(specDirectory) ? null : specDirectory;
+                return ToCore(DashSpec.Modeling.Parse.Host.HostModuleParser.parse(text, directory));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -298,6 +318,35 @@ internal static class ModuleParseRegistration
         return definition;
     }
 
+    private static HostDocument ToCore(FsharpHost host)
+    {
+        var links = host.Links
+            .Select(link => new HostLinkDefinition(
+                link.Id,
+                link.Label,
+                link.Url,
+                link.Target,
+                link.Topbar,
+                link.Settings))
+            .ToList();
+
+        LayoutBoardDefinition? topbarLayout = null;
+        var layoutItems = OptionModule.ToArray(host.TopbarLayout);
+        if (layoutItems.Length > 0)
+        {
+            topbarLayout = ToCore(layoutItems[0]);
+        }
+
+        return new HostDocument(
+            host.Id,
+            host.CatalogPath,
+            host.Configuration.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
+            host.Presentation.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
+            links,
+            host.Surfaces.ToList(),
+            topbarLayout);
+    }
+
     private static CatalogDocument ToCore(FsharpCatalog catalog)
     {
         var entries = catalog.Entries
@@ -356,6 +405,7 @@ internal static class ModuleParseRegistration
         if (scope.Equals(FsharpScope.Tab)) return LayoutScope.Tab;
         if (scope.Equals(FsharpScope.Page)) return LayoutScope.Page;
         if (scope.Equals(FsharpScope.Card)) return LayoutScope.Card;
+        if (scope.Equals(FsharpScope.Host)) return LayoutScope.Host;
         return null;
     }
 

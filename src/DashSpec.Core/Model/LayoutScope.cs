@@ -7,4 +7,5 @@ public enum LayoutScope
     Tab,
     Page,
     Card,
+    Host,
 }

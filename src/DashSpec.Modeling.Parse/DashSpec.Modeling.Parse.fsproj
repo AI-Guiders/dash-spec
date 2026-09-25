@@ -45,6 +45,8 @@
     <Compile Include="Tooltip\TooltipModuleParser.fs" />
     <Compile Include="Catalog\CatalogTypes.fs" />
     <Compile Include="Catalog\CatalogParser.fs" />
+    <Compile Include="Host\HostTypes.fs" />
+    <Compile Include="Host\HostModuleParser.fs" />
     <Compile Include="Transform\TransformTypes.fs" />
     <Compile Include="Transform\TransformModuleParser.fs" />
     <Compile Include="Palette\PaletteTypes.fs" />
