@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using DashSpec.Core.Parsing;
 using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Dev;
 
 namespace DashSpec.Host.Services.Git;
@@ -11,6 +12,7 @@ public sealed class GitCatalogSyncService(
     DashSpecTomlRoot bootstrap,
     CatalogSourceState catalogState,
     IWebHostEnvironment environment,
+    IGitCatalogSynchronizer gitCatalogSynchronizer,
     DevSpecReloadNotifier reloadNotifier,
     ILogger<GitCatalogSyncService> logger)
 {
@@ -34,11 +36,11 @@ public sealed class GitCatalogSyncService(
 
         try
         {
-            var cacheDir = GitCatalogSynchronizer.ResolveCacheDirectory(
+            var cacheDir = gitCatalogSynchronizer.ResolveCacheDirectory(
                 bootstrap.CatalogGit,
                 environment.ContentRootPath);
             var catalogPath = await Task.Run(
-                    () => GitCatalogSynchronizer.SyncRepository(bootstrap.CatalogGit, cacheDir, logger),
+                    () => gitCatalogSynchronizer.SyncRepository(bootstrap.CatalogGit, cacheDir),
                     cancellationToken)
                 .ConfigureAwait(false);
 

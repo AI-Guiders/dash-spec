@@ -17,6 +17,7 @@ namespace DashSpec.Host.Services.Diagnostics;
 public sealed class LoadDiagnosticsService(
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
+    IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider,
     RuntimeConnectorResolver runtimeConnectorResolver,
     IDashboardSpecLoader specLoader)
@@ -29,7 +30,7 @@ public sealed class LoadDiagnosticsService(
             return LoadDiagnosticsReport.Fail("ui", "Dashboard spec path is not configured.", []);
         }
 
-        var specPath = DashSpecBootstrap.ResolveSpecPath(environment.ContentRootPath, relative);
+        var specPath = pathResolver.ResolveSpecPath(environment.ContentRootPath, relative);
         return DiagnoseFile(specPath, includeCards, includeFieldOptions);
     }
 
@@ -101,7 +102,7 @@ public sealed class LoadDiagnosticsService(
             steps.Add(new LoadStepReport("resolve_model", true, resolveSw.ElapsedMilliseconds));
 
             var runtimeSw = Stopwatch.StartNew();
-            var runtimePath = DashSpecBootstrap.ResolveRuntimeConfigPath(
+            var runtimePath = pathResolver.ResolveRuntimeConfigPath(
                 specFullPath,
                 text,
                 hostContext.DefaultSpecDirectory);
