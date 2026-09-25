@@ -5,6 +5,7 @@
 @using DashSpec.Host.Components.Dashboard
 @using DashSpec.Host.Commands
 @using DashSpec.Host.Services.Presentation
+@using DashSpec.Execution.Runtime
 @inject IWebHostEnvironment HostEnvironment
 @inject DashSpec.Host.Services.Localization.DashboardLocalizer Loc
 
@@ -75,9 +76,31 @@ else
                              OnTopChanged="Page.OnDashboardTopChanged"
                              GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
 
-    <p class="report-format-guide muted" title="@Page.FormatReadingGuide">
-        @Page.FormatReadingGuide
-    </p>
+    <div class="report-format-guide muted" aria-label="@Loc.T("Date and time formats")">
+        <table class="report-format-table">
+            <thead>
+                <tr>
+                    <th scope="col">@Loc.T("Kind")</th>
+                    <th scope="col">@Loc.T("Format")</th>
+                    <th scope="col">@Loc.T("Example")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Page.FormatReadingGuide.Rows)
+                {
+                    <tr>
+                        <th scope="row">@row.Label</th>
+                        <td><code>@row.Pattern</code></td>
+                        <td>@row.Example</td>
+                    </tr>
+                }
+                <tr>
+                    <th scope="row">@Loc.T("Time zone")</th>
+                    <td colspan="2">@Page.FormatReadingGuide.TimeZoneLabel</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
         @if (Page.TabLayoutPlan is { } layoutPlan)
