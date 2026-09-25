@@ -54,27 +54,27 @@ window.dashSpecMatrix = {
     const chrome = 16;
     const preferredCellW = 28;
     const preferredCellH = 22;
-    const denseThreshold = 12;
-    const dense = xCount > denseThreshold || yCount > denseThreshold;
-
-    // Dense matrices (e.g. user × host): fixed cell size + scroll both axes.
-    if (dense) {
-      return { cellW: preferredCellW, cellH: preferredCellH };
-    }
+    const growThreshold = 10;
 
     const gridW = Math.max(0, availableWidth - yLabelCol - chrome);
     const gridH = Math.max(0, availableHeight - xLabelRow - chrome);
-    const minCellW = 18;
-    let cellW = Math.floor((gridW - gap * (xCount + 1)) / Math.max(1, xCount));
-    cellW = Math.min(52, Math.max(minCellW, cellW));
+    const naturalW = xCount * (preferredCellW + gap) + gap;
+    const naturalH = yCount * (preferredCellH + gap) + gap;
 
-    const fittedCellH = Math.floor((gridH - gap * (yCount + 1)) / Math.max(1, yCount));
-    let cellH = Math.min(48, Math.max(preferredCellH, fittedCellH));
-    const totalH = yCount * (cellH + gap) + gap;
-    if (totalH > gridH + gap) {
-      cellH = preferredCellH;
+    // Wide/tall matrices: fixed readable cell size; .matrix-canvas-scroll handles overflow.
+    if (
+      xCount > growThreshold ||
+      yCount > growThreshold ||
+      naturalW > gridW ||
+      naturalH > gridH
+    ) {
+      return { cellW: preferredCellW, cellH: preferredCellH };
     }
 
+    let cellW = Math.floor((gridW - gap * (xCount + 1)) / Math.max(1, xCount));
+    cellW = Math.min(52, Math.max(preferredCellW, cellW));
+    let cellH = Math.floor((gridH - gap * (yCount + 1)) / Math.max(1, yCount));
+    cellH = Math.min(48, Math.max(preferredCellH, cellH));
     return { cellW, cellH };
   },
 
