@@ -107,7 +107,7 @@ database_path = ""   # WitDB, ADR-0042
 1. `.dashhost` (git / catalog_git) — planet-content SSOT
 2. `dash-spec.toml` / `dash-spec.local.toml` — **только ops**: `[host] database_path`, `[access]`, `[catalog_git]`
 3. WitDB `host_settings` — live override ops ([ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md))
-4. env `DASHSPEC_API_KEY`, `DASHSPEC_HOST_DB`, `DASHSPEC_CATALOG_GIT_*` — только ops-секреты (не planet-content)
+4. WitDB Control Center — live override ops (api_key, theme/TZ для оператора)
 
 `[presentation]` в TOML — deprecated в favor of `.dashhost`; WitDB может override theme/TZ для оператора.
 
@@ -138,7 +138,7 @@ database_path = ""   # WitDB, ADR-0042
 3. `[host] dashhost` in ops TOML only
 4. `scope host` layout → `TopbarNav` slot order (`HostTopbarLayoutResolver`)
 5. `product_title`, `catalog_label`, links from dashhost; runtime `[[links]]` fallback + deprecation warning
-6. Deprecation warnings: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` when dashhost defines them
+6. Hard reject: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` — только `.dashhost`
 7. Ops `dash-spec.toml` / `dash-spec.local.toml` with required `[host] dashhost`
 
 ## Non-goals

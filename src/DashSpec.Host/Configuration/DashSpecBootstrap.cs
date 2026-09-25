@@ -1,19 +1,17 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Host.Services.Settings;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
-using Microsoft.Extensions.Logging;
 
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Host bootstrap: ops TOML → <c>.dashhost</c> → catalog → default entry @runtime TOML.</summary>
 public static class DashSpecBootstrap
 {
-    public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment, ILogger? logger = null) =>
-        LoadBootstrapWithHost(environment, logger).Bootstrap;
+    public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
+        LoadBootstrapWithHost(environment).Bootstrap;
 
-    public static (DashSpecTomlRoot Bootstrap, HostShellBootstrap? HostShell) LoadBootstrapWithHost(
-        IHostEnvironment environment,
-        ILogger? logger = null)
+    public static (DashSpecTomlRoot Bootstrap, HostShellBootstrap HostShell) LoadBootstrapWithHost(
+        IHostEnvironment environment)
     {
         var contentRoot = environment.ContentRootPath;
         var bootstrapPath = Path.Combine(contentRoot, "dash-spec.toml");
@@ -25,38 +23,24 @@ public static class DashSpecBootstrap
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
 
-        var hadTomlCatalogPath = !string.IsNullOrWhiteSpace(bootstrap.Dashboard.CatalogPath);
-        var hadTomlPresentation = HostBootstrapDeprecation.HasPresentationInToml(bootstrap.Presentation);
+        HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(bootstrap);
 
-        HostShellBootstrap? hostShell = null;
-        var dashhostPath = ResolveDashhostPath(contentRoot, bootstrap.Host.Dashhost);
-        if (!string.IsNullOrWhiteSpace(dashhostPath))
-        {
-            DashSpecParser.EnsureModuleParsersRegistered();
-            var document = HostModuleParser.ParseFile(dashhostPath);
-            hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
-            ApplyHostShell(bootstrap, hostShell);
-            HostBootstrapDeprecation.WarnPlanetTomlOverrides(
-                logger,
-                hadTomlCatalogPath,
-                hadTomlPresentation,
-                hostShell);
-        }
-
-        if (string.IsNullOrWhiteSpace(bootstrap.Dashboard.CatalogPath))
+        if (string.IsNullOrWhiteSpace(bootstrap.Host.Dashhost))
         {
             throw new InvalidOperationException(
-                """
-                Host bootstrap requires a catalog source:
-                  [host] dashhost = "dashspec/<id>.dashhost"
-                  or legacy [dashboard] catalog_path in dash-spec.toml.
-                """);
+                "[host] dashhost is required in dash-spec.toml or dash-spec.local.toml.");
         }
 
-        ApplyAccessEnvOverride(bootstrap);
+        var dashhostPath = ResolveDashhostPath(contentRoot, bootstrap.Host.Dashhost)
+            ?? throw new FileNotFoundException(
+                $"Host dashhost not found: '{bootstrap.Host.Dashhost}' (content root: {contentRoot}).");
+
+        DashSpecParser.EnsureModuleParsersRegistered();
+        var document = HostModuleParser.ParseFile(dashhostPath);
+        var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
+        ApplyHostShell(bootstrap, hostShell);
 
         HostSettingsOverlay.Apply(bootstrap);
-        ApplyAccessEnvOverride(bootstrap);
 
         GitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
@@ -129,15 +113,6 @@ public static class DashSpecBootstrap
         }
     }
 
-    private static void ApplyAccessEnvOverride(DashSpecTomlRoot bootstrap)
-    {
-        var envKey = Environment.GetEnvironmentVariable("DASHSPEC_API_KEY");
-        if (!string.IsNullOrWhiteSpace(envKey))
-        {
-            bootstrap.Access.ApiKey = envKey;
-        }
-    }
-
     private static DashSpecTomlRoot OverlayOptionalToml(DashSpecTomlRoot root, string path)
     {
         if (!File.Exists(path))
@@ -148,9 +123,9 @@ public static class DashSpecBootstrap
         return DashSpecTomlLoader.Merge(root, DashSpecTomlLoader.LoadFile(path));
     }
 
-    public static DashSpecTomlRoot Load(IHostEnvironment environment, ILogger? logger = null)
+    public static DashSpecTomlRoot Load(IHostEnvironment environment)
     {
-        var bootstrap = LoadBootstrap(environment, logger);
+        var bootstrap = LoadBootstrap(environment);
         var catalog = LoadCatalog(bootstrap, environment.ContentRootPath);
         var specPath = ResolveActiveSpecFullPath(catalog);
         if (!File.Exists(specPath))
@@ -200,6 +175,8 @@ public static class DashSpecBootstrap
 
     private static void ValidateRuntimeConfig(DashSpecTomlRoot root, string configPath)
     {
+        HostBootstrapPlanetTomlGuard.RejectLegacyRuntimeLinks(root, configPath);
+
         if (root.Plugins.Load.Count == 0)
         {
             throw new InvalidOperationException(

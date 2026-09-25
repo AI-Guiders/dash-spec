@@ -12,12 +12,6 @@ public static class HostSettingsPaths
 
     public static string ResolveDatabasePath(DashSpecTomlRoot bootstrap)
     {
-        var env = Environment.GetEnvironmentVariable("DASHSPEC_HOST_DB");
-        if (!string.IsNullOrWhiteSpace(env))
-        {
-            return Path.GetFullPath(env);
-        }
-
         if (!string.IsNullOrWhiteSpace(bootstrap.Host.DatabasePath))
         {
             return Path.GetFullPath(bootstrap.Host.DatabasePath);
