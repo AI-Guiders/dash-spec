@@ -15,6 +15,16 @@ module HostModuleParser =
         let reference = reader.ReadString()
         kind, reference
 
+    let private assignTopbarLayout
+        (specDirectory: string)
+        (context: string)
+        (topbarLayout: LayoutBoardDefinition option byref)
+        (reference: string)
+        =
+        let board = LayoutModuleParser.load reference specDirectory
+        LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Host context
+        topbarLayout <- Some board
+
     let private readBoolProperty (reader: TokenReader) (defaultValue: bool) =
         reader.Expect TokenKind.Eq
         let value = reader.ReadIdent()
@@ -156,20 +166,28 @@ module HostModuleParser =
                 parseLinksBlock reader links
             elif reader.TryKeyword "surfaces" then
                 parseSurfacesBlock reader surfaces
-            elif reader.TryKeyword "include" then
-                let kind, reference = readIncludeReference reader
-                if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"@host module allows include layout only, got include {kind}."))
-                match specDirectory with
-                | None | Some "" ->
-                    raise (DashSpecParseException("include layout requires host file directory when parsing."))
-                | Some dir ->
-                    let board = LayoutModuleParser.load reference dir
-                    LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Host "include layout"
-                    topbarLayout <- Some board
-                    reader.SkipNewlines()
             else
-                raise (reader.Unexpected())
+                match reader.TryModuleInclude() with
+                | Some reference ->
+                    match specDirectory with
+                    | None | Some "" ->
+                        raise (DashSpecParseException("!include requires host file directory when parsing."))
+                    | Some dir ->
+                        assignTopbarLayout dir "!include" &topbarLayout reference
+                        reader.SkipNewlines()
+                | None ->
+                    if reader.TryKeyword "include" then
+                        let kind, reference = readIncludeReference reader
+                        if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
+                            raise (DashSpecParseException($"@host module allows include layout only, got include {kind}."))
+                        match specDirectory with
+                        | None | Some "" ->
+                            raise (DashSpecParseException("include layout requires host file directory when parsing."))
+                        | Some dir ->
+                            assignTopbarLayout dir "include layout" &topbarLayout reference
+                            reader.SkipNewlines()
+                    else
+                        raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "host" (Some hostId)
 

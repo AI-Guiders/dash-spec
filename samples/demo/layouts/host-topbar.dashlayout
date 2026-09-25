@@ -1,0 +1,7 @@
+@layout demo_host_topbar
+scope host
+
+[ catalog ]
+[ nav ]
+[ external_links ]
+[ help settings spec_dev ]
