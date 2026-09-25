@@ -126,6 +126,19 @@
   border-bottom: 1px solid var(--border);
 }
 
+.card-head-toolbar-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.card-head-toolbar-filters .card-filter-apply {
+  margin-left: 0;
+}
+
 .card-head-meta {
   display: flex;
   flex-direction: column;

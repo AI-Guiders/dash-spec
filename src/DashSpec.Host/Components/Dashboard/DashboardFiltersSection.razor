@@ -109,54 +109,16 @@
 
         }
 
+        @if (BarLayout)
+        {
+            @RenderToolbarActions
+        }
+
     </div>
 
-    @if (!AutoApply)
-
+    @if (!BarLayout)
     {
-
-        <div class="filters-actions">
-
-            <button class="primary"
-
-                    disabled="@Busy"
-
-                    @onclick="OnApply">
-
-                @if (Busy)
-
-                {
-
-                    <span class="spinner spinner-inline" aria-hidden="true"></span>
-
-                    <span>Загрузка…</span>
-
-                }
-
-                else
-
-                {
-
-                    <span>Применить</span>
-
-                }
-
-            </button>
-
-        </div>
-
-    }
-
-    else if (Busy)
-
-    {
-
-        <div class="filters-actions">
-
-            <span class="muted filters-busy"><span class="spinner spinner-inline" aria-hidden="true"></span> обновление…</span>
-
-        </div>
-
+        @RenderToolbarActions
     }
 
 </section>
@@ -238,6 +200,69 @@
             ? OnTopChanged.InvokeAsync((filter.Name, value))
 
             : Task.CompletedTask;
+
+    private RenderFragment RenderToolbarActions => __builder =>
+    {
+        if (AutoApply)
+        {
+            if (!Busy)
+            {
+                return;
+            }
+
+            if (BarLayout)
+            {
+                <div class="toolbar-filter-cell toolbar-filter-apply">
+                    <span class="muted filters-busy"><span class="spinner spinner-inline" aria-hidden="true"></span> обновление…</span>
+                </div>
+            }
+            else
+            {
+                <div class="filters-actions">
+                    <span class="muted filters-busy"><span class="spinner spinner-inline" aria-hidden="true"></span> обновление…</span>
+                </div>
+            }
+
+            return;
+        }
+
+        if (BarLayout)
+        {
+            <div class="toolbar-filter-cell toolbar-filter-apply">
+                <button class="primary"
+                        disabled="@Busy"
+                        @onclick="OnApply">
+                    @if (Busy)
+                    {
+                        <span class="spinner spinner-inline" aria-hidden="true"></span>
+                        <span>Загрузка…</span>
+                    }
+                    else
+                    {
+                        <span>Применить</span>
+                    }
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="filters-actions">
+                <button class="primary"
+                        disabled="@Busy"
+                        @onclick="OnApply">
+                    @if (Busy)
+                    {
+                        <span class="spinner spinner-inline" aria-hidden="true"></span>
+                        <span>Загрузка…</span>
+                    }
+                    else
+                    {
+                        <span>Применить</span>
+                    }
+                </button>
+            </div>
+        }
+    };
 
 }
 
