@@ -96,11 +96,13 @@ dashhost = "dashspec/sscad-prod.dashhost"
 database_path = ""   # WitDB, ADR-0042
 ```
 
-Разрешение `.dashhost` (первый найденный):
+Разрешение `.dashhost` (только явный путь):
 
-1. `[host] dashhost` / `DASHSPEC_DASHHOST`
-2. convention: `{contentRoot}/dashspec/{id}.dashhost` при известном deploy id
-3. ошибка с подсказкой
+1. `[host] dashhost` в ops TOML
+2. env `DASHSPEC_DASHHOST` (break-glass / CI)
+3. иначе — ошибка с подсказкой
+
+Автопоиск по deploy id или «единственный файл в dashspec/» **не** используется (явное лучше неявного).
 
 Из распарсенного `.dashhost` Host получает `catalog_path`, presentation, links, layout.
 
@@ -139,11 +141,11 @@ database_path = ""   # WitDB, ADR-0042
 
 1. Parse `@host` + `catalog` + `configuration` + `presentation` + `links` + `surfaces`
 2. `include layout` and `!include "*.dashlayout"` with mandatory `scope host`
-3. `[host] dashhost` / `DASHSPEC_DASHHOST` / `DASHSPEC_DEPLOY_ID` / single `dashspec/*.dashhost` convention
+3. `[host] dashhost` / `DASHSPEC_DASHHOST` (explicit only)
 4. `scope host` layout → `TopbarNav` slot order (`HostTopbarLayoutResolver`)
 5. `product_title`, `catalog_label`, links from dashhost; runtime `[[links]]` fallback + deprecation warning
 6. Deprecation warnings: `[dashboard] catalog_path`, `[presentation]`, runtime `[[links]]` when dashhost defines them
-7. Ops-only `dash-spec.toml` (optional if convention resolves dashhost)
+7. Ops `dash-spec.toml` / `dash-spec.local.toml` with required `[host] dashhost`
 
 ## Non-goals
 

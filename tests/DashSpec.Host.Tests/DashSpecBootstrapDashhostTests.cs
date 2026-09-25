@@ -8,24 +8,20 @@ namespace DashSpec.Host.Tests;
 public sealed class DashSpecBootstrapDashhostTests
 {
     [Fact]
-    public void ResolveDashhostPath_finds_single_dashspec_host_by_convention()
+    public void ResolveDashhostPath_requires_explicit_reference()
     {
-        var root = Path.Combine(Path.GetTempPath(), "dashhost-conv-" + Guid.NewGuid().ToString("N"));
+        var root = Path.Combine(Path.GetTempPath(), "dashhost-explicit-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
         Directory.CreateDirectory(dashspecDir);
         var dashhostPath = Path.Combine(dashspecDir, "sscad-prod.dashhost");
-        File.WriteAllText(
-            dashhostPath,
-            """
-            @host sscad_prod
-            catalog "catalogs/sscad-prod.dashcatalog"
-            end host
-            """);
+        File.WriteAllText(dashhostPath, "@host x\ncatalog \"c.dashcatalog\"\nend host\n");
 
         try
         {
-            var resolved = DashSpecBootstrap.ResolveDashhostPath(root, null);
-            Assert.Equal(dashhostPath, resolved);
+            Assert.Null(DashSpecBootstrap.ResolveDashhostPath(root, null));
+            Assert.Equal(
+                dashhostPath,
+                DashSpecBootstrap.ResolveDashhostPath(root, "dashspec/sscad-prod.dashhost"));
         }
         finally
         {
@@ -34,7 +30,7 @@ public sealed class DashSpecBootstrapDashhostTests
     }
 
     [Fact]
-    public void LoadBootstrapWithHost_applies_catalog_from_dashhost_without_toml_catalog_path()
+    public void LoadBootstrapWithHost_applies_catalog_from_explicit_dashhost_pointer()
     {
         var root = Path.Combine(Path.GetTempPath(), "dashhost-boot-" + Guid.NewGuid().ToString("N"));
         var dashspecDir = Path.Combine(root, "dashspec");
@@ -54,6 +50,13 @@ public sealed class DashSpecBootstrapDashhostTests
             @host demo
             catalog "catalogs/demo.dashcatalog"
             end host
+            """);
+
+        File.WriteAllText(
+            Path.Combine(root, "dash-spec.toml"),
+            """
+            [host]
+            dashhost = "dashspec/demo.dashhost"
             """);
 
         try
