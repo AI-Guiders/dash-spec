@@ -1,26 +1,17 @@
 # Copy to dash-spec.local.toml for personal dev (gitignored).
 # Loaded after dash-spec.toml and optional dash-spec.dev.toml.
 
-# Optional WitDB path for Control Center (ADR-0042). Default: %ProgramData%\DashSpec\host-settings.witdb
 # [host]
 # database_path = "D:/data/dashspec-host-settings.witdb"
 
-[dashboard]
-# LUS-only dev slice:
-# catalog_path = "D:/SSCADRepo/URSA.LicenseUsage/docs/dashspec/catalogs/lus-dev.dashcatalog"
-# LUS + LUF (prod-like local):
-catalog_path = "D:/SSCADRepo/LogUseFunc.DashSpec/publish/handoff/dashspec/catalogs/sscad-prod.dashcatalog"
-
-# Prod / git catalog — preferred via Control Center (/admin) → WitDB; toml = bootstrap fallback
 # [catalog_git]
 # enabled = true
 # url = "https://forge.example/<org>/<repo>.git"
 # branch = "main"
 # path = "catalogs/<prod>.dashcatalog"
 # pull_interval_minutes = 720
+# password = "..."
 # sync_webhook_secret = "..."
-# Env: DASHSPEC_CATALOG_SYNC_SECRET, DASHSPEC_HOST_DB
 
 # [access]
 # api_key = "CHANGE_ME"
-# Or env: DASHSPEC_API_KEY

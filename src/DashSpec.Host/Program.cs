@@ -73,15 +73,12 @@ if (OperatingSystem.IsWindows())
     builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
 }
 
-using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
-var bootstrapLogger = bootstrapLoggerFactory.CreateLogger("DashSpec.Bootstrap");
-var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment, bootstrapLogger);
+var (bootstrap, hostShell) = DashSpecBootstrap.LoadBootstrapWithHost(builder.Environment);
 
 var catalog = DashSpecBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
 var catalogState = new CatalogSourceState(catalog);
 var defaultSpecPath = DashSpecBootstrap.ResolveActiveSpecFullPath(catalog);
-var dashSpecToml = DashSpecBootstrap.Load(builder.Environment, bootstrapLogger);
-HostBootstrapDeprecation.WarnRuntimeLinks(bootstrapLogger, hostShell, dashSpecToml);
+var dashSpecToml = DashSpecBootstrap.Load(builder.Environment);
 var defaultSpecText = File.ReadAllText(defaultSpecPath);
 var startupConfigPath = DashSpecBootstrap.ResolveRuntimeConfigPath(
     defaultSpecPath,
@@ -90,11 +87,6 @@ var startupRuntimeReference = DashSpecParser.ReadRuntimePath(defaultSpecText)
     ?? throw new InvalidOperationException("Default catalog entry .dashspec must declare @runtime.");
 
 var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
-var envKey = Environment.GetEnvironmentVariable("DASHSPEC_API_KEY");
-if (!string.IsNullOrWhiteSpace(envKey))
-{
-    accessOptions.ApiKey = envKey;
-}
 
 builder.Configuration.AddInMemoryCollection(DashSpecTomlLoader.Flatten(dashSpecToml));
 
@@ -120,10 +112,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 builder.Services.AddSingleton(bootstrap);
-if (hostShell is not null)
-{
-    builder.Services.AddSingleton(hostShell);
-}
+builder.Services.AddSingleton(hostShell);
 builder.Services.AddSingleton<HostPresentationSignals>();
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);

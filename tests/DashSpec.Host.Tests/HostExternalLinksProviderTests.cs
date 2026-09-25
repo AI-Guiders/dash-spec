@@ -1,3 +1,4 @@
+using DashSpec.Core.Model;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Presentation;
 using Xunit;
@@ -7,51 +8,45 @@ namespace DashSpec.Host.Tests;
 public sealed class HostExternalLinksProviderTests
 {
     [Fact]
-    public void Load_links_from_runtime_toml()
+    public void Load_links_from_dashhost()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "dashspec-links-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
-        var runtimePath = Path.Combine(dir, "runtime.toml");
-        File.WriteAllText(
-            runtimePath,
-            """
-            [connectors.sqlserver]
-            connection_string = "Server=.;Database=test;Trusted_Connection=True"
-
-            [[plugins.load]]
-            id = "sqlserver"
-            assembly = "DashSpec.Connector.SqlServer.dll"
-            is_connector = true
-
-            [[links]]
-            id = "agent_admin"
-            label = "Админка агента"
-            url = "http://localhost:5280/admin/"
-            target = "_blank"
-            """);
-
-        try
+        var hostShell = new HostShellBootstrap
         {
-            var provider = new HostExternalLinksProvider(new DashSpecHostContext
-            {
-                StartupRuntimeConfigPath = runtimePath,
-                StartupRuntimeReference = "runtime.toml",
-                DefaultSpecRelativePath = "spec.dashspec",
-                DefaultSpecDirectory = dir,
-                Catalog = null!,
-            });
+            FullPath = "dashspec/sscad-prod.dashhost",
+            Document = new HostDocument(
+                "sscad_prod",
+                "catalogs/sscad-prod.dashcatalog",
+                new Dictionary<string, string>(),
+                new Dictionary<string, string>(),
+                [
+                    new HostLinkDefinition(
+                        "agent_admin",
+                        "Админка агента",
+                        "http://localhost:5280/admin/",
+                        "_blank",
+                        true,
+                        true),
+                ],
+                [],
+                null),
+        };
 
-            var links = provider.ForStartupRuntime();
-            var link = Assert.Single(links);
-            Assert.Equal("Админка агента", link.Label);
-            Assert.Equal("http://localhost:5280/admin/", link.Url);
-            Assert.Equal("_blank", link.Target);
-            Assert.True(link.Topbar);
-            Assert.True(link.Settings);
-        }
-        finally
+        var provider = new HostExternalLinksProvider(new DashSpecHostContext
         {
-            Directory.Delete(dir, recursive: true);
-        }
+            StartupRuntimeConfigPath = "runtime.toml",
+            StartupRuntimeReference = "runtime.toml",
+            DefaultSpecRelativePath = "spec.dashspec",
+            DefaultSpecDirectory = ".",
+            Catalog = null!,
+            HostShell = hostShell,
+        });
+
+        var links = provider.ForStartupRuntime();
+        var link = Assert.Single(links);
+        Assert.Equal("Админка агента", link.Label);
+        Assert.Equal("http://localhost:5280/admin/", link.Url);
+        Assert.Equal("_blank", link.Target);
+        Assert.True(link.Topbar);
+        Assert.True(link.Settings);
     }
 }
