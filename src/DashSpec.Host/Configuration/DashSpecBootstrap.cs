@@ -1,4 +1,5 @@
 using DashSpec.Core.Parsing;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Settings;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
@@ -7,11 +8,14 @@ namespace DashSpec.Host.Configuration;
 /// <summary>Host bootstrap: ops TOML → <c>.dashhost</c> → catalog → default entry @runtime TOML.</summary>
 public static class DashSpecBootstrap
 {
-    public static DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
-        LoadBootstrapWithHost(environment).Bootstrap;
+    public static DashSpecTomlRoot LoadBootstrap(
+        IHostEnvironment environment,
+        IHostDatabaseInitializer hostDatabase) =>
+        LoadBootstrapWithHost(environment, hostDatabase).Bootstrap;
 
     public static (DashSpecTomlRoot Bootstrap, HostShellBootstrap HostShell) LoadBootstrapWithHost(
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        IHostDatabaseInitializer hostDatabase)
     {
         var contentRoot = environment.ContentRootPath;
         var bootstrapPath = Path.Combine(contentRoot, "dash-spec.toml");
@@ -42,7 +46,7 @@ public static class DashSpecBootstrap
         var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
         ApplyHostShell(bootstrap, hostShell);
 
-        HostSettingsOverlay.Apply(bootstrap);
+        HostSettingsOverlay.Apply(bootstrap, hostDatabase);
 
         GitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
@@ -78,9 +82,11 @@ public static class DashSpecBootstrap
         return normalizedSpec.Replace('\\', '/');
     }
 
-    public static DashSpecAccessOptions LoadAccessOptions(IHostEnvironment environment)
+    public static DashSpecAccessOptions LoadAccessOptions(
+        IHostEnvironment environment,
+        IHostDatabaseInitializer hostDatabase)
     {
-        var bootstrap = LoadBootstrap(environment);
+        var bootstrap = LoadBootstrap(environment, hostDatabase);
         return new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
     }
 
@@ -127,9 +133,9 @@ public static class DashSpecBootstrap
         return DashSpecTomlLoader.Merge(root, overlay);
     }
 
-    public static DashSpecTomlRoot Load(IHostEnvironment environment)
+    public static DashSpecTomlRoot Load(IHostEnvironment environment, IHostDatabaseInitializer hostDatabase)
     {
-        var bootstrap = LoadBootstrap(environment);
+        var bootstrap = LoadBootstrap(environment, hostDatabase);
         var catalog = LoadCatalog(bootstrap, environment.ContentRootPath);
         var specPath = ResolveActiveSpecFullPath(catalog);
         if (!File.Exists(specPath))
