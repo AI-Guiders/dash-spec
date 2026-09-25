@@ -28,12 +28,6 @@ public static class DashSpecBootstrap
         var hadTomlCatalogPath = !string.IsNullOrWhiteSpace(bootstrap.Dashboard.CatalogPath);
         var hadTomlPresentation = HostBootstrapDeprecation.HasPresentationInToml(bootstrap.Presentation);
 
-        var envDashhost = Environment.GetEnvironmentVariable("DASHSPEC_DASHHOST");
-        if (!string.IsNullOrWhiteSpace(envDashhost))
-        {
-            bootstrap.Host.Dashhost = envDashhost;
-        }
-
         HostShellBootstrap? hostShell = null;
         var dashhostPath = ResolveDashhostPath(contentRoot, bootstrap.Host.Dashhost);
         if (!string.IsNullOrWhiteSpace(dashhostPath))
@@ -49,19 +43,12 @@ public static class DashSpecBootstrap
                 hostShell);
         }
 
-        var envCatalogPath = Environment.GetEnvironmentVariable("DASHSPEC_CATALOG_PATH");
-        if (!string.IsNullOrWhiteSpace(envCatalogPath))
-        {
-            bootstrap.Dashboard.CatalogPath = envCatalogPath;
-        }
-
         if (string.IsNullOrWhiteSpace(bootstrap.Dashboard.CatalogPath))
         {
             throw new InvalidOperationException(
                 """
                 Host bootstrap requires a catalog source:
                   [host] dashhost = "dashspec/<id>.dashhost"
-                  or env DASHSPEC_DASHHOST
                   or legacy [dashboard] catalog_path in dash-spec.toml.
                 """);
         }
