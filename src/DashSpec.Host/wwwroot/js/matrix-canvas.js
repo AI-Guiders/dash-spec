@@ -36,10 +36,7 @@ window.dashSpecMatrix = {
     col.querySelectorAll(".matrix-canvas-y-label").forEach((el) => {
       maxLabel = Math.max(maxLabel, el.scrollWidth || 0);
     });
-    const width = Math.max(
-      96,
-      Math.ceil(col.getBoundingClientRect().width),
-      maxLabel + 8);
+    const width = Math.max(96, maxLabel + 8);
     host.style.setProperty("--matrix-y-label-width", `${width}px`);
     return width;
   },
