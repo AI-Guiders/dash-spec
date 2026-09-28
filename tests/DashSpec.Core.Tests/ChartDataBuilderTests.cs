@@ -312,6 +312,39 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_with_axis_window_limits_five_minute_grid()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["x"] = "bucket_start_utc",
+            ["y"] = "app_name",
+            ["value"] = "event_count",
+            ["x_format"] = "time.short",
+            ["x_step"] = "5m",
+            ["axis_from"] = "08:00",
+            ["axis_to"] = "18:00",
+            ["y_format"] = "raw",
+        });
+
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["bucket_start_utc"] = new DateTime(2026, 6, 30, 9, 0, 0, DateTimeKind.Utc),
+                ["app_name"] = "Cursor IDE",
+                ["event_count"] = 5d,
+            },
+        ];
+
+        var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+        Assert.Equal(120, matrix.XLabels.Count);
+        Assert.Equal("08:00", matrix.XLabels[0]);
+        Assert.Equal("17:55", matrix.XLabels[^1]);
+    }
+
+    [Fact]
     public void BuildHeatmap_series_max_keeps_all_y_rows_for_viewport_scroll()
     {
         var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
