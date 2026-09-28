@@ -30,16 +30,21 @@ window.dashSpecMatrix = {
       return 0;
     }
 
+    const text = el.textContent || "";
+    if (!text) {
+      return 0;
+    }
+
     const style = window.getComputedStyle(el);
-    const probe = document.createElement("span");
-    probe.textContent = el.textContent || "";
-    probe.style.cssText =
-      "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;" +
-      `font:${style.fontWeight} ${style.fontSize} ${style.fontFamily};`;
-    document.body.appendChild(probe);
-    const width = probe.getBoundingClientRect().width;
-    probe.remove();
-    return width;
+    const font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return text.length * 7;
+    }
+
+    ctx.font = font;
+    return ctx.measureText(text).width;
   },
 
   syncYLabelWidth(host) {
@@ -221,6 +226,42 @@ window.dashSpecMatrix = {
     });
   },
 
+  scheduleRender(host, reason, attempt = 0) {
+    if (host._matrixRenderFrame) {
+      cancelAnimationFrame(host._matrixRenderFrame);
+    }
+    host._matrixRenderFrame = requestAnimationFrame(() => {
+      host._matrixRenderFrame = 0;
+      if (!host._matrixPayload || !host._matrixCanvas) {
+        return;
+      }
+
+      const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
+      const clientWidth = scrollEl.clientWidth || host.getBoundingClientRect().width || 0;
+      if (clientWidth < 2 && attempt < 12) {
+        this.scheduleRender(host, reason, attempt + 1);
+        return;
+      }
+
+      const canvas = host._matrixCanvas;
+      const layout = canvas?._matrixLayout;
+      if (
+        reason === "resize" &&
+        host._matrixHasRendered &&
+        layout &&
+        host._matrixScrollClientWidth > 0 &&
+        Math.abs(clientWidth - host._matrixScrollClientWidth) < 1
+      ) {
+        return;
+      }
+
+      host._matrixScrollClientWidth = clientWidth;
+      host._matrixLastLayout = "";
+      this.fitAndRender(host, canvas, host._matrixPayload);
+      host._matrixHasRendered = true;
+    });
+  },
+
   mount(hostId, canvasId, payload) {
     const host = this.hostElement(hostId);
     const canvas = this.canvasElement(canvasId);
@@ -231,33 +272,10 @@ window.dashSpecMatrix = {
     this.unmount(hostId);
     host._matrixPayload = payload;
     host._matrixCanvas = canvas;
+    host._matrixHasRendered = false;
 
-    const renderNow = (reason) => {
-      if (host._matrixRenderFrame) {
-        cancelAnimationFrame(host._matrixRenderFrame);
-      }
-      host._matrixRenderFrame = requestAnimationFrame(() => {
-        host._matrixRenderFrame = 0;
-        if (!host._matrixPayload || !host._matrixCanvas) {
-          return;
-        }
-        const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
-        const clientWidth = scrollEl.clientWidth || 0;
-        if (
-          reason === "resize" &&
-          host._matrixScrollClientWidth > 0 &&
-          Math.abs(clientWidth - host._matrixScrollClientWidth) < 1
-        ) {
-          return;
-        }
-        host._matrixScrollClientWidth = clientWidth;
-        host._matrixLastLayout = "";
-        this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
-      });
-    };
-
-    renderNow("mount");
-    const observer = new ResizeObserver(() => renderNow("resize"));
+    this.scheduleRender(host, "mount");
+    const observer = new ResizeObserver(() => this.scheduleRender(host, "resize"));
     observer.observe(host.querySelector(".matrix-canvas-scroll") || host);
     host._matrixResizeObserver = observer;
   },
@@ -270,26 +288,18 @@ window.dashSpecMatrix = {
       return;
     }
 
-    if (!host._matrixCanvas || !host._matrixResizeObserver) {
+    if (
+      !host._matrixResizeObserver ||
+      host._matrixCanvas !== canvas ||
+      !host._matrixCanvas.isConnected
+    ) {
       this.mount(hostId, canvasId, payload);
       return;
     }
 
     host._matrixPayload = payload;
     host._matrixCanvas = canvas;
-    host._matrixLastLayout = "";
-    if (host._matrixRenderFrame) {
-      cancelAnimationFrame(host._matrixRenderFrame);
-    }
-    host._matrixRenderFrame = requestAnimationFrame(() => {
-      host._matrixRenderFrame = 0;
-      if (!host._matrixPayload || !host._matrixCanvas) {
-        return;
-      }
-      const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
-      host._matrixScrollClientWidth = scrollEl.clientWidth || host._matrixScrollClientWidth || 0;
-      this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
-    });
+    this.scheduleRender(host, "update");
   },
 
   unmount(hostId) {
@@ -312,6 +322,7 @@ window.dashSpecMatrix = {
     host._matrixYLabelKey = "";
     host._matrixYLabelWidth = 0;
     host._matrixScrollClientWidth = 0;
+    host._matrixHasRendered = false;
   },
 
   hitTest(canvasId, offsetX, offsetY) {
