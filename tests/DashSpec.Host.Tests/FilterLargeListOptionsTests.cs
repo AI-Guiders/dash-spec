@@ -1,4 +1,4 @@
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Presentation.Filters;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

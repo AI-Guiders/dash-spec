@@ -3,6 +3,7 @@ using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Presentation;
+using DashSpec.Presentation.Filters;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
 

@@ -1,9 +1,10 @@
-@namespace DashSpec.Host.Components.Filters
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
 
 @using DashSpec.Core.Model
 
 @using DashSpec.Core.Runtime
-@using DashSpec.Host.Services.Presentation
+@using DashSpec.Execution.Runtime
+@using DashSpec.Presentation.Filters
 
 
 
@@ -15,7 +16,7 @@
 
     {
 
-        <span class="@LabelClass">@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)</span>
+        <span class="@LabelClass">@Label</span>
 
     }
 
@@ -35,7 +36,7 @@
 
                            class="date-input-grain filter-grain-input"
 
-                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           aria-label="@Label"
 
                            disabled="@Disabled"
 
@@ -51,7 +52,7 @@
 
                            class="date-input-grain date-input-year filter-grain-input"
 
-                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           aria-label="@Label"
 
                            disabled="@Disabled"
 
@@ -72,7 +73,7 @@
                     <input type="date"
                            class="filter-grain-input"
 
-                           aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                           aria-label="@Label"
 
                            disabled="@Disabled"
 
@@ -92,7 +93,7 @@
 
             <input type="date"
 
-                   aria-label="@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)"
+                   aria-label="@Label"
 
                    disabled="@Disabled"
 
@@ -114,7 +115,7 @@ else
 
     {
 
-        <span class="@LabelClass">@FilterUiHelpers.DisplayLabel(Filter, FilterIndex, SelectedFields)</span>
+        <span class="@LabelClass">@Label</span>
 
     }
 
@@ -159,6 +160,8 @@ else
     [Parameter, EditorRequired] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } = default!;
 
     [Parameter, EditorRequired] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = default!;
+
+    [Parameter] public string Label { get; set; } = string.Empty;
 
     [Parameter] public bool ShowLabel { get; set; } = true;
 

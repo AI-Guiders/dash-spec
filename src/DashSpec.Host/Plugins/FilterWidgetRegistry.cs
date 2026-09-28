@@ -1,40 +1,31 @@
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Model;
-using DashSpec.Host.Components.Filters;
 
 namespace DashSpec.Host.Plugins;
 
-public interface IFilterWidgetRenderer
-{
-    string WidgetId { get; }
-
-    bool CanRender(FilterDefinition filter);
-
-    Type ComponentType { get; }
-}
-
 public sealed class FilterWidgetRegistry
 {
-    private readonly IReadOnlyDictionary<string, IFilterWidgetRenderer> _byId;
+    private readonly FilterWidgetComponentRegistry _components;
     private readonly DashSpecContributorRegistry _contributors;
 
     public FilterWidgetRegistry(
-        IEnumerable<IFilterWidgetRenderer> renderers,
+        FilterWidgetComponentRegistry components,
         DashSpecContributorRegistry contributors)
     {
-        _byId = renderers.ToDictionary(x => x.WidgetId, StringComparer.OrdinalIgnoreCase);
+        _components = components;
         _contributors = contributors;
     }
 
-    public IFilterWidgetRenderer Resolve(FilterDefinition filter)
+    public Type ResolveComponentType(FilterDefinition filter)
     {
         var widgetId = ResolveWidgetId(filter);
-        if (_byId.TryGetValue(widgetId, out var renderer) && renderer.CanRender(filter))
+        var componentType = _components.TryGet(widgetId);
+        if (componentType is not null)
         {
-            return renderer;
+            return componentType;
         }
 
-        return ResolveFallback(filter);
+        return ResolveFallbackComponent(filter);
     }
 
     public bool IsKnownWidget(string? widgetId) =>
@@ -55,7 +46,7 @@ public sealed class FilterWidgetRegistry
             _ => "combobox",
         };
 
-    private IFilterWidgetRenderer ResolveFallback(FilterDefinition filter)
+    private Type ResolveFallbackComponent(FilterDefinition filter)
     {
         var fallbackId = filter.Kind switch
         {
@@ -66,6 +57,7 @@ public sealed class FilterWidgetRegistry
             _ => "combobox",
         };
 
-        return _byId[fallbackId];
+        return _components.TryGet(fallbackId)
+            ?? throw new InvalidOperationException($"No filter widget component registered for '{fallbackId}'.");
     }
 }
