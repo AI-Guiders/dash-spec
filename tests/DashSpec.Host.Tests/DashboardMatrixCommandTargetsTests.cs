@@ -7,7 +7,7 @@ namespace DashSpec.Host.Tests;
 public sealed class DashboardMatrixCommandTargetsTests
 {
     [Fact]
-    public void BuildMatrix_includes_only_heatmap_cards()
+    public void BuildVizToolbar_includes_only_heatmap_cards()
     {
         var cards = new List<CardDefinition>
         {
@@ -27,7 +27,7 @@ public sealed class DashboardMatrixCommandTargetsTests
                 LocalFilters: []),
         };
 
-        var targets = DashSpec.Host.Commands.DashboardCardCommandTargetsBuilder.BuildMatrix(cards);
+        var targets = DashSpec.Host.Commands.DashboardCardCommandTargetsBuilder.BuildVizToolbar(cards);
 
         Assert.Single(targets);
         Assert.Equal("heat_card", targets[0].CardId);
