@@ -19,11 +19,7 @@ public static class TabLayoutBoardResolver
             throw new ArgumentOutOfRangeException(nameof(columns));
         }
 
-        var context = $"Tab '{tabId}' layout";
-        return LayoutBoardPlacer.Resolve(
-            board,
-            columns,
-            context,
-            token => CardLayoutRefResolver.Resolve(token, tabCards, context));
+        var plan = TabLayoutPlanner.Plan(board, tabCards, columns, tabId);
+        return plan.AllCardPlacements;
     }
 }

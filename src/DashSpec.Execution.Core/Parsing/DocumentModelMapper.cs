@@ -222,8 +222,15 @@ internal static class DocumentModelMapper
                 new LayoutBoardCardRow(cardRow.Item.ToList()),
             FsharpLayout.LayoutBoardEntry.GroupRow groupRow =>
                 new LayoutBoardGroupRow(ToCore(groupRow.Item)),
+            FsharpLayout.LayoutBoardEntry.NestRow nestRow =>
+                new LayoutBoardNestRow(ToCore(nestRow.Item)),
             _ => throw new InvalidOperationException($"Unknown layout board entry: {entry}")
         };
+
+    private static LayoutBoardNestDefinition ToCore(FsharpLayout.LayoutBoardNestDefinition nest) =>
+        new(
+            nest.Id,
+            nest.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
 
     private static LayoutBoardGroupDefinition ToCore(FsharpLayout.LayoutBoardGroupDefinition group) =>
         new(

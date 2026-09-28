@@ -5,7 +5,8 @@ public sealed record LayoutBoardDefinition(
     IReadOnlyList<LayoutBoardEntry> Entries,
     LayoutScope? ModuleScope = null)
 {
-    public int RowCount => Entries.Count;
+    public int RowCount =>
+        Entries.Count(static entry => entry is LayoutBoardCardRow or LayoutBoardGroupRow);
 
     public int ColumnCount
     {
@@ -23,6 +24,9 @@ public sealed record LayoutBoardDefinition(
                     LayoutBoardGroupRow groupRow => groupRow.Group.Rows.Count == 0
                         ? 0
                         : groupRow.Group.Rows.Max(static row => row.Count),
+                    LayoutBoardNestRow nestRow => nestRow.Nest.Rows.Count == 0
+                        ? 0
+                        : nestRow.Nest.Rows.Max(static row => row.Count),
                     _ => 0
                 })
                 .DefaultIfEmpty(0)

@@ -30,6 +30,8 @@ internal static class LayoutBoardPlacer
                     rowIndex++;
                     PlaceCardRow(cardRow.CardIds, rowIndex, columns, context, resolveToken, result);
                     break;
+                case LayoutBoardNestRow:
+                    break;
                 case LayoutBoardGroupRow { Group: var group }:
                     rowIndex++;
                     var innerBoard = LayoutBoardDefinition.FromCardRows(group.Rows);

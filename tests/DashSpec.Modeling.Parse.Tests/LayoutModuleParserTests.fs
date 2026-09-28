@@ -76,3 +76,30 @@ type LayoutModuleParserTests() =
         match board.Entries[1] with
         | CardRow cells -> Assert.Equal<string list>([ "C" ], cells |> Seq.toList)
         | _ -> Assert.Fail("Expected card row")
+
+    [<Fact>]
+    member _.``Parse_tab_layout_module_with_nest`` () =
+        let text =
+            """
+                @layout n
+                scope tab
+
+                nest panel {
+                  [ A B ]
+                }
+                [ C panel ]
+                """
+
+        let board = LayoutModuleParser.parseLayoutFile text
+
+        Assert.Equal(1, board.RowCount)
+        Assert.Equal(2, board.Entries.Count)
+        match board.Entries[0] with
+        | NestRow nest ->
+            Assert.Equal("panel", nest.Id)
+            Assert.Equal<string list>([ "A"; "B" ], nest.Rows[0] |> Seq.toList)
+        | _ -> Assert.Fail("Expected nest row")
+
+        match board.Entries[1] with
+        | CardRow cells -> Assert.Equal<string list>([ "C"; "panel" ], cells |> Seq.toList)
+        | _ -> Assert.Fail("Expected card row")
