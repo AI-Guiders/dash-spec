@@ -56,6 +56,8 @@ public static class DiagramKindRegistry
         new("value", PropertyValueType.ColumnBinding),
         new("height", PropertyValueType.Scalar),
         new("color_normalize", PropertyValueType.Scalar),
+        new("y_order", PropertyValueType.Scalar),
+        new("y_sort", PropertyValueType.Scalar),
     ];
 
     private static readonly IReadOnlyList<PropertySpec> GanttProperties =

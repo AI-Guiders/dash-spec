@@ -22,6 +22,13 @@ module CardParser =
         | true, value -> Some value
         | false, _ -> None
 
+    let private propBool (props: IDictionary<string, string>) key =
+        match props.TryGetValue key with
+        | true, value when value.Equals("false", StringComparison.OrdinalIgnoreCase) -> Some false
+        | true, value when value.Equals("true", StringComparison.OrdinalIgnoreCase) -> Some true
+        | true, _ -> Some true
+        | false, _ -> None
+
     let private parsePresentation (reader: TokenReader) =
         let props = PropertyBlockParser.parse reader PropertySchemas.presentation "presentation" false false
         let usePreset = propValue props "use"
@@ -49,7 +56,8 @@ module CardParser =
         let props = PropertyBlockParser.parse reader PropertySchemas.legend "legend" false false
         { MinLabel = propValue props "min"
           MaxLabel = propValue props "max"
-          Title = propValue props "title" }
+          Title = propValue props "title"
+          Show = propBool props "show" }
 
     let private parseBind (reader: TokenReader) =
         if reader.IsOnNewline() then

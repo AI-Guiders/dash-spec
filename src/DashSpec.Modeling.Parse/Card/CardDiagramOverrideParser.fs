@@ -41,7 +41,13 @@ module CardDiagramOverrideParser =
             PropertyBlockParser.parseWithEndKind reader PropertySchemas.legend "legend" "legend" false false
         { MinLabel = propValue props "min"
           MaxLabel = propValue props "max"
-          Title = propValue props "title" }
+          Title = propValue props "title"
+          Show =
+            match props.TryGetValue "show" with
+            | true, value when value.Equals("false", StringComparison.OrdinalIgnoreCase) -> Some false
+            | true, value when value.Equals("true", StringComparison.OrdinalIgnoreCase) -> Some true
+            | true, _ -> Some true
+            | false, _ -> None }
 
     let private parsePresentationOverride (reader: TokenReader) =
         let props =

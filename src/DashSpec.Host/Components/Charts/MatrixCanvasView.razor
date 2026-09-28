@@ -41,19 +41,17 @@ else
                         <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
                     }
                 </div>
-                @if (ShowAxisLabelsX)
-                {
-                    <div class="matrix-canvas-x-labels">
-                        @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
-                        {
-                            var show = ShouldShowXLabel(xi);
-                            <span class="matrix-canvas-x-label @(show ? null : "matrix-canvas-x-label-sparse")"
-                                  title="@FormatXLabel(Payload.XLabels[xi])">
-                                @(show ? FormatXLabel(Payload.XLabels[xi]) : "")
-                            </span>
-                        }
-                    </div>
-                }
+                <div class="matrix-canvas-x-labels @(ShowAxisLabelsX ? null : "matrix-canvas-x-labels--hidden")"
+                     aria-hidden="@(!ShowAxisLabelsX)">
+                    @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
+                    {
+                        var show = ShowAxisLabelsX && ShouldShowXLabel(xi);
+                        <span class="matrix-canvas-x-label @(show ? null : "matrix-canvas-x-label-sparse")"
+                              title="@(ShowAxisLabelsX ? FormatXLabel(Payload.XLabels[xi]) : null)">
+                            @(show ? FormatXLabel(Payload.XLabels[xi]) : "")
+                        </span>
+                    }
+                </div>
                 @if (ShowAxisLabelsY)
                 {
                     <div class="matrix-canvas-y-labels">
