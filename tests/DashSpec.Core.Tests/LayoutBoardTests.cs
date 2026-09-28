@@ -711,4 +711,54 @@ end tab
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    public void TabLayoutPlanner_places_nest_in_bracket_cell_with_inner_rows()
+    {
+        var doc = DashSpecParser.Parse("""
+@tab demo
+  wiring
+  layout board
+  nest strip {
+    [ E ]
+    [ T ]
+  }
+  [ Q strip ]
+  end layout board
+  end wiring
+  report
+  title = "demo"
+  card wide as "Wide" ref Q
+  diagram bar
+  x = a y
+  end bar
+  datasource view dbo.t
+  end card
+  card inner_a as "Inner A" ref E
+  diagram bar
+  x = a y
+  end bar
+  datasource view dbo.t
+  end card
+  card inner_b as "Inner B" ref T
+  diagram bar
+  x = a y
+  end bar
+  datasource view dbo.t
+  end card
+  end report
+end tab
+""");
+
+        var context = TabLayoutCompactor.ResolveContext(doc, "demo");
+        var plan = TabLayoutCompactor.TryBuildLayoutPlan(context);
+
+        Assert.NotNull(plan);
+        Assert.True(plan!.Nests.ContainsKey("strip"));
+        var nest = plan.Nests["strip"];
+        Assert.Equal(new PlacementDefinition(1, 7, 6), nest.OuterPlacement);
+        Assert.Equal(new PlacementDefinition(1, 1, 12), nest.InnerPlacements["inner_a"]);
+        Assert.Equal(new PlacementDefinition(2, 1, 12), nest.InnerPlacements["inner_b"]);
+        Assert.Equal(new PlacementDefinition(1, 1, 6), plan.TopLevelPlacements["wide"]);
+    }
 }
