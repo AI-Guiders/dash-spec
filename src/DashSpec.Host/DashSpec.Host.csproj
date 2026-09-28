@@ -14,6 +14,7 @@
 
   <!-- Catalog emit: GdlEmitProject → authoring/dashspec.gdlproj (Wave 2.5; requires authoring-toolchain main 3b8cd8b+) -->
   <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
+  <Import Project="..\..\build\ValidateJavaScriptSyntax.targets" />
 
   <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
     <GdlEmitProject>$(MSBuildProjectDirectory)\authoring\dashspec.gdlproj</GdlEmitProject>
@@ -23,6 +24,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="DashSpec.Host.Tests" />
+    <InternalsVisibleTo Include="DashSpec.Host.E2E" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseLocalGuidersPlatform)' == 'true'">

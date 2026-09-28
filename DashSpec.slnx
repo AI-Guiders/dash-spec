@@ -46,6 +46,8 @@
 
   <Project Path="tests\DashSpec.GdlEmit.Tests\DashSpec.GdlEmit.Tests.csproj" />
 
+  <Project Path="tests\DashSpec.Host.E2E\DashSpec.Host.E2E.csproj" />
+
 </Solution>
 
 

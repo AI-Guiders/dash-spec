@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DashSpec.Host.E2E</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.50.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DashSpec.Host\DashSpec.Host.csproj" />
+  </ItemGroup>
+
+  <Target Name="StageHostRuntimeForE2E" AfterTargets="Build">
+    <PropertyGroup>
+      <_HostOut>$(MSBuildThisFileDirectory)..\..\src\DashSpec.Host\bin\$(Configuration)\$(TargetFramework)\</_HostOut>
+    </PropertyGroup>
+    <ItemGroup>
+      <_ConnectorDll Include="$(_HostOut)connectors\**\*" />
+      <_ExtensionDll Include="$(_HostOut)plugins\**\*" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutputPath)connectors;$(OutputPath)plugins" />
+    <Copy SourceFiles="@(_ConnectorDll)"
+          DestinationFiles="@(_ConnectorDll->'$(OutputPath)connectors\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(_HostOut)connectors')" />
+    <Copy SourceFiles="@(_ExtensionDll)"
+          DestinationFiles="@(_ExtensionDll->'$(OutputPath)plugins\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(_HostOut)plugins')" />
+  </Target>
+
+</Project>

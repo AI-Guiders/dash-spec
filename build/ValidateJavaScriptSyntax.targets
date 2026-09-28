@@ -1,0 +1,13 @@
+<Project>
+  <Target Name="ValidateJavaScriptSyntax"
+          BeforeTargets="Build"
+          Condition="'$(ValidateJavaScriptSyntax)' != 'false'">
+    <ItemGroup>
+      <_JsSyntaxFile Include="$(MSBuildProjectDirectory)\wwwroot\js\*.js" />
+    </ItemGroup>
+    <Exec Command="node --check &quot;%(_JsSyntaxFile.FullPath)&quot;"
+          Condition="'@(_JsSyntaxFile)' != ''"
+          IgnoreExitCode="false"
+          ContinueOnError="false" />
+  </Target>
+</Project>
