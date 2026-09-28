@@ -45,31 +45,14 @@
   display: grid;
   grid-template-columns: var(--matrix-y-label-width, max-content) max-content;
   grid-template-rows: auto max-content;
-  grid-template-areas:
-    "corner xlabels"
-    "ylabels canvas";
   gap: 4px;
   width: max-content;
   min-width: 100%;
 }
 
 .matrix-canvas-corner {
-  grid-area: corner;
-}
-
-.matrix-canvas-x-labels {
-  grid-area: xlabels;
-}
-
-.matrix-canvas-y-labels {
-  grid-area: ylabels;
-}
-
-.matrix-canvas {
-  grid-area: canvas;
-}
-
-.matrix-canvas-corner {
+  grid-column: 1;
+  grid-row: 1;
   position: sticky;
   left: 0;
   z-index: 2;
@@ -84,6 +67,8 @@
 }
 
 .matrix-canvas-x-labels {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   gap: 2px;
   align-items: end;
@@ -106,6 +91,8 @@
 }
 
 .matrix-canvas-y-labels {
+  grid-column: 1;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -131,6 +118,8 @@
 }
 
 .matrix-canvas {
+  grid-column: 2;
+  grid-row: 2;
   display: block;
   cursor: crosshair;
 }

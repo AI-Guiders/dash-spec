@@ -194,6 +194,7 @@ else
 
         if (string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal) && !firstRender)
         {
+            await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
             return;
         }
 
