@@ -325,7 +325,10 @@
             Card.FilterLinkCssClass,
             _selection?.Xi,
             _selection?.Yi,
-            _fullscreen);
+            _fullscreen,
+            MatrixDisplayState.GetValueLabelsOverride(Card.Id),
+            MatrixDisplayState.GetAxisLabelsXOverride(Card.Id),
+            MatrixDisplayState.GetAxisLabelsYOverride(Card.Id));
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -345,7 +348,10 @@
         string? FilterLinkCssClass,
         int? SelectionXi,
         int? SelectionYi,
-        bool Fullscreen);
+        bool Fullscreen,
+        bool? MatrixValueLabelsOverride,
+        bool? MatrixAxisLabelsXOverride,
+        bool? MatrixAxisLabelsYOverride);
 
     protected override void OnInitialized()
     {
