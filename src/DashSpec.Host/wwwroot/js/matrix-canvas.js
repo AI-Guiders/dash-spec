@@ -25,7 +25,7 @@ window.dashSpecMatrix = {
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
-  intrinsicTextWidth(el) {
+  measureLabelTextWidth(el) {
     if (!el) {
       return 0;
     }
@@ -37,8 +37,8 @@ window.dashSpecMatrix = {
 
     const style = window.getComputedStyle(el);
     const font = style.font || `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const probe = document.createElement("canvas");
+    const ctx = probe.getContext("2d");
     if (!ctx) {
       return text.length * 7;
     }
@@ -65,7 +65,7 @@ window.dashSpecMatrix = {
 
     let maxLabel = 0;
     labels.forEach((el) => {
-      maxLabel = Math.max(maxLabel, this.intrinsicTextWidth(el));
+      maxLabel = Math.max(maxLabel, this.measureLabelTextWidth(el));
     });
     const width = Math.max(96, Math.ceil(maxLabel) + 8);
     host._matrixYLabelKey = key;
@@ -92,7 +92,6 @@ window.dashSpecMatrix = {
     const naturalW = xCount * (preferredCellW + gap) + gap;
     const naturalH = yCount * (preferredCellH + gap) + gap;
 
-    // Wide/tall matrices: fixed readable cell size; .matrix-canvas-scroll handles overflow.
     if (
       visibleRows > 0 ||
       xCount > growThreshold ||
@@ -226,39 +225,23 @@ window.dashSpecMatrix = {
     });
   },
 
-  scheduleRender(host, reason, attempt = 0) {
+  paint(host) {
+    if (!host?._matrixPayload || !host?._matrixCanvas) {
+      return;
+    }
+
+    this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
+  },
+
+  schedulePaint(host) {
     if (host._matrixRenderFrame) {
       cancelAnimationFrame(host._matrixRenderFrame);
     }
+
     host._matrixRenderFrame = requestAnimationFrame(() => {
       host._matrixRenderFrame = 0;
-      if (!host._matrixPayload || !host._matrixCanvas) {
-        return;
-      }
-
-      const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
-      const clientWidth = scrollEl.clientWidth || host.getBoundingClientRect().width || 0;
-      if (clientWidth < 2 && attempt < 12) {
-        this.scheduleRender(host, reason, attempt + 1);
-        return;
-      }
-
-      const canvas = host._matrixCanvas;
-      const layout = canvas?._matrixLayout;
-      if (
-        reason === "resize" &&
-        host._matrixHasRendered &&
-        layout &&
-        host._matrixScrollClientWidth > 0 &&
-        Math.abs(clientWidth - host._matrixScrollClientWidth) < 1
-      ) {
-        return;
-      }
-
-      host._matrixScrollClientWidth = clientWidth;
-      host._matrixLastLayout = "";
-      this.fitAndRender(host, canvas, host._matrixPayload);
-      host._matrixHasRendered = true;
+      this.paint(host);
+      requestAnimationFrame(() => this.paint(host));
     });
   },
 
@@ -272,11 +255,20 @@ window.dashSpecMatrix = {
     this.unmount(hostId);
     host._matrixPayload = payload;
     host._matrixCanvas = canvas;
-    host._matrixHasRendered = false;
 
-    this.scheduleRender(host, "mount");
-    const observer = new ResizeObserver(() => this.scheduleRender(host, "resize"));
-    observer.observe(host.querySelector(".matrix-canvas-scroll") || host);
+    this.schedulePaint(host);
+    const scroll = host.querySelector(".matrix-canvas-scroll") || host;
+    let lastWidth = scroll.clientWidth || 0;
+    const observer = new ResizeObserver(() => {
+      const nextWidth = scroll.clientWidth || 0;
+      if (Math.abs(nextWidth - lastWidth) < 1) {
+        return;
+      }
+
+      lastWidth = nextWidth;
+      this.schedulePaint(host);
+    });
+    observer.observe(scroll);
     host._matrixResizeObserver = observer;
   },
 
@@ -299,7 +291,7 @@ window.dashSpecMatrix = {
 
     host._matrixPayload = payload;
     host._matrixCanvas = canvas;
-    this.scheduleRender(host, "update");
+    this.schedulePaint(host);
   },
 
   unmount(hostId) {
@@ -318,11 +310,8 @@ window.dashSpecMatrix = {
     }
     host._matrixPayload = null;
     host._matrixCanvas = null;
-    host._matrixLastLayout = "";
     host._matrixYLabelKey = "";
     host._matrixYLabelWidth = 0;
-    host._matrixScrollClientWidth = 0;
-    host._matrixHasRendered = false;
   },
 
   hitTest(canvasId, offsetX, offsetY) {
