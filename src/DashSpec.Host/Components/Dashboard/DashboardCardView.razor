@@ -3,7 +3,8 @@
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Host.Components.Filters
-@using DashSpec.Host.Services.Models
+@using DashSpec.Viz
+@using DashSpec.Host.Plugins
 @using DashSpec.Host.Plugins.Builtins
 @using DashSpec.Host.Services.Presentation
 @using DashSpec.Host.Services.Localization
@@ -44,22 +45,9 @@
                     }
                 </div>
             }
-            @if (CanMatrixLabelToggles)
+            @if (_vizToolbarType is not null)
             {
-                <label class="card-matrix-toggle" title="@Loc.T("Toggle cell values")">
-                    <input type="checkbox"
-                           checked="@MatrixValueLabelsVisible"
-                           disabled="@Card.Loading"
-                           @onchange="ToggleMatrixValueLabelsAsync" />
-                    <span>@Loc.T("Cell values")</span>
-                </label>
-                <label class="card-matrix-toggle" title="@Loc.T("Toggle X axis labels")">
-                    <input type="checkbox"
-                           checked="@MatrixAxisLabelsXVisible"
-                           disabled="@Card.Loading"
-                           @onchange="ToggleMatrixAxisLabelsXAsync" />
-                    <span>@Loc.T("X axis labels")</span>
-                </label>
+                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
             }
             @if (CanExport)
             {
@@ -250,7 +238,7 @@
     private ElementReference _fullscreenPanel;
 
     private bool HasHeadToolbar =>
-        CanMatrixLabelToggles ||
+        _vizToolbarType is not null ||
         CanExport ||
         CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
@@ -275,11 +263,12 @@
         !Card.IsVisibilityPlaceholder &&
         Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table or DiagramDataFamily.Gantt;
 
-    private bool CanMatrixLabelToggles =>
-        !Card.IsVisibilityPlaceholder &&
-        !Card.Loading &&
-        string.IsNullOrEmpty(Card.Error) &&
-        Card.Matrix is not null;
+    [Inject] private VizCardToolbarRegistry VizToolbars { get; set; } = default!;
+
+    [Inject] private ICardMatrixDisplayState MatrixDisplayState { get; set; } = default!;
+
+    private Type? _vizToolbarType;
+    private Dictionary<string, object?> _vizToolbarParameters = new();
 
     private bool MatrixValueLabelsVisible =>
         MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
@@ -290,14 +279,6 @@
         MatrixLabelDisplayResolver.EffectiveAxisVisible(
             Card.MatrixPresentation?.AxisLabelsX ?? true,
             MatrixDisplayState.GetAxisLabelsXOverride(Card.Id));
-
-    private Task ToggleMatrixValueLabelsAsync() =>
-        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "toggle_matrix_value_labels", new Dictionary<string, string>()));
-
-    private Task ToggleMatrixAxisLabelsXAsync() =>
-        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "toggle_matrix_axis_labels_x", new Dictionary<string, string>()));
-
-    [Inject] private ICardMatrixDisplayState MatrixDisplayState { get; set; } = default!;
 
     private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
 
@@ -385,6 +366,22 @@
         {
             _selection = null;
         }
+
+        _vizToolbarType = Card.IsVisibilityPlaceholder ||
+                          Card.Loading ||
+                          !string.IsNullOrEmpty(Card.Error)
+            ? null
+            : VizToolbars.TryGet(Card.RenderPluginId);
+        _vizToolbarParameters = _vizToolbarType is null
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>
+            {
+                ["Context"] = new VizCardToolbarContext
+                {
+                    Card = Card,
+                    OnCardAction = OnCardAction,
+                },
+            };
     }
 
     private bool UsesInteriorLayout => DashboardLayoutHelper.UsesInteriorLayout(Card);

@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Plugin.Viz.Builtins.Gantt;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

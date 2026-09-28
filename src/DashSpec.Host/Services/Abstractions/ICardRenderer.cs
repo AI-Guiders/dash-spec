@@ -3,7 +3,7 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Services.Models;
+using DashSpec.Viz;
 
 namespace DashSpec.Host.Services.Abstractions;
 

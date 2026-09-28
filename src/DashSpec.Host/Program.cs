@@ -7,7 +7,10 @@ using DashSpec.Host.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Endpoints;
 using DashSpec.Host.Middleware;
+using DashSpec.Abstractions.Viz;
 using DashSpec.Host.Plugins;
+using DashSpec.Host.Services.Localization;
+using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Security;
 using DashSpec.Host.Services;
 using DashSpec.Host.Services.Abstractions;
@@ -21,7 +24,6 @@ using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using DashSpec.Host.Services.Diagnostics;
-using DashSpec.Host.Services.Localization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
@@ -146,6 +148,8 @@ builder.Services.AddSingleton(new DashSpecHostContext
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<IVizCardToolbarLocalizer, VizCardToolbarLocalizer>();
+
 // Survive Host upgrades: antiforgery cookies decrypt after redeploy.
 var dataProtectionKeys = Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
 Directory.CreateDirectory(dataProtectionKeys);
@@ -242,6 +246,7 @@ app.MapPluginEndpoints();
 app.MapDashboardCommandEndpoints();
 
 app.MapRazorComponents<App>()
+    .AddAdditionalAssemblies(typeof(VizBuiltinsPluginCatalog).Assembly)
     .AddInteractiveServerRenderMode();
 
 app.MapDevEndpoints();

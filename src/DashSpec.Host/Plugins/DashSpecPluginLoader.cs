@@ -5,6 +5,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Plugins.Builtins;
+using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Services.Presentation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,12 +58,18 @@ public static class DashSpecPluginLoader
         RegisterBuiltIn(new ScopeBuiltinPlugin(), registry, services, configuration, commandRegistry);
         RegisterBuiltIn(new DiagramBuiltinPlugin(), registry, services, configuration, commandRegistry);
         RegisterBuiltIn(new OnClickDefaultPlugin(), registry, services, configuration, commandRegistry);
-        RegisterBuiltIn(new VizBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        foreach (var vizPlugin in VizBuiltinsPluginCatalog.CreateAll())
+        {
+            RegisterBuiltIn(vizPlugin, registry, services, configuration, commandRegistry);
+        }
+
         RegisterBuiltIn(new FilterWidgetsBuiltinPlugin(), registry, services, configuration, commandRegistry);
         RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
 
         services.AddScoped<ICardViewState, CardViewStateService>();
         services.AddScoped<ICardMatrixDisplayState, CardMatrixDisplayStateService>();
+        services.AddSingleton(registry.BuildCardVizComponentRegistry());
+        services.AddSingleton(registry.BuildVizCardToolbarRegistry());
 
         var activeBundle = ResolveActiveBundle(manifest);
         var pluginIds = ResolveBundlePluginIds(manifest, activeBundle);
@@ -264,7 +271,13 @@ public static class DashSpecPluginLoader
             "scope_builtin",
             "diagram_builtin",
             "on_click_default",
-            "viz_builtin",
+            "viz_chartjs",
+            "viz_matrix_canvas",
+            "viz_css_grid",
+            "viz_table_html",
+            "viz_scalar_html",
+            "viz_gantt_html",
+            "viz_gantt_timeline",
             "filter_widgets_builtin",
         };
 

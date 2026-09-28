@@ -1085,7 +1085,7 @@ public class DashboardFilterCommandTests
         public void ApplyTopFilter(string name, int limit) =>
             Filters.SetTop(name, limit);
 
-        public Task<Services.Models.CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default) =>
+        public Task<DashSpec.Viz.CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }
 }
