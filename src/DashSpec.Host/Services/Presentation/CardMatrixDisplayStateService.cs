@@ -4,6 +4,8 @@ namespace DashSpec.Host.Services.Presentation;
 
 public sealed class CardMatrixDisplayStateService : ICardMatrixDisplayState
 {
+    public event Action<string>? Changed;
+
     private readonly Dictionary<string, bool?> _valueLabels =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -50,14 +52,17 @@ public sealed class CardMatrixDisplayStateService : ICardMatrixDisplayState
     private static bool? TryGet(Dictionary<string, bool?> store, string cardId) =>
         store.TryGetValue(cardId, out var value) ? value : null;
 
-    private static void Set(Dictionary<string, bool?> store, string cardId, bool? visible)
+    private void Set(Dictionary<string, bool?> store, string cardId, bool? visible)
     {
         if (visible is null)
         {
             store.Remove(cardId);
-            return;
+        }
+        else
+        {
+            store[cardId] = visible;
         }
 
-        store[cardId] = visible;
+        Changed?.Invoke(cardId);
     }
 }
