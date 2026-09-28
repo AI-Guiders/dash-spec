@@ -63,8 +63,10 @@ public sealed class DashSpecAccessMiddleware(
         }
 
         if (path.StartsWithSegments("/_framework", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWithSegments("/_content", StringComparison.OrdinalIgnoreCase) ||
             path.StartsWithSegments("/css", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWithSegments("/js", StringComparison.OrdinalIgnoreCase))
+            path.StartsWithSegments("/js", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWithSegments("/lib", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
