@@ -20,8 +20,14 @@ public interface IDashSpecContributorRegistry
 
     void AddCardChrome(CardChromeContributorDescriptor descriptor);
 
+    void RegisterCardVizComponent(string rendererId, Type componentType);
+
+    void RegisterVizCardToolbar(string rendererId, Type toolbarComponentType);
+
     void AddCommand(DashSpecCommandDescriptor descriptor);
 }
+
+public sealed record VizCardToolbarDescriptor(string RendererId, Type ComponentType);
 
 public sealed record FilterWidgetContributorDescriptor(
     string PluginId,

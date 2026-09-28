@@ -1,7 +1,7 @@
 using System.Globalization;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Model;
-using DashSpec.Host.Services.Models;
+using DashSpec.Viz;
 using Microsoft.JSInterop;
 
 namespace DashSpec.Host.Plugins;

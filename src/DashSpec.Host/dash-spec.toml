@@ -9,7 +9,7 @@ active_bundle = "standard"
 
 [[plugins.bundles]]
 name = "standard"
-plugins = ["diagram_builtin", "on_click_default", "viz_builtin", "filter_widgets_builtin", "card_export", "card_views", "dashspec_diagnostics"]
+plugins = ["diagram_builtin", "on_click_default", "viz_chartjs", "viz_matrix_canvas", "viz_css_grid", "viz_table_html", "viz_scalar_html", "viz_gantt_html", "viz_gantt_timeline", "filter_widgets_builtin", "card_export", "card_views", "dashspec_diagnostics"]
 
 [[plugins.load]]
 id = "sqlserver"

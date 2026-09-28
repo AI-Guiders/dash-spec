@@ -3,7 +3,7 @@ using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Models;
+using DashSpec.Viz;
 
 namespace DashSpec.Host.Services.Presentation;
 

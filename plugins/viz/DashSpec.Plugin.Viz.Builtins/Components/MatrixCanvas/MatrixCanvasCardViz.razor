@@ -1,0 +1,73 @@
+@namespace DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas
+@using DashSpec.Abstractions.Plugins
+@using DashSpec.Core.Model
+@using DashSpec.Execution.Runtime
+@inject ICardMatrixDisplayState MatrixDisplayState
+
+@if (Context.EffectiveCard.Matrix is not null)
+{
+    var presentation = Context.EffectiveCard.MatrixPresentation;
+    var valueOverride = MatrixDisplayState.GetValueLabelsOverride(Context.Card.Id);
+    var axisXOverride = MatrixDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
+    var axisYOverride = MatrixDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var spec = presentation ?? new MatrixPresentation();
+    var valueLabelsWire = MatrixLabelDisplayResolver.ResolveValueLabelsWire(spec.ValueLabels, valueOverride);
+    var showAxisX = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
+    var showAxisY = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+
+    <MatrixCanvasView HostId="@DashboardVizDomIds.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
+                      CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
+                      Payload="Context.EffectiveCard.Matrix"
+                      HeightPx="@ResolveMatrixHeightPx()"
+                      VisibleRows="@presentation?.VisibleRows"
+                      XAxisLabel="@presentation?.XLabel"
+                      YAxisLabel="@presentation?.YLabel"
+                      ValueLabel="@presentation?.ValueLabel"
+                      XFormat="@(presentation?.XFormat ?? "date.short")"
+                      YFormat="@(presentation?.YFormat ?? "user.short")"
+                      ColorScale="@(presentation?.ColorScale ?? "heat")"
+                      ValueLabelsWire="@valueLabelsWire"
+                      ValueLabelsThresholdPx="@spec.ValueLabelsThresholdPx"
+                      ShowAxisLabelsX="@showAxisX"
+                      ShowAxisLabelsY="@showAxisY"
+                      LegendMinText="@presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
+                      LegendMaxText="@presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                      Limits="Context.EffectiveCard.MatrixLimits"
+                      OversizeMessage="Context.EffectiveCard.OversizeMessage"
+                      OnCellSelected="Context.OnHeatmapCellSelected" />
+}
+
+@code {
+    private const int CellHeightPx = 22;
+    private const int MatrixChromePx = 96;
+
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private int ResolveMatrixHeightPx()
+    {
+        var presentation = Context.EffectiveCard.MatrixPresentation;
+        var baseHeight = presentation?.HeightPx ?? 320;
+        var visibleRows = presentation?.VisibleRows;
+        var rowCount = Context.EffectiveCard.Matrix?.YLabels.Count ?? 0;
+
+        if (visibleRows is int vy)
+        {
+            if (Context.DetailView)
+            {
+                var expandedRows = rowCount > 0
+                    ? Math.Min(rowCount, Math.Max(vy * 2, 16))
+                    : Math.Max(vy * 2, 16);
+                return Math.Clamp(expandedRows * CellHeightPx + MatrixChromePx, Math.Max(baseHeight, 480), 720);
+            }
+
+            return Math.Clamp(vy * CellHeightPx + MatrixChromePx, 160, 800);
+        }
+
+        if (Context.DetailView)
+        {
+            return Math.Max(baseHeight, 560);
+        }
+
+        return baseHeight;
+    }
+}

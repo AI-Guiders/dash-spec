@@ -1,0 +1,291 @@
+@namespace DashSpec.Plugin.Viz.Builtins.Components.Charts
+@using DashSpec.Core.Runtime
+@using DashSpec.Core.Model
+
+@if (Payload is null || Payload.XLabels.Count == 0 || Payload.YLabels.Count == 0)
+{
+    <p class="empty-state">Нет данных за выбранный период</p>
+}
+else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
+{
+    <div class="heatmap-oversized" role="alert">
+        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @EffectiveLimits.EffectiveMaxCells, ось @EffectiveLimits.EffectiveMaxAxisLabels).</p>
+        @if (!string.IsNullOrWhiteSpace(OversizeMessage))
+        {
+            <p class="muted"><RichTextView Text="@OversizeMessage" /></p>
+        }
+        else
+        {
+            <p class="muted">Сузьте период или выберите одного пользователя в toolbar.</p>
+        }
+    </div>
+}
+else
+{
+    <div class="heatmap-wrap @WrapCssClass"
+         data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
+        <div class="heatmap-scroll" style="@($"max-height:{HeightPx}px")">
+        <div class="heatmap-grid" style="@GridStyle()">
+            <div class="heatmap-corner" style="grid-row:1;grid-column:1">
+                @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
+                {
+                    <span class="heatmap-axis-y"><RichTextView Text="@YAxisLabel" /></span>
+                }
+                @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(XAxisLabel))
+                {
+                    <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
+                }
+            </div>
+            @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
+            {
+                var xLabel = Payload.XLabels[xi];
+                var showXLabel = ShowAxisLabelsX && ShouldShowXLabel(xi);
+                <div class="heatmap-x-label @(showXLabel ? null : "heatmap-x-label-sparse")"
+                     style="@($"grid-row:1;grid-column:{xi + 2}")"
+                     title="@(ShowAxisLabelsX ? FormatXLabel(xLabel) : null)">
+                    @(showXLabel ? FormatXLabel(xLabel) : "")
+                </div>
+            }
+            @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
+            {
+                var yLabel = Payload.YLabels[yi];
+                @if (ShowAxisLabelsY)
+                {
+                    <div class="heatmap-y-label" style="@($"grid-row:{yi + 2};grid-column:1")" title="@yLabel">@FormatYLabel(yLabel)</div>
+                }
+                else
+                {
+                    <div class="heatmap-y-label heatmap-y-label-spacer"
+                         style="@($"grid-row:{yi + 2};grid-column:1")"
+                         aria-hidden="true"></div>
+                }
+                @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
+                {
+                    var value = Payload.Cells[yi][xi];
+                    var xLabel = Payload.XLabels[xi];
+                    var filled = value is not null;
+                    var active = _activeCell is { Yi: var ay, Xi: var ax } && ay == yi && ax == xi;
+                    var (cellMin, cellMax) = Payload.ColorRangeForCell(yi, xi);
+                    <div class="heatmap-cell @(filled ? "heatmap-cell-filled" : "heatmap-cell-empty") @(active ? "heatmap-cell-active" : null)"
+                         style="@CellStyle(yi, xi, filled, value, cellMin, cellMax)"
+                         @onmouseenter="() => ShowPopover(yi, xi)"
+                         @onmouseleave="HidePopover"
+                         @onclick="() => SelectCell(yi, xi)"
+                         @onclick:stopPropagation="true"
+                         @onfocus="() => ShowPopover(yi, xi)"
+                         @onblur="HidePopover"
+                         tabindex="@(filled ? 0 : -1)">
+                        @if (filled && ShowCellValues)
+                        {
+                            <span class="heatmap-cell-value">@FormatValue(value)</span>
+                        }
+                        @if (active && filled)
+                        {
+                            <div class="heatmap-popover" role="tooltip">
+                                <p class="heatmap-popover-head">@PopoverHeader(yLabel, xLabel, value)</p>
+                                @if (TooltipFormat is TooltipFormat.List && HasTooltipItems(yi, xi))
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(TooltipLabel))
+                                    {
+                                        <p class="heatmap-popover-section"><RichTextView Text="@TooltipLabel" /></p>
+                                    }
+                                    <ul class="heatmap-popover-list">
+                                        @foreach (var item in TooltipItems(yi, xi))
+                                        {
+                                            <li>@item</li>
+                                        }
+                                    </ul>
+                                }
+                                else if (HasTooltipItems(yi, xi))
+                                {
+                                    <p class="heatmap-popover-body">@InlineTooltipBody(yi, xi)</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
+        {
+            <div class="heatmap-legend" aria-hidden="true">
+                @if (!string.IsNullOrWhiteSpace(LegendMinText))
+                {
+                    <span><RichTextView Text="@LegendMinText" /></span>
+                }
+                <span class="heatmap-legend-bar"></span>
+                @if (!string.IsNullOrWhiteSpace(LegendMaxText))
+                {
+                    <span><RichTextView Text="@LegendMaxText" /></span>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public MatrixPayload Payload { get; set; } = null!;
+
+    [Parameter]
+    public int HeightPx { get; set; } = 320;
+
+    [Parameter]
+    public string? XAxisLabel { get; set; }
+
+    [Parameter]
+    public string? YAxisLabel { get; set; }
+
+    [Parameter]
+    public string? ValueLabel { get; set; }
+
+    [Parameter]
+    public string? TooltipLabel { get; set; }
+
+    [Parameter]
+    public TooltipFormat TooltipFormat { get; set; } = TooltipFormat.Inline;
+
+    [Parameter]
+    public string TooltipSplit { get; set; } = ", ";
+
+    [Parameter]
+    public string XFormat { get; set; } = "date.short";
+
+    [Parameter]
+    public string YFormat { get; set; } = "user.short";
+
+    [Parameter]
+    public string ColorScale { get; set; } = "heat";
+
+    [Parameter]
+    public string? LegendMinText { get; set; }
+
+    [Parameter]
+    public string? LegendMaxText { get; set; }
+
+    [Parameter]
+    public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
+    [Parameter]
+    public MatrixRenderLimitsDefinition? Limits { get; set; }
+
+    [Parameter]
+    public string? OversizeMessage { get; set; }
+
+    [Parameter]
+    public bool ShowAxisLabelsX { get; set; } = true;
+
+    [Parameter]
+    public bool ShowAxisLabelsY { get; set; } = true;
+
+    [Parameter]
+    public bool ShowCellValues { get; set; } = true;
+
+    private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
+
+    private string WrapCssClass =>
+        $"{(ShowAxisLabelsX ? null : "heatmap-wrap--hide-x-labels")} {(ShowAxisLabelsY ? null : "heatmap-wrap--hide-y-labels")}".Trim();
+
+    private (int Yi, int Xi)? _activeCell;
+
+    private const double ColumnWidthRem = 2.75;
+    private const double RowHeightRem = 2.75;
+    private const int TargetVisibleXLabels = 14;
+
+    private string GridStyle()
+    {
+        var columns = Payload.XLabels.Count;
+        var yColumn = ShowAxisLabelsY ? "minmax(9rem, max-content)" : "0";
+        return
+            $"grid-template-columns:{yColumn} repeat({columns}, {ColumnWidthRem}rem);" +
+            $"grid-template-rows:auto repeat({Payload.YLabels.Count}, {RowHeightRem}rem);";
+    }
+
+    private string CellStyle(int yi, int xi, bool filled, double? value, double cellMin, double cellMax)
+    {
+        var placement = $"grid-row:{yi + 2};grid-column:{xi + 2};";
+        if (!filled || value is null)
+        {
+            return placement;
+        }
+
+        var bg = HeatmapColorScale.CellBackground(ColorScale, value.Value, cellMin, cellMax);
+        var fg = HeatmapColorScale.CellText(ColorScale, value.Value, cellMin, cellMax);
+        return $"{placement}background:{bg};color:{fg};";
+    }
+
+    private bool ShouldShowXLabel(int index)
+    {
+        var count = Payload.XLabels.Count;
+        if (count <= TargetVisibleXLabels)
+        {
+            return true;
+        }
+
+        var step = (int)Math.Ceiling(count / (double)TargetVisibleXLabels);
+        return index == 0 || index == count - 1 || index % step == 0;
+    }
+
+    private void ShowPopover(int yi, int xi)
+    {
+        _activeCell = (yi, xi);
+    }
+
+    private void HidePopover()
+    {
+        _activeCell = null;
+    }
+
+    private async Task SelectCell(int yi, int xi)
+    {
+        if (!OnCellSelected.HasDelegate || Payload.Cells[yi][xi] is null)
+        {
+            return;
+        }
+
+        var value = Payload.Cells[yi][xi];
+        var context = new HeatmapCellContext(
+            yi,
+            xi,
+            Payload.XLabels[xi],
+            Payload.YLabels[yi],
+            value,
+            Payload.Tooltips?[yi][xi]);
+
+        await OnCellSelected.InvokeAsync(context);
+    }
+
+    private static string FormatValue(double? value) =>
+        value is null ? "—" : value.Value.ToString("0");
+
+    private string FormatXLabel(string label) => LabelFormat.Format(label, XFormat);
+
+    private string FormatYLabel(string label) => LabelFormat.Format(label, YFormat);
+
+    private string PopoverHeader(string yLabel, string xLabel, double? value)
+    {
+        var head = $"{FormatYLabel(yLabel)} · {FormatXLabel(xLabel)}: {FormatValue(value)}";
+        return string.IsNullOrWhiteSpace(ValueLabel) ? head : $"{head} {ValueLabel}";
+    }
+
+    private bool HasTooltipItems(int yi, int xi) =>
+        !string.IsNullOrWhiteSpace(Payload.Tooltips?[yi][xi]);
+
+    private IReadOnlyList<string> TooltipItems(int yi, int xi)
+    {
+        var raw = Payload.Tooltips?[yi][xi];
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return [];
+        }
+
+        return raw.Split(TooltipSplit, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    private string InlineTooltipBody(int yi, int xi)
+    {
+        var tip = Payload.Tooltips?[yi][xi];
+        return string.IsNullOrWhiteSpace(TooltipLabel) ? tip ?? string.Empty : $"{TooltipLabel}: {tip}";
+    }
+}
