@@ -14,9 +14,52 @@ public static class LayoutBoardRowPlacer
         Func<string, string> resolveToken,
         IDictionary<string, PlacementDefinition> result)
     {
+        PlaceRow(
+            row,
+            gridRow,
+            columns,
+            context,
+            token => new LayoutBoardRefTarget(LayoutBoardRefKind.Card, resolveToken(token)),
+            (target, placement, cards, _, _) =>
+            {
+                if (target.Kind != LayoutBoardRefKind.Card)
+                {
+                    throw new DashSpecParseException(
+                        $"{context}: row {gridRow} references nest '{target.Id}' but nest cells require TabLayoutPlanner.");
+                }
+
+                if (!cards.TryAdd(target.Id, placement))
+                {
+                    throw new DashSpecParseException(
+                        $"{context}: '{target.Id}' appears more than once in the layout board.");
+                }
+            },
+            result,
+            EmptyNestPlacements,
+            EmptyNestDefinitions);
+    }
+
+    private static readonly Dictionary<string, LayoutNestPlacement> EmptyNestPlacements = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly Dictionary<string, LayoutBoardNestDefinition> EmptyNestDefinitions = new(StringComparer.OrdinalIgnoreCase);
+
+    public static void PlaceRow(
+        IReadOnlyList<string> row,
+        int gridRow,
+        int columns,
+        string context,
+        Func<string, LayoutBoardRefTarget> resolveTarget,
+        Action<LayoutBoardRefTarget, PlacementDefinition, IDictionary<string, PlacementDefinition>, IDictionary<string, LayoutNestPlacement>, IReadOnlyDictionary<string, LayoutBoardNestDefinition>> assignCell,
+        IDictionary<string, PlacementDefinition> cardPlacements,
+        IDictionary<string, LayoutNestPlacement> nestPlacements,
+        IReadOnlyDictionary<string, LayoutBoardNestDefinition> nestDefinitions)
+    {
         ArgumentNullException.ThrowIfNull(row);
-        ArgumentNullException.ThrowIfNull(resolveToken);
-        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(resolveTarget);
+        ArgumentNullException.ThrowIfNull(assignCell);
+        ArgumentNullException.ThrowIfNull(cardPlacements);
+        ArgumentNullException.ThrowIfNull(nestPlacements);
+        ArgumentNullException.ThrowIfNull(nestDefinitions);
         if (columns <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(columns));
@@ -30,13 +73,9 @@ public static class LayoutBoardRowPlacer
         if (row.Count == 1)
         {
             var cell = ParseCell(row[0], context, gridRow);
-            var itemId = resolveToken(cell.RefToken);
-            if (!result.TryAdd(itemId, new PlacementDefinition(gridRow, 1, columns)))
-            {
-                throw new DashSpecParseException(
-                    $"{context}: '{itemId}' appears more than once in the layout board.");
-            }
-
+            var target = resolveTarget(cell.RefToken);
+            var placement = new PlacementDefinition(gridRow, 1, columns);
+            assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
             return;
         }
 
@@ -60,13 +99,9 @@ public static class LayoutBoardRowPlacer
                     $"{context}: row {gridRow} weight distribution yields zero-width cell.");
             }
 
-            var itemId = resolveToken(cells[cellIndex].RefToken);
-            if (!result.TryAdd(itemId, new PlacementDefinition(gridRow, col, span)))
-            {
-                throw new DashSpecParseException(
-                    $"{context}: '{itemId}' appears more than once in the layout board.");
-            }
-
+            var target = resolveTarget(cells[cellIndex].RefToken);
+            var placement = new PlacementDefinition(gridRow, col, span);
+            assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
             col += span;
             allocated += span;
         }

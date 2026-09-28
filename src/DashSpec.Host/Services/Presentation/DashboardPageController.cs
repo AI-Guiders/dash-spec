@@ -658,6 +658,46 @@ public sealed class DashboardPageController : IDisposable
         return TabLayoutCompactor.ResolveCardRef(context, token);
     }
 
+    public bool TryGetNestPlacement(string cellToken, out LayoutNestPlacement? placement)
+    {
+        placement = null;
+        if (TabLayoutPlan is null)
+        {
+            return false;
+        }
+
+        var nestId = LayoutBoardCellFormat.RefToken(cellToken);
+        if (!TabLayoutPlan.Nests.TryGetValue(nestId, out var found))
+        {
+            return false;
+        }
+
+        placement = found;
+        return true;
+    }
+
+    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNest(
+        LayoutNestPlacement nestPlacement)
+    {
+        foreach (var row in nestPlacement.Rows)
+        {
+            foreach (var token in row)
+            {
+                var cardId = ResolveLayoutCardRef(token);
+                if (!nestPlacement.InnerPlacements.TryGetValue(cardId, out var placement))
+                {
+                    continue;
+                }
+
+                var card = FindVisibleCard(cardId);
+                if (card is not null)
+                {
+                    yield return (card, placement);
+                }
+            }
+        }
+    }
+
     public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForGroup(
         LayoutBoardGroupDefinition group)
     {

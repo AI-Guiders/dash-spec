@@ -90,7 +90,7 @@ catalog "catalogs/my_prod.dashcatalog"
 | **Catalog entry** | Имя в UI + путь к модулю + (опционально) свой runtime |
 | **Toolbar** | Какие фильтры видны глобально |
 | **Card** | Datasource, diagram, `bind`, `on click`, title |
-| **Layout** | Куда встать карточки (`ref` + `[ A B ]`) |
+| **Layout** | Куда встать карточки (`ref` + `[ A B ]`); `group` — GroupBox на всю строку; `nest` — вложенный board в одной ячейке (ADR-0063) |
 | **Tab module** | Вынести кусок в отдельный `.dashspec` |
 
 Авто-apply + debounce — норма для toolbar chrome; отдельная кнопка «Применить» не обязательна.

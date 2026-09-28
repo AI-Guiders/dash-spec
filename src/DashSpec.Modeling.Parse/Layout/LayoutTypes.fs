@@ -31,10 +31,17 @@ type LayoutBoardGroupDefinition =
       Title: string option
       Rows: IReadOnlyList<IReadOnlyList<string>> }
 
+/// <summary>Named inner board referenced from a bracket cell (ADR-0063).</summary>
+[<CLIMutable>]
+type LayoutBoardNestDefinition =
+    { Id: string
+      Rows: IReadOnlyList<IReadOnlyList<string>> }
+
 /// <summary>Top-level layout board entry.</summary>
 type LayoutBoardEntry =
     | CardRow of IReadOnlyList<string>
     | GroupRow of LayoutBoardGroupDefinition
+    | NestRow of LayoutBoardNestDefinition
 
 /// <summary>Bracket layout board; optional <see cref="ModuleScope"/> when loaded from <c>.dashlayout</c>.</summary>
 [<CLIMutable>]
@@ -48,7 +55,10 @@ type LayoutBoardDefinition =
         |> Seq.choose (function CardRow cells -> Some cells | _ -> None)
         |> Seq.toList
 
-    member this.RowCount = this.Entries.Count
+    member this.RowCount =
+        this.Entries
+        |> Seq.filter (function NestRow _ -> false | _ -> true)
+        |> Seq.length
 
     member this.ColumnCount =
         let counts =
@@ -56,5 +66,6 @@ type LayoutBoardDefinition =
             |> Seq.collect (fun entry ->
                 match entry with
                 | CardRow cells -> seq { cells.Count }
-                | GroupRow group -> group.Rows |> Seq.map (fun row -> row.Count))
+                | GroupRow group -> group.Rows |> Seq.map (fun row -> row.Count)
+                | NestRow nest -> nest.Rows |> Seq.map (fun row -> row.Count))
         if Seq.isEmpty counts then 0 else Seq.max counts
