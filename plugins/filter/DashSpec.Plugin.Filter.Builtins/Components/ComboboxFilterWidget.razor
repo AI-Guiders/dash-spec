@@ -1,0 +1,17 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Filters
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+<FieldMultiSelect Label="@Context.Label"
+                  Hint="@Context.Hint"
+                  Compact="@Context.Compact"
+                  Disabled="@Context.Disabled"
+                  Combobox="true"
+                  SingleSelect="@Context.Filter.IsSingleSelectField"
+                  Options="@Context.Options"
+                  Selected="@Context.Selected"
+                  SelectedChanged="@Context.SelectedChanged" />
+
+@code {
+    [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+}

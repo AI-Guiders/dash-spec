@@ -1,0 +1,25 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Filters
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+<div class="@WrapperClass" style="@Context.PlacementStyle">
+    <GrainAwareDateInput Filter="@Context.Filter"
+                         Label="@Context.Label"
+                         Disabled="@Context.Disabled"
+                         ShowLabel="@Context.ShowDateLabel"
+                         LabelClass="@Context.DateLabelClass"
+                         DateFrom="@Context.DateFrom"
+                         DateTo="@Context.DateTo"
+                         FilterIndex="@Context.FilterIndex"
+                         SelectedFields="@Context.SelectedFields"
+                         OnDayChanged="@Context.OnDayChanged"
+                         OnRangeChanged="@Context.OnRangeChanged" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+
+    private string WrapperClass =>
+        Context.Compact ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
+
+}

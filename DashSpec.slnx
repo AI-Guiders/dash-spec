@@ -12,7 +12,11 @@
 
   <Project Path="src\DashSpec.Viz\DashSpec.Viz.csproj" />
 
+  <Project Path="src\DashSpec.Filters\DashSpec.Filters.csproj" />
+
   <Project Path="plugins\viz\DashSpec.Plugin.Viz.Builtins\DashSpec.Plugin.Viz.Builtins.csproj" />
+
+  <Project Path="plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
 
   <Project Path="src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
 
