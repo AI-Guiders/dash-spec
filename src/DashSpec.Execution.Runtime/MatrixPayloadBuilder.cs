@@ -241,24 +241,28 @@ internal static class MatrixPayloadBuilder
 
         List<DateTime> xKeys;
         List<string> xLabels;
-        if (buckets.Count > 0
-            && xStep == TimeSpan.FromHours(1)
-            && LabelFormat.DisplayTimeZone is { } displayTz)
+        var axisWindow = TryParseAxisWindow(diagram);
+        if (buckets.Count > 0 && LabelFormat.DisplayTimeZone is { } displayTz)
         {
-            (xKeys, xLabels) = BuildDisplayDayHourAxis(buckets.Keys.Min(), displayTz, xStep);
+            (xKeys, xLabels) = BuildDisplayLocalTimeAxis(
+                buckets.Keys.Min(),
+                displayTz,
+                xStep,
+                axisWindow);
         }
         else if (buckets.Count > 0)
         {
             var day = buckets.Keys.First().Date;
+            var (rangeStart, rangeEnd) = ResolveUtcStorageWindow(day, axisWindow);
             var expanded = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
             var expandedRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
                 Comparer<DateTime>.Default);
-            for (var hour = day; hour < day.AddDays(1); hour = hour.Add(xStep))
+            for (var slot = rangeStart; slot < rangeEnd; slot = slot.Add(xStep))
             {
-                expanded[hour] = buckets.TryGetValue(hour, out var values)
+                expanded[slot] = buckets.TryGetValue(slot, out var values)
                     ? new Dictionary<string, double?>(values, StringComparer.OrdinalIgnoreCase)
                     : new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
-                expandedRows[hour] = bucketRows.TryGetValue(hour, out var rowMap)
+                expandedRows[slot] = bucketRows.TryGetValue(slot, out var rowMap)
                     ? new Dictionary<string, IReadOnlyDictionary<string, object?>>(rowMap, StringComparer.OrdinalIgnoreCase)
                     : new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.OrdinalIgnoreCase);
             }
@@ -327,22 +331,68 @@ internal static class MatrixPayloadBuilder
         return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
     }
 
-    private static (List<DateTime> UtcKeys, List<string> Labels) BuildDisplayDayHourAxis(
+    private readonly record struct AxisWindow(TimeOnly From, TimeOnly To);
+
+    private static AxisWindow? TryParseAxisWindow(DiagramDefinition diagram)
+    {
+        if (!diagram.Properties.TryGetValue("axis_from", out var fromRaw)
+            || !diagram.Properties.TryGetValue("axis_to", out var toRaw)
+            || !TimeOnly.TryParse(fromRaw.Trim(), CultureInfo.InvariantCulture, out var from)
+            || !TimeOnly.TryParse(toRaw.Trim(), CultureInfo.InvariantCulture, out var to)
+            || to <= from)
+        {
+            return null;
+        }
+
+        return new AxisWindow(from, to);
+    }
+
+    private static (DateTime RangeStart, DateTime RangeEnd) ResolveUtcStorageWindow(DateTime anchorDay, AxisWindow? window)
+    {
+        if (window is null)
+        {
+            return (anchorDay, anchorDay.AddDays(1));
+        }
+
+        var start = anchorDay.Date.Add(window.Value.From.ToTimeSpan());
+        var end = anchorDay.Date.Add(window.Value.To.ToTimeSpan());
+        return end > start ? (start, end) : (start, start.AddHours(1));
+    }
+
+    private static (List<DateTime> UtcKeys, List<string> Labels) BuildDisplayLocalTimeAxis(
         DateTime anchorUtcBucket,
         TimeZoneInfo displayTz,
-        TimeSpan xStep)
+        TimeSpan xStep,
+        AxisWindow? window)
     {
         var anchorUtc = DateValueCodec.NormalizeStorageUtc(anchorUtcBucket);
         var anchorLocalDate = TimeZoneInfo.ConvertTimeFromUtc(anchorUtc, displayTz).Date;
-        var utcKeys = new List<DateTime>(24);
-        var labels = new List<string>(24);
-        for (var hour = 0; hour < 24; hour++)
+        DateTime localStart;
+        DateTime localEnd;
+        if (window is { } w)
         {
-            var local = DateTime.SpecifyKind(anchorLocalDate.AddHours(hour), DateTimeKind.Unspecified);
+            localStart = DateTime.SpecifyKind(anchorLocalDate.Add(w.From.ToTimeSpan()), DateTimeKind.Unspecified);
+            localEnd = DateTime.SpecifyKind(anchorLocalDate.Add(w.To.ToTimeSpan()), DateTimeKind.Unspecified);
+        }
+        else
+        {
+            localStart = DateTime.SpecifyKind(anchorLocalDate, DateTimeKind.Unspecified);
+            localEnd = localStart.AddDays(1);
+        }
+
+        if (localEnd <= localStart)
+        {
+            localEnd = localStart.Add(xStep);
+        }
+
+        var utcKeys = new List<DateTime>();
+        var labels = new List<string>();
+        for (var local = localStart; local < localEnd; local = local.Add(xStep))
+        {
             var utc = TimeZoneInfo.ConvertTimeToUtc(local, displayTz);
             var key = TimeSeriesGrid.Floor(utc, xStep);
             utcKeys.Add(key);
-            labels.Add(local.ToString("HH:mm", CultureInfo.InvariantCulture));
+            labels.Add(TimeOnly.FromDateTime(local).ToString("HH:mm", CultureInfo.InvariantCulture));
         }
 
         return (utcKeys, labels);
