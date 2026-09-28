@@ -50,9 +50,12 @@ window.dashSpecMatrix = {
   syncYLabelWidth(host) {
     const col = host?.querySelector?.(".matrix-canvas-y-labels");
     if (!col || host.classList.contains("matrix-canvas-host--hide-y-labels")) {
-      host?._matrixYLabelKey = "";
-      host?._matrixYLabelWidth = 0;
-      host?.style?.setProperty?.("--matrix-y-label-width", "0px");
+      if (host) {
+        host._matrixYLabelKey = "";
+        host._matrixYLabelWidth = 0;
+        host.style?.setProperty?.("--matrix-y-label-width", "0px");
+      }
+
       return 0;
     }
 
