@@ -43,7 +43,7 @@ public sealed class VizBuiltinPlugin : IDashSpecPlugin
     {
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.ChartJs, "Chart"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.CssGrid, "Matrix (CSS grid, legacy)"));
-        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.MatrixCanvas, "Matrix (canvas)"));
+        registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.MatrixCanvas, "Matrix (CSS heatmap)"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.TableHtml, "Table"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.ScalarHtml, "Scalar"));
         registry.AddVizRenderer(new VizRendererDescriptor(Id, VizPluginIds.GanttHtml, "Gantt (compact)"));

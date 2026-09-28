@@ -61,6 +61,26 @@
   visibility: hidden;
 }
 
+.heatmap-wrap--hide-x-labels .heatmap-x-label,
+.heatmap-wrap--hide-x-labels .heatmap-axis-x {
+  visibility: hidden;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0;
+  line-height: 0;
+}
+
+.heatmap-wrap--hide-y-labels .heatmap-y-label:not(.heatmap-y-label-spacer) {
+  display: none;
+}
+
+.heatmap-y-label-spacer {
+  padding: 0;
+  min-height: 0;
+  visibility: hidden;
+}
+
 .heatmap-y-label {
   font-size: 0.78rem;
   color: var(--text);
