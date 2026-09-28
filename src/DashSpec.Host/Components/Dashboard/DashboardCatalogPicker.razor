@@ -3,76 +3,66 @@
 @using DashSpec.Core.Model
 @using DashSpec.Host.Services.Presentation
 
-
-
 @if (Entries.Count > 1)
-
 {
-
     <label class="dash-catalog @(Inline ? "dash-catalog-inline" : null)">
-
         @if (!Inline || ShowLabel)
         {
             <span class="filter-inline-label">@CatalogLabel</span>
         }
 
         <select class="dash-catalog-select"
-
                 aria-label="Выбор отчёта"
-
                 disabled="@Busy"
-
-                value="@ResolvedEntryId"
-
+                value="@SelectValue"
+                @key="@SelectValue"
                 @onchange="OnChanged">
-
             @foreach (var group in Groups)
-
             {
-
                 <optgroup label="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)">
-
-                    @foreach (var entry in GroupEntries(group).Where(e => !EntryDuplicatesGroupTitle(group, e)))
-
+                    @foreach (var entry in GroupEntries(group))
                     {
-
                         <option value="@entry.Id">@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)</option>
-
                     }
-
                 </optgroup>
-
             }
 
             @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId)))
-
             {
-
                 <option value="@entry.Id">@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)</option>
-
             }
-
         </select>
-
     </label>
-
 }
 
-
-
 @code {
-
     [Parameter] public IReadOnlyList<CatalogEntryDefinition> Entries { get; set; } = [];
 
     [Parameter] public IReadOnlyList<CatalogGroupDefinition> Groups { get; set; } = [];
 
     [Parameter] public string? ActiveEntryId { get; set; }
 
-    private string ResolvedEntryId =>
-        !string.IsNullOrWhiteSpace(ActiveEntryId)
-        && Entries.Any(entry => string.Equals(entry.Id, ActiveEntryId, StringComparison.OrdinalIgnoreCase))
-            ? ActiveEntryId
-            : Entries[0].Id;
+    [Parameter] public string? DefaultEntryId { get; set; }
+
+    private string SelectValue
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(ActiveEntryId)
+                && Entries.Any(entry => string.Equals(entry.Id, ActiveEntryId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return ActiveEntryId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(DefaultEntryId)
+                && Entries.Any(entry => string.Equals(entry.Id, DefaultEntryId, StringComparison.OrdinalIgnoreCase)))
+            {
+                return DefaultEntryId;
+            }
+
+            return Entries.Count > 0 ? Entries[0].Id : string.Empty;
+        }
+    }
 
     [Parameter] public bool Busy { get; set; }
 
@@ -84,34 +74,15 @@
 
     [Parameter] public EventCallback<string> OnSelect { get; set; }
 
-
-
     private async Task OnChanged(ChangeEventArgs e)
-
     {
-
         var entryId = e.Value?.ToString();
-
         if (!string.IsNullOrWhiteSpace(entryId))
-
         {
-
             await OnSelect.InvokeAsync(entryId);
-
         }
-
     }
 
     private IEnumerable<CatalogEntryDefinition> GroupEntries(CatalogGroupDefinition group) =>
         Entries.Where(entry => string.Equals(entry.GroupId, group.Id, StringComparison.OrdinalIgnoreCase));
-
-    private bool EntryDuplicatesGroupTitle(CatalogGroupDefinition group, CatalogEntryDefinition entry)
-    {
-        var groupTitle = DisplayResolutionHost.ResolveCatalogGroupTitle(group);
-        var entryTitle = DisplayResolutionHost.ResolveCatalogEntryTitle(entry);
-        return string.Equals(groupTitle, entryTitle, StringComparison.OrdinalIgnoreCase);
-    }
-
 }
-
-
