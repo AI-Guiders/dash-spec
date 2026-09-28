@@ -3,12 +3,12 @@ using Xunit;
 
 namespace DashSpec.Host.Tests;
 
-public sealed class CardMatrixDisplayStateTests
+public sealed class CardVizDisplayStateTests
 {
     [Fact]
     public void ToggleAxisLabelsY_raises_changed_for_card()
     {
-        var service = new CardMatrixDisplayStateService();
+        var service = new CardVizDisplayStateService();
         string? changedId = null;
         service.Changed += id => changedId = id;
 

@@ -2,18 +2,18 @@
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Execution.Runtime
-@inject ICardMatrixDisplayState MatrixDisplayState
+@inject ICardVizDisplayState VizDisplayState
 
 @if (Context.EffectiveCard.Matrix is not null)
 {
     var presentation = Context.EffectiveCard.MatrixPresentation;
-    var valueOverride = MatrixDisplayState.GetValueLabelsOverride(Context.Card.Id);
-    var axisXOverride = MatrixDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
-    var axisYOverride = MatrixDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var valueOverride = VizDisplayState.GetValueLabelsOverride(Context.Card.Id);
+    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
+    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
     var spec = presentation ?? new MatrixPresentation();
-    var valueLabelsWire = MatrixLabelDisplayResolver.ResolveValueLabelsWire(spec.ValueLabels, valueOverride);
-    var showAxisX = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
-    var showAxisY = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+    var valueLabelsWire = VizLabelDisplayResolver.ResolveValueLabelsWire(spec.ValueLabels, valueOverride);
+    var showAxisX = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
+    var showAxisY = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
 
     <MatrixCanvasView HostId="@DashboardVizDomIds.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
                       CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"

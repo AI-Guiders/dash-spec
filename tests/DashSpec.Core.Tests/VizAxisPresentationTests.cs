@@ -4,16 +4,16 @@ using Xunit;
 
 namespace DashSpec.Core.Tests;
 
-public sealed class MatrixLabelVisibilityTests
+public sealed class VizAxisPresentationTests
 {
     [Theory]
-    [InlineData("show", MatrixValueLabelMode.Show)]
-    [InlineData("hide", MatrixValueLabelMode.Hide)]
-    [InlineData("auto", MatrixValueLabelMode.Auto)]
-    public void ParseValueLabels_reads_spec_property(string raw, MatrixValueLabelMode expected)
+    [InlineData("show", VizValueLabelMode.Show)]
+    [InlineData("hide", VizValueLabelMode.Hide)]
+    [InlineData("auto", VizValueLabelMode.Auto)]
+    public void ParseValueLabels_reads_spec_property(string raw, VizValueLabelMode expected)
     {
         var props = new Dictionary<string, string> { ["value_labels"] = raw };
-        Assert.Equal(expected, MatrixLabelVisibilityParser.ParseValueLabels(props));
+        Assert.Equal(expected, VizAxisPresentationParser.ParseValueLabels(props));
     }
 
     [Theory]
@@ -22,7 +22,7 @@ public sealed class MatrixLabelVisibilityTests
     public void ParseAxisLabels_reads_spec_property(string raw, bool expected)
     {
         var props = new Dictionary<string, string> { ["axis_labels_x"] = raw };
-        Assert.Equal(expected, MatrixLabelVisibilityParser.ParseAxisLabels(props, "axis_labels_x"));
+        Assert.Equal(expected, VizAxisPresentationParser.ParseAxisLabels(props, "axis_labels_x"));
     }
 
     [Theory]
@@ -30,11 +30,11 @@ public sealed class MatrixLabelVisibilityTests
     [InlineData("14", 14)]
     [InlineData("3", 6)]
     [InlineData("120", 96)]
-    [InlineData("nope", MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx)]
+    [InlineData("nope", VizAxisPresentationParser.DefaultValueLabelsThresholdPx)]
     public void ParseValueLabelsThreshold_clamps_and_defaults(string raw, int expected)
     {
         var props = new Dictionary<string, string> { ["value_labels_threshold"] = raw };
-        Assert.Equal(expected, MatrixLabelVisibilityParser.ParseValueLabelsThreshold(props));
+        Assert.Equal(expected, VizAxisPresentationParser.ParseValueLabelsThreshold(props));
     }
 
     [Fact]
@@ -56,8 +56,8 @@ public sealed class MatrixLabelVisibilityTests
             LocalFilters: []);
 
         var presentation = MatrixPresentation.FromCard(card);
-        Assert.Equal(MatrixValueLabelMode.Hide, presentation.ValueLabels);
-        Assert.Equal(MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx, presentation.ValueLabelsThresholdPx);
+        Assert.Equal(VizValueLabelMode.Hide, presentation.ValueLabels);
+        Assert.Equal(VizAxisPresentationParser.DefaultValueLabelsThresholdPx, presentation.ValueLabelsThresholdPx);
         Assert.False(presentation.AxisLabelsX);
         Assert.True(presentation.AxisLabelsY);
     }
@@ -104,18 +104,18 @@ public sealed class MatrixLabelVisibilityTests
     }
 
     [Theory]
-    [InlineData(MatrixValueLabelMode.Auto, null, "auto")]
-    [InlineData(MatrixValueLabelMode.Show, null, "show")]
-    [InlineData(MatrixValueLabelMode.Hide, null, "hide")]
-    [InlineData(MatrixValueLabelMode.Auto, true, "show")]
-    [InlineData(MatrixValueLabelMode.Hide, true, "show")]
+    [InlineData(VizValueLabelMode.Auto, null, "auto")]
+    [InlineData(VizValueLabelMode.Show, null, "show")]
+    [InlineData(VizValueLabelMode.Hide, null, "hide")]
+    [InlineData(VizValueLabelMode.Auto, true, "show")]
+    [InlineData(VizValueLabelMode.Hide, true, "show")]
     public void ResolveValueLabelsWire_prefers_user_override(
-        MatrixValueLabelMode specMode,
+        VizValueLabelMode specMode,
         bool? userOverride,
         string expectedWire)
     {
         Assert.Equal(
             expectedWire,
-            MatrixLabelDisplayResolver.ResolveValueLabelsWire(specMode, userOverride));
+            VizLabelDisplayResolver.ResolveValueLabelsWire(specMode, userOverride));
     }
 }

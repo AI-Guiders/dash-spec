@@ -16,15 +16,15 @@ public sealed record MatrixPresentation(
     string XFormat = "date.short",
     string YFormat = "user.short",
     string ColorScale = "heat",
-    MatrixValueLabelMode ValueLabels = MatrixValueLabelMode.Auto,
-    int ValueLabelsThresholdPx = MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx,
+    VizValueLabelMode ValueLabels = VizValueLabelMode.Auto,
+    int ValueLabelsThresholdPx = VizAxisPresentationParser.DefaultValueLabelsThresholdPx,
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
     string? ToolbarValueLabels = null,
     string? ToolbarAxisLabelsX = null,
     string? ToolbarAxisLabelsY = null,
     LegendDefinition? Legend = null,
-    bool HasTooltip = false)
+    bool HasTooltip = false) : IVizAxisPresentationSpec
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
@@ -39,13 +39,13 @@ public sealed record MatrixPresentation(
         var xFormat = LabelFormat.ResolveAxisFormat(diagram.Properties.GetValueOrDefault("x_format"));
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
         var colorScale = diagram.Properties.GetValueOrDefault("color_scale") ?? "heat";
-        var valueLabels = MatrixLabelVisibilityParser.ParseValueLabels(diagram.Properties);
-        var valueLabelsThreshold = MatrixLabelVisibilityParser.ParseValueLabelsThreshold(diagram.Properties);
-        var axisLabelsX = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_x");
-        var axisLabelsY = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_y");
-        var toolbarValueLabels = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_value_labels");
-        var toolbarAxisLabelsX = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_x");
-        var toolbarAxisLabelsY = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
+        var valueLabels = VizAxisPresentationParser.ParseValueLabels(diagram.Properties);
+        var valueLabelsThreshold = VizAxisPresentationParser.ParseValueLabelsThreshold(diagram.Properties);
+        var axisLabelsX = VizAxisPresentationParser.ParseAxisLabels(diagram.Properties, "axis_labels_x");
+        var axisLabelsY = VizAxisPresentationParser.ParseAxisLabels(diagram.Properties, "axis_labels_y");
+        var toolbarValueLabels = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_value_labels");
+        var toolbarAxisLabelsX = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_x");
+        var toolbarAxisLabelsY = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
 
         return new MatrixPresentation(
             height,

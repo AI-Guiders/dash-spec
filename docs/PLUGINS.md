@@ -185,3 +185,7 @@ buttons {
 ```
 
 Host `DashSpecActionDispatcher` executes the handler and can trigger browser download (table / matrix / chart → CSV). Unknown `action` / `invoke` ids fail at parse when Host supplies `KnownActionHandlers` / `KnownInteractionHandlers`.
+
+## Viz display toggles (ADR-0062)
+
+Matrix / heatmap card toolbars emit `toggle_viz_*` card actions (`value_labels`, `axis_labels_x/y` in diagram; session overrides via `ICardVizDisplayState`). Legacy `toggle_matrix_*` ids are still accepted. Register toolbar via `RegisterVizCardToolbar` on the viz plugin.

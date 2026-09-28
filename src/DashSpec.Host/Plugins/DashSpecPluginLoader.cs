@@ -72,7 +72,7 @@ public static class DashSpecPluginLoader
         RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
 
         services.AddScoped<ICardViewState, CardViewStateService>();
-        services.AddScoped<ICardMatrixDisplayState, CardMatrixDisplayStateService>();
+        services.AddScoped<ICardVizDisplayState, CardVizDisplayStateService>();
         services.AddSingleton(registry.BuildCardVizComponentRegistry());
         services.AddSingleton(registry.BuildVizCardToolbarRegistry());
         services.AddSingleton(registry.BuildFilterWidgetComponentRegistry());

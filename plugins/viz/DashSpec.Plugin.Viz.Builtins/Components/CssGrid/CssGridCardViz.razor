@@ -3,18 +3,18 @@
 @using DashSpec.Core.Model
 @using DashSpec.Execution.Runtime
 @using DashSpec.Viz
-@inject ICardMatrixDisplayState MatrixDisplayState
+@inject ICardVizDisplayState VizDisplayState
 
 @if (Context.Card.Matrix is not null)
 {
     var presentation = Context.Card.MatrixPresentation;
     var spec = presentation ?? new MatrixPresentation();
-    var valueOverride = MatrixDisplayState.GetValueLabelsOverride(Context.Card.Id);
-    var axisXOverride = MatrixDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
-    var axisYOverride = MatrixDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
-    var showValues = MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(spec.ValueLabels, valueOverride);
-    var showAxisX = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
-    var showAxisY = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+    var valueOverride = VizDisplayState.GetValueLabelsOverride(Context.Card.Id);
+    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
+    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var showValues = VizLabelDisplayResolver.EffectiveValueLabelsVisible(spec.ValueLabels, valueOverride);
+    var showAxisX = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
+    var showAxisY = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
 
     <HeatmapView Payload="Context.Card.Matrix"
                  HeightPx="@spec.HeightPx"
