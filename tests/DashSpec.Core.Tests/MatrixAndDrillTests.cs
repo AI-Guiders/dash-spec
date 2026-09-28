@@ -16,6 +16,15 @@ public sealed class MatrixRenderLimitsTests
     [InlineData(90, 90, true)]
     public void IsOversized(int x, int y, bool expected) =>
         Assert.Equal(expected, MatrixRenderLimits.IsOversized(x, y));
+
+    [Fact]
+    public void DescribeOversize_axis_limit_is_distinct_from_cell_product()
+    {
+        var limits = MatrixRenderLimitsDefinition.Default;
+        Assert.True(limits.IsOversized(120, 16));
+        Assert.Contains("столбцов X (120)", limits.DescribeOversize(120, 16));
+        Assert.DoesNotContain("ячеек", limits.DescribeOversize(120, 16));
+    }
 }
 
 public sealed class DrillDownPhraseTests
