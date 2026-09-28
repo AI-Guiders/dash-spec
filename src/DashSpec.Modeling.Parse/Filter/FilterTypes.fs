@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Filter
 
 open System.Collections.Generic
+open DashSpec.Modeling.Parse.Layout
 
 type FilterKind =
     | Date
@@ -20,7 +21,8 @@ type FilterDefinition =
       GrainFilterName: string option
       SingleSelect: bool
       LayoutRef: string option
-      GrainLabels: IReadOnlyDictionary<string, string> option }
+      GrainLabels: IReadOnlyDictionary<string, string> option
+      Placement: PlacementDefinition option }
 
 [<CLIMutable>]
 type FiltersChromeDefinition =

@@ -60,7 +60,8 @@ public sealed record FilterDefinition(
     string? GrainFilterName = null,
     bool SingleSelect = false,
     string? LayoutRef = null,
-    IReadOnlyDictionary<string, string>? GrainLabels = null)
+    IReadOnlyDictionary<string, string>? GrainLabels = null,
+    PlacementDefinition? Placement = null)
 {
     public bool IsDayWidget =>
         string.Equals(Widget, "day", StringComparison.OrdinalIgnoreCase);

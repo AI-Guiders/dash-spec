@@ -13,11 +13,15 @@ public static class ToolbarLayoutCompactor
         var columns = document.Layout.Columns;
         if (document.ToolbarBoard is not null)
         {
-            return LayoutBoardPlacer.Resolve(
-                document.ToolbarBoard,
-                columns,
-                "Toolbar",
-                token => FilterLayoutRefResolver.Resolve(token, document.Filters, "Toolbar"));
+            var layout = new Dictionary<string, PlacementDefinition>(
+                LayoutBoardPlacer.Resolve(
+                    document.ToolbarBoard,
+                    columns,
+                    "Toolbar",
+                    token => FilterLayoutRefResolver.Resolve(token, document.Filters, "Toolbar")),
+                StringComparer.OrdinalIgnoreCase);
+            LayoutPlacementResolution.ApplyFilterPlacementOverrides(document.Filters, layout);
+            return layout;
         }
 
         var result = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -69,12 +73,16 @@ public static class ToolbarLayoutCompactor
             return result;
         }
 
-        var span = visible.Count == 1 ? columns : columns / visible.Count;
-        for (var i = 0; i < visible.Count; i++)
-        {
-            result[visible[i]] = new PlacementDefinition(1, 1 + i * span, span);
-        }
-
+        LayoutBoardRowPlacer.PlaceRow(
+            visible,
+            1,
+            columns,
+            "Toolbar",
+            filterName => filterName,
+            result);
+        LayoutPlacementResolution.ApplyFilterPlacementOverrides(
+            document.Filters.Where(f => visible.Contains(f.Name)).ToList(),
+            result);
         return result;
     }
 
@@ -92,7 +100,8 @@ public static class ToolbarLayoutCompactor
             var visibleInRow = new List<string>();
             foreach (var token in row)
             {
-                var filterName = FilterLayoutRefResolver.Resolve(token, filters, "Toolbar");
+                var cell = LayoutBoardRowPlacer.ParseCell(token, "Toolbar", compactedRow + 1);
+                var filterName = FilterLayoutRefResolver.Resolve(cell.RefToken, filters, "Toolbar");
                 if (visibleFilterNames.Contains(filterName))
                 {
                     visibleInRow.Add(filterName);
@@ -105,14 +114,18 @@ public static class ToolbarLayoutCompactor
             }
 
             compactedRow++;
-            var span = visibleInRow.Count == 1 ? columns : columns / visibleInRow.Count;
-            for (var cellIndex = 0; cellIndex < visibleInRow.Count; cellIndex++)
-            {
-                result[visibleInRow[cellIndex]] =
-                    new PlacementDefinition(compactedRow, 1 + cellIndex * span, span);
-            }
+            LayoutBoardRowPlacer.PlaceRow(
+                visibleInRow,
+                compactedRow,
+                columns,
+                "Toolbar",
+                filterName => filterName,
+                result);
         }
 
+        LayoutPlacementResolution.ApplyFilterPlacementOverrides(
+            filters.Where(f => result.ContainsKey(f.Name)).ToList(),
+            result);
         return result;
     }
 }

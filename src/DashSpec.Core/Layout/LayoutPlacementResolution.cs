@@ -36,4 +36,18 @@ public static class LayoutPlacementResolution
             }
         }
     }
+
+    /// <summary>Explicit <c>place</c> on filter overrides toolbar board placement (ADR-0061).</summary>
+    public static void ApplyFilterPlacementOverrides(
+        IEnumerable<FilterDefinition> filters,
+        IDictionary<string, PlacementDefinition> toolbarPlacements)
+    {
+        foreach (var filter in filters)
+        {
+            if (filter.Placement is not null)
+            {
+                toolbarPlacements[filter.Name] = filter.Placement;
+            }
+        }
+    }
 }

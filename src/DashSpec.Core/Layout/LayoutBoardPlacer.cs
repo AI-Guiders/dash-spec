@@ -60,24 +60,6 @@ internal static class LayoutBoardPlacer
         int columns,
         string context,
         Func<string, string> resolveToken,
-        IDictionary<string, PlacementDefinition> result)
-    {
-        if (row.Count == 0)
-        {
-            throw new DashSpecParseException($"{context}: row {gridRow} is empty.");
-        }
-
-        var cellCount = row.Count;
-        var span = cellCount == 1 ? columns : columns / cellCount;
-
-        for (var cellIndex = 0; cellIndex < cellCount; cellIndex++)
-        {
-            var itemId = resolveToken(row[cellIndex]);
-            if (!result.TryAdd(itemId, new PlacementDefinition(gridRow, 1 + cellIndex * span, span)))
-            {
-                throw new DashSpecParseException(
-                    $"{context}: '{itemId}' appears more than once in the layout board.");
-            }
-        }
-    }
+        IDictionary<string, PlacementDefinition> result) =>
+        LayoutBoardRowPlacer.PlaceRow(row, gridRow, columns, context, resolveToken, result);
 }

@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
+open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 
 /// Filter declaration grammar (ADR-0010 legacy kind-first; ADR-0037 structured id-first bind/show).
@@ -279,6 +280,7 @@ module FilterParser =
         let bindProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let showProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let mutable grainLabels: IReadOnlyDictionary<string, string> option = None
+        let mutable placement: PlacementDefinition option = None
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -314,8 +316,13 @@ module FilterParser =
 
                 for kv in props do
                     showProps.[kv.Key] <- kv.Value
+            elif reader.TryKeyword "place" then
+                if placement.IsSome then
+                    raise (DashSpecParseException($"Filter '{name}': duplicate place block."))
+
+                placement <- Some(LayoutParser.parsePlacement reader)
             else
-                raise (reader.Unexpected "bind or show")
+                raise (reader.Unexpected "bind, show, or place")
 
         BlockSyntax.expectBlockEnd reader "filter" None
 
@@ -367,7 +374,8 @@ module FilterParser =
               GrainFilterName = grainFilterName
               SingleSelect = singleSelect
               LayoutRef = layoutRef
-              GrainLabels = grainLabels }
+              GrainLabels = grainLabels
+              Placement = placement }
 
     let private tryParseTopLabel (reader: TokenReader) (kind: FilterKind) =
         if kind <> FilterKind.Top || not (reader.TryKeyword "as") then
@@ -526,6 +534,21 @@ module FilterParser =
             else
                 Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), None
 
+    let private tryParseFilterPlacement (reader: TokenReader) =
+        let saved = reader.SavePosition()
+        if reader.TryKeywordSameLine "place" then
+            Some(LayoutParser.parsePlacement reader)
+        elif not (reader.IsOnNewline()) then
+            reader.RestorePosition saved
+            None
+        else
+            reader.SkipNewlines()
+            if reader.TryKeywordSameLine "place" then
+                Some(LayoutParser.parsePlacement reader)
+            else
+                reader.RestorePosition saved
+                None
+
     let private parseLegacyKindFirst (reader: TokenReader) (kind: FilterKind) (resolveProperty: string -> string -> string option) =
         let name = reader.ReadIdentSameLine()
         let declarationLabel = tryParseTopLabel reader kind
@@ -538,6 +561,8 @@ module FilterParser =
                 None
 
         let layoutRef = ParserUtilities.tryReadLayoutRef reader
+
+        let placement = tryParseFilterPlacement reader
 
         if reader.TryKeywordSameLine "default" then
             rejectInlineDefault name
@@ -582,7 +607,8 @@ module FilterParser =
           GrainFilterName = grainFilterName
           SingleSelect = singleSelect
           LayoutRef = layoutRef
-          GrainLabels = grainLabels }
+          GrainLabels = grainLabels
+          Placement = placement }
 
     let parse (reader: TokenReader) (resolveProperty: string -> string -> string option) =
         match reader.TryPeekIdent() with

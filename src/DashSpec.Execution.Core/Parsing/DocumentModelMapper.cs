@@ -95,7 +95,8 @@ internal static class DocumentModelMapper
             FirstOrNull(filter.GrainFilterName),
             filter.SingleSelect,
             FirstOrNull(filter.LayoutRef),
-            ToDictionaryOrNull(filter.GrainLabels, static x => x));
+            ToDictionaryOrNull(filter.GrainLabels, static x => x),
+            MapOptional(filter.Placement, ToCore));
 
     private static FiltersChromeDefinition ToCore(FsharpFilter.FiltersChromeDefinition chrome) =>
         new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.DebounceMs, chrome.FormatGuide);

@@ -24,12 +24,13 @@ module ToolbarPlacementResolver =
 
             for row in b.Rows do
                 for token in row do
+                    let boardRef = LayoutBoardCellParser.refToken token
                     let name =
                         filters
                         |> Seq.tryFind (fun f ->
-                            String.Equals(f.Name, token, StringComparison.OrdinalIgnoreCase)
+                            String.Equals(f.Name, boardRef, StringComparison.OrdinalIgnoreCase)
                             || (f.LayoutRef.IsSome
-                                && String.Equals(f.LayoutRef.Value, token, StringComparison.OrdinalIgnoreCase)))
+                                && String.Equals(f.LayoutRef.Value, boardRef, StringComparison.OrdinalIgnoreCase)))
                         |> function
                             | Some f -> f.Name
                             | None -> token
