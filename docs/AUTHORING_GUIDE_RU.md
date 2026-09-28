@@ -181,6 +181,10 @@ Diagram (`@diagram`) задаёт kind и привязки колонок (`cate
 | `axis_labels_x` / `axis_labels_y` | `show` / `hide` | Подписи осей по умолчанию |
 | `toolbar_value_labels` | текст | Подпись чекбокса «цифры» (иначе локаль Host) |
 | `toolbar_axis_labels_x` / `toolbar_axis_labels_y` | текст | Подписи чекбоксов осей X и Y |
+| `y_sort` | `value` / `label` | Порядок строк Y; **если не задано:** `label` при `y_format = raw` (продукт, категория), иначе `value` |
+| `y_order` | `asc` / `desc` | Направление; **если не задано:** `asc` для `label`, `desc` для `value` |
+
+Чекбоксы осей и цифр на карточке — единый механизм для `matrix-canvas` / css heatmap: состояние сессии Host, переопределяет `axis_labels_*` / `value_labels` из diagram.
 
 Kinds сейчас: line, bar, table, heatmap, pie/donut, … (см. ADR-0003 / samples).
 
