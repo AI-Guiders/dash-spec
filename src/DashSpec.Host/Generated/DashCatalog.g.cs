@@ -30,6 +30,7 @@ public static partial class DashCatalog
         ["card.view"] = "dash.card.view",
         ["card.matrix.values.toggle"] = "dash.card.matrix.values.toggle",
         ["card.matrix.axis_x.toggle"] = "dash.card.matrix.axis_x.toggle",
+        ["card.matrix.axis_y.toggle"] = "dash.card.matrix.axis_y.toggle",
         ["host.show"] = "dash.host.show",
     };
 
@@ -54,6 +55,7 @@ public static partial class DashCatalog
         new("card.view", "dash.card.view", "view", ["card", "view"]),
         new("card.matrix.values.toggle", "dash.card.matrix.values.toggle", "toggle matrix values", ["card"]),
         new("card.matrix.axis_x.toggle", "dash.card.matrix.axis_x.toggle", "toggle matrix axis-x", ["card"]),
+        new("card.matrix.axis_y.toggle", "dash.card.matrix.axis_y.toggle", "toggle matrix axis-y", ["card"]),
         new("host.show", "dash.host.show", "show host", ["surface"]),
     ];
 
@@ -139,6 +141,7 @@ public static partial class DashCatalog
             new CatalogPhrase("pick-view", "view {card} {view}"),
             new CatalogPhrase("toggle-matrix-values", "toggle matrix values {card}"),
             new CatalogPhrase("toggle-matrix-axis-x", "toggle matrix axis-x {card}"),
+            new CatalogPhrase("toggle-matrix-axis-y", "toggle matrix axis-y {card}"),
             new CatalogPhrase("show-host", "show host {surface}"),
         ],
         Profiles =
@@ -249,6 +252,18 @@ public static partial class DashCatalog
                     ["expand"] = "matrix-cards",
                     ["fills"] = "card",
                     ["phrase"] = "toggle-matrix-axis-x",
+                    ["profile"] = "",
+                },
+            },
+            new CatalogCommandRow
+            {
+                Command = "card.matrix.axis_y.toggle",
+                Columns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["command"] = "card.matrix.axis_y.toggle",
+                    ["expand"] = "matrix-cards",
+                    ["fills"] = "card",
+                    ["phrase"] = "toggle-matrix-axis-y",
                     ["profile"] = "",
                 },
             },

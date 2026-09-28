@@ -20,6 +20,9 @@ public sealed record MatrixPresentation(
     int ValueLabelsThresholdPx = MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx,
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
+    string? ToolbarValueLabels = null,
+    string? ToolbarAxisLabelsX = null,
+    string? ToolbarAxisLabelsY = null,
     LegendDefinition? Legend = null,
     bool HasTooltip = false)
 {
@@ -40,6 +43,9 @@ public sealed record MatrixPresentation(
         var valueLabelsThreshold = MatrixLabelVisibilityParser.ParseValueLabelsThreshold(diagram.Properties);
         var axisLabelsX = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_x");
         var axisLabelsY = MatrixLabelVisibilityParser.ParseAxisLabels(diagram.Properties, "axis_labels_y");
+        var toolbarValueLabels = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_value_labels");
+        var toolbarAxisLabelsX = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_x");
+        var toolbarAxisLabelsY = MatrixLabelVisibilityParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
 
         return new MatrixPresentation(
             height,
@@ -57,6 +63,9 @@ public sealed record MatrixPresentation(
             valueLabelsThreshold,
             axisLabelsX,
             axisLabelsY,
+            toolbarValueLabels,
+            toolbarAxisLabelsX,
+            toolbarAxisLabelsY,
             card.Legend,
             card.Tooltip is not null);
     }

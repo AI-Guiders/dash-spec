@@ -63,6 +63,30 @@ public sealed class MatrixLabelVisibilityTests
     }
 
     [Fact]
+    public void MatrixPresentation_reads_toolbar_labels_from_diagram()
+    {
+        var card = new CardDefinition(
+            "t",
+            "T",
+            new DiagramDefinition(
+                "heatmap",
+                new Dictionary<string, string>
+                {
+                    ["toolbar_value_labels"] = "Значения",
+                    ["toolbar_axis_labels_x"] = "Дни",
+                    ["toolbar_axis_labels_y"] = "Пользователи",
+                }),
+            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            BoundFilters: [],
+            LocalFilters: []);
+
+        var presentation = MatrixPresentation.FromCard(card);
+        Assert.Equal("Значения", presentation.ToolbarValueLabels);
+        Assert.Equal("Дни", presentation.ToolbarAxisLabelsX);
+        Assert.Equal("Пользователи", presentation.ToolbarAxisLabelsY);
+    }
+
+    [Fact]
     public void MatrixPresentation_reads_value_labels_threshold_from_diagram()
     {
         var card = new CardDefinition(
