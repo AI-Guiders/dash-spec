@@ -63,10 +63,35 @@ module LayoutParser =
               Title = groupTitle
               Rows = rows :> IReadOnlyList<_> }
 
+    let private parseNestBlock (reader: TokenReader) =
+        let nestId = reader.ReadIdent()
+        if String.IsNullOrWhiteSpace nestId then
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout nest requires an id."))
+
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let rows = ResizeArray<IReadOnlyList<string>>()
+
+        while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "nest" (Some nestId)) do
+            reader.SkipNewlines()
+            if BlockSyntax.isBlockEnd reader "nest" (Some nestId) then ()
+            elif reader.IsAt TokenKind.LBracket then
+                rows.Add(parseBoardRow reader)
+            else
+                raise (reader.Unexpected("[ … ]"))
+
+        BlockSyntax.expectBlockEnd reader "nest" (Some nestId)
+
+        if rows.Count = 0 then
+            raise (DashSpec.Modeling.Core.DashSpecParseException($"Layout nest '{nestId}' requires at least one row [ … ]."))
+
+        NestRow { Id = nestId; Rows = rows :> IReadOnlyList<_> }
+
     let private parseBoardEntry (reader: TokenReader) =
         if reader.IsAt TokenKind.LBracket then CardRow(parseBoardRow reader)
         elif reader.TryKeyword "group" then parseGroupBlock reader
-        else raise (reader.Unexpected("[ or group"))
+        elif reader.TryKeyword "nest" then parseNestBlock reader
+        else raise (reader.Unexpected("[, group, or nest"))
 
     /// Bracket rows and optional groups until EOF or end kind (for .dashlayout modules).
     let parseBoardRows (reader: TokenReader) (endKind: string option) (endId: string option) =
@@ -78,7 +103,7 @@ module LayoutParser =
             entries.Add(parseBoardEntry reader)
             reader.SkipNewlines()
         if entries.Count = 0 then
-            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout board requires at least one row [ … ] or group { … }."))
+            raise (DashSpec.Modeling.Core.DashSpecParseException("Layout board requires at least one row [ … ], group { … }, or nest { … }."))
         { Entries = entries :> IReadOnlyList<_>; ModuleScope = None }
 
     let parseGrid (reader: TokenReader) =

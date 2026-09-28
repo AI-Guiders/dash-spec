@@ -1,5 +1,6 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
+using DashSpec.Core.Parsing;
 
 namespace DashSpec.Core.Resolution;
 
@@ -189,6 +190,7 @@ public static class ResolutionLint
             return;
         }
 
+        var nests = CollectNestDefinitions(board, context);
         foreach (var entry in board.Entries)
         {
             switch (entry)
@@ -196,7 +198,15 @@ public static class ResolutionLint
                 case LayoutBoardCardRow cardRow:
                     foreach (var token in cardRow.CardIds)
                     {
-                        ids.Add(CardLayoutRefResolver.Resolve(token, tabCards, context));
+                        var target = LayoutBoardRefResolver.Resolve(
+                            LayoutBoardCellFormat.RefToken(token),
+                            tabCards,
+                            nests,
+                            context);
+                        if (target.Kind == LayoutBoardRefKind.Card)
+                        {
+                            ids.Add(target.Id);
+                        }
                     }
 
                     break;
@@ -210,8 +220,39 @@ public static class ResolutionLint
                     }
 
                     break;
+                case LayoutBoardNestRow { Nest: var nest }:
+                    foreach (var row in nest.Rows)
+                    {
+                        foreach (var token in row)
+                        {
+                            ids.Add(CardLayoutRefResolver.Resolve(token, tabCards, context));
+                        }
+                    }
+
+                    break;
             }
         }
+    }
+
+    private static Dictionary<string, LayoutBoardNestDefinition> CollectNestDefinitions(
+        LayoutBoardDefinition board,
+        string context)
+    {
+        var nests = new Dictionary<string, LayoutBoardNestDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in board.Entries)
+        {
+            if (entry is not LayoutBoardNestRow { Nest: var nest })
+            {
+                continue;
+            }
+
+            if (!nests.TryAdd(nest.Id, nest))
+            {
+                throw new DashSpecParseException($"{context}: duplicate layout nest id '{nest.Id}'.");
+            }
+        }
+
+        return nests;
     }
 
     private static IReadOnlyList<CardDefinition> ResolveTabCards(DashboardDocument document, string? tabId)

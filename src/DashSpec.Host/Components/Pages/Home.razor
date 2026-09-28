@@ -117,13 +117,31 @@ else
                 {
                     @foreach (var token in cardRow.CardIds)
                     {
-                        var card = Page.FindVisibleCard(Page.ResolveLayoutCardRef(token));
-                        if (card is not null && layoutPlan.TopLevelPlacements.TryGetValue(card.Id, out var placement))
+                        if (Page.TryGetNestPlacement(token, out var nestPlacement) && nestPlacement is not null)
                         {
-                            <DashboardCardSlot Card="card"
-                                               Page="Page"
-                                               AutoApply="chrome.IsAutoApply"
-                                               PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(placement, Page.Session.Document.Layout.Columns)" />
+                            <div class="card-nest"
+                                 style="@DashboardLayoutHelper.PlacementGridStyle(nestPlacement.OuterPlacement, Page.Session.Document.Layout.Columns)">
+                                <div class="card-nest-cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)">
+                                    @foreach (var (card, innerPlacement) in Page.CardsForNest(nestPlacement))
+                                    {
+                                        <DashboardCardSlot Card="card"
+                                                           Page="Page"
+                                                           AutoApply="chrome.IsAutoApply"
+                                                           PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(innerPlacement, Page.Session.Document.Layout.Columns)" />
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            var card = Page.FindVisibleCard(Page.ResolveLayoutCardRef(token));
+                            if (card is not null && layoutPlan.TopLevelPlacements.TryGetValue(card.Id, out var placement))
+                            {
+                                <DashboardCardSlot Card="card"
+                                                   Page="Page"
+                                                   AutoApply="chrome.IsAutoApply"
+                                                   PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(placement, Page.Session.Document.Layout.Columns)" />
+                            }
                         }
                     }
                 }
