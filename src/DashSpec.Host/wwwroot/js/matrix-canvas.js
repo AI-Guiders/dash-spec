@@ -25,18 +25,46 @@ window.dashSpecMatrix = {
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
+  intrinsicTextWidth(el) {
+    if (!el) {
+      return 0;
+    }
+
+    const style = window.getComputedStyle(el);
+    const probe = document.createElement("span");
+    probe.textContent = el.textContent || "";
+    probe.style.cssText =
+      "position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;" +
+      `font:${style.fontWeight} ${style.fontSize} ${style.fontFamily};`;
+    document.body.appendChild(probe);
+    const width = probe.getBoundingClientRect().width;
+    probe.remove();
+    return width;
+  },
+
   syncYLabelWidth(host) {
     const col = host?.querySelector?.(".matrix-canvas-y-labels");
     if (!col || host.classList.contains("matrix-canvas-host--hide-y-labels")) {
+      host?._matrixYLabelKey = "";
+      host?._matrixYLabelWidth = 0;
       host?.style?.setProperty?.("--matrix-y-label-width", "0px");
       return 0;
     }
 
+    const labels = col.querySelectorAll(".matrix-canvas-y-label");
+    const key = Array.from(labels, (el) => el.textContent || "").join("\x1e");
+    if (host._matrixYLabelKey === key && Number.isFinite(host._matrixYLabelWidth)) {
+      host.style.setProperty("--matrix-y-label-width", `${host._matrixYLabelWidth}px`);
+      return host._matrixYLabelWidth;
+    }
+
     let maxLabel = 0;
-    col.querySelectorAll(".matrix-canvas-y-label").forEach((el) => {
-      maxLabel = Math.max(maxLabel, el.scrollWidth || 0);
+    labels.forEach((el) => {
+      maxLabel = Math.max(maxLabel, this.intrinsicTextWidth(el));
     });
-    const width = Math.max(96, maxLabel + 8);
+    const width = Math.max(96, Math.ceil(maxLabel) + 8);
+    host._matrixYLabelKey = key;
+    host._matrixYLabelWidth = width;
     host.style.setProperty("--matrix-y-label-width", `${width}px`);
     return width;
   },
@@ -204,7 +232,7 @@ window.dashSpecMatrix = {
     host._matrixPayload = payload;
     host._matrixCanvas = canvas;
 
-    const renderNow = () => {
+    const renderNow = (reason) => {
       if (host._matrixRenderFrame) {
         cancelAnimationFrame(host._matrixRenderFrame);
       }
@@ -213,20 +241,23 @@ window.dashSpecMatrix = {
         if (!host._matrixPayload || !host._matrixCanvas) {
           return;
         }
+        const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
+        const clientWidth = scrollEl.clientWidth || 0;
+        if (
+          reason === "resize" &&
+          host._matrixScrollClientWidth > 0 &&
+          Math.abs(clientWidth - host._matrixScrollClientWidth) < 1
+        ) {
+          return;
+        }
+        host._matrixScrollClientWidth = clientWidth;
         host._matrixLastLayout = "";
         this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
-        requestAnimationFrame(() => {
-          if (!host._matrixPayload || !host._matrixCanvas) {
-            return;
-          }
-          host._matrixLastLayout = "";
-          this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
-        });
       });
     };
 
-    renderNow();
-    const observer = new ResizeObserver(() => renderNow());
+    renderNow("mount");
+    const observer = new ResizeObserver(() => renderNow("resize"));
     observer.observe(host.querySelector(".matrix-canvas-scroll") || host);
     host._matrixResizeObserver = observer;
   },
@@ -255,6 +286,8 @@ window.dashSpecMatrix = {
       if (!host._matrixPayload || !host._matrixCanvas) {
         return;
       }
+      const scrollEl = host.querySelector(".matrix-canvas-scroll") || host;
+      host._matrixScrollClientWidth = scrollEl.clientWidth || host._matrixScrollClientWidth || 0;
       this.fitAndRender(host, host._matrixCanvas, host._matrixPayload);
     });
   },
@@ -276,6 +309,9 @@ window.dashSpecMatrix = {
     host._matrixPayload = null;
     host._matrixCanvas = null;
     host._matrixLastLayout = "";
+    host._matrixYLabelKey = "";
+    host._matrixYLabelWidth = 0;
+    host._matrixScrollClientWidth = 0;
   },
 
   hitTest(canvasId, offsetX, offsetY) {

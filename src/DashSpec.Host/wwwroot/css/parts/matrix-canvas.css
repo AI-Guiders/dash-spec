@@ -119,13 +119,15 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  width: max-content;
+  max-width: 100%;
   height: var(--matrix-cell-h, 22px);
   padding-right: 0.45rem;
   font-size: 0.76rem;
   font-weight: 500;
   white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .matrix-canvas {
