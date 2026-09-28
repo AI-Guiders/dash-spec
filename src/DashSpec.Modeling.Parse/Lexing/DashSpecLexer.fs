@@ -155,6 +155,7 @@ module DashSpecLexer =
                     tokens.Add({ Kind = TokenKind.RelativeDay; Value = text.[relStart..i - 1]; Start = relStart; Length = i - relStart })
                     atLineStart <- false
                 | ',' -> tokens.Add({ Kind = TokenKind.Comma; Value = ","; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
+                | ':' -> tokens.Add({ Kind = TokenKind.Colon; Value = ":"; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | '"' ->
                     let tok =
                         if i + 2 < text.Length && text.[i + 1] = '"' && text.[i + 2] = '"' then readMultilineString text &i start
