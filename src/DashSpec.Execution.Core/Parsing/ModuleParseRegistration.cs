@@ -355,7 +355,8 @@ internal static class ModuleParseRegistration
                 e.Id,
                 e.Title,
                 e.DashspecPath,
-                OptionModule.ToArray(e.GroupId).FirstOrDefault()))
+                OptionModule.ToArray(e.GroupId).FirstOrDefault(),
+                OptionModule.ToArray(e.InitialTabId).FirstOrDefault()))
             .ToList();
 
         IReadOnlyList<CatalogGroupDefinition>? groups = null;

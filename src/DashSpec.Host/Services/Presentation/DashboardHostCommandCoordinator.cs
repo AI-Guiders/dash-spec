@@ -46,6 +46,8 @@ public sealed class DashboardHostCommandCoordinator
 
     public string ActiveCatalogEntryId => ResolveActiveCatalogEntryId();
 
+    public string DefaultCatalogEntryId => _hostContext.Catalog.Document.DefaultEntryId;
+
     public bool CatalogBusy => _dashboard?.Switching == true;
 
     public async Task SelectCatalogEntryAsync(string entryId)

@@ -210,6 +210,7 @@ public sealed class DashboardPageController : IDisposable
 
             var stateSw = System.Diagnostics.Stopwatch.StartNew();
             await InitializeDashboardStateAsync().ConfigureAwait(false);
+            ApplyCatalogInitialTab(_session.ActiveCatalogEntryId);
             stateSw.Stop();
             trace.Step("init_ui_state", stateSw.ElapsedMilliseconds, true);
 
@@ -611,6 +612,7 @@ public sealed class DashboardPageController : IDisposable
             await _session.LoadCatalogEntryAsync(entryId).ConfigureAwait(false);
             LoadedSpecSource = _session.LoadedSpecSource;
             await InitializeDashboardStateAsync().ConfigureAwait(false);
+            ApplyCatalogInitialTab(entryId);
             if (carriedFilters is not null)
             {
                 _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
@@ -1054,6 +1056,7 @@ public sealed class DashboardPageController : IDisposable
                 }
                 LoadedSpecSource = _session.LoadedSpecSource;
                 await InitializeDashboardStateAsync().ConfigureAwait(false);
+                ApplyCatalogInitialTab(_session.ActiveCatalogEntryId);
                 Error = null;
                 Loaded = true;
                 Notify();
@@ -1092,6 +1095,32 @@ public sealed class DashboardPageController : IDisposable
         _refresh.SeedAllCardSkeletons();
 
         await Task.CompletedTask;
+    }
+
+    private void ApplyCatalogInitialTab(string? entryId)
+    {
+        if (string.IsNullOrWhiteSpace(entryId))
+        {
+            return;
+        }
+
+        var entry = _hostContext.Catalog.Document.Entries.FirstOrDefault(e =>
+            string.Equals(e.Id, entryId, StringComparison.OrdinalIgnoreCase));
+        if (string.IsNullOrWhiteSpace(entry?.InitialTabId))
+        {
+            return;
+        }
+
+        var tab = _session.Document.Tabs.FirstOrDefault(t =>
+            string.Equals(t.Id, entry.InitialTabId, StringComparison.OrdinalIgnoreCase));
+        if (tab is null)
+        {
+            return;
+        }
+
+        ActiveTabId = tab.Id;
+        ResetActivePageForTab();
+        RecomputeTabPlacements();
     }
 
     private void ApplyReportFormatDefaults() =>

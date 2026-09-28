@@ -11,4 +11,5 @@ public sealed record CatalogEntryDefinition(
     string Id,
     string Title,
     string DashspecPath,
-    string? GroupId = null);
+    string? GroupId = null,
+    string? InitialTabId = null);
