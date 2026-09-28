@@ -18,6 +18,8 @@ public interface IDashSpecContributorRegistry
 
     void AddFilterWidget(FilterWidgetContributorDescriptor descriptor);
 
+    void RegisterFilterWidgetComponent(string widgetId, Type componentType);
+
     void AddCardChrome(CardChromeContributorDescriptor descriptor);
 
     void RegisterCardVizComponent(string rendererId, Type componentType);

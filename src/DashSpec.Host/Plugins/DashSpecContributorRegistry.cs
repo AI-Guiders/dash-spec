@@ -27,6 +27,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly List<DashSpecCommandDescriptor> _commands = [];
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _filterWidgetComponents = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
 
@@ -138,6 +139,37 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
 
         TrackPlugin(descriptor.PluginId, filterWidget: descriptor.WidgetId);
+    }
+
+    public void RegisterFilterWidgetComponent(string widgetId, Type componentType)
+    {
+        if (string.IsNullOrWhiteSpace(widgetId))
+        {
+            throw new ArgumentException("Widget id is required.", nameof(widgetId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
+        {
+            throw new ArgumentException(
+                $"Type {componentType.FullName} must implement IComponent.",
+                nameof(componentType));
+        }
+
+        if (!_filterWidgetComponents.TryAdd(widgetId, componentType))
+        {
+            throw new InvalidOperationException($"Duplicate filter widget component registration for '{widgetId}'.");
+        }
+    }
+
+    public FilterWidgetComponentRegistry BuildFilterWidgetComponentRegistry()
+    {
+        var registry = new FilterWidgetComponentRegistry();
+        foreach (var (widgetId, componentType) in _filterWidgetComponents)
+        {
+            registry.Register(widgetId, componentType);
+        }
+
+        return registry;
     }
 
     public void AddCardChrome(CardChromeContributorDescriptor descriptor)

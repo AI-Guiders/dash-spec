@@ -5,6 +5,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Plugins.Builtins;
+using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Services.Presentation;
 using Microsoft.Extensions.Configuration;
@@ -63,13 +64,19 @@ public static class DashSpecPluginLoader
             RegisterBuiltIn(vizPlugin, registry, services, configuration, commandRegistry);
         }
 
-        RegisterBuiltIn(new FilterWidgetsBuiltinPlugin(), registry, services, configuration, commandRegistry);
+        foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
+        {
+            RegisterBuiltIn(filterPlugin, registry, services, configuration, commandRegistry);
+        }
+
         RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
 
         services.AddScoped<ICardViewState, CardViewStateService>();
         services.AddScoped<ICardMatrixDisplayState, CardMatrixDisplayStateService>();
         services.AddSingleton(registry.BuildCardVizComponentRegistry());
         services.AddSingleton(registry.BuildVizCardToolbarRegistry());
+        services.AddSingleton(registry.BuildFilterWidgetComponentRegistry());
+        services.AddSingleton<FilterWidgetRegistry>();
 
         var activeBundle = ResolveActiveBundle(manifest);
         var pluginIds = ResolveBundlePluginIds(manifest, activeBundle);

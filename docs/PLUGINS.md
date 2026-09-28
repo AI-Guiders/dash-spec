@@ -108,7 +108,7 @@ card peak {
 
 ## Filter widgets
 
-Core parses `filter … widget chips|combobox|select|day|range|top`. Host `FilterWidgetRegistry` maps widget id → renderer component. Register via `AddFilterWidget` (built-in `filter_widgets_builtin` ships combobox, select, chips, day, range, top).
+Core parses `filter … widget chips|combobox|select|day|range|top`. Host `FilterWidgetHost` dispatches to plugin RCL components via `FilterWidgetRegistry` (ADR-0060). Built-in `filter_widgets_builtin` in `plugins/filter/DashSpec.Plugin.Filter.Builtins`. Toolbar placement uses `.dashlayout` `scope toolbar` (ADR-0022) — same board model as tab cards.
 
 ```text
 filter field app_name on dbo.v.app as "Products" widget chips

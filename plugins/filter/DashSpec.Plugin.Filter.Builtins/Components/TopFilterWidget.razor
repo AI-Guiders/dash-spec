@@ -1,0 +1,22 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Core.Runtime
+@using DashSpec.Execution.Runtime
+@using DashSpec.Filters
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+<div class="@WrapperClass" style="@Context.PlacementStyle">
+    <TopFilterInput Label="@Context.Label"
+                    ScopeHint="@Context.Hint"
+                    Disabled="@Context.Disabled"
+                    Min="@(Context.Filter.MinValue ?? 1)"
+                    Max="@(Context.Filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
+                    Value="@Context.TopValue"
+                    ValueChanged="@Context.TopValueChanged" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+
+    private string WrapperClass =>
+        Context.Compact ? "filter filter-top filter-inline" : "filter filter-top filter-compact";
+}
