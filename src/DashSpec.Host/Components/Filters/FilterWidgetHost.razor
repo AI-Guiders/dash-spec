@@ -1,60 +1,12 @@
 @namespace DashSpec.Host.Components.Filters
 @using DashSpec.Core.Model
-@using DashSpec.Core.Runtime
+@using DashSpec.Filters
 @using DashSpec.Host.Plugins
-@using DashSpec.Host.Services.Presentation
 @inject FilterWidgetRegistry WidgetRegistry
 
-@if (_renderer?.WidgetId is "combobox" or "select")
+@if (_componentType is not null)
 {
-    <FieldMultiSelect Label="@Label"
-                      Hint="@Hint"
-                      Compact="@Compact"
-                      Disabled="@Disabled"
-                      Combobox="@(filter!.IsComboboxWidget && _renderer.WidgetId == "combobox")"
-                      NativeSelect="@(filter.IsSelectWidget || _renderer.WidgetId == "select")"
-                      SingleSelect="@filter.IsSingleSelectField"
-                      Options="Options"
-                      Selected="Selected"
-                      SelectedChanged="SelectedChanged" />
-}
-else if (_renderer?.WidgetId == "chips")
-{
-    <FieldChipsSelect Label="@Label"
-                      Hint="@Hint"
-                      Compact="@Compact"
-                      Disabled="@Disabled"
-                      SingleSelect="@filter!.IsSingleSelectField"
-                      Options="Options"
-                      Selected="Selected"
-                      SelectedChanged="SelectedChanged" />
-}
-else if (_renderer?.WidgetId is "day" or "range")
-{
-    <div class="@DateWrapperClass" style="@PlacementStyle">
-        <GrainAwareDateInput Filter="filter!"
-                             Disabled="@Disabled"
-                             DateFrom="DateFrom"
-                             DateTo="DateTo"
-                             FilterIndex="FilterIndex"
-                             SelectedFields="SelectedFields"
-                             ShowLabel="@ShowDateLabel"
-                             LabelClass="@DateLabelClass"
-                             OnDayChanged="OnDayChanged"
-                             OnRangeChanged="OnRangeChanged" />
-    </div>
-}
-else if (_renderer?.WidgetId == "top")
-{
-    <div class="@TopWrapperClass" style="@PlacementStyle">
-        <TopFilterInput Label="@Label"
-                        ScopeHint="@Hint"
-                        Disabled="@Disabled"
-                        Min="@(filter!.MinValue ?? 1)"
-                        Max="@(filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
-                        Value="TopValue"
-                        ValueChanged="TopValueChanged" />
-    </div>
+    <DynamicComponent Type="_componentType" Parameters="_parameters" />
 }
 
 @code {
@@ -80,14 +32,17 @@ else if (_renderer?.WidgetId == "top")
 
     [Parameter] public EventCallback<HashSet<string>> SelectedChanged { get; set; }
 
-    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public IReadOnlyDictionary<string, DateOnly> DateFrom { get; set; } =
+        new Dictionary<string, DateOnly>(StringComparer.OrdinalIgnoreCase);
 
-    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public IReadOnlyDictionary<string, DateOnly> DateTo { get; set; } =
+        new Dictionary<string, DateOnly>(StringComparer.OrdinalIgnoreCase);
 
     [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
-        new Dictionary<string, FilterDefinition>();
+        new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase);
 
-    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public IReadOnlyDictionary<string, HashSet<string>> SelectedFields { get; set; } =
+        new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
     [Parameter] public EventCallback<string> OnDayChanged { get; set; }
 
@@ -97,16 +52,44 @@ else if (_renderer?.WidgetId == "top")
 
     [Parameter] public EventCallback<int> TopValueChanged { get; set; }
 
-    private FilterDefinition? filter;
-    private IFilterWidgetRenderer? _renderer;
-
-    private string DateWrapperClass => Compact ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
-
-    private string TopWrapperClass => Compact ? "filter filter-top filter-inline" : "filter filter-top filter-compact";
+    private Type? _componentType;
+    private Dictionary<string, object?> _parameters = new();
 
     protected override void OnParametersSet()
     {
-        filter = Filter;
-        _renderer = WidgetRegistry.Resolve(Filter);
+        _componentType = WidgetRegistry.ResolveComponentType(Filter);
+        _parameters = new Dictionary<string, object?>
+        {
+            ["Context"] = new FilterWidgetRenderContext
+            {
+                Filter = Filter,
+                Label = Label,
+                Hint = Hint,
+                Compact = Compact,
+                Disabled = Disabled,
+                PlacementStyle = PlacementStyle,
+                ShowDateLabel = ShowDateLabel,
+                DateLabelClass = DateLabelClass,
+                Options = Options,
+                Selected = Selected,
+                SelectedChanged = SelectedChanged,
+                DateFrom = AsMutableDateMap(DateFrom),
+                DateTo = AsMutableDateMap(DateTo),
+                FilterIndex = FilterIndex,
+                SelectedFields = AsMutableFieldMap(SelectedFields),
+                OnDayChanged = OnDayChanged,
+                OnRangeChanged = OnRangeChanged,
+                TopValue = TopValue,
+                TopValueChanged = TopValueChanged,
+            },
+        };
     }
+
+    private static Dictionary<string, DateOnly> AsMutableDateMap(IReadOnlyDictionary<string, DateOnly> source) =>
+        source as Dictionary<string, DateOnly> ?? new Dictionary<string, DateOnly>(source, StringComparer.OrdinalIgnoreCase);
+
+    private static Dictionary<string, HashSet<string>> AsMutableFieldMap(
+        IReadOnlyDictionary<string, HashSet<string>> source) =>
+        source as Dictionary<string, HashSet<string>>
+        ?? source.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
 }

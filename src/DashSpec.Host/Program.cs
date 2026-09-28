@@ -10,6 +10,7 @@ using DashSpec.Host.Middleware;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Localization;
+using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Security;
 using DashSpec.Host.Services;
@@ -246,7 +247,9 @@ app.MapPluginEndpoints();
 app.MapDashboardCommandEndpoints();
 
 app.MapRazorComponents<App>()
-    .AddAdditionalAssemblies(typeof(VizBuiltinsPluginCatalog).Assembly)
+    .AddAdditionalAssemblies(
+        typeof(VizBuiltinsPluginCatalog).Assembly,
+        typeof(FilterBuiltinsPluginCatalog).Assembly)
     .AddInteractiveServerRenderMode();
 
 app.MapDevEndpoints();

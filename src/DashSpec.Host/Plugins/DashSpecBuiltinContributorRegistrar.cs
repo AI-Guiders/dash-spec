@@ -1,5 +1,6 @@
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Host.Plugins.Builtins;
+using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 
 namespace DashSpec.Host.Plugins;
@@ -26,7 +27,11 @@ public static class DashSpecBuiltinContributorRegistrar
             registry.RegisterPlugin(vizPlugin);
         }
 
-        registry.RegisterPlugin(new FilterWidgetsBuiltinPlugin());
+        foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
+        {
+            registry.RegisterPlugin(filterPlugin);
+        }
+
         registry.RegisterPlugin(new CardViewsBuiltinPlugin());
     }
 }
