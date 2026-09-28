@@ -133,7 +133,7 @@ else
 
     [Parameter] public bool ShowAxisLabelsY { get; set; } = true;
 
-    [Parameter] public int ValueLabelsThresholdPx { get; set; } = MatrixLabelVisibilityParser.DefaultValueLabelsThresholdPx;
+    [Parameter] public int ValueLabelsThresholdPx { get; set; } = VizAxisPresentationParser.DefaultValueLabelsThresholdPx;
 
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
 

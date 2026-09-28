@@ -62,7 +62,7 @@ public sealed class DashboardFilterContext : ICommandScopedContext
 
     public IReadOnlyList<DashboardCardCommandTarget> SwitchableCards { get; init; } = [];
 
-    public IReadOnlyList<DashboardCardCommandTarget> MatrixCards { get; init; } = [];
+    public IReadOnlyList<DashboardCardCommandTarget> VizToolbarCards { get; init; } = [];
 
     public void ApplyDate(string filterName, DateOnly from, DateOnly to)
     {

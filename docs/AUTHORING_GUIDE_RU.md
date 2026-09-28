@@ -184,7 +184,7 @@ Diagram (`@diagram`) задаёт kind и привязки колонок (`cate
 | `y_sort` | `value` / `label` | Порядок строк Y; **если не задано:** `label` при `y_format = raw` (продукт, категория), иначе `value` |
 | `y_order` | `asc` / `desc` | Направление; **если не задано:** `asc` для `label`, `desc` для `value` |
 
-Чекбоксы осей и цифр на карточке — единый механизм для `matrix-canvas` / css heatmap: состояние сессии Host, переопределяет `axis_labels_*` / `value_labels` из diagram.
+Чекбоксы осей и цифр — **общий механизм viz** (ADR-0062): свойства diagram + сессионные override в Host; конкретный `render` (matrix-canvas, css heatmap, позже chart.js) сам рисует. Slash-команды: `VizToolbarCards` (heatmap v1).
 
 Kinds сейчас: line, bar, table, heatmap, pie/donut, … (см. ADR-0003 / samples).
 

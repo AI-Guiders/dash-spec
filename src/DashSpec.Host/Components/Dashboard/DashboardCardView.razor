@@ -266,7 +266,7 @@
 
     [Inject] private VizCardToolbarRegistry VizToolbars { get; set; } = default!;
 
-    [Inject] private ICardMatrixDisplayState MatrixDisplayState { get; set; } = default!;
+    [Inject] private ICardVizDisplayState VizDisplayState { get; set; } = default!;
 
     private Type? _vizToolbarType;
     private Dictionary<string, object?> _vizToolbarParameters = new();
@@ -326,9 +326,9 @@
             _selection?.Xi,
             _selection?.Yi,
             _fullscreen,
-            MatrixDisplayState.GetValueLabelsOverride(Card.Id),
-            MatrixDisplayState.GetAxisLabelsXOverride(Card.Id),
-            MatrixDisplayState.GetAxisLabelsYOverride(Card.Id));
+            VizDisplayState.GetValueLabelsOverride(Card.Id),
+            VizDisplayState.GetAxisLabelsXOverride(Card.Id),
+            VizDisplayState.GetAxisLabelsYOverride(Card.Id));
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -355,15 +355,15 @@
 
     protected override void OnInitialized()
     {
-        MatrixDisplayState.Changed += OnMatrixDisplayStateChanged;
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
     }
 
     public void Dispose()
     {
-        MatrixDisplayState.Changed -= OnMatrixDisplayStateChanged;
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
     }
 
-    private void OnMatrixDisplayStateChanged(string cardId)
+    private void OnVizDisplayStateChanged(string cardId)
     {
         if (!string.Equals(cardId, Card.Id, StringComparison.OrdinalIgnoreCase))
         {

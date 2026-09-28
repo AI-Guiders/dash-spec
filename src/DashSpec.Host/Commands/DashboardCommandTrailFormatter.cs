@@ -59,7 +59,7 @@ internal static class DashboardCommandTrailFormatter
             && body.Length > DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix.Length)
         {
             var cardToken = body[(DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
-            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            var card = DashboardCommandEntityResolver.ResolveVizToolbarCard(cardToken, context);
             segments.Add(new("toggle matrix values", DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix));
             segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
         }
@@ -69,7 +69,7 @@ internal static class DashboardCommandTrailFormatter
             && body.Length > DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix.Length)
         {
             var cardToken = body[(DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
-            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            var card = DashboardCommandEntityResolver.ResolveVizToolbarCard(cardToken, context);
             segments.Add(new("toggle matrix axis-x", DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix));
             segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
         }
@@ -79,7 +79,7 @@ internal static class DashboardCommandTrailFormatter
             && body.Length > DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix.Length)
         {
             var cardToken = body[(DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
-            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            var card = DashboardCommandEntityResolver.ResolveVizToolbarCard(cardToken, context);
             segments.Add(new("toggle matrix axis-y", DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix));
             segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
         }

@@ -78,7 +78,7 @@ internal static class MatrixPayloadBuilder
             yTotals[y] = yTotals.GetValueOrDefault(y) + value;
         }
 
-        MatrixYOrderParser.SortYLabels(yLabels, yTotals, diagram.Properties);
+        CategoryAxisOrdering.Sort(yLabels, yTotals, diagram.Properties, CategoryAxis.Y);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
@@ -230,7 +230,7 @@ internal static class MatrixPayloadBuilder
             yTotals[y] = yTotals.GetValueOrDefault(y) + value;
         }
 
-        MatrixYOrderParser.SortYLabels(yLabels, yTotals, diagram.Properties);
+        CategoryAxisOrdering.Sort(yLabels, yTotals, diagram.Properties, CategoryAxis.Y);
         yIndex.Clear();
         for (var i = 0; i < yLabels.Count; i++)
         {
