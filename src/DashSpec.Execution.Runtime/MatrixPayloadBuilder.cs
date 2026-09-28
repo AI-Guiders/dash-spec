@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 
@@ -237,7 +239,15 @@ internal static class MatrixPayloadBuilder
             yIndex[yLabels[i]] = i;
         }
 
-        if (buckets.Count > 0)
+        List<DateTime> xKeys;
+        List<string> xLabels;
+        if (buckets.Count > 0
+            && xStep == TimeSpan.FromHours(1)
+            && LabelFormat.DisplayTimeZone is { } displayTz)
+        {
+            (xKeys, xLabels) = BuildDisplayDayHourAxis(buckets.Keys.Min(), displayTz, xStep);
+        }
+        else if (buckets.Count > 0)
         {
             var day = buckets.Keys.First().Date;
             var expanded = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
@@ -255,11 +265,16 @@ internal static class MatrixPayloadBuilder
 
             buckets = expanded;
             bucketRows = expandedRows;
+            xKeys = buckets.Keys.ToList();
+            xLabels = xKeys
+                .Select(key => PayloadRowFormatters.FormatChartAxisLabel(key, xFormat))
+                .ToList();
         }
-
-        var xLabels = buckets.Keys
-            .Select(key => PayloadRowFormatters.FormatChartAxisLabel(key, xFormat))
-            .ToList();
+        else
+        {
+            xKeys = [];
+            xLabels = [];
+        }
 
         var cells = Enumerable.Range(0, yLabels.Count)
             .Select(_ => new double?[xLabels.Count])
@@ -274,9 +289,14 @@ internal static class MatrixPayloadBuilder
         double min = double.PositiveInfinity;
         double max = double.NegativeInfinity;
 
-        var xi = 0;
-        foreach (var (xKey, seriesValues) in buckets)
+        for (var xi = 0; xi < xKeys.Count; xi++)
         {
+            var xKey = xKeys[xi];
+            if (!buckets.TryGetValue(xKey, out var seriesValues))
+            {
+                seriesValues = new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
+            }
+
             foreach (var (y, value) in seriesValues)
             {
                 if (!yIndex.TryGetValue(y, out var yi) || value is null)
@@ -296,8 +316,6 @@ internal static class MatrixPayloadBuilder
                     tooltips[yi][xi] = TooltipTemplate.Render(tooltip, row);
                 }
             }
-
-            xi++;
         }
 
         if (double.IsPositiveInfinity(min))
@@ -307,6 +325,27 @@ internal static class MatrixPayloadBuilder
         }
 
         return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
+    }
+
+    private static (List<DateTime> UtcKeys, List<string> Labels) BuildDisplayDayHourAxis(
+        DateTime anchorUtcBucket,
+        TimeZoneInfo displayTz,
+        TimeSpan xStep)
+    {
+        var anchorUtc = DateValueCodec.NormalizeStorageUtc(anchorUtcBucket);
+        var anchorLocalDate = TimeZoneInfo.ConvertTimeFromUtc(anchorUtc, displayTz).Date;
+        var utcKeys = new List<DateTime>(24);
+        var labels = new List<string>(24);
+        for (var hour = 0; hour < 24; hour++)
+        {
+            var local = DateTime.SpecifyKind(anchorLocalDate.AddHours(hour), DateTimeKind.Unspecified);
+            var utc = TimeZoneInfo.ConvertTimeToUtc(local, displayTz);
+            var key = TimeSeriesGrid.Floor(utc, xStep);
+            utcKeys.Add(key);
+            labels.Add(local.ToString("HH:mm", CultureInfo.InvariantCulture));
+        }
+
+        return (utcKeys, labels);
     }
 
     private static MatrixPayload FinalizeMatrix(
