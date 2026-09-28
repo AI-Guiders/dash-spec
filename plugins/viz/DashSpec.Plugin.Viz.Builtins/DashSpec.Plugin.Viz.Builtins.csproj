@@ -14,6 +14,8 @@
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
+  <Import Project="..\..\..\build\ValidateJavaScriptSyntax.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
