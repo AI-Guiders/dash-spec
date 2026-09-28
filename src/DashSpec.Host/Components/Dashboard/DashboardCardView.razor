@@ -9,6 +9,7 @@
 @using DashSpec.Host.Services.Presentation
 @using DashSpec.Host.Services.Localization
 @inject DashboardLocalizer Loc
+@implements IDisposable
 
 <article class="@CardCssClass" style="@PlacementStyle">
     <div class="card-head">
@@ -270,16 +271,6 @@
     private Type? _vizToolbarType;
     private Dictionary<string, object?> _vizToolbarParameters = new();
 
-    private bool MatrixValueLabelsVisible =>
-        MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
-            Card.MatrixPresentation?.ValueLabels ?? MatrixValueLabelMode.Auto,
-            MatrixDisplayState.GetValueLabelsOverride(Card.Id));
-
-    private bool MatrixAxisLabelsXVisible =>
-        MatrixLabelDisplayResolver.EffectiveAxisVisible(
-            Card.MatrixPresentation?.AxisLabelsX ?? true,
-            MatrixDisplayState.GetAxisLabelsXOverride(Card.Id));
-
     private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
 
     private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
@@ -334,9 +325,7 @@
             Card.FilterLinkCssClass,
             _selection?.Xi,
             _selection?.Yi,
-            _fullscreen,
-            MatrixValueLabelsVisible,
-            MatrixAxisLabelsXVisible);
+            _fullscreen);
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -356,9 +345,27 @@
         string? FilterLinkCssClass,
         int? SelectionXi,
         int? SelectionYi,
-        bool Fullscreen,
-        bool MatrixValueLabelsVisible,
-        bool MatrixAxisLabelsXVisible);
+        bool Fullscreen);
+
+    protected override void OnInitialized()
+    {
+        MatrixDisplayState.Changed += OnMatrixDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        MatrixDisplayState.Changed -= OnMatrixDisplayStateChanged;
+    }
+
+    private void OnMatrixDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Card.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     protected override void OnParametersSet()
     {

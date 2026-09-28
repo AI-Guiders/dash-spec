@@ -3,6 +3,9 @@ namespace DashSpec.Abstractions.Plugins;
 /// <summary>Per-card matrix label visibility overrides (session UI toggles).</summary>
 public interface ICardMatrixDisplayState
 {
+    /// <summary>Fired when per-card matrix label toggles change (card id).</summary>
+    event Action<string>? Changed;
+
     bool? GetValueLabelsOverride(string cardId);
 
     bool? GetAxisLabelsXOverride(string cardId);
