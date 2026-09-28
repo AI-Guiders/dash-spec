@@ -44,6 +44,21 @@ public sealed class CatalogParserTests
     }
 
     [Fact]
+    public void Parse_catalog_entry_initial_tab()
+    {
+        const string text = """
+            @catalog demo
+            entry versions as "Версии ПО"
+              dashspec "lus-dev-soak.dashspec"
+              tab versions
+            """;
+
+        var catalog = CatalogParser.Parse(text);
+
+        Assert.Equal("versions", catalog.Entries[0].InitialTabId);
+    }
+
+    [Fact]
     public void Parse_rejects_duplicate_entry_id()
     {
         const string text = """
