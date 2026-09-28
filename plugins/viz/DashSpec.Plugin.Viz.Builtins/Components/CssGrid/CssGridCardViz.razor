@@ -1,21 +1,37 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.CssGrid
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
+@using DashSpec.Execution.Runtime
+@using DashSpec.Viz
+@inject ICardMatrixDisplayState MatrixDisplayState
 
 @if (Context.Card.Matrix is not null)
 {
+    var presentation = Context.Card.MatrixPresentation;
+    var spec = presentation ?? new MatrixPresentation();
+    var valueOverride = MatrixDisplayState.GetValueLabelsOverride(Context.Card.Id);
+    var axisXOverride = MatrixDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
+    var axisYOverride = MatrixDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var showValues = MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(spec.ValueLabels, valueOverride);
+    var showAxisX = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
+    var showAxisY = MatrixLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+
     <HeatmapView Payload="Context.Card.Matrix"
-                 HeightPx="@(Context.Card.MatrixPresentation?.HeightPx ?? 320)"
-                 XAxisLabel="@Context.Card.MatrixPresentation?.XLabel"
-                 YAxisLabel="@Context.Card.MatrixPresentation?.YLabel"
-                 ValueLabel="@Context.Card.MatrixPresentation?.ValueLabel"
-                 TooltipLabel="@Context.Card.MatrixPresentation?.TooltipLabel"
-                 TooltipFormat="@(Context.Card.MatrixPresentation?.TooltipFormat ?? TooltipFormat.Inline)"
-                 TooltipSplit="@(Context.Card.MatrixPresentation?.TooltipSplit ?? ", ")"
-                 XFormat="@(Context.Card.MatrixPresentation?.XFormat ?? "date.short")"
-                 YFormat="@(Context.Card.MatrixPresentation?.YFormat ?? "user.short")"
-                 ColorScale="@(Context.Card.MatrixPresentation?.ColorScale ?? "heat")"
-                 LegendMinText="@Context.Card.MatrixPresentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
-                 LegendMaxText="@Context.Card.MatrixPresentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                 HeightPx="@spec.HeightPx"
+                 XAxisLabel="@presentation?.XLabel"
+                 YAxisLabel="@presentation?.YLabel"
+                 ValueLabel="@presentation?.ValueLabel"
+                 TooltipLabel="@presentation?.TooltipLabel"
+                 TooltipFormat="@(presentation?.TooltipFormat ?? TooltipFormat.Inline)"
+                 TooltipSplit="@(presentation?.TooltipSplit ?? ", ")"
+                 XFormat="@(presentation?.XFormat ?? "date.short")"
+                 YFormat="@(presentation?.YFormat ?? "user.short")"
+                 ColorScale="@(presentation?.ColorScale ?? "heat")"
+                 ShowAxisLabelsX="@showAxisX"
+                 ShowAxisLabelsY="@showAxisY"
+                 ShowCellValues="@showValues"
+                 LegendMinText="@presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
+                 LegendMaxText="@presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
                  Limits="Context.Card.MatrixLimits"
                  OversizeMessage="Context.Card.OversizeMessage"
                  OnCellSelected="Context.OnHeatmapCellSelected" />
