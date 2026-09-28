@@ -74,6 +74,16 @@ internal static class DashboardCommandTrailFormatter
             segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
         }
 
+        if ((body.Equals(DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix, StringComparison.OrdinalIgnoreCase)
+             || body.StartsWith($"{DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix} ", StringComparison.OrdinalIgnoreCase))
+            && body.Length > DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix.Length)
+        {
+            var cardToken = body[(DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix.Length + 1)..].Trim();
+            var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+            segments.Add(new("toggle matrix axis-y", DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix));
+            segments.Add(new(card?.Title ?? cardToken, card?.CardId ?? cardToken));
+        }
+
         return segments;
     }
 }

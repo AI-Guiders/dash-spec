@@ -80,6 +80,14 @@ internal static class DashboardCommandCatalogExpander
                     .Surfaces(FederationSurfaces)
                     .Scope(DashSpecCommandScope.Dashboard)
                     .Build());
+            descriptors.Add(
+                CommandDescriptors.Describe(ToggleMatrixAxisLabelsYCommand.Id)
+                    .Path(DashboardCatalogPhrases.MatrixAxisYTogglePath(card.CardId))
+                    .Help($"{card.Title} — переключить подписи оси Y")
+                    .Group("Matrix")
+                    .Surfaces(FederationSurfaces)
+                    .Scope(DashSpecCommandScope.Dashboard)
+                    .Build());
         }
 
         return descriptors;

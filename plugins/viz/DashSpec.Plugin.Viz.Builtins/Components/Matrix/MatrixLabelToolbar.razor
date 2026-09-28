@@ -1,38 +1,68 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Matrix
 @using DashSpec.Core.Model
+@using DashSpec.Execution.Runtime
 @inject ICardMatrixDisplayState MatrixDisplayState
 @inject IVizCardToolbarLocalizer Loc
 
 @if (Context.Card.Matrix is not null)
 {
-    <label class="card-matrix-toggle" title="@Loc.T("Toggle cell values")">
+    <label class="card-matrix-toggle" title="@ValueLabelsTitle">
         <input type="checkbox"
                checked="@MatrixValueLabelsVisible"
                disabled="@Context.Card.Loading"
                @onchange="ToggleMatrixValueLabelsAsync" />
-        <span>@Loc.T("Cell values")</span>
+        <span>@ValueLabelsCaption</span>
     </label>
-    <label class="card-matrix-toggle" title="@Loc.T("Toggle X axis labels")">
+    <label class="card-matrix-toggle" title="@AxisLabelsXTitle">
         <input type="checkbox"
                checked="@MatrixAxisLabelsXVisible"
                disabled="@Context.Card.Loading"
                @onchange="ToggleMatrixAxisLabelsXAsync" />
-        <span>@Loc.T("X axis labels")</span>
+        <span>@AxisLabelsXCaption</span>
+    </label>
+    <label class="card-matrix-toggle" title="@AxisLabelsYTitle">
+        <input type="checkbox"
+               checked="@MatrixAxisLabelsYVisible"
+               disabled="@Context.Card.Loading"
+               @onchange="ToggleMatrixAxisLabelsYAsync" />
+        <span>@AxisLabelsYCaption</span>
     </label>
 }
 
 @code {
     [Parameter, EditorRequired] public VizCardToolbarContext Context { get; set; } = default!;
 
+    private MatrixPresentation? MatrixSpec => Context.Card.MatrixPresentation;
+
     private bool MatrixValueLabelsVisible =>
         MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
-            Context.Card.MatrixPresentation?.ValueLabels ?? MatrixValueLabelMode.Auto,
+            MatrixSpec?.ValueLabels ?? MatrixValueLabelMode.Auto,
             MatrixDisplayState.GetValueLabelsOverride(Context.Card.Id));
 
     private bool MatrixAxisLabelsXVisible =>
         MatrixLabelDisplayResolver.EffectiveAxisVisible(
-            Context.Card.MatrixPresentation?.AxisLabelsX ?? true,
+            MatrixSpec?.AxisLabelsX ?? true,
             MatrixDisplayState.GetAxisLabelsXOverride(Context.Card.Id));
+
+    private bool MatrixAxisLabelsYVisible =>
+        MatrixLabelDisplayResolver.EffectiveAxisVisible(
+            MatrixSpec?.AxisLabelsY ?? true,
+            MatrixDisplayState.GetAxisLabelsYOverride(Context.Card.Id));
+
+    private string ValueLabelsCaption =>
+        MatrixSpec?.ToolbarValueLabels ?? Loc.T("Cell values");
+
+    private string AxisLabelsXCaption =>
+        MatrixSpec?.ToolbarAxisLabelsX ?? Loc.T("X axis labels");
+
+    private string AxisLabelsYCaption =>
+        MatrixSpec?.ToolbarAxisLabelsY ?? Loc.T("Y axis labels");
+
+    private string ValueLabelsTitle => Loc.T("Toggle cell values");
+
+    private string AxisLabelsXTitle => Loc.T("Toggle X axis labels");
+
+    private string AxisLabelsYTitle => Loc.T("Toggle Y axis labels");
 
     private Task ToggleMatrixValueLabelsAsync() =>
         Context.OnCardAction.InvokeAsync(
@@ -41,4 +71,8 @@
     private Task ToggleMatrixAxisLabelsXAsync() =>
         Context.OnCardAction.InvokeAsync(
             new CardActionRequest(Context.Card.Id, "toggle_matrix_axis_labels_x", new Dictionary<string, string>()));
+
+    private Task ToggleMatrixAxisLabelsYAsync() =>
+        Context.OnCardAction.InvokeAsync(
+            new CardActionRequest(Context.Card.Id, "toggle_matrix_axis_labels_y", new Dictionary<string, string>()));
 }

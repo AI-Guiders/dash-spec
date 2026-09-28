@@ -63,6 +63,16 @@ public static class MatrixLabelVisibilityParser
 
         return Math.Clamp(parsed, 6, 96);
     }
+
+    public static string? ParseToolbarLabel(IReadOnlyDictionary<string, string> properties, string propertyName)
+    {
+        if (!properties.TryGetValue(propertyName, out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        return raw.Trim();
+    }
 }
 
 public static class MatrixLabelDisplayResolver
