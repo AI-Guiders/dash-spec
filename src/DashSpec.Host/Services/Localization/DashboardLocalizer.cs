@@ -91,8 +91,10 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml)."] = "Отредактированный TOML-фрагмент из WitDB для резервного копирования без сети (не записывает local.toml).",
             ["Cell values"] = "Цифры",
             ["X axis labels"] = "Подписи X",
+            ["Y axis labels"] = "Подписи Y",
             ["Toggle cell values"] = "Показать или скрыть цифры в ячейках",
             ["Toggle X axis labels"] = "Показать или скрыть подписи оси X",
+            ["Toggle Y axis labels"] = "Показать или скрыть подписи оси Y",
         };
 
     private static readonly IReadOnlyDictionary<string, string> _en =
@@ -171,7 +173,9 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml)."] = "Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml).",
             ["Cell values"] = "Cell values",
             ["X axis labels"] = "X axis labels",
+            ["Y axis labels"] = "Y axis labels",
             ["Toggle cell values"] = "Show or hide cell values",
             ["Toggle X axis labels"] = "Show or hide X axis labels",
+            ["Toggle Y axis labels"] = "Show or hide Y axis labels",
         };
 }
