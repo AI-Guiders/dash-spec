@@ -13,7 +13,8 @@ open DashSpec.Modeling.Parse.Transform
 type LegendDefinition =
     { MinLabel: string option
       MaxLabel: string option
-      Title: string option }
+      Title: string option
+      Show: bool option }
 
 type ShowPlacement =
     | Below = 0

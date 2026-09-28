@@ -27,15 +27,19 @@ type FiltersChromeDefinition =
     { Layout: string
       Sticky: string
       Apply: string
-      DebounceMs: int }
+      DebounceMs: int
+      FormatGuide: string }
 
 module FiltersChromeDefinition =
     let [<Literal>] StickyNone = "none"
     let [<Literal>] StickyLine = "line"
     let [<Literal>] StickyCard = "card"
+    let [<Literal>] FormatGuideHidden = "hidden"
+    let [<Literal>] FormatGuideShow = "show"
 
     let Default =
         { Layout = "card"
           Sticky = StickyNone
           Apply = "manual"
-          DebounceMs = 400 }
+          DebounceMs = 400
+          FormatGuide = FormatGuideHidden }

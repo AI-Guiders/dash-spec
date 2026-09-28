@@ -10,7 +10,7 @@
 .matrix-canvas-scroll {
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 70%, transparent) var(--surface-2, #1e293b);
   width: 100%;
@@ -45,9 +45,28 @@
   display: grid;
   grid-template-columns: var(--matrix-y-label-width, max-content) max-content;
   grid-template-rows: auto max-content;
+  grid-template-areas:
+    "corner xlabels"
+    "ylabels canvas";
   gap: 4px;
   width: max-content;
   min-width: 100%;
+}
+
+.matrix-canvas-corner {
+  grid-area: corner;
+}
+
+.matrix-canvas-x-labels {
+  grid-area: xlabels;
+}
+
+.matrix-canvas-y-labels {
+  grid-area: ylabels;
+}
+
+.matrix-canvas {
+  grid-area: canvas;
 }
 
 .matrix-canvas-corner {
@@ -132,7 +151,13 @@
   );
 }
 
-.matrix-canvas-host--hide-x-labels .matrix-canvas-x-labels,
+.matrix-canvas-x-labels--hidden {
+  visibility: hidden;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
 .matrix-canvas-host--hide-x-labels .heatmap-axis-x {
   display: none;
 }

@@ -34,11 +34,14 @@ else
 {
     var chrome = Page.Session.Document.FiltersChrome;
 
-    <DashboardTabBar Tabs="Page.Session.Document.Tabs"
-                     ActiveTabId="Page.ActiveTabId"
-                     ResolveLabel="Page.ResolveTabLabel"
-                     Sticky="chrome.IsSticky"
-                     OnSelect="Page.SelectTab" />
+    @if (Page.Session.Document.Tabs.Count > 1)
+    {
+        <DashboardTabBar Tabs="Page.Session.Document.Tabs"
+                         ActiveTabId="Page.ActiveTabId"
+                         ResolveLabel="Page.ResolveTabLabel"
+                         Sticky="chrome.IsSticky"
+                         OnSelect="Page.SelectTab" />
+    }
 
     @if (Page.HasPages)
     {
@@ -76,31 +79,34 @@ else
                              OnTopChanged="Page.OnDashboardTopChanged"
                              GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
 
-    <div class="report-format-guide muted" aria-label="@Loc.T("Date and time formats")">
-        <table class="report-format-table">
-            <thead>
-                <tr>
-                    <th scope="col">@Loc.T("Kind")</th>
-                    <th scope="col">@Loc.T("Format")</th>
-                    <th scope="col">@Loc.T("Example")</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in Page.FormatReadingGuide.Rows)
-                {
+    @if (chrome.ShowsFormatGuide)
+    {
+        <div class="report-format-guide muted" aria-label="@Loc.T("Date and time formats")">
+            <table class="report-format-table">
+                <thead>
                     <tr>
-                        <th scope="row">@row.Label</th>
-                        <td><code>@row.Pattern</code></td>
-                        <td>@row.Example</td>
+                        <th scope="col">@Loc.T("Kind")</th>
+                        <th scope="col">@Loc.T("Format")</th>
+                        <th scope="col">@Loc.T("Example")</th>
                     </tr>
-                }
-                <tr>
-                    <th scope="row">@Loc.T("Time zone")</th>
-                    <td colspan="2">@Page.FormatReadingGuide.TimeZoneLabel</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @foreach (var row in Page.FormatReadingGuide.Rows)
+                    {
+                        <tr>
+                            <th scope="row">@row.Label</th>
+                            <td><code>@row.Pattern</code></td>
+                            <td>@row.Example</td>
+                        </tr>
+                    }
+                    <tr>
+                        <th scope="row">@Loc.T("Time zone")</th>
+                        <td colspan="2">@Page.FormatReadingGuide.TimeZoneLabel</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    }
 
     <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
         @if (Page.TabLayoutPlan is { } layoutPlan)

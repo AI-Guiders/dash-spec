@@ -80,12 +80,14 @@ module PropertySchemas =
         [ spec "layout" Scalar
           spec "sticky" Scalar
           spec "apply" Scalar
-          spec "debounce_ms" Scalar ]
+          spec "debounce_ms" Scalar
+          spec "format_guide" Scalar ]
 
     let legend =
         [ spec "min" String
           spec "max" String
-          spec "title" String ]
+          spec "title" String
+          spec "show" Scalar ]
 
     let runtime =
         [ spec "manifest" String ]

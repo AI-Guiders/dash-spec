@@ -5,13 +5,19 @@ public sealed record FiltersChromeDefinition(
     string Layout = "card",
     string Sticky = "none",
     string Apply = "manual",
-    int DebounceMs = 400)
+    int DebounceMs = 400,
+    string FormatGuide = "hidden")
 {
     public const string StickyNone = "none";
     public const string StickyLine = "line";
     public const string StickyCard = "card";
+    public const string FormatGuideHidden = "hidden";
+    public const string FormatGuideShow = "show";
 
     public static FiltersChromeDefinition Default { get; } = new();
+
+    public bool ShowsFormatGuide =>
+        string.Equals(FormatGuide, FormatGuideShow, StringComparison.OrdinalIgnoreCase);
 
     public bool IsAutoApply => string.Equals(Apply, "auto", StringComparison.OrdinalIgnoreCase);
 

@@ -98,7 +98,7 @@ internal static class DocumentModelMapper
             ToDictionaryOrNull(filter.GrainLabels, static x => x));
 
     private static FiltersChromeDefinition ToCore(FsharpFilter.FiltersChromeDefinition chrome) =>
-        new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.DebounceMs);
+        new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.DebounceMs, chrome.FormatGuide);
 
     private static CardDefinition ToCore(FsharpCard.CardDefinition card) =>
         new(
@@ -135,7 +135,8 @@ internal static class DocumentModelMapper
         new(
             FirstOrNull(legend.MinLabel),
             FirstOrNull(legend.MaxLabel),
-            FirstOrNull(legend.Title));
+            FirstOrNull(legend.Title),
+            FirstOrNull(legend.Show));
 
     private static CardClickBehaviour ToCore(FsharpCard.CardClickBehaviour behaviour) =>
         new(behaviour.Effects.Select(ToCore).ToList());
@@ -312,6 +313,12 @@ internal static class DocumentModelMapper
     }
 
     private static int? FirstOrNull(FSharpOption<int> option)
+    {
+        var items = OptionModule.ToArray(option);
+        return items.Length > 0 ? items[0] : null;
+    }
+
+    private static bool? FirstOrNull(FSharpOption<bool> option)
     {
         var items = OptionModule.ToArray(option);
         return items.Length > 0 ? items[0] : null;
