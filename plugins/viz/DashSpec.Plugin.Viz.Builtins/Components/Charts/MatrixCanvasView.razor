@@ -12,7 +12,7 @@
 else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
 {
     <div class="heatmap-oversized" role="alert">
-        <p><strong>Слишком много ячеек для heatmap</strong> (@(Payload.XLabels.Count) × @(Payload.YLabels.Count) = @(Payload.XLabels.Count * Payload.YLabels.Count), лимит @EffectiveLimits.EffectiveMaxCells, ось @EffectiveLimits.EffectiveMaxAxisLabels).</p>
+        <p><strong>Heatmap не отображается (лимит защиты)</strong> — @EffectiveLimits.DescribeOversize(Payload.XLabels.Count, Payload.YLabels.Count).</p>
         @if (!string.IsNullOrWhiteSpace(OversizeMessage))
         {
             <p class="muted"><RichTextView Text="@OversizeMessage" /></p>
