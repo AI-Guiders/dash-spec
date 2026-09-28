@@ -26,3 +26,4 @@ Built-in diagram renderers (Chart.js, matrix-canvas, table, …) lived inside `D
 - New renderer: add vertical slice under `plugins/viz/` (or product DLL later with `[[viz.load]]`), register contributors; no Host `switch`.
 - Matrix UX (values / X labels) ships with matrix render plugins, not host card view.
 - **Next:** optional `[[viz.load]]` DLL staging for product-only renderers (same pattern as extension plugins).
+- **Quality:** `node --check` on `wwwroot/js/*.js` at build; Playwright E2E (`tests/DashSpec.Host.E2E`) fails on `console.error`, `pageerror`, and failed script loads — see [docs/E2E.md](../docs/E2E.md).
