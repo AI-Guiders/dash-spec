@@ -4,7 +4,7 @@ Browser smoke tests catch **JavaScript parse/runtime errors**, failed script loa
 
 ## Prerequisites
 
-- **Node.js** on `PATH` (build runs `node --check` on `wwwroot/js/*.js` in Host and viz plugin).
+- **Node.js** on `PATH` (build runs `node --check` on Host `wwwroot/js` and `wwwroot/lib/**/*.js`, plus viz plugin JS).
 - **Playwright Chromium** (once per machine):
 
 ```powershell
@@ -13,7 +13,7 @@ dotnet build
 pwsh bin\Debug\net10.0\playwright.ps1 install chromium
 ```
 
-E2E tests need outbound HTTPS for Chart.js CDN scripts on the host shell.
+Chart.js and the boxplot plugin are **vendored** under `src/DashSpec.Host/wwwroot/lib/chartjs` — no CDN or outbound HTTPS required at runtime or in E2E.
 
 ## Run
 
