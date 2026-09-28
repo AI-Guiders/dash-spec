@@ -1,0 +1,76 @@
+@namespace DashSpec.Plugin.Viz.Builtins.Components.ChartJs
+@using DashSpec.Abstractions.Viz
+@using DashSpec.Core.Model
+@inject DashSpec.Viz.IOnClickInteractionService Interactions
+
+@if (Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart))
+{
+    <p class="empty-state">Нет данных за выбранный период</p>
+}
+else
+{
+    <div class="chart-wrap @ChartWrapCssClass" style="@ChartHeightStyle.Resolve(Context.Card, Context.DetailView)">
+        <ChartCanvas ChartId="@DashboardVizDomIds.ChartDomId(Context.Card.Id, Context.DetailView)"
+                     ChartType="@ResolveChartJsType(Context.EffectiveCard.DiagramKind)"
+                     Payload="Context.EffectiveCard.Chart"
+                     Legend="@(Context.EffectiveCard.ChartPresentation?.Legend ?? "bottom")"
+                     Stacked="@(Context.EffectiveCard.ChartPresentation?.Stacked ?? false)"
+                     FillArea="@(Context.EffectiveCard.ChartPresentation?.FillArea ?? false)"
+                     Sparkline="@(Context.EffectiveCard.ChartPresentation?.Sparkline ?? false)"
+                     Orientation="@(Context.EffectiveCard.ChartPresentation?.Orientation ?? ChartOrientation.Vertical)"
+                     ValueAxisScale="@(Context.EffectiveCard.ChartPresentation?.ValueAxisScale ?? ChartAxisScale.Decimal)"
+                     CategoryAxisLabel="@Context.EffectiveCard.ChartPresentation?.CategoryAxisLabel"
+                     ValueAxisLabel="@Context.EffectiveCard.ChartPresentation?.ValueAxisLabel"
+                     ValueAxisMax="@Context.EffectiveCard.ChartPresentation?.ValueAxisMax"
+                     DetailView="@Context.DetailView"
+                     CategoryClickEnabled="@CategoryClickEnabled"
+                     OnCategorySelected="HandleCategorySelectedAsync" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private static bool IsEmpty(ChartPayload chart) =>
+        chart.Points is { Count: > 0 }
+            ? false
+            : chart.Labels.Count == 0;
+
+    private static string ResolveChartJsType(string? diagramKind) =>
+        diagramKind?.ToLowerInvariant() switch
+        {
+            "bar" or "histogram" => "bar",
+            "pie" => "pie",
+            "donut" or "doughnut" => "doughnut",
+            "scatter" => "scatter",
+            "area" or "sparkline" or "line" => "line",
+            _ => "line",
+        };
+
+    private bool CategoryClickEnabled =>
+        Context.OnHeatmapCellSelected.HasDelegate &&
+        Context.EffectiveCard.ClickBehaviour is not null &&
+        (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
+         Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null);
+
+    private Task HandleCategorySelectedAsync((int Index, string Label) args)
+    {
+        if (!CategoryClickEnabled || !Context.OnHeatmapCellSelected.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        // Category label satisfies both `from x` and `from y` (horizontal bar vs vertical/donut).
+        var context = new HeatmapCellContext(
+            args.Index,
+            args.Index,
+            args.Label,
+            args.Label,
+            null,
+            null);
+
+        return Context.OnHeatmapCellSelected.InvokeAsync(context);
+    }
+
+    private string ChartWrapCssClass => Context.DetailView ? "chart-wrap-detail" : string.Empty;
+}

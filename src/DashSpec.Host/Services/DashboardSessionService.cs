@@ -7,7 +7,7 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Host.Services.Models;
+using DashSpec.Viz;
 
 public sealed class DashboardSessionService(
     IDashboardSpecLoader specLoader,

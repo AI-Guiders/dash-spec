@@ -43,7 +43,7 @@ Use **underscores** in ids (`card_export`, `drill_down`, `csv_export`). Unquoted
 
 | Tier | Meaning |
 |------|---------|
-| `core` | Always loaded (`on_click_default`, `viz_builtin`, …) |
+| `core` | Always loaded (`on_click_default`, `viz_chartjs`, `viz_matrix_canvas`, …) |
 | `extended` | Optional capability DLLs (`card_export`, …) |
 | `product` | Rare third-party / bespoke DLLs (same contract, your bundle) |
 
@@ -55,7 +55,7 @@ Use **underscores** in ids (`card_export`, `drill_down`, `csv_export`). Unquoted
 |-----------|------|-------------------|
 | `diagram_builtin` | core | diagram kinds: line, bar, heatmap, … |
 | `on_click_default` | core | `selection_list`, `drill_down` |
-| `viz_builtin` | core | chartjs, css-grid, matrix-canvas, table-html, scalar-html, gantt-html, gantt-timeline |
+| `viz_chartjs` … `viz_gantt_timeline` | core | one plugin per `render` id (see [ADR-0059](../design/DASHSPEC-ADR-0059-vertical-viz-plugins.md)); assembly `DashSpec.Plugin.Viz.Builtins` |
 | `card_export` | extended | block `buttons`; action `csv_export` |
 | `card_views` | extended | block `views`; action `switch_view`; segmented diagram toggle |
 | `dashspec_diagnostics` | extended | HTTP `/diagnostics/*` — load timings, connector ping, capabilities, UI load trace |
