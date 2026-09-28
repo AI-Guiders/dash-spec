@@ -110,7 +110,7 @@ internal static class DashboardCommandEntityResolver
         return matches.Count == 1 ? matches[0] : null;
     }
 
-    public static DashboardCardCommandTarget? ResolveMatrixCard(string token, DashboardFilterContext context)
+    public static DashboardCardCommandTarget? ResolveVizToolbarCard(string token, DashboardFilterContext context)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -118,14 +118,14 @@ internal static class DashboardCommandEntityResolver
         }
 
         var trimmed = token.Trim();
-        var byId = context.MatrixCards.FirstOrDefault(card =>
+        var byId = context.VizToolbarCards.FirstOrDefault(card =>
             card.CardId.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
         if (byId is not null)
         {
             return byId;
         }
 
-        var matches = context.MatrixCards
+        var matches = context.VizToolbarCards
             .Where(card => card.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
                            || card.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
             .ToList();

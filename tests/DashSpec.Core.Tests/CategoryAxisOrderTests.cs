@@ -1,12 +1,12 @@
-using DashSpec.Execution.Runtime;
+using DashSpec.Core.Model;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
 
-public sealed class MatrixYOrderParserTests
+public sealed class CategoryAxisOrderTests
 {
     [Fact]
-    public void SortYLabels_by_value_desc_is_default()
+    public void Sort_by_value_desc_is_default_without_y_format()
     {
         var labels = new List<string> { "a", "b", "c" };
         var totals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
@@ -16,13 +16,13 @@ public sealed class MatrixYOrderParserTests
             ["c"] = 2,
         };
 
-        MatrixYOrderParser.SortYLabels(labels, totals, new Dictionary<string, string>());
+        CategoryAxisOrdering.Sort(labels, totals, new Dictionary<string, string>());
 
         Assert.Equal(["b", "c", "a"], labels);
     }
 
     [Fact]
-    public void SortYLabels_by_label_asc()
+    public void Sort_by_label_asc_when_specified()
     {
         var labels = new List<string> { "z", "a", "m" };
         var totals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
@@ -32,13 +32,13 @@ public sealed class MatrixYOrderParserTests
             ["y_order"] = "asc",
         };
 
-        MatrixYOrderParser.SortYLabels(labels, totals, props);
+        CategoryAxisOrdering.Sort(labels, totals, props);
 
         Assert.Equal(["a", "m", "z"], labels);
     }
 
     [Fact]
-    public void SortYLabels_raw_y_format_defaults_to_label_asc_without_y_sort()
+    public void Sort_raw_y_format_defaults_to_label_asc_without_y_sort()
     {
         var labels = new List<string> { "NanoCAD", "AutoCAD", "LIRA" };
         var totals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
@@ -52,7 +52,7 @@ public sealed class MatrixYOrderParserTests
             ["y_format"] = "raw",
         };
 
-        MatrixYOrderParser.SortYLabels(labels, totals, props);
+        CategoryAxisOrdering.Sort(labels, totals, props);
 
         Assert.Equal(["AutoCAD", "LIRA", "NanoCAD"], labels);
     }
@@ -60,13 +60,15 @@ public sealed class MatrixYOrderParserTests
     [Fact]
     public void ResolveSortMode_defaults_to_value_when_y_format_omitted()
     {
-        Assert.Equal(MatrixYSortMode.Value, MatrixYOrderParser.ResolveSortMode(new Dictionary<string, string>()));
+        Assert.Equal(
+            CategorySortMode.Value,
+            CategoryAxisOrderParser.ResolveSortMode(new Dictionary<string, string>(), CategoryAxis.Y));
     }
 
     [Fact]
     public void ResolveSortMode_raw_is_label()
     {
         var props = new Dictionary<string, string> { ["y_format"] = "raw" };
-        Assert.Equal(MatrixYSortMode.Label, MatrixYOrderParser.ResolveSortMode(props));
+        Assert.Equal(CategorySortMode.Label, CategoryAxisOrderParser.ResolveSortMode(props, CategoryAxis.Y));
     }
 }

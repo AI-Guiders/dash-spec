@@ -17,7 +17,7 @@ Built-in diagram renderers (Chart.js, matrix-canvas, table, …) lived inside `D
    - `IVizPlugin` backend (data-family fallback),
    - `VizRendererDescriptor`,
    - card viz `IComponent` via `RegisterCardVizComponent`,
-   - optional card toolbar via `RegisterVizCardToolbar` (matrix label toggles).
+   - optional card toolbar via `RegisterVizCardToolbar` (viz display toggles; see ADR-0062).
 3. **Host** — `CardVisualization` remains the slot; `DynamicComponent` + registries built from contributor registry after plugin load. Card chrome toolbar dispatches viz-owned toolbar components. Static assets served from `_content/DashSpec.Plugin.Viz.Builtins/`.
 4. **Execution unchanged** — payloads still built in `DashSpec.Execution.Runtime`; only presentation moves to plugins.
 

@@ -62,7 +62,7 @@ internal static class DashboardCommandCatalogExpander
                 (builder, _) => DashboardDefaults(builder).Group("View")));
         }
 
-        foreach (var card in context.MatrixCards)
+        foreach (var card in context.VizToolbarCards)
         {
             descriptors.Add(
                 CommandDescriptors.Describe(ToggleMatrixValueLabelsCommand.Id)

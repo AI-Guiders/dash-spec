@@ -39,7 +39,7 @@ internal static class DashboardCardCommandTargetsBuilder
         return targets;
     }
 
-    public static IReadOnlyList<DashboardCardCommandTarget> BuildMatrix(IEnumerable<CardDefinition> cards)
+    public static IReadOnlyList<DashboardCardCommandTarget> BuildVizToolbar(IEnumerable<CardDefinition> cards)
     {
         var targets = new List<DashboardCardCommandTarget>();
         foreach (var card in cards)

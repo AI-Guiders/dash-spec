@@ -61,13 +61,13 @@ internal static class DashboardCommandHighlightResolver
         {
             return new CommandHighlightState(
                 new HashSet<string>(StringComparer.OrdinalIgnoreCase),
-                context.MatrixCards.Select(card => card.CardId).ToHashSet(StringComparer.OrdinalIgnoreCase));
+                context.VizToolbarCards.Select(card => card.CardId).ToHashSet(StringComparer.OrdinalIgnoreCase));
         }
 
-        var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+        var card = DashboardCommandEntityResolver.ResolveVizToolbarCard(cardToken, context);
         if (card is null)
         {
-            var partialCards = context.MatrixCards
+            var partialCards = context.VizToolbarCards
                 .Where(cardTarget => MatchesPartial(cardTarget.CardId, cardToken)
                                      || MatchesPartial(cardTarget.Title, cardToken))
                 .Select(cardTarget => cardTarget.CardId)
@@ -85,7 +85,7 @@ internal static class DashboardCommandHighlightResolver
         var filters = context.ToolbarFilterNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var cards = context.SwitchableCards
             .Select(card => card.CardId)
-            .Concat(context.MatrixCards.Select(card => card.CardId))
+            .Concat(context.VizToolbarCards.Select(card => card.CardId))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return new CommandHighlightState(filters, cards);
     }

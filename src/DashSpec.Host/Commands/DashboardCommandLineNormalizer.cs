@@ -60,7 +60,7 @@ internal static class DashboardCommandLineNormalizer
             return body;
         }
 
-        var card = DashboardCommandEntityResolver.ResolveMatrixCard(cardToken, context);
+        var card = DashboardCommandEntityResolver.ResolveVizToolbarCard(cardToken, context);
         return card is null ? body : $"{prefix} {card.CardId}";
     }
 

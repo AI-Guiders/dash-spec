@@ -30,7 +30,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly OnClickInteractionService _interactions;
     private readonly DashSpecActionDispatcher _actions;
     private readonly ICardViewState _cardViewState;
-    private readonly ICardMatrixDisplayState _matrixDisplayState;
+    private readonly ICardVizDisplayState _vizDisplayState;
     private readonly DashSpecHostContext _hostContext;
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
@@ -48,7 +48,7 @@ public sealed class DashboardPageController : IDisposable
         OnClickInteractionService interactions,
         DashSpecActionDispatcher actions,
         ICardViewState cardViewState,
-        ICardMatrixDisplayState matrixDisplayState,
+        ICardVizDisplayState vizDisplayState,
         DashSpecHostContext hostContext,
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
@@ -66,7 +66,7 @@ public sealed class DashboardPageController : IDisposable
         _interactions = interactions;
         _actions = actions;
         _cardViewState = cardViewState;
-        _matrixDisplayState = matrixDisplayState;
+        _vizDisplayState = vizDisplayState;
         _hostContext = hostContext;
         _filters = filters;
         _refresh = refresh;
@@ -445,7 +445,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        if (TryHandleMatrixLabelToggle(request, card))
+        if (CardVizDisplayToggle.TryApply(request, card, _vizDisplayState))
         {
             Notify();
             return;
@@ -462,44 +462,6 @@ public sealed class DashboardPageController : IDisposable
             !string.IsNullOrWhiteSpace(outcome.RefreshCardId))
         {
             await _refresh.RefreshSingleCardAsync(outcome.RefreshCardId, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private bool TryHandleMatrixLabelToggle(CardActionRequest request, CardRenderResult card)
-    {
-        if (card.Matrix is null && card.DetailMatrix is null)
-        {
-            return false;
-        }
-
-        var presentation = card.MatrixPresentation;
-        if (presentation is null)
-        {
-            return false;
-        }
-
-        switch (request.ActionId.ToLowerInvariant())
-        {
-            case "toggle_matrix_value_labels":
-                var valueVisible = MatrixLabelDisplayResolver.EffectiveValueLabelsVisible(
-                    presentation.ValueLabels,
-                    _matrixDisplayState.GetValueLabelsOverride(request.CardId));
-                _matrixDisplayState.ToggleValueLabels(request.CardId, valueVisible);
-                return true;
-            case "toggle_matrix_axis_labels_x":
-                var axisXVisible = MatrixLabelDisplayResolver.EffectiveAxisVisible(
-                    presentation.AxisLabelsX,
-                    _matrixDisplayState.GetAxisLabelsXOverride(request.CardId));
-                _matrixDisplayState.ToggleAxisLabelsX(request.CardId, axisXVisible);
-                return true;
-            case "toggle_matrix_axis_labels_y":
-                var axisYVisible = MatrixLabelDisplayResolver.EffectiveAxisVisible(
-                    presentation.AxisLabelsY,
-                    _matrixDisplayState.GetAxisLabelsYOverride(request.CardId));
-                _matrixDisplayState.ToggleAxisLabelsY(request.CardId, axisYVisible);
-                return true;
-            default:
-                return false;
         }
     }
 
@@ -885,9 +847,10 @@ public sealed class DashboardPageController : IDisposable
             var card = _refresh.Cards.FirstOrDefault(c =>
                 string.Equals(c.Id, run.PendingCardId, StringComparison.OrdinalIgnoreCase));
             if (card is not null &&
-                TryHandleMatrixLabelToggle(
+                CardVizDisplayToggle.TryApply(
                     new CardActionRequest(run.PendingCardId, run.PendingCardActionId, new Dictionary<string, string>()),
-                    card))
+                    card,
+                    _vizDisplayState))
             {
                 CommandError = null;
                 Notify();
@@ -917,7 +880,7 @@ public sealed class DashboardPageController : IDisposable
             ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
             ActivePageId = ActivePageId,
             SwitchableCards = BuildSwitchableCards(),
-            MatrixCards = BuildMatrixCards(),
+            VizToolbarCards = BuildVizToolbarCards(),
             Culture = _cultureAmbient.Culture,
         };
 
@@ -928,8 +891,8 @@ public sealed class DashboardPageController : IDisposable
                 .Where(definition => definition is not null)
                 .Cast<CardDefinition>());
 
-    IReadOnlyList<DashboardCardCommandTarget> BuildMatrixCards() =>
-        DashboardCardCommandTargetsBuilder.BuildMatrix(
+    IReadOnlyList<DashboardCardCommandTarget> BuildVizToolbarCards() =>
+        DashboardCardCommandTargetsBuilder.BuildVizToolbar(
             VisibleCards()
                 .Select(card => FindCardDefinition(card.Id))
                 .Where(definition => definition is not null)
@@ -1083,7 +1046,7 @@ public sealed class DashboardPageController : IDisposable
         _refresh.FiltersToCards = FiltersToCards;
 
         _cardViewState.ClearAll();
-        _matrixDisplayState.ClearAll();
+        _vizDisplayState.ClearAll();
         _filters.LoadFromSession(_session, PlacedFilterNames());
         SnapAllGrainAnchoredDates();
         _refresh.SeedAllCardSkeletons();
