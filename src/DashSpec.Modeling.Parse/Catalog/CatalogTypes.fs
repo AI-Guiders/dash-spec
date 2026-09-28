@@ -7,7 +7,8 @@ type CatalogEntryDefinition =
     { Id: string
       Title: string
       DashspecPath: string
-      GroupId: string option }
+      GroupId: string option
+      InitialTabId: string option }
 
 [<CLIMutable>]
 type CatalogGroupDefinition = { Id: string; Title: string }
