@@ -172,6 +172,16 @@ Diagram (`@diagram`) задаёт kind и привязки колонок (`cate
 
 Алиасы: `global`/`matrix` → `map`, `line`/`y` → `row`, `col`/`x` → `column`.
 
+**Heatmap / matrix-canvas — подписи и toolbar** (свойства diagram):
+
+| Свойство | Значения | Смысл |
+|----------|----------|--------|
+| `value_labels` | `auto` / `show` / `hide` | Цифры в ячейках |
+| `value_labels_threshold` | px (6–96) | Порог для `auto` |
+| `axis_labels_x` / `axis_labels_y` | `show` / `hide` | Подписи осей по умолчанию |
+| `toolbar_value_labels` | текст | Подпись чекбокса «цифры» (иначе локаль Host) |
+| `toolbar_axis_labels_x` / `toolbar_axis_labels_y` | текст | Подписи чекбоксов осей X и Y |
+
 Kinds сейчас: line, bar, table, heatmap, pie/donut, … (см. ADR-0003 / samples).
 
 ---
