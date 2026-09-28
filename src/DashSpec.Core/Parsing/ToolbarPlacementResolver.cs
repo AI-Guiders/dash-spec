@@ -28,7 +28,8 @@ internal static class ToolbarPlacementResolver
         {
             foreach (var token in row)
             {
-                var name = FilterLayoutRefResolver.Resolve(token, filters, context);
+                var boardRef = LayoutBoardRowPlacer.ParseCell(token, context, 1).RefToken;
+                var name = FilterLayoutRefResolver.Resolve(boardRef, filters, context);
                 if (names.Contains(name, StringComparer.OrdinalIgnoreCase))
                 {
                     throw new DashSpecParseException(

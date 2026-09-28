@@ -8,6 +8,15 @@ open DashSpec.Modeling.Parse.Lexing
 
 module LayoutParser =
 
+    let private readBoardCell (reader: TokenReader) =
+        let id = reader.ReadIdent()
+        if reader.IsAt TokenKind.Colon then
+            reader.Expect TokenKind.Colon
+            let weight = reader.ReadIdent()
+            $"{id}:{weight}"
+        else
+            id
+
     let private parseBoardRow (reader: TokenReader) =
         reader.Expect TokenKind.LBracket
         reader.SkipNewlines()
@@ -16,7 +25,7 @@ module LayoutParser =
             reader.SkipNewlines()
             if reader.IsAt TokenKind.RBracket then ()
             else
-                cells.Add(reader.ReadIdent())
+                cells.Add(readBoardCell reader)
                 reader.SkipNewlines()
         reader.Expect TokenKind.RBracket
         if cells.Count = 0 then

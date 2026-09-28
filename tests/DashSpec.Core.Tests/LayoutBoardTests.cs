@@ -397,6 +397,83 @@ end tab
     }
 
     [Fact]
+    public void ToolbarLayoutCompactor_applies_weighted_board_row()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              layout grid
+              columns = 12
+              end grid
+              defaults
+                filter.d1.range = -7d..today
+              end defaults
+              filter date d1 on c1 as "D1" ref D
+              filter field f1 on c2 as "F1" ref P widget combobox
+              toolbar
+              [ D:1 P:3 ]
+              end toolbar
+              card c as "C"
+              bind
+                d1
+                f1
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+""");
+
+        var layout = ToolbarLayoutCompactor.Compact(doc);
+
+        Assert.Equal(new PlacementDefinition(1, 1, 3), layout["d1"]);
+        Assert.Equal(new PlacementDefinition(1, 4, 9), layout["f1"]);
+    }
+
+    [Fact]
+    public void ToolbarLayoutCompactor_filter_place_overrides_board()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              layout grid
+              columns = 12
+              end grid
+              defaults
+                filter.d1.range = -7d..today
+              end defaults
+              filter date d1 on c1 as "D1" ref D
+              place { row = 2 col = 1 span = 6 }
+              filter field f1 on c2 as "F1" ref P widget combobox
+              toolbar
+              [ D P ]
+              end toolbar
+              card c as "C"
+              bind
+                d1
+                f1
+              end bind
+              diagram number
+              value = n
+              end number
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+""");
+
+        var layout = ToolbarLayoutCompactor.Compact(doc);
+
+        Assert.Equal(new PlacementDefinition(2, 1, 6), layout["d1"]);
+        Assert.Equal(new PlacementDefinition(1, 7, 6), layout["f1"]);
+    }
+
+    [Fact]
     public void Parse_include_toolbar_dashlayout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
