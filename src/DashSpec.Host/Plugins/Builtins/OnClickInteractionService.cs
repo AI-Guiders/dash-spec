@@ -1,9 +1,10 @@
 using DashSpec.Core.Model;
+using DashSpec.Viz;
 using DashSpec.Host.Services.Presentation;
 
 namespace DashSpec.Host.Plugins.Builtins;
 
-public sealed class OnClickInteractionService
+public sealed class OnClickInteractionService : IOnClickInteractionService
 {
     public ShowSelectionEffect? ResolveShowEffect(CardClickBehaviour? behaviour) =>
         CardSelectionPresenter.FindShowEffect(behaviour);

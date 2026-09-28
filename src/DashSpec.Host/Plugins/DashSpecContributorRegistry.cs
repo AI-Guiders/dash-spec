@@ -25,6 +25,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<IDashSpecEndpointContributor> _endpointContributors = [];
     private readonly List<DashSpecCommandDescriptor> _commands = [];
+    private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
 
@@ -165,6 +167,68 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 
         _commands.Add(descriptor);
         TrackPlugin(descriptor.PluginId);
+    }
+
+    public void RegisterCardVizComponent(string rendererId, Type componentType)
+    {
+        if (string.IsNullOrWhiteSpace(rendererId))
+        {
+            throw new ArgumentException("Renderer id is required.", nameof(rendererId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
+        {
+            throw new ArgumentException(
+                $"Type {componentType.FullName} must implement IComponent.",
+                nameof(componentType));
+        }
+
+        if (!_vizComponents.TryAdd(rendererId, componentType))
+        {
+            throw new InvalidOperationException($"Duplicate viz component registration for '{rendererId}'.");
+        }
+    }
+
+    public void RegisterVizCardToolbar(string rendererId, Type toolbarComponentType)
+    {
+        if (string.IsNullOrWhiteSpace(rendererId))
+        {
+            throw new ArgumentException("Renderer id is required.", nameof(rendererId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(toolbarComponentType))
+        {
+            throw new ArgumentException(
+                $"Type {toolbarComponentType.FullName} must implement IComponent.",
+                nameof(toolbarComponentType));
+        }
+
+        if (!_vizToolbars.TryAdd(rendererId, toolbarComponentType))
+        {
+            throw new InvalidOperationException($"Duplicate viz toolbar registration for '{rendererId}'.");
+        }
+    }
+
+    public CardVizComponentRegistry BuildCardVizComponentRegistry()
+    {
+        var registry = new CardVizComponentRegistry();
+        foreach (var (rendererId, componentType) in _vizComponents)
+        {
+            registry.Register(rendererId, componentType);
+        }
+
+        return registry;
+    }
+
+    public VizCardToolbarRegistry BuildVizCardToolbarRegistry()
+    {
+        var registry = new VizCardToolbarRegistry();
+        foreach (var (rendererId, componentType) in _vizToolbars)
+        {
+            registry.Register(rendererId, componentType);
+        }
+
+        return registry;
     }
 
     public IReadOnlyDictionary<string, CardChromeContributorDescriptor> CardChromeBlocks => _cardChrome;

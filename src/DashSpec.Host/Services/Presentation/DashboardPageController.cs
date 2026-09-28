@@ -14,7 +14,7 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Dev;
 using DashSpec.Host.Services.Diagnostics;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Host.Services.Models;
+using DashSpec.Viz;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using DashSpec.Host.Services.Settings;
