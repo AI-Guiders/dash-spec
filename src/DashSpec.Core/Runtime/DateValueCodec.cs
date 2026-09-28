@@ -77,11 +77,20 @@ public static partial class DateValueCodec
             out utc);
     }
 
+    /// <summary>SQL <c>datetime2</c> and legacy readers often return <see cref="DateTimeKind.Unspecified"/> for UTC columns.</summary>
+    public static DateTime NormalizeStorageUtc(DateTime dt) =>
+        dt.Kind switch
+        {
+            DateTimeKind.Utc => dt,
+            DateTimeKind.Local => dt.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc),
+        };
+
     public static DateTime? TryParseStoredBucket(object? value) =>
         value switch
         {
             null => null,
-            DateTime dt => dt,
+            DateTime dt => NormalizeStorageUtc(dt),
             DateTimeOffset dto => dto.UtcDateTime,
             DateOnly d => d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
             _ => TryParseStoredDateTime(Convert.ToString(value), out var parsed) ? parsed : null,

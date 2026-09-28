@@ -36,6 +36,15 @@ public sealed class DateValueCodecTests
     }
 
     [Fact]
+    public void TryParseStoredBucket_unspecified_datetime_is_treated_as_utc()
+    {
+        var unspecified = new DateTime(2026, 8, 3, 11, 5, 0, DateTimeKind.Unspecified);
+        var bucket = DateValueCodec.TryParseStoredBucket(unspecified);
+        Assert.NotNull(bucket);
+        Assert.Equal(DateTimeKind.Utc, bucket!.Value.Kind);
+    }
+
+    [Fact]
     public void TryParseStoredDateTime_skips_current_culture_ambiguity()
     {
         var previous = CultureInfo.CurrentCulture;
