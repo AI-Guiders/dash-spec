@@ -21,17 +21,17 @@ else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Coun
 }
 else
 {
-    <div class="heatmap-wrap"
+    <div class="heatmap-wrap @WrapCssClass"
          style="@($"min-height:{HeightPx}px")"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
         <div class="heatmap-scroll" style="@($"max-height:{HeightPx}px")">
         <div class="heatmap-grid" style="@GridStyle()">
             <div class="heatmap-corner">
-                @if (!string.IsNullOrWhiteSpace(YAxisLabel))
+                @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
                 {
                     <span class="heatmap-axis-y"><RichTextView Text="@YAxisLabel" /></span>
                 }
-                @if (!string.IsNullOrWhiteSpace(XAxisLabel))
+                @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(XAxisLabel))
                 {
                     <span class="heatmap-axis-x"><RichTextView Text="@XAxisLabel" /> →</span>
                 }
@@ -39,15 +39,22 @@ else
             @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
             {
                 var xLabel = Payload.XLabels[xi];
-                var showXLabel = ShouldShowXLabel(xi);
-                <div class="heatmap-x-label @(showXLabel ? null : "heatmap-x-label-sparse")" title="@FormatXLabel(xLabel)">
+                var showXLabel = ShowAxisLabelsX && ShouldShowXLabel(xi);
+                <div class="heatmap-x-label @(showXLabel ? null : "heatmap-x-label-sparse")" title="@(ShowAxisLabelsX ? FormatXLabel(xLabel) : null)">
                     @(showXLabel ? FormatXLabel(xLabel) : "")
                 </div>
             }
             @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
             {
                 var yLabel = Payload.YLabels[yi];
-                <div class="heatmap-y-label" title="@yLabel">@FormatYLabel(yLabel)</div>
+                @if (ShowAxisLabelsY)
+                {
+                    <div class="heatmap-y-label" title="@yLabel">@FormatYLabel(yLabel)</div>
+                }
+                else
+                {
+                    <div class="heatmap-y-label heatmap-y-label-spacer" aria-hidden="true"></div>
+                }
                 @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
                 {
                     var value = Payload.Cells[yi][xi];
@@ -64,7 +71,7 @@ else
                          @onfocus="() => ShowPopover(yi, xi)"
                          @onblur="HidePopover"
                          tabindex="@(filled ? 0 : -1)">
-                        @if (filled)
+                        @if (filled && ShowCellValues)
                         {
                             <span class="heatmap-cell-value">@FormatValue(value)</span>
                         }
@@ -162,7 +169,19 @@ else
     [Parameter]
     public string? OversizeMessage { get; set; }
 
+    [Parameter]
+    public bool ShowAxisLabelsX { get; set; } = true;
+
+    [Parameter]
+    public bool ShowAxisLabelsY { get; set; } = true;
+
+    [Parameter]
+    public bool ShowCellValues { get; set; } = true;
+
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
+
+    private string WrapCssClass =>
+        $"{(ShowAxisLabelsX ? null : "heatmap-wrap--hide-x-labels")} {(ShowAxisLabelsY ? null : "heatmap-wrap--hide-y-labels")}".Trim();
 
     private (int Yi, int Xi)? _activeCell;
 
@@ -172,7 +191,8 @@ else
     private string GridStyle()
     {
         var columns = Payload.XLabels.Count;
-        return $"grid-template-columns: 10rem repeat({columns}, {ColumnWidthRem}rem);";
+        var yColumn = ShowAxisLabelsY ? "10rem" : "0";
+        return $"grid-template-columns: {yColumn} repeat({columns}, {ColumnWidthRem}rem);";
     }
 
     private bool ShouldShowXLabel(int index)
