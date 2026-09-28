@@ -62,4 +62,14 @@ module FiltersChromeParser =
                 | _ -> 400
             | false, _ -> 400
 
-        { Layout = layout; Sticky = sticky; Apply = apply; DebounceMs = debounceMs }
+        let formatGuide =
+            match props.TryGetValue "format_guide" with
+            | true, raw ->
+                match raw.Trim().ToLowerInvariant() with
+                | FiltersChromeDefinition.FormatGuideShow -> FiltersChromeDefinition.FormatGuideShow
+                | FiltersChromeDefinition.FormatGuideHidden -> FiltersChromeDefinition.FormatGuideHidden
+                | _ ->
+                    raise (DashSpecParseException("filters chrome format_guide must be 'show' or 'hidden'."))
+            | false, _ -> FiltersChromeDefinition.FormatGuideHidden
+
+        { Layout = layout; Sticky = sticky; Apply = apply; DebounceMs = debounceMs; FormatGuide = formatGuide }

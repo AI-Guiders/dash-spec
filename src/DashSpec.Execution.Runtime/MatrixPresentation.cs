@@ -61,11 +61,17 @@ public sealed record MatrixPresentation(
             card.Tooltip is not null);
     }
 
+    public bool ShowsGradientLegend =>
+        Legend?.Show is false
+            ? false
+            : Legend is not null &&
+              (!string.IsNullOrWhiteSpace(Legend.MinLabel) || !string.IsNullOrWhiteSpace(Legend.MaxLabel));
+
     public string? FormatLegendMin(double min, double max) =>
-        FormatLegendTemplate(Legend?.MinLabel, min, max);
+        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MinLabel, min, max) : null;
 
     public string? FormatLegendMax(double min, double max) =>
-        FormatLegendTemplate(Legend?.MaxLabel, min, max);
+        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MaxLabel, min, max) : null;
 
     private static string? FormatLegendTemplate(string? template, double min, double max)
     {
