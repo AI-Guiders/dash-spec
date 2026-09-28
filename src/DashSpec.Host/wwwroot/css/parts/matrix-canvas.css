@@ -47,7 +47,6 @@
   grid-template-rows: auto max-content;
   gap: 4px;
   width: max-content;
-  min-width: 100%;
 }
 
 .matrix-canvas-corner {
