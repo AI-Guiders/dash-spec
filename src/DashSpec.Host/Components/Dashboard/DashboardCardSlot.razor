@@ -39,5 +39,9 @@
     [Parameter]
     public bool AutoApply { get; set; }
 
-    private void ToggleBodyFold() => Page.ToggleCardBodyFold(Card.Id);
+    private Task ToggleBodyFold()
+    {
+        Page.ToggleCardBodyFold(Card.Id);
+        return Task.CompletedTask;
+    }
 }
