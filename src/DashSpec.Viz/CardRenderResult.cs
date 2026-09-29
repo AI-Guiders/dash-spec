@@ -31,6 +31,7 @@ public sealed record CardRenderResult(
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,
     int? LocalFiltersApplySplitIndex = null,
+    IReadOnlyDictionary<string, PlacementDefinition>? LocalFilterChromePlacements = null,
     bool IsVisibilityPlaceholder = false,
     string? VisibilityMessage = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,

@@ -119,6 +119,7 @@ type CardDefinition =
       ExtensionBlocks: IReadOnlyList<ExtensionBlockNode>
       LocalFiltersManualApply: bool
       LocalFiltersApplySplitIndex: int option
+      LocalFiltersChromeBoard: LayoutBoardDefinition option
       Visibility: CardVisibilityRule option
       PhaseId: string option
       PageId: string option
