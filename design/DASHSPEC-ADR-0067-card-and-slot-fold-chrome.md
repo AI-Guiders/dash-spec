@@ -25,10 +25,10 @@ end report
 
 | `fold` | Semantics |
 |--------|-----------|
-| `none` | Each card folds independently only |
+| `none` (default) | Report does not coordinate cards; each `independent` card toggles on its own |
 | `focus_single` | Expanding a foldable card collapses other foldable cards on the page |
 
-**v1 default:** если на странице **≥2** карточек с `chrome fold = independent` и report policy не задан — Host включает `focus_single` при развороте (demo overview).
+Per-card `fold = independent` means **this card** has its own chevron and body toggle. It does **not** imply `focus_single`; add `cards chrome { fold = focus_single }` on the report when you want one expanded card at a time.
 
 ### Per card
 
