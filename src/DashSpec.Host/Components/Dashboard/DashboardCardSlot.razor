@@ -21,7 +21,9 @@
                        OnCardDayChanged="Page.OnCardDayChanged"
                        OnCardFieldChanged="Page.OnCardFieldChanged"
                        OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
-                       OnCardAction="Page.ExecuteCardActionAsync" />
+                       OnCardAction="Page.ExecuteCardActionAsync"
+                       BodyFolded="Page.IsCardBodyFolded(Card.Id)"
+                       OnToggleBodyFold="ToggleBodyFold" />
 </CommandTargetShell>
 
 @code {
@@ -36,4 +38,6 @@
 
     [Parameter]
     public bool AutoApply { get; set; }
+
+    private void ToggleBodyFold() => Page.ToggleCardBodyFold(Card.Id);
 }

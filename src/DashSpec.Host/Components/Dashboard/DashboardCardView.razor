@@ -17,6 +17,20 @@
         @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
         {
             <div class="card-head-title">
+                @if (CanFoldBody)
+                {
+                    <button type="button"
+                            class="secondary card-icon-btn card-fold-btn"
+                            title="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
+                            aria-expanded="@(!BodyFolded)"
+                            aria-label="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
+                            @onclick="ToggleBodyFoldAsync"
+                            @onclick:stopPropagation="true">
+                        <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+                }
                 @if (Card.ShowChromeTitle)
                 {
                     <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
@@ -164,7 +178,7 @@
             <p>@Card.VisibilityMessage</p>
         </div>
     }
-    else
+    else if (!BodyFolded)
     {
         <div class="card-interior-grid" style="@InteriorGridStyle">
             @foreach (var slot in OrderedInteriorSlots)
@@ -254,6 +268,14 @@
     [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
     [Parameter] public EventCallback<(CardRenderResult Card, HeatmapCellContext Context)> OnCellClickNavigate { get; set; }
     [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
+    [Parameter] public bool BodyFolded { get; set; }
+    [Parameter] public EventCallback OnToggleBodyFold { get; set; }
+
+    private bool CanFoldBody =>
+        Card.FoldMode is not CardFoldMode.None && !Card.IsVisibilityPlaceholder;
+
+    private Task ToggleBodyFoldAsync() =>
+        OnToggleBodyFold.HasDelegate ? OnToggleBodyFold.InvokeAsync() : Task.CompletedTask;
 
     private HeatmapCellContext? _selection;
     private RenderSnapshot _renderSnapshot;
@@ -451,6 +473,11 @@
             if (!string.IsNullOrWhiteSpace(Card.FilterLinkCssClass))
             {
                 parts.Add(Card.FilterLinkCssClass);
+            }
+
+            if (BodyFolded)
+            {
+                parts.Add("card--folded");
             }
 
             return string.Join(' ', parts);

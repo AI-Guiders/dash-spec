@@ -183,6 +183,7 @@ builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
 builder.Services.AddSingleton<RuntimeConnectorResolver>();
 builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardCellDrillState, CardCellDrillState>();
+builder.Services.AddScoped<ICardFoldState, CardFoldState>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();

@@ -414,12 +414,13 @@ public sealed class DashboardRefreshCoordinator : IDisposable
         }
 
         var filterDisplay = FilterDisplayFactory?.Invoke();
-        return DisplayResolutionHost.ApplyCardChrome(
+        var enriched = DisplayResolutionHost.ApplyCardChrome(
             DisplayContext,
             card,
             render,
             filterDisplay,
             PageDisplayBindings);
+        return enriched with { FoldMode = card.Chrome?.Fold ?? CardFoldMode.None };
     }
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)

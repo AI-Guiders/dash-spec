@@ -41,7 +41,8 @@ internal static class DocumentModelMapper
             ToDictionaryOrNull(document.ModuleTooltips, ToCoreTooltip),
             ToListOrNull(document.Pages)?.Select(ToCore).ToList(),
             ToDictionaryOrNull(document.CommandAliases, static x => x),
-            ToCore(document.FormatDefaults));
+            ToCore(document.FormatDefaults),
+            MapOptional(document.CardsChrome, ToCore));
 
     private static ReportFormatDefaults ToCore(FsharpDocument.ReportFormatDefaults defaults) =>
         new(
@@ -190,8 +191,11 @@ internal static class DocumentModelMapper
             (CardVisibilityMode)(int)rule.Mode,
             FirstOrNull(rule.Message));
 
+    private static CardsChromeDefinition ToCore(FsharpCard.CardsChromeDefinition chrome) =>
+        new((CardsFoldPolicy)(int)chrome.FoldPolicy);
+
     private static CardChromeDefinition ToCore(FsharpCard.CardChromeDefinition chrome) =>
-        new((CardBoundFilterChrome)(int)chrome.BoundFilters, chrome.HideTitle);
+        new((CardBoundFilterChrome)(int)chrome.BoundFilters, chrome.HideTitle, (CardFoldMode)(int)chrome.Fold);
 
     private static MatrixRenderLimitsDefinition ToCore(FsharpCard.MatrixRenderLimitsDefinition limits) =>
         new(FirstOrNull(limits.MaxCells), FirstOrNull(limits.MaxAxisLabels));
