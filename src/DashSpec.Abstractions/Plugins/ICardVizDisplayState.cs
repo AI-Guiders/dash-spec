@@ -11,17 +11,23 @@ public interface ICardVizDisplayState
 
     bool? GetAxisLabelsYOverride(string cardId);
 
+    bool? GetLegendOverride(string cardId);
+
     void SetValueLabelsOverride(string cardId, bool? visible);
 
     void SetAxisLabelsXOverride(string cardId, bool? visible);
 
     void SetAxisLabelsYOverride(string cardId, bool? visible);
 
+    void SetLegendOverride(string cardId, bool? visible);
+
     void ToggleValueLabels(string cardId, bool currentlyVisible);
 
     void ToggleAxisLabelsX(string cardId, bool currentlyVisible);
 
     void ToggleAxisLabelsY(string cardId, bool currentlyVisible);
+
+    void ToggleLegend(string cardId, bool currentlyVisible);
 
     void ClearAll();
 }

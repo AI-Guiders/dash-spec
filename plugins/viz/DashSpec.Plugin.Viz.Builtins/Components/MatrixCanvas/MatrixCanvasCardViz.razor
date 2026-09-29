@@ -2,18 +2,22 @@
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Execution.Runtime
+@implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
 
 @if (Context.EffectiveCard.Matrix is not null)
 {
     var presentation = Context.EffectiveCard.MatrixPresentation;
-    var valueOverride = VizDisplayState.GetValueLabelsOverride(Context.Card.Id);
-    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
-    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var cardId = Context.ResolveVizStateCardId();
+    var valueOverride = VizDisplayState.GetValueLabelsOverride(cardId);
+    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(cardId);
+    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(cardId);
+    var legendOverride = VizDisplayState.GetLegendOverride(cardId);
     var spec = presentation ?? new MatrixPresentation();
     var valueLabelsWire = VizLabelDisplayResolver.ResolveValueLabelsWire(spec.ValueLabels, valueOverride);
     var showAxisX = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
     var showAxisY = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+    var showLegend = VizLabelDisplayResolver.EffectiveLegendVisible(spec.ShowsGradientLegend, legendOverride);
 
     <MatrixCanvasView HostId="@DashboardVizDomIds.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
                       CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
@@ -30,8 +34,9 @@
                       ValueLabelsThresholdPx="@spec.ValueLabelsThresholdPx"
                       ShowAxisLabelsX="@showAxisX"
                       ShowAxisLabelsY="@showAxisY"
-                      LegendMinText="@presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
-                      LegendMaxText="@presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                      ShowGradientLegend="@showLegend"
+                      LegendMinText="@(showLegend ? presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null)"
+                      LegendMaxText="@(showLegend ? presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null)"
                       Limits="Context.EffectiveCard.MatrixLimits"
                       OversizeMessage="Context.EffectiveCard.OversizeMessage"
                       OnCellSelected="Context.OnHeatmapCellSelected" />
@@ -42,6 +47,26 @@
     private const int MatrixChromePx = 96;
 
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Context.ResolveVizStateCardId(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     private int ResolveMatrixHeightPx()
     {

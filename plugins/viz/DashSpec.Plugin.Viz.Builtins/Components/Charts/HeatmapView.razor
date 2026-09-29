@@ -107,7 +107,7 @@ else
             }
         </div>
         </div>
-        @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
+        @if (ShowGradientLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText)))
         {
             <div class="heatmap-legend" aria-hidden="true">
                 @if (!string.IsNullOrWhiteSpace(LegendMinText))
@@ -163,6 +163,9 @@ else
 
     [Parameter]
     public string? LegendMaxText { get; set; }
+
+    [Parameter]
+    public bool ShowGradientLegend { get; set; } = true;
 
     [Parameter]
     public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }

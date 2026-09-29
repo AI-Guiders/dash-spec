@@ -3,18 +3,22 @@
 @using DashSpec.Core.Model
 @using DashSpec.Execution.Runtime
 @using DashSpec.Viz
+@implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
 
 @if (Context.Card.Matrix is not null)
 {
     var presentation = Context.Card.MatrixPresentation;
+    var cardId = Context.ResolveVizStateCardId();
     var spec = presentation ?? new MatrixPresentation();
-    var valueOverride = VizDisplayState.GetValueLabelsOverride(Context.Card.Id);
-    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(Context.Card.Id);
-    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(Context.Card.Id);
+    var valueOverride = VizDisplayState.GetValueLabelsOverride(cardId);
+    var axisXOverride = VizDisplayState.GetAxisLabelsXOverride(cardId);
+    var axisYOverride = VizDisplayState.GetAxisLabelsYOverride(cardId);
+    var legendOverride = VizDisplayState.GetLegendOverride(cardId);
     var showValues = VizLabelDisplayResolver.EffectiveValueLabelsVisible(spec.ValueLabels, valueOverride);
     var showAxisX = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
     var showAxisY = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
+    var showLegend = VizLabelDisplayResolver.EffectiveLegendVisible(spec.ShowsGradientLegend, legendOverride);
 
     <HeatmapView Payload="Context.Card.Matrix"
                  HeightPx="@spec.HeightPx"
@@ -30,8 +34,9 @@
                  ShowAxisLabelsX="@showAxisX"
                  ShowAxisLabelsY="@showAxisY"
                  ShowCellValues="@showValues"
-                 LegendMinText="@presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax)"
-                 LegendMaxText="@presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax)"
+                 ShowGradientLegend="@showLegend"
+                 LegendMinText="@(showLegend ? presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null)"
+                 LegendMaxText="@(showLegend ? presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null)"
                  Limits="Context.Card.MatrixLimits"
                  OversizeMessage="Context.Card.OversizeMessage"
                  OnCellSelected="Context.OnHeatmapCellSelected" />
@@ -39,4 +44,24 @@
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Context.ResolveVizStateCardId(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
 }

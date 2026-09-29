@@ -24,7 +24,7 @@ public sealed class HostExternalLinksProviderTests
                         "Админка агента",
                         "http://localhost:5280/admin/",
                         "_blank",
-                        true,
+                        false,
                         true),
                 ],
                 [],
@@ -46,7 +46,7 @@ public sealed class HostExternalLinksProviderTests
         Assert.Equal("Админка агента", link.Label);
         Assert.Equal("http://localhost:5280/admin/", link.Url);
         Assert.Equal("_blank", link.Target);
-        Assert.True(link.Topbar);
+        Assert.False(link.Topbar);
         Assert.True(link.Settings);
     }
 }

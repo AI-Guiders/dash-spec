@@ -5,6 +5,7 @@ public enum VizDisplayToggleKind
     ValueLabels,
     AxisLabelsX,
     AxisLabelsY,
+    Legend,
 }
 
 public static class VizCardDisplayActions
@@ -12,6 +13,7 @@ public static class VizCardDisplayActions
     public const string ToggleValueLabels = "toggle_viz_value_labels";
     public const string ToggleAxisLabelsX = "toggle_viz_axis_labels_x";
     public const string ToggleAxisLabelsY = "toggle_viz_axis_labels_y";
+    public const string ToggleLegend = "toggle_viz_legend";
 
     public const string LegacyToggleValueLabels = "toggle_matrix_value_labels";
     public const string LegacyToggleAxisLabelsX = "toggle_matrix_axis_labels_x";
@@ -33,6 +35,9 @@ public static class VizCardDisplayActions
             case LegacyToggleAxisLabelsY:
                 kind = VizDisplayToggleKind.AxisLabelsY;
                 return true;
+            case ToggleLegend:
+                kind = VizDisplayToggleKind.Legend;
+                return true;
             default:
                 kind = default;
                 return false;
@@ -45,6 +50,7 @@ public static class VizCardDisplayActions
             VizDisplayToggleKind.ValueLabels => ToggleValueLabels,
             VizDisplayToggleKind.AxisLabelsX => ToggleAxisLabelsX,
             VizDisplayToggleKind.AxisLabelsY => ToggleAxisLabelsY,
+            VizDisplayToggleKind.Legend => ToggleLegend,
             _ => ToggleValueLabels,
         };
 }

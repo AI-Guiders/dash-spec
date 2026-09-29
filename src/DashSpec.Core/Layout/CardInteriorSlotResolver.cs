@@ -10,21 +10,26 @@ internal static class CardInteriorSlotResolver
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
         ArgumentNullException.ThrowIfNull(card);
 
+        var slots = CardDiagramSlotCatalog.ResolveSlots(card);
+
         if (string.Equals(token, "diagram", StringComparison.OrdinalIgnoreCase))
         {
-            if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef))
+            if (slots.ContainsKey(CardInteriorSlots.Diagram))
+            {
+                return CardInteriorSlots.Diagram;
+            }
+
+            if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
+                slots.ContainsKey(card.DiagramSlotRef))
             {
                 throw new DashSpecParseException(
                     $"Card '{card.Id}' interior: use diagram ref '{card.DiagramSlotRef}' instead of reserved token 'diagram'.");
             }
-
-            return CardInteriorSlots.Diagram;
         }
 
-        if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
-            string.Equals(token, card.DiagramSlotRef, StringComparison.OrdinalIgnoreCase))
+        if (slots.ContainsKey(token))
         {
-            return CardInteriorSlots.Diagram;
+            return token;
         }
 
         var localFilterDefs = new List<FilterDefinition>();

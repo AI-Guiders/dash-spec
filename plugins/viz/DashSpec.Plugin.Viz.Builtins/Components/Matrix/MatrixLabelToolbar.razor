@@ -29,6 +29,16 @@
                @onchange="ToggleMatrixAxisLabelsYAsync" />
         <span>@AxisLabelsYCaption</span>
     </label>
+    @if (MatrixSpec?.ShowsGradientLegend == true)
+    {
+        <label class="card-matrix-toggle" title="@LegendTitle">
+            <input type="checkbox"
+                   checked="@MatrixLegendVisible"
+                   disabled="@Context.Card.Loading"
+                   @onchange="ToggleMatrixLegendAsync" />
+            <span>@LegendCaption</span>
+        </label>
+    }
 }
 
 @code {
@@ -51,6 +61,11 @@
             MatrixSpec?.AxisLabelsY ?? true,
             VizDisplayState.GetAxisLabelsYOverride(Context.Card.Id));
 
+    private bool MatrixLegendVisible =>
+        VizLabelDisplayResolver.EffectiveLegendVisible(
+            MatrixSpec?.ShowsGradientLegend == true,
+            VizDisplayState.GetLegendOverride(Context.Card.Id));
+
     private string ValueLabelsCaption =>
         MatrixSpec?.ToolbarValueLabels ?? Loc.T("Cell values");
 
@@ -66,6 +81,10 @@
 
     private string AxisLabelsYTitle => Loc.T("Toggle Y axis labels");
 
+    private string LegendCaption => Loc.T("Legend");
+
+    private string LegendTitle => Loc.T("Toggle gradient legend");
+
     private Task ToggleMatrixValueLabelsAsync() =>
         Context.OnCardAction.InvokeAsync(
             new CardActionRequest(Context.Card.Id, VizCardDisplayActions.ToggleValueLabels, new Dictionary<string, string>()));
@@ -77,4 +96,8 @@
     private Task ToggleMatrixAxisLabelsYAsync() =>
         Context.OnCardAction.InvokeAsync(
             new CardActionRequest(Context.Card.Id, VizCardDisplayActions.ToggleAxisLabelsY, new Dictionary<string, string>()));
+
+    private Task ToggleMatrixLegendAsync() =>
+        Context.OnCardAction.InvokeAsync(
+            new CardActionRequest(Context.Card.Id, VizCardDisplayActions.ToggleLegend, new Dictionary<string, string>()));
 }

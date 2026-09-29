@@ -115,10 +115,6 @@ module rec DashboardComposer =
 
                     filters.Add filter
 
-                    if filter.Kind <> FilterKind.Top
-                       && not (dashboardFilters |> Seq.exists (fun name -> String.Equals(name, filter.Name, StringComparison.OrdinalIgnoreCase))) then
-                        insertTabModuleDashboardFilter dashboardFilters filter.Name
-
                 for card in tabModule.Cards do
                     if cards |> Seq.exists (fun c -> String.Equals(c.Id, card.Id, StringComparison.OrdinalIgnoreCase)) then
                         raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares card '{card.Id}' already on parent dashboard."))

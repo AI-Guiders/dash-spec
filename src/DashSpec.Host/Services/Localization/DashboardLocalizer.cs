@@ -95,6 +95,8 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Toggle cell values"] = "Показать или скрыть цифры в ячейках",
             ["Toggle X axis labels"] = "Показать или скрыть подписи оси X",
             ["Toggle Y axis labels"] = "Показать или скрыть подписи оси Y",
+            ["Legend"] = "Легенда",
+            ["Toggle gradient legend"] = "Показать или скрыть градиентную легенду",
         };
 
     private static readonly IReadOnlyDictionary<string, string> _en =
@@ -177,5 +179,7 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
             ["Toggle cell values"] = "Show or hide cell values",
             ["Toggle X axis labels"] = "Show or hide X axis labels",
             ["Toggle Y axis labels"] = "Show or hide Y axis labels",
+            ["Legend"] = "Legend",
+            ["Toggle gradient legend"] = "Show or hide gradient legend",
         };
 }
