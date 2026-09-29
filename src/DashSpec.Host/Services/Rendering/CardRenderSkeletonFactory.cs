@@ -42,6 +42,9 @@ public static class CardRenderSkeletonFactory
             MatrixPresentation: kind.DataFamily is DiagramDataFamily.Matrix
                 ? MatrixPresentation.FromCard(effective, library)
                 : null,
+            TablePresentation: kind.DataFamily is DiagramDataFamily.Table
+                ? CompositionResolution.ResolveTablePresentation(effective, library)
+                : null,
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
@@ -101,6 +104,9 @@ public static class CardRenderSkeletonFactory
                 : null,
             MatrixPresentation: kind.DataFamily is DiagramDataFamily.Matrix
                 ? MatrixPresentation.FromCard(effective, library)
+                : null,
+            TablePresentation: kind.DataFamily is DiagramDataFamily.Table
+                ? CompositionResolution.ResolveTablePresentation(effective, library)
                 : null,
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,

@@ -501,4 +501,35 @@ public class ChartRuntimeTests
         Assert.Equal("#e11d48", payload.Series[0].PointColors![0]);
         Assert.Equal("#2563eb", payload.Series[0].PointColors![1]);
     }
+
+    [Fact]
+    public void TablePresentation_reads_width_density_and_column_filters_from_presentation()
+    {
+        var card = DashSpecParser.Parse("""
+
+            @dashboard t
+              report
+              title = "T"
+              card c as "C"
+              diagram table
+              columns = a, b
+              end table
+              presentation
+              width = content
+              density = compact
+              column_filters = false
+              height = 280
+              end presentation
+              datasource view dbo.t
+              end card
+              end report
+            end dashboard
+            """).Cards[0];
+
+        var presentation = CardChromeResolver.ResolveTablePresentation(card, library: null);
+        Assert.Equal(TableWidthMode.Content, presentation.Width);
+        Assert.Equal(TableDensity.Compact, presentation.Density);
+        Assert.False(presentation.ColumnFilters);
+        Assert.Equal(280, presentation.MaxHeightPx);
+    }
 }

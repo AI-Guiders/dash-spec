@@ -113,6 +113,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
         var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
             ? MatrixPresentation.FromCard(effective, library)
             : null;
+        var tablePresentation = kind.DataFamily is DiagramDataFamily.Table
+            ? CompositionResolution.ResolveTablePresentation(effective, library)
+            : null;
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
         var interiorPlacements = DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
         var localFilterChromePlacements = CardLocalFilterChromeCompactor.Compact(
@@ -225,6 +228,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
                     Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
                     Placement: card.Placement,
                     InteriorPlacements: interiorPlacements,
+                    TablePresentation: tablePresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour,
@@ -342,6 +346,9 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
                 var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
                     ? MatrixPresentation.FromCard(effective, library)
                     : null;
+                var tablePresentation = kind.DataFamily is DiagramDataFamily.Table
+                    ? CompositionResolution.ResolveTablePresentation(effective, library)
+                    : null;
                 var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix
                     ? CompositionResolution.ResolveSeriesTransform(effective, library)
                     : null;
@@ -353,7 +360,8 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
                         effective.Diagram.Kind,
                         kind.DataFamily,
                         renderPluginId,
-                        Table: ChartDataBuilder.BuildTable(rows, effective.Diagram)),
+                        Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
+                        TablePresentation: tablePresentation),
                     DiagramDataFamily.Matrix => new CardSlotRenderResult(
                         slotRef,
                         effective.Diagram.Kind,
