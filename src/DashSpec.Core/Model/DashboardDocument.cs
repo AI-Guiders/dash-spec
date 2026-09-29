@@ -106,6 +106,7 @@ public sealed record CardDefinition(
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,
     int? LocalFiltersApplySplitIndex = null,
+    LayoutBoardDefinition? LocalFiltersChromeBoard = null,
     CardVisibilityRule? Visibility = null,
     string? PhaseId = null,
     string? PageId = null,
