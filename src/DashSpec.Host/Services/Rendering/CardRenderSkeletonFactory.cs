@@ -4,6 +4,7 @@ using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Plugins;
 using DashSpec.Viz;
+using DashSpec.Core.Layout;
 using DashSpec.Host.Services.Presentation;
 
 namespace DashSpec.Host.Services.Rendering;
@@ -45,6 +46,9 @@ public static class CardRenderSkeletonFactory
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
             LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
+            LocalFilterChromePlacements: document is not null
+                ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
+                : null,
             MatrixLimits: card.MatrixLimits,
             OversizeMessage: card.OversizeMessage);
     }
@@ -102,6 +106,9 @@ public static class CardRenderSkeletonFactory
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
             LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
+            LocalFilterChromePlacements: document is not null
+                ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
+                : null,
             MatrixLimits: card.MatrixLimits,
             OversizeMessage: card.OversizeMessage);
     }

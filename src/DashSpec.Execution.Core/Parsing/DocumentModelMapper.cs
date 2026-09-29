@@ -130,6 +130,7 @@ internal static class DocumentModelMapper
             card.ExtensionBlocks.Select(ToCore).ToList(),
             card.LocalFiltersManualApply,
             MapOptional(card.LocalFiltersApplySplitIndex, static x => x),
+            MapOptional(card.LocalFiltersChromeBoard, ToCore),
             MapOptional(card.Visibility, ToCore),
             FirstOrNull(card.PhaseId),
             FirstOrNull(card.PageId),

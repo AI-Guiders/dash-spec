@@ -1,5 +1,6 @@
 @namespace DashSpec.Host.Components.Dashboard
 @using DashSpec.Core.Layout
+@using static DashSpec.Core.Layout.CardLocalFilterChromeCompactor
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Host.Components.Filters
@@ -31,22 +32,25 @@
             <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
             @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
             {
-                <div class="card-head-toolbar-filters">
+                <div class="@CardHeadFiltersClass"
+                     style="@CardHeadFiltersGridStyle">
                     @foreach (var filterName in LocalFiltersBeforeApply)
                     {
-                        @RenderLocalFilter(filterName, placementStyle: null)
+                        @RenderLocalFilterChromeSlot(filterName)
                     }
                     @if (ShowLocalApplyButton)
                     {
-                        <button class="secondary card-filter-apply"
-                                disabled="@Card.Loading"
-                                @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                            @Loc.T("Apply")
-                        </button>
+                        <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
+                            <button class="secondary card-filter-apply"
+                                    disabled="@Card.Loading"
+                                    @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                                @Loc.T("Apply")
+                            </button>
+                        </div>
                     }
                     @foreach (var filterName in LocalFiltersAfterApply)
                     {
-                        @RenderLocalFilter(filterName, placementStyle: null)
+                        @RenderLocalFilterChromeSlot(filterName)
                     }
                 </div>
             }
@@ -506,6 +510,39 @@
 
     private IEnumerable<string> LocalFiltersAfterApply =>
         OrderedLocalFilters.Skip(LocalFiltersApplySplit);
+
+    private bool UsesLocalFilterChromeGrid =>
+        Card.LocalFilterChromePlacements is { Count: > 0 };
+
+    private string CardHeadFiltersClass =>
+        UsesLocalFilterChromeGrid
+            ? "card-head-toolbar-filters card-head-toolbar-filters--grid"
+            : "card-head-toolbar-filters";
+
+    private string CardHeadFiltersGridStyle =>
+        UsesLocalFilterChromeGrid
+            ? DashboardLayoutHelper.CardInteriorGridStyle(new LayoutDefinition(GridColumns, 0))
+            : string.Empty;
+
+    private string LocalFilterChromeStyle(string slotId) =>
+        UsesLocalFilterChromeGrid &&
+        Card.LocalFilterChromePlacements!.TryGetValue(slotId, out var placement)
+            ? DashboardLayoutHelper.CardInteriorSlotStyle(placement, GridColumns)
+            : string.Empty;
+
+    private RenderFragment RenderLocalFilterChromeSlot(string filterName) => __builder =>
+    {
+        if (UsesLocalFilterChromeGrid)
+        {
+            <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(filterName)">
+                @RenderLocalFilter(filterName, placementStyle: null)
+            </div>
+        }
+        else
+        {
+            @RenderLocalFilter(filterName, placementStyle: null)
+        }
+    };
 
     private string InteriorSlotStyle(string slotKey)
     {

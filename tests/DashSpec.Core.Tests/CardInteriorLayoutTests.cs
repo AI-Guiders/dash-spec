@@ -1,5 +1,6 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Model;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -228,6 +229,46 @@ public class CardInteriorLayoutTests
         Assert.True(card.LocalFiltersManualApply);
         Assert.Equal(1, card.LocalFiltersApplySplitIndex);
         Assert.Equal(["usage_date", "app_name"], card.LocalFilters);
+    }
+
+    [Fact]
+    public void Card_local_filters_layout_board_assigns_weighted_chrome_spans()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              layout grid
+              columns = 12
+              end grid
+              defaults
+                filter.usage_date.range = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
+              filter field app_name on dbo.t.app as "App" widget combobox
+              card peak as "Peak"
+              filters
+                usage_date
+                apply = manual
+                app_name
+                layout
+                  [ usage_date:2 apply:1 app_name:5 ]
+                end layout
+              end filters
+              diagram ref H heatmap
+              end heatmap
+              datasource view dbo.t
+              bind usage_date, app_name
+              end card
+              end report
+            end dashboard
+            """);
+
+        var card = doc.Cards.Single();
+        var chrome = CardLocalFilterChromeCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
+        Assert.Equal(new PlacementDefinition(1, 1, 3), chrome["usage_date"]);
+        Assert.Equal(new PlacementDefinition(1, 4, 1), chrome["apply"]);
+        Assert.Equal(new PlacementDefinition(1, 5, 8), chrome["app_name"]);
     }
 
 }

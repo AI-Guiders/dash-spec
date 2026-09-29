@@ -88,10 +88,15 @@ module CardParser =
         let mutable manualApply = false
         let mutable applySplitIndex = None
         let mutable namesBeforeApply = 0
+        let chromeBoard = ref None
 
         while not (BlockSyntax.isBlockEnd reader "filters" None) && not reader.IsEof do
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader "filters" None then ()
+            elif reader.TryKeyword "layout" then
+                if chromeBoard.Value.IsSome then
+                    raise (DashSpecParseException($"Card '{cardId}': duplicate filters layout block."))
+                chromeBoard.Value <- Some(LayoutParser.parseBoard reader)
             elif reader.TryKeyword "apply" then
                 reader.Expect TokenKind.Eq
                 let mode = reader.ReadIdent()
@@ -112,7 +117,7 @@ module CardParser =
         BlockSyntax.expectBlockEnd reader "filters" None
         if names.Count = 0 then
             raise (DashSpecParseException($"Card '{cardId}': filters block requires at least one filter name."))
-        names :> IReadOnlyList<_>, manualApply, applySplitIndex
+        names :> IReadOnlyList<_>, manualApply, applySplitIndex, chromeBoard.Value
 
     let private parseDataBlock
         (reader: TokenReader)
@@ -373,6 +378,7 @@ module CardParser =
         let extensionBlocks = ResizeArray<ExtensionBlockNode>()
         let mutable localFiltersManualApply = false
         let mutable localFiltersApplySplitIndex : int option = None
+        let mutable localFiltersChromeBoard : LayoutBoardDefinition option = None
         let includeFragment = ref SpecIncludeFragmentResolver.emptyFragment
         let inspect = ref None
         let tooltip = ref None
@@ -462,10 +468,11 @@ module CardParser =
                 elif reader.IsOnNewline()
                      || (reader.TryPeekIdent().IsSome
                          && String.Equals(reader.TryPeekIdent().Value, "apply", StringComparison.OrdinalIgnoreCase)) then
-                    let names, manualApply, applySplit = parseLocalFiltersBlock reader id
+                    let names, manualApply, applySplit, chromeBoard = parseLocalFiltersBlock reader id
                     localFilters.AddRange(names)
                     localFiltersManualApply <- manualApply
                     localFiltersApplySplitIndex <- applySplit
+                    localFiltersChromeBoard <- chromeBoard
                 else
                     localFilters.AddRange(reader.ReadCommaListInline())
                 reader.SkipNewlines()
@@ -649,6 +656,7 @@ module CardParser =
           ExtensionBlocks = extensionBlocks :> IReadOnlyList<_>
           LocalFiltersManualApply = localFiltersManualApply
           LocalFiltersApplySplitIndex = localFiltersApplySplitIndex
+          LocalFiltersChromeBoard = localFiltersChromeBoard
           Visibility = visibility.Value
           PhaseId = phaseId
           PageId = pageId

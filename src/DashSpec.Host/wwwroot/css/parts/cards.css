@@ -153,6 +153,32 @@
   min-width: 0;
 }
 
+.card-head-toolbar-filters--grid {
+  display: grid;
+  flex-wrap: unset;
+  align-items: center;
+  grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, 1fr));
+}
+
+.card-head-filter-slot {
+  min-width: 0;
+}
+
+.card-head-toolbar-filters--grid .filter-field {
+  flex: unset;
+  max-width: none;
+  width: 100%;
+}
+
+.card-head-toolbar-filters--grid .filter-date {
+  min-width: 0;
+  width: 100%;
+}
+
+.card-head-toolbar-filters--grid .card-filter-apply {
+  width: 100%;
+}
+
 .card-head-toolbar-filters .card-filter-apply {
   margin-left: 0;
 }
