@@ -190,6 +190,19 @@
 
     private string _search = string.Empty;
     private bool _open;
+    private int _optionsCount;
+
+    protected override void OnParametersSet()
+    {
+        if (_optionsCount != Options.Count)
+        {
+            _optionsCount = Options.Count;
+            if (_open && Options.Count > 0)
+            {
+                _ = InvokeAsync(StateHasChanged);
+            }
+        }
+    }
 
     private IEnumerable<string> FilteredOptions =>
         string.IsNullOrWhiteSpace(_search)

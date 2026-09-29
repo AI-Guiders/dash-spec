@@ -70,7 +70,8 @@
                                 CssClass="@FilterCellClass(filter)"
                                 Style="@placementStyle">
 
-                <FilterWidgetHost Filter="filter"
+                <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
+                                  Filter="filter"
 
                                   Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
 
@@ -151,6 +152,8 @@
     [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+
+    [Parameter] public int FieldOptionsRevision { get; set; }
 
     [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
 

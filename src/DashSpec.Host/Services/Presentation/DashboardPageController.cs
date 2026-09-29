@@ -104,6 +104,9 @@ public sealed class DashboardPageController : IDisposable
     }
 
     public bool Loaded { get; private set; }
+
+    /// <summary>Bumped after background distinct-value load so card filter widgets refresh.</summary>
+    public int FieldOptionsRevision { get; private set; }
     public bool Busy => _refresh.Busy;
     public bool Switching { get; private set; }
     public string? Error { get; private set; }
@@ -270,6 +273,7 @@ public sealed class DashboardPageController : IDisposable
             sw.Stop();
             trace.Step("load", sw.ElapsedMilliseconds, true);
             trace.Succeed();
+            FieldOptionsRevision++;
             Notify();
         }
         catch (Exception ex)

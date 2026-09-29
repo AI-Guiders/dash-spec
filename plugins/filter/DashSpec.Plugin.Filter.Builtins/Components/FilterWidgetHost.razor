@@ -5,7 +5,9 @@
 
 @if (_componentType is not null)
 {
-    <DynamicComponent Type="_componentType" Parameters="_parameters" />
+    <DynamicComponent @key="@($"{Filter.Name}:{Options.Count}")"
+                      Type="_componentType"
+                      Parameters="_parameters" />
 }
 
 @code {
