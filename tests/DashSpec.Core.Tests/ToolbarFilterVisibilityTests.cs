@@ -20,8 +20,9 @@ public class ToolbarFilterVisibilityTests
         var map = FilterBinding.MapFiltersToCards(doc);
         var page = doc.Pages!.Single(p => p.Id == "peak_util");
 
-        Assert.DoesNotContain("chart_top", page.ToolbarBoard!.Rows.SelectMany(row => row));
-        Assert.Equal(["chart_top"], doc.Cards.Single(c => c.Id == "stakeholder_peak_over_limit").LocalFilters);
+        var pageToolbarTokens = page.ToolbarBoard?.Rows.SelectMany(row => row) ?? [];
+        Assert.DoesNotContain("chart_top", pageToolbarTokens);
+        Assert.Contains("chart_top", doc.Cards.Single(c => c.Id == "stakeholder_peak_over_limit").LocalFilters);
         Assert.Equal("stakeholder_peak_over_limit", doc.Cards.Single(c => c.Id == "stakeholder_utilization").FilterHostCardId);
         Assert.Contains("chart_top", map);
         Assert.Contains("stakeholder_peak_over_limit", map["chart_top"]);

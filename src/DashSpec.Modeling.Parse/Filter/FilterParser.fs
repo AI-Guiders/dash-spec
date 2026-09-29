@@ -41,8 +41,31 @@ module FilterParser =
                 | Some value when not (target.ContainsKey key) -> target.[key] <- value
                 | _ -> ()
 
-        mergeInto bindProps [ "column"; "min"; "max"; "grain_filter"; "single" ]
+        mergeInto bindProps [ "column"; "min"; "max"; "limit"; "range"; "grain_filter"; "single" ]
         mergeInto showProps [ "widget"; "ref"; "grain_filter" ]
+
+    let private resolveDefaultExpression
+        (kind: FilterKind)
+        (name: string)
+        (bindProps: IReadOnlyDictionary<string, string>)
+        (resolveProperty: string -> string -> string option)
+        =
+        match resolveInitialExpression kind name resolveProperty with
+        | Some expr -> Some expr
+        | None ->
+            match kind with
+            | FilterKind.Date ->
+                match bindProps.TryGetValue "range" with
+                | true, value -> Some value
+                | false, _ -> None
+            | FilterKind.Top ->
+                match bindProps.TryGetValue "limit" with
+                | true, value -> Some value
+                | false, _ -> None
+            | FilterKind.Field ->
+                match bindProps.TryGetValue "value" with
+                | true, value -> Some value
+                | false, _ -> None
 
     type private StructuredBindParse =
         { Properties: Dictionary<string, string>
@@ -333,7 +356,7 @@ module FilterParser =
                 rejectInlineDefault name
 
             applyScopeDefaults name bindProps showProps resolveProperty
-            let defaultExpression = resolveInitialExpression resolvedKind name resolveProperty
+            let defaultExpression = resolveDefaultExpression resolvedKind name bindProps resolveProperty
 
             let columnReference =
                 match bindProps.TryGetValue "column" with
@@ -578,7 +601,7 @@ module FilterParser =
                 | true, value -> Some value
                 | false, _ -> None
 
-        let defaultExpression = resolveInitialExpression kind name resolveProperty
+        let defaultExpression = resolveDefaultExpression kind name props resolveProperty
 
         let label = resolveFilterLabel name kind props declarationLabel (labelFromOn |> Option.orElse trailingLabel)
 

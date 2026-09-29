@@ -1087,5 +1087,11 @@ public class DashboardFilterCommandTests
 
         public Task<DashSpec.Viz.CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<IReadOnlyDictionary<string, DashSpec.Viz.CardSlotRenderResult>> RenderInteriorSlotsAsync(
+            CardDefinition card,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyDictionary<string, DashSpec.Viz.CardSlotRenderResult>>(
+                new Dictionary<string, DashSpec.Viz.CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase));
     }
 }

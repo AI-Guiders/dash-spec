@@ -15,6 +15,9 @@ public sealed class CardVizDisplayStateService : ICardVizDisplayState
     private readonly Dictionary<string, bool?> _axisLabelsY =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, bool?> _legend =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public bool? GetValueLabelsOverride(string cardId) =>
         TryGet(_valueLabels, cardId);
 
@@ -23,6 +26,9 @@ public sealed class CardVizDisplayStateService : ICardVizDisplayState
 
     public bool? GetAxisLabelsYOverride(string cardId) =>
         TryGet(_axisLabelsY, cardId);
+
+    public bool? GetLegendOverride(string cardId) =>
+        TryGet(_legend, cardId);
 
     public void SetValueLabelsOverride(string cardId, bool? visible) =>
         Set(_valueLabels, cardId, visible);
@@ -33,6 +39,9 @@ public sealed class CardVizDisplayStateService : ICardVizDisplayState
     public void SetAxisLabelsYOverride(string cardId, bool? visible) =>
         Set(_axisLabelsY, cardId, visible);
 
+    public void SetLegendOverride(string cardId, bool? visible) =>
+        Set(_legend, cardId, visible);
+
     public void ToggleValueLabels(string cardId, bool currentlyVisible) =>
         SetValueLabelsOverride(cardId, !currentlyVisible);
 
@@ -42,11 +51,15 @@ public sealed class CardVizDisplayStateService : ICardVizDisplayState
     public void ToggleAxisLabelsY(string cardId, bool currentlyVisible) =>
         SetAxisLabelsYOverride(cardId, !currentlyVisible);
 
+    public void ToggleLegend(string cardId, bool currentlyVisible) =>
+        SetLegendOverride(cardId, !currentlyVisible);
+
     public void ClearAll()
     {
         _valueLabels.Clear();
         _axisLabelsX.Clear();
         _axisLabelsY.Clear();
+        _legend.Clear();
     }
 
     private static bool? TryGet(Dictionary<string, bool?> store, string cardId) =>

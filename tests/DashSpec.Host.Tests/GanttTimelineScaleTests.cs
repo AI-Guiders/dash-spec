@@ -41,8 +41,9 @@ public class GanttTimelineScaleTests
     [Fact]
     public void TodayLeftPercent_inside_axis_returns_percent()
     {
-        var start = DateTime.Today.AddHours(8);
-        var end = DateTime.Today.AddHours(18);
+        var now = DateTime.UtcNow;
+        var start = now.AddHours(-2);
+        var end = now.AddHours(2);
         var left = GanttTimelineScale.TodayLeftPercent(start, end);
 
         Assert.NotNull(left);
