@@ -155,8 +155,11 @@
 
 .card-head-toolbar-filters--grid {
   display: grid;
+  flex: 1 1 36rem;
   flex-wrap: unset;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
   grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, 1fr));
 }
 
@@ -168,10 +171,22 @@
   flex: unset;
   max-width: none;
   width: 100%;
+  min-width: 0;
 }
 
 .card-head-toolbar-filters--grid .filter-date {
   min-width: 0;
+  width: 100%;
+}
+
+.card-head-toolbar-filters--grid .field-combobox {
+  min-width: 0;
+  width: 100%;
+}
+
+.card-head-toolbar-filters--grid .combobox-trigger {
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
 }
 
