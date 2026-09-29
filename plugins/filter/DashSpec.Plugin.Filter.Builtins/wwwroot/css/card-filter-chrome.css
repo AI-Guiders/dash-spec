@@ -32,3 +32,18 @@
   max-width: 100%;
   width: 100%;
 }
+
+.card-filter-apply {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.card-head-toolbar-filters--grid .card-filter-apply,
+.card-filters-local.card-head-toolbar-filters--grid .card-filter-apply {
+  width: 100%;
+  margin-left: 0;
+}
+
+.card-head-toolbar-filters .card-filter-apply {
+  margin-left: 0;
+}

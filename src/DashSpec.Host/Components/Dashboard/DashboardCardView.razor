@@ -9,6 +9,7 @@
 @using DashSpec.Host.Plugins.Builtins
 @using DashSpec.Host.Services.Presentation
 @using DashSpec.Host.Services.Localization
+@using DashSpec.Plugin.Filter.Builtins.Components
 @inject DashboardLocalizer Loc
 @implements IDisposable
 
@@ -621,11 +622,9 @@
         if (string.Equals(slotId, ApplySlotId, StringComparison.OrdinalIgnoreCase))
         {
             <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
-                <button class="secondary card-filter-apply"
-                        disabled="@Card.Loading"
-                        @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                    @Loc.T("Apply")
-                </button>
+                <CardManualApplyButton Label="@Loc.T("Apply")"
+                                       Disabled="@Card.Loading"
+                                       OnApply="() => OnApplyCard.InvokeAsync(Card.Id)" />
             </div>
             return;
         }
