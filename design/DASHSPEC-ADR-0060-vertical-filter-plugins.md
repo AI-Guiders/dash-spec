@@ -16,7 +16,7 @@ Toolbar/card placement already uses `.dashlayout` with `scope toolbar|tab|card` 
 
 1. **`DashSpec.Filters`** — `FilterWidgetRenderContext` (host → plugin): filter definition, labels, options, selected values, date maps, callbacks. No SQL compile in plugins.
 2. **`plugins/filter/DashSpec.Plugin.Filter.Builtins`** — RCL; `filter_widgets_builtin` registers `RegisterFilterWidgetComponent(widgetId, typeof(...))` for combobox, select, chips, day, range, top.
-3. **Host** — `FilterWidgetHost` is a thin `DynamicComponent` slot (like `CardVisualization`). `FilterWidgetRegistry` resolves widget id → component type. Card-head **grid shell** (weighted row, slots) remains host (`cards.css`); **widget fit** in that chrome (combobox, date range) ships with `DashSpec.Plugin.Filter.Builtins` (`card-filter-chrome.css`), same pattern as viz toolbar toggles in `matrix-canvas.css`.
+3. **Host** — `FilterWidgetHost` is a thin `DynamicComponent` slot (like `CardVisualization`). `FilterWidgetRegistry` resolves widget id → component type. Card-head **grid shell** (weighted row, slots) remains host (`cards.css`); **filter chrome** (widgets, manual **Apply**, `card-filter-chrome.css`, `CardManualApplyButton`) ships with `DashSpec.Plugin.Filter.Builtins`, same pattern as viz toolbar toggles in `matrix-canvas.css`.
 4. **Execution unchanged** — filter state and queries stay in Core/Execution; viz still receives filtered `CardRenderResult`, not live toolbar state (unless a future narrow snapshot is added).
 
 ## Consequences
