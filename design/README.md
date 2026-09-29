@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0058**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0065**.
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -65,3 +65,8 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0055](DASHSPEC-ADR-0055-gantt-timeline-renderer.md) | Gantt timeline renderer | Accepted |
 | [0056](DASHSPEC-ADR-0056-layout-card-groups.md) | Layout card groups (GroupBox) | Accepted |
 | [0057](DASHSPEC-ADR-0057-resolution-registry.md) | Resolution registry — SSOT precedence | Accepted |
+| [0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md) | Vertical filter widget plugins | Accepted |
+| [0061](DASHSPEC-ADR-0061-layout-board-weights-and-filter-place.md) | Layout board weights + filter place | Accepted |
+| [0062](DASHSPEC-ADR-0062-viz-axis-presentation.md) | Viz axis presentation | Accepted |
+| [0063](DASHSPEC-ADR-0063-layout-board-nest.md) | Layout board nest | Accepted |
+| [0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md) | Cell drill via table + tabular payload | Accepted (pilot) |
