@@ -441,17 +441,63 @@ internal sealed class TokenReader
         };
     }
 
-    /// <summary>Reads scalar tokens until newline/EOF — does not cross line boundaries.</summary>
+    /// <summary>Reads tokens until newline/EOF — does not cross line boundaries (includes commas in SQL fragments).</summary>
     public string ReadRestOfLine()
     {
         var parts = new List<string>();
-        while (Current.Kind is TokenKind.Ident or TokenKind.Raw)
+        while (!IsOnNewline() && !IsEof)
         {
-            parts.Add(Current.Value);
+            switch (Current.Kind)
+            {
+                case TokenKind.Comma:
+                    parts.Add(",");
+                    break;
+                case TokenKind.Ident:
+                case TokenKind.Raw:
+                case TokenKind.String:
+                    parts.Add(Current.Value);
+                    break;
+                default:
+                    return FormatRestOfLine(parts);
+            }
+
             _index++;
         }
 
-        return string.Join(' ', parts);
+        return FormatRestOfLine(parts);
+    }
+
+    private static string FormatRestOfLine(List<string> parts)
+    {
+        if (parts.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var result = new System.Text.StringBuilder();
+        foreach (var part in parts)
+        {
+            if (part == ",")
+            {
+                result.Append(',');
+            }
+            else if (result.Length == 0)
+            {
+                result.Append(part);
+            }
+            else if (result[^1] == ',')
+            {
+                result.Append(' ');
+                result.Append(part);
+            }
+            else
+            {
+                result.Append(' ');
+                result.Append(part);
+            }
+        }
+
+        return result.ToString();
     }
 
     public DashSpecParseException Unexpected(string? expected = null)
