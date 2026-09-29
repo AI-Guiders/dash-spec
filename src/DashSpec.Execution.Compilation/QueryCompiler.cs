@@ -323,18 +323,30 @@ public static class QueryCompiler
         return $"({rawSql.Trim().TrimEnd(';')}) AS _dashspec_q";
     }
 
-    public static string BuildDistinctFieldSql(FilterDefinition filter)
+    /// <summary>Field filters need <c>table.column</c> to query DISTINCT options (wire-only / click-set filters may omit the table).</summary>
+    public static bool CanLoadDistinctFieldOptions(FilterDefinition filter)
     {
         if (filter.Kind is not FilterKind.Field || string.IsNullOrWhiteSpace(filter.ColumnReference))
         {
-            throw new ArgumentException("Field filter requires column reference.", nameof(filter));
+            return false;
         }
 
         var lastDot = filter.ColumnReference.LastIndexOf('.');
-        if (lastDot <= 0)
+        return lastDot > 0 && lastDot < filter.ColumnReference.Length - 1;
+    }
+
+    public static string BuildDistinctFieldSql(FilterDefinition filter)
+    {
+        if (!CanLoadDistinctFieldOptions(filter))
         {
-            throw new ArgumentException($"Invalid column reference '{filter.ColumnReference}'.", nameof(filter));
+            throw new ArgumentException(
+                filter.Kind is not FilterKind.Field || string.IsNullOrWhiteSpace(filter.ColumnReference)
+                    ? "Field filter requires column reference."
+                    : $"Invalid column reference '{filter.ColumnReference}'.",
+                nameof(filter));
         }
+
+        var lastDot = filter.ColumnReference.LastIndexOf('.');
 
         var table = filter.ColumnReference[..lastDot];
         var column = filter.ColumnReference[(lastDot + 1)..];
