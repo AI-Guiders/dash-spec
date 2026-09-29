@@ -76,6 +76,10 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             : null;
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
         var interiorPlacements = DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
+        var localFilterChromePlacements = CardLocalFilterChromeCompactor.Compact(
+            card,
+            document.Filters,
+            document.Layout.Columns);
         var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(card);
 
         var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
@@ -91,10 +95,13 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             primarySlotRef,
             cancellationToken).ConfigureAwait(false);
 
-        CardRenderResult AttachSlots(CardRenderResult result) =>
-            interiorSlotRenders.Count == 0
+        CardRenderResult AttachSlots(CardRenderResult result)
+        {
+            result = result with { LocalFilterChromePlacements = localFilterChromePlacements };
+            return interiorSlotRenders.Count == 0
                 ? result
                 : result with { InteriorSlotRenders = interiorSlotRenders };
+        }
 
         if (kind.DataFamily is DiagramDataFamily.Scalar)
         {
