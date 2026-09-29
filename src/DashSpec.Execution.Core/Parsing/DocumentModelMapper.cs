@@ -120,9 +120,16 @@ internal static class DocumentModelMapper
             ToListOrNull(card.HostedFilters),
             MapOptional(card.InteriorBoard, ToCore),
             FirstOrNull(card.DiagramSlotRef),
+            card.DiagramSlots.Count == 0
+                ? null
+                : card.DiagramSlots.ToDictionary(
+                    static kv => kv.Key,
+                    static kv => ToCore(kv.Value),
+                    StringComparer.OrdinalIgnoreCase),
             MapOptional(card.ClickBehaviour, ToCore),
             card.ExtensionBlocks.Select(ToCore).ToList(),
             card.LocalFiltersManualApply,
+            MapOptional(card.LocalFiltersApplySplitIndex, static x => x),
             MapOptional(card.Visibility, ToCore),
             FirstOrNull(card.PhaseId),
             FirstOrNull(card.PageId),
@@ -131,6 +138,16 @@ internal static class DocumentModelMapper
             MapOptional(card.Chrome, ToCore),
             MapOptional(card.Inspect, ToCore),
             MapOptional(card.Tooltip, ToCoreTooltip));
+
+    private static CardDiagramSlotDefinition ToCore(FsharpCard.CardDiagramSlot slot) =>
+        new(
+            slot.SlotRef,
+            ToCore(slot.Diagram),
+            ToCore(slot.DataSource),
+            slot.BoundFilters.ToList(),
+            MapOptional(slot.Legend, ToCore),
+            MapOptional(slot.Presentation, ToCore),
+            MapOptional(slot.SeriesTransform, ToCore));
 
     private static LegendDefinition ToCore(FsharpCard.LegendDefinition legend) =>
         new(

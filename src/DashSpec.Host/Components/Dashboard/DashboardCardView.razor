@@ -32,7 +32,7 @@
             @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
             {
                 <div class="card-head-toolbar-filters">
-                    @foreach (var filterName in OrderedLocalFilters)
+                    @foreach (var filterName in LocalFiltersBeforeApply)
                     {
                         @RenderLocalFilter(filterName, placementStyle: null)
                     }
@@ -43,6 +43,10 @@
                                 @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
                             @Loc.T("Apply")
                         </button>
+                    }
+                    @foreach (var filterName in LocalFiltersAfterApply)
+                    {
+                        @RenderLocalFilter(filterName, placementStyle: null)
                     }
                 </div>
             }
@@ -116,7 +120,7 @@
                 @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
                 {
                     <div class="card-filters card-filters-local">
-                        @foreach (var filterName in Card.LocalFilters)
+                        @foreach (var filterName in LocalFiltersBeforeApply)
                         {
                             @RenderLocalFilter(filterName, placementStyle: null)
                         }
@@ -127,6 +131,10 @@
                                     @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
                                 @Loc.T("Apply")
                             </button>
+                        }
+                        @foreach (var filterName in LocalFiltersAfterApply)
+                        {
+                            @RenderLocalFilter(filterName, placementStyle: null)
                         }
                     </div>
                 }
@@ -149,28 +157,29 @@
             <p>@Card.VisibilityMessage</p>
         </div>
     }
-    else if (UsesInteriorLayout)
-    {
-        <div class="card-interior-grid" style="@InteriorGridStyle">
-            <div class="card-diagram-slot" style="@DiagramSlotStyle">
-                <div class="card-viz-stack">
-                    <CardVisualization Card="Card"
-                                       MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                                       MatrixMax="@(Card.Matrix?.Max ?? 0)"
-                                       OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
-                    @RenderSelectionDetail()
-                </div>
-            </div>
-        </div>
-    }
     else
     {
-        <div class="card-viz-stack">
-            <CardVisualization Card="Card"
-                               MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                               MatrixMax="@(Card.Matrix?.Max ?? 0)"
-                               OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
-            @RenderSelectionDetail()
+        <div class="card-interior-grid" style="@InteriorGridStyle">
+            @foreach (var slot in OrderedInteriorSlots)
+            {
+                <div class="card-interior-slot @(IsDiagramInteriorSlot(slot.Key) ? "card-diagram-slot" : "card-filter-slot")"
+                     style="@InteriorSlotStyle(slot.Key)">
+                    @if (Card.InteriorSlotRenders?.ContainsKey(slot.Key) == true)
+                    {
+                        <CardSlotVisualization Card="Card" Slot="@Card.InteriorSlotRenders[slot.Key]" />
+                    }
+                    else
+                    {
+                        <div class="card-viz-stack">
+                            <CardVisualization Card="Card"
+                                               MatrixMin="@(Card.Matrix?.Min ?? 0)"
+                                               MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                                               OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+                            @RenderSelectionDetail()
+                        </div>
+                    }
+                </div>
+            }
         </div>
     }
 </article>
@@ -397,7 +406,17 @@
             };
     }
 
-    private bool UsesInteriorLayout => DashboardLayoutHelper.UsesInteriorLayout(Card);
+    private bool UsesInteriorLayout => Card.InteriorPlacements is { Count: > 0 };
+
+    private IEnumerable<KeyValuePair<string, PlacementDefinition>> OrderedInteriorSlots =>
+        Card.InteriorPlacements is null
+            ? []
+            : Card.InteriorPlacements
+                .OrderBy(static kv => kv.Value.Row)
+                .ThenBy(static kv => kv.Value.Col);
+
+    private static bool IsDiagramInteriorSlot(string slotKey) =>
+        !string.IsNullOrWhiteSpace(slotKey);
 
     private string CardCssClass
     {
@@ -424,7 +443,12 @@
         Interactions.ResolveShowEffect(Card.ClickBehaviour);
 
     private ShowSelectionEffect? EffectiveShowSelection =>
-        ShowSelection ?? (Card.Matrix is not null ? MatrixDefaultShowSelection : null);
+        ShowSelection ?? (Card.Matrix is not null && !HasInlineDrillTableSlot()
+            ? MatrixDefaultShowSelection
+            : null);
+
+    private bool HasInlineDrillTableSlot() =>
+        Card.InteriorSlotRenders?.Values.Any(static slot => slot.DataFamily is DiagramDataFamily.Table) == true;
 
     private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
         new(ShowPlacement.Below, ShowFormat.Kv, ShowSource.Cell, CopyFriendly: true);
@@ -464,7 +488,6 @@
     private string InteriorGridStyle => DashboardLayoutHelper.CardInteriorGridStyle(
         new LayoutDefinition(GridColumns, 0));
 
-    private string DiagramSlotStyle => InteriorSlotStyle(CardInteriorSlots.Diagram);
 
     private IEnumerable<string> OrderedLocalFilters =>
         Card.LocalFilters is null or { Count: 0 }
@@ -474,6 +497,15 @@
                     .OrderBy(name => Card.InteriorPlacements!.GetValueOrDefault(name)?.Row ?? 0)
                     .ThenBy(name => Card.InteriorPlacements!.GetValueOrDefault(name)?.Col ?? 0)
                 : Card.LocalFilters;
+
+    private int LocalFiltersApplySplit =>
+        Card.LocalFiltersApplySplitIndex ?? Card.LocalFilters?.Count ?? 0;
+
+    private IEnumerable<string> LocalFiltersBeforeApply =>
+        OrderedLocalFilters.Take(LocalFiltersApplySplit);
+
+    private IEnumerable<string> LocalFiltersAfterApply =>
+        OrderedLocalFilters.Skip(LocalFiltersApplySplit);
 
     private string InteriorSlotStyle(string slotKey)
     {

@@ -30,6 +30,7 @@ public sealed record CardRenderResult(
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,
+    int? LocalFiltersApplySplitIndex = null,
     bool IsVisibilityPlaceholder = false,
     string? VisibilityMessage = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,
@@ -37,7 +38,8 @@ public sealed record CardRenderResult(
     string? FilterLinkHint = null,
     string? FilterLinkCssClass = null,
     string? TopFilterScopeHint = null,
-    bool ShowChromeTitle = true)
+    bool ShowChromeTitle = true,
+    IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 
