@@ -185,16 +185,17 @@
   flex: 0 1 auto;
   flex-wrap: unset;
   align-items: center;
-  width: fit-content;
   max-width: 100%;
   min-width: 0;
   margin-left: 0;
   margin-right: auto;
-  grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, max-content));
+  overflow: visible;
+  grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, 1fr));
 }
 
 .card-head-filter-slot {
   min-width: 0;
+  overflow: visible;
 }
 
 .card-head-toolbar-filters--grid .filter-field {
