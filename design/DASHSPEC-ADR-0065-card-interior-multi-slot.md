@@ -57,6 +57,22 @@ end layout
 
 Remove drill card from overview layout.
 
+## Composition contract (host grid, plugin fill)
+
+**Host** only materializes **bracket grids** and passes **named cells** to renderers:
+
+| Grid | Who declares tokens | Who renders into a cell |
+|------|---------------------|-------------------------|
+| Tab / page board | `.dashlayout` | Card shell (one cell = one card chrome + interior root) |
+| Card `filters layout` | Spec weights (`usage_date:2 apply:1 …`) | Filter plugin widgets + manual Apply ([ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md)) |
+| Card `layout { }` interior | Spec rows (`[ heatmap ]`, `[ drill ]`) | Viz plugin per `diagram ref` / `InteriorSlotRenders` |
+
+**Spec / Core** answer: «это карточка, у меня N слотов» (boards + binds + click) and «это диаграмма, я в слот `drill`» (`data for`, `diagram ref`).
+
+**Plugins** answer: «я занимаю слот X» — filter widget id or viz renderer id; no filter/diagram semantics in Host beyond iterating placements and wiring session callbacks.
+
+Target: Host does not grow product UI (Apply, combobox chrome, matrix toggles) — only `FilterWidgetHost`, `CardVisualization`, `CardSlotVisualization`, and grid CSS shell.
+
 ## Non-goals (this ADR)
 
 - `nest` inside card
