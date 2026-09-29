@@ -86,6 +86,8 @@ module CardParser =
         reader.SkipNewlines()
         let names = ResizeArray<string>()
         let mutable manualApply = false
+        let mutable applySplitIndex = None
+        let mutable namesBeforeApply = 0
 
         while not (BlockSyntax.isBlockEnd reader "filters" None) && not reader.IsEof do
             reader.SkipNewlines()
@@ -96,9 +98,13 @@ module CardParser =
                 if not (String.Equals(mode, "manual", StringComparison.OrdinalIgnoreCase)) then
                     raise (DashSpecParseException($"Card '{cardId}': filters apply must be 'manual', got '{mode}'."))
                 manualApply <- true
+                if applySplitIndex.IsNone then
+                    applySplitIndex <- Some namesBeforeApply
                 reader.SkipNewlines()
             else
                 names.Add(reader.ReadIdent())
+                if applySplitIndex.IsNone then
+                    namesBeforeApply <- namesBeforeApply + 1
                 reader.SkipNewlines()
                 if reader.CurrentKind = TokenKind.Comma then reader.Advance()
 
@@ -106,7 +112,7 @@ module CardParser =
         BlockSyntax.expectBlockEnd reader "filters" None
         if names.Count = 0 then
             raise (DashSpecParseException($"Card '{cardId}': filters block requires at least one filter name."))
-        names :> IReadOnlyList<_>, manualApply
+        names :> IReadOnlyList<_>, manualApply, applySplitIndex
 
     let private parseDataBlock
         (reader: TokenReader)
@@ -129,6 +135,18 @@ module CardParser =
             else
                 raise (reader.Unexpected "datasource or bind")
         BlockSyntax.expectBlockEnd reader "data" None
+
+    let private parseDataBlockForSlot
+        (reader: TokenReader)
+        (cardId: string)
+        (specDirectory: string option)
+        =
+        let dataSource = ref None
+        let boundFilters = ResizeArray<string>()
+        parseDataBlock reader cardId specDirectory dataSource boundFilters
+        match dataSource.Value with
+        | None -> raise (DashSpecParseException($"Card '{cardId}': data block requires datasource."))
+        | Some ds -> ds, boundFilters :> IReadOnlyList<_>
 
     let private parseDiagramStatement
         (reader: TokenReader)
@@ -159,6 +177,14 @@ module CardParser =
             match includes with
             | Some state when state.TryGetDiagram(diagramName, &registered) ->
                 includeFragment.Value <- SpecIncludeFragmentResolver.merge includeFragment.Value registered
+                if registered.Diagram.IsSome then
+                    diagram.Value <-
+                        match diagram.Value with
+                        | None -> registered.Diagram
+                        | Some current ->
+                            (SpecIncludeFragmentResolver.merge
+                                { SpecIncludeFragmentResolver.emptyFragment with Diagram = Some current }
+                                { SpecIncludeFragmentResolver.emptyFragment with Diagram = registered.Diagram }).Diagram
             | _ ->
                 if DiagramKindRegistry.tryResolve diagramName |> fst then
                     diagram.Value <- Some(DiagramParser.parseAfterKindIdent reader diagramName)
@@ -206,6 +232,7 @@ module CardParser =
         (specDirectory: string option)
         (includes: ModuleIncludeState option)
         (parseOptions: DashSpecParseOptions)
+        (slotBuilder: CardDiagramSlotBuilder.Builder)
         (diagram: DiagramDefinition option ref)
         (diagramSlotRef: string option ref)
         (legend: LegendDefinition option ref)
@@ -219,7 +246,17 @@ module CardParser =
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader "view" None then ()
             elif reader.TryKeyword "diagram" then
+                let slotRef =
+                    match ParserUtilities.tryReadLayoutRef reader with
+                    | Some r ->
+                        if diagramSlotRef.Value.IsNone then diagramSlotRef.Value <- Some r
+                        r
+                    | None -> CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
                 parseDiagramStatement reader cardId includes "view" diagramSlotRef diagram legend presentation seriesTransform includeFragment
+                match diagram.Value with
+                | Some d ->
+                    CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+                | None -> ()
                 reader.SkipNewlines()
             elif reader.TryKeyword "legend" then
                 legend.Value <- Some(parseLegend reader)
@@ -314,6 +351,7 @@ module CardParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
 
+        let slotBuilder = CardDiagramSlotBuilder.create ()
         let diagram = ref None
         let dataSource = ref None
         let placement = ref None
@@ -334,6 +372,7 @@ module CardParser =
         let chrome = ref None
         let extensionBlocks = ResizeArray<ExtensionBlockNode>()
         let mutable localFiltersManualApply = false
+        let mutable localFiltersApplySplitIndex : int option = None
         let includeFragment = ref SpecIncludeFragmentResolver.emptyFragment
         let inspect = ref None
         let tooltip = ref None
@@ -387,10 +426,22 @@ module CardParser =
                 useCardPreset <- Some(reader.ReadIdent())
                 reader.SkipNewlines()
             elif reader.TryKeyword "data" then
-                parseDataBlock reader id specDirectory dataSource boundFilters
+                if reader.TryKeyword "for" then
+                    let slotName = reader.ReadIdent()
+                    if String.IsNullOrWhiteSpace slotName then
+                        raise (DashSpecParseException($"Card '{id}': data for requires slot id."))
+                    let ds, slotBind = parseDataBlockForSlot reader id specDirectory
+                    CardDiagramSlotBuilder.applyData slotBuilder slotName ds slotBind
+                else
+                    parseDataBlock reader id specDirectory dataSource boundFilters
+                    match dataSource.Value with
+                    | Some ds ->
+                        let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
+                        CardDiagramSlotBuilder.applyData slotBuilder slotRef ds (boundFilters :> IReadOnlyList<_>)
+                    | None -> ()
                 reader.SkipNewlines()
             elif reader.TryKeyword "view" then
-                parseViewBlock reader id specDirectory includes parseOptions diagram diagramSlotRef legend presentation seriesTransform includeFragment
+                parseViewBlock reader id specDirectory includes parseOptions slotBuilder diagram diagramSlotRef legend presentation seriesTransform includeFragment
                 reader.SkipNewlines()
             elif reader.TryKeyword "override" then
                 CardDiagramOverrideParser.parseOverridesBlock reader id false diagram legend presentation seriesTransform
@@ -411,14 +462,25 @@ module CardParser =
                 elif reader.IsOnNewline()
                      || (reader.TryPeekIdent().IsSome
                          && String.Equals(reader.TryPeekIdent().Value, "apply", StringComparison.OrdinalIgnoreCase)) then
-                    let names, manualApply = parseLocalFiltersBlock reader id
+                    let names, manualApply, applySplit = parseLocalFiltersBlock reader id
                     localFilters.AddRange(names)
                     localFiltersManualApply <- manualApply
+                    localFiltersApplySplitIndex <- applySplit
                 else
                     localFilters.AddRange(reader.ReadCommaListInline())
                 reader.SkipNewlines()
             elif reader.TryKeyword "diagram" then
+                let slotRef =
+                    match ParserUtilities.tryReadLayoutRef reader with
+                    | Some r ->
+                        if diagramSlotRef.Value.IsNone then diagramSlotRef.Value <- Some r
+                        r
+                    | None -> CardDiagramSlotBuilder.DiagramSlotId
                 parseDiagramStatement reader id includes "card" diagramSlotRef diagram legend presentation seriesTransform includeFragment
+                match diagram.Value with
+                | Some d ->
+                    CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+                | None -> ()
                 reader.SkipNewlines()
             elif reader.TryKeyword "place" then
                 placement.Value <- Some(LayoutParser.parsePlacement reader)
@@ -432,6 +494,11 @@ module CardParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "datasource" then
                 dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
+                match dataSource.Value with
+                | Some ds ->
+                    let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
+                    CardDiagramSlotBuilder.applyData slotBuilder slotRef ds (boundFilters :> IReadOnlyList<_>)
+                | None -> ()
                 reader.SkipNewlines()
             elif reader.TryKeyword "legend" then
                 legend.Value <- Some(parseLegend reader)
@@ -512,38 +579,76 @@ module CardParser =
 
         if diagram.Value.IsNone && useCardPreset.IsNone then
             raise (DashSpecParseException("Card requires a diagram block or use <card-preset>."))
-        if dataSource.Value.IsNone && useCardPreset.IsNone then
-            raise (DashSpecParseException("Card requires a datasource block or use <card-preset>."))
+
+        if slotBuilder.Slots.Count = 0 then
+            let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
+            CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef diagram.Value.Value legend.Value presentation.Value seriesTransform.Value
+            CardDiagramSlotBuilder.applyData slotBuilder slotRef dataSource.Value.Value (boundFilters :> IReadOnlyList<_>)
+        else
+            CardDiagramSlotBuilder.pruneDataOnlyDiagramSlot slotBuilder
+            match diagram.Value with
+            | Some d ->
+                for slotRef in slotBuilder.Order do
+                    let scratch = slotBuilder.Slots.[slotRef]
+                    if scratch.Diagram.IsNone then
+                        scratch.Diagram <- Some d
+                        CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+            | None -> ()
+
+        for slotRef in slotBuilder.Order do
+            let scratch = slotBuilder.Slots.[slotRef]
+            if scratch.BoundFilters.Count = 0 && boundFilters.Count > 0 then
+                scratch.BoundFilters.AddRange boundFilters
+            if scratch.DataSource.IsNone && dataSource.Value.IsSome then
+                scratch.DataSource <- dataSource.Value
+
+        let diagramSlotsFinal =
+            match CardDiagramSlotBuilder.build slotBuilder id with
+            | Some map -> map
+            | None -> raise (DashSpecParseException($"Card '{id}': failed to build diagram slots."))
+
+        for slot in diagramSlotsFinal.Values do
+            validateCardFilterBinding id slot.BoundFilters filters
 
         validateCardFilterBinding id (boundFilters :> IReadOnlyList<_>) filters
 
+        let primaryKey =
+            CardDiagramSlotBuilder.resolvePrimarySlotKey slotBuilder interiorBoard.Value
+
+        let primarySlot = diagramSlotsFinal.[primaryKey]
+
+        if dataSource.Value.IsNone && useCardPreset.IsNone then
+            dataSource.Value <- Some primarySlot.DataSource
+
+        if dataSource.Value.IsNone && useCardPreset.IsNone then
+            raise (DashSpecParseException("Card requires a datasource block or use <card-preset>."))
+
         { Id = id
           Title = title.Value
-          Diagram =
-            diagram.Value
-            |> Option.defaultValue
-                { Kind = ""
-                  Properties = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
-                  UsePreset = None }
-          DataSource =
-            dataSource.Value
-            |> Option.defaultValue { Kind = DataSourceKind.View; Value = ""; SqlCarrier = None; Sheet = None }
-          BoundFilters = boundFilters :> IReadOnlyList<_>
+          Diagram = primarySlot.Diagram
+          DataSource = primarySlot.DataSource
+          BoundFilters = primarySlot.BoundFilters
           LocalFilters = localFilters :> IReadOnlyList<_>
           Placement = placement.Value
           TabId = None
           LayoutRef = layoutRef
           UseCardPreset = useCardPreset
-          Legend = legend.Value
-          Presentation = presentation.Value
-          SeriesTransform = seriesTransform.Value
+          Legend = legend.Value |> Option.orElse primarySlot.Legend
+          Presentation = presentation.Value |> Option.orElse primarySlot.Presentation
+          SeriesTransform = seriesTransform.Value |> Option.orElse primarySlot.SeriesTransform
           FilterHostCardId = filterHostCardId
           HostedFilters = Some(hostedFilters :> IReadOnlyList<_>)
           InteriorBoard = interiorBoard.Value
-          DiagramSlotRef = diagramSlotRef.Value
+          DiagramSlotRef =
+            if String.Equals(primaryKey, CardDiagramSlotBuilder.DiagramSlotId, StringComparison.Ordinal) then
+                None
+            else
+                Some primaryKey
+          DiagramSlots = diagramSlotsFinal
           ClickBehaviour = clickBehaviour.Value
           ExtensionBlocks = extensionBlocks :> IReadOnlyList<_>
           LocalFiltersManualApply = localFiltersManualApply
+          LocalFiltersApplySplitIndex = localFiltersApplySplitIndex
           Visibility = visibility.Value
           PhaseId = phaseId
           PageId = pageId

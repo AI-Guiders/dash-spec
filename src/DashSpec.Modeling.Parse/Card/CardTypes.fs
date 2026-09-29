@@ -86,6 +86,16 @@ type FilterDeriveDefinition =
       GrainFilterName: string option }
 
 [<CLIMutable>]
+type CardDiagramSlot =
+    { SlotRef: string
+      Diagram: DiagramDefinition
+      DataSource: DataSourceDefinition
+      BoundFilters: IReadOnlyList<string>
+      Legend: LegendDefinition option
+      Presentation: PresentationBlock option
+      SeriesTransform: SeriesTransformBlock option }
+
+[<CLIMutable>]
 type CardDefinition =
     { Id: string
       Title: string
@@ -104,9 +114,11 @@ type CardDefinition =
       HostedFilters: IReadOnlyList<string> option
       InteriorBoard: LayoutBoardDefinition option
       DiagramSlotRef: string option
+      DiagramSlots: IReadOnlyDictionary<string, CardDiagramSlot>
       ClickBehaviour: CardClickBehaviour option
       ExtensionBlocks: IReadOnlyList<ExtensionBlockNode>
       LocalFiltersManualApply: bool
+      LocalFiltersApplySplitIndex: int option
       Visibility: CardVisibilityRule option
       PhaseId: string option
       PageId: string option
