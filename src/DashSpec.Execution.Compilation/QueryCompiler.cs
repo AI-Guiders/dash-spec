@@ -346,10 +346,11 @@ public static class QueryCompiler
                 nameof(filter));
         }
 
-        var lastDot = filter.ColumnReference.LastIndexOf('.');
+        var columnRef = filter.ColumnReference!;
+        var lastDot = columnRef.LastIndexOf('.');
 
-        var table = filter.ColumnReference[..lastDot];
-        var column = filter.ColumnReference[(lastDot + 1)..];
+        var table = columnRef[..lastDot];
+        var column = columnRef[(lastDot + 1)..];
         return $"SELECT DISTINCT {column} AS value FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}";
     }
 
