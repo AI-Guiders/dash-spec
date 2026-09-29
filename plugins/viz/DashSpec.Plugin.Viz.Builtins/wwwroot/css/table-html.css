@@ -1,0 +1,103 @@
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.table-wrap--width-content {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.table-wrap--width-fill {
+  width: 100%;
+  max-width: 100%;
+}
+
+.table-wrap table {
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.table-wrap--width-content table {
+  width: max-content;
+  max-width: 100%;
+}
+
+.table-wrap--width-fill table {
+  width: 100%;
+}
+
+.table-wrap th,
+.table-wrap td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  width: auto;
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-wrap--density-compact th,
+.table-wrap--density-compact td {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+}
+
+.table-wrap th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  font-weight: 600;
+  color: var(--muted);
+  vertical-align: bottom;
+}
+
+.table-col-head {
+  margin-bottom: 0.35rem;
+}
+
+.table-wrap--density-compact .table-col-head {
+  margin-bottom: 0.2rem;
+}
+
+.table-col-filter {
+  width: 100%;
+  min-width: 3rem;
+  max-width: 12rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.table-filter-clear {
+  margin-left: 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+
+.table-foot {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+}
+
+.card-diagram-slot:has(.table-wrap--width-content) {
+  min-height: 0;
+  align-self: start;
+}
+
+@media (max-width: 768px) {
+  .card-diagram-slot:has(.table-wrap--width-content) {
+    min-height: 0;
+  }
+}
