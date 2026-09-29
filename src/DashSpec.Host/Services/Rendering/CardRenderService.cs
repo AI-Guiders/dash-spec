@@ -9,6 +9,7 @@ using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Viz;
 using DashSpec.Host.Services.Presentation;
+using DashSpec.Core.Layout;
 
 namespace DashSpec.Host.Services.Rendering;
 
@@ -74,12 +75,26 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             ? MatrixPresentation.FromCard(effective, library)
             : null;
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
-        var interiorPlacements = card.InteriorBoard is null
-            ? null
-            : DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
+        var interiorPlacements = DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
+        var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(card);
 
         var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
         var topFilterScopeHint = CardFilterScopeHints.ResolveTopFilterScope(card, document);
+        var interiorSlotRenders = await RenderSecondarySlotsAsync(
+            card,
+            document,
+            filters,
+            filterIndex,
+            library,
+            connector,
+            specDirectory,
+            primarySlotRef,
+            cancellationToken).ConfigureAwait(false);
+
+        CardRenderResult AttachSlots(CardRenderResult result) =>
+            interiorSlotRenders.Count == 0
+                ? result
+                : result with { InteriorSlotRenders = interiorSlotRenders };
 
         if (kind.DataFamily is DiagramDataFamily.Scalar)
         {
@@ -106,7 +121,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                 }
             }
 
-            return new CardRenderResult(
+            return AttachSlots(new CardRenderResult(
                 card.Id,
                 card.Title,
                 effective.Diagram.Kind,
@@ -122,11 +137,12 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                 ClickBehaviour: card.ClickBehaviour,
                 ExtensionBlocks: card.ExtensionBlocks,
                 LocalFiltersManualApply: card.LocalFiltersManualApply,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
                 MatrixLimits: card.MatrixLimits,
-                OversizeMessage: card.OversizeMessage);
+                OversizeMessage: card.OversizeMessage));
         }
 
-        return kind.DataFamily switch
+        return AttachSlots(kind.DataFamily switch
         {
             DiagramDataFamily.Chart =>
                 new CardRenderResult(
@@ -147,6 +163,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
                     MatrixLimits: card.MatrixLimits,
                     OversizeMessage: card.OversizeMessage,
                     FilterLinkHint: filterLinkHint,
@@ -167,6 +184,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
                     MatrixLimits: card.MatrixLimits,
                     OversizeMessage: card.OversizeMessage,
                     FilterLinkHint: filterLinkHint,
@@ -191,6 +209,7 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
                     MatrixLimits: card.MatrixLimits,
                     OversizeMessage: card.OversizeMessage,
                     FilterLinkHint: filterLinkHint,
@@ -214,13 +233,122 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
                     ClickBehaviour: card.ClickBehaviour,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
                     MatrixLimits: card.MatrixLimits,
                     OversizeMessage: card.OversizeMessage,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
-        };
+        });
+    }
+
+    private async Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderSecondarySlotsAsync(
+        CardDefinition card,
+        DashboardDocument document,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterIndex,
+        SpecLibrary? library,
+        IDataSourceConnector connector,
+        string? specDirectory,
+        string primarySlotRef,
+        CancellationToken cancellationToken)
+    {
+        var slots = CardDiagramSlotCatalog.ResolveSlots(card);
+        if (slots.Count <= 1)
+        {
+            return new Dictionary<string, CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var renders = new Dictionary<string, CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (slotRef, slot) in slots)
+        {
+            if (string.Equals(slotRef, primarySlotRef, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var slotCard = card with
+            {
+                Diagram = slot.Diagram,
+                DataSource = slot.DataSource,
+                BoundFilters = slot.BoundFilters,
+                Legend = slot.Legend,
+                Presentation = slot.Presentation,
+                SeriesTransform = slot.SeriesTransform,
+            };
+
+            try
+            {
+                var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
+                var effective = resolved.Card;
+                var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect, specDirectory);
+                var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
+                var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
+                var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+                var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
+                    ? MatrixPresentation.FromCard(effective, library)
+                    : null;
+                var seriesTransform = kind.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix
+                    ? CompositionResolution.ResolveSeriesTransform(effective, library)
+                    : null;
+
+                renders[slotRef] = kind.DataFamily switch
+                {
+                    DiagramDataFamily.Table => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Table: ChartDataBuilder.BuildTable(rows, effective.Diagram)),
+                    DiagramDataFamily.Matrix => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip),
+                        MatrixPresentation: matrixPresentation),
+                    DiagramDataFamily.Chart => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Chart: ChartDataBuilder.BuildChart(
+                            rows,
+                            effective.Diagram,
+                            seriesTransform,
+                            effective,
+                            library,
+                            document.ColorPalette)),
+                    DiagramDataFamily.Gantt => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Gantt: EnrichGanttPayload(
+                            ChartDataBuilder.BuildGantt(rows, effective.Diagram),
+                            effective,
+                            library)),
+                    _ => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Error: $"Unsupported interior slot family '{kind.DataFamily}'."),
+                };
+            }
+            catch (Exception ex)
+            {
+                renders[slotRef] = new CardSlotRenderResult(
+                    slotRef,
+                    slot.Diagram.Kind,
+                    DiagramDataFamily.Table,
+                    string.Empty,
+                    Error: ex.Message);
+            }
+        }
+
+        return renders;
     }
 
     private static IEnumerable<string> EnumerateCardFilters(CardDefinition card)

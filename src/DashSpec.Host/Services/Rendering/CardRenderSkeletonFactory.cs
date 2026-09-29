@@ -21,7 +21,7 @@ public static class CardRenderSkeletonFactory
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
-        var interiorPlacements = document is not null && card.InteriorBoard is not null
+        var interiorPlacements = document is not null
             ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
             : null;
         return new CardRenderResult(
@@ -44,6 +44,7 @@ public static class CardRenderSkeletonFactory
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
+            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
             MatrixLimits: card.MatrixLimits,
             OversizeMessage: card.OversizeMessage);
     }
@@ -77,7 +78,7 @@ public static class CardRenderSkeletonFactory
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
-        var interiorPlacements = document is not null && card.InteriorBoard is not null
+        var interiorPlacements = document is not null
             ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
             : null;
         return new CardRenderResult(
@@ -100,6 +101,7 @@ public static class CardRenderSkeletonFactory
             ClickBehaviour: card.ClickBehaviour,
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
+            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
             MatrixLimits: card.MatrixLimits,
             OversizeMessage: card.OversizeMessage);
     }
