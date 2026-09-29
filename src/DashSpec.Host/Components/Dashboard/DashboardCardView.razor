@@ -123,22 +123,25 @@
             <div class="card-head-meta">
                 @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
                 {
-                    <div class="card-filters card-filters-local">
+                    <div class="@($"{CardHeadFiltersClass} card-filters-local")"
+                         style="@CardHeadFiltersGridStyle">
                         @foreach (var filterName in LocalFiltersBeforeApply)
                         {
-                            @RenderLocalFilter(filterName, placementStyle: null)
+                            @RenderLocalFilterChromeSlot(filterName)
                         }
                         @if (ShowLocalApplyButton)
                         {
-                            <button class="secondary card-filter-apply"
-                                    disabled="@Card.Loading"
-                                    @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                                @Loc.T("Apply")
-                            </button>
+                            <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
+                                <button class="secondary card-filter-apply"
+                                        disabled="@Card.Loading"
+                                        @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                                    @Loc.T("Apply")
+                                </button>
+                            </div>
                         }
                         @foreach (var filterName in LocalFiltersAfterApply)
                         {
-                            @RenderLocalFilter(filterName, placementStyle: null)
+                            @RenderLocalFilterChromeSlot(filterName)
                         }
                     </div>
                 }
