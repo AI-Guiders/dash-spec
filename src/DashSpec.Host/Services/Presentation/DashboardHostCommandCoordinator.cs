@@ -13,7 +13,7 @@ public sealed class DashboardHostCommandCoordinator
     readonly DashboardFilterCommandService _commands;
     readonly DashboardFilterUiState _uiState;
     readonly IDashboardCultureAmbient _culture;
-    readonly DashSpecHostContext _hostContext;
+    readonly CatalogSourceState _catalogState;
 
     DashboardPageController? _dashboard;
     string? _pendingCatalogEntryId;
@@ -23,30 +23,30 @@ public sealed class DashboardHostCommandCoordinator
         DashboardFilterCommandService commands,
         DashboardFilterUiState uiState,
         IDashboardCultureAmbient culture,
-        DashSpecHostContext hostContext)
+        CatalogSourceState catalogState)
     {
         _navigation = navigation;
         _commands = commands;
         _uiState = uiState;
         _culture = culture;
-        _hostContext = hostContext;
+        _catalogState = catalogState;
     }
 
     public event Action? Changed;
 
     public string? CommandError { get; private set; }
 
-    public bool HasCatalog => _hostContext.Catalog.Document.Entries.Count > 1;
+    public bool HasCatalog => _catalogState.Current.Document.Entries.Count > 1;
 
     public IReadOnlyList<CatalogEntryDefinition> CatalogEntries =>
-        _hostContext.Catalog.Document.Entries;
+        _catalogState.Current.Document.Entries;
 
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
-        _hostContext.Catalog.Document.Groups ?? [];
+        _catalogState.Current.Document.Groups ?? [];
 
     public string ActiveCatalogEntryId => ResolveActiveCatalogEntryId();
 
-    public string DefaultCatalogEntryId => _hostContext.Catalog.Document.DefaultEntryId;
+    public string DefaultCatalogEntryId => _catalogState.Current.Document.DefaultEntryId;
 
     public bool CatalogBusy => _dashboard?.Switching == true;
 
@@ -158,7 +158,7 @@ public sealed class DashboardHostCommandCoordinator
             return fromUri;
         }
 
-        return _hostContext.Catalog.Document.DefaultEntryId;
+        return _catalogState.Current.Document.DefaultEntryId;
     }
 
     string? ResolveReportFromUri()

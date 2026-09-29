@@ -32,6 +32,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly ICardViewState _cardViewState;
     private readonly ICardVizDisplayState _vizDisplayState;
     private readonly DashSpecHostContext _hostContext;
+    private readonly CatalogSourceState _catalogState;
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
     private readonly DashboardFilterCommandService _filterCommands;
@@ -50,6 +51,7 @@ public sealed class DashboardPageController : IDisposable
         ICardViewState cardViewState,
         ICardVizDisplayState vizDisplayState,
         DashSpecHostContext hostContext,
+        CatalogSourceState catalogState,
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
         DashboardFilterCommandService filterCommands,
@@ -68,6 +70,7 @@ public sealed class DashboardPageController : IDisposable
         _cardViewState = cardViewState;
         _vizDisplayState = vizDisplayState;
         _hostContext = hostContext;
+        _catalogState = catalogState;
         _filters = filters;
         _refresh = refresh;
         _filterCommands = filterCommands;
@@ -128,12 +131,12 @@ public sealed class DashboardPageController : IDisposable
         _cultureAmbient.DisplayTimeZone);
 
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
-        _hostContext.Catalog.Document.Groups ?? [];
+        _catalogState.Current.Document.Groups ?? [];
 
     public bool HasPages => ActiveTabPages().Count > 1;
 
     public IReadOnlyList<CatalogEntryDefinition> CatalogEntries =>
-        _hostContext.Catalog.Document.Entries;
+        _catalogState.Current.Document.Entries;
 
     public string? ActiveCatalogEntryId => _session.ActiveCatalogEntryId;
 
@@ -146,7 +149,7 @@ public sealed class DashboardPageController : IDisposable
 
     public string ResolveTabLabel(TabDefinition tab) =>
         DisplayResolutionHost.ResolveTabLabel(
-            DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, tab.Id));
+            DisplayResolutionHost.CreateContext(_session, _catalogState.Current, tab.Id));
 
     public string ResolvePageNavTitle(ReportPageDefinition page) =>
         DisplayResolutionHost.ResolvePageNavTitle(page);
@@ -166,7 +169,7 @@ public sealed class DashboardPageController : IDisposable
             TopLimits);
 
     private ResolutionContext DisplayContext =>
-        DisplayResolutionHost.CreateContext(_session, _hostContext.Catalog, ActiveTabId);
+        DisplayResolutionHost.CreateContext(_session, _catalogState.Current, ActiveTabId);
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default, string? requestedCatalogEntryId = null)
     {
@@ -181,7 +184,7 @@ public sealed class DashboardPageController : IDisposable
                 var clientId = _catalogUsage.GetOrCreateClientId(_httpContextAccessor.HttpContext);
                 entryToLoad = _catalogUsage.ResolvePreferredEntryId(
                     clientId,
-                    _hostContext.Catalog.Document.DefaultEntryId);
+                    _catalogState.Current.Document.DefaultEntryId);
             }
 
             if (!string.IsNullOrWhiteSpace(entryToLoad))
@@ -448,7 +451,7 @@ public sealed class DashboardPageController : IDisposable
 
         if (CardVizDisplayToggle.TryApply(request, card, _vizDisplayState))
         {
-            Notify();
+            // Viz-only session overrides: ICardVizDisplayState.Changed → card/viz components; skip full page Notify.
             return;
         }
 
@@ -910,7 +913,6 @@ public sealed class DashboardPageController : IDisposable
                     _vizDisplayState))
             {
                 CommandError = null;
-                Notify();
                 return;
             }
         }
@@ -1048,6 +1050,41 @@ public sealed class DashboardPageController : IDisposable
 
     private void OnDevSpecFileChanged() => _ = ReloadFromDiskAsync();
 
+    private string? ResolveReloadCatalogEntryId()
+    {
+        var entryId = _session.ActiveCatalogEntryId;
+        if (string.IsNullOrWhiteSpace(entryId))
+        {
+            return null;
+        }
+
+        if (CatalogEntries.Any(entry => string.Equals(entry.Id, entryId, StringComparison.OrdinalIgnoreCase)))
+        {
+            return entryId;
+        }
+
+        return _catalogState.Current.Document.DefaultEntryId;
+    }
+
+    private void TryReloadCatalogFromDisk()
+    {
+        var path = _catalogState.Current.FullPath;
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            var document = CatalogParser.ParseFile(path);
+            _catalogState.Replace(new CatalogBootstrap(document, path));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to reload catalog from {Path}", path);
+        }
+    }
+
     private async Task ReloadFromDiskAsync()
     {
         if (UiDispatcher is null)
@@ -1061,9 +1098,11 @@ public sealed class DashboardPageController : IDisposable
             Notify();
             try
             {
-                if (!string.IsNullOrWhiteSpace(_session.ActiveCatalogEntryId))
+                TryReloadCatalogFromDisk();
+                var entryId = ResolveReloadCatalogEntryId();
+                if (!string.IsNullOrWhiteSpace(entryId))
                 {
-                    await _session.LoadCatalogEntryAsync(_session.ActiveCatalogEntryId).ConfigureAwait(false);
+                    await _session.LoadCatalogEntryAsync(entryId).ConfigureAwait(false);
                 }
                 else
                 {
@@ -1119,7 +1158,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var entry = _hostContext.Catalog.Document.Entries.FirstOrDefault(e =>
+        var entry = _catalogState.Current.Document.Entries.FirstOrDefault(e =>
             string.Equals(e.Id, entryId, StringComparison.OrdinalIgnoreCase));
         if (string.IsNullOrWhiteSpace(entry?.InitialTabId))
         {
@@ -1286,7 +1325,7 @@ public sealed class DashboardPageController : IDisposable
         {
             _refresh.DisplayContext = DisplayResolutionHost.CreateContext(
                 _session,
-                _hostContext.Catalog,
+                _catalogState.Current,
                 ActiveTabId);
         }
         catch (InvalidOperationException)
