@@ -200,33 +200,7 @@
   overflow: visible;
 }
 
-.card-head-toolbar-filters--grid .filter-field {
-  flex: unset;
-  max-width: none;
-  width: 100%;
-  min-width: 0;
-}
-
-.card-head-toolbar-filters--grid .filter-date {
-  min-width: 0;
-  width: 100%;
-}
-
-.card-head-toolbar-filters--grid .field-combobox {
-  min-width: 0;
-  width: 100%;
-  overflow: visible;
-}
-
-.card-head-toolbar-filters--grid .combobox-panel {
-  z-index: 60;
-}
-
-.card-head-toolbar-filters--grid .combobox-trigger {
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-}
+/* Filter widget fit in chrome grid → DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css */
 
 .card-head-toolbar-filters--grid .card-filter-apply {
   width: 100%;
