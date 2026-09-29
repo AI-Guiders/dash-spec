@@ -43,6 +43,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly NavigationManager _navigation;
     private readonly CatalogUsageService _catalogUsage;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICardCellDrillState _cellDrill;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -62,7 +63,8 @@ public sealed class DashboardPageController : IDisposable
         ILogger<DashboardPageController> logger,
         NavigationManager navigation,
         CatalogUsageService catalogUsage,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        ICardCellDrillState cellDrill)
     {
         _session = session;
         _interactions = interactions;
@@ -80,6 +82,7 @@ public sealed class DashboardPageController : IDisposable
         _navigation = navigation;
         _catalogUsage = catalogUsage;
         _httpContextAccessor = httpContextAccessor;
+        _cellDrill = cellDrill;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -352,6 +355,20 @@ public sealed class DashboardPageController : IDisposable
         }
 
         var effects = _interactions.ExpandClickEffects(card.ClickBehaviour.Effects).ToList();
+        var drillTable = effects.OfType<DrillTableFromCellEffect>().FirstOrDefault();
+        if (drillTable is not null)
+        {
+            var overlay = HeatmapCellFilterResolver.BuildOverlay(
+                drillTable.Binds,
+                context,
+                _session.FilterIndex,
+                _session.Filters);
+            _cellDrill.Set(card.Id, overlay);
+            Notify();
+            await _refresh.RefreshSingleCardAsync(card.Id, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         // Stacked field filters from sequential chart clicks often yield empty detail cards
         // (e.g. location=/PROJECTHUB AND program=DESIGN). Keep date; replace sibling fields.
         var fieldFiltersThisClick = effects
@@ -482,59 +499,18 @@ public sealed class DashboardPageController : IDisposable
         return card is null ? null : CardViewSwitchApplier.ResolveDefaultViewId(card.ExtensionBlocks);
     }
 
-    private void ApplyFilterFromHeatmapCell(SetFilterFromFieldEffect effect, HeatmapCellContext context)
-    {
-        if (!_session.FilterIndex.TryGetValue(effect.FilterName, out var filter))
-        {
-            return;
-        }
-
-        var raw = effect.Field switch
-        {
-            "x" => context.XLabel,
-            "y" => context.YLabel,
-            "value" => context.Value?.ToString("0") ?? string.Empty,
-            _ => string.Empty,
-        };
-
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return;
-        }
-
-        // Folded "Other"/"Прочие" is not a real dimension value — filtering by it yields empty cards.
-        if (string.Equals(raw, "Other", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "Прочие", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        switch (filter.Kind)
-        {
-            case FilterKind.Date when TryParseHeatmapDateFilter(raw, effect.FilterName, out var day):
-                DateFrom[effect.FilterName] = day;
-                DateTo[effect.FilterName] = day;
-                break;
-            case FilterKind.Field:
-                SelectedFields[effect.FilterName] = new HashSet<string>([raw], StringComparer.OrdinalIgnoreCase);
-                break;
-        }
-    }
-
-    private bool TryParseHeatmapDateFilter(string raw, string filterName, out DateOnly day)
-    {
-        if (DateValueCodec.TryParseWireDay(raw, out day))
-        {
-            return true;
-        }
-
-        var anchorYear = DateTo.TryGetValue(filterName, out var to)
-            ? to.Year
-            : DateFrom.TryGetValue(filterName, out var from)
-                ? from.Year
-                : DateTime.UtcNow.Year;
-        return DateValueCodec.TryParseChartAxisDayLabel(raw, anchorYear, out day);
-    }
+    private void ApplyFilterFromHeatmapCell(SetFilterFromFieldEffect effect, HeatmapCellContext context) =>
+        HeatmapCellFilterResolver.ApplyToSessionUi(
+            effect,
+            context,
+            _session.FilterIndex,
+            _session.Filters,
+            (name, from, to) =>
+            {
+                DateFrom[name] = from;
+                DateTo[name] = to;
+            },
+            (name, raw) => SelectedFields[name] = new HashSet<string>([raw], StringComparer.OrdinalIgnoreCase));
 
     private FilterUiSnapshot? BuildCarriedFiltersForCatalogEntry(
         GotoCatalogEntryEffect gotoEntry,
