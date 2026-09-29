@@ -329,6 +329,22 @@
         }
     }
 
+    private int LocalFieldOptionsToken()
+    {
+        if (Card.LocalFilters is not { Count: > 0 })
+        {
+            return 0;
+        }
+
+        var token = 0;
+        foreach (var name in Card.LocalFilters)
+        {
+            token = HashCode.Combine(token, GetFieldOptions(name).Count);
+        }
+
+        return token;
+    }
+
     protected override bool ShouldRender()
     {
         var snapshot = new RenderSnapshot(
@@ -343,6 +359,7 @@
             _selection?.Yi,
             _fullscreen,
             BodyFolded,
+            LocalFieldOptionsToken(),
             VizDisplayState.GetValueLabelsOverride(Card.Id),
             VizDisplayState.GetAxisLabelsXOverride(Card.Id),
             VizDisplayState.GetAxisLabelsYOverride(Card.Id));
@@ -367,6 +384,7 @@
         int? SelectionYi,
         bool Fullscreen,
         bool BodyFolded,
+        int LocalFieldOptionsToken,
         bool? MatrixValueLabelsOverride,
         bool? MatrixAxisLabelsXOverride,
         bool? MatrixAxisLabelsYOverride);
