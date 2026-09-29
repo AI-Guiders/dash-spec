@@ -508,7 +508,7 @@ public sealed class DashboardPageController : IDisposable
 
         switch (filter.Kind)
         {
-            case FilterKind.Date when DateValueCodec.TryParseWireDay(raw, out var day):
+            case FilterKind.Date when TryParseHeatmapDateFilter(raw, effect.FilterName, out var day):
                 DateFrom[effect.FilterName] = day;
                 DateTo[effect.FilterName] = day;
                 break;
@@ -516,6 +516,21 @@ public sealed class DashboardPageController : IDisposable
                 SelectedFields[effect.FilterName] = new HashSet<string>([raw], StringComparer.OrdinalIgnoreCase);
                 break;
         }
+    }
+
+    private bool TryParseHeatmapDateFilter(string raw, string filterName, out DateOnly day)
+    {
+        if (DateValueCodec.TryParseWireDay(raw, out day))
+        {
+            return true;
+        }
+
+        var anchorYear = DateTo.TryGetValue(filterName, out var to)
+            ? to.Year
+            : DateFrom.TryGetValue(filterName, out var from)
+                ? from.Year
+                : DateTime.UtcNow.Year;
+        return DateValueCodec.TryParseChartAxisDayLabel(raw, anchorYear, out day);
     }
 
     private FilterUiSnapshot? BuildCarriedFiltersForCatalogEntry(
