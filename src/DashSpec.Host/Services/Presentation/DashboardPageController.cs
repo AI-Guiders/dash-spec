@@ -364,8 +364,7 @@ public sealed class DashboardPageController : IDisposable
                 _session.FilterIndex,
                 _session.Filters);
             _cellDrill.Set(card.Id, overlay);
-            Notify();
-            await _refresh.RefreshSingleCardAsync(card.Id, cancellationToken).ConfigureAwait(false);
+            await _refresh.RefreshCardInteriorSlotsAsync(card.Id, cancellationToken).ConfigureAwait(false);
             return;
         }
 

@@ -45,4 +45,8 @@ public interface IDashboardSession
     void ApplyTopFilter(string name, int limit);
 
     Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderInteriorSlotsAsync(
+        CardDefinition card,
+        CancellationToken cancellationToken = default);
 }
