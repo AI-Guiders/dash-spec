@@ -200,14 +200,25 @@ on click
 end click
 ```
 
-| Эффект | Назначение |
-|--------|------------|
-| `set <filter> from x\|y\|value` | Drill: значение клика → FilterState |
-| `show below list\|kv\|plain data from tooltip\|cell [copy]` | Sticky detail под viz |
-| `goto tab <id>` / page / catalog entry | Навигация |
-| `invoke` / phrase templates | Плагинные действия (ADR-0034) |
+| Эффект | Что обновляется |
+|--------|-----------------|
+| `set <filter> from x\|y\|value` | **Весь отчёт** по затронутым фильтрам (как «Применить»): toolbar + все карточки с `bind` |
+| `drill table from cell` + `set …` | Только **drill-диаграмма** внутри этой карточки (`data for …`); heatmap/primary и toolbar **не** сужаются |
+| `show below list\|kv\|plain data from tooltip\|cell [copy]` | Только полоска detail под viz, **без** SQL |
+| `goto tab <id>` / page / catalog entry | Навигация (+ фильтры по правилам `goto entry`) |
+| `invoke` / phrase templates | По контракту плагина (ADR-0034) |
 
-### Поведение Host, которое надо закладывать в UX
+Пример interior drill (overview peak / activity):
+
+```text
+on click
+  drill table from cell
+  set usage_date from x
+  set app_name from y
+end click
+```
+
+### UX, которое надо закладывать в отчёт
 
 1. **Легенда donut/pie** эмитит category-click (фильтр), не Chart.js hide.
 2. **Other / Прочие** — свёртка Top-N; **не** реальное значение; Host **игнорирует** клик (иначе пустые карточки).

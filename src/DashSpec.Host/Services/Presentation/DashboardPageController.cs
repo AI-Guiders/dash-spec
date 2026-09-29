@@ -355,9 +355,9 @@ public sealed class DashboardPageController : IDisposable
         }
 
         var effects = _interactions.ExpandClickEffects(card.ClickBehaviour.Effects).ToList();
-        var drillTable = effects.OfType<DrillTableFromCellEffect>().FirstOrDefault();
-        if (drillTable is not null)
+        if (CardClickRefreshPlanner.Plan(effects) is CardInteractionRefresh.CardInteriorSlots)
         {
+            var drillTable = effects.OfType<DrillTableFromCellEffect>().First();
             var overlay = HeatmapCellFilterResolver.BuildOverlay(
                 drillTable.Binds,
                 context,
