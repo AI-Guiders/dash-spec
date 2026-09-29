@@ -8,6 +8,8 @@
 
 
 
+@if (ShowDashboardFilters)
+{
 <section class="@SectionClass" aria-label="Фильтры дашборда">
 
     <div class="@GridClass" style="@GridStyle">
@@ -122,10 +124,14 @@
     }
 
 </section>
+}
 
 
 
 @code {
+
+    private bool ShowDashboardFilters =>
+        FilterNames.Count > 0 || (AutoApply && Busy);
 
     [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
 

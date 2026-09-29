@@ -149,7 +149,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
-  margin-right: auto;
+  margin-left: auto;
   min-width: 0;
 }
 
