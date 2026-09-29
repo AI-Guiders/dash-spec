@@ -98,6 +98,33 @@ public class CardClickBehaviourTests
     }
 
     [Fact]
+    public void Parse_on_click_drill_table_from_cell_binds_filters()
+    {
+        var doc = DashSpecParser.Parse("""
+            @tab t
+              report
+              title = "T"
+              card peak as "Peak"
+              on click
+              drill table from cell
+              set usage_date from x
+              set app_name from y
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              datasource view dbo.t
+              end card
+              end report
+            end tab
+            """);
+
+        var drill = Assert.IsType<DrillTableFromCellEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
+        Assert.Equal(2, drill.Binds.Count);
+    }
+
+    [Fact]
     public void Parse_on_click_rejects_unknown_show_format()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""

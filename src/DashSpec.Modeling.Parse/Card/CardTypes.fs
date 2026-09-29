@@ -31,6 +31,7 @@ type ShowSource =
 type CardClickEffect =
     | ShowSelection of ShowPlacement * ShowFormat * ShowSource * bool * string option
     | SetFilterFromField of string * string
+    | DrillTableFromCell of IReadOnlyList<string * string>
     | InvokeHandler of string * IReadOnlyDictionary<string, string>
     | GotoTab of string
     | FocusPhase of string

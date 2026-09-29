@@ -13,7 +13,7 @@ using DashSpec.Core.Layout;
 
 namespace DashSpec.Host.Services.Rendering;
 
-public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRenderer
+public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDrillState cellDrill) : ICardRenderer
 {
     public async Task<CardRenderResult> RenderAsync(
         CardDefinition card,
@@ -289,7 +289,14 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins) : ICardRende
             {
                 var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
                 var effective = resolved.Card;
-                var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect, specDirectory);
+                var drillOverlay = cellDrill.Get(card.Id);
+                var query = QueryCompiler.Compile(
+                    effective,
+                    filters,
+                    filterIndex,
+                    document.SqlDialect,
+                    specDirectory,
+                    drillOverlay);
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
                 var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
