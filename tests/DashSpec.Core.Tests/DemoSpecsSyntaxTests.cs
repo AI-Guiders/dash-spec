@@ -176,6 +176,21 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_table_diagram_order_by_with_comma()
+    {
+        var text = """
+            @diagram t
+            table
+              columns = host_name, user_sam
+              order_by = host_name ASC, user_sam ASC
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        Assert.Equal("host_name ASC, user_sam ASC", fragment.Diagram!.Properties["order_by"]);
+    }
+
+    [Fact]
     public void Parse_demo_events_detail_table_diagram()
     {
         var path = @"samples/demo\diagrams\detail\events-detail-table.dashdiagram";
