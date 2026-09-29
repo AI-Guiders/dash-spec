@@ -48,23 +48,9 @@
             {
                 <div class="@CardHeadFiltersClass"
                      style="@CardHeadFiltersGridStyle">
-                    @foreach (var filterName in LocalFiltersBeforeApply)
+                    @foreach (var slotId in ChromeSlotsInLayoutOrder())
                     {
-                        @RenderLocalFilterChromeSlot(filterName)
-                    }
-                    @if (ShowLocalApplyButton)
-                    {
-                        <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
-                            <button class="secondary card-filter-apply"
-                                    disabled="@Card.Loading"
-                                    @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                                @Loc.T("Apply")
-                            </button>
-                        </div>
-                    }
-                    @foreach (var filterName in LocalFiltersAfterApply)
-                    {
-                        @RenderLocalFilterChromeSlot(filterName)
+                        @RenderLocalFilterChromeSlotOrApply(slotId)
                     }
                 </div>
             }
@@ -139,23 +125,9 @@
                 {
                     <div class="@($"{CardHeadFiltersClass} card-filters-local")"
                          style="@CardHeadFiltersGridStyle">
-                        @foreach (var filterName in LocalFiltersBeforeApply)
+                        @foreach (var slotId in ChromeSlotsInLayoutOrder())
                         {
-                            @RenderLocalFilterChromeSlot(filterName)
-                        }
-                        @if (ShowLocalApplyButton)
-                        {
-                            <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
-                                <button class="secondary card-filter-apply"
-                                        disabled="@Card.Loading"
-                                        @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
-                                    @Loc.T("Apply")
-                                </button>
-                            </div>
-                        }
-                        @foreach (var filterName in LocalFiltersAfterApply)
-                        {
-                            @RenderLocalFilterChromeSlot(filterName)
+                            @RenderLocalFilterChromeSlotOrApply(slotId)
                         }
                     </div>
                 }
@@ -559,6 +531,57 @@
     private bool UsesLocalFilterChromeGrid =>
         Card.LocalFilterChromePlacements is { Count: > 0 };
 
+    private int LocalFilterChromeGridColumns =>
+        Card.LocalFilterChromePlacements is { Count: > 0 } placements
+            ? placements.Values.Max(static p => p.Col + p.Span - 1)
+            : GridColumns;
+
+    private IEnumerable<string> ChromeSlotsInLayoutOrder()
+    {
+        if (!UsesLocalFilterChromeGrid || Card.LocalFilterChromePlacements is null)
+        {
+            foreach (var filterName in LocalFiltersBeforeApply)
+            {
+                yield return filterName;
+            }
+
+            if (ShowLocalApplyButton)
+            {
+                yield return ApplySlotId;
+            }
+
+            foreach (var filterName in LocalFiltersAfterApply)
+            {
+                yield return filterName;
+            }
+
+            yield break;
+        }
+
+        var placements = Card.LocalFilterChromePlacements;
+        var slotIds = new List<string>();
+        if (Card.LocalFilters is not null)
+        {
+            foreach (var filterName in Card.LocalFilters)
+            {
+                if (placements.ContainsKey(filterName))
+                {
+                    slotIds.Add(filterName);
+                }
+            }
+        }
+
+        if (ShowLocalApplyButton && placements.ContainsKey(ApplySlotId))
+        {
+            slotIds.Add(ApplySlotId);
+        }
+
+        foreach (var slotId in slotIds.OrderBy(id => placements[id].Col))
+        {
+            yield return slotId;
+        }
+    }
+
     private string CardHeadFiltersClass =>
         UsesLocalFilterChromeGrid
             ? "card-head-toolbar-filters card-head-toolbar-filters--grid"
@@ -566,14 +589,31 @@
 
     private string CardHeadFiltersGridStyle =>
         UsesLocalFilterChromeGrid
-            ? DashboardLayoutHelper.CardInteriorGridStyle(new LayoutDefinition(GridColumns, 0))
+            ? DashboardLayoutHelper.CardInteriorGridStyle(new LayoutDefinition(LocalFilterChromeGridColumns, 0))
             : string.Empty;
 
     private string LocalFilterChromeStyle(string slotId) =>
         UsesLocalFilterChromeGrid &&
         Card.LocalFilterChromePlacements!.TryGetValue(slotId, out var placement)
-            ? DashboardLayoutHelper.CardInteriorSlotStyle(placement, GridColumns)
+            ? DashboardLayoutHelper.CardInteriorSlotStyle(placement, LocalFilterChromeGridColumns)
             : string.Empty;
+
+    private RenderFragment RenderLocalFilterChromeSlotOrApply(string slotId) => __builder =>
+    {
+        if (string.Equals(slotId, ApplySlotId, StringComparison.OrdinalIgnoreCase))
+        {
+            <div class="card-head-filter-slot" style="@LocalFilterChromeStyle(ApplySlotId)">
+                <button class="secondary card-filter-apply"
+                        disabled="@Card.Loading"
+                        @onclick="() => OnApplyCard.InvokeAsync(Card.Id)">
+                    @Loc.T("Apply")
+                </button>
+            </div>
+            return;
+        }
+
+        @RenderLocalFilterChromeSlot(slotId)
+    };
 
     private RenderFragment RenderLocalFilterChromeSlot(string filterName) => __builder =>
     {
