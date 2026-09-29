@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0065**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0067**.
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -70,3 +70,5 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0062](DASHSPEC-ADR-0062-viz-axis-presentation.md) | Viz axis presentation | Accepted |
 | [0063](DASHSPEC-ADR-0063-layout-board-nest.md) | Layout board nest | Accepted |
 | [0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md) | Cell drill via table + tabular payload | Accepted (pilot) |
+| [0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) | Card interior multi-slot | Accepted |
+| [0066](DASHSPEC-ADR-0066-card-refresh-scopes.md) | Card refresh scopes (Host SSOT) | Accepted |

@@ -19,6 +19,8 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     private CancellationTokenSource? _cardApplyCts;
     private CancellationTokenSource? _refreshCts;
     private long _refreshGeneration;
+    private CancellationTokenSource? _interiorRefreshCts;
+    private long _interiorRefreshGeneration;
 
     public DashboardRefreshCoordinator(
         IDashboardSession session,
@@ -106,6 +108,10 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     public Task RefreshSingleCardAsync(string cardId, CancellationToken cancellationToken = default) =>
         RefreshCardsAsync([cardId], cancellationToken);
 
+    /// <summary>ADR-0066 CardInteriorSlots — drill table only; no Card.Loading / Busy.</summary>
+    public Task RefreshCardInteriorSlotsAsync(string cardId, CancellationToken cancellationToken = default) =>
+        RefreshInteriorSlotsAsync(cardId, cancellationToken);
+
     public void CancelPendingApplies()
     {
         _dashboardApplyCts?.Cancel();
@@ -120,7 +126,86 @@ public sealed class DashboardRefreshCoordinator : IDisposable
         _cardApplyCts?.Dispose();
         _refreshCts?.Cancel();
         _refreshCts?.Dispose();
+        _interiorRefreshCts?.Cancel();
+        _interiorRefreshCts?.Dispose();
     }
+
+    private async Task RefreshInteriorSlotsAsync(string cardId, CancellationToken cancellationToken)
+    {
+        _interiorRefreshCts?.Cancel();
+        _interiorRefreshCts?.Dispose();
+        _interiorRefreshCts = new CancellationTokenSource();
+        _interiorRefreshGeneration++;
+        var generation = _interiorRefreshGeneration;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            _interiorRefreshCts.Token);
+        var token = linked.Token;
+        var cardDef = _session.Document.Cards.Single(card =>
+            string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+
+        try
+        {
+            var slots = await _session.RenderInteriorSlotsAsync(cardDef, token).ConfigureAwait(false);
+            if (!IsCurrentInteriorRefresh(generation))
+            {
+                return;
+            }
+
+            await DispatchUiAsync(() =>
+            {
+                var index = Cards.FindIndex(card =>
+                    string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = slots });
+                NotifyStateChanged();
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!IsCurrentInteriorRefresh(generation))
+        {
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (!IsCurrentInteriorRefresh(generation))
+            {
+                return;
+            }
+
+            await DispatchUiAsync(() =>
+            {
+                var index = Cards.FindIndex(card =>
+                    string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var prior = Cards[index].InteriorSlotRenders;
+                if (prior is null || prior.Count == 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var errorSlots = prior.ToDictionary(
+                    static pair => pair.Key,
+                    pair => pair.Value with { Error = ex.Message },
+                    StringComparer.OrdinalIgnoreCase);
+                Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = errorSlots });
+                NotifyStateChanged();
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        }
+    }
+
+    private bool IsCurrentInteriorRefresh(long generation) => generation == _interiorRefreshGeneration;
 
     private async Task DebouncedDashboardApplyAsync(CancellationToken cancellationToken)
     {
