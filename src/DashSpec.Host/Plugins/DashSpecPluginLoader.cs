@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Plugins;
+using DashSpec.Filters;
+using DashSpec.Viz;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Plugins.Builtins;
@@ -73,10 +75,13 @@ public static class DashSpecPluginLoader
 
         services.AddScoped<ICardViewState, CardViewStateService>();
         services.AddScoped<ICardVizDisplayState, CardVizDisplayStateService>();
-        services.AddSingleton(registry.BuildCardVizComponentRegistry());
+        var cardVizComponents = registry.BuildCardVizComponentRegistry();
+        services.AddSingleton(cardVizComponents);
+        services.AddSingleton<ICardVizComponentResolver>(cardVizComponents);
         services.AddSingleton(registry.BuildVizCardToolbarRegistry());
         services.AddSingleton(registry.BuildFilterWidgetComponentRegistry());
         services.AddSingleton<FilterWidgetRegistry>();
+        services.AddSingleton<IFilterWidgetComponentResolver>(sp => sp.GetRequiredService<FilterWidgetRegistry>());
 
         var activeBundle = ResolveActiveBundle(manifest);
         var pluginIds = ResolveBundlePluginIds(manifest, activeBundle);

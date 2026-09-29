@@ -61,17 +61,10 @@ internal static class DashboardLayoutHelper
         card.InteriorPlacements is { Count: > 0 };
 
     public static string CardInteriorGridStyle(LayoutDefinition layout) =>
-        $"--card-grid-columns:{layout.Columns};";
+        PlacementGridCss.InteriorGridVariables(layout.Columns);
 
-    public static string CardInteriorSlotStyle(
-        PlacementDefinition placement,
-        int columns)
-    {
-        var span = Math.Min(placement.Span, columns);
-        return placement.Row > 0
-            ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
-            : $"grid-column:span {span};";
-    }
+    public static string CardInteriorSlotStyle(PlacementDefinition placement, int columns) =>
+        PlacementGridCss.SlotStyle(placement, columns);
 
     public static IReadOnlyDictionary<string, PlacementDefinition> ResolveInteriorPlacements(
         CardDefinition card,

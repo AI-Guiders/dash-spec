@@ -1,0 +1,48 @@
+@namespace DashSpec.Plugin.Viz.Builtins.Components.Hosting
+@inject ICardVizComponentResolver VizComponents
+
+@if (Card.Loading)
+{
+    <div class="card-skeleton">
+        <div class="spinner" aria-hidden="true"></div>
+    </div>
+}
+else if (!string.IsNullOrEmpty(Card.Error))
+{
+    <div class="card-error">@Card.Error</div>
+}
+else if (_componentType is null)
+{
+    <div class="card-error">Неизвестный viz plugin: @Card.RenderPluginId</div>
+}
+else
+{
+    <DynamicComponent Type="_componentType" Parameters="_parameters" />
+}
+
+@code {
+    [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+    [Parameter] public double MatrixMin { get; set; }
+    [Parameter] public double MatrixMax { get; set; }
+    [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
+    [Parameter] public bool DetailView { get; set; }
+
+    private Type? _componentType;
+    private Dictionary<string, object?> _parameters = new();
+
+    protected override void OnParametersSet()
+    {
+        _componentType = VizComponents.TryGetComponentType(Card.RenderPluginId);
+        _parameters = new Dictionary<string, object?>
+        {
+            ["Context"] = new CardVizRenderContext
+            {
+                Card = Card,
+                DetailView = DetailView,
+                MatrixMin = MatrixMin,
+                MatrixMax = MatrixMax,
+                OnHeatmapCellSelected = OnHeatmapCellSelected,
+            },
+        };
+    }
+}

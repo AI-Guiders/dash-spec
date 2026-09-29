@@ -1,6 +1,8 @@
+using DashSpec.Viz;
+
 namespace DashSpec.Host.Plugins;
 
-public sealed class CardVizComponentRegistry
+public sealed class CardVizComponentRegistry : ICardVizComponentResolver
 {
     private readonly Dictionary<string, Type> _components = new(StringComparer.OrdinalIgnoreCase);
 
@@ -25,5 +27,8 @@ public sealed class CardVizComponentRegistry
     }
 
     public Type? TryGet(string pluginId) =>
-        _components.TryGetValue(pluginId, out var componentType) ? componentType : null;
+        TryGetComponentType(pluginId);
+
+    public Type? TryGetComponentType(string renderPluginId) =>
+        _components.TryGetValue(renderPluginId, out var componentType) ? componentType : null;
 }
