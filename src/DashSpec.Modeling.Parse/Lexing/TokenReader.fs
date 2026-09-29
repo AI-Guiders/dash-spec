@@ -223,12 +223,32 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
         else
             { Column = column; Alias = None }
 
+    member private this.FormatRestOfLine(parts: ResizeArray<string>) =
+        let sb = System.Text.StringBuilder()
+        for part in parts do
+            if part = "," then
+                sb.Append(',') |> ignore
+            elif sb.Length = 0 then
+                sb.Append(part) |> ignore
+            elif sb.[sb.Length - 1] = ',' then
+                sb.Append(' ').Append(part) |> ignore
+            else
+                sb.Append(' ').Append(part) |> ignore
+        sb.ToString()
+
     member this.ReadRestOfLine() =
         let parts = ResizeArray<string>()
-        while tokens.[index].Kind = TokenKind.Ident || tokens.[index].Kind = TokenKind.Raw do
-            parts.Add(tokens.[index].Value)
-            index <- index + 1
-        String.Join(' ', parts)
+        let mutable continueReading = true
+        while continueReading && index < tokens.Count && tokens.[index].Kind <> TokenKind.Newline do
+            match tokens.[index].Kind with
+            | TokenKind.Comma ->
+                parts.Add(",")
+                index <- index + 1
+            | TokenKind.Ident | TokenKind.Raw | TokenKind.String ->
+                parts.Add(tokens.[index].Value)
+                index <- index + 1
+            | _ -> continueReading <- false
+        this.FormatRestOfLine(parts)
 
     member this.TryModuleInclude() =
         this.SkipNewlines()
