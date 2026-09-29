@@ -266,9 +266,9 @@ public class CardInteriorLayoutTests
 
         var card = doc.Cards.Single();
         var chrome = CardLocalFilterChromeCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
-        Assert.Equal(new PlacementDefinition(1, 1, 6), chrome["usage_date"]);
-        Assert.Equal(new PlacementDefinition(1, 7, 3), chrome["apply"]);
-        Assert.Equal(new PlacementDefinition(1, 10, 3), chrome["app_name"]);
+        Assert.Equal(new PlacementDefinition(1, 1, 2), chrome["usage_date"]);
+        Assert.Equal(new PlacementDefinition(1, 3, 1), chrome["apply"]);
+        Assert.Equal(new PlacementDefinition(1, 4, 1), chrome["app_name"]);
     }
 
     [Fact]
