@@ -153,7 +153,8 @@
   min-width: 0;
 }
 
-.card-head-toolbar-filters--grid {
+.card-head-toolbar-filters--grid,
+.card-filters-local.card-head-toolbar-filters--grid {
   display: grid;
   flex: 1 1 36rem;
   flex-wrap: unset;
