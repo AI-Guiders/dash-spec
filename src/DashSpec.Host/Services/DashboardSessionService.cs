@@ -138,9 +138,7 @@ public sealed class DashboardSessionService(
 
     public Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default)
     {
-        var activeView = cardViewState.GetActiveView(card.Id)
-            ?? CardViewSwitchApplier.ResolveDefaultViewId(card.ExtensionBlocks);
-        var effectiveCard = CardViewSwitchApplier.Apply(card, activeView);
+        var effectiveCard = ResolveEffectiveCard(card);
         return cardRenderService.RenderAsync(
             effectiveCard,
             Document,
@@ -150,6 +148,29 @@ public sealed class DashboardSessionService(
             _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
             _specDirectory,
             cancellationToken);
+    }
+
+    public Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderInteriorSlotsAsync(
+        CardDefinition card,
+        CancellationToken cancellationToken = default)
+    {
+        var effectiveCard = ResolveEffectiveCard(card);
+        return cardRenderService.RenderInteriorSlotsAsync(
+            effectiveCard,
+            Document,
+            Filters,
+            FilterIndex,
+            _specLibrary,
+            _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
+            _specDirectory,
+            cancellationToken);
+    }
+
+    private CardDefinition ResolveEffectiveCard(CardDefinition card)
+    {
+        var activeView = cardViewState.GetActiveView(card.Id)
+            ?? CardViewSwitchApplier.ResolveDefaultViewId(card.ExtensionBlocks);
+        return CardViewSwitchApplier.Apply(card, activeView);
     }
 
     private async Task LoadFromTextAsync(
