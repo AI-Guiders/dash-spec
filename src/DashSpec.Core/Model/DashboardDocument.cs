@@ -21,8 +21,10 @@ public sealed record DashboardDocument(
     IReadOnlyDictionary<string, TooltipDefinition>? ModuleTooltips = null,
     IReadOnlyList<ReportPageDefinition>? Pages = null,
     IReadOnlyDictionary<string, string>? CommandAliases = null,
-    ReportFormatDefaults? FormatDefaults = null)
+    ReportFormatDefaults? FormatDefaults = null,
+    CardsChromeDefinition? CardsChrome = null)
 {
+    public CardsChromeDefinition ResolvedCardsChrome => CardsChrome ?? CardsChromeDefinition.Default;
     public ReportFormatDefaults ResolvedFormatDefaults => FormatDefaults ?? ReportFormatDefaults.Empty;
     public static IReadOnlyDictionary<string, string> EmptyCommandAliases { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

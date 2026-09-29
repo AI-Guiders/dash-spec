@@ -9,10 +9,18 @@ open DashSpec.Modeling.Parse.Lexing
 
 module CardChromeParser =
 
+    let private parseFoldMode (cardId: string) (raw: string) =
+        match raw.Trim().ToLowerInvariant() with
+        | "none" -> CardFoldMode.None
+        | "independent" | "titlebar" -> CardFoldMode.Independent
+        | _ ->
+            raise (DashSpecParseException($"Card '{cardId}': chrome fold must be none or independent; got '{raw}'."))
+
     let parse (reader: TokenReader) (cardId: string) =
         BlockSyntax.beginBlock reader
         let mutable boundFilters = CardBoundFilterChrome.Chips
         let mutable hideTitle = false
+        let mutable fold = CardFoldMode.None
 
         while not (BlockSyntax.isBlockEnd reader "chrome" None) do
             reader.SkipNewlines()
@@ -35,11 +43,41 @@ module CardChromeParser =
                     | raw ->
                         raise (DashSpecParseException($"Card '{cardId}': chrome title must be hidden, omit, or suppress; got '{raw}'."))
                 reader.SkipNewlines()
+            elif reader.TryKeyword "fold" then
+                reader.Expect TokenKind.Eq
+                fold <- parseFoldMode cardId (reader.ReadIdent())
+                reader.SkipNewlines()
             else
                 raise (reader.Unexpected "chrome property")
 
         BlockSyntax.expectBlockEnd reader "chrome" None
-        { BoundFilters = boundFilters; HideTitle = hideTitle }
+        { BoundFilters = boundFilters; HideTitle = hideTitle; Fold = fold }
+
+module CardsChromeParser =
+
+    let parse (reader: TokenReader) =
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let mutable foldPolicy = CardsFoldPolicy.None
+
+        while not (BlockSyntax.isBlockEnd reader "chrome" None) && not reader.IsEof do
+            reader.SkipNewlines()
+            if BlockSyntax.isBlockEnd reader "chrome" None then ()
+            elif reader.TryKeyword "fold" then
+                reader.Expect TokenKind.Eq
+                let raw = reader.ReadIdent().Trim().ToLowerInvariant()
+                foldPolicy <-
+                    match raw with
+                    | "none" -> CardsFoldPolicy.None
+                    | "focus_single" | "focus-single" | "focus" -> CardsFoldPolicy.FocusSingle
+                    | _ ->
+                        raise (DashSpecParseException($"cards chrome fold must be none or focus_single; got '{raw}'."))
+                reader.SkipNewlines()
+            else
+                raise (reader.Unexpected "cards chrome property")
+
+        BlockSyntax.expectBlockEnd reader "chrome" None
+        { FoldPolicy = foldPolicy }
 
 module FilterDeriveParser =
 
