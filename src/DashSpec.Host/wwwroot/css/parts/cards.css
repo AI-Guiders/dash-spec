@@ -200,16 +200,6 @@
   overflow: visible;
 }
 
-/* Filter widget fit in chrome grid → DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css */
-
-.card-head-toolbar-filters--grid .card-filter-apply {
-  width: 100%;
-}
-
-.card-head-toolbar-filters .card-filter-apply {
-  margin-left: 0;
-}
-
 .card-head-meta {
   display: flex;
   flex-direction: column;
