@@ -26,4 +26,7 @@ public static class CompositionResolution
 
     public static int? ResolveVisibleRows(CardDefinition card, SpecLibrary? library) =>
         CardChromeResolver.ResolveVisibleRows(card, library);
+
+    public static TablePresentation ResolveTablePresentation(CardDefinition card, SpecLibrary? library) =>
+        CardChromeResolver.ResolveTablePresentation(card, library);
 }

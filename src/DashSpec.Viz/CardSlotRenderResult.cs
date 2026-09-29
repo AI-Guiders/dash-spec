@@ -14,4 +14,5 @@ public sealed record CardSlotRenderResult(
     MatrixPayload? Matrix = null,
     GanttPayload? Gantt = null,
     MatrixPresentation? MatrixPresentation = null,
+    TablePresentation? TablePresentation = null,
     string? Error = null);

@@ -1,4 +1,5 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.TableHtml
+@using DashSpec.Execution.Runtime
 
 @if (Context.Card.Table is null || Context.Card.Table.Rows.Count == 0)
 {
@@ -6,7 +7,7 @@
 }
 else
 {
-    <div class="table-wrap">
+    <div class="@WrapClass" style="@WrapStyle">
         <table>
             <thead>
                 <tr>
@@ -14,12 +15,15 @@ else
                     {
                         <th>
                             <div class="table-col-head">@column</div>
-                            <input type="search"
-                                   class="table-col-filter"
-                                   placeholder="Фильтр"
-                                   aria-label="@($"Фильтр: {column}")"
-                                   value="@GetFilter(column)"
-                                   @oninput="e => SetFilter(column, e.Value?.ToString())" />
+                            @if (ShowColumnFilters)
+                            {
+                                <input type="search"
+                                       class="table-col-filter"
+                                       placeholder="Фильтр"
+                                       aria-label="@($"Фильтр: {column}")"
+                                       value="@GetFilter(column)"
+                                       @oninput="e => SetFilter(column, e.Value?.ToString())" />
+                            }
                         </th>
                     }
                 </tr>
@@ -49,6 +53,30 @@ else
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
 
+    private TablePresentation Presentation =>
+        Context.Card.TablePresentation ?? TablePresentation.FromProperties(new Dictionary<string, string>());
+
+    private bool ShowColumnFilters => Presentation.ColumnFilters;
+
+    private string WrapClass
+    {
+        get
+        {
+            var parts = new List<string> { "table-wrap" };
+            parts.Add(Presentation.Width is TableWidthMode.Fill
+                ? "table-wrap--width-fill"
+                : "table-wrap--width-content");
+            if (Presentation.Density is TableDensity.Compact)
+            {
+                parts.Add("table-wrap--density-compact");
+            }
+
+            return string.Join(' ', parts);
+        }
+    }
+
+    private string WrapStyle => $"max-height: {Presentation.MaxHeightPx}px;";
+
     private readonly Dictionary<string, string> _columnFilters = new(StringComparer.OrdinalIgnoreCase);
 
     private IReadOnlyList<IReadOnlyList<string>> FilteredRows
@@ -68,6 +96,7 @@ else
     private int FilteredRowCount => FilteredRows.Count;
 
     private bool HasActiveFilters =>
+        ShowColumnFilters &&
         _columnFilters.Values.Any(value => !string.IsNullOrWhiteSpace(value));
 
     private string GetFilter(string column) =>

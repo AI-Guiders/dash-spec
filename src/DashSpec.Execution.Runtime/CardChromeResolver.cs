@@ -22,6 +22,9 @@ public static class CardChromeResolver
         };
     }
 
+    public static TablePresentation ResolveTablePresentation(CardDefinition card, SpecLibrary? library) =>
+        TablePresentation.Resolve(card, library);
+
     public static int ResolveMatrixHeightPx(CardDefinition card, SpecLibrary? library)
     {
         var props = ChartChromeProperties.Merge(card, library);

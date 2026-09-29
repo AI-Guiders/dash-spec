@@ -3,7 +3,7 @@ using DashSpec.Core.Parsing;
 
 namespace DashSpec.Execution.Runtime;
 
-internal static class ChartChromeProperties
+public static class ChartChromeProperties
 {
     public static Dictionary<string, string> Merge(CardDefinition card, SpecLibrary? library)
     {
@@ -12,9 +12,10 @@ internal static class ChartChromeProperties
 
         foreach (var legacyKey in new[]
         {
-            "legend", "height", "visible_rows", "stacked", "orientation", "fill",
+            "legend", "height", "max_height", "visible_rows", "stacked", "orientation", "fill",
             "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
             "y_max", "value_axis_max", "color_mode", "default", "colors",
+            "width", "density", "column_filters",
         })
         {
             if (!merged.ContainsKey(legacyKey) &&
