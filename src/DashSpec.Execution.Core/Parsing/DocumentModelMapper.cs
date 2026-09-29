@@ -170,6 +170,8 @@ internal static class DocumentModelMapper
                 show.Item4,
                 FirstOrNull(show.Item5)),
             FsharpCardClick.SetFilterFromField set => new SetFilterFromFieldEffect(set.Item1, set.Item2),
+            FsharpCardClick.DrillTableFromCell drill => new DrillTableFromCellEffect(
+                drill.Item.Select(static b => new SetFilterFromFieldEffect(b.Item1, b.Item2)).ToList()),
             FsharpCardClick.InvokeHandler invoke => new InvokeHandlerEffect(
                 invoke.Item1,
                 invoke.Item2.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase)),

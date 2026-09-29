@@ -16,6 +16,10 @@ public sealed record SetFilterFromFieldEffect(
     string FilterName,
     string Field) : CardClickEffect;
 
+/// <summary>Scope heatmap cell binds to interior drill SQL only (ADR-0064).</summary>
+public sealed record DrillTableFromCellEffect(
+    IReadOnlyList<SetFilterFromFieldEffect> Binds) : CardClickEffect;
+
 public sealed record InvokeHandlerEffect(
     string HandlerId,
     IReadOnlyDictionary<string, string> Args) : CardClickEffect;

@@ -60,6 +60,57 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_cell_drill_overlay_overrides_session_filters_for_bound_names()
+    {
+        var card = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              defaults
+                filter.usage_date.range = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Usage"
+              filter field app_name on demo.v.app_name as "App"
+              filters dashboard
+              usage_date
+              app_name
+              end dashboard
+              card peak as "Peak"
+              bind
+                usage_date, app_name
+              end bind
+              diagram table
+              columns = host_name, user_sam
+              end table
+              datasource view demo.v_drill
+              end card
+              end report
+            end dashboard
+""").Cards[0];
+
+        var filters = new FilterState();
+        filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
+        filters.SetField("app_name", ["OtherApp"]);
+
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v.app_name"),
+        };
+
+        var overlay = new CardCellDrillOverlay();
+        overlay.SetDate("usage_date", new DateOnly(2026, 6, 3), new DateOnly(2026, 6, 3));
+        overlay.SetField("app_name", "Tekla Structures");
+
+        var query = QueryCompiler.Compile(card, filters, index, cellDrillOverlay: overlay);
+
+        Assert.Contains("usage_date >= @usage_date_from", query.Sql);
+        Assert.Contains("app_name = @app_name_0", query.Sql);
+        Assert.Equal(new DateOnly(2026, 6, 3), (DateOnly)query.Parameters.First(p => p.Name == "@usage_date_from").Value!);
+        Assert.Equal("Tekla Structures", query.Parameters.First(p => p.Name == "@app_name_0").Value);
+    }
+
+    [Fact]
     public void Compile_sql_datasource_wraps_subquery_and_applies_filters()
     {
         var card = DashSpecParser.Parse("""

@@ -79,7 +79,7 @@ module CardClickParser =
                 None
         ShowSelection(ShowPlacement.Below, format, source, copyFriendly, split)
 
-    let private parseSetEffect (reader: TokenReader) (cardId: string) =
+    let private parseSetBinding (reader: TokenReader) (cardId: string) =
         let filterName = reader.ReadIdent()
         if String.IsNullOrWhiteSpace filterName then
             raise (DashSpecParseException($"Card '{cardId}': set requires filter name."))
@@ -92,7 +92,28 @@ module CardClickParser =
                 || field.Equals("y", StringComparison.OrdinalIgnoreCase)
                 || field.Equals("value", StringComparison.OrdinalIgnoreCase)) then
             raise (DashSpecParseException($"Card '{cardId}': set from field must be x, y, or value; got '{field}'."))
-        SetFilterFromField(filterName, field.ToLowerInvariant())
+        filterName, field.ToLowerInvariant()
+
+    let private parseSetEffect (reader: TokenReader) (cardId: string) =
+        let filterName, field = parseSetBinding reader cardId
+        SetFilterFromField(filterName, field)
+
+    let private parseDrillTableFromCellEffect (reader: TokenReader) (cardId: string) =
+        if not (reader.TryKeyword "table") then
+            raise (DashSpecParseException($"Card '{cardId}': drill requires 'table from cell'."))
+        if not (reader.TryKeyword "from") then
+            raise (DashSpecParseException($"Card '{cardId}': drill table requires 'from cell'."))
+        let source = reader.ReadIdent()
+        if not (String.Equals(source, "cell", StringComparison.OrdinalIgnoreCase)) then
+            raise (DashSpecParseException($"Card '{cardId}': drill table source must be 'cell'; got '{source}'."))
+        let binds = ResizeArray<string * string>()
+        reader.SkipNewlines()
+        while reader.TryKeyword "set" do
+            binds.Add(parseSetBinding reader cardId)
+            reader.SkipNewlines()
+        if binds.Count = 0 then
+            raise (DashSpecParseException($"Card '{cardId}': drill table from cell requires at least one 'set <filter> from x|y|value'."))
+        DrillTableFromCell(binds :> IReadOnlyList<_>)
 
     let private parsePreserveFilterList (reader: TokenReader) =
         reader.SkipNewlines()
@@ -170,6 +191,9 @@ module CardClickParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "set" then
                 effects.Add(parseSetEffect reader cardId)
+                reader.SkipNewlines()
+            elif reader.TryKeyword "drill" then
+                effects.Add(parseDrillTableFromCellEffect reader cardId)
                 reader.SkipNewlines()
             elif reader.TryKeyword "goto" then
                 effects.Add(parseGotoEffect reader cardId)
