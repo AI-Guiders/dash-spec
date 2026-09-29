@@ -252,7 +252,7 @@ public class CardInteriorLayoutTests
                 apply = manual
                 app_name
                 layout
-                  [ usage_date:2 apply:1 app_name:5 ]
+                  [ usage_date:2 apply:1 app_name:1 ]
                 end layout
               end filters
               diagram ref H heatmap
@@ -268,7 +268,7 @@ public class CardInteriorLayoutTests
         var chrome = CardLocalFilterChromeCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
         Assert.Equal(new PlacementDefinition(1, 1, 3), chrome["usage_date"]);
         Assert.Equal(new PlacementDefinition(1, 4, 1), chrome["apply"]);
-        Assert.Equal(new PlacementDefinition(1, 5, 8), chrome["app_name"]);
+        Assert.Equal(new PlacementDefinition(1, 10, 3), chrome["app_name"]);
     }
 
 }
