@@ -3,22 +3,31 @@
   max-height: 420px;
   border: 1px solid var(--border);
   border-radius: 8px;
+  width: fit-content;
+  max-width: 100%;
 }
 
-table {
-  width: 100%;
+.table-wrap table {
+  width: max-content;
+  max-width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
-th, td {
+.table-wrap th,
+.table-wrap td {
   border-bottom: 1px solid var(--border);
-  padding: 0.5rem 0.65rem;
+  padding: 0.35rem 0.5rem;
   text-align: left;
   font-size: 0.86rem;
   white-space: nowrap;
+  width: auto;
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-th {
+.table-wrap th {
   position: sticky;
   top: 0;
   background: var(--surface-2);
@@ -33,7 +42,8 @@ th {
 
 .table-col-filter {
   width: 100%;
-  min-width: 4.5rem;
+  min-width: 3rem;
+  max-width: 12rem;
   padding: 0.2rem 0.35rem;
   border: 1px solid var(--border);
   border-radius: 4px;
