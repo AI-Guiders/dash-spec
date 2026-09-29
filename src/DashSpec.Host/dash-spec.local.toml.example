@@ -2,7 +2,8 @@
 # Loaded after dash-spec.toml and optional dash-spec.dev.toml.
 
 # [host]
-# dashhost = "D:/DashSpecDemo/DemoHost.DashSpec/dashspec/demo-luf-dev.dashhost"
+# dashhost = "samples/demo/demo.dashhost"
+
 # database_path = "D:/data/dashspec-host-settings.witdb"
 
 # [catalog_git]

@@ -3,7 +3,7 @@ using DashSpec.Core.Parsing;
 
 namespace DashSpec.Core.Layout;
 
-/// <summary>Card interior grid: diagram slot + local filters from bracket board.</summary>
+/// <summary>Card interior grid: diagram slots + local filters from bracket board.</summary>
 public static class CardInteriorLayoutCompactor
 {
     public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
@@ -18,14 +18,11 @@ public static class CardInteriorLayoutCompactor
             throw new ArgumentOutOfRangeException(nameof(columns));
         }
 
-        if (card.InteriorBoard is null)
-        {
-            return new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
-        }
+        var board = card.InteriorBoard ?? CardInteriorLayoutDefaults.Synthesize(card);
 
         var context = $"Card '{card.Id}' interior";
         var placements = LayoutBoardPlacer.Resolve(
-            card.InteriorBoard,
+            board,
             columns,
             context,
             token => CardInteriorSlotResolver.Resolve(token, card, filters));
@@ -39,26 +36,24 @@ public static class CardInteriorLayoutCompactor
         IReadOnlyDictionary<string, PlacementDefinition> placements,
         string context)
     {
-        if (!placements.ContainsKey(CardInteriorSlots.Diagram))
+        var slots = CardDiagramSlotCatalog.ResolveSlots(card);
+        foreach (var slotRef in slots.Keys)
         {
-            throw new DashSpecParseException(
-                $"{context}: layout board must include the diagram slot " +
-                $"(token '{card.DiagramSlotRef ?? "diagram"}').");
-        }
-
-        foreach (var filterName in card.LocalFilters)
-        {
-            if (!placements.ContainsKey(filterName))
+            if (!placements.ContainsKey(slotRef))
             {
+                var token = string.Equals(slotRef, CardInteriorSlots.Diagram, StringComparison.Ordinal)
+                    ? "diagram"
+                    : slotRef;
                 throw new DashSpecParseException(
-                    $"{context}: layout board must include local filter '{filterName}'.");
+                    $"{context}: layout board must include diagram slot '{token}'.");
             }
         }
 
-        var allowed = new HashSet<string>(card.LocalFilters, StringComparer.OrdinalIgnoreCase)
+        var allowed = new HashSet<string>(card.LocalFilters, StringComparer.OrdinalIgnoreCase);
+        foreach (var slotRef in slots.Keys)
         {
-            CardInteriorSlots.Diagram,
-        };
+            allowed.Add(slotRef);
+        }
 
         foreach (var slot in placements.Keys)
         {

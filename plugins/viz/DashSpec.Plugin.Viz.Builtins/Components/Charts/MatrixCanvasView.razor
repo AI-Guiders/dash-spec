@@ -66,18 +66,10 @@ else
                         class="matrix-canvas"
                         width="1"
                         height="1"
-                        @onclick="HandleCanvasClickAsync"
-                        @onmousemove="HandleCanvasMoveAsync"
-                        @onmouseleave="ClearHover"></canvas>
+                        @onclick="HandleCanvasClickAsync"></canvas>
             </div>
         </div>
-        <div class="heatmap-hover-detail" role="status" aria-live="polite">
-            @if (_hoverCell is { } hover && hover.Value is not null)
-            {
-                <p class="heatmap-hover-detail-head">@PopoverHeader(hover.Yi, hover.Xi, hover.Value)</p>
-            }
-        </div>
-        @if (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText))
+        @if (ShowGradientLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText)))
         {
             <div class="heatmap-legend">
                 @if (!string.IsNullOrWhiteSpace(LegendMinText))
@@ -121,6 +113,8 @@ else
 
     [Parameter] public string? LegendMaxText { get; set; }
 
+    [Parameter] public bool ShowGradientLegend { get; set; } = true;
+
     [Parameter] public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
 
     [Parameter] public MatrixRenderLimitsDefinition? Limits { get; set; }
@@ -141,8 +135,6 @@ else
         $"{(ShowAxisLabelsX ? null : "matrix-canvas-host--hide-x-labels")} {(ShowAxisLabelsY ? null : "matrix-canvas-host--hide-y-labels")}".Trim();
 
     private string? _mountedPayloadKey;
-    private (int Yi, int Xi, double? Value)? _hoverCell;
-    private long _lastHoverTick;
     private const int TargetVisibleXLabels = 14;
 
     private string HostStyle => $"--matrix-max-height:{HeightPx}px";
@@ -249,39 +241,6 @@ else
             Payload.Tooltips?[hit.Yi][hit.Xi]);
 
         await OnCellSelected.InvokeAsync(context);
-        _hoverCell = null;
-        StateHasChanged();
-    }
-
-    private async Task HandleCanvasMoveAsync(MouseEventArgs args)
-    {
-        var now = Environment.TickCount64;
-        if (now - _lastHoverTick < 48)
-        {
-            return;
-        }
-
-        _lastHoverTick = now;
-        var hit = await Js.InvokeAsync<CanvasHit?>("dashSpecMatrix.hitTest", CanvasId, args.OffsetX, args.OffsetY);
-        var next = hit is null ? null : ((int Yi, int Xi, double? Value)?)(hit.Yi, hit.Xi, hit.Value);
-        if (next == _hoverCell)
-        {
-            return;
-        }
-
-        _hoverCell = next;
-        StateHasChanged();
-    }
-
-    private void ClearHover()
-    {
-        if (_hoverCell is null)
-        {
-            return;
-        }
-
-        _hoverCell = null;
-        StateHasChanged();
     }
 
     private bool ShouldShowXLabel(int index)
@@ -302,17 +261,6 @@ else
     private string FormatXLabel(string label) => LabelFormat.Format(label, XFormat);
 
     private string FormatYLabel(string label) => LabelFormat.Format(label, YFormat);
-
-    private string PopoverHeader(int yi, int xi, double? value)
-    {
-        var yLabel = Payload.YLabels[yi];
-        var xLabel = Payload.XLabels[xi];
-        var head = $"{yLabel} · {FormatXLabel(xLabel)}: {FormatValue(value)}";
-        return string.IsNullOrWhiteSpace(ValueLabel) ? head : $"{head} {ValueLabel}";
-    }
-
-    private static string FormatValue(double? value) =>
-        value is null ? "—" : value.Value.ToString("0");
 
     private async Task UnmountIfMountedAsync()
     {
