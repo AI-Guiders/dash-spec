@@ -1,0 +1,12 @@
+@namespace DashSpec.Presentation.Components
+@using DashSpec.Core.Layout
+@using DashSpec.Core.Model
+
+<div class="card-interior-grid" style="@PlacementGridCss.InteriorGridVariables(GridColumns)">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public int GridColumns { get; set; } = 12;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

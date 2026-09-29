@@ -1,0 +1,125 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Core.Layout
+@using DashSpec.Core.Model
+@using DashSpec.Viz
+@using DashSpec.Filters
+@using static DashSpec.Core.Layout.CardLocalFilterChromeCompactor
+
+<div class="@RootClass" style="@GridStyle">
+    @foreach (var slotId in SlotOrder)
+    {
+        @if (string.Equals(slotId, ApplySlotId, StringComparison.OrdinalIgnoreCase))
+        {
+            <div class="card-head-filter-slot" style="@SlotStyle(ApplySlotId)">
+                <CardManualApplyButton Label="@ApplyLabel"
+                                       Disabled="@Card.Loading"
+                                       OnApply="() => OnApplyCard.InvokeAsync(Card.Id)" />
+            </div>
+        }
+        else if (UsesChromeGrid)
+        {
+            <div class="card-head-filter-slot" style="@SlotStyle(slotId)">
+                @RenderFilter(slotId)
+            </div>
+        }
+        else
+        {
+            @RenderFilter(slotId)
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+    [Parameter] public int GridColumns { get; set; } = 12;
+    [Parameter] public bool HeadMetaLayout { get; set; }
+    [Parameter, EditorRequired] public string ApplyLabel { get; set; } = "Apply";
+    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
+        new Dictionary<string, FilterDefinition>();
+    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+    [Parameter] public bool AutoApply { get; set; }
+    [Parameter] public EventCallback<string> OnApplyCard { get; set; }
+    [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
+    [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
+    [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
+
+    private bool UsesChromeGrid => Card.LocalFilterChromePlacements is { Count: > 0 };
+
+    private int ChromeGridColumns =>
+        Card.LocalFilterChromePlacements is { Count: > 0 } placements
+            ? CardFilterChromeSlotOrder.GridColumnCount(placements)
+            : GridColumns;
+
+    private int ApplySplitIndex =>
+        Card.LocalFiltersApplySplitIndex ?? Card.LocalFilters?.Count ?? 0;
+
+    private bool ShowApplyButton =>
+        Card.LocalFilters is { Count: > 0 } && (!AutoApply || Card.LocalFiltersManualApply);
+
+    private bool LocalFiltersAutoApply =>
+        AutoApply && !Card.LocalFiltersManualApply;
+
+    private IEnumerable<string> SlotOrder =>
+        CardFilterChromeSlotOrder.Order(
+            Card.LocalFilters ?? [],
+            Card.LocalFilterChromePlacements,
+            ApplySplitIndex,
+            ShowApplyButton);
+
+    private string RootClass =>
+        HeadMetaLayout
+            ? UsesChromeGrid
+                ? "card-head-toolbar-filters card-head-toolbar-filters--grid card-filters-local"
+                : "card-head-toolbar-filters card-filters-local"
+            : UsesChromeGrid
+                ? "card-head-toolbar-filters card-head-toolbar-filters--grid"
+                : "card-head-toolbar-filters";
+
+    private string GridStyle =>
+        UsesChromeGrid
+            ? PlacementGridCss.InteriorGridVariables(ChromeGridColumns)
+            : string.Empty;
+
+    private string SlotStyle(string slotId) =>
+        UsesChromeGrid &&
+        Card.LocalFilterChromePlacements!.TryGetValue(slotId, out var placement)
+            ? PlacementGridCss.SlotStyle(placement, ChromeGridColumns)
+            : string.Empty;
+
+    private RenderFragment RenderFilter(string filterName) => __builder =>
+    {
+        var filter = FilterIndex[filterName];
+        <FilterWidgetHost Filter="filter"
+                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields)"
+                          Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
+                          Disabled="@Card.Loading"
+                          Options="GetFieldOptions(filter.Name)"
+                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, SelectedFields)"
+                          SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
+                          DateFrom="DateFrom"
+                          DateTo="DateTo"
+                          FilterIndex="FilterIndex"
+                          SelectedFields="SelectedFields"
+                          OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
+                          OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
+                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, TopLimits)"
+                          TopValueChanged="value => OnLocalTopChanged(filter, value)" />;
+    };
+
+    private Task OnLocalTopChanged(FilterDefinition filter, int value)
+    {
+        if (filter.Kind is not FilterKind.Top)
+        {
+            return Task.CompletedTask;
+        }
+
+        TopLimits[filter.Name] = value;
+        return LocalFiltersAutoApply
+            ? OnScheduleCardApply.InvokeAsync(Card.Id)
+            : Task.CompletedTask;
+    }
+}
