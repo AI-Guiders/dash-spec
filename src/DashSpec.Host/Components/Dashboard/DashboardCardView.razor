@@ -171,11 +171,17 @@
             {
                 <div class="card-interior-slot @(IsDiagramInteriorSlot(slot.Key) ? "card-diagram-slot" : "card-filter-slot")"
                      style="@InteriorSlotStyle(slot.Key)">
-                    @if (Card.InteriorSlotRenders?.ContainsKey(slot.Key) == true)
+                    @if (IsLocalFilterInteriorSlot(slot.Key))
+                    {
+                        <div class="card-interior-filter-slot">
+                            @RenderLocalFilter(slot.Key, InteriorSlotStyle(slot.Key))
+                        </div>
+                    }
+                    else if (Card.InteriorSlotRenders?.ContainsKey(slot.Key) == true)
                     {
                         <CardSlotVisualization Card="Card" Slot="@Card.InteriorSlotRenders[slot.Key]" />
                     }
-                    else
+                    else if (IsPrimaryDiagramInteriorSlot(slot.Key))
                     {
                         <div class="card-viz-stack">
                             <CardVisualization Card="Card"
@@ -424,6 +430,13 @@
 
     private static bool IsDiagramInteriorSlot(string slotKey) =>
         !string.IsNullOrWhiteSpace(slotKey);
+
+    private bool IsLocalFilterInteriorSlot(string slotKey) =>
+        Card.LocalFilters?.Contains(slotKey, StringComparer.OrdinalIgnoreCase) == true;
+
+    private bool IsPrimaryDiagramInteriorSlot(string slotKey) =>
+        !IsLocalFilterInteriorSlot(slotKey)
+        && Card.InteriorSlotRenders?.ContainsKey(slotKey) != true;
 
     private string CardCssClass
     {
