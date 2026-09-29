@@ -27,6 +27,7 @@ public sealed record CardRenderResult(
     MatrixPayload? DetailMatrix = null,
     GanttPayload? Gantt = null,
     MatrixPresentation? MatrixPresentation = null,
+    TablePresentation? TablePresentation = null,
     CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,

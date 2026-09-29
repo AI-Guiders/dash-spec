@@ -27,6 +27,7 @@ module PropertySchemas =
         [ spec "use" Scalar
           spec "legend" Scalar
           spec "height" Scalar
+          spec "max_height" Scalar
           spec "visible_rows" Scalar
           spec "stacked" Scalar
           spec "fill" Scalar
@@ -34,7 +35,10 @@ module PropertySchemas =
           spec "scale_value" Scalar
           spec "y_max" Scalar
           spec "default" Scalar
-          spec "colors" Scalar ]
+          spec "colors" Scalar
+          spec "width" Scalar
+          spec "density" Scalar
+          spec "column_filters" Scalar ]
 
     let layoutGrid =
         [ spec "columns" Scalar

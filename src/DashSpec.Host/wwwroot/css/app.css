@@ -6,6 +6,7 @@
 @import url("parts/charts.css");
 @import url("/_content/DashSpec.Plugin.Viz.Builtins/css/heatmap.css");
 @import url("/_content/DashSpec.Plugin.Viz.Builtins/css/matrix-canvas.css");
+@import url("/_content/DashSpec.Plugin.Viz.Builtins/css/table-html.css");
 @import url("parts/viz-misc.css");
 @import url("parts/gantt-timeline.css");
 @import url("parts/spec-inspector.css");
