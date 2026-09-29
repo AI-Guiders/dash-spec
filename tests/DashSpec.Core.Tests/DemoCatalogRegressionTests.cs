@@ -166,15 +166,15 @@ public sealed class DemoCatalogRegressionTests
         var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
         var card = doc.Cards.Single(c => string.Equals(c.Id, "peak_concurrent_proxy", StringComparison.OrdinalIgnoreCase));
 
-        Assert.Null(card.InteriorBoard);
+        Assert.NotNull(card.InteriorBoard);
         Assert.NotNull(card.ExtensionBlocks);
         Assert.Contains(card.ExtensionBlocks!, b => string.Equals(b.Keyword, "views", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(card.ClickBehaviour);
-        var show = Assert.IsType<ShowSelectionEffect>(card.ClickBehaviour!.Effects[0]);
-        Assert.Equal(ShowPlacement.Below, show.Placement);
-        Assert.Equal(ShowSource.Tooltip, show.Source);
+        Assert.Contains(card.ClickBehaviour!.Effects, e => e is SetFilterFromFieldEffect);
 
         var placements = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
-        Assert.Single(placements);
+        Assert.Equal(2, placements.Count);
+        Assert.True(placements.ContainsKey("heatmap"));
+        Assert.True(placements.ContainsKey("drill"));
     }
 }
