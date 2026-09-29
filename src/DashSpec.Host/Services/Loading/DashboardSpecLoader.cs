@@ -123,6 +123,15 @@ public sealed class DashboardSpecLoader(
         TimeSpan timeout,
         CancellationToken cancellationToken)
     {
+        if (!QueryCompiler.CanLoadDistinctFieldOptions(filter))
+        {
+            logger.LogDebug(
+                "Skipping distinct field options for {FilterName} (column '{Column}' is not table-qualified).",
+                filter.Name,
+                filter.ColumnReference ?? "");
+            return (filter.Name, []);
+        }
+
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var sql = QueryCompiler.BuildDistinctFieldSql(filter);
         var cacheKey = $"{runtimeKey}:{connector.Id}:{sql}";
