@@ -45,7 +45,7 @@ end card
 | `none` | No fold control (default) |
 | `independent` | Titlebar chevron; toggle **this** card body (interior grid). No SQL re-run |
 
-Fold hides **card body** (interior grid + viz), keeps **card-head** (title, local filters, actions).
+Fold collapses to **titlebar only** (chevron + title): interior grid, viz, card-head toolbar (local filters, viz actions, export), and head meta are hidden.
 
 ### Slot fold (interior)
 
