@@ -41,7 +41,7 @@
                 }
             </div>
         }
-        @if (HasHeadToolbar)
+        @if (HasHeadToolbar && !BodyFolded)
         {
             <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
             @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
@@ -132,7 +132,7 @@
             }
             </div>
         }
-        @if (HasHeadMeta)
+        @if (HasHeadMeta && !BodyFolded)
         {
             <div class="card-head-meta">
                 @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
