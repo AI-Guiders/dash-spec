@@ -127,6 +127,7 @@
   flex-direction: column;
   gap: 0;
   margin-bottom: 0.75rem;
+  overflow: visible;
 }
 
 .card-head-title {
@@ -168,6 +169,7 @@
   gap: 0.35rem;
   padding: 0.4rem 0;
   border-bottom: 1px solid var(--border);
+  overflow: visible;
 }
 
 .card-head-toolbar-filters {
@@ -213,6 +215,11 @@
 .card-head-toolbar-filters--grid .field-combobox {
   min-width: 0;
   width: 100%;
+  overflow: visible;
+}
+
+.card-head-toolbar-filters--grid .combobox-panel {
+  z-index: 60;
 }
 
 .card-head-toolbar-filters--grid .combobox-trigger {
