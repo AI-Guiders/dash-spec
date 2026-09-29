@@ -27,6 +27,13 @@ public sealed class DateValueCodecTests
     }
 
     [Fact]
+    public void TryParseChartAxisDayLabel_accepts_date_short_with_anchor_year()
+    {
+        Assert.True(DateValueCodec.TryParseChartAxisDayLabel("28.09", 2026, out var day));
+        Assert.Equal(new DateOnly(2026, 9, 28), day);
+    }
+
+    [Fact]
     public void TryParseStoredBucket_reads_iso_datetime_as_utc()
     {
         var bucket = DateValueCodec.TryParseStoredBucket("2026-08-03T11:05:00");
