@@ -170,7 +170,10 @@ public sealed class LusCatalogRegressionTests
         Assert.NotNull(card.ExtensionBlocks);
         Assert.Contains(card.ExtensionBlocks!, b => string.Equals(b.Keyword, "views", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(card.ClickBehaviour);
-        Assert.Contains(card.ClickBehaviour!.Effects, e => e is SetFilterFromFieldEffect);
+        var drill = Assert.IsType<DrillTableFromCellEffect>(card.ClickBehaviour!.Effects[0]);
+        Assert.Equal(2, drill.Binds.Count);
+        Assert.Contains(drill.Binds, b => b.FilterName == "usage_date" && b.Field == "x");
+        Assert.Contains(drill.Binds, b => b.FilterName == "app_name" && b.Field == "y");
 
         var placements = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
         Assert.Equal(2, placements.Count);

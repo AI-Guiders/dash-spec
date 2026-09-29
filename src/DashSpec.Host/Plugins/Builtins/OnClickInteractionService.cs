@@ -12,7 +12,7 @@ public sealed class OnClickInteractionService : IOnClickInteractionService
     public bool HasNavigationEffects(CardClickBehaviour? behaviour) =>
         behaviour?.Effects.Any(effect => effect switch
         {
-            SetFilterFromFieldEffect or GotoTabEffect or GotoPageEffect or FocusPhaseEffect => true,
+            SetFilterFromFieldEffect or DrillTableFromCellEffect or GotoTabEffect or GotoPageEffect or FocusPhaseEffect => true,
             InvokeHandlerEffect invoke =>
                 string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase),
             _ => false,

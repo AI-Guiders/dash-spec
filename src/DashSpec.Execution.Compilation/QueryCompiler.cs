@@ -15,15 +15,17 @@ public static class QueryCompiler
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         SqlDialect sqlDialect = SqlDialect.TSql,
-        string? specDirectory = null) =>
-        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory);
+        string? specDirectory = null,
+        CardCellDrillOverlay? cellDrillOverlay = null) =>
+        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay);
 
     public static CompiledQuery Compile(
         CardDefinition card,
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         ISqlDialectBackend dialect,
-        string? specDirectory = null)
+        string? specDirectory = null,
+        CardCellDrillOverlay? cellDrillOverlay = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -41,7 +43,7 @@ public static class QueryCompiler
 
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
-        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect);
+        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay);
 
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
             ? ResolveTableLimit(card, filters, filterDefinitions)
@@ -423,7 +425,8 @@ public static class QueryCompiler
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         List<QueryParameter> parameters,
-        ISqlDialectBackend dialect)
+        ISqlDialectBackend dialect,
+        CardCellDrillOverlay? cellDrillOverlay)
     {
         foreach (var filterName in card.BoundFilters)
         {
@@ -433,7 +436,7 @@ public static class QueryCompiler
                 continue;
             }
 
-            var clause = BuildClause(definition, filters, parameters, dialect);
+            var clause = BuildClause(definition, filters, parameters, dialect, cellDrillOverlay);
             if (clause is null)
             {
                 continue;
@@ -447,10 +450,15 @@ public static class QueryCompiler
         FilterDefinition definition,
         FilterState filters,
         List<QueryParameter> parameters,
-        ISqlDialectBackend dialect)
+        ISqlDialectBackend dialect,
+        CardCellDrillOverlay? cellDrillOverlay)
     {
         return definition.Kind switch
         {
+            FilterKind.Date when cellDrillOverlay?.TryGetDate(definition.Name, out var drillDate) == true =>
+                BuildDateClause(drillDate, definition, filters, parameters, dialect),
+            FilterKind.Field when cellDrillOverlay?.TryGetField(definition.Name, out var drillField) == true =>
+                BuildFieldClause(new FieldFilterValue(drillField.ToList()), definition, parameters),
             FilterKind.Date => BuildDateClause(filters.GetDate(definition.Name), definition, filters, parameters, dialect),
             FilterKind.Field => BuildFieldClause(filters.GetField(definition.Name), definition, parameters),
             _ => null,
