@@ -9,4 +9,5 @@ public enum CardBoundFilterChrome
 
 public sealed record CardChromeDefinition(
     CardBoundFilterChrome BoundFilters = CardBoundFilterChrome.Chips,
-    bool HideTitle = false);
+    bool HideTitle = false,
+    CardFoldMode Fold = CardFoldMode.None);

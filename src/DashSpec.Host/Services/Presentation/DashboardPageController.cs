@@ -44,6 +44,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly CatalogUsageService _catalogUsage;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ICardCellDrillState _cellDrill;
+    private readonly ICardFoldState _cardFold;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -64,7 +65,8 @@ public sealed class DashboardPageController : IDisposable
         NavigationManager navigation,
         CatalogUsageService catalogUsage,
         IHttpContextAccessor httpContextAccessor,
-        ICardCellDrillState cellDrill)
+        ICardCellDrillState cellDrill,
+        ICardFoldState cardFold)
     {
         _session = session;
         _interactions = interactions;
@@ -83,6 +85,7 @@ public sealed class DashboardPageController : IDisposable
         _catalogUsage = catalogUsage;
         _httpContextAccessor = httpContextAccessor;
         _cellDrill = cellDrill;
+        _cardFold = cardFold;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -342,6 +345,23 @@ public sealed class DashboardPageController : IDisposable
         RecomputeToolbarPlacements();
         Notify();
         await ApplyFiltersAsync().ConfigureAwait(false);
+    }
+
+    public bool IsCardBodyFolded(string cardId) => _cardFold.IsCollapsed(cardId);
+
+    public void ToggleCardBodyFold(string cardId)
+    {
+        var foldable = _session.Document.Cards.Select(c =>
+            (c.Id, c.Chrome?.Fold ?? CardFoldMode.None)).ToList();
+        var policy = _session.Document.ResolvedCardsChrome.FoldPolicy;
+        if (policy is CardsFoldPolicy.None &&
+            foldable.Count(static x => x.Item2 is CardFoldMode.Independent) > 1)
+        {
+            policy = CardsFoldPolicy.FocusSingle;
+        }
+
+        _cardFold.Toggle(cardId, policy, foldable);
+        Notify();
     }
 
     public async Task ApplyCardClickNavigationAsync(
@@ -1119,6 +1139,7 @@ public sealed class DashboardPageController : IDisposable
 
         _cardViewState.ClearAll();
         _vizDisplayState.ClearAll();
+        _cardFold.Clear();
         _filters.LoadFromSession(_session, PlacedFilterNames());
         SnapAllGrainAnchoredDates();
         _refresh.SeedAllCardSkeletons();
