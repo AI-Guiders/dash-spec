@@ -51,6 +51,19 @@ public static class CardVizDisplayToggle
                 state.ToggleAxisLabelsY(cardId, visible);
                 return true;
             }
+            case VizDisplayToggleKind.Legend:
+            {
+                if (!presentation.ShowsGradientLegend)
+                {
+                    return false;
+                }
+
+                var visible = VizLabelDisplayResolver.EffectiveLegendVisible(
+                    true,
+                    state.GetLegendOverride(cardId));
+                state.ToggleLegend(cardId, visible);
+                return true;
+            }
             default:
                 return false;
         }

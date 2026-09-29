@@ -588,9 +588,14 @@ module CardParser =
             raise (DashSpecParseException("Card requires a diagram block or use <card-preset>."))
 
         if slotBuilder.Slots.Count = 0 then
-            let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
-            CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef diagram.Value.Value legend.Value presentation.Value seriesTransform.Value
-            CardDiagramSlotBuilder.applyData slotBuilder slotRef dataSource.Value.Value (boundFilters :> IReadOnlyList<_>)
+            match diagram.Value, dataSource.Value with
+            | Some d, Some ds ->
+                let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
+                CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+                CardDiagramSlotBuilder.applyData slotBuilder slotRef ds (boundFilters :> IReadOnlyList<_>)
+            | _ when useCardPreset.IsSome -> ()
+            | _ ->
+                raise (DashSpecParseException($"Card '{id}': requires diagram and data blocks, diagram slots, or use <card-preset>."))
         else
             CardDiagramSlotBuilder.pruneDataOnlyDiagramSlot slotBuilder
             match diagram.Value with
@@ -612,6 +617,8 @@ module CardParser =
         let diagramSlotsFinal =
             match CardDiagramSlotBuilder.build slotBuilder id with
             | Some map -> map
+            | None when useCardPreset.IsSome ->
+                Dictionary<string, CardDiagramSlot>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
             | None -> raise (DashSpecParseException($"Card '{id}': failed to build diagram slots."))
 
         for slot in diagramSlotsFinal.Values do
@@ -619,30 +626,50 @@ module CardParser =
 
         validateCardFilterBinding id (boundFilters :> IReadOnlyList<_>) filters
 
-        let primaryKey =
-            CardDiagramSlotBuilder.resolvePrimarySlotKey slotBuilder interiorBoard.Value
+        let presetDiagramPlaceholder =
+            { Kind = ""
+              Properties = Dictionary<string, string>() :> IReadOnlyDictionary<_, _>
+              UsePreset = None }
 
-        let primarySlot = diagramSlotsFinal.[primaryKey]
+        let presetDataSourcePlaceholder =
+            { Kind = DataSourceKind.View
+              Value = ""
+              SqlCarrier = None
+              Sheet = None }
+
+        let primaryKey, primaryDiagram, primaryDataSource, primaryBound, primaryLegend, primaryPresentation, primarySeriesTransform =
+            if diagramSlotsFinal.Count = 0 && useCardPreset.IsSome then
+                (CardDiagramSlotBuilder.DiagramSlotId,
+                 presetDiagramPlaceholder,
+                 presetDataSourcePlaceholder,
+                 boundFilters :> IReadOnlyList<_>,
+                 legend.Value,
+                 presentation.Value,
+                 seriesTransform.Value)
+            else
+                let key = CardDiagramSlotBuilder.resolvePrimarySlotKey slotBuilder interiorBoard.Value
+                let slot = diagramSlotsFinal.[key]
+                (key, slot.Diagram, slot.DataSource, slot.BoundFilters, slot.Legend, slot.Presentation, slot.SeriesTransform)
 
         if dataSource.Value.IsNone && useCardPreset.IsNone then
-            dataSource.Value <- Some primarySlot.DataSource
+            dataSource.Value <- Some primaryDataSource
 
         if dataSource.Value.IsNone && useCardPreset.IsNone then
             raise (DashSpecParseException("Card requires a datasource block or use <card-preset>."))
 
         { Id = id
           Title = title.Value
-          Diagram = primarySlot.Diagram
-          DataSource = primarySlot.DataSource
-          BoundFilters = primarySlot.BoundFilters
+          Diagram = primaryDiagram
+          DataSource = primaryDataSource
+          BoundFilters = primaryBound
           LocalFilters = localFilters :> IReadOnlyList<_>
           Placement = placement.Value
           TabId = None
           LayoutRef = layoutRef
           UseCardPreset = useCardPreset
-          Legend = legend.Value |> Option.orElse primarySlot.Legend
-          Presentation = presentation.Value |> Option.orElse primarySlot.Presentation
-          SeriesTransform = seriesTransform.Value |> Option.orElse primarySlot.SeriesTransform
+          Legend = legend.Value |> Option.orElse primaryLegend
+          Presentation = presentation.Value |> Option.orElse primaryPresentation
+          SeriesTransform = seriesTransform.Value |> Option.orElse primarySeriesTransform
           FilterHostCardId = filterHostCardId
           HostedFilters = Some(hostedFilters :> IReadOnlyList<_>)
           InteriorBoard = interiorBoard.Value

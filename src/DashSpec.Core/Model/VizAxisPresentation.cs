@@ -116,4 +116,14 @@ public static class VizLabelDisplayResolver
 
     public static bool EffectiveAxisVisible(bool specShow, bool? userOverride) =>
         ResolveAxisVisible(specShow, userOverride);
+
+    public static bool EffectiveLegendVisible(bool specShowsLegend, bool? userOverride)
+    {
+        if (!specShowsLegend)
+        {
+            return false;
+        }
+
+        return userOverride ?? true;
+    }
 }

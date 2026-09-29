@@ -24,6 +24,6 @@ public class LusStakeholderSyntaxTests
         Assert.Equal("chart_top", doc.Filters.Single(f => f.Kind == Model.FilterKind.Top).Name);
         Assert.Equal("usage_date", doc.Filters[0].Name);
         Assert.Equal("Дата отчёта", doc.Filters[0].Label);
-        Assert.Equal(25, doc.Cards.Single(c => c.Id == "stakeholder_peak_apps_browse").SeriesTransform?.Max);
+        Assert.Null(doc.Cards.Single(c => c.Id == "stakeholder_peak_apps_browse").SeriesTransform);
     }
 }

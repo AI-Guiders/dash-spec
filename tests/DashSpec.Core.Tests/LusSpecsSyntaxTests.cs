@@ -1,3 +1,4 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 using Xunit;
 
@@ -35,6 +36,16 @@ public class LusSpecsSyntaxTests
         var text = File.ReadAllText(path);
         var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!, LusParseOptions);
         Assert.NotEmpty(doc.Filters);
+
+        foreach (var card in doc.Cards)
+        {
+            if (card.InteriorBoard is null)
+            {
+                continue;
+            }
+
+            _ = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
+        }
     }
 
     [Fact]

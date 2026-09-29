@@ -157,6 +157,35 @@
 
 ---
 
+# Страницы и layout board
+            
+             Несколько экранов в одном tab module:
+            
+             ```text
+             page executive_summary
+               title = "Сводка"
+               toolbar period_grain, period_start, chart_top
+               include layout "layouts/stakeholder-page-executive.dashlayout"
+               card kpi_total_users … end card
+             end page
+             ```
+            
+             Layout (`.dashlayout`) — bracket board:
+            
+             ```text
+             @layout stakeholder_page_executive
+             scope page
+            
+             [ kpi_a kpi_b kpi_c ]
+             [ chart_left chart_right ]
+             ```
+            
+             Id в скобках = id карточек на странице. `scope page` привязывает layout к `page`.
+            
+             ADR-0020, ADR-0021, ADR-0030 (phase browse/detail).
+
+---
+
 # Chart chrome (`@presentation`)
             
              Пресеты в `.dashpresentation`:
