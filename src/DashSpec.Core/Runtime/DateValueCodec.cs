@@ -99,6 +99,35 @@ public static partial class DateValueCodec
     public static bool TryParseStoredDateOnly(string? raw, out DateOnly day) =>
         TryParseWireDay(raw, out day);
 
+    /// <summary>Heatmap/chart axis labels: wire day, <c>dd.MM</c> (year from anchor), <c>dd.MM.yyyy</c>.</summary>
+    public static bool TryParseChartAxisDayLabel(string? raw, int anchorYear, out DateOnly day)
+    {
+        day = default;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        var text = raw.Trim();
+        if (TryParseWireDay(text, out day))
+        {
+            return true;
+        }
+
+        if (DateOnly.TryParseExact(text, "dd.MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var shortDay)
+            && TryCreateCalendarDate(anchorYear, shortDay.Month, shortDay.Day, out day))
+        {
+            return true;
+        }
+
+        if (DateOnly.TryParseExact(text, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out day))
+        {
+            return true;
+        }
+
+        return TryParseDashedDayMonthYear(text, out day);
+    }
+
     /// <summary>Legacy wire/display typo: day-month-year with dashes (e.g. 03-08-2026).</summary>
     public static bool TryParseDashedDayMonthYear(string token, out DateOnly day)
     {
