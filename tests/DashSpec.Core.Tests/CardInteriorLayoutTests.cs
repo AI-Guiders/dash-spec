@@ -266,9 +266,45 @@ public class CardInteriorLayoutTests
 
         var card = doc.Cards.Single();
         var chrome = CardLocalFilterChromeCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
-        Assert.Equal(new PlacementDefinition(1, 1, 3), chrome["usage_date"]);
-        Assert.Equal(new PlacementDefinition(1, 4, 1), chrome["apply"]);
+        Assert.Equal(new PlacementDefinition(1, 1, 6), chrome["usage_date"]);
+        Assert.Equal(new PlacementDefinition(1, 7, 3), chrome["apply"]);
         Assert.Equal(new PlacementDefinition(1, 10, 3), chrome["app_name"]);
+    }
+
+    [Fact]
+    public void Synthesized_interior_layout_places_diagram_only_not_head_local_filters()
+    {
+        var doc = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              defaults
+                filter.usage_date.range = -7d..today
+              end defaults
+              filter date usage_date on usage_date as "Date"
+              filter field app_name on dbo.t.app as "App"
+              card peak as "Peak"
+              filters
+                usage_date
+                apply = manual
+                app_name
+              end filters
+              diagram ref H heatmap
+              end heatmap
+              datasource view dbo.t
+              bind usage_date, app_name
+              end card
+              end report
+            end dashboard
+            """);
+
+        var card = doc.Cards.Single();
+        Assert.Null(card.InteriorBoard);
+
+        var placements = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
+        Assert.Equal(["H"], placements.Keys.OrderBy(static k => k, StringComparer.Ordinal).ToArray());
+        Assert.Equal(1, placements["H"].Row);
+        Assert.Equal(12, placements["H"].Span);
     }
 
 }
