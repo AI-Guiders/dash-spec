@@ -71,7 +71,7 @@ Remove drill card from overview layout.
 
 **Plugins** answer: «я занимаю слот X» — filter widget id or viz renderer id; no filter/diagram semantics in Host beyond iterating placements and wiring session callbacks.
 
-Target: Host does not grow product UI (Apply, combobox chrome, matrix toggles) — only `FilterWidgetHost`, `CardVisualization`, `CardSlotVisualization`, and grid CSS shell.
+Target: Host keeps card chrome shell (title, fold, export, fullscreen, extension blocks) and iterates interior placements; filter chrome (`CardLocalFilterChrome`, `FilterWidgetHost`) lives in `DashSpec.Plugin.Filter.Builtins`; viz dispatch (`CardVizHost`, `CardInteriorVizHost`) in `DashSpec.Plugin.Viz.Builtins`; shared slot order/CSS in `DashSpec.Core` (`CardFilterChromeSlotOrder`, `PlacementGridCss`) and `CardInteriorGrid` in Presentation.
 
 ## Non-goals (this ADR)
 
