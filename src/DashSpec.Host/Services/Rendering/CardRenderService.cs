@@ -50,6 +50,45 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
         }
     }
 
+    public async Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderInteriorSlotsAsync(
+        CardDefinition card,
+        DashboardDocument document,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterIndex,
+        SpecLibrary? library,
+        IDataSourceConnector connector,
+        string? specDirectory = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(filters);
+        ArgumentNullException.ThrowIfNull(filterIndex);
+        ArgumentNullException.ThrowIfNull(connector);
+
+        LabelFormat.SetReportDefaults(document.ResolvedFormatDefaults);
+        try
+        {
+            var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
+            var effective = resolved.Card;
+            var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(effective);
+            return await RenderSecondarySlotsAsync(
+                effective,
+                document,
+                filters,
+                filterIndex,
+                library,
+                connector,
+                specDirectory,
+                primarySlotRef,
+                cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
     private async Task<CardRenderResult> RenderCoreAsync(
         CardDefinition card,
         DashboardDocument document,
