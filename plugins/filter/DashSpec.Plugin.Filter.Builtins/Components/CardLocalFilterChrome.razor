@@ -41,6 +41,7 @@
     [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+    [Parameter] public int FieldOptionsRevision { get; set; }
     [Parameter] public bool AutoApply { get; set; }
     [Parameter] public EventCallback<string> OnApplyCard { get; set; }
     [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
@@ -93,7 +94,8 @@
     private RenderFragment RenderFilter(string filterName) => __builder =>
     {
         var filter = FilterIndex[filterName];
-        <FilterWidgetHost Filter="filter"
+        <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
+                          Filter="filter"
                           Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields)"
                           Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
                           Disabled="@Card.Loading"
