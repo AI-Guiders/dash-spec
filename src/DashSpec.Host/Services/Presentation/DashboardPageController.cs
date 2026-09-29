@@ -354,11 +354,6 @@ public sealed class DashboardPageController : IDisposable
         var foldable = _session.Document.Cards.Select(c =>
             (c.Id, c.Chrome?.Fold ?? CardFoldMode.None)).ToList();
         var policy = _session.Document.ResolvedCardsChrome.FoldPolicy;
-        if (policy is CardsFoldPolicy.None &&
-            foldable.Count(static x => x.Item2 is CardFoldMode.Independent) > 1)
-        {
-            policy = CardsFoldPolicy.FocusSingle;
-        }
 
         _cardFold.Toggle(cardId, policy, foldable);
         Notify();
