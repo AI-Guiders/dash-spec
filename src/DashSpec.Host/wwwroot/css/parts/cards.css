@@ -146,6 +146,11 @@
   border-bottom: none;
 }
 
+.card--folded {
+  min-height: unset;
+  align-self: start;
+}
+
 .card-fold-btn {
   flex-shrink: 0;
   margin-top: 0.1rem;
