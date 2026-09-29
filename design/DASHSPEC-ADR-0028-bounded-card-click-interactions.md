@@ -52,11 +52,24 @@ on click {
 
 ### Whitelist effects (v1)
 
-| Effect | Grammar | Host |
-|--------|---------|------|
-| **show** | `show <placement> <variant> data from <source> [copy]` | detail strip at placement |
-| **set** | `set <filter> from x\|y\|value` | patch toolbar filter state |
-| **goto** | `goto tab <id>` | switch tab |
+| Effect | Grammar | Что обновляется (семантика спеки) |
+|--------|---------|-----------------------------------|
+| **show** | `show <placement> <variant> data from <source> [copy]` | Только sticky detail в card body; **без** повторного SQL |
+| **set** | `set <filter> from x\|y\|value` | **FilterState** отчёта → все карточки с `bind` на эти фильтры (как «Применить») |
+| **drill table** | `drill table from cell` + `set <filter> from x\|y\|value` (≥1) | Только **non-primary** diagram slots этой карточки (`data for …`); primary diagram и toolbar **не** меняются |
+| **goto** | `goto tab <id>` / `page` / `entry` | Навигация; фильтры по правилам `goto entry preserving` |
+
+Host реализует таблицу через `CardClickRefreshPlanner` (Core); авторы **не** задают scope отдельным ключевом.
+
+```text
+on click
+  drill table from cell
+  set usage_date from x
+  set app_name from y
+end click
+```
+
+`set` внутри `drill table` — привязка ячейки к SQL **drill-слота**, не запись в toolbar.
 
 #### `show` slots
 
@@ -109,7 +122,7 @@ New placements only via amend this ADR.
 
 - **Legacy:** `show below as list` / `show below list from tooltip` → `show below list data from tooltip`.
 - **show list from tooltip:** split по `tooltip_split`; **copy** → selectable UI.
-- **Order:** all `set` → `goto` → refresh (host).
+- **Order:** effects применяются сверху вниз; re-query по `CardInteractionRefresh` из Core (один scope на клик).
 
 ### Diagram kind → click target
 
