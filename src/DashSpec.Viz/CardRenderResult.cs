@@ -40,6 +40,7 @@ public sealed record CardRenderResult(
     string? FilterLinkCssClass = null,
     string? TopFilterScopeHint = null,
     bool ShowChromeTitle = true,
+    CardFoldMode FoldMode = CardFoldMode.None,
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;

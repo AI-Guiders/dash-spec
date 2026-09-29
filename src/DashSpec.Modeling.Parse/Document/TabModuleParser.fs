@@ -101,6 +101,7 @@ module TabModuleParser =
               ColorPalette = shell.ColorPalette
               Layout = shell.Layout
               FiltersChrome = shell.FiltersChrome
+              CardsChrome = shell.CardsChrome
               Filters = shell.Filters :> IReadOnlyList<_>
               DashboardFilters = dashboardFilters
               Tabs = tabs

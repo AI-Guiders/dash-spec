@@ -84,6 +84,7 @@ type DashboardDocument =
       ColorPalette: string option
       Layout: LayoutDefinition
       FiltersChrome: FiltersChromeDefinition
+      CardsChrome: CardsChromeDefinition option
       Filters: IReadOnlyList<FilterDefinition>
       DashboardFilters: IReadOnlyList<string>
       Tabs: IReadOnlyList<TabDefinition>
@@ -155,6 +156,7 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val ColorPalette: string option = None with get, set
     member val Layout = LayoutDefinition.Default with get, set
     member val FiltersChrome = FiltersChromeDefinition.Default with get, set
+    member val CardsChrome: CardsChromeDefinition option = None with get, set
     member val LayoutBoard: LayoutBoardDefinition option = None with get, set
     member val ToolbarBoard: LayoutBoardDefinition option = None with get, set
     member val TabModuleLabel: string option = None with get, set

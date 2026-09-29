@@ -46,10 +46,23 @@ type CardBoundFilterChrome =
     | Hidden = 1
     | ToolbarOnly = 2
 
+type CardFoldMode =
+    | None = 0
+    | Independent = 1
+
+type CardsFoldPolicy =
+    | None = 0
+    | FocusSingle = 1
+
+[<CLIMutable>]
+type CardsChromeDefinition =
+    { FoldPolicy: CardsFoldPolicy }
+
 [<CLIMutable>]
 type CardChromeDefinition =
     { BoundFilters: CardBoundFilterChrome
-      HideTitle: bool }
+      HideTitle: bool
+      Fold: CardFoldMode }
 
 type CardVisibilityMode =
     | WhenEmpty = 0

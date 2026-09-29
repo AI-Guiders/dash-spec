@@ -102,6 +102,7 @@ module rec DocumentModuleParser =
               ColorPalette = result.Shell.ColorPalette
               Layout = result.Shell.Layout
               FiltersChrome = result.Shell.FiltersChrome
+              CardsChrome = result.Shell.CardsChrome
               Filters = result.Shell.Filters :> IReadOnlyList<_>
               DashboardFilters = dashboardFilters
               Tabs = tabs
@@ -143,6 +144,7 @@ module rec DocumentModuleParser =
           ColorPalette = dashShell.ColorPalette
           Layout = dashShell.Layout
           FiltersChrome = dashShell.FiltersChrome
+          CardsChrome = dashShell.CardsChrome
           Filters = dashShell.Filters :> IReadOnlyList<_>
           DashboardFilters = dashboardFilters
           Tabs = dashShell.Tabs :> IReadOnlyList<_>
@@ -586,6 +588,11 @@ module rec DocumentModuleParser =
                 parseReportDefaultsBlock reader shell "defaults"
             elif reader.TryKeyword "default" then
                 parseReportDefaultsBlock reader shell "default"
+            elif reader.TryKeyword "cards" then
+                if not (reader.TryKeyword "chrome") then
+                    raise (DashSpecParseException("cards requires chrome block (cards chrome … end chrome)."))
+                shell.CardsChrome <- Some(Card.CardsChromeParser.parse reader)
+                reader.SkipNewlines()
             elif reader.TryKeyword "filters" then
                 match reader.TryPeekIdent() with
                 | Some next when
@@ -704,6 +711,7 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let standaloneFilterDefaults = FilterScopeDefaults.create ()
+        FilterScopeDefaults.merge standaloneFilterDefaults shell.FilterDefaults
 
         let resolveFilterProperty (filterName: string) (property: string) =
             FilterScopeDefaults.resolveProperty [ standaloneFilterDefaults; shell.FilterDefaults ] filterName property
@@ -765,6 +773,7 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let blockFilterDefaults = FilterScopeDefaults.create ()
+        FilterScopeDefaults.merge blockFilterDefaults shell.FilterDefaults
 
         let resolveFilterProperty (filterName: string) (property: string) =
             FilterScopeDefaults.resolveProperty [ blockFilterDefaults; shell.FilterDefaults ] filterName property
