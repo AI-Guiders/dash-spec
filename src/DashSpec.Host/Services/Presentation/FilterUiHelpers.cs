@@ -1,6 +1,7 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Filters;
 
 namespace DashSpec.Host.Services.Presentation;
 
@@ -10,7 +11,7 @@ internal static class FilterUiHelpers
         FilterDefinition filter,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         IReadOnlyDictionary<string, HashSet<string>> selectedFields) =>
-        GrainFilterPresentation.DisplayLabel(filter, filterIndex, selectedFields);
+        FilterWidgetPresentation.DisplayLabel(filter, filterIndex, selectedFields);
 
     public static string DisplayLabel(FilterDefinition filter) =>
         GrainFilterPresentation.DisplayLabel(
@@ -65,29 +66,11 @@ internal static class FilterUiHelpers
 
     public static int ResolveTopValue(
         FilterDefinition filter,
-        IReadOnlyDictionary<string, int> topLimits)
-    {
-        if (filter.Kind is not FilterKind.Top)
-        {
-            return 0;
-        }
-
-        return TopLimitDefaults.Resolve(
-            filter,
-            topLimits.TryGetValue(filter.Name, out var current) ? current : null);
-    }
+        IReadOnlyDictionary<string, int> topLimits) =>
+        FilterWidgetPresentation.ResolveTopValue(filter, topLimits);
 
     public static HashSet<string> SelectedFieldValues(
         FilterDefinition filter,
-        IReadOnlyDictionary<string, HashSet<string>> selectedFields)
-    {
-        if (filter.Kind is not FilterKind.Field)
-        {
-            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        return selectedFields.TryGetValue(filter.Name, out var selected)
-            ? selected
-            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    }
+        IReadOnlyDictionary<string, HashSet<string>> selectedFields) =>
+        FilterWidgetPresentation.SelectedFieldValues(filter, selectedFields);
 }

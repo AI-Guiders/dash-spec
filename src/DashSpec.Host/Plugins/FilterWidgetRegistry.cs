@@ -1,9 +1,9 @@
-using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Model;
+using DashSpec.Filters;
 
 namespace DashSpec.Host.Plugins;
 
-public sealed class FilterWidgetRegistry
+public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
 {
     private readonly FilterWidgetComponentRegistry _components;
     private readonly DashSpecContributorRegistry _contributors;

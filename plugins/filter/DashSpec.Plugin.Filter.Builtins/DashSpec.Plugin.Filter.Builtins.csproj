@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\DashSpec.Filters\DashSpec.Filters.csproj" />
+    <ProjectReference Include="..\..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\..\src\DashSpec.Presentation\DashSpec.Presentation.csproj" />
   </ItemGroup>
 
