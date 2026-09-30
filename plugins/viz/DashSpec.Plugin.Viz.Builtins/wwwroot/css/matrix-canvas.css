@@ -178,18 +178,16 @@
   border-radius: calc(var(--radius, 8px) - 2px);
   border: 1px solid var(--border);
   background: transparent;
-  color: var(--muted);
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  color: var(--text);
+  transition: color 0.12s ease, border-color 0.12s ease;
 }
 
 .card-head-toolbar .card-matrix-glyph-btn[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--accent, #3b82f6) 92%, black);
-  border-color: var(--accent, #3b82f6);
-  color: var(--surface, #fff);
+  border-color: color-mix(in srgb, var(--accent, #3b82f6) 55%, var(--border));
+  color: var(--accent, #3b82f6);
 }
 
 .card-head-toolbar .card-matrix-glyph-btn[aria-pressed="false"] {
-  background: transparent;
   color: var(--muted);
 }
 
@@ -198,14 +196,30 @@
   cursor: not-allowed;
 }
 
-.card-matrix-glyph {
+.card-matrix-glyph-svg {
+  width: 1.15rem;
+  height: 1.15rem;
   display: block;
-  font-size: 0.82rem;
-  font-weight: 700;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  user-select: none;
+}
+
+.card-matrix-glyph-letter {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  paint-order: stroke fill;
+}
+
+.card-matrix-glyph-btn[aria-pressed="false"] .card-matrix-glyph-letter {
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.45px;
+}
+
+.card-matrix-glyph-btn[aria-pressed="true"] .card-matrix-glyph-letter {
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.45px;
 }
 
 .card-viz-stack {
