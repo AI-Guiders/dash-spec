@@ -25,12 +25,6 @@ module HostModuleParser =
         LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Host context
         topbarLayout <- Some board
 
-    let private readBoolProperty (reader: TokenReader) (defaultValue: bool) =
-        reader.Expect TokenKind.Eq
-        let value = reader.ReadIdent()
-        if String.IsNullOrWhiteSpace value then defaultValue
-        else not (value.Equals("false", StringComparison.OrdinalIgnoreCase))
-
     let private parseLink (reader: TokenReader) =
         let linkId = reader.ReadIdent()
         if String.IsNullOrWhiteSpace linkId then
@@ -40,43 +34,39 @@ module HostModuleParser =
         if reader.TryKeyword "as" then
             label <- reader.ReadString()
 
-        BlockSyntax.beginBlock reader
+        let props =
+            BlockGrammar.parseKeywordContainer
+                reader
+                "link"
+                $"host link '{linkId}'"
+                [ BlockGrammar.SchemaProperties(PropertySchemas.hostLink, false, false) ]
+                (Some linkId)
+
         reader.SkipNewlines()
-        let mutable url = ""
-        let mutable target = "_blank"
-        let mutable topbar = true
-        let mutable settings = true
-        while not (BlockSyntax.isBlockEnd reader "link" (Some linkId)) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "link" (Some linkId) then ()
-            elif reader.TryKeyword "url" then
-                reader.Expect TokenKind.Eq
-                url <- reader.ReadString()
-                reader.SkipNewlines()
-            elif reader.TryKeyword "target" then
-                reader.Expect TokenKind.Eq
-                target <- reader.ReadString()
-                reader.SkipNewlines()
-            elif reader.TryKeyword "topbar" then
-                topbar <- readBoolProperty reader true
-                reader.SkipNewlines()
-            elif reader.TryKeyword "settings" then
-                settings <- readBoolProperty reader true
-                reader.SkipNewlines()
-            else
-                raise (reader.Unexpected())
-        BlockSyntax.expectBlockEnd reader "link" (Some linkId)
-        reader.SkipNewlines()
+
+        let url =
+            match props.TryGetValue "url" with
+            | true, value -> value
+            | false, _ -> ""
 
         if String.IsNullOrWhiteSpace url then
             raise (DashSpecParseException($"Host link '{linkId}' requires url."))
 
+        let readBool (key: string) (defaultValue: bool) =
+            match props.TryGetValue key with
+            | true, value when String.IsNullOrWhiteSpace value -> defaultValue
+            | true, value -> not (value.Equals("false", StringComparison.OrdinalIgnoreCase))
+            | false, _ -> defaultValue
+
         { Id = linkId
           Label = label
           Url = url
-          Target = target
-          Topbar = topbar
-          Settings = settings }
+          Target =
+            match props.TryGetValue "target" with
+            | true, value when not (String.IsNullOrWhiteSpace value) -> value
+            | _ -> "_blank"
+          Topbar = readBool "topbar" true
+          Settings = readBool "settings" true }
 
     let private parseLinksBlock (reader: TokenReader) (links: ResizeArray<HostLinkDefinition>) =
         BlockSyntax.beginBlock reader

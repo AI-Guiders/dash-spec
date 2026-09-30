@@ -38,7 +38,7 @@ module CardDiagramOverrideParser =
 
     let private parseLegendOverride (reader: TokenReader) =
         let props =
-            PropertyBlockParser.parseWithEndKind reader PropertySchemas.legend "legend" "legend" false false
+            PropertyBlockParser.parseWithEndKind reader PropertySchemas.legend "legend" "legend" false false None
         { MinLabel = propValue props "min"
           MaxLabel = propValue props "max"
           Title = propValue props "title"
@@ -51,7 +51,7 @@ module CardDiagramOverrideParser =
 
     let private parsePresentationOverride (reader: TokenReader) =
         let props =
-            PropertyBlockParser.parseWithEndKind reader PropertySchemas.presentation "presentation" "presentation" false false
+            PropertyBlockParser.parseWithEndKind reader PropertySchemas.presentation "presentation" "presentation" false false None
         toPresentationBlock props
 
     let private parseSeriesOverride (reader: TokenReader) (cardId: string) (diagramId: string) =
@@ -64,7 +64,7 @@ module CardDiagramOverrideParser =
         elif reader.IsOnNewline() then
             reader.SkipNewlines()
             let props =
-                PropertyBlockParser.parseWithEndKind reader PropertySchemas.seriesTransform "series" "series" false false
+                PropertyBlockParser.parseWithEndKind reader PropertySchemas.seriesTransform "series" "series" false false None
             let usePreset = propValue props "use"
             let max =
                 match propValue props "max" with

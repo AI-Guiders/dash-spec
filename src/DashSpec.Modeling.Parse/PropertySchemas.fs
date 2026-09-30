@@ -88,10 +88,16 @@ module PropertySchemas =
     let filtersChrome =
         [ spec "layout" Scalar
           spec "sticky" Scalar
-          spec "apply" Scalar
           spec "debounce_ms" Scalar
           spec "format_guide" Scalar
           spec "cells" Scalar ]
+
+    let cardChrome =
+        [ spec "bound_filters" Scalar
+          spec "title" Scalar
+          spec "fold" Scalar ]
+
+    let cardsChrome = [ spec "fold" Scalar ]
 
     let legend =
         [ spec "min" String

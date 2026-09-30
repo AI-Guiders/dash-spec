@@ -54,22 +54,23 @@ module MemberGrammar =
             reader.Expect TokenKind.Eq
             values.[key] <- reader.ReadScalarValue()
 
-    /// `ident = <rest-of-line>` entries until `end <endKind>`.
-    let parseStringMapBlock
+    let private parseStringMapBodyCore
         (reader: TokenReader)
         endKind
         blockName
         (readValue: TokenReader -> string)
+        (endId: string option)
+        (requireAtLeastOne: bool)
         =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
-        while not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
+        while not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
             reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader endKind None then ()
+            if BlockSyntax.isBlockEnd reader endKind endId then ()
             else
                 let key = reader.ReadIdent()
+                if String.IsNullOrWhiteSpace key then
+                    raise (DashSpecParseException($"{blockName}: entry name is required."))
                 reader.Expect TokenKind.Eq
                 let value = readValue reader
                 if String.IsNullOrWhiteSpace value then
@@ -79,11 +80,35 @@ module MemberGrammar =
                 values.[key] <- value.Trim()
                 reader.SkipNewlines()
 
-        BlockSyntax.expectBlockEnd reader endKind None
-
-        if values.Count = 0 then
+        if requireAtLeastOne && values.Count = 0 then
             raise (DashSpecParseException($"{blockName} requires at least one entry."))
 
         values
+
+    /// `ident = <value>` entries until `end <endKind>` (body only; caller opened the block).
+    let parseStringMapBody
+        (reader: TokenReader)
+        endKind
+        blockName
+        (readValue: TokenReader -> string)
+        =
+        parseStringMapBodyCore reader endKind blockName readValue None true
+
+    /// `ident = <value>` block with `beginBlock` / `expectBlockEnd`.
+    let parseStringMapBlock
+        (reader: TokenReader)
+        endKind
+        blockName
+        (readValue: TokenReader -> string)
+        =
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let values = parseStringMapBodyCore reader endKind blockName readValue None true
+        BlockSyntax.expectBlockEnd reader endKind None
+        values
+
+    /// `ident = ident` map (commands, tooltip variables).
+    let parseIdentMapBlock (reader: TokenReader) endKind blockName =
+        parseStringMapBlock reader endKind blockName (fun r -> r.ReadIdent())
 
     let parsePresetRestOfLine (reader: TokenReader) = reader.ReadRestOfLine().Trim()
