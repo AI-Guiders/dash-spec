@@ -3,6 +3,7 @@
 @using DashSpec.Core.Model
 @using DashSpec.Execution.Runtime
 @using DashSpec.Viz
+@implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
 @inject IVizCardToolbarLocalizer Loc
 
@@ -83,6 +84,26 @@
     private string AxisLabelsYTitle => Loc.T("Toggle Y axis labels");
 
     private string LegendTitle => Loc.T("Toggle gradient legend");
+
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Context.Card.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     private Task ToggleMatrixValueLabelsAsync() =>
         Context.OnCardAction.InvokeAsync(

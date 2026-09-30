@@ -1,11 +1,6 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Matrix
 
-<svg class="card-matrix-glyph-svg" viewBox="0 0 24 24" aria-hidden="true">
-    <text x="12"
-          y="17.5"
-          text-anchor="middle"
-          class="card-matrix-glyph-letter">@Glyph</text>
-</svg>
+<span class="card-matrix-glyph-char">@Glyph</span>
 
 @code {
     [Parameter, EditorRequired] public string Glyph { get; set; } = default!;
