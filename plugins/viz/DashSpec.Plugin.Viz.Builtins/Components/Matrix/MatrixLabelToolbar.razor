@@ -8,37 +8,47 @@
 
 @if (Context.Card.MatrixPresentation is not null)
 {
-    <label class="card-matrix-toggle" title="@ValueLabelsTitle">
-        <input type="checkbox"
-               checked="@MatrixValueLabelsVisible"
-               disabled="@Context.Card.Loading"
-               @onchange="ToggleMatrixValueLabelsAsync" />
-        <span>@ValueLabelsCaption</span>
-    </label>
-    <label class="card-matrix-toggle" title="@AxisLabelsXTitle">
-        <input type="checkbox"
-               checked="@MatrixAxisLabelsXVisible"
-               disabled="@Context.Card.Loading"
-               @onchange="ToggleMatrixAxisLabelsXAsync" />
-        <span>@AxisLabelsXCaption</span>
-    </label>
-    <label class="card-matrix-toggle" title="@AxisLabelsYTitle">
-        <input type="checkbox"
-               checked="@MatrixAxisLabelsYVisible"
-               disabled="@Context.Card.Loading"
-               @onchange="ToggleMatrixAxisLabelsYAsync" />
-        <span>@AxisLabelsYCaption</span>
-    </label>
-    @if (MatrixSpec?.ShowsGradientLegend == true)
-    {
-        <label class="card-matrix-toggle" title="@LegendTitle">
-            <input type="checkbox"
-                   checked="@MatrixLegendVisible"
-                   disabled="@Context.Card.Loading"
-                   @onchange="ToggleMatrixLegendAsync" />
-            <span>@LegendCaption</span>
-        </label>
-    }
+    <div class="card-matrix-glyph-group" role="group" aria-label="@Loc.T("Matrix display")">
+        <button type="button"
+                class="secondary card-icon-btn card-matrix-glyph-btn"
+                title="@ValueLabelsTitle"
+                aria-label="@ValueLabelsTitle"
+                aria-pressed="@MatrixValueLabelsVisible"
+                disabled="@Context.Card.Loading"
+                @onclick="ToggleMatrixValueLabelsAsync">
+            <span class="card-matrix-glyph" aria-hidden="true">V</span>
+        </button>
+        <button type="button"
+                class="secondary card-icon-btn card-matrix-glyph-btn"
+                title="@AxisLabelsXTitle"
+                aria-label="@AxisLabelsXTitle"
+                aria-pressed="@MatrixAxisLabelsXVisible"
+                disabled="@Context.Card.Loading"
+                @onclick="ToggleMatrixAxisLabelsXAsync">
+            <span class="card-matrix-glyph" aria-hidden="true">X</span>
+        </button>
+        <button type="button"
+                class="secondary card-icon-btn card-matrix-glyph-btn"
+                title="@AxisLabelsYTitle"
+                aria-label="@AxisLabelsYTitle"
+                aria-pressed="@MatrixAxisLabelsYVisible"
+                disabled="@Context.Card.Loading"
+                @onclick="ToggleMatrixAxisLabelsYAsync">
+            <span class="card-matrix-glyph" aria-hidden="true">Y</span>
+        </button>
+        @if (MatrixSpec?.ShowsGradientLegend == true)
+        {
+            <button type="button"
+                    class="secondary card-icon-btn card-matrix-glyph-btn"
+                    title="@LegendTitle"
+                    aria-label="@LegendTitle"
+                    aria-pressed="@MatrixLegendVisible"
+                    disabled="@Context.Card.Loading"
+                    @onclick="ToggleMatrixLegendAsync">
+                <span class="card-matrix-glyph" aria-hidden="true">L</span>
+            </button>
+        }
+    </div>
 }
 
 @code {
@@ -66,22 +76,11 @@
             MatrixSpec?.ShowsGradientLegend == true,
             VizDisplayState.GetLegendOverride(Context.Card.Id));
 
-    private string ValueLabelsCaption =>
-        MatrixSpec?.ToolbarValueLabels ?? Loc.T("Cell values");
-
-    private string AxisLabelsXCaption =>
-        MatrixSpec?.ToolbarAxisLabelsX ?? Loc.T("X axis labels");
-
-    private string AxisLabelsYCaption =>
-        MatrixSpec?.ToolbarAxisLabelsY ?? Loc.T("Y axis labels");
-
     private string ValueLabelsTitle => Loc.T("Toggle cell values");
 
     private string AxisLabelsXTitle => Loc.T("Toggle X axis labels");
 
     private string AxisLabelsYTitle => Loc.T("Toggle Y axis labels");
-
-    private string LegendCaption => Loc.T("Legend");
 
     private string LegendTitle => Loc.T("Toggle gradient legend");
 

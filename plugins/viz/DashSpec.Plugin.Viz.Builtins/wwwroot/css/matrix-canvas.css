@@ -165,24 +165,47 @@
   display: none;
 }
 
-.card-head-toolbar .card-matrix-toggle {
+.card-head-toolbar .card-matrix-glyph-group {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
+  gap: 0.2rem;
 }
 
-.card-head-toolbar .card-matrix-toggle input {
-  margin: 0;
-  accent-color: var(--accent, #3b82f6);
+.card-head-toolbar .card-matrix-glyph-btn {
+  padding: 0.25rem;
+  min-width: 1.85rem;
+  min-height: 1.85rem;
+  border-radius: calc(var(--radius, 8px) - 2px);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
-.card-head-toolbar .card-matrix-toggle:has(input:disabled) {
+.card-head-toolbar .card-matrix-glyph-btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent, #3b82f6) 92%, black);
+  border-color: var(--accent, #3b82f6);
+  color: var(--surface, #fff);
+}
+
+.card-head-toolbar .card-matrix-glyph-btn[aria-pressed="false"] {
+  background: transparent;
+  color: var(--muted);
+}
+
+.card-head-toolbar .card-matrix-glyph-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.card-matrix-glyph {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  user-select: none;
 }
 
 .card-viz-stack {
