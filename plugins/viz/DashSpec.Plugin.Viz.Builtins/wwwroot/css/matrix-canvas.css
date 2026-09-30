@@ -181,11 +181,7 @@
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.card-head-toolbar .card-matrix-glyph-btn.is-on {
-  background: color-mix(in srgb, var(--accent, #3b82f6) 92%, black);
-  border-color: var(--accent, #3b82f6);
-}
-
+.card-head-toolbar .card-matrix-glyph-btn.is-on,
 .card-head-toolbar .card-matrix-glyph-btn.is-off {
   background: transparent;
 }
