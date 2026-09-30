@@ -73,6 +73,27 @@ public class LusSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_configuration_block_accepts_report_time_keys()
+    {
+        var text = """
+            configuration
+              work_time_column = bucket_start_utc
+              time_basis = working
+            end configuration
+            """;
+
+        var reader = ParserUtilities.CreateReader(text);
+        reader.TryKeyword("configuration");
+        var props = PropertyBlockParser.Parse(
+            reader,
+            PropertySchemas.Configuration,
+            "configuration");
+
+        Assert.Equal("bucket_start_utc", props["work_time_column"]);
+        Assert.Equal("working", props["time_basis"]);
+    }
+
+    [Fact]
     public void Parse_table_property_block_order_by_only()
     {
         var text = """
