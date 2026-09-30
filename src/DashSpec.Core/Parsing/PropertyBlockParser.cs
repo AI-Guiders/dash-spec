@@ -452,6 +452,13 @@ internal static class PropertySchemas
         new("sqldialect", PropertyValueType.Scalar),
         new("palette", PropertyValueType.String),
         new("diagramlibrary", PropertyValueType.String),
+        new("time_basis", PropertyValueType.Scalar),
+        new("time_apply", PropertyValueType.Scalar),
+        new("work_time_column", PropertyValueType.ColumnBinding),
+        new("work_timezone", PropertyValueType.Scalar),
+        new("work_start", PropertyValueType.Scalar),
+        new("work_end", PropertyValueType.Scalar),
+        new("work_days", PropertyValueType.Scalar),
     ];
 
     public static IReadOnlyList<PropertySpec> Palette { get; } =

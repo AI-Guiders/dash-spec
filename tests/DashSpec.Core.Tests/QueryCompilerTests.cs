@@ -581,4 +581,29 @@ public class QueryCompilerTests
         Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Basis);
         Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
     }
+
+    [Fact]
+    public void Parse_tab_configuration_accepts_work_time_column()
+    {
+        var document = DashSpecParser.Parse("""
+            @tab overview
+              configuration
+                sqldialect = tsql
+                palette = "palettes/demo-apps.dashpalette"
+                work_time_column = bucket_start_utc
+              end configuration
+              report
+              title = "Overview"
+              card c as "C"
+              diagram number
+              value = kpi
+              end number
+              datasource view demo.v
+              end card
+              end report
+            end tab
+            """);
+
+        Assert.Equal("bucket_start_utc", document.TimePolicy?.WorkTimeColumn);
+    }
 }
