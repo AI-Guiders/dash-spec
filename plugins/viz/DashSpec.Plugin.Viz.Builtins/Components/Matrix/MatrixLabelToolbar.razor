@@ -16,7 +16,7 @@
                 aria-pressed="@MatrixValueLabelsVisible"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixValueLabelsAsync">
-            <span class="card-matrix-glyph" aria-hidden="true">D</span>
+            <MatrixGlyphIcon Glyph="D" />
         </button>
         <button type="button"
                 class="secondary card-icon-btn card-matrix-glyph-btn"
@@ -25,7 +25,7 @@
                 aria-pressed="@MatrixAxisLabelsXVisible"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixAxisLabelsXAsync">
-            <span class="card-matrix-glyph" aria-hidden="true">X</span>
+            <MatrixGlyphIcon Glyph="X" />
         </button>
         <button type="button"
                 class="secondary card-icon-btn card-matrix-glyph-btn"
@@ -34,7 +34,7 @@
                 aria-pressed="@MatrixAxisLabelsYVisible"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixAxisLabelsYAsync">
-            <span class="card-matrix-glyph" aria-hidden="true">Y</span>
+            <MatrixGlyphIcon Glyph="Y" />
         </button>
         @if (MatrixSpec?.ShowsGradientLegend == true)
         {
@@ -45,7 +45,7 @@
                     aria-pressed="@MatrixLegendVisible"
                     disabled="@Context.Card.Loading"
                     @onclick="ToggleMatrixLegendAsync">
-                <span class="card-matrix-glyph" aria-hidden="true">L</span>
+                <MatrixGlyphIcon Glyph="L" />
             </button>
         }
     </div>
