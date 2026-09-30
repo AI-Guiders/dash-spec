@@ -1,7 +1,9 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Matrix
 
-<span class="card-matrix-glyph-char">@Glyph</span>
+<span class="card-matrix-glyph-char @(Filled ? "is-on" : "is-off")">@Glyph</span>
 
 @code {
     [Parameter, EditorRequired] public string Glyph { get; set; } = default!;
+
+    [Parameter] public bool Filled { get; set; }
 }
