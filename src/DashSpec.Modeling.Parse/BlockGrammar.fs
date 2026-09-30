@@ -21,6 +21,7 @@ module BlockGrammar =
         | ChildKeyword of keyword: string * parse: (TokenReader -> unit)
         | KeywordScalarOrBlock of
             keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
+        | RepeatingBracketRows of rows: ResizeArray<IReadOnlyList<string>>
 
     let serializeColumnFormatMap (map: IReadOnlyDictionary<string, string>) =
         let sb = StringBuilder()
@@ -34,8 +35,16 @@ module BlockGrammar =
         { IrProperty = "column_formats"
           Serialize = serializeColumnFormatMap }
 
-    let private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
+    let rec private tryParseMember (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
+        | RepeatingBracketRows rows when reader.IsAt TokenKind.LBracket ->
+            rows.Add(MemberGrammar.parseBoardRow reader)
+            true
+        | _ -> tryParseChild reader memberDef values
+
+    and private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
+        match memberDef with
+        | RepeatingBracketRows _ -> false
         | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then
                 let map = MemberGrammar.parseStringMapBlock reader endKind blockName readValue
@@ -81,13 +90,13 @@ module BlockGrammar =
             else
                 let mutable handled = false
                 for memberDef in members do
-                    if not handled && tryParseChild reader memberDef values then
+                    if not handled && tryParseMember reader memberDef values then
                         handled <- true
                 if not handled then
                     while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
                         let mutable innerHandled = false
                         for memberDef in members do
-                            if not innerHandled && tryParseChild reader memberDef values then
+                            if not innerHandled && tryParseMember reader memberDef values then
                                 innerHandled <- true
                         if not innerHandled then
                             MemberGrammar.readPropertyEntry

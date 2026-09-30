@@ -50,8 +50,11 @@ No alternate surface for the same IR when a child block exists (e.g. no inline `
 | `ChildKeywordMerge` | Nested `keyword` … `end keyword` string map → serialized IR property (table `formats`) |
 | `ChildKeyword` | Nested block or keyword line with custom parser (`filter bind labels`, reject `default`) |
 | `KeywordScalarOrBlock` | `keyword = scalar` or `keyword` … `end keyword` (`filters chrome apply`) |
+| `RepeatingBracketRows` | One or more layout rows `[ cell … ]` (`layout group` / `nest`) |
 
 `parseKeywordContainer` accepts optional `endId` for `end link <id>`-style closes.
+
+**MemberGrammar (layout):** `readBoardCell`, `parseBoardRow` — bracket row syntax, not a property block.
 
 ### Migrated to BlockGrammar / MemberGrammar (F#)
 
@@ -66,7 +69,9 @@ No alternate surface for the same IR when a child block exists (e.g. no inline `
 | Toolbar `commands` | `CommandAliasesParser` → `parseIdentMapBlock` |
 | Tooltip `variables` | `TooltipModuleParser` |
 | Display `bind` slots | `DisplayBindingParser` → `parseStringMapBody` |
+| Layout `group` / `nest` bodies | `LayoutParser` → `RepeatingBracketRows` + `layoutGroup` schema |
+| Layout board rows `[ … ]` | `MemberGrammar.parseBoardRow` |
 
 ### Still bespoke (nested DSL, not flat members)
 
-Card/report/document shells, layout `group`/`nest`, filter `filter` wrapper (`bind`/`show`/`place` children), diagram module includes, toolbar placement, catalog, defaults tree, palette — keep dedicated parsers; new **member lines** inside them should call `MemberGrammar.readPropertyEntry` or `BlockGrammar` when the body is schema-only.
+Card/report/document shells, layout **board** entry stream (`[ ]` vs `group` vs `nest`), filter `filter` wrapper (`bind`/`show`/`place` children), diagram module includes, toolbar placement, catalog, defaults tree, palette — orchestration stays in module parsers; **member lines** inside schema-only bodies use `MemberGrammar` / `BlockGrammar`.

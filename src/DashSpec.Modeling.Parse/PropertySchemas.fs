@@ -44,6 +44,8 @@ module PropertySchemas =
         [ spec "columns" Scalar
           spec "gap" Scalar ]
 
+    let layoutGroup = [ spec "title" String ]
+
     let placement =
         [ spec "row" Scalar
           spec "col" Scalar
