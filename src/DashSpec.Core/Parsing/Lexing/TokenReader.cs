@@ -452,6 +452,9 @@ internal sealed class TokenReader
                 case TokenKind.Comma:
                     parts.Add(",");
                     break;
+                case TokenKind.Dot:
+                    parts.Add(".");
+                    break;
                 case TokenKind.Ident:
                 case TokenKind.Raw:
                 case TokenKind.String:
@@ -488,6 +491,10 @@ internal sealed class TokenReader
             else if (result[^1] == ',')
             {
                 result.Append(' ');
+                result.Append(part);
+            }
+            else if (part is ":" or ".")
+            {
                 result.Append(part);
             }
             else

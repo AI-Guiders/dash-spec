@@ -234,7 +234,7 @@ public class LusSpecsSyntaxTests
         var text = File.ReadAllText(path);
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
             text,
-            @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec");
+            Path.GetDirectoryName(path)!);
         Assert.Equal("table", fragment.Diagram!.Kind);
     }
 }
