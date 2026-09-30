@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0068**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0072**.
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -73,3 +73,7 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) | Card interior multi-slot | Accepted |
 | [0066](DASHSPEC-ADR-0066-card-refresh-scopes.md) | Card refresh scopes (Host SSOT) | Accepted |
 | [0067](DASHSPEC-ADR-0067-card-and-slot-fold-chrome.md) | Card fold chrome | Accepted |
+| [0068](DASHSPEC-ADR-0068-diagram-designer-discoverability.md) | Diagram Designer discoverability | Accepted |
+| [0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md) | Report time basis & work calendar | Accepted |
+| [0070](DASHSPEC-ADR-0070-table-column-formats-block.md) | Table `formats` block | Accepted |
+| [0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) | Block + member grammar | Accepted |

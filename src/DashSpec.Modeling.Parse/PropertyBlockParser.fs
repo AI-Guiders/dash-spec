@@ -15,62 +15,23 @@ module PropertyBlockParser =
 
     let resolveEndKind blockName = PropertySchemas.resolveEndKind blockName
 
-    let private readTypedValue (reader: TokenReader) (valueType: PropertyValueType) =
-        match valueType with
-        | PropertyValueType.Scalar -> reader.ReadScalarValue()
-        | PropertyValueType.String -> reader.ReadString()
-        | PropertyValueType.DateRange -> reader.ReadDateDefaultValue()
-        | PropertyValueType.QualifiedName -> reader.ReadQualifiedName()
-        | PropertyValueType.CommaList -> reader.ReadCommaSeparatedValues()
-        | PropertyValueType.RestOfLine -> reader.ReadRestOfLine()
-        | PropertyValueType.ColumnBinding -> invalidOp "ColumnBinding must be handled separately."
+    let readPropertyEntry =
+        MemberGrammar.readPropertyEntry
 
-    let private writeColumnBinding (values: Dictionary<string, string>) key (binding: ColumnBindingValue) =
-        values.[key] <- binding.Column
-        match binding.Alias with
-        | Some alias -> values.[key + "_as"] <- alias
-        | None -> ()
-
-    let private readPropertyEntry (reader: TokenReader) (specs: IDictionary<string, PropertySpec>) allowExtensionProperties allowQuotedKeys blockName (values: Dictionary<string, string>) =
-        let key = reader.ReadPropertyKey(allowQuoted=allowQuotedKeys)
-        match specs.TryGetValue key with
-        | true, spec ->
-            if String.Equals(key, "use", StringComparison.OrdinalIgnoreCase)
-               && not (reader.IsAt TokenKind.Eq)
-               && reader.TryPeekIdent().IsSome then
-                values.[key] <- reader.ReadIdent()
-            else
-                reader.Expect TokenKind.Eq
-                if spec.ValueType = PropertyValueType.ColumnBinding then
-                    writeColumnBinding values key (reader.ReadColumnBinding())
-                else
-                    values.[key] <- readTypedValue reader spec.ValueType
-        | false, _ ->
-            if not allowExtensionProperties || key.EndsWith("_as", StringComparison.OrdinalIgnoreCase) then
-                raise (DashSpecParseException($"Unknown property '{key}' in {blockName} block."))
-            reader.Expect TokenKind.Eq
-            values.[key] <- reader.ReadScalarValue()
-
-    let parseWithEndKind (reader: TokenReader) (schema: PropertySpec list) blockName endKind allowExtensionProperties allowQuotedKeys =
-        let specs =
-            schema
-            |> List.map (fun s -> s.Name, s)
-            |> dict
-
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-        let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-
-        while not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader endKind None then ()
-            else
-                while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
-                    readPropertyEntry reader specs allowExtensionProperties allowQuotedKeys blockName values
-                reader.SkipNewlines()
-
-        BlockSyntax.expectBlockEnd reader endKind None
-        values
+    let parseWithEndKind
+        (reader: TokenReader)
+        (schema: PropertySpec list)
+        blockName
+        endKind
+        allowExtensionProperties
+        allowQuotedKeys
+        : Dictionary<string, string>
+        =
+        BlockGrammar.parseKeywordContainer
+            reader
+            endKind
+            blockName
+            [ BlockGrammar.SchemaProperties(schema, allowExtensionProperties, allowQuotedKeys) ]
 
     let parse (reader: TokenReader) (schema: PropertySpec list) blockName allowExtensionProperties allowQuotedKeys =
         let endKind = resolveEndKind blockName
@@ -89,7 +50,7 @@ module PropertyBlockParser =
             if reader.IsEof then ()
             else
                 while not (reader.IsAt TokenKind.Newline) && not reader.IsEof do
-                    readPropertyEntry reader specs allowExtensionProperties allowQuotedKeys context values
+                    MemberGrammar.readPropertyEntry reader specs allowExtensionProperties allowQuotedKeys context values
                 reader.SkipNewlines()
 
         values
@@ -119,28 +80,7 @@ module PropertyBlockParser =
         parseCommaListBlock reader endKind blockName
 
     let parseStringMapBlock (reader: TokenReader) endKind blockName =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-        let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-
-        while not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader endKind None then ()
-            else
-                let key = reader.ReadIdent()
-                reader.Expect TokenKind.Eq
-                let value = reader.ReadString()
-                if values.ContainsKey key then
-                    raise (DashSpecParseException($"{blockName}: duplicate key '{key}'."))
-                values.[key] <- value
-                reader.SkipNewlines()
-
-        BlockSyntax.expectBlockEnd reader endKind None
-
-        if values.Count = 0 then
-            raise (DashSpecParseException($"{blockName} requires at least one entry."))
-
-        values
+        MemberGrammar.parseStringMapBlock reader endKind blockName (fun r -> r.ReadString())
 
     let private readTitleToken (reader: TokenReader) =
         match reader.CurrentKind with
