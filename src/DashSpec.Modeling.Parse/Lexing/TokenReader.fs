@@ -225,6 +225,7 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
 
     member private this.FormatRestOfLine(parts: ResizeArray<string>) =
         let sb = System.Text.StringBuilder()
+        let noSpaceBefore = Set [ ":"; "." ]
         for part in parts do
             if part = "," then
                 sb.Append(',') |> ignore
@@ -232,6 +233,8 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
                 sb.Append(part) |> ignore
             elif sb.[sb.Length - 1] = ',' then
                 sb.Append(' ').Append(part) |> ignore
+            elif noSpaceBefore.Contains part then
+                sb.Append(part) |> ignore
             else
                 sb.Append(' ').Append(part) |> ignore
         sb.ToString()
@@ -243,6 +246,12 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
             match tokens.[index].Kind with
             | TokenKind.Comma ->
                 parts.Add(",")
+                index <- index + 1
+            | TokenKind.Colon ->
+                parts.Add(":")
+                index <- index + 1
+            | TokenKind.Dot ->
+                parts.Add(".")
                 index <- index + 1
             | TokenKind.Ident | TokenKind.Raw | TokenKind.String ->
                 parts.Add(tokens.[index].Value)

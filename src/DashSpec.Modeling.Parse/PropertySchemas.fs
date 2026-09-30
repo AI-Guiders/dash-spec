@@ -78,14 +78,20 @@ module PropertySchemas =
     let filterShow =
         [ spec "label" String
           spec "widget" Scalar
-          spec "ref" Scalar ]
+          spec "ref" Scalar
+          spec "bind_scope" Scalar ]
+
+    let filtersChromeApply =
+        [ spec "mode" Scalar
+          spec "control" Scalar ]
 
     let filtersChrome =
         [ spec "layout" Scalar
           spec "sticky" Scalar
           spec "apply" Scalar
           spec "debounce_ms" Scalar
-          spec "format_guide" Scalar ]
+          spec "format_guide" Scalar
+          spec "cells" Scalar ]
 
     let legend =
         [ spec "min" String
@@ -151,7 +157,8 @@ module PropertySchemas =
     let tableDiagram =
         [ spec "columns" CommaList
           spec "order_by" RestOfLine
-          spec "limit" Scalar ]
+          spec "limit" Scalar
+          spec "column_formats" RestOfLine ]
 
     let numberDiagram =
         [ spec "value" ColumnBinding
