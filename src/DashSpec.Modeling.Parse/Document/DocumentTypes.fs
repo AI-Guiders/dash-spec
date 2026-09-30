@@ -73,6 +73,31 @@ module ReportFormatDefaults =
           DateFormat = overlay.DateFormat |> Option.orElse baseFmt.DateFormat
           DateTimeFormat = overlay.DateTimeFormat |> Option.orElse baseFmt.DateTimeFormat }
 
+[<RequireQualifiedAccess>]
+type ReportTimeBasis =
+    | Calendar
+    | Working
+
+[<RequireQualifiedAccess>]
+type ReportTimeApply =
+    | Clip
+    | Measure
+    | Both
+
+[<CLIMutable>]
+type WorkCalendarDefinition =
+    { TimeZoneId: string option
+      StartTime: string option
+      EndTime: string option
+      WorkDays: string option }
+
+[<CLIMutable>]
+type ReportTimePolicy =
+    { Basis: ReportTimeBasis
+      Apply: ReportTimeApply
+      WorkTimeColumn: string option
+      WorkCalendar: WorkCalendarDefinition option }
+
 [<CLIMutable>]
 type DashboardDocument =
     { Id: string
@@ -96,7 +121,8 @@ type DashboardDocument =
       ModuleTooltips: IReadOnlyDictionary<string, TooltipDefinition> option
       Pages: IReadOnlyList<ReportPageDefinition> option
       CommandAliases: IReadOnlyDictionary<string, string> option
-      FormatDefaults: ReportFormatDefaults }
+      FormatDefaults: ReportFormatDefaults
+      TimePolicy: ReportTimePolicy option }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -139,7 +165,8 @@ type TabModuleContent =
       ModuleChartChromePresets: IReadOnlyDictionary<string, PresentationBlock> option
       ModuleTooltips: IReadOnlyDictionary<string, TooltipDefinition> option
       Pages: IReadOnlyList<ReportPageDefinition> option
-      FormatDefaults: ReportFormatDefaults }
+      FormatDefaults: ReportFormatDefaults
+      TimePolicy: ReportTimePolicy option }
 
 type DashboardShellContext(mode: DashboardShellMode) =
     member val Mode = mode with get, set
@@ -168,6 +195,7 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val ModuleExtensions = { EnabledPluginIds = []; Imports = [] } with get, set
     member val CommandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     member val FormatDefaults = ReportFormatDefaults.empty with get, set
+    member val TimePolicy: ReportTimePolicy option = None with get, set
     member val FilterDefaults = FilterScopeDefaults.create ()
 
     member this.ResolveFilterProperty (filterName: string) (property: string) =
