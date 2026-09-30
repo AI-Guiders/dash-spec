@@ -234,7 +234,7 @@ public class DemoSpecsSyntaxTests
         var text = File.ReadAllText(path);
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
             text,
-            @"samples/demo");
+            Path.GetDirectoryName(path)!);
         Assert.Equal("table", fragment.Diagram!.Kind);
     }
 }
