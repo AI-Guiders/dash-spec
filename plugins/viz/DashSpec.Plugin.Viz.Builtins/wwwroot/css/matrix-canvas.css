@@ -181,12 +181,12 @@
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.card-head-toolbar .card-matrix-glyph-btn[aria-pressed="true"] {
+.card-head-toolbar .card-matrix-glyph-btn.is-on {
   background: color-mix(in srgb, var(--accent, #3b82f6) 92%, black);
   border-color: var(--accent, #3b82f6);
 }
 
-.card-head-toolbar .card-matrix-glyph-btn[aria-pressed="false"] {
+.card-head-toolbar .card-matrix-glyph-btn.is-off {
   background: transparent;
 }
 
@@ -207,13 +207,13 @@
   user-select: none;
 }
 
-.card-matrix-glyph-btn[aria-pressed="false"] .card-matrix-glyph-char {
+.card-matrix-glyph-char.is-off {
   color: transparent;
   -webkit-text-stroke: 1.85px rgba(248, 250, 252, 0.92);
   paint-order: stroke fill;
 }
 
-.card-matrix-glyph-btn[aria-pressed="true"] .card-matrix-glyph-char {
+.card-matrix-glyph-char.is-on {
   color: #fff;
   -webkit-text-stroke: 1.85px #fff;
   paint-order: stroke fill;
