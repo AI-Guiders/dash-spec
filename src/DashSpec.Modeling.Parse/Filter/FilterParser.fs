@@ -89,16 +89,6 @@ module FilterParser =
         | "top" -> FilterKind.Top
         | _ -> raise (DashSpecParseException($"Unknown filter kind '{ident}'."))
 
-    let private readTypedValue (reader: TokenReader) (valueType: PropertySchemas.PropertyValueType) =
-        match valueType with
-        | PropertySchemas.PropertyValueType.Scalar -> reader.ReadScalarValue()
-        | PropertySchemas.PropertyValueType.String -> reader.ReadString()
-        | PropertySchemas.PropertyValueType.DateRange -> reader.ReadDateDefaultValue()
-        | PropertySchemas.PropertyValueType.QualifiedName -> reader.ReadQualifiedName()
-        | PropertySchemas.PropertyValueType.CommaList -> reader.ReadCommaSeparatedValues()
-        | PropertySchemas.PropertyValueType.RestOfLine -> reader.ReadRestOfLine()
-        | PropertySchemas.PropertyValueType.ColumnBinding -> invalidOp "ColumnBinding must be handled separately."
-
     let private resolveSingleSelect (widget: string option) (props: IReadOnlyDictionary<string, string>) =
         match widget with
         | Some w when w.Equals("select", StringComparison.OrdinalIgnoreCase) -> true
@@ -237,6 +227,33 @@ module FilterParser =
             raise (DashSpecParseException($"Filter '{filterName}': bind requires date, field, or top, got '{kindIdent}'."))
         | Some _ -> parseFilterKindFromIdent (reader.ReadIdent())
 
+    let private filterSchemaContainerMembers
+        (kind: FilterKind)
+        (name: string)
+        (blockName: string)
+        (grainLabels: ref<IReadOnlyDictionary<string, string> option>)
+        (schema: PropertySchemas.PropertySpec list)
+        =
+        [ BlockGrammar.ChildKeyword("default", fun _ -> rejectInlineDefault name)
+          BlockGrammar.ChildKeyword(
+              "labels",
+              fun r ->
+                  if kind <> FilterKind.Date then
+                      raise (DashSpecParseException($"{blockName}: labels block is allowed only on date filters."))
+
+                  if grainLabels.Value.IsSome then
+                      raise (DashSpecParseException($"{blockName}: duplicate labels block."))
+
+                  grainLabels :=
+                      Some(
+                          MemberGrammar.parseStringMapBlock
+                              r
+                              "labels"
+                              $"{blockName} labels"
+                              (fun reader -> reader.ReadString())
+                      ))
+          BlockGrammar.SchemaProperties(schema, false, false) ]
+
     let private parseStructuredBindBlock (reader: TokenReader) (kind: FilterKind) (name: string) =
         let schema =
             match kind with
@@ -245,58 +262,10 @@ module FilterParser =
             | FilterKind.Top -> PropertySchemas.filterTop
 
         let blockName = $"filter {name} bind {kindName kind}"
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-
-        let specs =
-            schema
-            |> List.map (fun s -> s.Name, s)
-            |> dict
-
-        let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        let mutable grainLabels: IReadOnlyDictionary<string, string> option = None
-
-        while not (BlockSyntax.isBlockEnd reader "bind" None) && not reader.IsEof do
-            reader.SkipNewlines()
-
-            if BlockSyntax.isBlockEnd reader "bind" None then ()
-            else
-                while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader "bind" None) && not reader.IsEof do
-                    if BlockSyntax.isBlockEnd reader "bind" None then ()
-                    else
-                        let key = reader.ReadPropertyKey(allowQuoted=false)
-
-                        if key.Equals("labels", StringComparison.OrdinalIgnoreCase) then
-                            if kind <> FilterKind.Date then
-                                raise (DashSpecParseException($"{blockName}: labels block is allowed only on date filters."))
-
-                            if grainLabels.IsSome then
-                                raise (DashSpecParseException($"{blockName}: duplicate labels block."))
-
-                            reader.SkipNewlines()
-                            grainLabels <- Some(PropertyBlockParser.parseStringMapBlock reader "labels" $"{blockName} labels")
-                        elif key.Equals("default", StringComparison.OrdinalIgnoreCase) then
-                            rejectInlineDefault name
-                        elif specs.ContainsKey key then
-                            let spec = specs.[key]
-                            reader.Expect TokenKind.Eq
-
-                            if spec.ValueType = PropertySchemas.PropertyValueType.ColumnBinding then
-                                let binding = reader.ReadColumnBinding()
-                                values.[key] <- binding.Column
-
-                                match binding.Alias with
-                                | Some alias -> values.[key + "_as"] <- alias
-                                | None -> ()
-                            else
-                                values.[key] <- readTypedValue reader spec.ValueType
-                        else
-                            raise (DashSpecParseException($"Unknown property '{key}' in {blockName} block."))
-
-                reader.SkipNewlines()
-
-        BlockSyntax.expectBlockEnd reader "bind" None
-        { Properties = values; GrainLabels = grainLabels }
+        let grainLabels = ref None
+        let members = filterSchemaContainerMembers kind name blockName grainLabels schema
+        let values = BlockGrammar.parseKeywordContainer reader "bind" blockName members None
+        { Properties = values; GrainLabels = grainLabels.Value }
 
     let private parseStructuredIdFirst (reader: TokenReader) (name: string) (resolveProperty: string -> string -> string option) =
         let mutable kind: FilterKind option = None
@@ -336,6 +305,7 @@ module FilterParser =
                         "show"
                         false
                         false
+                        None
 
                 for kv in props do
                     showProps.[kv.Key] <- kv.Value
@@ -381,6 +351,15 @@ module FilterParser =
                 | true, value -> Some value
                 | false, _ -> None
 
+            let bindScope =
+                match showProps.TryGetValue "bind_scope" with
+                | true, value ->
+                    match value.Trim().ToLowerInvariant() with
+                    | "tooltip" | "inline" | "hidden" -> Some (value.Trim().ToLowerInvariant())
+                    | _ ->
+                        raise (DashSpecParseException($"Filter '{name}': show bind_scope must be 'tooltip', 'inline', or 'hidden'."))
+                | false, _ -> Some "tooltip"
+
             let label = resolveStructuredLabel name resolvedKind showProps
             let singleSelect = resolveSingleSelect widget bindProps
             let defaultExpression, minValue, maxValue =
@@ -397,6 +376,7 @@ module FilterParser =
               GrainFilterName = grainFilterName
               SingleSelect = singleSelect
               LayoutRef = layoutRef
+              BindScopeHint = bindScope
               GrainLabels = grainLabels
               Placement = placement }
 
@@ -476,61 +456,15 @@ module FilterParser =
             | FilterKind.Top -> PropertySchemas.filterTop
 
         let blockName = $"filter {kindName kind} {name}"
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-
-        let specs =
-            schema
-            |> List.map (fun s -> s.Name, s)
-            |> dict
-
-        let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        let mutable grainLabels: IReadOnlyDictionary<string, string> option = None
-
-        while not (BlockSyntax.isBlockEnd reader "filter" None) && not reader.IsEof do
-            reader.SkipNewlines()
-
-            if BlockSyntax.isBlockEnd reader "filter" None then ()
-            else
-                while not (reader.IsAt TokenKind.Newline) && not (BlockSyntax.isBlockEnd reader "filter" None) && not reader.IsEof do
-                    let key = reader.ReadPropertyKey(allowQuoted=false)
-
-                    if key.Equals("labels", StringComparison.OrdinalIgnoreCase) then
-                        if kind <> FilterKind.Date then
-                            raise (DashSpecParseException($"{blockName}: labels block is allowed only on date filters."))
-
-                        if grainLabels.IsSome then
-                            raise (DashSpecParseException($"{blockName}: duplicate labels block."))
-
-                        reader.SkipNewlines()
-                        grainLabels <- Some(PropertyBlockParser.parseStringMapBlock reader "labels" $"{blockName} labels")
-                    elif key.Equals("default", StringComparison.OrdinalIgnoreCase) then
-                        rejectInlineDefault name
-                    elif specs.ContainsKey key then
-                        let spec = specs.[key]
-                        reader.Expect TokenKind.Eq
-
-                        if spec.ValueType = PropertySchemas.PropertyValueType.ColumnBinding then
-                            let binding = reader.ReadColumnBinding()
-                            values.[key] <- binding.Column
-
-                            match binding.Alias with
-                            | Some alias -> values.[key + "_as"] <- alias
-                            | None -> ()
-                        else
-                            values.[key] <- readTypedValue reader spec.ValueType
-                    else
-                        raise (DashSpecParseException($"Unknown property '{key}' in {blockName} block."))
-
-                reader.SkipNewlines()
-
-        BlockSyntax.expectBlockEnd reader "filter" None
+        let grainLabels = ref None
+        let members = filterSchemaContainerMembers kind name blockName grainLabels schema
+        let values = BlockGrammar.parseKeywordContainer reader "filter" blockName members None
 
         if columnProvidedByOn then
             values.Remove "column" |> ignore
             values.Remove "column_as" |> ignore
 
-        values, grainLabels
+        values, grainLabels.Value
 
     let private parseFilterBody (reader: TokenReader) (kind: FilterKind) (name: string) (columnProvidedByOn: bool) =
         if reader.RawKind = TokenKind.LBrace then
@@ -630,6 +564,7 @@ module FilterParser =
           GrainFilterName = grainFilterName
           SingleSelect = singleSelect
           LayoutRef = layoutRef
+          BindScopeHint = None
           GrainLabels = grainLabels
           Placement = placement }
 

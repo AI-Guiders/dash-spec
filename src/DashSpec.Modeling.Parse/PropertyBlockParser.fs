@@ -25,6 +25,7 @@ module PropertyBlockParser =
         endKind
         allowExtensionProperties
         allowQuotedKeys
+        (endId: string option)
         : Dictionary<string, string>
         =
         BlockGrammar.parseKeywordContainer
@@ -32,10 +33,11 @@ module PropertyBlockParser =
             endKind
             blockName
             [ BlockGrammar.SchemaProperties(schema, allowExtensionProperties, allowQuotedKeys) ]
+            endId
 
     let parse (reader: TokenReader) (schema: PropertySpec list) blockName allowExtensionProperties allowQuotedKeys =
         let endKind = resolveEndKind blockName
-        parseWithEndKind reader schema blockName endKind allowExtensionProperties allowQuotedKeys
+        parseWithEndKind reader schema blockName endKind allowExtensionProperties allowQuotedKeys None
 
     let parseFlatProperties (reader: TokenReader) (schema: PropertySpec list) context allowExtensionProperties allowQuotedKeys =
         let specs =

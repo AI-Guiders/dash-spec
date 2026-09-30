@@ -9,27 +9,8 @@ open DashSpec.Modeling.Parse.Lexing
 module TooltipModuleParser =
 
     let private parseVariables (reader: TokenReader) (tooltipId: string) =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-        let map = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-
-        while not (BlockSyntax.isBlockEnd reader "variables" None) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "variables" None then ()
-            else
-                let name = reader.ReadIdent()
-                if String.IsNullOrWhiteSpace name then
-                    raise (DashSpecParseException($"Tooltip '{tooltipId}': variables entry requires a name."))
-                reader.Expect TokenKind.Eq
-                let column = reader.ReadIdent()
-                if String.IsNullOrWhiteSpace column then
-                    raise (DashSpecParseException($"Tooltip '{tooltipId}': variables '{name}' requires a column."))
-                if not (map.TryAdd(name, column)) then
-                    raise (DashSpecParseException($"Tooltip '{tooltipId}': duplicate variable '{name}'."))
-                reader.SkipNewlines()
-
-        BlockSyntax.expectBlockEnd reader "variables" None
-        map :> IReadOnlyDictionary<string, string>
+        MemberGrammar.parseIdentMapBlock reader "variables" $"Tooltip '{tooltipId}' variables"
+        :> IReadOnlyDictionary<string, string>
 
     let private parseBody (reader: TokenReader) (id: string) =
         let mutable variables: IReadOnlyDictionary<string, string> option = None
