@@ -163,14 +163,30 @@ internal static class ModuleParseRegistration
     private static void RegisterDiagram()
     {
         DiagramParseBridge.ParseDiagramFile = (text, baseDirectory) =>
-            FoldDiagramStatements(
-                DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text).Statements,
-                baseDirectory);
+        {
+            try
+            {
+                return FoldDiagramStatements(
+                    DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text).Statements,
+                    baseDirectory);
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
 
         DiagramParseBridge.ParseDiagramFileWithId = (text, baseDirectory) =>
         {
-            var (id, doc) = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModuleWithId(text);
-            return (id, FoldDiagramStatements(doc.Statements, baseDirectory));
+            try
+            {
+                var (id, doc) = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModuleWithId(text);
+                return (id, FoldDiagramStatements(doc.Statements, baseDirectory));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
         };
     }
 

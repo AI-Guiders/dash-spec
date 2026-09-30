@@ -36,7 +36,6 @@ public static class DiagramKindRegistry
     private static readonly IReadOnlyList<PropertySpec> TableProperties =
     [
         new("columns", PropertyValueType.CommaList),
-        new("column_formats", PropertyValueType.RestOfLine),
         new("order_by", PropertyValueType.RestOfLine),
         new("limit", PropertyValueType.Scalar),
     ];
