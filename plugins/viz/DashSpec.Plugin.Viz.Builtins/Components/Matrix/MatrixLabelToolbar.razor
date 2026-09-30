@@ -11,42 +11,42 @@
 {
     <div class="card-matrix-glyph-group" role="group" aria-label="@Loc.T("Matrix display")">
         <button type="button"
-                class="secondary card-icon-btn card-matrix-glyph-btn"
+                class="@GlyphBtnClass(MatrixValueLabelsVisible)"
                 title="@ValueLabelsTitle"
                 aria-label="@ValueLabelsTitle"
-                aria-pressed="@MatrixValueLabelsVisible"
+                aria-pressed="@(MatrixValueLabelsVisible ? "true" : "false")"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixValueLabelsAsync">
-            <MatrixGlyphIcon Glyph="D" />
+            <MatrixGlyphIcon Glyph="D" Filled="@MatrixValueLabelsVisible" />
         </button>
         <button type="button"
-                class="secondary card-icon-btn card-matrix-glyph-btn"
+                class="@GlyphBtnClass(MatrixAxisLabelsXVisible)"
                 title="@AxisLabelsXTitle"
                 aria-label="@AxisLabelsXTitle"
-                aria-pressed="@MatrixAxisLabelsXVisible"
+                aria-pressed="@(MatrixAxisLabelsXVisible ? "true" : "false")"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixAxisLabelsXAsync">
-            <MatrixGlyphIcon Glyph="X" />
+            <MatrixGlyphIcon Glyph="X" Filled="@MatrixAxisLabelsXVisible" />
         </button>
         <button type="button"
-                class="secondary card-icon-btn card-matrix-glyph-btn"
+                class="@GlyphBtnClass(MatrixAxisLabelsYVisible)"
                 title="@AxisLabelsYTitle"
                 aria-label="@AxisLabelsYTitle"
-                aria-pressed="@MatrixAxisLabelsYVisible"
+                aria-pressed="@(MatrixAxisLabelsYVisible ? "true" : "false")"
                 disabled="@Context.Card.Loading"
                 @onclick="ToggleMatrixAxisLabelsYAsync">
-            <MatrixGlyphIcon Glyph="Y" />
+            <MatrixGlyphIcon Glyph="Y" Filled="@MatrixAxisLabelsYVisible" />
         </button>
         @if (MatrixSpec?.ShowsGradientLegend == true)
         {
             <button type="button"
-                    class="secondary card-icon-btn card-matrix-glyph-btn"
+                    class="@GlyphBtnClass(MatrixLegendVisible)"
                     title="@LegendTitle"
                     aria-label="@LegendTitle"
-                    aria-pressed="@MatrixLegendVisible"
+                    aria-pressed="@(MatrixLegendVisible ? "true" : "false")"
                     disabled="@Context.Card.Loading"
                     @onclick="ToggleMatrixLegendAsync">
-                <MatrixGlyphIcon Glyph="L" />
+                <MatrixGlyphIcon Glyph="L" Filled="@MatrixLegendVisible" />
             </button>
         }
     </div>
@@ -76,6 +76,11 @@
         VizLabelDisplayResolver.EffectiveLegendVisible(
             MatrixSpec?.ShowsGradientLegend == true,
             VizDisplayState.GetLegendOverride(Context.Card.Id));
+
+    private static string GlyphBtnClass(bool on) =>
+        on
+            ? "secondary card-icon-btn card-matrix-glyph-btn is-on"
+            : "secondary card-icon-btn card-matrix-glyph-btn is-off";
 
     private string ValueLabelsTitle => Loc.T("Toggle cell values");
 
