@@ -11,6 +11,7 @@ using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Host.Services.Diagnostics;
 
@@ -20,7 +21,8 @@ public sealed class LoadDiagnosticsService(
     IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider,
     RuntimeConnectorResolver runtimeConnectorResolver,
-    IDashboardSpecLoader specLoader)
+    IDashboardSpecLoader specLoader,
+    DashSpecTomlRoot bootstrap)
 {
     public LoadDiagnosticsReport DiagnoseConfiguredSpec(bool includeCards = false, bool includeFieldOptions = true)
     {
@@ -171,13 +173,18 @@ public sealed class LoadDiagnosticsService(
                     try
                     {
                         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                        var reportTime = ReportTimePolicyResolver.ResolveEffective(
+                            loaded.Document.TimePolicy,
+                            bootstrap.ReportTime.ToSettingsDictionary(),
+                            LabelFormat.DisplayTimeZone?.Id);
                         _ = loaded.Connector.QueryAsync(
                                 QueryCompiler.Compile(
                                     card,
                                     loaded.Filters,
                                     loaded.FilterIndex,
                                     loaded.Document.SqlDialect,
-                                    loaded.SpecDirectory),
+                                    loaded.SpecDirectory,
+                                    reportTimePolicy: reportTime),
                                 cts.Token)
                             .GetAwaiter()
                             .GetResult();

@@ -99,7 +99,14 @@ module PropertySchemas =
     let configuration =
         [ spec "sqldialect" Scalar
           spec "palette" String
-          spec "diagramlibrary" String ]
+          spec "diagramlibrary" String
+          spec "time_basis" Scalar
+          spec "time_apply" Scalar
+          spec "work_time_column" ColumnBinding
+          spec "work_timezone" Scalar
+          spec "work_start" Scalar
+          spec "work_end" Scalar
+          spec "work_days" Scalar ]
 
     let hostConfiguration =
         [ spec "language" Scalar

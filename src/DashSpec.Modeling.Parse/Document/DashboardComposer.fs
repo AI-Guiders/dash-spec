@@ -89,6 +89,7 @@ module rec DashboardComposer =
             Dictionary<string, TooltipDefinition>(document.ResolvedModuleTooltips, StringComparer.OrdinalIgnoreCase)
 
         let mutable formatDefaults = document.FormatDefaults
+        let mutable timePolicy = document.TimePolicy
 
         for tab in document.Tabs do
             if String.IsNullOrWhiteSpace(Option.defaultValue "" tab.DashspecPath) then
@@ -108,6 +109,7 @@ module rec DashboardComposer =
                     DocumentModuleParser.parseTabEmbedded moduleText tab.Id (Some specDirectory) (Some(filters :> IReadOnlyList<_>)) parseOptions
 
                 formatDefaults <- ReportFormatDefaults.merge formatDefaults tabModule.FormatDefaults
+                timePolicy <- ReportTimePolicyParser.mergePolicyOptions timePolicy tabModule.TimePolicy
 
                 for filter in tabModule.Filters do
                     if filters |> Seq.exists (fun f -> String.Equals(f.Name, filter.Name, StringComparison.OrdinalIgnoreCase)) then
@@ -177,7 +179,8 @@ module rec DashboardComposer =
                 ModuleChartChromePresets = Some(moduleChartChromePresets :> IReadOnlyDictionary<_, _>)
                 ModuleTooltips = Some(moduleTooltips :> IReadOnlyDictionary<_, _>)
                 Pages = Some(pages :> IReadOnlyList<_>)
-                FormatDefaults = formatDefaults }
+                FormatDefaults = formatDefaults
+                TimePolicy = timePolicy }
 
         DashboardValidator.validate merged
         merged

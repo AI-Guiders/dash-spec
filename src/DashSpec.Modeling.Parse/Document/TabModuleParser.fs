@@ -54,7 +54,8 @@ module TabModuleParser =
           ModuleChartChromePresets = None
           ModuleTooltips = None
           Pages = if shell.Pages.Count = 0 then None else Some(shell.Pages :> IReadOnlyList<_>)
-          FormatDefaults = shell.FormatDefaults }
+          FormatDefaults = shell.FormatDefaults
+          TimePolicy = shell.TimePolicy }
 
     let composeStandalone (text: string) (specDirectory: string option) =
         if String.IsNullOrWhiteSpace text then
@@ -117,7 +118,8 @@ module TabModuleParser =
                       None
                   else
                       Some(shell.CommandAliases :> IReadOnlyDictionary<_, _>)
-              FormatDefaults = shell.FormatDefaults }
+              FormatDefaults = shell.FormatDefaults
+              TimePolicy = shell.TimePolicy }
 
         DashboardValidator.validate document
         document
