@@ -10,10 +10,15 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Viz;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Core.Layout;
+using DashSpec.Core.Resolution;
+using DashSpec.Host.Configuration;
 
 namespace DashSpec.Host.Services.Rendering;
 
-public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDrillState cellDrill) : ICardRenderer
+public sealed class CardRenderService(
+    VizPluginRegistry vizPlugins,
+    ICardCellDrillState cellDrill,
+    DashSpecTomlRoot bootstrap) : ICardRenderer
 {
     public async Task<CardRenderResult> RenderAsync(
         CardDefinition card,
@@ -101,7 +106,14 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
     {
         var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
         var effective = resolved.Card;
-        var query = QueryCompiler.Compile(effective, filters, filterIndex, document.SqlDialect, specDirectory);
+        var reportTime = ResolveReportTime(document);
+        var query = QueryCompiler.Compile(
+            effective,
+            filters,
+            filterIndex,
+            document.SqlDialect,
+            specDirectory,
+            reportTimePolicy: reportTime);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
@@ -162,7 +174,8 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
                     priorFilters,
                     filterIndex,
                     document.SqlDialect,
-                    specDirectory);
+                    specDirectory,
+                    reportTimePolicy: reportTime);
                 var priorRows = await connector.QueryAsync(priorQuery, cancellationToken).ConfigureAwait(false);
                 if (KpiPriorPeriod.TryReadScalar(priorRows, effective.Diagram, out var priorValue))
                 {
@@ -339,7 +352,8 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
                     filterIndex,
                     document.SqlDialect,
                     specDirectory,
-                    drillOverlay);
+                    drillOverlay,
+                    ResolveReportTime(document));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
                 var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
@@ -488,4 +502,10 @@ public sealed class CardRenderService(VizPluginRegistry vizPlugins, ICardCellDri
         {
             VisibleRows = CompositionResolution.ResolveVisibleRows(card, library),
         };
+
+    private ReportTimePolicy ResolveReportTime(DashboardDocument document) =>
+        ReportTimePolicyResolver.ResolveEffective(
+            document.TimePolicy,
+            bootstrap.ReportTime.ToSettingsDictionary(),
+            LabelFormat.DisplayTimeZone?.Id);
 }

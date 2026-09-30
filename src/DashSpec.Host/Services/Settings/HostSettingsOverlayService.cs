@@ -37,6 +37,7 @@ public sealed class HostSettingsOverlayService(IHostDatabaseInitializer hostData
 
         ApplyAccess(bootstrap, rows);
         ApplyPresentation(bootstrap, rows);
+        ApplyReportTime(bootstrap, rows);
     }
 
     private static void ApplyAccess(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
@@ -73,6 +74,19 @@ public sealed class HostSettingsOverlayService(IHostDatabaseInitializer hostData
         {
             bootstrap.Presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(largeLayout);
         }
+    }
+
+    private static void ApplyReportTime(DashSpecTomlRoot bootstrap, List<HostSettingEntity> rows)
+    {
+        var settings = rows
+            .Where(r => string.Equals(r.Section, HostSettingsSections.SectionReportTime, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(r => r.Key, r => r.Value, StringComparer.OrdinalIgnoreCase);
+        if (settings.Count == 0)
+        {
+            return;
+        }
+
+        bootstrap.ReportTime.ApplyFromSettings(settings);
     }
 
     private static string? Get(List<HostSettingEntity> rows, string section, string key) =>

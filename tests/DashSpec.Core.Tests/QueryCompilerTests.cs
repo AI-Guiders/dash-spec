@@ -517,4 +517,68 @@ public class QueryCompilerTests
         Assert.DoesNotContain("SUM(", query.Sql);
         Assert.DoesNotContain("MAX(", query.Sql);
     }
+
+    [Fact]
+    public void Compile_working_time_basis_appends_work_window_predicate()
+    {
+        var card = new CardDefinition(
+            "peak",
+            "Peak",
+            new DiagramDefinition(
+                "line",
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["x"] = "usage_date",
+                    ["y"] = "peak_concurrent_proxy",
+                }),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak"),
+            ["usage_date"],
+            []);
+
+        var policy = new ReportTimePolicy(
+            ReportTimeBasis.Working,
+            ReportTimeApply.Clip,
+            "bucket_start_utc",
+            new WorkCalendarDefinition("Russian Standard Time", "09:00", "18:00", "mon,tue,wed,thu,fri"));
+
+        var filters = new FilterState();
+        filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.TSql, reportTimePolicy: policy);
+
+        Assert.Contains("bucket_start_utc AT TIME ZONE 'UTC'", query.Sql);
+        Assert.Contains("AT TIME ZONE 'Russian Standard Time'", query.Sql);
+        Assert.Contains("CAST(", query.Sql);
+        Assert.Contains("09:00:00", query.Sql);
+    }
+
+    [Fact]
+    public void Parse_configuration_reads_time_basis_and_work_column()
+    {
+        var document = DashSpecParser.Parse("""
+            @dashboard t
+              configuration
+                time_basis = working
+                work_time_column = bucket_start_utc
+              end configuration
+              report
+              title = "T"
+              card c as "C"
+              diagram number
+              value = kpi
+              end number
+              datasource view demo.v
+              end card
+              end report
+            end dashboard
+            """);
+
+        Assert.NotNull(document.TimePolicy);
+        Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Basis);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
+    }
 }

@@ -16,8 +16,9 @@ public static class QueryCompiler
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         SqlDialect sqlDialect = SqlDialect.TSql,
         string? specDirectory = null,
-        CardCellDrillOverlay? cellDrillOverlay = null) =>
-        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay);
+        CardCellDrillOverlay? cellDrillOverlay = null,
+        ReportTimePolicy? reportTimePolicy = null) =>
+        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay, reportTimePolicy);
 
     public static CompiledQuery Compile(
         CardDefinition card,
@@ -25,7 +26,8 @@ public static class QueryCompiler
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         ISqlDialectBackend dialect,
         string? specDirectory = null,
-        CardCellDrillOverlay? cellDrillOverlay = null)
+        CardCellDrillOverlay? cellDrillOverlay = null,
+        ReportTimePolicy? reportTimePolicy = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -44,6 +46,7 @@ public static class QueryCompiler
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
         AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay);
+        AppendWorkWindowClip(whereBuilder, reportTimePolicy, dialect);
 
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
             ? ResolveTableLimit(card, filters, filterDefinitions)
@@ -552,5 +555,24 @@ public static class QueryCompiler
         }
 
         return $"{column} IN ({string.Join(", ", placeholders)})";
+    }
+
+    private static void AppendWorkWindowClip(
+        StringBuilder whereBuilder,
+        ReportTimePolicy? reportTimePolicy,
+        ISqlDialectBackend dialect)
+    {
+        if (reportTimePolicy is null)
+        {
+            return;
+        }
+
+        var predicate = WorkWindowSql.TryBuildWorkClipPredicate(reportTimePolicy, dialect.Id);
+        if (string.IsNullOrWhiteSpace(predicate))
+        {
+            return;
+        }
+
+        whereBuilder.Append(" AND ").Append(predicate);
     }
 }
