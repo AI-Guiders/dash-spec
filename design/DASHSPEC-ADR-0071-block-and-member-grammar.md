@@ -41,3 +41,32 @@ No alternate surface for the same IR when a child block exists (e.g. no inline `
 - `PropertyBlockParser.parse` delegates to `BlockGrammar` with a single `SchemaProperties` member.
 - `TableDiagramParser` is a member list: `formats` + table schema.
 - C# `PropertyBlockParser` unchanged until a later port; F# is SSOT for diagram/table authoring extensions.
+
+### Container member kinds
+
+| Member | Use |
+|--------|-----|
+| `SchemaProperties` | `key = value` lines from `PropertySchemas` |
+| `ChildKeywordMerge` | Nested `keyword` … `end keyword` string map → serialized IR property (table `formats`) |
+| `ChildKeyword` | Nested block or keyword line with custom parser (`filter bind labels`, reject `default`) |
+| `KeywordScalarOrBlock` | `keyword = scalar` or `keyword` … `end keyword` (`filters chrome apply`) |
+
+`parseKeywordContainer` accepts optional `endId` for `end link <id>`-style closes.
+
+### Migrated to BlockGrammar / MemberGrammar (F#)
+
+| Surface | Parser |
+|---------|--------|
+| Generic property blocks | `PropertyBlockParser` → `BlockGrammar` |
+| Table `formats` | `TableDiagramParser` |
+| `filters chrome` | `FiltersChromeParser` |
+| `filter` bind (schema + `labels`) | `FilterParser.parseStructuredBindBlock` |
+| Host `link` | `HostModuleParser.parseLink` |
+| Card / cards `chrome` | `CardChromeParser`, `CardsChromeParser` |
+| Toolbar `commands` | `CommandAliasesParser` → `parseIdentMapBlock` |
+| Tooltip `variables` | `TooltipModuleParser` |
+| Display `bind` slots | `DisplayBindingParser` → `parseStringMapBody` |
+
+### Still bespoke (nested DSL, not flat members)
+
+Card/report/document shells, layout `group`/`nest`, filter `filter` wrapper (`bind`/`show`/`place` children), diagram module includes, toolbar placement, catalog, defaults tree, palette — keep dedicated parsers; new **member lines** inside them should call `MemberGrammar.readPropertyEntry` or `BlockGrammar` when the body is schema-only.

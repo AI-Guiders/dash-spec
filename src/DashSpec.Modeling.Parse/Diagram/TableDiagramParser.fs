@@ -11,5 +11,6 @@ module TableDiagramParser =
             reader
             "table"
             "diagram table"
-            [ BlockGrammar.ChildKeywordMerge("formats", "formats", "diagram formats", BlockGrammar.tableFormatsMerge)
+            [ BlockGrammar.ChildKeywordMerge("formats", "formats", "diagram formats", MemberGrammar.parsePresetRestOfLine, BlockGrammar.tableFormatsMerge)
               BlockGrammar.SchemaProperties(schema, false, false) ]
+            None

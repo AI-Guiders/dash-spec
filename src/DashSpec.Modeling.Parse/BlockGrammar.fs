@@ -17,7 +17,10 @@ module BlockGrammar =
         | SchemaProperties of
             schema: PropertySchemas.PropertySpec list * allowExtension: bool * allowQuotedKeys: bool
         | ChildKeywordMerge of
-            keyword: string * endKind: string * blockName: string * merge: StringMapMerge
+            keyword: string * endKind: string * blockName: string * readValue: (TokenReader -> string) * merge: StringMapMerge
+        | ChildKeyword of keyword: string * parse: (TokenReader -> unit)
+        | KeywordScalarOrBlock of
+            keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
 
     let serializeColumnFormatMap (map: IReadOnlyDictionary<string, string>) =
         let sb = StringBuilder()
@@ -33,11 +36,25 @@ module BlockGrammar =
 
     let private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
-        | ChildKeywordMerge(keyword, endKind, blockName, merge) ->
+        | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then
-                let map =
-                    MemberGrammar.parseStringMapBlock reader endKind blockName MemberGrammar.parsePresetRestOfLine
+                let map = MemberGrammar.parseStringMapBlock reader endKind blockName readValue
                 values.[merge.IrProperty] <- merge.Serialize map
+                true
+            else
+                false
+        | ChildKeyword(keyword, parseChild) ->
+            if reader.TryKeyword keyword then
+                parseChild reader
+                true
+            else
+                false
+        | KeywordScalarOrBlock(keyword, endKind, blockName, onScalar, onBlock) ->
+            if reader.TryKeyword keyword then
+                if reader.IsAt TokenKind.Eq then
+                    onScalar reader values
+                else
+                    onBlock reader values
                 true
             else
                 false
@@ -49,6 +66,7 @@ module BlockGrammar =
         blockName
         (members: ContainerMember list)
         (values: Dictionary<string, string>)
+        (endId: string option)
         =
         let schema, allowExtension, allowQuotedKeys =
             match members |> List.tryPick (function SchemaProperties(s, a, q) -> Some(s, a, q) | _ -> None) with
@@ -57,16 +75,16 @@ module BlockGrammar =
 
         let specs = schema |> List.map (fun s -> s.Name, s) |> dict
 
-        while not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
+        while not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
             reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader endKind None then ()
+            if BlockSyntax.isBlockEnd reader endKind endId then ()
             else
                 let mutable handled = false
                 for memberDef in members do
                     if not handled && tryParseChild reader memberDef values then
                         handled <- true
                 if not handled then
-                    while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
+                    while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
                         let mutable innerHandled = false
                         for memberDef in members do
                             if not innerHandled && tryParseChild reader memberDef values then
@@ -87,12 +105,13 @@ module BlockGrammar =
         endKind
         blockName
         (members: ContainerMember list)
+        (endId: string option)
         =
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
-        parseBody reader endKind blockName members values
-        BlockSyntax.expectBlockEnd reader endKind None
+        parseBody reader endKind blockName members values endId
+        BlockSyntax.expectBlockEnd reader endKind endId
         values
 
     let parseBracketContainer (reader: TokenReader) blockName (members: ContainerMember list) =
@@ -103,6 +122,6 @@ module BlockGrammar =
         reader.Advance()
         reader.PushBlockClose BlockCloseStyle.Brace
         reader.SkipNewlines()
-        parseBody reader "}" blockName members values
+        parseBody reader "}" blockName members values None
         BlockSyntax.expectBlockEnd reader "}" None
         values
