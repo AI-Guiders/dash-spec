@@ -5,6 +5,7 @@ public static class HostSettingsSections
     public const string SectionAccess = "access";
     public const string SectionCatalogGit = "catalog_git";
     public const string SectionPresentation = "presentation";
+    public const string SectionReportTime = "report_time";
     public const string KeyDisplayTimeZone = "display_time_zone";
     public const string KeyColorScheme = "color_scheme";
     public const string KeyLanguage = "language";

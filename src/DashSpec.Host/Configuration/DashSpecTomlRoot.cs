@@ -11,6 +11,8 @@ public sealed class DashSpecTomlRoot
     public AccessTomlSection Access { get; set; } = new();
     public PresentationTomlSection Presentation { get; set; } = new();
 
+    public ReportTimeTomlSection ReportTime { get; set; } = new();
+
     public Dictionary<string, ConnectorTomlSection> Connectors { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
 

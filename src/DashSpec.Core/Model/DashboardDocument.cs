@@ -22,10 +22,12 @@ public sealed record DashboardDocument(
     IReadOnlyList<ReportPageDefinition>? Pages = null,
     IReadOnlyDictionary<string, string>? CommandAliases = null,
     ReportFormatDefaults? FormatDefaults = null,
-    CardsChromeDefinition? CardsChrome = null)
+    CardsChromeDefinition? CardsChrome = null,
+    ReportTimePolicy? TimePolicy = null)
 {
     public CardsChromeDefinition ResolvedCardsChrome => CardsChrome ?? CardsChromeDefinition.Default;
     public ReportFormatDefaults ResolvedFormatDefaults => FormatDefaults ?? ReportFormatDefaults.Empty;
+    public ReportTimePolicy ResolvedTimePolicy => TimePolicy ?? ReportTimePolicy.Default;
     public static IReadOnlyDictionary<string, string> EmptyCommandAliases { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 

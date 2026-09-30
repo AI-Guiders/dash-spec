@@ -42,7 +42,42 @@ internal static class DocumentModelMapper
             ToListOrNull(document.Pages)?.Select(ToCore).ToList(),
             ToDictionaryOrNull(document.CommandAliases, static x => x),
             ToCore(document.FormatDefaults),
-            MapOptional(document.CardsChrome, ToCore));
+            MapOptional(document.CardsChrome, ToCore),
+            MapOptional(document.TimePolicy, ToCore));
+
+    private static ReportTimePolicy ToCore(FsharpDocument.ReportTimePolicy policy) =>
+        new(
+            ToCore(policy.Basis),
+            ToCore(policy.Apply),
+            FirstOrNull(policy.WorkTimeColumn),
+            MapOptional(policy.WorkCalendar, ToCore));
+
+    private static WorkCalendarDefinition ToCore(FsharpDocument.WorkCalendarDefinition calendar) =>
+        new(
+            FirstOrNull(calendar.TimeZoneId),
+            FirstOrNull(calendar.StartTime),
+            FirstOrNull(calendar.EndTime),
+            FirstOrNull(calendar.WorkDays));
+
+    private static ReportTimeBasis ToCore(FsharpDocument.ReportTimeBasis basis) =>
+        basis == FsharpDocument.ReportTimeBasis.Working
+            ? ReportTimeBasis.Working
+            : ReportTimeBasis.Calendar;
+
+    private static ReportTimeApply ToCore(FsharpDocument.ReportTimeApply apply)
+    {
+        if (apply == FsharpDocument.ReportTimeApply.Measure)
+        {
+            return ReportTimeApply.Measure;
+        }
+
+        if (apply == FsharpDocument.ReportTimeApply.Both)
+        {
+            return ReportTimeApply.Both;
+        }
+
+        return ReportTimeApply.Clip;
+    }
 
     private static ReportFormatDefaults ToCore(FsharpDocument.ReportFormatDefaults defaults) =>
         new(

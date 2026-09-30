@@ -114,7 +114,8 @@ module rec DocumentModuleParser =
               ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
               Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
               CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>)
-              FormatDefaults = result.Shell.FormatDefaults }
+              FormatDefaults = result.Shell.FormatDefaults
+              TimePolicy = result.Shell.TimePolicy }
 
         DashboardValidator.validate document
         document
@@ -156,7 +157,8 @@ module rec DocumentModuleParser =
           ModuleTooltips = Some(dashShell.Includes.ExportTooltips())
           Pages = Some(dashShell.Pages :> IReadOnlyList<_>)
           CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
-          FormatDefaults = dashShell.FormatDefaults }
+          FormatDefaults = dashShell.FormatDefaults
+          TimePolicy = dashShell.TimePolicy }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -219,7 +221,8 @@ module rec DocumentModuleParser =
           ModuleChartChromePresets = Some(result.Shell.Includes.ExportChartChromePresets())
           ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
           Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
-          FormatDefaults = result.Shell.FormatDefaults }
+          FormatDefaults = result.Shell.FormatDefaults
+          TimePolicy = result.Shell.TimePolicy }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None
@@ -311,6 +314,7 @@ module rec DocumentModuleParser =
         let mutable wiringToolbarBoard = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
+        let mutable timePolicyAcc: ReportTimePolicy option = None
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -334,6 +338,7 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> wiringLayoutBoard <- Some lb)
                     (fun tb -> wiringToolbarBoard <- Some tb)
+                    (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
             elif reader.TryKeyword "report" then
@@ -351,6 +356,7 @@ module rec DocumentModuleParser =
                         wiringToolbarBoard
                         parseOptions
                         moduleExtensions
+                        timePolicyAcc
 
                 shell <- Some created
                 reportTitle <- readOptionalReportTitle reader
@@ -388,6 +394,7 @@ module rec DocumentModuleParser =
         let mutable wiringToolbarBoard = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
+        let mutable timePolicyAcc: ReportTimePolicy option = None
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -411,6 +418,7 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> wiringLayoutBoard <- Some lb)
                     (fun tb -> wiringToolbarBoard <- Some tb)
+                    (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
             elif reader.TryKeyword "report" then
@@ -428,6 +436,7 @@ module rec DocumentModuleParser =
                         wiringToolbarBoard
                         parseOptions
                         moduleExtensions
+                        timePolicyAcc
 
                 shell <- Some created
                 reportTitle <- readOptionalReportTitle reader
@@ -468,6 +477,7 @@ module rec DocumentModuleParser =
         (setModuleExtensions: ModuleExtensionsDefinition -> unit)
         (setLayoutBoard: LayoutBoardDefinition -> unit)
         (setToolbarBoard: LayoutBoardDefinition -> unit)
+        (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
         =
         if reader.TryKeyword "runtime" then
             let props = PropertyBlockParser.parse reader PropertySchemas.runtime "runtime" false false
@@ -489,6 +499,7 @@ module rec DocumentModuleParser =
             | true, path -> setDiagramLibraryPath (Some path)
             | false, _ -> ()
 
+            mergeTimeConfiguration props
             reader.SkipNewlines()
             true
         else
@@ -845,6 +856,7 @@ module rec DocumentModuleParser =
         (toolbarBoard: LayoutBoardDefinition option)
         (parseOptions: DashSpecParseOptions)
         (moduleExtensions: ModuleExtensionsDefinition)
+        (timePolicy: ReportTimePolicy option)
         =
         if layoutBoard.IsSome && includes.LayoutBoard.IsSome then
             raise (DashSpecParseException("Tab module declares more than one card layout board."))
@@ -864,6 +876,7 @@ module rec DocumentModuleParser =
         shell.ParseOptions <- restrictExtensionBlocksForModule parseOptions moduleExtensions
         shell.ModuleExtensions <- moduleExtensions
         shell.Includes <- includes
+        shell.TimePolicy <- timePolicy
         shell
 
     let private restrictExtensionBlocksForModule (options: DashSpecParseOptions) (moduleExtensions: ModuleExtensionsDefinition) =
