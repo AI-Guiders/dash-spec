@@ -208,6 +208,39 @@ public class LusSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_table_diagram_formats_block_serializes_column_formats()
+    {
+        var text = """
+            @diagram t
+            table
+              columns = host_name, bucket_start_utc
+              formats
+                bucket_start_utc = datetime.short
+              end formats
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        Assert.Equal("bucket_start_utc:datetime.short", fragment.Diagram!.Properties["column_formats"]);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_rejects_inline_column_formats()
+    {
+        var text = """
+            @diagram t
+            table
+              columns = a, b
+              column_formats = a:date.short
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("column_formats", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_table_diagram_order_by_with_comma()
     {
         var text = """

@@ -34,6 +34,8 @@
     <Compile Include="Syntax\SyntaxTree.fs" />
     <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
     <Compile Include="PropertySchemas.fs" />
+    <Compile Include="MemberGrammar.fs" />
+    <Compile Include="BlockGrammar.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="SpecIncludeResolver.fs" />
@@ -57,6 +59,7 @@
     <Compile Include="Presentation\PresentationModuleParser.fs" />
     <Compile Include="Diagram\DiagramTypes.fs" />
     <Compile Include="Diagram\DiagramKindRegistry.fs" />
+    <Compile Include="Diagram\TableDiagramParser.fs" />
     <Compile Include="Diagram\DiagramParser.fs" />
     <Compile Include="Diagram\InspectPresentationParser.fs" />
     <Compile Include="Diagram\DiagramModuleParser.fs" />

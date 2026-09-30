@@ -157,8 +157,7 @@ module PropertySchemas =
     let tableDiagram =
         [ spec "columns" CommaList
           spec "order_by" RestOfLine
-          spec "limit" Scalar
-          spec "column_formats" RestOfLine ]
+          spec "limit" Scalar ]
 
     let numberDiagram =
         [ spec "value" ColumnBinding
@@ -198,6 +197,7 @@ module PropertySchemas =
             | "layout" -> "layout"
             | "place" -> "place"
             | "series" -> "series"
+            | "formats" -> "formats"
             | "toolbar" -> parts.[parts.Length - 1]
             | _ when parts.Length > 1 -> parts.[parts.Length - 1]
             | _ -> blockName
