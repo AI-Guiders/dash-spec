@@ -18,6 +18,10 @@ module DiagramParser =
 
     let parseAfterKindIdent (reader: TokenReader) (name: string) =
         match DiagramKindRegistry.tryResolve name with
+        | true, spec when name.Equals("table", StringComparison.OrdinalIgnoreCase) ->
+            let properties = TableDiagramParser.parse reader
+            rejectLegacyTooltipProperties properties name
+            { Kind = name; Properties = properties :> IReadOnlyDictionary<_, _>; UsePreset = None }
         | true, spec ->
             let properties =
                 PropertyBlockParser.parse
