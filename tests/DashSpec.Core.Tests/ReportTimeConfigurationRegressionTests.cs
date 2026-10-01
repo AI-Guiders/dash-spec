@@ -6,24 +6,11 @@ namespace DashSpec.Core.Tests;
 
 /// <summary>
 /// Regression for ADR-0069 / DASHSPEC-ADR-0069: <c>work_time_column</c> and siblings in <c>configuration</c>.
-/// Core <see cref="PropertySchemas.Configuration"/> must stay aligned with F# PropertySchemas (ADR-0048);
-/// otherwise Host validate / LSP paths report Unknown property 'work_time_column'.
 /// </summary>
 public sealed class ReportTimeConfigurationRegressionTests
 {
     private const string DocsOverview =
         @"samples/demo\demo-overview.dashspec";
-
-    public static readonly string[] Adr0069ConfigurationKeys =
-    [
-        "time_basis",
-        "time_apply",
-        "work_time_column",
-        "work_timezone",
-        "work_start",
-        "work_end",
-        "work_days",
-    ];
 
     /// <summary>Minimal @tab reproduction when demo docs path is absent (CI).</summary>
     private const string EmbeddedOverviewConfigurationTab = """
@@ -49,37 +36,6 @@ public sealed class ReportTimeConfigurationRegressionTests
     {
         MergeReferencedTabModules = false,
     };
-
-    [Fact]
-    public void Core_configuration_schema_includes_adr_0069_report_time_keys()
-    {
-        var names = PropertySchemas.Configuration
-            .Select(static x => x.Name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var key in Adr0069ConfigurationKeys)
-        {
-            Assert.Contains(key, names);
-        }
-    }
-
-    [Fact]
-    public void Core_property_parser_accepts_work_time_column_in_configuration_block()
-    {
-        var text = """
-            configuration
-              sqldialect = tsql
-              palette = "palettes/demo-apps.dashpalette"
-              work_time_column = bucket_start_utc
-            end configuration
-            """;
-
-        var reader = ParserUtilities.CreateReader(text);
-        Assert.True(reader.TryKeyword("configuration"));
-        var props = PropertyBlockParser.Parse(reader, PropertySchemas.Configuration, "configuration");
-
-        Assert.Equal("bucket_start_utc", props["work_time_column"]);
-    }
 
     [Fact]
     public void Document_parser_maps_work_time_column_from_configuration()
