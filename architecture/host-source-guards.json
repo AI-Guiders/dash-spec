@@ -1,0 +1,56 @@
+{
+  "$schema": "./host-source-guards.schema.json",
+  "comment": "ADR-0076: regex guards on Host sources; shrink allowlist as composer/view lands.",
+  "scopes": [
+    {
+      "id": "report-nav-heuristic",
+      "paths": ["src/DashSpec.Host/Components", "src/DashSpec.Host/Services/Presentation"],
+      "extensions": [".cs", ".razor"],
+      "forbidden": [
+        {
+          "id": "ARCH-0074-TABS-COUNT",
+          "pattern": "Document\\.Tabs\\.Count\\s*>\\s*1",
+          "message": "Do not hide report tab bar via Tabs.Count; use composed NavigationBand.Show (ADR-0074)."
+        },
+        {
+          "id": "ARCH-0074-PAGES-COUNT",
+          "pattern": "Pages\\.Count\\s*>\\s*1",
+          "message": "Do not hide page nav via Pages.Count; use composed NavigationBand.Show (ADR-0074)."
+        },
+        {
+          "id": "ARCH-0074-ACTIVE-PAGES-COUNT",
+          "pattern": "ActiveTabPages\\(\\)\\.Count\\s*>\\s*1",
+          "message": "HasPages must come from composed view, not ActiveTabPages().Count (ADR-0074)."
+        }
+      ],
+      "allowlist": [
+        { "file": "Components/Pages/Home.razor", "rule": "ARCH-0074-TABS-COUNT" },
+        { "file": "Services/Presentation/DashboardPageController.cs", "rule": "ARCH-0074-PAGES-COUNT" },
+        { "file": "Services/Presentation/DashboardPageController.cs", "rule": "ARCH-0074-ACTIVE-PAGES-COUNT" }
+      ]
+    },
+    {
+      "id": "ui-no-payload-types",
+      "paths": ["src/DashSpec.Host/Components", "src/DashSpec.Host/Services/Presentation"],
+      "extensions": [".cs", ".razor"],
+      "forbidden": [
+        {
+          "id": "ARCH-PAYLOAD-BUILDER",
+          "pattern": "ChartDataBuilder\\.",
+          "message": "Build payloads only in Services/Rendering (CardRenderService)."
+        },
+        {
+          "id": "ARCH-MATRIX-BUILDER",
+          "pattern": "MatrixPayloadBuilder\\.",
+          "message": "MatrixPayloadBuilder is Execution.Runtime only."
+        },
+        {
+          "id": "ARCH-AXIS-SORT",
+          "pattern": "AxisLabelSort\\.",
+          "message": "Axis sort belongs in Execution.Runtime (LabelFormat / AxisLabelSort)."
+        }
+      ],
+      "allowlist": []
+    }
+  ]
+}
