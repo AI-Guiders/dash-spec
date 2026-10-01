@@ -165,9 +165,7 @@ module PropertySchemas =
     let tableDiagram =
         [ spec "columns" CommaList
           spec "order_by" RestOfLine
-          spec "limit" Scalar
-          // Legacy one-line authoring; prefer child `formats` block (ADR-0070).
-          spec "column_formats" RestOfLine ]
+          spec "limit" Scalar ]
 
     let numberDiagram =
         [ spec "value" ColumnBinding
