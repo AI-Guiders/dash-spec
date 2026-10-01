@@ -1,39 +1,128 @@
-using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
+using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Execution.Compilation;
+
 using Xunit;
+
+
 
 namespace DashSpec.Core.Tests;
 
+
+
 public class ToolbarFilterVisibilityTests
+
 {
+
+    private const string StakeholderSpecPath = @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-stakeholder.dashspec";
+
+
+
     [Fact]
-    public void Stakeholder_chart_top_is_card_local_not_page_toolbar()
+
+    public void Stakeholder_chart_top_on_page_toolbar_not_card_local()
+
     {
-        var path = @"d:\SSCADRepo\URSA.LicenseUsage\docs\dashspec\lus-dev-stakeholder.dashspec";
-        if (!File.Exists(path))
+
+        if (!File.Exists(StakeholderSpecPath))
+
         {
+
             return;
+
         }
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!);
+
+
+        var doc = DashSpecParser.Parse(File.ReadAllText(StakeholderSpecPath), Path.GetDirectoryName(StakeholderSpecPath)!);
+
         var map = FilterBinding.MapFiltersToCards(doc);
-        var page = doc.Pages!.Single(p => p.Id == "peak_util");
 
-        var pageToolbarTokens = page.ToolbarBoard?.Rows.SelectMany(row => row) ?? [];
-        Assert.DoesNotContain("chart_top", pageToolbarTokens);
-        Assert.Contains("chart_top", doc.Cards.Single(c => c.Id == "stakeholder_peak_over_limit").LocalFilters);
-        Assert.Equal("stakeholder_peak_over_limit", doc.Cards.Single(c => c.Id == "stakeholder_utilization").FilterHostCardId);
+
+
+        AssertPageToolbarHasChartTop(doc, "peak_util");
+
+        AssertPageToolbarHasChartTop(doc, "executive_summary");
+
+        AssertCardHasNoLocalChartTop(doc, "stakeholder_peak_over_limit");
+
+        AssertCardHasNoLocalChartTop(doc, "stakeholder_utilization");
+
+        AssertCardHasNoLocalChartTop(doc, "stakeholder_peak_within_limit");
+
+        AssertCardHasNoLocalChartTop(doc, "exec_top_utilization");
+
+        AssertCardHasNoLocalChartTop(doc, "exec_top_users_peak_apps");
+
+        AssertCardHasNoLocalChartTop(doc, "exec_top_apps_by_users");
+
+        AssertCardHasNoLocalChartTop(doc, "exec_top_users_work_hours");
+
+
+
         Assert.Contains("chart_top", map);
-        Assert.Contains("stakeholder_peak_over_limit", map["chart_top"]);
-        Assert.Contains("stakeholder_utilization", map["chart_top"]);
 
-        var visible = ToolbarFilterVisibility.ResolveVisibleFilters(
+        Assert.Contains("exec_top_utilization", map["chart_top"]);
+
+
+
+        var peakVisible = ToolbarFilterVisibility.ResolveVisibleFilters(
+
             doc,
+
             activeTabId: "stakeholder",
+
             activePageId: "peak_util",
+
             map);
 
-        Assert.DoesNotContain("chart_top", visible);
+        Assert.Contains("chart_top", peakVisible);
+
+
+
+        var execVisible = ToolbarFilterVisibility.ResolveVisibleFilters(
+
+            doc,
+
+            activeTabId: "stakeholder",
+
+            activePageId: "executive_summary",
+
+            map);
+
+        Assert.Contains("chart_top", execVisible);
+
     }
+
+
+
+    private static void AssertPageToolbarHasChartTop(DashboardDocument doc, string pageId)
+
+    {
+
+        var page = doc.Pages!.Single(p => p.Id == pageId);
+
+        var tokens = page.ToolbarBoard?.Rows.SelectMany(row => row) ?? [];
+
+        Assert.Contains("chart_top", tokens);
+
+    }
+
+
+
+    private static void AssertCardHasNoLocalChartTop(DashboardDocument doc, string cardId)
+
+    {
+
+        var card = doc.Cards.Single(c => c.Id == cardId);
+
+        Assert.DoesNotContain("chart_top", card.LocalFilters);
+
+        Assert.Null(card.FilterHostCardId);
+
+    }
+
 }
+
+
