@@ -66,7 +66,7 @@ public class DemoSpecsSyntaxTests
     public void IsBlockEnd_after_order_by_rest_of_line()
     {
         var reader = ParserUtilities.CreateReader("order_by = occurred_at_utc\nend table\n");
-        _ = reader.ReadPropertyKey();
+        _ = reader.ReadIdent();
         reader.Expect(TokenKind.Eq);
         _ = reader.ReadRestOfLine();
         Assert.True(BlockSyntax.IsBlockEnd(reader, "table"));
@@ -91,7 +91,7 @@ public class DemoSpecsSyntaxTests
     public void Tokenize_table_order_by()
     {
         var text = "order_by = occurred_at_utc\nend table\n";
-        var tokens = DashSpecLexer.Tokenize(text);
+        var tokens = DashSpecLexer.tokenize(text);
         Assert.Contains(tokens, t => t.Value == "order_by");
         Assert.Contains(tokens, t => t.Value == "end");
         Assert.Contains(tokens, t => t.Value == "table");

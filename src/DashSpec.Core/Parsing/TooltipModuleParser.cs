@@ -31,7 +31,7 @@ internal static class TooltipModuleParser
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         if (TooltipParseBridge.ParseTooltipBody is { } parse)
         {
-            return parse(id, reader.ReadTooltipBodySource());
+            return parse(id, Modeling.Parse.TokenReaderTooltip.readBodySource(reader));
         }
 
         throw new InvalidOperationException("Tooltip parse bridge not registered.");

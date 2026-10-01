@@ -4,7 +4,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 module ParserUtilities =
 
-    let createReader (text: string) = TokenReader(DashSpecLexer.tokenize text)
+    let createReader (text: string) = TokenReader(DashSpecLexer.tokenize text, sourceText = text)
 
     /// Reads optional ref &lt;id&gt; postfix without crossing a newline.
     let tryReadLayoutRef (reader: TokenReader) =
