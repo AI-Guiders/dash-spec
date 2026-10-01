@@ -36,7 +36,7 @@
   Host Shell (Blazor: nav chrome, slots, widgets, viz — no inference)
 ```
 
-- **Composer** — единственное место, где допустимы: merge модулей, подстановка `initial screen/page`, разрешение `standalone`, построение полного списка nav-узлов и toolbar slots.
+- **Composer** — единственное место, где допустимы: merge модулей, подстановка `initial section/page`, разрешение `standalone`, построение полного списка nav-узлов и toolbar slots.
 - **Host Shell** — только **projection** `ComposedDashboardView` + session state (значения фильтров, loading). **Запрещено** менять дерево навигации, скрывать уровни или дополнять фильтры по эвристикам.
 
 Composer может жить в `DashSpec.Execution.*` / loader pipeline; Host зависит от **абстракции view**, не от сырого `DashboardDocument` с неявными правилами.
@@ -48,9 +48,9 @@ Composer может жить в `DashSpec.Execution.*` / loader pipeline; Host �
 ```text
 ComposedDashboardView
   ReportTitle
-  InitialRoute          # screen id + page id — обязательны после compose
+  InitialRoute          # section id + page id — обязательны после compose
   NavigationBands[]     # ordered; each band is explicit
-    BandKind              # report | screen | page | portal (soak)
+    BandKind              # report | section | page | portal (soak)
     ShowMode              # bar | hidden | … — from spec/composer only
     Items[]               # id, label, order — all children listed
   ActiveRoute             # from URL / session; composer sets InitialRoute only at load
