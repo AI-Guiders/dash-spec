@@ -1,10 +1,11 @@
 @namespace DashSpec.Presentation.Components
 @using DashSpec.Core.Layout
-@using DashSpec.Core.Model
 
-<div class="card-interior-grid" style="@PlacementGridCss.InteriorGridVariables(GridColumns)">
+<PlacementSlotGrid CssClass="card-interior-grid"
+                   Scope="LayoutSlotScope.CardInterior"
+                   GridColumns="@GridColumns">
     @ChildContent
-</div>
+</PlacementSlotGrid>
 
 @code {
     [Parameter] public int GridColumns { get; set; } = 12;
