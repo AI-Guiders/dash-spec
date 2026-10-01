@@ -5,7 +5,8 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 
 /// Token cursor over lexed dashspec input.
-type TokenReader(tokens: IReadOnlyList<Token>) =
+type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
+    let sourceText = sourceText
     let mutable index = 0
     let blockCloseStyles = Stack<BlockCloseStyle>()
     let mutable consumedRuntimePath: string option = None
@@ -309,3 +310,15 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
             else
                 index <- index - 1
                 continueDirectives <- false
+
+    member internal _.SourceText = sourceText
+
+    member internal _.Tokens = tokens
+
+    member internal _.TokenIndex = index
+
+    member internal _.SetTokenIndex value = index <- value
+
+    member internal _.EndOffset(tokenIndex: int) =
+        let token = tokens.[tokenIndex]
+        token.Start + token.Length

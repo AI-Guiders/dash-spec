@@ -71,7 +71,8 @@ public static class DashSpecParser
 
 
 
-    internal static IReadOnlyList<Token> Tokenize(string text) => DashSpecLexer.Tokenize(text);
+    internal static IReadOnlyList<Token> Tokenize(string text) =>
+        Modeling.Parse.Lexing.DashSpecLexer.tokenize(text);
 
 
 
