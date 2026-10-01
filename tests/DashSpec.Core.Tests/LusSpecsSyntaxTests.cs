@@ -146,7 +146,7 @@ public class LusSpecsSyntaxTests
     }
 
     [Fact]
-    public void Parse_table_diagram_rejects_inline_column_formats()
+    public void Parse_table_diagram_accepts_legacy_inline_column_formats()
     {
         var text = """
             @diagram t
@@ -156,9 +156,8 @@ public class LusSpecsSyntaxTests
             end table
             """;
 
-        var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
-        Assert.Contains("column_formats", ex.Message, StringComparison.OrdinalIgnoreCase);
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        Assert.Equal("a:date.short", fragment.Diagram!.Properties["column_formats"]);
     }
 
     [Fact]
