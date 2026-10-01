@@ -16,7 +16,8 @@ internal static class ChartSeriesPayloadBuilder
         var xColumn = DiagramBindings.Column(diagram, "x");
         var yColumn = DiagramBindings.Column(diagram, "y");
         diagram.Properties.TryGetValue("series", out var seriesColumn);
-        diagram.Properties.TryGetValue("x_format", out var xFormat);
+        diagram.Properties.TryGetValue("x_format", out var xFormatRaw);
+        var xFormat = LabelFormat.ResolveAxisFormat(xFormatRaw);
         diagram.Properties.TryGetValue("x_step", out var xStepRaw);
         var useTimeGrid = TimeSeriesGrid.TryParseStep(xStepRaw, out var xStep);
 
