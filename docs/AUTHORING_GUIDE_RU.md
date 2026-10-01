@@ -29,8 +29,9 @@
 ```
 
 1. Ты описываешь отчёт **текстом в git** (не кликами в BI-студии).
-2. Host парсит спеку, компилирует SQL из `bind`, рисует UI.
-3. Аналитик крутит фильтры и кликает сегменты — поведение задаёшь **ты** (`filter` / `bind` / `on click`).
+2. Composer собирает дерево навигации и chrome; **Host только отображает** composed view ([ADR-0074](../design/DASHSPEC-ADR-0074-host-shell-composed-view.md)) — без скрытия вкладок «если одна».
+3. Иерархия для автора: `report` → `screen` → `page` → `card` → `diagram` ([ADR-0073](../design/DASHSPEC-ADR-0073-author-navigation-surface.md)).
+4. Аналитик крутит фильтры и кликает сегменты — поведение задаёшь **ты** (`filter` / `bind` / `on click`).
 
 Core **не знает** конкретную БД продукта. Connector (SqlServer) только выполняет `CompiledQuery`.
 
