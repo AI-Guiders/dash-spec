@@ -49,4 +49,42 @@ public sealed class LayoutSlotEngineTests
         Assert.Equal("b", plan[2].Token);
         Assert.Equal(2, plan[2].Placement.Col);
     }
+
+    [Fact]
+    public void PlanHostTabBoard_emits_card_nest_and_group_slots()
+    {
+        var entries = new LayoutBoardEntry[]
+        {
+            new LayoutBoardCardRow(["nest_a", "kpi"]),
+            new LayoutBoardGroupRow(new LayoutBoardGroupDefinition("g1", "G", [["c2"]])),
+        };
+        var top = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["kpi"] = new(1, 2, 4),
+        };
+        var nests = new Dictionary<string, LayoutNestPlacement>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["nest_a"] = new(
+                "nest_a",
+                new PlacementDefinition(1, 1, 8),
+                [["c1"]],
+                new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase) { ["c1"] = new(1, 1, 6) }),
+        };
+        var groups = new Dictionary<string, LayoutGroupPlacement>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["g1"] = new("g1", "G", 2, new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase)),
+        };
+        var plan = new TabLayoutPlan(entries, top, groups, nests, top);
+
+        var slots = LayoutSlotEngine.PlanHostTabBoard(plan, 12, token => token);
+
+        Assert.Equal(3, slots.Count);
+        Assert.Equal(LayoutSlotContentKind.Nest, slots[0].ContentKind);
+        Assert.Equal("nest_a", slots[0].Token);
+        Assert.Equal(LayoutSlotContentKind.Card, slots[1].ContentKind);
+        Assert.Equal("kpi", slots[1].Token);
+        Assert.Equal(LayoutSlotContentKind.Group, slots[2].ContentKind);
+        Assert.Equal("g1", slots[2].Token);
+        Assert.Equal(2, slots[2].Placement.Row);
+    }
 }

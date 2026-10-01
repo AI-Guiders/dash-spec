@@ -43,9 +43,9 @@ SQL and chart building stay **card/slot compile time** in Execution; the slot pl
 |-------|-------------|
 | **M1** (now) | Core `LayoutSlotScope`, `LayoutSlotContentKind`, `LayoutSlotDescriptor`, `CardInteriorSlotPlan`; Host card interior uses plan + `switch` on kind |
 | **M2** (done) | `LayoutSlotEngine` + `PlacementSlotGrid` / `PlacementSlot` (Presentation); `PlacementGridCss` host/interior variables; card interior on slot components |
-| **M3** | Toolbar filters as slot plane (`HostPageToolbar`); deprecate parallel filter-only layout path where redundant |
-| **M4** | Tab/page board slots → `HostTabBoard` plan; nest/group as slot kinds |
-| **M5** | Optional: single `ISlotRenderer` registry table keyed by scope+kind; remove remaining duplicate dispatch |
+| **M3** (done) | `DashboardFiltersSection` → `PlacementSlotGrid` + `LayoutSlotEngine.PlanHostPageToolbar` |
+| **M4** (done) | `PlanHostTabBoard` / `PlanHostTabBoardCards`; `DashboardTabBoard` + `HostTabBoardSlot` (card / nest / group) |
+| **M5** (done) | `ILayoutSlotRendererRegistry`; `CardInteriorSlotContent` + `HostTabBoardSlot` dispatch via registry |
 
 ### 4. Non-goals
 

@@ -734,6 +734,33 @@ public sealed class DashboardPageController : IDisposable
         }
     }
 
+    public LayoutBoardGroupDefinition? FindLayoutGroup(string groupId)
+    {
+        if (TabLayoutPlan is null || string.IsNullOrWhiteSpace(groupId))
+        {
+            return null;
+        }
+
+        return TabLayoutPlan.Entries
+            .OfType<LayoutBoardGroupRow>()
+            .Select(static row => row.Group)
+            .FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public IReadOnlyList<LayoutSlotDescriptor> HostTabBoardSlots()
+    {
+        var columns = _session.Document.Layout.Columns;
+        if (TabLayoutPlan is { } plan)
+        {
+            return LayoutSlotEngine.PlanHostTabBoard(plan, columns, ResolveLayoutCardRef);
+        }
+
+        var cards = VisibleCards()
+            .Select(card => (card.Id, card.DataFamily))
+            .ToList();
+        return LayoutSlotEngine.PlanHostTabBoardCards(cards, TabPlacements, columns);
+    }
+
     public IEnumerable<CardRenderResult> VisibleCards()
     {
         IEnumerable<CardRenderResult> cards;

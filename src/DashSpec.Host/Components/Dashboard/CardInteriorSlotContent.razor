@@ -1,0 +1,37 @@
+@namespace DashSpec.Host.Components.Dashboard
+@using DashSpec.Core.Layout
+@using DashSpec.Host.Services.Presentation
+@inject ILayoutSlotRendererRegistry SlotRegistry
+
+@if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.ContentKind))
+{
+    <span class="layout-slot-unsupported muted">@Slot.Scope / @Slot.ContentKind</span>
+}
+else if (Owner is not null)
+{
+    @switch (Slot.ContentKind)
+    {
+        case LayoutSlotContentKind.Filter:
+            <div class="card-interior-filter-slot">
+                @Owner.RenderLocalFilter(Slot.Token, Owner.InteriorSlotStyle(Slot.Token))
+            </div>
+            break;
+        case LayoutSlotContentKind.SecondaryDiagram:
+            <CardInteriorVizHost Card="Owner.Card" Slot="@Owner.Card.InteriorSlotRenders![Slot.Token]" />
+            break;
+        case LayoutSlotContentKind.PrimaryDiagram:
+            <div class="card-viz-stack">
+                <CardVizHost Card="Owner.Card"
+                             MatrixMin="@(Owner.Card.Matrix?.Min ?? 0)"
+                             MatrixMax="@(Owner.Card.Matrix?.Max ?? 0)"
+                             OnHeatmapCellSelected="Owner.HandleHeatmapCellSelectedAsync" />
+                @Owner.RenderSelectionDetail()
+            </div>
+            break;
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public LayoutSlotDescriptor Slot { get; set; } = default!;
+    [CascadingParameter] public DashboardCardView? Owner { get; set; }
+}

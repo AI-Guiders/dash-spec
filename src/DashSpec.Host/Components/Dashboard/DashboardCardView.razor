@@ -170,35 +170,18 @@
     }
     else if (!BodyFolded)
     {
-        <CardInteriorGrid GridColumns="GridColumns">
-            @foreach (var slot in Card.PlanInteriorSlots())
-            {
-                <PlacementSlot Placement="slot.Placement"
-                               GridColumns="GridColumns"
-                               CssClass="@InteriorSlotClass(slot.ContentKind)">
-                    @switch (slot.ContentKind)
-                    {
-                        case LayoutSlotContentKind.Filter:
-                            <div class="card-interior-filter-slot">
-                                @RenderLocalFilter(slot.Token, InteriorSlotStyle(slot.Token))
-                            </div>
-                            break;
-                        case LayoutSlotContentKind.SecondaryDiagram:
-                            <CardInteriorVizHost Card="Card" Slot="@Card.InteriorSlotRenders![slot.Token]" />
-                            break;
-                        case LayoutSlotContentKind.PrimaryDiagram:
-                            <div class="card-viz-stack">
-                                <CardVizHost Card="Card"
-                                             MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                                             MatrixMax="@(Card.Matrix?.Max ?? 0)"
-                                             OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
-                                @RenderSelectionDetail()
-                            </div>
-                            break;
-                    }
-                </PlacementSlot>
-            }
-        </CardInteriorGrid>
+        <CascadingValue Value="this" IsFixed="true">
+            <CardInteriorGrid GridColumns="GridColumns">
+                @foreach (var slot in Card.PlanInteriorSlots())
+                {
+                    <PlacementSlot Placement="slot.Placement"
+                                   GridColumns="GridColumns"
+                                   CssClass="@InteriorSlotClass(slot.ContentKind)">
+                        <CardInteriorSlotContent Slot="slot" />
+                    </PlacementSlot>
+                }
+            </CardInteriorGrid>
+        </CascadingValue>
     }
 </article>
 
@@ -501,7 +484,7 @@
     private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
         new(ShowPlacement.Below, ShowFormat.Kv, ShowSource.Cell, CopyFriendly: true);
 
-    private async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
+    internal async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
     {
         if (EffectiveShowSelection is not null)
         {
@@ -521,7 +504,7 @@
         }
     }
 
-    private RenderFragment RenderSelectionDetail() => __builder =>
+    internal RenderFragment RenderSelectionDetail() => __builder =>
     {
         if (EffectiveShowSelection is null || _selection is null)
         {
@@ -538,7 +521,7 @@
             ? "card-interior-slot card-filter-slot"
             : "card-interior-slot card-diagram-slot";
 
-    private string InteriorSlotStyle(string slotKey) =>
+    internal string InteriorSlotStyle(string slotKey) =>
         Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
             ? PlacementGridCss.SlotStyle(placement!, GridColumns)
             : string.Empty;
@@ -559,7 +542,7 @@
             : Task.CompletedTask;
     }
 
-    private RenderFragment RenderLocalFilter(string filterName, string? placementStyle) => __builder =>
+    internal RenderFragment RenderLocalFilter(string filterName, string? placementStyle) => __builder =>
     {
         var filter = FilterIndex[filterName];
         <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
