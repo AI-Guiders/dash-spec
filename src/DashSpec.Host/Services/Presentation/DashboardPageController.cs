@@ -46,6 +46,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly ICardCellDrillState _cellDrill;
     private readonly ICardFoldState _cardFold;
     private readonly CardLocalFilterUiStore _cardLocalFilters;
+    private readonly ReportFormatDefaultsAmbient _reportFormatDefaults;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -68,7 +69,8 @@ public sealed class DashboardPageController : IDisposable
         IHttpContextAccessor httpContextAccessor,
         ICardCellDrillState cellDrill,
         ICardFoldState cardFold,
-        CardLocalFilterUiStore cardLocalFilters)
+        CardLocalFilterUiStore cardLocalFilters,
+        ReportFormatDefaultsAmbient reportFormatDefaults)
     {
         _session = session;
         _interactions = interactions;
@@ -89,6 +91,7 @@ public sealed class DashboardPageController : IDisposable
         _cellDrill = cellDrill;
         _cardFold = cardFold;
         _cardLocalFilters = cardLocalFilters;
+        _reportFormatDefaults = reportFormatDefaults;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -1050,7 +1053,7 @@ public sealed class DashboardPageController : IDisposable
 
     public void Dispose()
     {
-        LabelFormat.ClearReportDefaults();
+        _reportFormatDefaults.Clear();
         _refresh.StateChanged -= OnRefreshStateChanged;
         if (_reloadNotifier is not null)
         {
@@ -1194,7 +1197,7 @@ public sealed class DashboardPageController : IDisposable
     }
 
     private void ApplyReportFormatDefaults() =>
-        LabelFormat.SetReportDefaults(_session.Document.ResolvedFormatDefaults);
+        _reportFormatDefaults.Apply(_session.Document.ResolvedFormatDefaults);
 
     private bool IsCardLocalManualApply(string cardId) =>
         _session.Document.Cards.Any(card =>

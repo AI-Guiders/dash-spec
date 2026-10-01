@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>DashSpec.Architecture.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DashSpec.Host\DashSpec.Host.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Filters\DashSpec.Filters.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\architecture\host-source-guards.json" Link="host-source-guards.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

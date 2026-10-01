@@ -32,11 +32,15 @@
 
   <Project Path="connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
 
+  <Project Path="src\DashSpec.Analyzers\DashSpec.Analyzers.csproj" />
+
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
 
   <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
 
   <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
+
+  <Project Path="tests\DashSpec.Architecture.Tests\DashSpec.Architecture.Tests.csproj" />
 
   <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
 
