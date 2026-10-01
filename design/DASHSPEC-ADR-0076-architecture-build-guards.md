@@ -32,6 +32,7 @@ Regex rules on `src/DashSpec.Host` paths, validated by `DashSpec.Architecture.Te
 
 - Report nav heuristics (`Tabs.Count > 1`, `Pages.Count > 1`, …) — **ARCH-0074-***.
 - Payload APIs in UI/presentation folders.
+- Inline Cyrillic in Host UI `.razor` — **ARCH-0077-***; see [ADR-0077](DASHSPEC-ADR-0077-host-ui-copy-ssot.md) and `host-ui-cyrillic-baseline.json`.
 
 **Allowlist** entries are technical debt: each line must link to a composer/view migration task; list must **shrink**, never grow without ADR note.
 
