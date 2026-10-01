@@ -68,6 +68,7 @@
     <Compile Include="Filter\DateDefaultRange.fs" />
     <Compile Include="Filter\FiltersChromeParser.fs" />
     <Compile Include="Filter\FilterParser.fs" />
+    <Compile Include="Filter\FilterLayoutRefResolver.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
