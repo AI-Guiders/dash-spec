@@ -21,6 +21,7 @@ type FilterDefinition =
       GrainFilterName: string option
       SingleSelect: bool
       LayoutRef: string option
+      BindScopeHint: string option
       GrainLabels: IReadOnlyDictionary<string, string> option
       Placement: PlacementDefinition option }
 
@@ -29,8 +30,10 @@ type FiltersChromeDefinition =
     { Layout: string
       Sticky: string
       Apply: string
+      ApplyControl: string
       DebounceMs: int
-      FormatGuide: string }
+      FormatGuide: string
+      Cells: string }
 
 module FiltersChromeDefinition =
     let [<Literal>] StickyNone = "none"
@@ -43,5 +46,7 @@ module FiltersChromeDefinition =
         { Layout = "card"
           Sticky = StickyNone
           Apply = "manual"
+          ApplyControl = "icon"
           DebounceMs = 400
-          FormatGuide = FormatGuideHidden }
+          FormatGuide = FormatGuideHidden
+          Cells = "" }

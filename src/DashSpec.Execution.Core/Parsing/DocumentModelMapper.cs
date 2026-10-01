@@ -131,11 +131,12 @@ internal static class DocumentModelMapper
             FirstOrNull(filter.GrainFilterName),
             filter.SingleSelect,
             FirstOrNull(filter.LayoutRef),
+            FirstOrNull(filter.BindScopeHint),
             ToDictionaryOrNull(filter.GrainLabels, static x => x),
             MapOptional(filter.Placement, ToCore));
 
     private static FiltersChromeDefinition ToCore(FsharpFilter.FiltersChromeDefinition chrome) =>
-        new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.DebounceMs, chrome.FormatGuide);
+        new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.ApplyControl, chrome.DebounceMs, chrome.FormatGuide, chrome.Cells);
 
     private static CardDefinition ToCore(FsharpCard.CardDefinition card) =>
         new(

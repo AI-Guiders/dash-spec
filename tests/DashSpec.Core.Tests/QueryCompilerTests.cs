@@ -111,6 +111,49 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_cell_drill_overlay_applies_bucket_start_utc_field()
+    {
+        var card = DashSpecParser.Parse("""
+
+            @dashboard t
+              configuration
+              sqldialect = tsql
+              end configuration
+              report
+              title = "T"
+              filter field bucket on bucket_start_utc as "Bucket"
+              filters dashboard
+              bucket
+              end dashboard
+              card c as "C"
+              bind
+                bucket
+              end bind
+              diagram table
+              columns = user_sam
+              end table
+              datasource view lus.v_five_minute_activity_at_bucket
+              end card
+              end report
+            end dashboard
+""").Cards[0];
+
+        var filters = new FilterState();
+        var index = new Dictionary<string, Model.FilterDefinition>
+        {
+            ["bucket"] = new(Model.FilterKind.Field, "bucket", null, "bucket_start_utc"),
+        };
+
+        var overlay = new CardCellDrillOverlay();
+        overlay.SetField("bucket", "2026-06-03T08:05:00");
+
+        var query = QueryCompiler.Compile(card, filters, index, cellDrillOverlay: overlay);
+
+        Assert.Contains("bucket_start_utc = @bucket_0", query.Sql);
+        Assert.Equal("2026-06-03T08:05:00", query.Parameters.First(p => p.Name == "@bucket_0").Value);
+    }
+
+    [Fact]
     public void Compile_sql_datasource_wraps_subquery_and_applies_filters()
     {
         var card = DashSpecParser.Parse("""

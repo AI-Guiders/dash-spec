@@ -235,6 +235,8 @@ type TokenReader(tokens: IReadOnlyList<Token>) =
                 sb.Append(' ').Append(part) |> ignore
             elif noSpaceBefore.Contains part then
                 sb.Append(part) |> ignore
+            elif sb.[sb.Length - 1] = ':' then
+                sb.Append(part) |> ignore
             else
                 sb.Append(' ').Append(part) |> ignore
         sb.ToString()
