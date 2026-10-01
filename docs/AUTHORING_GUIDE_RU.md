@@ -30,7 +30,7 @@
 
 1. Ты описываешь отчёт **текстом в git** (не кликами в BI-студии).
 2. Composer собирает дерево навигации и chrome; **Host только отображает** composed view ([ADR-0074](../design/DASHSPEC-ADR-0074-host-shell-composed-view.md)) — без скрытия вкладок «если одна».
-3. Контент: `report` → `section` → `page` → `card` → `visual` (KPI/график) → `diagram`. **Widget** — только контрол (фильтр `widget = day`, Apply, icon) — [ADR-0073](../design/DASHSPEC-ADR-0073-author-navigation-surface.md), [ADR-0060](../design/DASHSPEC-ADR-0060-vertical-filter-plugins.md).
+3. Контент: `report` → `section` → `page` → `card` → **`view`** → `diagram` (блоки `data`/`view` на card — [ADR-0038](../design/DASHSPEC-ADR-0038-structured-card-and-report-composition.md)). **Widget** — только контрол (фильтр, кнопка, icon) — [ADR-0073](../design/DASHSPEC-ADR-0073-author-navigation-surface.md), [ADR-0060](../design/DASHSPEC-ADR-0060-vertical-filter-plugins.md). «Визуал» в быту = весь UI, не отдельный уровень DSL.
 4. Аналитик крутит фильтры и кликает сегменты — поведение задаёшь **ты** (`filter` / `bind` / `on click`).
 
 Core **не знает** конкретную БД продукта. Connector (SqlServer) только выполняет `CompiledQuery`.
