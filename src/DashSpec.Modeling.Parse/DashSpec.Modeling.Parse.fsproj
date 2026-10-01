@@ -38,7 +38,7 @@
     <Compile Include="BlockGrammar.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
-    <Compile Include="SpecIncludeResolver.fs" />
+    <Compile Include="Include\SpecFragmentPaths.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
     <Compile Include="Layout\LayoutBoardCellParser.fs" />
     <Compile Include="Layout\LayoutBracketRowParser.fs" />
@@ -71,7 +71,7 @@
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
-    <Compile Include="Include\SpecFragmentPaths.fs" />
+    <Compile Include="SpecIncludeResolver.fs" />
     <Compile Include="Include\SpecIncludeTypes.fs" />
     <Compile Include="Include\SpecIncludeFragmentResolver.fs" />
     <Compile Include="Include\ModuleIncludeState.fs" />
