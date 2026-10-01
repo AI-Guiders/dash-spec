@@ -146,6 +146,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
         try
         {
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
             var slots = await _session.RenderInteriorSlotsAsync(cardDef, token).ConfigureAwait(false);
             if (!IsCurrentInteriorRefresh(generation))
             {
@@ -247,7 +248,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
         try
         {
-            _filters.SyncToSession(_session, PlacedFilterNames());
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
             var targetIds = ResolveTargetCardIds(cardIds);
             await SetCardsLoadingAsync(targetIds).ConfigureAwait(false);
 

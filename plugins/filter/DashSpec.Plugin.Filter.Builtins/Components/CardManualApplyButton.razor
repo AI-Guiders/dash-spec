@@ -1,11 +1,10 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
 
-<button type="button"
-        class="secondary card-filter-apply"
-        disabled="@Disabled"
-        @onclick="OnApply">
-    @Label
-</button>
+<FilterApplyIconButton AriaLabel="@Label"
+                       CssClass="secondary card-icon-btn card-filter-apply filter-apply-icon"
+                       Disabled="@Disabled"
+                       OnClick="OnApply" />
 
 @code {
     [Parameter, EditorRequired]

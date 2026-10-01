@@ -10,7 +10,7 @@
     {
         @if (string.Equals(slotId, ApplySlotId, StringComparison.OrdinalIgnoreCase))
         {
-            <div class="card-head-filter-slot" style="@SlotStyle(ApplySlotId)">
+            <div class="card-head-filter-slot card-head-filter-slot--apply" style="@SlotStyle(ApplySlotId)">
                 <CardManualApplyButton Label="@ApplyLabel"
                                        Disabled="@Card.Loading"
                                        OnApply="() => OnApplyCard.InvokeAsync(Card.Id)" />
@@ -81,8 +81,8 @@
                 : "card-head-toolbar-filters";
 
     private string GridStyle =>
-        UsesChromeGrid
-            ? PlacementGridCss.InteriorGridVariables(ChromeGridColumns)
+        UsesChromeGrid && Card.LocalFilterChromePlacements is { Count: > 0 } placements
+            ? PlacementGridCss.ChromeGridStyle(placements, ChromeGridColumns)
             : string.Empty;
 
     private string SlotStyle(string slotId) =>
@@ -98,6 +98,7 @@
                           Filter="filter"
                           Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields)"
                           Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
+                          HintAriaLabel="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
                           Disabled="@Card.Loading"
                           Options="GetFieldOptions(filter.Name)"
                           Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, SelectedFields)"
