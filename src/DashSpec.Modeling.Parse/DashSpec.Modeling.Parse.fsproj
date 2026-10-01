@@ -41,6 +41,7 @@
     <Compile Include="SpecIncludeResolver.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
     <Compile Include="Layout\LayoutBoardCellParser.fs" />
+    <Compile Include="Layout\LayoutBracketRowParser.fs" />
     <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
     <Compile Include="Layout\LayoutModuleScopeValidator.fs" />

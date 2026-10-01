@@ -21,7 +21,8 @@ module BlockGrammar =
         | ChildKeyword of keyword: string * parse: (TokenReader -> unit)
         | KeywordScalarOrBlock of
             keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
-        | RepeatingBracketRows of rows: ResizeArray<IReadOnlyList<string>>
+        | RepeatingBracketRows of
+            rows: ResizeArray<IReadOnlyList<string>> * parseRow: (TokenReader -> IReadOnlyList<string>)
 
     let serializeColumnFormatMap (map: IReadOnlyDictionary<string, string>) =
         let sb = StringBuilder()
@@ -37,8 +38,8 @@ module BlockGrammar =
 
     let rec private tryParseMember (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
-        | RepeatingBracketRows rows when reader.IsAt TokenKind.LBracket ->
-            rows.Add(MemberGrammar.parseBoardRow reader)
+        | RepeatingBracketRows(rows, parseRow) when reader.IsAt TokenKind.LBracket ->
+            rows.Add(parseRow reader)
             true
         | _ -> tryParseChild reader memberDef values
 
