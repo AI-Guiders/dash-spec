@@ -130,6 +130,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddSingleton(bootstrap);
 builder.Services.AddSingleton(hostShell);
 builder.Services.AddSingleton<HostPresentationSignals>();
+builder.Services.AddSingleton<ILayoutSlotRendererRegistry, LayoutSlotRendererRegistry>();
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
 builder.Services.AddSingleton<DashSpecAccessValidator>();

@@ -41,6 +41,96 @@ public static class LayoutSlotEngine
         return list;
     }
 
+    public static IReadOnlyList<LayoutSlotDescriptor> PlanHostTabBoard(
+        TabLayoutPlan plan,
+        int columns,
+        Func<string, string> resolveCardRef)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(resolveCardRef);
+        if (columns <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(columns));
+        }
+
+        var slots = new List<LayoutSlotDescriptor>();
+        foreach (var entry in plan.Entries)
+        {
+            switch (entry)
+            {
+                case LayoutBoardCardRow cardRow:
+                    foreach (var token in cardRow.CardIds)
+                    {
+                        var refId = LayoutBoardCellFormat.RefToken(token);
+                        if (plan.Nests.TryGetValue(refId, out var nest))
+                        {
+                            slots.Add(new LayoutSlotDescriptor(
+                                refId,
+                                nest.OuterPlacement,
+                                LayoutSlotScope.HostTabBoard,
+                                LayoutSlotContentKind.Nest));
+                            continue;
+                        }
+
+                        var cardId = resolveCardRef(token);
+                        if (plan.TopLevelPlacements.TryGetValue(cardId, out var placement))
+                        {
+                            slots.Add(new LayoutSlotDescriptor(
+                                cardId,
+                                placement,
+                                LayoutSlotScope.HostTabBoard,
+                                LayoutSlotContentKind.Card));
+                        }
+                    }
+
+                    break;
+                case LayoutBoardGroupRow { Group: var group }:
+                    if (plan.Groups.TryGetValue(group.Id, out var groupPlacement))
+                    {
+                        slots.Add(new LayoutSlotDescriptor(
+                            group.Id,
+                            new PlacementDefinition(groupPlacement.OuterRow, 1, columns),
+                            LayoutSlotScope.HostTabBoard,
+                            LayoutSlotContentKind.Group));
+                    }
+
+                    break;
+            }
+        }
+
+        return slots;
+    }
+
+    public static IReadOnlyList<LayoutSlotDescriptor> PlanHostTabBoardCards(
+        IReadOnlyList<(string CardId, DiagramDataFamily DataFamily)> cardsInOrder,
+        IReadOnlyDictionary<string, PlacementDefinition> tabPlacements,
+        int columns)
+    {
+        ArgumentNullException.ThrowIfNull(cardsInOrder);
+        ArgumentNullException.ThrowIfNull(tabPlacements);
+        if (columns <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(columns));
+        }
+
+        var slots = new List<LayoutSlotDescriptor>(cardsInOrder.Count);
+        foreach (var (cardId, dataFamily) in cardsInOrder)
+        {
+            if (!tabPlacements.TryGetValue(cardId, out var placement))
+            {
+                placement = PlacementDefaults.ForFamily(dataFamily, columns);
+            }
+
+            slots.Add(new LayoutSlotDescriptor(
+                cardId,
+                placement,
+                LayoutSlotScope.HostTabBoard,
+                LayoutSlotContentKind.Card));
+        }
+
+        return slots;
+    }
+
     internal static IReadOnlyList<LayoutSlotDescriptor> PlanScoped(
         LayoutSlotScope scope,
         IReadOnlyDictionary<string, PlacementDefinition>? placements,

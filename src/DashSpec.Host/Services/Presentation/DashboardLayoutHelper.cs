@@ -21,20 +21,7 @@ internal static class DashboardLayoutHelper
         PlacementGridCss.SlotStyle(placement, layoutColumns);
 
     public static string GroupOuterStyle(int outerRow) =>
-        $"grid-column:1 / -1;grid-row:{outerRow};";
-
-    public static string FilterPlacementStyle(
-        string filterName,
-        LayoutDefinition layout,
-        IReadOnlyDictionary<string, PlacementDefinition> toolbarPlacements)
-    {
-        if (!toolbarPlacements.TryGetValue(filterName, out var placement))
-        {
-            return string.Empty;
-        }
-
-        return PlacementGridCss.SlotStyle(placement, layout.Columns);
-    }
+        PlacementGridCss.GroupOuterStyle(outerRow);
 
     public static PlacementDefinition ResolvePlacement(
         CardRenderResult card,
