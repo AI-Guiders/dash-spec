@@ -106,6 +106,10 @@ module SpecIncludeFragmentResolver =
         map.[id] <- definition
         { emptyFragment with Tooltips = Some(map :> IReadOnlyDictionary<_, _>) }
 
+    let private isChartChromeIncludeKind (kind: string) =
+        String.Equals(kind, "presentation", StringComparison.OrdinalIgnoreCase)
+        || String.Equals(kind, "chrome", StringComparison.OrdinalIgnoreCase)
+
     let rec load (includeKind: string) (reference: string) (specDirectory: string) =
         let path = SpecFragmentPaths.resolvePath reference specDirectory
         let resolved = resolveExistingFile path includeKind
@@ -133,6 +137,8 @@ module SpecIncludeFragmentResolver =
         for includeRef in doc.Includes do
             if baseDirectory.IsNone || String.IsNullOrWhiteSpace baseDirectory.Value then
                 raise (DashSpecParseException("Presentation include requires a base directory (parse from file path)."))
+            if not (isChartChromeIncludeKind includeRef.Kind) then
+                raise (DashSpecParseException($"@presentation module only supports include presentation/chrome, got '{includeRef.Kind}'."))
             let fragment = load includeRef.Kind includeRef.Reference baseDirectory.Value
             merged <- mergePresentation merged fragment.Presentation
 
