@@ -1,0 +1,23 @@
+{
+  "comment": "ADR-0077: lines containing Cyrillic per Host UI .razor (relative to src/DashSpec.Host). Count may only shrink when migrating to DashboardLocalizer; growing requires operator sign-off and baseline update in the same PR.",
+  "scanRoots": [
+    "src/DashSpec.Host/Components/Dashboard",
+    "src/DashSpec.Host/Components/Pages",
+    "src/DashSpec.Host/Components/Layout"
+  ],
+  "files": {
+    "Components/Dashboard/CardExtensionChrome.razor": 2,
+    "Components/Dashboard/CardSelectionDetail.razor": 1,
+    "Components/Dashboard/DashboardCatalogPicker.razor": 2,
+    "Components/Dashboard/DashboardCommandPalette.razor": 2,
+    "Components/Dashboard/DashboardCommandSuggestionList.razor": 2,
+    "Components/Dashboard/DashboardFilterCommandBar.razor": 2,
+    "Components/Dashboard/DashboardFiltersSection.razor": 6,
+    "Components/Dashboard/DashboardPagePicker.razor": 1,
+    "Components/Dashboard/DashboardTabBar.razor": 1,
+    "Components/Dashboard/DashboardToolbar.razor": 2,
+    "Components/Pages/Admin.razor": 1,
+    "Components/Pages/Help.razor": 45,
+    "Components/Pages/Spec.razor": 8
+  }
+}

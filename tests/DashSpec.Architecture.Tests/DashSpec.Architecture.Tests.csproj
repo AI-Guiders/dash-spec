@@ -30,6 +30,9 @@
     <None Include="..\..\architecture\host-source-guards.json" Link="host-source-guards.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\architecture\host-ui-cyrillic-baseline.json" Link="host-ui-cyrillic-baseline.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

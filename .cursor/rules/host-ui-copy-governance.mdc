@@ -1,0 +1,33 @@
+---
+description: Host UI user-facing text — no inline copy, no paraphrasing without operator
+globs:
+  - src/DashSpec.Host/Components/**/*.razor
+  - src/DashSpec.Host/Services/Localization/**
+alwaysApply: false
+---
+
+# Host UI copy (ADR-0077)
+
+You **cannot** invent, shorten, merge, or “polish” user-facing text in Blazor or CSS `content:` without the operator.
+
+## Required pattern
+
+- Shell chrome: `DashboardLocalizer.T("English key")` only.
+- Add or change strings in `DashboardLocalizer.cs` (`_en` + `_ruMap`) in the **same** change.
+- English key string is the stable identifier; Russian is never the key.
+
+## Forbidden
+
+- New Cyrillic (or new hardcoded UI English) inside `Components/Dashboard`, `Components/Pages`, `Components/Layout` razor.
+- Editing existing inline Cyrillic in allowlisted legacy files without operator approval and baseline update.
+- Replacing operator-approved wording with your own synonym (“Применить” → “Ок”, “Загрузка…” → “Ждите”, etc.).
+
+## If the task needs new or different copy
+
+1. **Stop** — do not guess.
+2. Propose exact **ru + en** strings to the operator.
+3. After approval: localizer + razor wiring; if removing inline Cyrillic, lower `architecture/host-ui-cyrillic-baseline.json` in the same PR.
+
+## CI
+
+`ARCH-0077-CYRILLIC-INLINE` and `HostUiCopyBaselineTests` block violations. Do not bump baseline counts upward without explicit operator sign-off in chat.
