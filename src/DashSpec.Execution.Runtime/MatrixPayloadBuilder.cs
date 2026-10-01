@@ -18,7 +18,8 @@ internal static class MatrixPayloadBuilder
         var xColumn = DiagramBindings.Column(diagram, "x");
         var yColumn = DiagramBindings.Column(diagram, "y");
         var valueColumn = DiagramBindings.Column(diagram, "value");
-        diagram.Properties.TryGetValue("x_format", out var xFormat);
+        diagram.Properties.TryGetValue("x_format", out var xFormatRaw);
+        var xFormat = LabelFormat.ResolveAxisFormat(xFormatRaw);
         diagram.Properties.TryGetValue("y_format", out var yFormat);
         diagram.Properties.TryGetValue("x_step", out var xStepRaw);
 
