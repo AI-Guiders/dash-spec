@@ -64,6 +64,7 @@ public sealed record FilterDefinition(
     string? GrainFilterName = null,
     bool SingleSelect = false,
     string? LayoutRef = null,
+    string? BindScopeHint = null,
     IReadOnlyDictionary<string, string>? GrainLabels = null,
     PlacementDefinition? Placement = null)
 {
@@ -78,6 +79,16 @@ public sealed record FilterDefinition(
 
     public bool IsSingleSelectField =>
         SingleSelect || IsSelectWidget;
+
+    public bool IsBindScopeInline =>
+        string.Equals(BindScopeHint, "inline", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsBindScopeHidden =>
+        string.Equals(BindScopeHint, "hidden", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsBindScopeTooltip =>
+        string.IsNullOrWhiteSpace(BindScopeHint) ||
+        string.Equals(BindScopeHint, "tooltip", StringComparison.OrdinalIgnoreCase);
 }
 
 public enum FilterKind

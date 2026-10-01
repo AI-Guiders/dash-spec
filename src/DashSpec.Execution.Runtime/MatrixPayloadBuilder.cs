@@ -169,7 +169,7 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
+        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: null);
     }
 
     private static MatrixPayload BuildHourGrid(
@@ -328,7 +328,7 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram);
+        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: xKeys);
     }
 
     private readonly record struct AxisWindow(TimeOnly From, TimeOnly To);
@@ -405,7 +405,8 @@ internal static class MatrixPayloadBuilder
         double min,
         double max,
         string?[][]? tooltips,
-        DiagramDefinition diagram)
+        DiagramDefinition diagram,
+        IReadOnlyList<DateTime>? xBucketStarts)
     {
         diagram.Properties.TryGetValue("color_normalize", out var normalizeRaw);
         var normalize = MatrixColorNormalizeParser.Parse(normalizeRaw);
@@ -436,7 +437,8 @@ internal static class MatrixPayloadBuilder
             rowMins,
             rowMaxs,
             colMins,
-            colMaxs);
+            colMaxs,
+            xBucketStarts);
     }
 
     private static (double[] RowMins, double[] RowMaxs) ComputeRowRanges(

@@ -116,7 +116,8 @@ public sealed record MatrixPayload(
     IReadOnlyList<double>? RowMins = null,
     IReadOnlyList<double>? RowMaxs = null,
     IReadOnlyList<double>? ColMins = null,
-    IReadOnlyList<double>? ColMaxs = null)
+    IReadOnlyList<double>? ColMaxs = null,
+    IReadOnlyList<DateTime>? XBucketStarts = null)
 {
     public (double Min, double Max) ColorRangeForCell(int yi, int xi)
     {
