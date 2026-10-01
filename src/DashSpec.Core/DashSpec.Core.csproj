@@ -34,6 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="DashSpec.Modeling.Parse.Lexing" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="stdlib\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="stdlib" />
   </ItemGroup>
 

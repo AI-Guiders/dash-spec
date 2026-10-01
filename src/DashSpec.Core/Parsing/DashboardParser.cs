@@ -31,7 +31,7 @@ internal static class DashboardParser
 
     internal static string ReadPaletteReference(TokenReader reader)
     {
-        if (reader.RawKind is TokenKind.Eq)
+        if (reader.RawKind == TokenKind.Eq)
         {
             reader.Advance();
         }
