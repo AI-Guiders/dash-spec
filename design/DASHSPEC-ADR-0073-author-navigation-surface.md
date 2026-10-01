@@ -1,4 +1,4 @@
-# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `visual` → `diagram`
+# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `view` → `diagram`
 
 | | |
 |---|---|
@@ -42,7 +42,9 @@ filter …
 
 Плюс chrome: **Apply** (icon/button), export, fold, view toggles — тоже **widgets** (элементы управления), не аналитика.
 
-**KPI / график / таблица / heatmap** — не widget. Для них в author surface: **`visual`** (смысл); в IR/plugins — **`viz`** / diagram slot ([ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md)).
+**KPI / график / таблица / heatmap** — не widget. Для них в author surface: блок **`view`** → ссылка на **`diagram`** ([ADR-0038](DASHSPEC-ADR-0038-structured-card-and-report-composition.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md)); рендер — **viz** plugins ([ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md)).
+
+Слово «визуал» в разговоре — **весь UI** (toolbar, card, widgets). В грамматике отдельного keyword `visual` **нет**, чтобы не путать с «всё на экране».
 
 ## Decision
 
@@ -55,7 +57,7 @@ report
   section
     page
       card
-        visual
+        view
           diagram
 ```
 
