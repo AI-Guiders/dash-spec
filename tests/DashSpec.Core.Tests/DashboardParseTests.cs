@@ -290,6 +290,70 @@ public class DashboardParseTests
     }
 
     [Fact]
+    public void Parse_filters_chrome_apply_block_and_sugar()
+    {
+        var block = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              filters chrome
+                layout = bar
+                apply
+                  mode = manual
+                  control = button
+                end apply
+              end chrome
+              end report
+            end dashboard
+""");
+        Assert.False(block.FiltersChrome.IsAutoApply);
+        Assert.Equal(FiltersChromeDefinition.ApplyControlButton, block.FiltersChrome.ApplyControl);
+
+        var sugar = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              toolbar chrome
+                apply = auto
+              end chrome
+              end report
+            end dashboard
+""");
+        Assert.True(sugar.FiltersChrome.IsAutoApply);
+        Assert.Equal(FiltersChromeDefinition.ApplyControlIcon, sugar.FiltersChrome.ApplyControl);
+    }
+
+    [Fact]
+    public void Parse_toolbar_chrome_cells_labeled_and_inline()
+    {
+        var labeled = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              toolbar chrome
+                layout = bar
+                cells = labeled
+              end chrome
+              end report
+            end dashboard
+""");
+        Assert.True(labeled.FiltersChrome.IsToolbarLabeledCells);
+
+        var inline = DashSpecParser.Parse("""
+            @dashboard t
+              report
+              title = "T"
+              toolbar chrome
+                layout = bar
+                cells = inline
+              end chrome
+              end report
+            end dashboard
+""");
+        Assert.False(inline.FiltersChrome.IsToolbarLabeledCells);
+    }
+
+    [Fact]
     public void Parse_heatmap_diagram_kind()
     {
         var doc = DashSpecParser.Parse("""
@@ -567,11 +631,61 @@ public class DashboardParseTests
         {
             var utc = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc);
             Assert.Equal("15.06 14:05", LabelFormat.FormatObject(utc, "datetime.short"));
+
+            var sqlUnspecified = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Unspecified);
+            Assert.Equal("15.06 14:05", LabelFormat.FormatObject(sqlUnspecified, "datetime.short"));
         }
         finally
         {
             LabelFormat.DisplayTimeZone = null;
         }
+    }
+
+    [Fact]
+    public void HeatmapCellFilterResolver_maps_display_time_to_storage_utc_wire()
+    {
+        var moscow = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
+        LabelFormat.DisplayTimeZone = moscow;
+        try
+        {
+            var filter = new FilterDefinition(
+                FilterKind.Field,
+                "activity_bucket_time",
+                null,
+                "bucket_start_utc");
+            var index = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
+            {
+                [filter.Name] = filter,
+            };
+            var filters = new FilterState();
+            filters.SetDate("activity_slot", new DateOnly(2024, 6, 15), new DateOnly(2024, 6, 15));
+            var context = new HeatmapCellContext(0, 0, "14:05", "host", 3, null);
+
+            var overlay = HeatmapCellFilterResolver.BuildOverlay(
+                [new SetFilterFromFieldEffect(filter.Name, "x")],
+                context,
+                index,
+                filters,
+                ["activity_slot"]);
+
+            Assert.True(overlay.TryGetField(filter.Name, out var values));
+            Assert.Contains("2024-06-15T11:05:00", values);
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = null;
+        }
+    }
+
+    [Fact]
+    public void DateValueCodec_CombineDisplayLocalToStorageUtc_matches_matrix_axis()
+    {
+        var moscow = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
+        var day = new DateOnly(2024, 6, 15);
+        var utc = DateValueCodec.CombineDisplayLocalToStorageUtc(day, new TimeOnly(14, 5), moscow);
+        Assert.Equal(new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc), utc);
     }
 
     [Fact]

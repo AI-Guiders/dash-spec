@@ -152,17 +152,19 @@ public static partial class LabelFormat
             return dt;
         }
 
-        if (dt.Kind == DateTimeKind.Unspecified)
-        {
-            return dt;
-        }
-
         if (DisplayTimeZone is null)
         {
-            return DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
+            return dt.Kind == DateTimeKind.Unspecified
+                ? dt
+                : DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
         }
 
-        var utc = dt.Kind == DateTimeKind.Utc ? dt : DateTime.SpecifyKind(dt.ToUniversalTime(), DateTimeKind.Utc);
+        var utc = dt.Kind switch
+        {
+            DateTimeKind.Utc => dt,
+            DateTimeKind.Unspecified => DateValueCodec.NormalizeStorageUtc(dt),
+            _ => DateTime.SpecifyKind(dt.ToUniversalTime(), DateTimeKind.Utc),
+        };
         return TimeZoneInfo.ConvertTimeFromUtc(utc, DisplayTimeZone);
     }
 

@@ -59,4 +59,5 @@ public sealed record HeatmapCellContext(
     string XLabel,
     string YLabel,
     double? Value,
-    string? TooltipRaw);
+    string? TooltipRaw,
+    DateTime? XBucketUtc = null);

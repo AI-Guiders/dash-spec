@@ -44,7 +44,8 @@ public static class ToolbarLayoutCompactor
     /// <summary>Toolbar placement for a subset of filters; empty board rows are omitted.</summary>
     public static IReadOnlyDictionary<string, PlacementDefinition> CompactVisible(
         DashboardDocument document,
-        IReadOnlySet<string> visibleFilterNames)
+        IReadOnlySet<string> visibleFilterNames,
+        LayoutBoardDefinition? activeToolbarBoard = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(visibleFilterNames);
@@ -55,10 +56,11 @@ public static class ToolbarLayoutCompactor
         }
 
         var columns = document.Layout.Columns;
-        if (document.ToolbarBoard is not null)
+        var board = activeToolbarBoard ?? document.ToolbarBoard;
+        if (board is not null)
         {
             return CompactVisibleBoard(
-                document.ToolbarBoard,
+                board,
                 columns,
                 document.Filters,
                 visibleFilterNames);

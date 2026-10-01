@@ -53,4 +53,46 @@ public static class PlacedFilterCollector
 
         return result;
     }
+
+    /// <summary>Dashboard + page toolbars only (excludes <c>card filters { }</c> — those are per-card in Host).</summary>
+    public static IReadOnlyList<string> CollectSessionScoped(DashboardDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+
+        void Add(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name) || !seen.Add(name))
+            {
+                return;
+            }
+
+            result.Add(name);
+        }
+
+        foreach (var name in document.DashboardFilters)
+        {
+            Add(name);
+        }
+
+        if (document.Pages is not null)
+        {
+            foreach (var page in document.Pages)
+            {
+                if (page.ToolbarBoard is null)
+                {
+                    continue;
+                }
+
+                foreach (var name in page.ToolbarBoard.Rows.SelectMany(row => row))
+                {
+                    Add(name);
+                }
+            }
+        }
+
+        return result;
+    }
 }

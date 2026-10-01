@@ -86,6 +86,13 @@ public static partial class DateValueCodec
             _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc),
         };
 
+    /// <summary>Wall clock in display TZ (calendar day + time) → UTC storage bucket for SQL filters.</summary>
+    public static DateTime CombineDisplayLocalToStorageUtc(DateOnly day, TimeOnly time, TimeZoneInfo displayTz)
+    {
+        var local = DateTime.SpecifyKind(day.ToDateTime(time), DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(local, displayTz);
+    }
+
     public static DateTime? TryParseStoredBucket(object? value) =>
         value switch
         {
