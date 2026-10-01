@@ -66,7 +66,7 @@ internal static class InspectPresentationParser
                 continue;
             }
 
-            throw reader.Unexpected();
+            throw reader.Unexpected(null);
         }
 
         BlockSyntax.ExpectBlockEnd(reader, "inspect");
