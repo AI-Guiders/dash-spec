@@ -1,0 +1,17 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+@if (!string.IsNullOrWhiteSpace(Text))
+{
+    <button type="button"
+            class="filter-scope-tip"
+            title="@Text"
+            aria-label="@AriaLabel">
+        <span class="filter-scope-tip-glyph" aria-hidden="true">i</span>
+    </button>
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+
+    [Parameter] public string? AriaLabel { get; set; }
+}

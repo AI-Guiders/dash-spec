@@ -17,15 +17,13 @@
 
     [Parameter] public string? Hint { get; set; }
 
-    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string? HintAriaLabel { get; set; }
+
+    [Parameter] public bool ToolbarLabeledCells { get; set; }
 
     [Parameter] public bool Disabled { get; set; }
 
     [Parameter] public string? PlacementStyle { get; set; }
-
-    [Parameter] public bool ShowDateLabel { get; set; }
-
-    [Parameter] public string DateLabelClass { get; set; } = "filter-label";
 
     [Parameter] public IReadOnlyList<string> Options { get; set; } = [];
 
@@ -66,11 +64,13 @@
                 Filter = Filter,
                 Label = Label,
                 Hint = Hint,
-                Compact = Compact,
+                HintAriaLabel = HintAriaLabel,
+                Compact = ToolbarLabeledCells,
+                ToolbarLabeledCells = ToolbarLabeledCells,
                 Disabled = Disabled,
                 PlacementStyle = PlacementStyle,
-                ShowDateLabel = ShowDateLabel,
-                DateLabelClass = DateLabelClass,
+                ShowDateLabel = ToolbarLabeledCells,
+                DateLabelClass = ToolbarLabeledCells ? "filter-inline-label" : "filter-label",
                 Options = Options,
                 Selected = Selected,
                 SelectedChanged = SelectedChanged,

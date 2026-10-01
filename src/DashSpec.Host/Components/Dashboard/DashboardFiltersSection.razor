@@ -4,12 +4,16 @@
 @using DashSpec.Host.Commands
 
 @using DashSpec.Host.Services.Presentation
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
 
 
 
 @if (ShowDashboardFilters)
 {
-<section class="@SectionClass" aria-label="Фильтры дашборда">
+<section class="@SectionClass"
+         data-toolbar-layout="@(BarLayout ? "bar" : null)"
+         data-toolbar-cells="@(ToolbarLabeledCells ? "labeled" : null)"
+         aria-label="Фильтры дашборда">
 
     <div class="@GridClass" style="@GridStyle">
 
@@ -23,15 +27,7 @@
 
         {
 
-            if (BarLayout && GroupBreakBefore?.Invoke(filterName) == true)
-
-            {
-
-                <div class="toolbar-filter-row-break" aria-hidden="true"></div>
-
-            }
-
-            else if (BarLayout &&
+            if (BarLayout &&
 
                 FilterPlacements.TryGetValue(filterName, out var placement) &&
 
@@ -59,11 +55,7 @@
 
             var filter = FilterIndex[filterName];
 
-            var placementStyle = BarLayout
-
-                ? string.Empty
-
-                : DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
+            var placementStyle = DashboardLayoutHelper.FilterPlacementStyle(filterName, Layout, FilterPlacements);
 
             <CommandTargetShell TargetId="@filterName"
                                 Kind="CommandTargetKind.Filter"
@@ -75,15 +67,12 @@
 
                                   Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
 
-                                  Hint="@(BarLayout ? null : FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards))"
+                                  Hint="@ScopeHintFor(filter)"
+                                  HintAriaLabel="@ScopeHintAriaFor(filter)"
 
-                                  Compact="@BarLayout"
+                                  ToolbarLabeledCells="@ToolbarLabeledCells"
 
                                   Disabled="@Busy"
-
-                                  ShowDateLabel="true"
-
-                                  DateLabelClass="@(BarLayout ? "filter-inline-label" : "filter-label")"
 
                                   Options="GetFieldOptions(filter.Name)"
 
@@ -163,7 +152,11 @@
 
     [Parameter] public bool BarLayout { get; set; }
 
+    [Parameter] public bool ToolbarLabeledCells { get; set; }
+
     [Parameter] public bool AutoApply { get; set; }
+
+    [Parameter] public bool ApplyIconControl { get; set; } = true;
 
     [Parameter] public bool Busy { get; set; }
 
@@ -182,10 +175,6 @@
     [Parameter] public EventCallback<(string Name, HashSet<string> Values)> OnFieldChanged { get; set; }
 
     [Parameter] public EventCallback<(string Name, int Value)> OnTopChanged { get; set; }
-
-    [Parameter] public Func<string, bool>? GroupBreakBefore { get; set; }
-
-
 
     private string FilterCellClass(FilterDefinition filter) =>
 
@@ -208,6 +197,54 @@
             ? OnTopChanged.InvokeAsync((filter.Name, value))
 
             : Task.CompletedTask;
+
+    private string? ScopeHintFor(FilterDefinition filter)
+    {
+        if (filter.IsBindScopeHidden)
+        {
+            return null;
+        }
+
+        if (filter.Kind is FilterKind.Top || !BarLayout)
+        {
+            return FilterUiHelpers.ScopeHint(filter.Name, FiltersToCards);
+        }
+
+        return null;
+    }
+
+    private string? ScopeHintAriaFor(FilterDefinition filter) =>
+        string.IsNullOrWhiteSpace(ScopeHintFor(filter))
+            ? null
+            : FilterUiHelpers.ScopeHintAriaLabel(filter.Name, FiltersToCards);
+
+    private RenderFragment RenderApplyButton => __builder =>
+    {
+        if (ApplyIconControl)
+        {
+            <FilterApplyIconButton AriaLabel="Применить"
+                                   CssClass="secondary card-icon-btn filter-apply-icon"
+                                   Busy="@Busy"
+                                   Disabled="@Busy"
+                                   OnClick="OnApply" />
+        }
+        else
+        {
+            <button class="primary"
+                    disabled="@Busy"
+                    @onclick="OnApply">
+                @if (Busy)
+                {
+                    <span class="spinner spinner-inline" aria-hidden="true"></span>
+                    <span>Загрузка…</span>
+                }
+                else
+                {
+                    <span>Применить</span>
+                }
+            </button>
+        }
+    };
 
     private RenderFragment RenderToolbarActions => __builder =>
     {
@@ -237,37 +274,13 @@
         if (BarLayout)
         {
             <div class="toolbar-filter-cell toolbar-filter-apply">
-                <button class="primary"
-                        disabled="@Busy"
-                        @onclick="OnApply">
-                    @if (Busy)
-                    {
-                        <span class="spinner spinner-inline" aria-hidden="true"></span>
-                        <span>Загрузка…</span>
-                    }
-                    else
-                    {
-                        <span>Применить</span>
-                    }
-                </button>
+                @RenderApplyButton
             </div>
         }
         else
         {
             <div class="filters-actions">
-                <button class="primary"
-                        disabled="@Busy"
-                        @onclick="OnApply">
-                    @if (Busy)
-                    {
-                        <span class="spinner spinner-inline" aria-hidden="true"></span>
-                        <span>Загрузка…</span>
-                    }
-                    else
-                    {
-                        <span>Применить</span>
-                    }
-                </button>
+                @RenderApplyButton
             </div>
         }
     };

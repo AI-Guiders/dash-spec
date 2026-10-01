@@ -2,6 +2,7 @@
 @import url("parts/layout.css");
 @import url("parts/filters.css");
 @import url("/_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css");
+@import url("/_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css");
 @import url("parts/cards.css");
 @import url("parts/charts.css");
 @import url("/_content/DashSpec.Plugin.Viz.Builtins/css/heatmap.css");

@@ -68,7 +68,9 @@ else
                              Layout="Page.Session.Document.Layout"
                              FilterPlacements="Page.ToolbarPlacements"
                              BarLayout="chrome.IsBarLayout"
+                             ToolbarLabeledCells="chrome.IsToolbarLabeledCells"
                              AutoApply="chrome.IsAutoApply"
+                             ApplyIconControl="chrome.IsApplyIconControl"
                              Busy="Page.Busy"
                              SectionClass="@Page.FiltersSectionClass()"
                              GridClass="@Page.FiltersGridClass()"
@@ -77,8 +79,7 @@ else
                              OnScheduleApply="Page.OnDashboardRangeChanged"
                              OnDayChanged="Page.OnDashboardDayChanged"
                              OnFieldChanged="Page.OnDashboardFieldChanged"
-                             OnTopChanged="Page.OnDashboardTopChanged"
-                             GroupBreakBefore="Page.ToolbarGroupBreakBefore" />
+                             OnTopChanged="Page.OnDashboardTopChanged" />
 
     @if (chrome.ShowsFormatGuide)
     {

@@ -10,7 +10,7 @@
         }
         else if (!string.IsNullOrWhiteSpace(Hint))
         {
-            <span class="filter-scope">@Hint</span>
+            <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
         }
 
         <select class="field-select"
@@ -96,12 +96,9 @@
         @if (!Compact)
         {
             <div class="filter-field-head">
-                <div>
+                <div class="filter-label-row">
                     <span class="filter-label">@Label</span>
-                    @if (!string.IsNullOrWhiteSpace(Hint))
-                    {
-                        <span class="filter-scope">@Hint</span>
-                    }
+                    <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
                 </div>
                 @if (!SingleSelect)
                 {

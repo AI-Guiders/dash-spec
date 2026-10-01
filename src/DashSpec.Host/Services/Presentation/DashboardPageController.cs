@@ -45,6 +45,7 @@ public sealed class DashboardPageController : IDisposable
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ICardCellDrillState _cellDrill;
     private readonly ICardFoldState _cardFold;
+    private readonly CardLocalFilterUiStore _cardLocalFilters;
 
     public DashboardPageController(
         IDashboardSession session,
@@ -66,7 +67,8 @@ public sealed class DashboardPageController : IDisposable
         CatalogUsageService catalogUsage,
         IHttpContextAccessor httpContextAccessor,
         ICardCellDrillState cellDrill,
-        ICardFoldState cardFold)
+        ICardFoldState cardFold,
+        CardLocalFilterUiStore cardLocalFilters)
     {
         _session = session;
         _interactions = interactions;
@@ -86,6 +88,7 @@ public sealed class DashboardPageController : IDisposable
         _httpContextAccessor = httpContextAccessor;
         _cellDrill = cellDrill;
         _cardFold = cardFold;
+        _cardLocalFilters = cardLocalFilters;
         _refresh.StateChanged += OnRefreshStateChanged;
         if (environment.IsDevelopment())
         {
@@ -117,6 +120,15 @@ public sealed class DashboardPageController : IDisposable
     public Dictionary<string, DateOnly> DateFrom => _filters.DateFrom;
     public Dictionary<string, DateOnly> DateTo => _filters.DateTo;
     public Dictionary<string, HashSet<string>> SelectedFields => _filters.SelectedFields;
+
+    public Dictionary<string, DateOnly> CardLocalDateFrom(string cardId) => _cardLocalFilters.DateFromBinding(cardId);
+
+    public Dictionary<string, DateOnly> CardLocalDateTo(string cardId) => _cardLocalFilters.DateToBinding(cardId);
+
+    public Dictionary<string, HashSet<string>> CardLocalSelectedFields(string cardId) =>
+        _cardLocalFilters.SelectedFieldsBinding(cardId);
+
+    public Dictionary<string, int> CardLocalTopLimits(string cardId) => _cardLocalFilters.TopLimitsBinding(cardId);
     public Dictionary<string, int> TopLimits => _filters.TopLimits;
     public Dictionary<string, IReadOnlyList<string>> FiltersToCards { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
@@ -376,12 +388,21 @@ public sealed class DashboardPageController : IDisposable
         var effects = _interactions.ExpandClickEffects(card.ClickBehaviour.Effects).ToList();
         if (CardClickRefreshPlanner.Plan(effects) is CardInteractionRefresh.CardInteriorSlots)
         {
-            var drillTable = effects.OfType<DrillTableFromCellEffect>().First();
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
+            var cardDef = FindCardDefinition(card.Id);
+            var queryFilters = cardDef is not null
+                ? _cardLocalFilters.ComposeQueryFilters(_session.Filters, cardDef, _session.FilterIndex)
+                : _session.Filters;
+            var anchorDates = HeatmapCellFilterResolver.ResolveAnchorDateFilterNames(
+                cardDef?.LocalFilters,
+                cardDef?.BoundFilters,
+                _session.FilterIndex);
             var overlay = HeatmapCellFilterResolver.BuildOverlay(
-                drillTable.Binds,
+                HeatmapCellFilterResolver.CollectDrillBinds(effects),
                 context,
                 _session.FilterIndex,
-                _session.Filters);
+                queryFilters,
+                anchorDates);
             _cellDrill.Set(card.Id, overlay);
             await _refresh.RefreshCardInteriorSlotsAsync(card.Id, cancellationToken).ConfigureAwait(false);
             return;
@@ -553,33 +574,6 @@ public sealed class DashboardPageController : IDisposable
         return snapshot.NarrowTo(names);
     }
 
-    public bool ToolbarGroupBreakBefore(string filterName)
-    {
-        if (!GrainFilterPresentation.IsGrainHostFilter(filterName, _session.FilterIndex))
-        {
-            return false;
-        }
-
-        var ordered = VisibleToolbarFilterNames();
-        var index = -1;
-        for (var i = 0; i < ordered.Count; i++)
-        {
-            if (string.Equals(ordered[i], filterName, StringComparison.OrdinalIgnoreCase))
-            {
-                index = i;
-                break;
-            }
-        }
-        if (index <= 0)
-        {
-            return false;
-        }
-
-        return ordered.Take(index).Any(name =>
-            _session.FilterIndex.TryGetValue(name, out var filter) &&
-            filter.Kind is FilterKind.Date or FilterKind.Field);
-    }
-
     public IReadOnlyList<string> VisibleToolbarFilters()
     {
         var visible = VisibleToolbarFilterNames();
@@ -608,7 +602,7 @@ public sealed class DashboardPageController : IDisposable
             }
 
             _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
-            _filters.SyncToSession(_session, PlacedFilterNames());
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
             Notify();
             await ApplyFiltersAsync(cancellationToken).ConfigureAwait(false);
             return;
@@ -628,7 +622,7 @@ public sealed class DashboardPageController : IDisposable
             if (carriedFilters is not null)
             {
                 _filters.ApplySnapshot(carriedFilters, _session.FilterIndex);
-                _filters.SyncToSession(_session, PlacedFilterNames());
+                _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
             }
 
             if (!Loaded)
@@ -815,14 +809,14 @@ public sealed class DashboardPageController : IDisposable
 
     public void OnCardDayChanged((string CardId, string FilterName) args)
     {
-        if (DateFrom.TryGetValue(args.FilterName, out var day))
+        if (_cardLocalFilters.DateFromBinding(args.CardId).TryGetValue(args.FilterName, out var day))
         {
             if (!SqlDateTimeRange.IsQueryable(day))
             {
                 return;
             }
 
-            DateTo[args.FilterName] = day;
+            _cardLocalFilters.SetDate(args.CardId, args.FilterName, day, day);
         }
 
         if (!IsCardLocalManualApply(args.CardId))
@@ -833,7 +827,7 @@ public sealed class DashboardPageController : IDisposable
 
     public void OnCardFieldChanged((string CardId, string FilterName, HashSet<string> Values) args)
     {
-        SelectedFields[args.FilterName] = args.Values;
+        _cardLocalFilters.SetField(args.CardId, args.FilterName, args.Values);
         NormalizeGrainDates(args.FilterName);
         if (!IsCardLocalManualApply(args.CardId))
         {
@@ -911,7 +905,7 @@ public sealed class DashboardPageController : IDisposable
             }
         }
 
-        _filters.SyncToSession(_session, PlacedFilterNames());
+        _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
         SyncUsageDateFromActivePage();
         CommandError = null;
         Notify();
@@ -994,9 +988,10 @@ public sealed class DashboardPageController : IDisposable
         var chrome = _session.Document.FiltersChrome;
         if (chrome.IsBarLayout)
         {
-            return chrome.IsStickyLine
-                ? "filters-toolbar-row filters-toolbar-sticky"
-                : "filters-toolbar-row";
+            var row = chrome.IsStickyLine
+                ? "filters-toolbar-row filters-toolbar-sticky filters-grid-layout"
+                : "filters-toolbar-row filters-grid-layout";
+            return row;
         }
 
         return chrome.IsStickyLine
@@ -1005,9 +1000,7 @@ public sealed class DashboardPageController : IDisposable
     }
 
     public string FiltersGridStyle() =>
-        _session.Document.FiltersChrome.IsBarLayout
-            ? string.Empty
-            : DashboardLayoutHelper.CardsGridStyle(_session.Document.Layout);
+        DashboardLayoutHelper.CardsGridStyle(_session.Document.Layout);
 
     private void RecordCatalogUsage()
     {
@@ -1139,7 +1132,8 @@ public sealed class DashboardPageController : IDisposable
         _cardViewState.ClearAll();
         _vizDisplayState.ClearAll();
         _cardFold.Clear();
-        _filters.LoadFromSession(_session, PlacedFilterNames());
+        _filters.LoadFromSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
+        _cardLocalFilters.SeedFromDocument(_session);
         SnapAllGrainAnchoredDates();
         _refresh.SeedAllCardSkeletons();
 
@@ -1245,8 +1239,12 @@ public sealed class DashboardPageController : IDisposable
     {
         var visible = VisibleToolbarFilterNames();
         var visibleSet = visible.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var activeToolbarBoard = PageToolbarResolver.ResolveActiveToolbarBoard(
+            _session.Document,
+            ActiveTabId,
+            ActivePageId);
         var placements = new Dictionary<string, PlacementDefinition>(
-            ToolbarLayoutCompactor.CompactVisible(_session.Document, visibleSet),
+            ToolbarLayoutCompactor.CompactVisible(_session.Document, visibleSet, activeToolbarBoard),
             StringComparer.OrdinalIgnoreCase);
 
         var unplaced = visible.Where(name => !placements.ContainsKey(name)).ToList();
