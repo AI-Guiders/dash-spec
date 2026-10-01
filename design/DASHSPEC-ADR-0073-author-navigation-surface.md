@@ -1,4 +1,4 @@
-# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `diagram`
+# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `widget` → `diagram`
 
 | | |
 |---|---|
@@ -38,7 +38,8 @@ report
   section
     page
       card
-        diagram
+        widget
+          diagram
 ```
 
 | Уровень | Смысл | Навигация в UI |
@@ -46,10 +47,23 @@ report
 | **report** | Один сценарий в catalog entry | Заголовок / смена entry |
 | **section** | Раздел отчёта (№1, №2, Сводка…) | Явный узел в composed tree |
 | **page** | Лист внутри раздела (browse / detail) | Явный узел в composed tree |
-| **card** | Виджет на layout-сетке | Нет |
-| **diagram** | Kind + привязки колонок (часто `!include`) | Нет |
+| **card** | **Плитка на layout-сетке**: заголовок, chrome, export, interior board, `on click`, `views` | Нет (ячейка сетки) |
+| **widget** | **Один визуал**: KPI, график, таблица, heatmap ([ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) — несколько widget в одном card) | Нет |
+| **diagram** | Декларация kind + колонок (часто `!include` `.dashdiagram`) | Нет |
 
-**Фильтры сценария** — на **page** (минимум) или на **section**, если общие для всех page внутри. **card** не объявляет глобальные фильтры; только `bind`. Локальные исключения — явный author block ([ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md)).
+### `card` ≠ виджет
+
+В BI пользователь говорит «виджет / визуал» про **KPI или диаграмму**, не про рамку с кнопкой Export. В DashSpec **`card`** — **контейнер** на bracket-board страницы ([ADR-0038](DASHSPEC-ADR-0038-structured-card-and-report-composition.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md)): может содержать **0..N** widget-слотов (`diagram ref …`, `data` / `data for …`).
+
+| Сегодня в DSL | Author surface (цель) |
+|---------------|------------------------|
+| `card` + `view { diagram … }` | `card` + один или несколько **`widget`** |
+| `diagram ref main` / `diagram ref drill` | отдельные **widget** в interior card |
+| `@diagram` в файле | **`diagram`** — пресет для widget |
+
+Слово **widget** в toolbar filter UI ([ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md)) — **контрол фильтра**, не report widget; в гайде: «filter control» vs «report widget (визуал)».
+
+**Фильтры сценария** — на **page** (минимум) или на **section**, если общие для всех page внутри. **widget** только `bind` к объявленным filter; глобальные filter не на widget. Локальные filter на **card** (interior row) — явно, без Host-умолчаний ([ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md)).
 
 ### 2. Соответствие demo stakeholder (пример)
 
