@@ -70,3 +70,12 @@ module SpecFragmentPaths =
                 if File.Exists withExt then
                     resolved <- withExt
             resolved
+
+    let resolveLayoutFile (path: string) =
+        if File.Exists path then path
+        else
+            let ext = ".dashlayout"
+            let withExt =
+                if path.EndsWith(ext, StringComparison.OrdinalIgnoreCase) then path
+                else path + ext
+            if File.Exists withExt then withExt else path

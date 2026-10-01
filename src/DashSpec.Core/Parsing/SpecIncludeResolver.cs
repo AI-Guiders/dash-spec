@@ -21,6 +21,9 @@ internal static class SpecIncludeResolver
     public static string ResolvePath(string reference, string specDirectory) =>
         Authoring.SpecFragmentPaths.ResolvePath(reference, specDirectory);
 
+    public static string ResolveLayoutFile(string path) =>
+        Modeling.Parse.SpecIncludeResolver.resolveLayoutFile(path);
+
     public static SpecIncludeFragment Load(string includeKind, string reference, string specDirectory)
     {
         try
