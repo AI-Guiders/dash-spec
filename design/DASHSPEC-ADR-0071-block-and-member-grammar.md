@@ -25,6 +25,8 @@ Both share one body loop.
 
 **Member lines** — `MemberGrammar.readPropertyEntry` + `PropertySchemas` value types (`Scalar`, `RestOfLine`, `ColumnBinding`, …).
 
+**Context-bound syntax** — surface that reuses tokens but **different semantics** (e.g. `ident:value` as layout **cell weight**, `col:preset` in formats IR, GDL wire literals) **MUST NOT** live on generic `MemberGrammar`. Put parsers in the **domain module** (e.g. `LayoutBracketRowParser`) and wire them via `BlockGrammar` members that take an explicit `parseRow` / `readValue` delegate. `MemberGrammar` stays **context-free** (`key = value`, string maps with an injected value reader, ident maps).
+
 **Container members** — `BlockGrammar.ContainerMember`:
 
 - `SchemaProperties(schema, allowExtension, allowQuotedKeys)` — zero or more `key = value` on one line, repeated per line.
@@ -50,11 +52,9 @@ No alternate surface for the same IR when a child block exists (e.g. no inline `
 | `ChildKeywordMerge` | Nested `keyword` … `end keyword` string map → serialized IR property (table `formats`) |
 | `ChildKeyword` | Nested block or keyword line with custom parser (`filter bind labels`, reject `default`) |
 | `KeywordScalarOrBlock` | `keyword = scalar` or `keyword` … `end keyword` (`filters chrome apply`) |
-| `RepeatingBracketRows` | One or more layout rows `[ cell … ]` (`layout group` / `nest`) |
+| `RepeatingBracketRows(rows, parseRow)` | Repeated `[ … ]` rows; **`parseRow` is context-specific** (layout: `LayoutBracketRowParser.parse`) |
 
 `parseKeywordContainer` accepts optional `endId` for `end link <id>`-style closes.
-
-**MemberGrammar (layout):** `readBoardCell`, `parseBoardRow` — bracket row syntax, not a property block.
 
 ### Migrated to BlockGrammar / MemberGrammar (F#)
 
@@ -70,7 +70,7 @@ No alternate surface for the same IR when a child block exists (e.g. no inline `
 | Tooltip `variables` | `TooltipModuleParser` |
 | Display `bind` slots | `DisplayBindingParser` → `parseStringMapBody` |
 | Layout `group` / `nest` bodies | `LayoutParser` → `RepeatingBracketRows` + `layoutGroup` schema |
-| Layout board rows `[ … ]` | `MemberGrammar.parseBoardRow` |
+| Layout board rows `[ … ]` | `LayoutBracketRowParser` (cell `ref:weight` only inside `[ ]`) |
 
 ### Still bespoke (nested DSL, not flat members)
 

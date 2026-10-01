@@ -112,33 +112,3 @@ module MemberGrammar =
         parseStringMapBlock reader endKind blockName (fun r -> r.ReadIdent())
 
     let parsePresetRestOfLine (reader: TokenReader) = reader.ReadRestOfLine().Trim()
-
-    /// Layout board cell: `card_id` or `card_id:weight`.
-    let readBoardCell (reader: TokenReader) =
-        let id = reader.ReadIdent()
-        if reader.IsAt TokenKind.Colon then
-            reader.Expect TokenKind.Colon
-            let weight = reader.ReadIdent()
-            $"{id}:{weight}"
-        else
-            id
-
-    /// Layout row: `[ cell … ]` (ADR-0020 / ADR-0071).
-    let parseBoardRow (reader: TokenReader) =
-        reader.Expect TokenKind.LBracket
-        reader.SkipNewlines()
-        let cells = ResizeArray<string>()
-
-        while not (reader.IsAt TokenKind.RBracket) && not reader.IsEof do
-            reader.SkipNewlines()
-            if reader.IsAt TokenKind.RBracket then ()
-            else
-                cells.Add(readBoardCell reader)
-                reader.SkipNewlines()
-
-        reader.Expect TokenKind.RBracket
-
-        if cells.Count = 0 then
-            raise (DashSpecParseException("Layout board row [ … ] must list at least one card ref or id."))
-
-        cells :> IReadOnlyList<string>
