@@ -22,8 +22,8 @@ public static class LayoutModuleParser
         ArgumentException.ThrowIfNullOrWhiteSpace(reference);
         ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
 
-        var path = SpecIncludeResolver.ResolvePath(reference, specDirectory);
-        path = ResolveLayoutFile(path);
+        var path = SpecIncludeResolver.ResolveLayoutFile(
+            SpecIncludeResolver.ResolvePath(reference, specDirectory));
 
         if (!File.Exists(path))
         {
@@ -33,17 +33,5 @@ public static class LayoutModuleParser
         }
 
         return ParseLayoutFile(File.ReadAllText(path));
-    }
-
-    private static string ResolveLayoutFile(string path)
-    {
-        if (File.Exists(path))
-        {
-            return path;
-        }
-
-        const string extension = ".dashlayout";
-        var withExt = path.EndsWith(extension, StringComparison.OrdinalIgnoreCase) ? path : path + extension;
-        return File.Exists(withExt) ? withExt : path;
     }
 }
