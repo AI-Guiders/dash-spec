@@ -1,9 +1,11 @@
-using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-
+using Microsoft.FSharp.Core;
+using FsharpToolbar = DashSpec.Modeling.Parse.Document.ToolbarPlacementResolver;
+using FsharpFilter = DashSpec.Modeling.Parse.Filter.FilterDefinition;
+using FsharpFilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
 namespace DashSpec.Core.Parsing;
 
+/// <summary>SSOT: <c>DashSpec.Modeling.Parse.Document.ToolbarPlacementResolver</c> (F#).</summary>
 internal static class ToolbarPlacementResolver
 {
     public static IReadOnlyList<string> ResolveFilterNames(
@@ -11,40 +13,52 @@ internal static class ToolbarPlacementResolver
         IReadOnlyList<string> flatNames,
         LayoutBoardDefinition? board)
     {
-        if (board is null)
+        try
         {
-            return flatNames;
-        }
+            FSharpOption<IReadOnlyList<IReadOnlyList<string>>> rows =
+                board is null
+                    ? FSharpOption<IReadOnlyList<IReadOnlyList<string>>>.None
+                    : FSharpOption<IReadOnlyList<IReadOnlyList<string>>>.Some(board.Rows);
 
-        if (flatNames.Count > 0)
+            return FsharpToolbar.resolveFilterNamesFromRows(
+                filters.Select(ToFsharpFilter).ToList(),
+                flatNames,
+                rows);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
-            throw new DashSpecParseException(
-                "Toolbar cannot combine a layout board with a flat filter list.");
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
         }
-
-        const string context = "Toolbar";
-        var names = new List<string>();
-        foreach (var row in board.Rows)
-        {
-            foreach (var token in row)
-            {
-                var boardRef = LayoutBoardRowPlacer.ParseCell(token, context, 1).RefToken;
-                var name = FilterLayoutRefResolver.Resolve(boardRef, filters, context);
-                if (names.Contains(name, StringComparer.OrdinalIgnoreCase))
-                {
-                    throw new DashSpecParseException(
-                        $"{context}: filter '{name}' appears more than once in the toolbar board.");
-                }
-
-                names.Add(name);
-            }
-        }
-
-        if (names.Count == 0)
-        {
-            throw new DashSpecParseException($"{context} layout board requires at least one filter.");
-        }
-
-        return names;
     }
+
+    private static FsharpFilter ToFsharpFilter(FilterDefinition filter) =>
+        new()
+        {
+            Kind = filter.Kind switch
+            {
+                FilterKind.Date => FsharpFilterKind.Date,
+                FilterKind.Field => FsharpFilterKind.Field,
+                FilterKind.Top => FsharpFilterKind.Top,
+                _ => FsharpFilterKind.Field,
+            },
+            Name = filter.Name,
+            DefaultExpression = ToFsharpStringOption(filter.DefaultExpression),
+            ColumnReference = ToFsharpStringOption(filter.ColumnReference),
+            Label = ToFsharpStringOption(filter.Label),
+            Widget = ToFsharpStringOption(filter.Widget),
+            MinValue = ToFsharpIntOption(filter.MinValue),
+            MaxValue = ToFsharpIntOption(filter.MaxValue),
+            GrainFilterName = ToFsharpStringOption(filter.GrainFilterName),
+            SingleSelect = filter.SingleSelect,
+            LayoutRef = ToFsharpStringOption(filter.LayoutRef),
+            BindScopeHint = ToFsharpStringOption(filter.BindScopeHint),
+            GrainLabels = FSharpOption<IReadOnlyDictionary<string, string>>.None,
+            Placement = FSharpOption<Modeling.Parse.Layout.PlacementDefinition>.None,
+        };
+
+    private static FSharpOption<string> ToFsharpStringOption(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? FSharpOption<string>.None : FSharpOption<string>.Some(value);
+
+    private static FSharpOption<int> ToFsharpIntOption(int? value) =>
+        value is int n ? FSharpOption<int>.Some(n) : FSharpOption<int>.None;
 }
