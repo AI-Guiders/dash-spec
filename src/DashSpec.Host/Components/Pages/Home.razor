@@ -110,74 +110,9 @@ else
         </div>
     }
 
-    <section class="cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)" aria-live="polite">
-        @if (Page.TabLayoutPlan is { } layoutPlan)
-        {
-            @foreach (var entry in layoutPlan.Entries)
-            {
-                @if (entry is LayoutBoardCardRow cardRow)
-                {
-                    @foreach (var token in cardRow.CardIds)
-                    {
-                        if (Page.TryGetNestPlacement(token, out var nestPlacement) && nestPlacement is not null)
-                        {
-                            <div class="card-nest"
-                                 style="@DashboardLayoutHelper.PlacementGridStyle(nestPlacement.OuterPlacement, Page.Session.Document.Layout.Columns)">
-                                <div class="card-nest-cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)">
-                                    @foreach (var (card, innerPlacement) in Page.CardsForNest(nestPlacement))
-                                    {
-                                        <DashboardCardSlot Card="card"
-                                                           Page="Page"
-                                                           AutoApply="chrome.IsAutoApply"
-                                                           PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(innerPlacement, Page.Session.Document.Layout.Columns)" />
-                                    }
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            var card = Page.FindVisibleCard(Page.ResolveLayoutCardRef(token));
-                            if (card is not null && layoutPlan.TopLevelPlacements.TryGetValue(card.Id, out var placement))
-                            {
-                                <DashboardCardSlot Card="card"
-                                                   Page="Page"
-                                                   AutoApply="chrome.IsAutoApply"
-                                                   PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(placement, Page.Session.Document.Layout.Columns)" />
-                            }
-                        }
-                    }
-                }
-                else if (entry is LayoutBoardGroupRow { Group: var group }
-                         && layoutPlan.Groups.TryGetValue(group.Id, out var groupPlacement))
-                {
-                    <section class="card-group" style="@DashboardLayoutHelper.GroupOuterStyle(groupPlacement.OuterRow)">
-                        @if (!string.IsNullOrWhiteSpace(groupPlacement.Title))
-                        {
-                            <h3 class="card-group-title">@Page.ResolveDisplayTitle(groupPlacement.Title)</h3>
-                        }
-                        <div class="card-group-cards" style="@DashboardLayoutHelper.CardsGridStyle(Page.Session.Document.Layout)">
-                            @foreach (var (card, innerPlacement) in Page.CardsForGroup(group))
-                            {
-                                <DashboardCardSlot Card="card"
-                                                   Page="Page"
-                                                   AutoApply="chrome.IsAutoApply"
-                                                   PlacementStyle="@DashboardLayoutHelper.PlacementGridStyle(innerPlacement, Page.Session.Document.Layout.Columns)" />
-                            }
-                        </div>
-                    </section>
-                }
-            }
-        }
-        else
-        {
-            @foreach (var card in Page.VisibleCards())
-            {
-                <DashboardCardSlot Card="card"
-                                   Page="Page"
-                                   AutoApply="chrome.IsAutoApply"
-                                   PlacementStyle="@DashboardLayoutHelper.CardPlacementStyle(card, Page.Session.Document.Layout, Page.TabPlacements)" />
-            }
-        }
-    </section>
+    <DashboardTabBoard Slots="Page.HostTabBoardSlots()"
+                       Page="Page"
+                       Layout="Page.Session.Document.Layout"
+                       AutoApply="chrome.IsAutoApply" />
 }
 </div>

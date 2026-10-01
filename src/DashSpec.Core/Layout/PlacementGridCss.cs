@@ -56,4 +56,7 @@ public static class PlacementGridCss
             ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
             : $"grid-column:span {span};";
     }
+
+    public static string GroupOuterStyle(int outerRow) =>
+        $"grid-column:1 / -1;grid-row:{outerRow};";
 }
