@@ -1,114 +1,20 @@
 using DashSpec.Core.Model;
+using FsharpDiagramKindRegistry = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry;
 
 namespace DashSpec.Core.Parsing;
 
-internal sealed record DiagramKindSpec(
-    string Id,
-    DiagramDataFamily DataFamily,
-    IReadOnlyList<PropertySpec> Properties,
-    bool SupportsTopLimit = false,
-    bool AllowExtensionProperties = false);
-
+/// <summary>
+/// Execution-facing facade over F# <see cref="FsharpDiagramKindRegistry"/> (ADR-0048 M6).
+/// </summary>
 public static class DiagramKindRegistry
 {
-    private static readonly IReadOnlyList<PropertySpec> ChartProperties =
-    [
-        new("x", PropertyValueType.ColumnBinding),
-        new("y", PropertyValueType.ColumnBinding),
-        new("category", PropertyValueType.ColumnBinding),
-        new("value", PropertyValueType.ColumnBinding),
-        new("series", PropertyValueType.ColumnBinding),
-        new("reference", PropertyValueType.ColumnBinding),
-        new("color", PropertyValueType.ColumnBinding),
-        new("size", PropertyValueType.ColumnBinding),
-        new("legend", PropertyValueType.Scalar),
-        new("max_series", PropertyValueType.Scalar),
-        new("stacked", PropertyValueType.Scalar),
-        new("fill", PropertyValueType.Scalar),
-        new("bins", PropertyValueType.Scalar),
-        new("bin_width", PropertyValueType.Scalar),
-        new("height", PropertyValueType.Scalar),
-        new("aggregate", PropertyValueType.Scalar),
-        new("min", PropertyValueType.Scalar),
-        new("max", PropertyValueType.Scalar),
-    ];
-
-    private static readonly IReadOnlyList<PropertySpec> TableProperties =
-    [
-        new("columns", PropertyValueType.CommaList),
-        new("order_by", PropertyValueType.RestOfLine),
-        new("limit", PropertyValueType.Scalar),
-    ];
-
-    private static readonly IReadOnlyList<PropertySpec> NumberProperties =
-    [
-        new("value", PropertyValueType.ColumnBinding),
-        new("aggregate", PropertyValueType.Scalar),
-        new("scale_value", PropertyValueType.Scalar),
-        new("delta", PropertyValueType.Scalar),
-    ];
-
-    private static readonly IReadOnlyList<PropertySpec> HeatmapProperties =
-    [
-        new("x", PropertyValueType.ColumnBinding),
-        new("y", PropertyValueType.ColumnBinding),
-        new("value", PropertyValueType.ColumnBinding),
-        new("height", PropertyValueType.Scalar),
-        new("color_normalize", PropertyValueType.Scalar),
-        new("y_order", PropertyValueType.Scalar),
-        new("y_sort", PropertyValueType.Scalar),
-        new("axis_from", PropertyValueType.Scalar),
-        new("axis_to", PropertyValueType.Scalar),
-    ];
-
-    private static readonly IReadOnlyList<PropertySpec> GanttProperties =
-    [
-        new("y", PropertyValueType.ColumnBinding),
-        new("from", PropertyValueType.ColumnBinding),
-        new("to", PropertyValueType.ColumnBinding),
-        new("color", PropertyValueType.ColumnBinding),
-        new("height", PropertyValueType.Scalar),
-        new("axis_from", PropertyValueType.Scalar),
-        new("axis_to", PropertyValueType.Scalar),
-        new("step", PropertyValueType.Scalar),
-        new("date_column", PropertyValueType.ColumnBinding),
-        new("poll_interval_seconds", PropertyValueType.Scalar),
-        new("axis_format", PropertyValueType.Scalar),
-        new("order_by", PropertyValueType.RestOfLine),
-        new("limit", PropertyValueType.Scalar),
-    ];
-
-    private static readonly IReadOnlyDictionary<string, DiagramKindSpec> Specs =
-        new Dictionary<string, DiagramKindSpec>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["line"] = new("line", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["area"] = new("area", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["sparkline"] = new("sparkline", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["bar"] = new("bar", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["pie"] = new("pie", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["donut"] = new("donut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["doughnut"] = new("doughnut", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["scatter"] = new("scatter", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["histogram"] = new("histogram", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["box"] = new("box", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["boxplot"] = new("boxplot", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["treemap"] = new("treemap", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["gauge"] = new("gauge", DiagramDataFamily.Chart, ChartProperties, AllowExtensionProperties: true),
-            ["windrose"] = new("windrose", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["wind_rose"] = new("wind_rose", DiagramDataFamily.Chart, ChartProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-            ["table"] = new("table", DiagramDataFamily.Table, TableProperties, SupportsTopLimit: true),
-            ["number"] = new("number", DiagramDataFamily.Scalar, NumberProperties),
-            ["heatmap"] = new("heatmap", DiagramDataFamily.Matrix, HeatmapProperties, AllowExtensionProperties: true),
-            ["gantt"] = new("gantt", DiagramDataFamily.Gantt, GanttProperties, SupportsTopLimit: true, AllowExtensionProperties: true),
-        };
-
     public static bool TryResolve(string kind, out DiagramKindInfo info)
     {
-        if (Specs.TryGetValue(kind, out var spec))
+        if (FsharpDiagramKindRegistry.tryResolve(kind) is (true, { } spec))
         {
             info = new DiagramKindInfo(
                 spec.Id,
-                spec.DataFamily,
+                (DiagramDataFamily)(int)spec.DataFamily,
                 spec.SupportsTopLimit,
                 spec.AllowExtensionProperties);
             return true;
@@ -125,29 +31,10 @@ public static class DiagramKindRegistry
             return info;
         }
 
-        var known = string.Join(", ", Specs.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+        var known = string.Join(", ", FsharpDiagramKindRegistry.knownKinds());
         throw new ArgumentException($"Unknown diagram kind '{kind}'. Known kinds: {known}.");
     }
 
     public static bool SupportsTopLimit(string kind) =>
-        Resolve(kind).SupportsTopLimit;
-
-    internal static IReadOnlyList<PropertySpec> AllBindingProperties()
-    {
-        var merged = new Dictionary<string, PropertySpec>(StringComparer.OrdinalIgnoreCase);
-        foreach (var spec in Specs.Values)
-        {
-            foreach (var property in spec.Properties)
-            {
-                merged[property.Name] = property;
-            }
-        }
-
-        return merged.Values.ToList();
-    }
-
-    internal static DiagramKindSpec GetSpec(string kind) => Specs[kind];
-
-    internal static IReadOnlyList<PropertySpec> GetProperties(string kind) =>
-        Specs[kind].Properties;
+        FsharpDiagramKindRegistry.supportsTopLimit(kind);
 }
