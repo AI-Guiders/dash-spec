@@ -121,24 +121,31 @@ report "Сводка"
     page main
       toolbar period_grain, period_start, app_name, chart_top
       include layout "…"
-      card …
+      card kpi_over_limit
+        widget main
+          diagram demo_stakeholder_kpi_over_limit
+          data … bind … end data
+        end widget
+      end card
     end page
   end section
 end report
 ```
 
-Переходный период: парсер принимает **legacy `page id`** (ADR-0030) как **`section id`** с diagnostic deprecate; вложенный `page` — новый смысл (лист внутри section).
+Целевой keyword **`widget`** может вводиться как обёртка над slot `diagram ref` + `data`; до P1 author мыслит widget, DSL может оставаться `view`/`diagram ref` с mapping в composer.
+
+Переходный период: парсер принимает **legacy `page id`** (ADR-0030) как **`section id`** с diagnostic deprecate; вложенный `page` — лист внутри section.
 
 ### 5. Анализатор (author guardrails)
 
 - `bind` на filter, не объявленный на report / section / page → **error**.
-- Тот же filter на card и на page/section → **error**.
+- Тот же filter на widget / card-local и на page/section → **error**.
 - `navigation.show = hidden` при одном child — **допустимо**; Host не скрывает без узла.
 
 ## Relationship to prior ADRs
 
 - [ADR-0030](DASHSPEC-ADR-0030-report-scale-pages-gates-and-suites.md): цели сохраняются; top-level `page` → `section`, browse/detail → nested `page`.
-- [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md): slot plane на **page** (toolbar + card grid).
+- [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md): slot plane на **page** (toolbar + card grid); interior slots — **widget** + local filters внутри **card**.
 - [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md): file modules ≠ `section` / `page`.
 
 ## Implementation phases
