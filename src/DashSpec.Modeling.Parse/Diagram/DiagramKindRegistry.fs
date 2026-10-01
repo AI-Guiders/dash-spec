@@ -8,8 +8,16 @@ module DiagramKindRegistry =
 
     type PropertySpec = PropertySchemas.PropertySpec
 
+    type DiagramDataFamily =
+        | Chart = 0
+        | Table = 1
+        | Scalar = 2
+        | Matrix = 3
+        | Gantt = 4
+
     type DiagramKindSpec =
         { Id: string
+          DataFamily: DiagramDataFamily
           Properties: PropertySpec list
           SupportsTopLimit: bool
           AllowExtensionProperties: bool }
@@ -26,32 +34,35 @@ module DiagramKindRegistry =
 
     let private specs =
         dict
-            [ "line", { Id = "line"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "area", { Id = "area"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "sparkline", { Id = "sparkline"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "bar", { Id = "bar"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "pie", { Id = "pie"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "donut", { Id = "donut"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "doughnut", { Id = "doughnut"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "scatter", { Id = "scatter"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "histogram", { Id = "histogram"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "box", { Id = "box"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "boxplot", { Id = "boxplot"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "treemap", { Id = "treemap"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "gauge", { Id = "gauge"; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "windrose", { Id = "windrose"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "wind_rose", { Id = "wind_rose"; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "table", { Id = "table"; Properties = tableProperties; SupportsTopLimit = true; AllowExtensionProperties = false }
-              "number", { Id = "number"; Properties = numberProperties; SupportsTopLimit = false; AllowExtensionProperties = false }
-              "heatmap", { Id = "heatmap"; Properties = heatmapProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "gantt", { Id = "gantt"; Properties = ganttProperties; SupportsTopLimit = true; AllowExtensionProperties = true } ]
+            [ "line", { Id = "line"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "area", { Id = "area"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "sparkline", { Id = "sparkline"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "bar", { Id = "bar"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "pie", { Id = "pie"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "donut", { Id = "donut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "doughnut", { Id = "doughnut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "scatter", { Id = "scatter"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "histogram", { Id = "histogram"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "box", { Id = "box"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "boxplot", { Id = "boxplot"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "treemap", { Id = "treemap"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "gauge", { Id = "gauge"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "windrose", { Id = "windrose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "wind_rose", { Id = "wind_rose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "table", { Id = "table"; DataFamily = DiagramDataFamily.Table; Properties = tableProperties; SupportsTopLimit = true; AllowExtensionProperties = false }
+              "number", { Id = "number"; DataFamily = DiagramDataFamily.Scalar; Properties = numberProperties; SupportsTopLimit = false; AllowExtensionProperties = false }
+              "heatmap", { Id = "heatmap"; DataFamily = DiagramDataFamily.Matrix; Properties = heatmapProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "gantt", { Id = "gantt"; DataFamily = DiagramDataFamily.Gantt; Properties = ganttProperties; SupportsTopLimit = true; AllowExtensionProperties = true } ]
 
-    let tryResolve kind =
-        specs.TryGetValue kind
+    let tryResolve kind = specs.TryGetValue kind
+
+    let knownKinds () = specs.Keys |> Seq.sort |> Seq.toList
 
     let getProperties kind = specs.[kind].Properties
 
     let allowExtensionProperties kind = specs.[kind].AllowExtensionProperties
+
+    let supportsTopLimit kind = specs.[kind].SupportsTopLimit
 
     let allBindingProperties () =
         let merged = Dictionary<string, PropertySpec>(StringComparer.OrdinalIgnoreCase)

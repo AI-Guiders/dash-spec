@@ -2,7 +2,7 @@ namespace DashSpec.Modeling.Parse
 
 open System
 
-/// Property schemas aligned with Core.Parsing.PropertySchemas (ADR-0048).
+/// Property schemas for Modeling.Parse (ADR-0048 SSOT).
 module PropertySchemas =
 
     type PropertyValueType =

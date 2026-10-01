@@ -8,20 +8,6 @@ internal static class ParserUtilities
         return new TokenReader(tokens, text);
     }
 
-    public static IReadOnlyList<string> ParseFilterPlacementList(
-        TokenReader reader,
-        string endKind,
-        string blockName)
-    {
-        if (reader.IsOnNewline())
-        {
-            reader.SkipNewlines();
-            return PropertyBlockParser.ParseCommaListBlock(reader, endKind, blockName);
-        }
-
-        return reader.ReadCommaListInline();
-    }
-
     /// <summary>Reads optional <c>ref &lt;id&gt;</c> postfix without crossing a newline.</summary>
     public static string? TryReadLayoutRef(TokenReader reader)
     {
