@@ -493,15 +493,19 @@ internal sealed class TokenReader
                 result.Append(' ');
                 result.Append(part);
             }
-            else if (part is ":" or ".")
-            {
-                result.Append(part);
-            }
-            else
-            {
-                result.Append(' ');
-                result.Append(part);
-            }
+                else if (part is ":" or ".")
+                {
+                    result.Append(part);
+                }
+                else if (result.Length > 0 && result[^1] is ':')
+                {
+                    result.Append(part);
+                }
+                else
+                {
+                    result.Append(' ');
+                    result.Append(part);
+                }
         }
 
         return result.ToString();

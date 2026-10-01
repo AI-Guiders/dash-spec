@@ -12,7 +12,12 @@ public sealed class FilterWidgetRenderContext
 
     public string? Hint { get; init; }
 
+    public string? HintAriaLabel { get; init; }
+
     public bool Compact { get; init; }
+
+    /// <summary>Toolbar chrome <c>layout = bar</c> with labeled cells (spec <c>cells</c>, default labeled).</summary>
+    public bool ToolbarLabeledCells { get; init; }
 
     public bool Disabled { get; init; }
 
