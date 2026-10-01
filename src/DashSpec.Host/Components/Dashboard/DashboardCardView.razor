@@ -173,8 +173,9 @@
         <CardInteriorGrid GridColumns="GridColumns">
             @foreach (var slot in Card.PlanInteriorSlots())
             {
-                <div class="card-interior-slot @(slot.ContentKind is LayoutSlotContentKind.Filter ? "card-filter-slot" : "card-diagram-slot")"
-                     style="@InteriorSlotStyle(slot.Token)">
+                <PlacementSlot Placement="slot.Placement"
+                               GridColumns="GridColumns"
+                               CssClass="@InteriorSlotClass(slot.ContentKind)">
                     @switch (slot.ContentKind)
                     {
                         case LayoutSlotContentKind.Filter:
@@ -195,7 +196,7 @@
                             </div>
                             break;
                     }
-                </div>
+                </PlacementSlot>
             }
         </CardInteriorGrid>
     }
@@ -532,15 +533,15 @@
                              Presentation="Card.MatrixPresentation" />;
     };
 
-    private string InteriorSlotStyle(string slotKey)
-    {
-        if (Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) != true)
-        {
-            return string.Empty;
-        }
+    private static string InteriorSlotClass(LayoutSlotContentKind kind) =>
+        kind is LayoutSlotContentKind.Filter
+            ? "card-interior-slot card-filter-slot"
+            : "card-interior-slot card-diagram-slot";
 
-        return DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns);
-    }
+    private string InteriorSlotStyle(string slotKey) =>
+        Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
+            ? PlacementGridCss.SlotStyle(placement!, GridColumns)
+            : string.Empty;
 
     private bool LocalFiltersAutoApply =>
         AutoApply && !Card.LocalFiltersManualApply;
