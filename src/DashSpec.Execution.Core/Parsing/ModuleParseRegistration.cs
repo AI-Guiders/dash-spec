@@ -19,6 +19,7 @@ using FsharpHostLink = DashSpec.Modeling.Parse.Host.HostLinkDefinition;
 using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
 using FsharpDiagramStmt = DashSpec.Modeling.Parse.Diagram.DiagramFragmentStatement;
 using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
+using FsharpInclude = DashSpec.Modeling.Parse.Include.SpecIncludeFragmentResolver;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -166,9 +167,8 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                return FoldDiagramStatements(
-                    DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text).Statements,
-                    baseDirectory);
+                var directory = ResolveDiagramBaseDirectory(text, baseDirectory);
+                return SpecIncludeFragmentMapper.ToCore(FsharpInclude.foldDiagramModule(text, directory));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -180,8 +180,9 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var (id, doc) = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModuleWithId(text);
-                return (id, FoldDiagramStatements(doc.Statements, baseDirectory));
+                var directory = ResolveDiagramBaseDirectory(text, baseDirectory);
+                var (id, fragment) = FsharpInclude.foldDiagramModuleWithId(text, directory);
+                return (id, SpecIncludeFragmentMapper.ToCore(fragment));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -190,129 +191,66 @@ internal static class ModuleParseRegistration
         };
     }
 
-    private static SpecIncludeFragment FoldDiagramStatements(
-        IReadOnlyList<FsharpDiagramStmt> statements,
-        string? baseDirectory)
+    private static string ResolveDiagramBaseDirectory(string text, string? baseDirectory)
     {
-        try
+        if (!string.IsNullOrWhiteSpace(baseDirectory))
         {
-            SpecIncludeFragment fragment = new(null, null, null);
+            return baseDirectory;
+        }
 
-            foreach (var statement in statements)
-            {
-                switch (statement)
-                {
-                    case FsharpDiagramStmt.IncludeStatement include:
-                        if (string.IsNullOrWhiteSpace(baseDirectory))
-                        {
-                            throw new DashSpecParseException(
-                                "Diagram include requires a base directory (parse from file path).");
-                        }
-
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            SpecIncludeResolver.Load(include.Item.Kind, include.Item.Reference, baseDirectory));
-                        break;
-
-                    case FsharpDiagramStmt.DiagramStatement diagram:
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            new SpecIncludeFragment(ToCore(diagram.Item), null, null));
-                        break;
-
-                    case FsharpDiagramStmt.PresentationStatement presentation:
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            new SpecIncludeFragment(null, ToCore(presentation.Item), null));
-                        break;
-
-                    case FsharpDiagramStmt.SeriesTransformStatement transform:
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            new SpecIncludeFragment(null, null, ToCore(transform.Item)));
-                        break;
-
-                    case FsharpDiagramStmt.TooltipStatement tooltip:
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            new SpecIncludeFragment(
-                                null,
-                                null,
-                                null,
-                                new Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
-                                {
-                                    [tooltip.Item1] = ToCore(tooltip.Item2),
-                                }));
-                        break;
-
-                    case FsharpDiagramStmt.InspectStatement inspect:
-                        fragment = SpecIncludeResolver.Merge(
-                            fragment,
-                            new SpecIncludeFragment(null, null, null, Inspect: ToCore(inspect.Item)));
-                        break;
-                }
-            }
-
-            if (fragment.Diagram is null)
+        var doc = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text);
+        foreach (var statement in doc.Statements)
+        {
+            if (statement is FsharpDiagramStmt.IncludeStatement)
             {
                 throw new DashSpecParseException(
-                    "Diagram module requires a chart kind block (e.g. heatmap … end heatmap).");
+                    "Diagram include requires a base directory (parse from file path).");
             }
+        }
 
-            return fragment;
-        }
-        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-        {
-            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-        }
+        return ".";
     }
 
     private static void RegisterPresentation()
     {
         PresentationParseBridge.ParsePresentationFile = (text, baseDirectory) =>
-            ParsePresentationModule(text, baseDirectory).Block;
+            ParsePresentationBlock(text, baseDirectory);
 
         PresentationParseBridge.ParsePresentationFileWithId = (text, baseDirectory) =>
         {
-            var result = ParsePresentationModule(text, baseDirectory);
-            return (result.Id, result.Block);
+            try
+            {
+                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
+                return (doc.Id, ParsePresentationBlock(text, baseDirectory));
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
         };
     }
 
-    private static (string Id, PresentationBlock Block) ParsePresentationModule(string text, string? baseDirectory)
+    private static PresentationBlock ParsePresentationBlock(string text, string? baseDirectory)
     {
         try
         {
-            var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
-            PresentationBlock? merged = null;
-
-            foreach (var include in doc.Includes)
+            if (string.IsNullOrWhiteSpace(baseDirectory))
             {
-                if (string.IsNullOrWhiteSpace(baseDirectory))
+                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
+                if (doc.Includes.Count > 0)
                 {
                     throw new DashSpecParseException(
                         "Presentation include requires a base directory (parse from file path).");
                 }
 
-                if (!PresentationModuleParser.IsChartChromeIncludeKind(include.Kind))
-                {
-                    throw new DashSpecParseException(
-                        $"@presentation module only supports include presentation/chrome, got '{include.Kind}'.");
-                }
-
-                var fragment = SpecIncludeResolver.Load(include.Kind, include.Reference, baseDirectory);
-                merged = SpecIncludeResolver.Merge(
-                    new SpecIncludeFragment(null, merged, null),
-                    fragment).Presentation;
+                var localItems = OptionModule.ToArray(doc.Local);
+                return localItems.Length > 0
+                    ? SpecIncludeFragmentMapper.ToCorePresentation(localItems[0])
+                    : throw new DashSpecParseException("@presentation module requires at least one property.");
             }
 
-            var localItems = OptionModule.ToArray(doc.Local);
-            PresentationBlock? local = localItems.Length > 0 ? ToCore(localItems[0]) : null;
-            var block = SpecIncludeResolver.Merge(
-                new SpecIncludeFragment(null, merged, null),
-                new SpecIncludeFragment(null, local, null)).Presentation;
-
-            return (doc.Id, block ?? throw new DashSpecParseException("@presentation module requires at least one property."));
+            return SpecIncludeFragmentMapper.ToCorePresentation(
+                FsharpInclude.parsePresentationBlockFromFile(text, baseDirectory));
         }
         catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
