@@ -9,11 +9,11 @@ open DashSpec.Modeling.Parse.Lexing
 module LayoutParser =
 
     let private layoutGroupMembers (rows: ResizeArray<IReadOnlyList<string>>) =
-        [ BlockGrammar.RepeatingBracketRows rows
+        [ BlockGrammar.RepeatingBracketRows(rows, LayoutBracketRowParser.parse)
           BlockGrammar.SchemaProperties(PropertySchemas.layoutGroup, false, false) ]
 
     let private layoutNestMembers (rows: ResizeArray<IReadOnlyList<string>>) =
-        [ BlockGrammar.RepeatingBracketRows rows ]
+        [ BlockGrammar.RepeatingBracketRows(rows, LayoutBracketRowParser.parse) ]
 
     let private parseGroupBlock (reader: TokenReader) =
         let groupId = reader.ReadIdent()
@@ -61,7 +61,7 @@ module LayoutParser =
         NestRow { Id = nestId; Rows = rows :> IReadOnlyList<_> }
 
     let private parseBoardEntry (reader: TokenReader) =
-        if reader.IsAt TokenKind.LBracket then CardRow(MemberGrammar.parseBoardRow reader)
+        if reader.IsAt TokenKind.LBracket then CardRow(LayoutBracketRowParser.parse reader)
         elif reader.TryKeyword "group" then parseGroupBlock reader
         elif reader.TryKeyword "nest" then parseNestBlock reader
         else raise (reader.Unexpected("[, group, or nest"))
