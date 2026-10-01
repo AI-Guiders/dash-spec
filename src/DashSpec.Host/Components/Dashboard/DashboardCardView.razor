@@ -171,29 +171,29 @@
     else if (!BodyFolded)
     {
         <CardInteriorGrid GridColumns="GridColumns">
-            @foreach (var slot in OrderedInteriorSlots)
+            @foreach (var slot in Card.PlanInteriorSlots())
             {
-                <div class="card-interior-slot @(IsDiagramInteriorSlot(slot.Key) ? "card-diagram-slot" : "card-filter-slot")"
-                     style="@InteriorSlotStyle(slot.Key)">
-                    @if (IsLocalFilterInteriorSlot(slot.Key))
+                <div class="card-interior-slot @(slot.ContentKind is LayoutSlotContentKind.Filter ? "card-filter-slot" : "card-diagram-slot")"
+                     style="@InteriorSlotStyle(slot.Token)">
+                    @switch (slot.ContentKind)
                     {
-                        <div class="card-interior-filter-slot">
-                            @RenderLocalFilter(slot.Key, InteriorSlotStyle(slot.Key))
-                        </div>
-                    }
-                    else if (Card.InteriorSlotRenders?.ContainsKey(slot.Key) == true)
-                    {
-                        <CardInteriorVizHost Card="Card" Slot="@Card.InteriorSlotRenders[slot.Key]" />
-                    }
-                    else if (IsPrimaryDiagramInteriorSlot(slot.Key))
-                    {
-                        <div class="card-viz-stack">
-                            <CardVizHost Card="Card"
-                                         MatrixMin="@(Card.Matrix?.Min ?? 0)"
-                                         MatrixMax="@(Card.Matrix?.Max ?? 0)"
-                                         OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
-                            @RenderSelectionDetail()
-                        </div>
+                        case LayoutSlotContentKind.Filter:
+                            <div class="card-interior-filter-slot">
+                                @RenderLocalFilter(slot.Token, InteriorSlotStyle(slot.Token))
+                            </div>
+                            break;
+                        case LayoutSlotContentKind.SecondaryDiagram:
+                            <CardInteriorVizHost Card="Card" Slot="@Card.InteriorSlotRenders![slot.Token]" />
+                            break;
+                        case LayoutSlotContentKind.PrimaryDiagram:
+                            <div class="card-viz-stack">
+                                <CardVizHost Card="Card"
+                                             MatrixMin="@(Card.Matrix?.Min ?? 0)"
+                                             MatrixMax="@(Card.Matrix?.Max ?? 0)"
+                                             OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+                                @RenderSelectionDetail()
+                            </div>
+                            break;
                     }
                 </div>
             }
@@ -459,23 +459,6 @@
     }
 
     private bool UsesInteriorLayout => Card.InteriorPlacements is { Count: > 0 };
-
-    private IEnumerable<KeyValuePair<string, PlacementDefinition>> OrderedInteriorSlots =>
-        Card.InteriorPlacements is null
-            ? []
-            : Card.InteriorPlacements
-                .OrderBy(static kv => kv.Value.Row)
-                .ThenBy(static kv => kv.Value.Col);
-
-    private static bool IsDiagramInteriorSlot(string slotKey) =>
-        !string.IsNullOrWhiteSpace(slotKey);
-
-    private bool IsLocalFilterInteriorSlot(string slotKey) =>
-        Card.LocalFilters?.Contains(slotKey, StringComparer.OrdinalIgnoreCase) == true;
-
-    private bool IsPrimaryDiagramInteriorSlot(string slotKey) =>
-        !IsLocalFilterInteriorSlot(slotKey)
-        && Card.InteriorSlotRenders?.ContainsKey(slotKey) != true;
 
     private string CardCssClass
     {
