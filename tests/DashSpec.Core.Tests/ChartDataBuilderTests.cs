@@ -280,6 +280,52 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_sorts_report_csharp_date_format_chronologically()
+    {
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults(DateFormat: "dd.MM"));
+        try
+        {
+            var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "usage_date",
+                ["y"] = "app_name",
+                ["value"] = "peak_concurrent_proxy",
+                ["y_format"] = "raw",
+            });
+
+            IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+            [
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["usage_date"] = "02.10",
+                    ["app_name"] = "Tekla",
+                    ["peak_concurrent_proxy"] = 3d,
+                },
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["usage_date"] = "28.09",
+                    ["app_name"] = "Tekla",
+                    ["peak_concurrent_proxy"] = 1d,
+                },
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["usage_date"] = "30.09",
+                    ["app_name"] = "Tekla",
+                    ["peak_concurrent_proxy"] = 2d,
+                },
+            ];
+
+            var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+            Assert.Equal(["28.09", "30.09", "02.10"], matrix.XLabels);
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    [Fact]
     public void BuildHeatmap_with_x_step_fills_full_day_hour_grid()
     {
         var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

@@ -66,6 +66,118 @@ public static partial class LabelFormat
         return ResolveDateFormat(trimmed);
     }
 
+    /// <summary>Parse a display label or raw value for chronological ordering (heatmap / axis sort).</summary>
+    public static DateTime? TryParseChronological(object? raw, string? resolvedFormat)
+    {
+        if (raw is DateOnly day)
+        {
+            return day.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (raw is DateTime dt)
+        {
+            return ToDisplayTime(dt);
+        }
+
+        if (raw is DateTimeOffset dto)
+        {
+            return ToDisplayTime(dto.UtcDateTime);
+        }
+
+        var format = string.IsNullOrWhiteSpace(resolvedFormat)
+            ? ResolveDateFormat(null)
+            : resolvedFormat.Trim();
+
+        var text = Convert.ToString(raw)?.Trim();
+        if (!string.IsNullOrWhiteSpace(text)
+            && TryParseDisplayLabel(text, format) is DateTime fromDisplay)
+        {
+            return fromDisplay;
+        }
+
+        if (TimeSeriesGrid.TryParseBucket(raw) is DateTime bucket)
+        {
+            return ToDisplayTime(bucket);
+        }
+
+        return null;
+    }
+
+    /// <summary>Parse text already formatted for display (C# pattern or named preset).</summary>
+    public static DateTime? TryParseDisplayLabel(string? text, string? resolvedFormat)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var label = text.Trim();
+        var format = string.IsNullOrWhiteSpace(resolvedFormat)
+            ? ResolveDateFormat(null)
+            : resolvedFormat.Trim();
+
+        if (format.Equals("time.short", StringComparison.OrdinalIgnoreCase)
+            && TryParseTimeLabel(label, out var time))
+        {
+            return DateTime.Today.Add(time.ToTimeSpan());
+        }
+
+        if (IsNamedPreset(format))
+        {
+            if (format.Equals("date.short", StringComparison.OrdinalIgnoreCase)
+                && DateOnly.TryParseExact(label, "dd.MM", DefaultCulture, DateTimeStyles.None, out var shortDay))
+            {
+                return shortDay.ToDateTime(TimeOnly.MinValue);
+            }
+
+            if (format.Equals("date.full", StringComparison.OrdinalIgnoreCase)
+                && DateOnly.TryParseExact(label, "dd.MM.yyyy", DefaultCulture, DateTimeStyles.None, out var fullDay))
+            {
+                return fullDay.ToDateTime(TimeOnly.MinValue);
+            }
+
+            if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
+                && DateTime.TryParseExact(label, "dd.MM HH:mm", DefaultCulture, DateTimeStyles.None, out var shortDateTime))
+            {
+                return shortDateTime;
+            }
+        }
+        else if (TryParseExactDisplay(label, format, out var custom))
+        {
+            return custom;
+        }
+
+        if (DateValueCodec.TryParseStoredDateOnly(label, out var wireDay))
+        {
+            return wireDay.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (DateValueCodec.TryParseStoredDateTime(label, out var wireDateTime))
+        {
+            return ToDisplayTime(wireDateTime);
+        }
+
+        if (TryParseTimeLabel(label, out var fallbackTime))
+        {
+            return DateTime.Today.Add(fallbackTime.ToTimeSpan());
+        }
+
+        if (DateOnly.TryParseExact(label, "dd.MM", DefaultCulture, DateTimeStyles.None, out var fallbackDay))
+        {
+            return fallbackDay.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (DateTime.TryParseExact(label, "dd.MM HH:mm", DefaultCulture, DateTimeStyles.None, out var fallbackDateTime))
+        {
+            return fallbackDateTime;
+        }
+
+        return null;
+    }
+
+    public static DateTime ChronologicalSortKey(object? raw, string? diagramFormat) =>
+        TryParseChronological(raw, ResolveAxisFormat(diagramFormat)) ?? DateTime.MaxValue;
+
     public static bool LooksLikePreformattedTimeLabel(string? raw) =>
         !string.IsNullOrWhiteSpace(raw) && PreformattedTimeLabelPattern().IsMatch(raw.Trim());
 
@@ -118,6 +230,16 @@ public static partial class LabelFormat
             && LooksLikePreformattedTimeLabel(raw))
         {
             return raw;
+        }
+
+        if (!normalized.Equals("raw", StringComparison.OrdinalIgnoreCase)
+            && !normalized.Equals("user.short", StringComparison.OrdinalIgnoreCase)
+            && !normalized.StartsWith("truncate.", StringComparison.OrdinalIgnoreCase)
+            && TryParseDisplayLabel(raw.Trim(), normalized) is DateTime displayParsed)
+        {
+            return FormatContainsClock(normalized)
+                ? FormatDisplayDateTime(displayParsed, normalized)
+                : FormatDateOnly(DateOnly.FromDateTime(displayParsed), normalized);
         }
 
         if (TryParseDateTime(raw, out var dt))
@@ -306,6 +428,26 @@ public static partial class LabelFormat
 
     private static bool TryParseDateOnly(string raw, out DateOnly date) =>
         DateValueCodec.TryParseStoredDateOnly(raw, out date);
+
+    private static bool TryParseTimeLabel(string text, out TimeOnly time) =>
+        TimeOnly.TryParse(text, DefaultCulture, DateTimeStyles.None, out time)
+        || TimeOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out time);
+
+    private static bool FormatContainsClock(string format) =>
+        format.Contains('H', StringComparison.Ordinal) || format.Contains('h', StringComparison.Ordinal);
+
+    private static bool TryParseExactDisplay(string label, string format, out DateTime result)
+    {
+        result = default;
+        var culture = ResolveCulture(forSystem: false);
+        if (DateOnly.TryParseExact(label, format, culture, DateTimeStyles.None, out var day))
+        {
+            result = day.ToDateTime(TimeOnly.MinValue);
+            return true;
+        }
+
+        return DateTime.TryParseExact(label, format, culture, DateTimeStyles.None, out result);
+    }
 
     [GeneratedRegex(@"^\d{1,2}:\d{2}$")]
     private static partial Regex PreformattedTimeLabelPattern();
