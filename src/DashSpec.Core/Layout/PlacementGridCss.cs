@@ -4,8 +4,18 @@ namespace DashSpec.Core.Layout;
 
 public static class PlacementGridCss
 {
+    public static string HostGridVariables(LayoutDefinition layout) =>
+        $"--grid-columns:{layout.Columns};--grid-gap:{layout.GapPx}px;";
+
     public static string InteriorGridVariables(int columns) =>
         $"--card-grid-columns:{columns};";
+
+    public static string GridVariables(LayoutSlotScope scope, LayoutDefinition layout) =>
+        scope switch
+        {
+            LayoutSlotScope.HostTabBoard or LayoutSlotScope.HostPageToolbar => HostGridVariables(layout),
+            _ => InteriorGridVariables(layout.Columns),
+        };
 
     /// <summary>Card filter chrome row: apply slot column shrinks to icon (ADR-0061).</summary>
     public static string ChromeGridStyle(

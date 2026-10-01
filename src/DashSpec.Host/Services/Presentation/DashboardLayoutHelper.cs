@@ -9,7 +9,7 @@ namespace DashSpec.Host.Services.Presentation;
 internal static class DashboardLayoutHelper
 {
     public static string CardsGridStyle(LayoutDefinition layout) =>
-        $"--grid-columns:{layout.Columns};--grid-gap:{layout.GapPx}px;";
+        PlacementGridCss.HostGridVariables(layout);
 
     public static string CardPlacementStyle(
         CardRenderResult card,
@@ -17,13 +17,8 @@ internal static class DashboardLayoutHelper
         IReadOnlyDictionary<string, PlacementDefinition> tabPlacements) =>
         PlacementGridStyle(ResolvePlacement(card, layout.Columns, tabPlacements), layout.Columns);
 
-    public static string PlacementGridStyle(PlacementDefinition placement, int layoutColumns)
-    {
-        var span = Math.Min(placement.Span, layoutColumns);
-        return placement.Row > 0
-            ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
-            : $"grid-column:span {span};";
-    }
+    public static string PlacementGridStyle(PlacementDefinition placement, int layoutColumns) =>
+        PlacementGridCss.SlotStyle(placement, layoutColumns);
 
     public static string GroupOuterStyle(int outerRow) =>
         $"grid-column:1 / -1;grid-row:{outerRow};";
@@ -38,10 +33,7 @@ internal static class DashboardLayoutHelper
             return string.Empty;
         }
 
-        var span = Math.Min(placement.Span, layout.Columns);
-        return placement.Row > 0
-            ? $"grid-column:{placement.Col} / span {span};grid-row:{placement.Row};"
-            : $"grid-column:span {span};";
+        return PlacementGridCss.SlotStyle(placement, layout.Columns);
     }
 
     public static PlacementDefinition ResolvePlacement(

@@ -1,0 +1,29 @@
+@namespace DashSpec.Presentation.Components
+@using DashSpec.Core.Layout
+@using DashSpec.Core.Model
+
+<div class="@CssClass" style="@ResolvedGridStyle">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public LayoutSlotScope Scope { get; set; } = LayoutSlotScope.CardInterior;
+    [Parameter] public int GridColumns { get; set; } = 12;
+    [Parameter] public LayoutDefinition? HostLayout { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, PlacementDefinition>? ChromePlacements { get; set; }
+    [Parameter] public string? GridStyle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string ResolvedGridStyle =>
+        GridStyle ?? Scope switch
+        {
+            LayoutSlotScope.CardFilterChrome when ChromePlacements is { Count: > 0 } =>
+                PlacementGridCss.ChromeGridStyle(ChromePlacements, GridColumns),
+            LayoutSlotScope.CardFilterChrome =>
+                PlacementGridCss.InteriorGridVariables(GridColumns),
+            LayoutSlotScope.HostTabBoard or LayoutSlotScope.HostPageToolbar when HostLayout is not null =>
+                PlacementGridCss.GridVariables(Scope, HostLayout),
+            _ => PlacementGridCss.InteriorGridVariables(GridColumns),
+        };
+}
