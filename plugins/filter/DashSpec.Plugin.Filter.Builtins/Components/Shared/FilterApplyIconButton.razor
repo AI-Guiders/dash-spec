@@ -1,0 +1,33 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+<button type="button"
+        class="@CssClass"
+        disabled="@Disabled"
+        aria-label="@AriaLabel"
+        title="@AriaLabel"
+        @onclick="OnClick">
+    @if (Busy)
+    {
+        <span class="spinner spinner-inline" aria-hidden="true"></span>
+    }
+    else
+    {
+        <svg class="filter-apply-icon-glyph" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M13.485 3.515a1 1 0 0 1 0 1.414l-6.5 6.5a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414L6.5 9.086l5.793-5.793a1 1 0 0 1 1.192-.078z" />
+        </svg>
+    }
+</button>
+
+@code {
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = default!;
+
+    [Parameter] public string BusyLabel { get; set; } = "Загрузка…";
+
+    [Parameter] public string CssClass { get; set; } = "primary filter-apply-icon";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback OnClick { get; set; }
+}

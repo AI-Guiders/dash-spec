@@ -1,0 +1,172 @@
+/* Dashboard toolbar (ADR-0060 / ADR-0022). Host: grid shell; plugin: bar widget chrome. */
+
+[data-toolbar-layout="bar"] .toolbar-filter-cell .filter-field {
+  flex: 1 1 auto;
+  max-width: none;
+  width: 100%;
+}
+
+[data-toolbar-layout="bar"] .filter-field .chip-list {
+  max-height: 2.6rem;
+  overflow-y: auto;
+}
+
+[data-toolbar-layout="bar"] .filter-field-head {
+  display: none;
+}
+
+[data-toolbar-layout="bar"] .chip-actions {
+  margin-top: 0.15rem;
+}
+
+[data-toolbar-layout="bar"] input[type="date"],
+[data-toolbar-layout="bar"] input[type="month"],
+[data-toolbar-layout="bar"] input.filter-grain-input,
+[data-toolbar-layout="bar"] input.date-input-grain,
+[data-toolbar-layout="bar"] input.date-input-year {
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0.25rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  color-scheme: dark;
+}
+
+[data-toolbar-layout="bar"] .filter-field.filter-combobox-wrap.filter-inline {
+  padding: 0;
+  border: none;
+  background: transparent;
+  gap: 0;
+}
+
+[data-toolbar-layout="bar"] .field-select {
+  border: none;
+  background: transparent;
+  min-height: 2rem;
+}
+
+[data-toolbar-layout="bar"] .filter-large-list .filter-chips-row,
+[data-toolbar-layout="bar"] .filter-large-list .chip-list {
+  max-height: 2.6rem;
+}
+
+.page.filter-large-expand [data-toolbar-layout="bar"] .filter-large-list .filter-chips-row,
+.page.filter-large-expand [data-toolbar-layout="bar"] .filter-large-list .chip-list {
+  max-height: none;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline-label {
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline {
+  display: grid;
+  grid-template-rows: minmax(1.05rem, auto) minmax(1.65rem, auto);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.22rem 0;
+  width: 100%;
+  min-width: 0;
+  align-content: end;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .filter-inline-label,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-top-head {
+  grid-row: 1;
+  align-self: end;
+  margin: 0;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .date-range,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .field-combobox,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .field-select,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .filter-search,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-number,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-scope-hint {
+  grid-row: 2;
+  align-self: center;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline > .field-combobox:only-child,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline > .field-select:only-child {
+  grid-row: 2;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-date.filter-inline {
+  gap: 0.28rem;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.3rem 0.4rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range input[type="date"],
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range input[type="month"],
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-input-grain {
+  min-width: 0;
+  flex: 1 1 6.5rem;
+  max-width: 9rem;
+  padding: 0.1rem 0.15rem;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-input-year {
+  max-width: 5.5rem;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-date .date-range {
+  flex-wrap: wrap;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-sep {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline {
+  padding: 0;
+  border: none;
+  background: transparent;
+  gap: 0;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .field-combobox {
+  min-width: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+[data-toolbar-cells="labeled"] .combobox-backdrop {
+  z-index: 49;
+}
+
+[data-toolbar-cells="labeled"] .combobox-panel {
+  z-index: 50;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .combobox-trigger {
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  padding: 0.12rem 0;
+  border: none;
+  background: transparent;
+}
+
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .field-select,
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-number {
+  width: 100%;
+  min-height: 0;
+  padding: 0.12rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+}

@@ -7,6 +7,7 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Loading;
+using DashSpec.Host.Services.Presentation;
 using DashSpec.Viz;
 
 public sealed class DashboardSessionService(
@@ -15,7 +16,8 @@ public sealed class DashboardSessionService(
     ICardViewState cardViewState,
     CatalogSourceState catalogState,
     IWebHostEnvironment environment,
-    IHostPathResolver pathResolver) : IDashboardSession
+    IHostPathResolver pathResolver,
+    CardLocalFilterUiStore cardLocalFilters) : IDashboardSession
 {
     private DashboardDocument? _document;
     private IDataSourceConnector? _connector;
@@ -139,10 +141,11 @@ public sealed class DashboardSessionService(
     public Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default)
     {
         var effectiveCard = ResolveEffectiveCard(card);
+        var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
         return cardRenderService.RenderAsync(
             effectiveCard,
             Document,
-            Filters,
+            queryFilters,
             FilterIndex,
             _specLibrary,
             _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
@@ -155,10 +158,11 @@ public sealed class DashboardSessionService(
         CancellationToken cancellationToken = default)
     {
         var effectiveCard = ResolveEffectiveCard(card);
+        var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
         return cardRenderService.RenderInteriorSlotsAsync(
             effectiveCard,
             Document,
-            Filters,
+            queryFilters,
             FilterIndex,
             _specLibrary,
             _connector ?? throw new InvalidOperationException("Dashboard not loaded."),

@@ -4,19 +4,18 @@
 @using DashSpec.Filters
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
 
-<div class="@WrapperClass" style="@Context.PlacementStyle">
-    <TopFilterInput Label="@Context.Label"
-                    ScopeHint="@Context.Hint"
-                    Disabled="@Context.Disabled"
-                    Min="@(Context.Filter.MinValue ?? 1)"
-                    Max="@(Context.Filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
-                    Value="@Context.TopValue"
-                    ValueChanged="@Context.TopValueChanged" />
-</div>
+<TopFilterInput Label="@Context.Label"
+                ScopeHint="@Context.Hint"
+                ScopeHintAriaLabel="@Context.HintAriaLabel"
+                ScopeHintInline="@Context.Filter.IsBindScopeInline"
+                Disabled="@Context.Disabled"
+                Min="@(Context.Filter.MinValue ?? 1)"
+                Max="@(Context.Filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
+                Value="@Context.TopValue"
+                ValueChanged="@Context.TopValueChanged"
+                ToolbarLabeledCells="@Context.ToolbarLabeledCells"
+                Style="@Context.PlacementStyle" />
 
 @code {
     [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
-
-    private string WrapperClass =>
-        Context.Compact ? "filter filter-top filter-inline" : "filter filter-top filter-compact";
 }

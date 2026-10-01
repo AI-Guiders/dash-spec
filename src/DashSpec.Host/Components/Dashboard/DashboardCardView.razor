@@ -52,10 +52,10 @@
                                        FieldOptionsRevision="FieldOptionsRevision"
                                        ApplyLabel="@Loc.T("Apply")"
                                        FilterIndex="FilterIndex"
-                                       DateFrom="DateFrom"
-                                       DateTo="DateTo"
-                                       SelectedFields="SelectedFields"
-                                       TopLimits="TopLimits"
+                                       DateFrom="CardLocalDateFrom"
+                                       DateTo="CardLocalDateTo"
+                                       SelectedFields="CardLocalSelectedFields"
+                                       TopLimits="CardLocalTopLimits"
                                        GetFieldOptions="GetFieldOptions"
                                        AutoApply="AutoApply"
                                        OnApplyCard="OnApplyCard"
@@ -138,10 +138,10 @@
                                            HeadMetaLayout="true"
                                            ApplyLabel="@Loc.T("Apply")"
                                            FilterIndex="FilterIndex"
-                                           DateFrom="DateFrom"
-                                           DateTo="DateTo"
-                                           SelectedFields="SelectedFields"
-                                           TopLimits="TopLimits"
+                                           DateFrom="CardLocalDateFrom"
+                                           DateTo="CardLocalDateTo"
+                                           SelectedFields="CardLocalSelectedFields"
+                                           TopLimits="CardLocalTopLimits"
                                            GetFieldOptions="GetFieldOptions"
                                            AutoApply="AutoApply"
                                            OnApplyCard="OnApplyCard"
@@ -249,6 +249,10 @@
     [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> CardLocalDateFrom { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> CardLocalDateTo { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, HashSet<string>> CardLocalSelectedFields { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, int> CardLocalTopLimits { get; set; } = default!;
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public int FieldOptionsRevision { get; set; }
     [Parameter] public bool AutoApply { get; set; }
@@ -565,7 +569,7 @@
             return Task.CompletedTask;
         }
 
-        TopLimits[filter.Name] = value;
+        CardLocalTopLimits[filter.Name] = value;
         return LocalFiltersAutoApply
             ? OnScheduleCardApply.InvokeAsync(Card.Id)
             : Task.CompletedTask;
@@ -576,20 +580,20 @@
         var filter = FilterIndex[filterName];
         <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
                           Filter="filter"
-                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields)"
+                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields)"
                           Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
                           PlacementStyle="@placementStyle"
                           Disabled="@Card.Loading"
                           Options="GetFieldOptions(filter.Name)"
-                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, SelectedFields)"
+                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields)"
                           SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
-                          DateFrom="DateFrom"
-                          DateTo="DateTo"
+                          DateFrom="CardLocalDateFrom"
+                          DateTo="CardLocalDateTo"
                           FilterIndex="FilterIndex"
-                          SelectedFields="SelectedFields"
+                          SelectedFields="CardLocalSelectedFields"
                           OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
                           OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
-                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, TopLimits)"
+                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits)"
                           TopValueChanged="value => OnLocalTopChanged(filter, value)" />
     };
 }
