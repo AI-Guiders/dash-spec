@@ -55,7 +55,7 @@ ComposedDashboardView
     Items[]               # id, label, order — all children listed
   ActiveRoute             # from URL / session; composer sets InitialRoute only at load
   Chrome
-    Toolbars[]            # per scope (report | screen | page): slots + filters + apply
+    Toolbars[]            # per scope (report | section | page): slots + filters + apply
     FiltersChrome         # sticky, bar, apply mode — from spec
   LayoutPlanes[]          # per active page: slot grid ([ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md))
   Cards[]                 # instances on active page
@@ -64,14 +64,14 @@ ComposedDashboardView
 Правила:
 
 1. Если автор хочет **не показывать** полосу переключения — в composed tree для этого band **`ShowMode = hidden`** (или band отсутствует), а не `Count <= 1` в Razor.
-2. Если **одна** page под screen — nav band для page может быть `hidden` **явно** в spec или **явно** выставлен composer’ом по policy **с записью в артефакт** (debug/spec expand), но Host не содержит `if (count > 1)`.
-3. **Portal** (несколько report в soak) — отдельный `NavigationBand` уровня `portal`, не смешивать с `screen`/`page` одного report ([ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md)).
+2. Если **одна** page под section — nav band для page может быть `hidden` **явно** в spec или **явно** выставлен composer’ом по policy **с записью в артефакт** (debug/spec expand), но Host не содержит `if (count > 1)`.
+3. **Portal** (несколько report в soak) — отдельный `NavigationBand` уровня `portal`, не смешивать с `section`/`page` одного report ([ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md)).
 
 ### 3. Initial route
 
 Источники (в порядке приоритета для composer):
 
-1. `report.navigation.initial` / `entry` block в `.dashcatalog` (`initial screen`, `initial page`).
+1. `report.navigation.initial` / `entry` block в `.dashcatalog` (`initial section`, `initial page`).
 2. Явная policy в composer config (dev only) — **должна сериализоваться** в composed metadata для аудита.
 3. **Запрещено** в Host: «взять первую page из списка» без записи в `InitialRoute`.
 
@@ -80,7 +80,7 @@ Catalog example:
 ```text
 entry stakeholder
   dashspec "demo-stakeholder.dashspec"
-  initial screen = peak_util
+  initial section = peak_util
   initial page = main
 end entry
 ```
@@ -101,9 +101,9 @@ end entry
 |--------|------|
 | `DashboardPageController` + сырой `DashboardDocument` | Controller читает `ComposedDashboardView` |
 | `DashboardTabBar` / `DashboardPagePicker` if count>1 | Один `NavigationBandView` component: renders band from view |
-| `TabLayoutCompactor` + active page inference | Composer выдаёт layout plane для `(screen, page)` |
+| `TabLayoutCompactor` + active page inference | Composer выдаёт layout plane для `(section, page)` |
 | `MergeReferencedTabModules` в parse | Composer pipeline |
-| Synthetic tab for `@tab` | Composer emits real `screen`/`page` tree or portal band |
+| Synthetic tab for `@tab` | Composer emits real `section`/`page` tree or portal band |
 
 Инкрементально: composer может **сначала** эмулировать текущее поведение, но **все** бывшие умолчания должны быть **явными строками** в composed output (включая `show=hidden`), чтобы затем убрать дубли из Host.
 
