@@ -20,6 +20,6 @@
     [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
 
     private string WrapperClass =>
-        Context.Compact ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
+        Context.ToolbarLabeledCells ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
 
 }

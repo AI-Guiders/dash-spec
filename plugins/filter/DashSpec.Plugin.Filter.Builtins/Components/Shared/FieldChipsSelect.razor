@@ -6,10 +6,7 @@
     {
         <span class="filter-label">@Label</span>
     }
-    @if (!string.IsNullOrWhiteSpace(Hint))
-    {
-        <span class="filter-scope">@Hint</span>
-    }
+    <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
     <div class="filter-chips-row" role="listbox" aria-label="@Label">
         @foreach (var option in Options)
         {

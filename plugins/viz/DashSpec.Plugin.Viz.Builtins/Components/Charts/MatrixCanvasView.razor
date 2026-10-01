@@ -232,13 +232,17 @@ else
             return;
         }
 
+        var xBucket = Payload.XBucketStarts is { Count: > 0 } buckets && hit.Xi >= 0 && hit.Xi < buckets.Count
+            ? buckets[hit.Xi]
+            : (DateTime?)null;
         var context = new HeatmapCellContext(
             hit.Yi,
             hit.Xi,
             Payload.XLabels[hit.Xi],
             Payload.YLabels[hit.Yi],
             hit.Value,
-            Payload.Tooltips?[hit.Yi][hit.Xi]);
+            Payload.Tooltips?[hit.Yi][hit.Xi],
+            xBucket);
 
         await OnCellSelected.InvokeAsync(context);
     }

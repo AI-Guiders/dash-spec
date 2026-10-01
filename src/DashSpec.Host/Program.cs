@@ -187,6 +187,7 @@ builder.Services.AddScoped<ICardFoldState, CardFoldState>();
 builder.Services.AddScoped<ICardRenderer, CardRenderService>();
 builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
 builder.Services.AddScoped<DashboardFilterUiState>();
+builder.Services.AddScoped<CardLocalFilterUiStore>();
 builder.Services.AddScoped<IDashboardCultureAmbient>(_ =>
     new DashboardCultureAmbient(uiCulture, displayTimeZone));
 builder.Services.AddScoped<DashboardLocalizer>();

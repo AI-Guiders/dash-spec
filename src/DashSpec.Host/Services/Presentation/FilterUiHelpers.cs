@@ -31,6 +31,20 @@ internal static class FilterUiHelpers
         return string.Join(", ", cards);
     }
 
+    public static string ScopeHintAriaLabel(
+        string filterName,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> filtersToCards)
+    {
+        if (!filtersToCards.TryGetValue(filterName, out var cards) || cards.Count == 0)
+        {
+            return "Область фильтра: ни одна карточка";
+        }
+
+        return cards.Count == 1
+            ? $"Область фильтра: 1 карточка ({cards[0]})"
+            : $"Область фильтра: {cards.Count} карточек";
+    }
+
     public static string FormatActiveChip(
         string filterName,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,

@@ -2,8 +2,14 @@
 @using DashSpec.Core.Runtime
 @using DashSpec.Execution.Runtime
 
-<div class="filter filter-top filter-compact">
-    <span class="filter-label">@Label</span>
+<div class="@RootClass" style="@Style">
+    <div class="filter-top-head">
+        <span class="filter-label">@Label</span>
+        @if (!ScopeHintInline)
+        {
+            <FilterScopeHintTrigger Text="@ScopeHint" AriaLabel="@ScopeHintAriaLabel" />
+        }
+    </div>
     <input type="number"
            class="filter-number"
            aria-label="@Label"
@@ -12,7 +18,7 @@
            disabled="@Disabled"
            @bind="Value"
            @bind:after="OnChanged" />
-    @if (!string.IsNullOrWhiteSpace(ScopeHint))
+    @if (ScopeHintInline && !string.IsNullOrWhiteSpace(ScopeHint))
     {
         <span class="filter-scope-hint muted">@ScopeHint</span>
     }
@@ -23,6 +29,10 @@
 
     [Parameter] public string? ScopeHint { get; set; }
 
+    [Parameter] public string? ScopeHintAriaLabel { get; set; }
+
+    [Parameter] public bool ScopeHintInline { get; set; }
+
     [Parameter] public int Min { get; set; } = 1;
 
     [Parameter] public int Max { get; set; } = TopLimitDefaults.DefaultMax;
@@ -32,6 +42,13 @@
     [Parameter] public int Value { get; set; }
 
     [Parameter] public EventCallback<int> ValueChanged { get; set; }
+
+    [Parameter] public bool ToolbarLabeledCells { get; set; }
+
+    [Parameter] public string? Style { get; set; }
+
+    private string RootClass =>
+        ToolbarLabeledCells ? "filter-top filter-inline" : "filter filter-top filter-compact";
 
     private Task OnChanged() => ValueChanged.InvokeAsync(Value);
 }
