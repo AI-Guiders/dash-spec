@@ -60,47 +60,62 @@ The type system describes **values**, not object identity.
 
 **Forbidden as data-plane types:** `string` masquerading as `instant` / `local_date` on ports (display formatting belongs in **present**, or derived typed columns from `semantic_time`).
 
-#### Aggregates (algebraic — not SQL `GROUP BY`)
+#### Aggregates (nested value types — not SQL `GROUP BY`)
 
-**Aggregate types** compose primitives into larger **value** shapes. This is the rich part of the type system; it is still not a programming language (no user-defined functions on types).
+**Aggregate** here means a **composite value type**: fields that are primitives or **other named types**, nested to arbitrary depth (still value-only, no references).
 
-| Kind | Syntax | Role |
-|------|--------|------|
-| **Product** | `record { f: T, … }` | Named row / struct (one logical row) |
-| **Nominal alias** | `type Name = record { … }` | UDT reused on ports |
-| **Optional** | `optional T` | Missing value explicit (no silent `null`) |
-| **Sum / enum** | `enum { A, B, C }` | Closed discriminated set (status, grain, …) |
-| **Homogeneous list** | `list T` | Ordered values (uncommon on ports; prefer `rows`) |
-| **Rowset** | `rows R` | **Primary port type** for channel/transform → card (`R` = record) |
-
-**Not in the type language:** SQL aggregation (`SUM`, `GROUP BY`) — that is a **named transform step** (`aggregate { … }`) whose **output** is a new `rows R'` type, not a separate “aggregate type” keyword.
-
-Composition example:
+Authoring form (aligned with dashspec `block` / `end` style):
 
 ```text
-type Grain = enum { day, hour, five_minute }
+type Address
+  string Street
+  string House
+  string City
+end type
 
-type ActivityRow = record {
-  grain: Grain
-  usage_day: local_date
-  peak: int
-  app_name: string
-}
+type OrderDetail
+  int OrderCode
+  Address CustomerAddress
+end type
 ```
 
-#### User-defined types (UDT)
+| Rule | Meaning |
+|------|---------|
+| Field line | `<Type> <FieldName>` — type first, then field name (PascalCase types, camelCase or PascalCase fields per style guide at parse time) |
+| Nesting | Field type may be any UDT or primitive |
+| Nominal | `OrderDetail` is a **name**; two types with identical fields are still distinct if names differ |
+| Flat rows | SQL-shaped rows are aggregates too — all fields primitives at top level (`StakeholderKpiRow`) |
+
+**Field paths** (for diagram bindings, transform steps, Designer):
 
 ```text
-type StakeholderKpiRow = record {
-  usage_day: local_date
-  user_sam: string
-  peak_concurrent_apps: int
-}
+CustomerAddress.House
+OrderDetail.CustomerAddress.City
 ```
 
-- UDT names are **nominal** (reuse across channels, transforms, cards).
-- UDT bodies are **structural records** (value types only).
-- Optional file root: `.dashtype` / `types { }` block in module ([ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) extended when parser lands).
+- Inside a **card `input`** typed `rows OrderDetail`, diagram properties use paths **relative to one row** (default: `CustomerAddress.House`).
+- Fully qualified paths (`OrderDetail.CustomerAddress.House`) are allowed when the same path is reused across types or in global expressions.
+- Modeling resolves paths at compile time; invalid path = error (unknown field, wrong kind for viz).
+
+**Rowset on ports:** `rows OrderDetail` — a table whose rows are `OrderDetail` values. Channel/transform outputs use `rows <AggregateType>`.
+
+**Also supported (compact alias):** `type Name = record { f: T, … }` in IR and tooling; canonical surface syntax for authors is **`type` … `end type`** above.
+
+**Optional / enum / list** (when needed): `optional T`, `enum { … }`, `list T` — same value-only rules; nesting applies (`list Address` rare; prefer flat columns or child row types in v2).
+
+**Not in the type language:** SQL `GROUP BY` / `SUM` — that is a **transform step** producing a new `rows R'` aggregate type.
+
+```text
+type StakeholderKpiRow
+  local_date UsageDay
+  string UserSam
+  int PeakConcurrentApps
+end type
+```
+
+- Definitions live in `.dashtype`, module `types { }`, or stdlib (`demo.types`).
+- SQL infer may propose a **flat** aggregate; authors may refactor to nested UDTs when the domain warrants it (no automatic nesting from dots in column names in v1).
+- **SQL column → field:** channel `from view` maps `user_sam` columns to aggregate fields (`UserSam` or explicit `map user_sam → UserSam` in channel body when names differ).
 
 #### Filter value types (separate from row types)
 
