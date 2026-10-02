@@ -58,6 +58,8 @@ The type system describes **values**, not object identity.
 | `local_datetime` | Local wall-clock without storing offset in the value |
 | `duration` | Elapsed time (not a clock instant) |
 
+Primitives stay the **wire/SQL boundary** (`instant`, `local_date`, …). **Calendar-facing** shapes use stdlib aggregates below (and nest inside row UDTs).
+
 **Forbidden as data-plane types:** `string` masquerading as `instant` / `local_date` on ports (display formatting belongs in **present**, or derived typed columns from `semantic_time`).
 
 #### Aggregates (nested value types — not SQL `GROUP BY`)
@@ -103,7 +105,76 @@ OrderDetail.CustomerAddress.City
 
 Optional SQL nullability: `optional string Notes` on a field line.
 
-**No `enum` or `list` types (v1):** closed categories are `string` / `int` columns or small UDTs; “many values” (e.g. field `IN`) is either multiple rows on a dedicated filter port type (see below) or transform/SQL — not a generic `list T` in the type language.
+**No generic `list` or `enum` (v1):** “many values” for filters uses **`rows`** of a small UDT (see filter types below) or SQL/transform.
+
+#### Fixed `array` (homogeneous vector)
+
+One additional aggregate form for **fixed-length** component tuples (stdlib and advanced UDTs):
+
+```text
+type DateParts
+  array int 3 YearMonthDay
+end type
+```
+
+| Rule | Meaning |
+|------|---------|
+| Syntax | `array <primitive> <count> <FieldName>` — `count` is a compile-time constant |
+| Element type | Primitives only (`int`, `bool`, …) — not `rows`, not nested `array` in v1 |
+| Use | Rare; prefer named fields (`Year`, `Month`, `Day`). Vectors suit generated/stdlib glue |
+
+No unbounded or runtime-sized arrays in v1.
+
+#### Stdlib calendar aggregates (`<stdlib>/time.dashtype`)
+
+First-class **named** value types (block-based) in the base library — authors `import` or reference without redefining:
+
+```text
+type Time
+  int Hour
+  int Minute
+  int Second
+end type
+
+type Date
+  int Year
+  int Month
+  int Day
+end type
+
+type Week
+  int Year
+  int Week
+end type
+
+type Month
+  int Year
+  int Month
+end type
+
+type Year
+  int Year
+end type
+```
+
+| Type | Role |
+|------|------|
+| **Time** | Wall-clock time of day (no date) |
+| **Date** | Civil calendar day (reporting calendar, not UTC instant) |
+| **Week** | ISO week bucket (week-number rules documented with `semantic_time` / calendar locale) |
+| **Month** / **Year** | Reporting grain labels on axes and group-by transforms |
+
+`semantic_time` and friends map `instant` / SQL datetimes → **`Date`**, **`Time`**, **`Date`+`Time`**, or grain types (`Week`, `Month`, `Year`) on typed columns — replaces string `dd.MM` on data ports.
+
+Row example:
+
+```text
+type UsageDayRow
+  Date UsageDay
+  Time PeakTime
+  int PeakConcurrentApps
+end type
+```
 
 Modeling (F#) may use an internal `DashType` DU; that is **not** an alternate authoring syntax.
 
