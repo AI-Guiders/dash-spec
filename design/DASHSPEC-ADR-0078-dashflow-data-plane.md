@@ -98,11 +98,11 @@ wiring {
 ### Channel (sketch grammar)
 
 ```text
-type UtilizationRow = record {
-  user_sam: string
-  usage_day: local_date
-  concurrent_apps: int
-}
+type UtilizationRow
+  string UserSam
+  local_date UsageDay
+  int ConcurrentApps
+end type
 
 channel utilization {
   from view demo.v_daily_peak_concurrent_apps_per_user
@@ -149,8 +149,8 @@ Closed **step catalog** (v1 subset, grow explicitly per ADR):
 card peak_table as "Top users" {
   input localized from reporting_calendar.localized
   diagram table {
-    columns user_sam, usage_day_local
-    formats { usage_day_local = date.short }
+    columns UserSam, UsageDayLocal
+    formats { UsageDayLocal = date.short }
   }
 }
 ```
