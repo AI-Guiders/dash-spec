@@ -36,6 +36,7 @@ The type system describes **values**, not object identity.
 |---------|------------------------|
 | Primitives (§3) | Reference types, `class`, entity identity |
 | UDT (`type` … `end type`) | Pointer / shared mutable row handles |
+| `array primitive N` on a field line | Unbounded or nested arrays (v1) |
 | `optional` on a field line | `null` as a silent third state without `optional` |
 | `rows R` where `R` is a UDT | Opaque cursor types on ports |
 
@@ -144,12 +145,12 @@ end type
 
 type Week
   int Year
-  int Week
+  int WeekNumber
 end type
 
 type Month
   int Year
-  int Month
+  int MonthNumber
 end type
 
 type Year
@@ -198,8 +199,8 @@ Filter ports use the same **`type` … `end type`** blocks (not generic collecti
 
 ```text
 type UsageDateRange
-  local_date From
-  local_date To
+  Date From
+  Date To
 end type
 
 type SelectedAppNames
