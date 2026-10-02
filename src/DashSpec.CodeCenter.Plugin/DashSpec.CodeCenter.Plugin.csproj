@@ -12,7 +12,7 @@
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DashSpec.Modeling.CodeCenter\DashSpec.Modeling.CodeCenter.fsproj" />
+    <ProjectReference Include="..\DashSpec.CodeCenter\DashSpec.CodeCenter.fsproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.Abstractions\AIGuiders.Surface.Wpf.Abstractions.csproj" />
     <ProjectReference Include="$(GuidersWpfRoot)\src\AIGuiders.Surface.Wpf.CodeCenter\AIGuiders.Surface.Wpf.CodeCenter.csproj" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.Language\AIGuiders.Platform.Execution.Language.csproj" />

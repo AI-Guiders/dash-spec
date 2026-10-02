@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.CodeCenter
+namespace DashSpec.CodeCenter
 
 open AIGuiders.Platform.Modeling.CodeCenter
 
