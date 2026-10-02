@@ -26,6 +26,8 @@
 | `.dashpalette` | `@palette <id>` | `const` + mappings — **без** `palette { }` |
 | `.dashlayout` | `@layout <id>` | board rows `[ Q W ]` |
 | `.dashcatalog` | `@catalog <id>` | `default`, `entry …` — flat, без `catalog { }` |
+| `.dashchannel` | `@channel <id>` | data channel library entry — [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) |
+| `.dashflow` | `@flow <id>` | channels, transformers, wires — [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) |
 
 ### File-level `.dashinclude` ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md))
 
