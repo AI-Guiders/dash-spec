@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (concept + IR; parser / runtime phased) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) |
+| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md) |
 
 ## Context
 
@@ -180,6 +180,8 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 
 - **Data Flow Graph** (read-only) from resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schemas.
 - **Data Flow Designer** (n8n-like): palette of node kinds, **typed ports**, per-node preview — same IR as text.
+
+Runtime orchestration and observability **reuse cockpit transport** (DataBus, CCU-shaped transforms, flow-run snapshot) — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md).
 
 ## Non-goals
 
