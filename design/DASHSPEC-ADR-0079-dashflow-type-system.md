@@ -22,9 +22,9 @@ The dashflow model ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)) **requ
 
 | Rule | Meaning |
 |------|---------|
-| **No dynamic typing** | No `object`, `json`, or “any column” in flow IR. Untyped bags are **connector-internal only** until the channel boundary. |
+| **No dynamic typing** | No `object`, `json`, or “any column” in flow IR. Untyped bags are **connector-internal only** until the **source** output boundary. |
 | **Compile-time graph check** | Every edge `(outPort → inPort)` must be provably compatible in **Modeling** (F#). Mismatch = error diagnostic with span. |
-| **Declared or locked inference** | Every channel/transform output has an explicit `DashType`. SQL inference may **propose** a type; shipping spec must **declare or lock** it (see §5). |
+| **Declared or locked inference** | Every source/transform output has an explicit `DashType`. SQL inference may **propose** a type; shipping spec must **declare or lock** it (see §5). |
 
 Runtime may still use CLR values; **authoring and graph IR do not**.
 
@@ -188,7 +188,7 @@ end type
 
 The **`to_zone`** transform rewrites **`Date` / `Time` / `DateTime`** fields: same types, new `Offset` and component values for the reporting zone. Converting **UTC+0 → Moscow** is not a type change.
 
-Row fields from SQL UTC typically use **`DateTime`** (`Day` and `Clock` both **`Offset` 0**) on the channel; after **`to_zone`**, a row may expose only **`Date UsageDay`** or **`Time PeakTime`** with reporting offset.
+Row fields from SQL UTC typically use **`DateTime`** (`Day` and `Clock` both **`Offset` 0**) on the **source** output; after **`to_zone`**, a row may expose only **`Date UsageDay`** or **`Time PeakTime`** with reporting offset.
 
 #### Parallel to .NET (conceptual, not naming SSOT)
 
@@ -226,7 +226,7 @@ end type
 - Definitions live in `.dashtype`, module `types { }`, or stdlib (`lus.types`).
 - **Semantic types** with non-trivial behavior use **type plugins** ([ADR-0081](DASHSPEC-ADR-0081-type-plugins.md)); structural aggregates stay in `type` … `end type` blocks.
 - SQL infer may propose a **flat** aggregate; authors may refactor to nested UDTs when the domain warrants it (no automatic nesting from dots in column names in v1).
-- **SQL column → field:** channel `from view` maps `user_sam` columns to aggregate fields (`UserSam` or explicit `map user_sam → UserSam` in channel body when names differ).
+- **SQL column → field:** source `from view` maps `user_sam` columns to aggregate fields (`UserSam` or explicit `map user_sam → UserSam` in source body when names differ).
 
 #### Filter value types (separate from row types)
 
@@ -247,7 +247,7 @@ end type
 
 `top_n` and similar: either fields on a small filter UDT or a dedicated transform parameter — not a built-in `list`/`enum`.
 
-Filter **application** lives in the **report internal flow** ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) amendment), not inside channel nodes.
+Filter **application** lives in the **report internal flow** ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) amendment), not inside source nodes.
 
 ### 4. Refinement predicates (non-goals v1)
 
@@ -275,7 +275,7 @@ SQL column metadata  ──infer──►  DashSpec type  ──emit──►  .
 | `datetime2`, `datetimeoffset` (UTC normalized) | `DateTime` (`Offset` 0) |
 | `time` | `Time` (`Offset` 0) or `duration` per column role |
 
-Ambiguous columns (untyped `sql` ad-hoc) **must** be annotated in channel output before graph wiring.
+Ambiguous columns (untyped `sql` ad-hoc) **must** be annotated in source output before graph wiring.
 
 #### DashSpec → .NET (Execution.Runtime)
 
