@@ -181,7 +181,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 - **Data Flow Graph** (read-only) from resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schemas.
 - **Data Flow Designer** (n8n-like): palette of node kinds, **typed ports**, per-node preview — same IR as text.
 
-Runtime orchestration and observability **reuse cockpit transport** (DataBus, CCU-shaped transforms, flow-run snapshot) — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md).
+Runtime orchestration **reuses federation DataFlow layer** (DataBus, CCU-shaped transforms, `FlowRunSnapshot`) — below Cockpit — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md).
 
 ## Non-goals
 

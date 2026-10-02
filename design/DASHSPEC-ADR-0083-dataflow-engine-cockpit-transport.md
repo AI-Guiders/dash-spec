@@ -1,4 +1,4 @@
-# DASHSPEC-ADR-0083: Data Flow Engine — reuse cockpit transport (CIDE / Federation)
+# DASHSPEC-ADR-0083: Data Flow Engine — federation **DataFlow** layer (below Cockpit)
 
 | | |
 |---|---|
@@ -6,90 +6,98 @@
 | **Date** | 2026-10-02 |
 | **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
 
+> Filename still says `cockpit-transport` for history; normative name is **DataFlow hyperlane**, not Cockpit.
+
 ## Context
 
-[ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) defines **`FlowGraph`** (channels, transformers, typed ports) and Execution that runs it. Cascade IDE / Glass already implement a **mature in-process comm stack** (DataBus, ingestion transport, CCU, channel DTOs, CDS snapshots, optional intercom) — see `cascade-ide` ADR 0094–0099, 0036, 0097.
+[ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) defines **`FlowGraph`** and Execution that runs it. Cascade IDE already built the **same substrate** for IDE domain signals — but it is **mis-filed under `Cockpit/`** in the repo:
 
-Reinventing ad-hoc events (`Task`, `IProgress`, private Host callbacks) in DashSpec would duplicate that work and break **agent parity** (MCPlane / Cockpit hyperlanes on the Federation map).
+| CIDE ADR | Layer (logical) |
+|----------|-----------------|
+| **0094** ingestion / `Channel<T>` transport | **DataFlow** — delivery, backpressure |
+| **0099** `IDataBus` typed events | **DataFlow** — domain events in-process |
+| **0097** CCU → DTO | **DataFlow** — compute step on a stream |
+| **0036** channel → **CDS** → compositor → surface | **Cockpit and above** — attention, slots, instruments |
+
+**Cockpit is above:** CDS answers *where* meaning may appear (PFD/MFD, topology); **Data Flow answers *what moved* between producers and consumers** (rows, events, snapshots) — including DashSpec `FlowGraph` and IDE build output alike.
+
+DashSpec must not reinvent this stack; it must **align with the federation DataFlow plane**, then **optionally project** into Cockpit/MCPlane for agents.
 
 ## Decision
 
-### One engine, two meanings of “channel”
-
-| Term | Dashflow (this ADR) | Cockpit (CIDE) |
-|------|---------------------|----------------|
-| **Channel** | **Data plane port** — `rows R` leaving a graph node | **UI strip stream** — DTO for a cockpit instrument |
-| **Reuse** | Same **patterns**, not the same DTO types | Reference implementation |
-
-Data Flow Engine **does not** embed Avalonia or PFD/MFD. It **reuses the transport model**:
+### Stack (normative)
 
 ```text
-Connector fetch (DAL)  →  Transform plugin (CCU)  →  Typed row batch (channel DTO)
-         ↑                        ↑
-    node started/done         DataBus / federation bus events
-         ↓
-Graph run snapshot (CDS-analog)  →  Host refresh, Designer preview, MCP pulse
+[ DataFlow ]     ingestion, DataBus, CCU/transform, typed port batches, run snapshots
+      ↓ feeds
+[ Cockpit ]      CDS, cockpit channels (IDE Health strips), compositor, instruments
+      ↓
+[ Surface ]      Avalonia / Glass / Blazor Host widgets
+      ↓
+[ MCPlane ]      agent pulse (truncated observation) — consumes snapshots, not raw rowsets
 ```
 
-### Mapping FlowGraph runtime → cockpit layers
+DashSpec **Data Flow Engine** lives entirely in **`[ DataFlow ]`**. Host card refresh subscribes to DataBus / run snapshot; **only if** we embed a cockpit-style designer do we map into CDS-like semantics.
 
-| CIDE layer | Data Flow Engine role |
-|------------|----------------------|
-| **DAL / connector** | `ChannelNode` execution — `IDataSourceConnector.QueryAsync` ([ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md)) |
-| **Ingestion transport** | Async pipeline, backpressure, cancellation between nodes (long SQL, large rowsets) |
-| **CCU** | **`IDataFlowTransform`** + builtins — pure-ish step: `rows R` → `rows R'` ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)) |
-| **Channel DTO** | **Typed port payload** — materialized `rows R` + schema hash; cache key `(nodeId, port, filter snapshot)` |
-| **DataBus** | `Publish`/`Subscribe` for **graph lifecycle**: `NodeStarted`, `NodeCompleted`, `NodeFailed`, `PortDataReady`, `GraphInvalidated` |
-| **CDS-analog** | **`FlowRunSnapshot`** — not full row data: active graph id, per-node status, port **types**, row counts, last error span — for Designer + agent |
-| **Intercom** | Only if Execution runs **out-of-process** (future Studio worker); in-process Host uses DataBus only |
+### Mapping `FlowGraph` runtime → DataFlow (not Cockpit)
 
-Modeling (F#) stays **outside** the bus: compile-time `FlowGraph` only. Runtime emits events; Host/Designer/MCP **subscribe**.
+| DataFlow primitive | DashSpec role |
+|--------------------|---------------|
+| **Source / DAL** | Connector `ChannelNode` — [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md) |
+| **Transform / CCU** | `IDataFlowTransform` plugins — [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) |
+| **Port batch** | Materialized `rows R` + schema hash; cache `(nodeId, port, filter snapshot)` |
+| **DataBus** | `NodeStarted`, `NodeCompleted`, `NodeFailed`, `PortDataReady`, `GraphInvalidated` |
+| **Run snapshot** | **`FlowRunSnapshot`** — statuses, port types, counts, errors — **not** CDS (no PFD/MFD topology) |
 
-### Federation packages (already named — not `Modeling.Communication`)
+Two meanings of **“channel”**:
 
-Hyperlane split matches [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md):
+| | Dashflow | Cockpit (CIDE) |
+|--|----------|----------------|
+| **Channel** | Typed **data port** on the graph | **Instrument strip** DTO (IDE Health, EICAS, …) |
+| **Relation** | Cockpit channel **may subscribe** to DataFlow events and project a strip; DashSpec cards **subscribe** to port batches directly |
 
-| Layer | Repo | Packages (examples) |
-|-------|------|---------------------|
-| **Modeling** (schemas, rules, event shapes) | `guiders-fsharp` | `AIGuiders.Platform.Modeling.Cockpit.DataBus`, `.Cockpit.Cds`, `.Cockpit.Channels`, `.Cockpit.Composition`, `.Cockpit.Ids`, `.Cockpit.Rules` |
-| **Execution** (runtime, DI, adapters) | `guiders-platform` | `AIGuiders.Platform.Execution.Cockpit.Abstractions`, `.Cockpit.DataBus`, `.Cockpit.Channels`, `.Cockpit.Cds`, `.Cockpit.Composition`, `.Cockpit.Transport`, `.Execution.MCPlane` |
+### Federation packages (target naming)
 
-`Execution.Cockpit.DataBus` is intentionally thin; event SSOT lives in **F#** `Modeling.Cockpit.DataBus` (`UseGuidersModelingCockpitDataBus` in `eng/Guiders.Modeling.props`).
+**Not** `Modeling.Communication`. **Not** primary home under `Execution.Cockpit.*` (today’s placement is **transitional** while CIDE extracted code).
 
-**CIDE / Glass:** today still carry **`CascadeIDE.Cockpit.*`** in-repo (reference impl). Target: **pin platform Cockpit packages** and shrink CIDE to composition + UI — same trajectory as `AIGuiders.Platform.CommandPlane` (CIDE already pins / `UseLocalGuidersPlatform`).
+| Layer | Repo | Target `PackageId` (to introduce / migrate) |
+|-------|------|-----------------------------------------------|
+| **Modeling** | `guiders-fsharp` | `AIGuiders.Platform.Modeling.DataFlow` (+ `.DataBus`, `.Events`, `.Rules` as needed) |
+| **Execution** | `guiders-platform` | `AIGuiders.Platform.Execution.DataFlow` (+ `.DataBus`, `.Transport`, `.Abstractions`) |
 
-**Dashflow-specific Modeling** (optional new grain): `AIGuiders.Platform.Modeling.Cockpit.DataFlow` — `FlowRunSnapshot`, graph lifecycle events, port schema refs — **or** extend `Modeling.Cockpit.DataBus` event catalog with a `dataflow/` namespace. DashSpec `FlowGraph` IR itself stays **`DashSpec.Modeling.*`** (planet DSL); only **transport + agent snapshot** are federation Cockpit.
+**Interim (as-is on NuGet):** `Modeling.Cockpit.DataBus` / `Execution.Cockpit.DataBus` — **same contracts**, rename/split when federation split-audit lands; DashSpec may pin interim ids first, migrate ids without behavior change.
 
-| Phase | Transport |
-|-------|-----------|
-| **P0** | DashSpec.Execution pins `Execution.Cockpit.DataBus` + `Abstractions`; no fork of `IDataBus` |
-| **P1** | Register dashflow events in Modeling.Cockpit.DataBus; MCPlane pulse for graph runs |
-| **P2** | Conformance vectors; CIDE deletes duplicate bus when on same package versions |
+**CIDE / Glass:** peel `CascadeIDE.Cockpit/DataBus`, `…/ComputingUnits`, ingestion helpers into **platform DataFlow** packages; leave under `Cockpit/` only **CDS, Composition, cockpit Channels, Surface**.
 
-DashSpec Host is a **planet consumer**, not owner of the bus SSOT — same as [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) for plugins.
+**Planet DSL:** `FlowGraph` IR stays **`DashSpec.Modeling.*`**. Federation owns **event shapes + bus + transport**, not `.dashflow` grammar.
 
-### What stays dashflow-specific
+**Agent ingress:** `Execution.MCPlane` **reads** `FlowRunSnapshot` / pulse hooks — sits **above** DataFlow, same as cockpit reads IDE Health DTOs.
 
-- **Port typing** ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) — compile-time edge check; cockpit DTOs carry `DashType` manifest reference, not IDE Health segments.
-- **Filter wiring** — explicit graph nodes (`apply_filters`), not dashboard UI events alone.
-- **Cache / invalidation** — keyed by flow node + filter snapshot, not IDE workspace stratum.
+### Phased alignment
 
-## Phased delivery
+| Phase | Work |
+|-------|------|
+| **F0** | GUIDERS ADR: formal **DataFlow** hyperlane below Cockpit; map CIDE ADR 0094/0097/0099 |
+| **F1** | DashSpec.Execution pins `Execution.DataFlow.*` (or interim `Cockpit.DataBus`); implement graph executor + events |
+| **F2** | Move F# event SSOT from `Modeling.Cockpit.DataBus` → `Modeling.DataFlow`; conformance vectors |
+| **F3** | CIDE + DashSpec + CDP on same package ids |
+
+## Phased delivery (DashSpec)
 
 | Phase | Deliverable |
 |-------|-------------|
-| **E0** | `FlowRunSnapshot` + event types in Execution.Runtime; Host subscribes to refresh cards |
-| **E1** | Data Flow Graph UI reads snapshot + port schemas (no full n8n editor required) |
-| **E2** | Pin shared bus package from guiders-platform / CIDE extraction; MCP tool exposes graph pulse |
+| **E0** | `FlowRunSnapshot` + DataBus events in Execution.Runtime; Host refresh |
+| **E1** | Data Flow Graph UI from snapshot + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schemas |
+| **E2** | MCPlane projection for graph runs; optional Cockpit designer bridge later |
 
 ## Non-goals
 
-- Merging DashSpec **data channel** grammar with **IDE Health** channel code in one assembly.
-- Shipping full `CascadeIDE.Cockpit` inside `DashSpec.Host` NuGet.
-- Using DataBus for **authoring** — only **execution observability** and refresh orchestration.
+- Labeling graph execution as **Cockpit** domain (wrong layer).
+- Merging dashflow **ports** with IDE Health **strips** in one DTO type.
+- Putting `FlowGraph` parse IR into guiders-fsharp (planet stays DashSpec).
 
 ## Consequences
 
-- Data Flow Engine implementation **tracks** CIDE cockpit evolution instead of a second event story.
-- Transform plugins ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)) are natural **CCUs** — testable units with channel DTO in/out.
-- Studio / agent see the same graph state humans infer from “what data is wired” — CDS-style snapshot, not `Dictionary<string, object?>` dumps.
+- Data Flow Engine and DashSpec Host share a **substrate** with CIDE build/test/git streams — one bus philosophy, many domains.
+- Cockpit/Glass become **consumers** of DataFlow for instruments; DashSpec BI becomes a **first-class DataFlow domain**, not a cockpit special case.
+- Renaming packages clarifies onboarding: **DataFlow → Cockpit → Surface → MCPlane**.
