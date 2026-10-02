@@ -172,16 +172,16 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy `datasource` → inline channel |
 | **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
 | **P3** | `.dashflow` parse + `wiring { flow … }`; card `input` |
-| **P4** | Studio matrix authoring; shared flows across tabs; `aggregate` / `join` steps |
+| **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps |
 
 **Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).
 
-## Future surfaces
+## Future surfaces (same runtime as text authoring)
 
-- **Data Flow Graph** (read-only) from resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schemas.
-- **Data Flow Designer** (n8n-like): palette of node kinds, **typed ports**, per-node preview — same IR as text.
+- **Data Flow Graph** (read-only): resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) port schemas + live **`FlowRunSnapshot`** from the executor.
+- **Data Flow Designer** (n8n-like): palette, **typed in/out ports**, drag-wire — **mutates the same `FlowGraph` IR** as `.dashflow`; per-node preview invokes the **same graph executor** (subgraph / single node), not a mock pipeline.
 
-Runtime orchestration **reuses federation DataFlow layer** (DataBus, CCU-shaped transforms, `FlowRunSnapshot`) — below Cockpit — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md).
+Implementation stack: federation **DataFlow** model (transport, DataBus, CCU-shaped transform plugins, port batches) — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md). Not a separate Studio engine; not MCP.
 
 ## Non-goals
 
