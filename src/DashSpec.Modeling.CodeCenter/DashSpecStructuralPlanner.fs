@@ -3,7 +3,6 @@ namespace DashSpec.Modeling.CodeCenter
 open System
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
-open DashSpec.Modeling.Authoring
 open DashSpec.Modeling.Parse.Syntax
 
 /// AST-first structural edits: mutate text at tier-aware offsets, then rebuild AST + tiers.
@@ -98,7 +97,7 @@ module DashSpecStructuralPlanner =
         snapshot
 
     let private planInsertBlock (before: DocumentSnapshot) (anchorId: NodeId) (sourceLine: string) =
-        let graph, _ = DashSpecAuthoringEntry.parseAndBuild before.Text None
+        let graph, _ = DashSpecSerializeRules.parseAndBuild before.Text
 
         match insertionOffset graph anchorId with
         | Error message -> Error message

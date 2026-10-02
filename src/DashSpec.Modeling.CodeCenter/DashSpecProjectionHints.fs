@@ -3,7 +3,6 @@ namespace DashSpec.Modeling.CodeCenter
 open System
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
-open DashSpec.Modeling.Authoring
 
 /// Planet projection visitors over AST tiers (ADR-0067 ProjectionHints).
 module DashSpecProjectionHints =
@@ -70,8 +69,7 @@ module DashSpecProjectionHints =
 
 module DashSpecProjectionBridge =
 
-    let buildConceptGraph (text: string) =
-        DashSpecAuthoringEntry.parse text None |> fun session -> session.ConceptGraph
+    let buildConceptGraph (text: string) = DashSpecConceptGraphBuilder.buildFromText text
 
     let diagramNodeIds (graph: DashSpecConceptGraph) =
         DashSpecProjectionHints.diagramTiers graph |> List.map (fun tier -> tier.Id)
@@ -86,5 +84,5 @@ module DashSpecProjectionBridge =
         formFieldNodeIds graph |> List.exists (fun id -> id = nodeId)
 
     let buildPreviewOutlineFromText (text: string) =
-        let graph = DashSpecAuthoringEntry.parse text None |> fun session -> session.ConceptGraph
+        let graph = DashSpecConceptGraphBuilder.buildFromText text
         DashSpecProjectionHints.buildPreviewOutline graph
