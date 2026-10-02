@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 
@@ -6,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class ChartSeriesPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -23,7 +24,7 @@ internal static class ChartSeriesPayloadBuilder
 
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             var bucket = TimeSeriesGrid.TryParseBucket(row.GetValueOrDefault(xColumn));
             if (bucket is null)

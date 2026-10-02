@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
@@ -11,7 +12,7 @@ internal static class GanttPayloadBuilder
     private static readonly TimeSpan DefaultPollStep = TimeSpan.FromMinutes(5);
 
     public static GanttPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var yColumn = DiagramBindings.Column(diagram, "y");
@@ -36,7 +37,7 @@ internal static class GanttPayloadBuilder
             axisEnd = DateTime.MinValue;
         }
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (!TryReadDateTime(row.GetValueOrDefault(startColumn), out var startUtc) ||
                 !TryReadDateTime(row.GetValueOrDefault(endColumn), out var endUtc) ||
@@ -128,7 +129,7 @@ internal static class GanttPayloadBuilder
     }
 
     private static bool TryResolveFixedAxis(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         out DateTime axisStart,
         out DateTime axisEnd,
@@ -163,10 +164,10 @@ internal static class GanttPayloadBuilder
     }
 
     private static DateOnly? ResolveAnchorDate(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         string dateColumn)
     {
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (!row.TryGetValue(dateColumn, out var raw))
             {

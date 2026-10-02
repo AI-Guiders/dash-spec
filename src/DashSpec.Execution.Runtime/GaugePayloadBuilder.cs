@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 using DashSpec.Core.Model;
 
@@ -6,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class GaugePayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         if (rows.Count == 0 ||
