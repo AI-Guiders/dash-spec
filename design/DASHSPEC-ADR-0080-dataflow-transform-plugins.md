@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (concept; loader phased) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
+| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0081](DASHSPEC-ADR-0081-type-plugins.md) |
 
 ## Context
 

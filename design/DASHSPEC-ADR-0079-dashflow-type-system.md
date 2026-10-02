@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (normative for dashflow; phased implementation) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
+| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0081](DASHSPEC-ADR-0081-type-plugins.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
 ## Context
 
