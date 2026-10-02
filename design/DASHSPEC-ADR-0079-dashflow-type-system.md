@@ -54,14 +54,21 @@ The type system describes **values**, not object identity.
 | `int` | 32-bit signed integer |
 | `decimal` | Fixed-scale decimal (precision/scale in SQL mapping metadata when inferred) |
 | `string` | Unicode text |
-| `instant` | Absolute UTC point in time (wire: ISO-8601 UTC) |
-| `local_date` | Calendar date without timezone (reporting calendar) |
-| `local_datetime` | Local wall-clock without storing offset in the value |
-| `duration` | Elapsed time (not a clock instant) |
+| `instant` | Absolute point on the UTC timeline (wire: ISO-8601 UTC) — the only **instant** primitive |
+| `duration` | Elapsed time (not a clock reading) |
 
-Primitives stay the **wire/SQL boundary** (`instant`, `local_date`, …). **Calendar-facing** shapes use stdlib aggregates below (and nest inside row UDTs).
+**Two notions of time (normative):**
 
-**Forbidden as data-plane types:** `string` masquerading as `instant` / `local_date` on ports (display formatting belongs in **present**, or derived typed columns from `semantic_time`).
+| Notion | Type | Meaning |
+|--------|------|---------|
+| **Absolute** | `instant` | Facts from DB (`occurred_at_utc`, `datetime2` normalized to UTC) |
+| **Civil** | stdlib `Date`, `Time` (+ `UtcOffset` on the value) | Wall calendar / clock **in a frame offset from UTC** |
+
+There is no separate primitive `local_date` / `local_datetime`. **“Local” is not a different type** — it is **`Date` / `Time` with a non-zero `UtcOffset`** (or offset taken from the report `semantic_time` zone when converting from `instant`). **UTC civil** is the same aggregates with **offset zero**.
+
+Primitives stay the **SQL wire boundary** for absolutes (`instant`). Civil shapes use stdlib aggregates on data ports after channel or `semantic_time`.
+
+**Forbidden as data-plane types:** `string` masquerading as time on ports (display formatting belongs in **present** only).
 
 #### Aggregates (nested value types — not SQL `GROUP BY`)
 
@@ -131,16 +138,22 @@ No unbounded or runtime-sized arrays in v1.
 First-class **named** value types (block-based) in the base library — authors `import` or reference without redefining:
 
 ```text
+type UtcOffset
+  int TotalMinutes
+end type
+
 type Time
   int Hour
   int Minute
   int Second
+  UtcOffset Offset
 end type
 
 type Date
   int Year
   int Month
   int Day
+  UtcOffset Offset
 end type
 
 type Week
@@ -160,12 +173,15 @@ end type
 
 | Type | Role |
 |------|------|
-| **Time** | Wall-clock time of day (no date) |
-| **Date** | Civil calendar day (reporting calendar, not UTC instant) |
-| **Week** | ISO week bucket (week-number rules documented with `semantic_time` / calendar locale) |
+| **UtcOffset** | Fixed offset from UTC (`TotalMinutes`; `0` = UTC civil frame). IANA zone → offset resolved in **`semantic_time`** (DST rules live there, not in every row) |
+| **Time** | Civil time of day **in the frame given by `Offset`** |
+| **Date** | Civil calendar day **in the frame given by `Offset`** (which “day” when converting from `instant` depends on offset) |
+| **Week** | ISO week bucket in that calendar frame |
 | **Month** / **Year** | Reporting grain labels on axes and group-by transforms |
 
-`semantic_time` and friends map `instant` / SQL datetimes → **`Date`**, **`Time`**, **`Date`+`Time`**, or grain types (`Week`, `Month`, `Year`) on typed columns — replaces string `dd.MM` on data ports.
+`semantic_time` maps `instant` → **`Date` / `Time` with `Offset` set** from reporting zone (or UTC when offset 0). Same types for UTC and “local”; only offset differs.
+
+Optional combined civil timestamp (stdlib): `Date` + `Time` fields with **matching** `Offset` on both, or a future `CivilDateTime` UDT alias in `time.dashtype`.
 
 Row example:
 
@@ -183,7 +199,7 @@ Modeling (F#) may use an internal `DashType` DU; that is **not** an alternate au
 
 ```text
 type StakeholderKpiRow
-  local_date UsageDay
+  Date UsageDay
   string UserSam
   int PeakConcurrentApps
 end type
@@ -236,9 +252,9 @@ SQL column metadata  ──infer──►  DashSpec type  ──emit──►  .
 | `int`, `bigint` | `int` (widen rules explicit) |
 | `decimal(p,s)` | `decimal` (p,s in mapping annotation) |
 | `nvarchar(n)` / `varchar(n)` | `string` (n in mapping annotation) |
-| `date` | `local_date` |
+| `date` | `Date` (infer `Offset` 0 at channel; `semantic_time` may rewrite) |
 | `datetime2`, `datetimeoffset` (UTC normalized) | `instant` |
-| `time` | `duration` or `time_of_day` (ADR add if needed) |
+| `time` | `Time` (offset 0) or `duration` per column role |
 
 Ambiguous columns (untyped `sql` ad-hoc) **must** be annotated in channel output before graph wiring.
 
@@ -251,8 +267,7 @@ Ambiguous columns (untyped `sql` ad-hoc) **must** be annotated in channel output
 | `decimal` | `decimal` |
 | `string` | `string` |
 | `instant` | `DateTime` (UTC) or `DateTimeOffset` (UTC) — pick one in Execution ADR note; Modeling uses `instant` only |
-| `local_date` | `DateOnly` |
-| `local_datetime` | `DateTime` (unspecified kind) + reporting zone in transform metadata |
+| `Date` / `Time` / `UtcOffset` | Structured CLR value or `DateOnly` + offset metadata per Execution note |
 | `optional T` | `T?` |
 
 Authors **never** write `DateTime` in `.dashspec` / `.dashflow`.
@@ -272,7 +287,7 @@ Transform steps declare **type transformers** in the catalog, e.g.:
 semantic_time: (rows R, zone, …) → rows R'
 ```
 
-where `R'` is computed by Modeling rules (fields added/changed/kind-upgraded `instant` → `local_date`). Invalid step chain = compile error.
+where `R'` is computed by Modeling rules (e.g. `instant` → `Date`/`Time` with `UtcOffset`). Invalid step chain = compile error.
 
 **Card `input`** must match `rows R`; **diagram** bindings reference fields of `R` with kind checks (`x` expects temporal kinds for time axis, etc.).
 
