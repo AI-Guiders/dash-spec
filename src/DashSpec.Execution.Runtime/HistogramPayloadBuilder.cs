@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 using DashSpec.Core.Model;
 
@@ -6,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class HistogramPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var valueColumn = DiagramBindings.TryGetColumn(diagram, "value", out var value)
@@ -14,7 +15,7 @@ internal static class HistogramPayloadBuilder
             : DiagramBindings.Column(diagram, "x");
 
         var samples = new List<double>();
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (TryReadDouble(row.GetValueOrDefault(valueColumn), out var sample))
             {

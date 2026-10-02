@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Core.Runtime;
@@ -55,10 +56,9 @@ public static partial class TooltipTemplate
 
     public static string? Render(
         TooltipDefinition tooltip,
-        IReadOnlyDictionary<string, object?> row)
+        DataRow row)
     {
         ArgumentNullException.ThrowIfNull(tooltip);
-        ArgumentNullException.ThrowIfNull(row);
 
         var sb = new StringBuilder();
         foreach (var fragment in Parse(tooltip.Template))

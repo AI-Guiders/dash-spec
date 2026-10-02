@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -5,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class ScatterPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var xColumn = DiagramBindings.Column(diagram, "x");
@@ -13,7 +14,7 @@ internal static class ScatterPayloadBuilder
         var hasSize = DiagramBindings.TryGetColumn(diagram, "size", out var sizeColumn);
         var points = new List<ChartPoint>();
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(xColumn), out var x) ||
                 !MeasureValues.TryReadDouble(row.GetValueOrDefault(yColumn), out var y))

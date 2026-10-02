@@ -25,6 +25,7 @@ Referenced as `Analyzer` from `DashSpec.Host`, `DashSpec.Core`, `DashSpec.Execut
 | **DSCHOST003** | `DateValueCodec` forbidden under `Components/` and `Services/Presentation/` |
 | **DSPEC020** | SQL client types only under `connectors/**` |
 | **DSPEC021** | External I/O forbidden in `Execution.Runtime` |
+| **DSPEC030** | Untyped row dictionaries forbidden outside `connectors/**` |
 
 Layer paths: **`LogicalPath`** via `AIGuiders.Platform.Paths` ([ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md)).
 

@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 
@@ -7,7 +8,7 @@ namespace DashSpec.Execution.Runtime;
 public static class ChartDataBuilder
 {
     public static ChartPayload BuildChart(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -24,7 +25,7 @@ public static class ChartDataBuilder
         };
 
     public static ChartPayload BuildLineOrBar(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -34,7 +35,7 @@ public static class ChartDataBuilder
             ? CategoryChartPayloadBuilder.Build(rows, diagram, seriesTransform, card, library, dashboardColorPalette)
             : ChartSeriesPayloadBuilder.Build(rows, diagram, seriesTransform, card, library, dashboardColorPalette);
 
-    private static bool UsesCategoryAxis(DiagramDefinition diagram, IReadOnlyList<IReadOnlyDictionary<string, object?>> rows)
+    private static bool UsesCategoryAxis(DiagramDefinition diagram, RowBatch rows)
     {
         if (diagram.Properties.ContainsKey("x_step"))
         {
@@ -62,19 +63,19 @@ public static class ChartDataBuilder
     }
 
     public static TablePayload BuildTable(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram) =>
         TablePayloadBuilder.Build(rows, diagram);
 
     public static MatrixPayload BuildHeatmap(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform = null,
         TooltipDefinition? tooltip = null) =>
         MatrixPayloadBuilder.Build(rows, diagram, seriesTransform, tooltip);
 
     public static GanttPayload BuildGantt(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram) =>
         GanttPayloadBuilder.Build(rows, diagram);
 }

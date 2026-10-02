@@ -440,10 +440,10 @@ public sealed class CardRenderService(
     }
 
     private static string? FormatNumber(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        DashSpec.Abstractions.Data.RowBatch rows,
         DiagramDefinition diagram)
     {
-        if (rows.Count == 0)
+        if (rows.IsEmpty)
         {
             return null;
         }

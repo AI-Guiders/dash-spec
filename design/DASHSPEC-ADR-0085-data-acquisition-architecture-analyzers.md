@@ -36,6 +36,7 @@ Referenced as `Analyzer` from Host, Core, Execution.Runtime, Execution.Compilati
 |----|------|
 | **DSPEC020** | SQL client types (`SqlConnection`, `NpgsqlConnection`, …) forbidden outside `connectors/**` |
 | **DSPEC021** | `File` / `Directory` / `Process` / `HttpClient` forbidden under `src/DashSpec.Execution.Runtime/**` |
+| **DSPEC030** | `Dictionary<string, object?>` / `IReadOnlyDictionary<string, object?>` forbidden outside `connectors/**` (use `RowBatch` / `DataRow`) |
 | **DSCHOST001–003** | Unchanged ([ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md)) |
 
 Severity: **Error**.
@@ -52,8 +53,8 @@ Legacy Host/Razor heuristics ([0076](DASHSPEC-ADR-0076-architecture-build-guards
 
 | Phase | Deliverable |
 |-------|-------------|
-| **A0** (this ADR) | DSPEC020/021 + analyzer refs + NetArchTest SqlClient |
-| **A1** | `RowBatch` / `rows R`; DSPEC030 strangler on `Dictionary<string, object?>` in new APIs |
+| **A0** | DSPEC020/021 + analyzer refs + NetArchTest SqlClient |
+| **A1** (shipped) | `RowBatch` / `DataRow` on `IDataSourceConnector`; DSPEC030 **Error** (no strangler) |
 | **A2** | F# `FlowGraphValidation` + NetArchTest Modeling.* |
 
 ## Non-goals
