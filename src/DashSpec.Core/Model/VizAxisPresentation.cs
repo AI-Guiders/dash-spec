@@ -7,6 +7,16 @@ public enum VizValueLabelMode
     Hide,
 }
 
+/// <summary>Heatmap matrix scroll: keep axis chrome fixed inside <c>.matrix-canvas-scroll</c>.</summary>
+public enum MatrixAxisScrollMode
+{
+    /// <summary>X and Y label rows stick while the cell grid scrolls.</summary>
+    Sticky,
+
+    /// <summary>Axis labels scroll with the canvas (legacy).</summary>
+    None,
+}
+
 /// <summary>Diagram-level axis/value label presentation (ADR-0062).</summary>
 public interface IVizAxisPresentationSpec
 {
@@ -81,6 +91,25 @@ public static class VizAxisPresentationParser
         }
 
         return raw.Trim();
+    }
+
+    /// <summary>Diagram <c>axis_scroll</c> on heatmap blocks (default <see cref="MatrixAxisScrollMode.Sticky"/>).</summary>
+    public static MatrixAxisScrollMode ParseAxisScroll(
+        IReadOnlyDictionary<string, string> properties,
+        MatrixAxisScrollMode defaultMode = MatrixAxisScrollMode.Sticky)
+    {
+        if (!properties.TryGetValue("axis_scroll", out var raw) ||
+            string.IsNullOrWhiteSpace(raw))
+        {
+            return defaultMode;
+        }
+
+        return raw.Trim().ToLowerInvariant() switch
+        {
+            "sticky" or "stick" => MatrixAxisScrollMode.Sticky,
+            "none" or "off" or "scroll" => MatrixAxisScrollMode.None,
+            _ => defaultMode,
+        };
     }
 }
 
