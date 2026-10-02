@@ -40,6 +40,8 @@
 
   <Project Path="src\DashSpec.LanguageServer\DashSpec.LanguageServer.csproj" />
 
+  <Project Path="tests\DashSpec.Analyzers.Tests\DashSpec.Analyzers.Tests.csproj" />
+
   <Project Path="tests\DashSpec.Architecture.Tests\DashSpec.Architecture.Tests.csproj" />
 
   <Project Path="tests\DashSpec.Core.Tests\DashSpec.Core.Tests.csproj" />
