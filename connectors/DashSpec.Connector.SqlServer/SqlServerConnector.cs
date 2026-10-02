@@ -1,5 +1,6 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Data;
+using DashSpec.Abstractions.Data.Acquisition;
 using DashSpec.Abstractions.Query;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
 
     public string Id => "sqlserver";
 
-    public async Task<RowBatch> QueryAsync(
+    public async Task<TypedRowBatch> QueryAsync(
         CompiledQuery query,
         CancellationToken cancellationToken = default)
     {
@@ -30,8 +31,8 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var columnNames = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToArray();
-        var rowValues = new List<object?[]>();
+        var schema = SqlRowMaterializer.InferSchema(reader);
+        var rowValues = new List<DashValue[]>();
         var maxRows = ResolveMaxRows();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -41,16 +42,10 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
                     $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [connectors.sqlserver] max_rows.");
             }
 
-            var cells = new object?[reader.FieldCount];
-            for (var i = 0; i < reader.FieldCount; i++)
-            {
-                cells[i] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-            }
-
-            rowValues.Add(cells);
+            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema));
         }
 
-        return RowBatch.Create(columnNames, rowValues);
+        return TypedRowBatch.Create(schema, rowValues);
     }
 
     public async Task<IReadOnlyList<string>> QueryDistinctStringsAsync(

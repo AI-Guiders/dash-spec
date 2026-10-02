@@ -56,7 +56,7 @@ public static partial class TooltipTemplate
 
     public static string? Render(
         TooltipDefinition tooltip,
-        DataRow row)
+        TypedDataRow row)
     {
         ArgumentNullException.ThrowIfNull(tooltip);
 
@@ -76,7 +76,7 @@ public static partial class TooltipTemplate
                     $"Tooltip '{tooltip.Id}': placeholder '{{{slot}}}' is not declared in variables.");
             }
 
-            sb.Append(FormatCellValue(row.GetValueOrDefault(column)));
+            sb.Append(FormatCellValue(row.GetClr(column)));
         }
 
         var text = sb.ToString();

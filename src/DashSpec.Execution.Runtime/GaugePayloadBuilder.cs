@@ -7,12 +7,12 @@ namespace DashSpec.Execution.Runtime;
 internal static class GaugePayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         if (rows.Count == 0 ||
             !DiagramBindings.TryGetColumn(diagram, "value", out var valueColumn) ||
-            !MeasureValues.TryReadDouble(rows[0].GetValueOrDefault(valueColumn), out var value))
+            !MeasureValues.TryReadDouble(rows[0].GetClr(valueColumn), out var value))
         {
             return new ChartPayload([], []);
         }

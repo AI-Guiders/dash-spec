@@ -201,7 +201,7 @@ public class ChartRuntimeTests
             ["orientation"] = "horizontal",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -236,7 +236,7 @@ public class ChartRuntimeTests
             ["orientation"] = "horizontal",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -434,7 +434,7 @@ public class ChartRuntimeTests
 
         var resolved = CardDiagramResolver.Resolve(card, library).Card;
         var payload = ChartDataBuilder.BuildLineOrBar(
-            RowBatchTestKit.FromDictionaries(
+            TypedRowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -480,7 +480,7 @@ public class ChartRuntimeTests
 
         var resolved = CardDiagramResolver.Resolve(card, library: null).Card;
         var payload = ChartDataBuilder.BuildLineOrBar(
-            RowBatchTestKit.FromDictionaries(
+            TypedRowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {

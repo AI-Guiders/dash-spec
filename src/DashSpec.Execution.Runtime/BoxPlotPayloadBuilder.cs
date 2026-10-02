@@ -6,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class BoxPlotPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var valueColumn = DiagramBindings.TryGetColumn(diagram, "value", out var value)
@@ -17,7 +17,7 @@ internal static class BoxPlotPayloadBuilder
         var groups = new Dictionary<string, List<double>>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in rows.Rows)
         {
-            if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(valueColumn), out var sample))
+            if (!MeasureValues.TryReadDouble(row.GetClr(valueColumn), out var sample))
             {
                 continue;
             }
@@ -25,7 +25,7 @@ internal static class BoxPlotPayloadBuilder
             var key = "all";
             if (hasCategory)
             {
-                var raw = row.GetValueOrDefault(categoryColumn);
+                var raw = row.GetClr(categoryColumn);
                 key = raw is null or DBNull
                     ? "(null)"
                     : Convert.ToString(raw, System.Globalization.CultureInfo.InvariantCulture) ?? "(null)";

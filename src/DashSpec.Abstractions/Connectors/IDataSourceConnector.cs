@@ -8,7 +8,7 @@ public interface IDataSourceConnector
 {
     string Id { get; }
 
-    Task<RowBatch> QueryAsync(
+    Task<TypedRowBatch> QueryAsync(
         CompiledQuery query,
         CancellationToken cancellationToken = default);
 

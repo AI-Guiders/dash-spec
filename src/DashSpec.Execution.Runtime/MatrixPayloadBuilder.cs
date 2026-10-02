@@ -11,7 +11,7 @@ internal static class MatrixPayloadBuilder
     private const string DefaultTooltipMergeSplit = ", ";
 
     public static MatrixPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform = null,
         TooltipDefinition? tooltip = null)
@@ -49,9 +49,9 @@ internal static class MatrixPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            var rawX = row.GetValueOrDefault(xColumn);
+            var rawX = row.GetClr(xColumn);
             var x = PayloadRowFormatters.FormatHeatmapAxisLabel(rawX, xFormat);
-            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(yColumn), yFormat);
+            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetClr(yColumn), yFormat);
             if (string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y))
             {
                 continue;
@@ -78,7 +78,7 @@ internal static class MatrixPayloadBuilder
                 yLabels.Add(y);
             }
 
-            var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(valueColumn)) ?? 0;
+            var value = PayloadRowFormatters.ToDouble(row.GetClr(valueColumn)) ?? 0;
             yTotals[y] = yTotals.GetValueOrDefault(y) + value;
         }
 
@@ -112,8 +112,8 @@ internal static class MatrixPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            var x = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(xColumn), xFormat);
-            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(yColumn), yFormat);
+            var x = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetClr(xColumn), xFormat);
+            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetClr(yColumn), yFormat);
             if (string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y))
             {
                 continue;
@@ -124,7 +124,7 @@ internal static class MatrixPayloadBuilder
                 continue;
             }
 
-            var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(valueColumn));
+            var value = PayloadRowFormatters.ToDouble(row.GetClr(valueColumn));
             if (value is null)
             {
                 continue;
@@ -175,7 +175,7 @@ internal static class MatrixPayloadBuilder
     }
 
     private static MatrixPayload BuildHourGrid(
-        RowBatch rows,
+        TypedRowBatch rows,
         string xColumn,
         string yColumn,
         string valueColumn,
@@ -187,7 +187,7 @@ internal static class MatrixPayloadBuilder
         DiagramDefinition diagram)
     {
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
-        var bucketRows = new SortedDictionary<DateTime, Dictionary<string, DataRow>>(
+        var bucketRows = new SortedDictionary<DateTime, Dictionary<string, TypedDataRow>>(
             Comparer<DateTime>.Default);
         var yLabels = new List<string>();
         var yIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -195,14 +195,14 @@ internal static class MatrixPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            var bucket = TimeSeriesGrid.TryParseBucket(row.GetValueOrDefault(xColumn));
+            var bucket = TimeSeriesGrid.TryParseBucket(row.GetClr(xColumn));
             if (bucket is null)
             {
                 continue;
             }
 
             var xKey = TimeSeriesGrid.Floor(bucket.Value, xStep);
-            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(yColumn), yFormat);
+            var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetClr(yColumn), yFormat);
             if (string.IsNullOrEmpty(y))
             {
                 continue;
@@ -212,7 +212,7 @@ internal static class MatrixPayloadBuilder
             {
                 seriesValues = new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
                 buckets[xKey] = seriesValues;
-                bucketRows[xKey] = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
+                bucketRows[xKey] = new Dictionary<string, TypedDataRow>(StringComparer.OrdinalIgnoreCase);
             }
 
             if (!yIndex.ContainsKey(y))
@@ -221,7 +221,7 @@ internal static class MatrixPayloadBuilder
                 yLabels.Add(y);
             }
 
-            var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(valueColumn)) ?? 0;
+            var value = PayloadRowFormatters.ToDouble(row.GetClr(valueColumn)) ?? 0;
             if (seriesValues.TryGetValue(y, out var existing) && existing is not null)
             {
                 seriesValues[y] = Math.Max(existing.Value, value);
@@ -257,7 +257,7 @@ internal static class MatrixPayloadBuilder
             var day = buckets.Keys.First().Date;
             var (rangeStart, rangeEnd) = ResolveUtcStorageWindow(day, axisWindow);
             var expanded = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
-            var expandedRows = new SortedDictionary<DateTime, Dictionary<string, DataRow>>(
+            var expandedRows = new SortedDictionary<DateTime, Dictionary<string, TypedDataRow>>(
                 Comparer<DateTime>.Default);
             for (var slot = rangeStart; slot < rangeEnd; slot = slot.Add(xStep))
             {
@@ -265,8 +265,8 @@ internal static class MatrixPayloadBuilder
                     ? new Dictionary<string, double?>(values, StringComparer.OrdinalIgnoreCase)
                     : new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
                 expandedRows[slot] = bucketRows.TryGetValue(slot, out var rowMap)
-                    ? new Dictionary<string, DataRow>(rowMap, StringComparer.OrdinalIgnoreCase)
-                    : new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
+                    ? new Dictionary<string, TypedDataRow>(rowMap, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, TypedDataRow>(StringComparer.OrdinalIgnoreCase);
             }
 
             buckets = expanded;
