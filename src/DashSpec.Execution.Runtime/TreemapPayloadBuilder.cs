@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -5,14 +6,14 @@ namespace DashSpec.Execution.Runtime;
 internal static class TreemapPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var categoryColumn = DiagramBindings.Column(diagram, "x");
         var valueColumn = DiagramBindings.Column(diagram, "y");
         var tiles = new List<TreemapTile>();
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(valueColumn), out var value) ||
                 value <= 0)

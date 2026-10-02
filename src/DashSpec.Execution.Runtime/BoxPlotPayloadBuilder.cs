@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -5,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class BoxPlotPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var valueColumn = DiagramBindings.TryGetColumn(diagram, "value", out var value)
@@ -14,7 +15,7 @@ internal static class BoxPlotPayloadBuilder
         var hasCategory = DiagramBindings.TryGetColumn(diagram, "x", out var categoryColumn);
 
         var groups = new Dictionary<string, List<double>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(valueColumn), out var sample))
             {

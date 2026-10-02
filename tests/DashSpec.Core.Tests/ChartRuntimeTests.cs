@@ -201,14 +201,14 @@ public class ChartRuntimeTests
             ["orientation"] = "horizontal",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
                 ["app_name"] = "Tekla Structures",
                 ["peak_concurrent_proxy"] = 12d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -236,7 +236,7 @@ public class ChartRuntimeTests
             ["orientation"] = "horizontal",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -250,7 +250,7 @@ public class ChartRuntimeTests
                 ["peak_concurrent_proxy"] = 3d,
                 ["purchased_seats"] = 50d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -434,6 +434,7 @@ public class ChartRuntimeTests
 
         var resolved = CardDiagramResolver.Resolve(card, library).Card;
         var payload = ChartDataBuilder.BuildLineOrBar(
+            RowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -445,7 +446,7 @@ public class ChartRuntimeTests
                     ["app_name"] = "Revit",
                     ["utilization_pct"] = 80d,
                 },
-            ],
+            ]),
             resolved.Diagram,
             seriesTransform: null,
             resolved,
@@ -479,6 +480,7 @@ public class ChartRuntimeTests
 
         var resolved = CardDiagramResolver.Resolve(card, library: null).Card;
         var payload = ChartDataBuilder.BuildLineOrBar(
+            RowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -492,7 +494,7 @@ public class ChartRuntimeTests
                     ["utilization_pct"] = 80d,
                     ["chart_color"] = "#2563eb",
                 },
-            ],
+            ]),
             resolved.Diagram,
             seriesTransform: null,
             resolved,

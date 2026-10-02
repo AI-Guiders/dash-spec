@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 using DashSpec.Core.Model;
 
@@ -55,7 +56,7 @@ public static class KpiPriorPeriod
     }
 
     public static bool TryReadScalar(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         out double value)
     {
