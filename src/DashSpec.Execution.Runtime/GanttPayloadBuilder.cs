@@ -12,7 +12,7 @@ internal static class GanttPayloadBuilder
     private static readonly TimeSpan DefaultPollStep = TimeSpan.FromMinutes(5);
 
     public static GanttPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var yColumn = DiagramBindings.Column(diagram, "y");
@@ -39,8 +39,8 @@ internal static class GanttPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            if (!TryReadDateTime(row.GetValueOrDefault(startColumn), out var startUtc) ||
-                !TryReadDateTime(row.GetValueOrDefault(endColumn), out var endUtc) ||
+            if (!TryReadDateTime(row.GetClr(startColumn), out var startUtc) ||
+                !TryReadDateTime(row.GetClr(endColumn), out var endUtc) ||
                 endUtc <= startUtc)
             {
                 continue;
@@ -53,8 +53,8 @@ internal static class GanttPayloadBuilder
                 continue;
             }
 
-            var label = PayloadRowFormatters.FormatValue(row.GetValueOrDefault(yColumn)) ?? "—";
-            var color = ResolveColor(row.GetValueOrDefault(colorColumn));
+            var label = PayloadRowFormatters.FormatValue(row.GetClr(yColumn)) ?? "—";
+            var color = ResolveColor(row.GetClr(colorColumn));
             var tooltip = $"{label}: {start:HH:mm} – {end:HH:mm}";
 
             if (!rowMap.TryGetValue(label, out var segments))
@@ -129,7 +129,7 @@ internal static class GanttPayloadBuilder
     }
 
     private static bool TryResolveFixedAxis(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         out DateTime axisStart,
         out DateTime axisEnd,
@@ -164,12 +164,13 @@ internal static class GanttPayloadBuilder
     }
 
     private static DateOnly? ResolveAnchorDate(
-        RowBatch rows,
+        TypedRowBatch rows,
         string dateColumn)
     {
         foreach (var row in rows.Rows)
         {
-            if (!row.TryGetValue(dateColumn, out var raw))
+            var raw = row.GetClr(dateColumn);
+            if (raw is null)
             {
                 continue;
             }

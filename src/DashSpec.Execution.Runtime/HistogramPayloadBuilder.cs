@@ -7,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class HistogramPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var valueColumn = DiagramBindings.TryGetColumn(diagram, "value", out var value)
@@ -17,7 +17,7 @@ internal static class HistogramPayloadBuilder
         var samples = new List<double>();
         foreach (var row in rows.Rows)
         {
-            if (TryReadDouble(row.GetValueOrDefault(valueColumn), out var sample))
+            if (TryReadDouble(row.GetClr(valueColumn), out var sample))
             {
                 samples.Add(sample);
             }

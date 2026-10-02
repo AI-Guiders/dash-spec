@@ -36,7 +36,8 @@ Referenced as `Analyzer` from Host, Core, Execution.Runtime, Execution.Compilati
 |----|------|
 | **DSPEC020** | SQL client types (`SqlConnection`, `NpgsqlConnection`, …) forbidden outside `connectors/**` |
 | **DSPEC021** | `File` / `Directory` / `Process` / `HttpClient` forbidden under `src/DashSpec.Execution.Runtime/**` |
-| **DSPEC030** | `Dictionary<string, object?>` / `IReadOnlyDictionary<string, object?>` forbidden outside `connectors/**` (use `RowBatch` / `DataRow`) |
+| **DSPEC030** | `Dictionary<string, object?>` / `IReadOnlyDictionary<string, object?>` forbidden outside `connectors/**` |
+| **DSPEC031–034** | Typed row wire — [ADR-0087](DASHSPEC-ADR-0087-typed-row-batch-analyzers.md) |
 | **DSCHOST001–003** | Unchanged ([ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md)) |
 
 Severity: **Error**.
@@ -54,7 +55,8 @@ Legacy Host/Razor heuristics ([0076](DASHSPEC-ADR-0076-architecture-build-guards
 | Phase | Deliverable |
 |-------|-------------|
 | **A0** | DSPEC020/021 + analyzer refs + NetArchTest SqlClient |
-| **A1** (shipped) | `RowBatch` / `DataRow` on `IDataSourceConnector`; DSPEC030 **Error** (no strangler) |
+| **A1** (superseded) | Untyped `RowBatch` — replaced by [ADR-0087](DASHSPEC-ADR-0087-typed-row-batch-analyzers.md) |
+| **A1b** (0087 B0) | `TypedRowBatch` / `DashValue` + DSPEC031–034 |
 | **A2** | F# `FlowGraphValidation` + NetArchTest Modeling.* |
 
 ## Non-goals

@@ -6,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class TablePayloadBuilder
 {
     public static TablePayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var columns = diagram.Properties.TryGetValue("columns", out var raw)
@@ -19,7 +19,7 @@ internal static class TablePayloadBuilder
             .Select(row => columns
                 .Select(column =>
                 {
-                    var value = row.GetValueOrDefault(column);
+                    var value = row.GetClr(column);
                     return columnFormats.TryGetValue(column, out var format)
                         ? LabelFormat.FormatObject(value, format)
                         : PayloadRowFormatters.FormatValue(value);

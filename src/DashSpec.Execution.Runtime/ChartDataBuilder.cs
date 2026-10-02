@@ -8,7 +8,7 @@ namespace DashSpec.Execution.Runtime;
 public static class ChartDataBuilder
 {
     public static ChartPayload BuildChart(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -25,7 +25,7 @@ public static class ChartDataBuilder
         };
 
     public static ChartPayload BuildLineOrBar(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -35,7 +35,7 @@ public static class ChartDataBuilder
             ? CategoryChartPayloadBuilder.Build(rows, diagram, seriesTransform, card, library, dashboardColorPalette)
             : ChartSeriesPayloadBuilder.Build(rows, diagram, seriesTransform, card, library, dashboardColorPalette);
 
-    private static bool UsesCategoryAxis(DiagramDefinition diagram, RowBatch rows)
+    private static bool UsesCategoryAxis(DiagramDefinition diagram, TypedRowBatch rows)
     {
         if (diagram.Properties.ContainsKey("x_step"))
         {
@@ -59,23 +59,23 @@ public static class ChartDataBuilder
         }
 
         var xColumn = DiagramBindings.Column(diagram, "x");
-        return TimeSeriesGrid.TryParseBucket(rows[0].GetValueOrDefault(xColumn)) is null;
+        return TimeSeriesGrid.TryParseBucket(rows[0].GetClr(xColumn)) is null;
     }
 
     public static TablePayload BuildTable(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram) =>
         TablePayloadBuilder.Build(rows, diagram);
 
     public static MatrixPayload BuildHeatmap(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform = null,
         TooltipDefinition? tooltip = null) =>
         MatrixPayloadBuilder.Build(rows, diagram, seriesTransform, tooltip);
 
     public static GanttPayload BuildGantt(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram) =>
         GanttPayloadBuilder.Build(rows, diagram);
 }
