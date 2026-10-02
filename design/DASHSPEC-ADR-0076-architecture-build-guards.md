@@ -47,6 +47,7 @@ Regex rules on `src/DashSpec.Host` paths, validated by `DashSpec.Architecture.Te
 `DashSpec.Architecture.Tests`:
 
 - `DashSpec.Host` must not depend on `DashSpec.Modeling.Parse`.
+- `DashSpec.Modeling.Parse`, `.Core`, `.Authoring` must not depend on `AIGuiders.Platform.Modeling.CodeCenter` ([ADR-0089](DASHSPEC-ADR-0089-authoring-ir-ssot.md)).
 - `DashSpec.Execution.Runtime`, `DashSpec.Viz`, `DashSpec.Filters` must not depend on `DashSpec.Host`.
 
 ## Non-goals

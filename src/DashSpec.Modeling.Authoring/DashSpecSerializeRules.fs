@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.CodeCenter
+namespace DashSpec.Modeling.Authoring
 
 open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Formatting
@@ -17,9 +17,7 @@ module DashSpecSerializeRules =
         DashSpecBlockFormatter.format graph.Tree.Text defaultFormatOptions
 
     let parseAndBuild (text: string) =
-        let tree = DashSpecSurfaceSyntax.parse text
-        let graph = DashSpecConceptGraphBuilder.build tree
-        graph, DashSpecInvariantLaws.all graph
+        DashSpecAuthoringEntry.parseAndBuild text None
 
     /// Structural round-trip: parse → concept graph → preserve serialize → parse yields equivalent outline.
     let roundTripOutline (text: string) =
