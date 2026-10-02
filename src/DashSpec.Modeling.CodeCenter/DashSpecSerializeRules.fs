@@ -17,7 +17,7 @@ module DashSpecSerializeRules =
         DashSpecBlockFormatter.format graph.Tree.Text defaultFormatOptions
 
     let parseAndBuild (text: string) =
-        let tree = SyntaxTree.parse text
+        let tree = DashSpecSurfaceSyntax.parse text
         let graph = DashSpecConceptGraphBuilder.build tree
         graph, DashSpecInvariantLaws.all graph
 
