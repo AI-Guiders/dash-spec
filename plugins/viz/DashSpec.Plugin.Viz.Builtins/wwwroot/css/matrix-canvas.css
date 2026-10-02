@@ -52,9 +52,6 @@
 .matrix-canvas-corner {
   grid-column: 1;
   grid-row: 1;
-  position: sticky;
-  left: 0;
-  z-index: 2;
   background: var(--surface);
   display: flex;
   flex-direction: column;
@@ -95,9 +92,27 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  background: var(--surface);
+}
+
+.matrix-canvas-host--axis-sticky .matrix-canvas-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+}
+
+.matrix-canvas-host--axis-sticky .matrix-canvas-x-labels {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+
+.matrix-canvas-host--axis-sticky .matrix-canvas-y-labels {
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: 2;
   background: var(--surface);
 }
 
