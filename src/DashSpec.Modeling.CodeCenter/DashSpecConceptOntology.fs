@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.Authoring
+namespace DashSpec.Modeling.CodeCenter
 
 open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Syntax
@@ -35,13 +35,12 @@ type DashSpecConceptEdge =
       ChildId: NodeId
       Kind: DashSpecConceptEdgeKind }
 
-/// Outline projection + optional Modeling IR (ADR-0089 — document is semantic SSOT when present).
+/// AST + planet tiers (same node ids end-to-end).
 type DashSpecConceptGraph =
     { Tree: ParseTree
       RootId: NodeId
       Tiers: Map<NodeId, DashSpecConceptTier>
-      Edges: DashSpecConceptEdge list
-      Document: DashSpec.Modeling.Parse.Document.DashboardDocument option }
+      Edges: DashSpecConceptEdge list }
 
 type ProfileLawDiagnostic =
     { Code: string
