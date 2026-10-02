@@ -1,4 +1,4 @@
-# DASHSPEC-ADR-0083: Dashflow — implement via federation **DataFlow** model
+# DASHSPEC-ADR-0083: Dashflow — federation **DataFlow** (separate from Cockpit)
 
 | | |
 |---|---|
@@ -6,98 +6,122 @@
 | **Date** | 2026-10-02 |
 | **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
 
-> Legacy filename `…cockpit-transport`. Normative: **DataFlow hyperlane** (below Cockpit). **MCP is out of scope** for this ADR.
+> Legacy filename `…cockpit-transport`. **DataFlow** ≠ **Cockpit**. **MCP** out of scope.
 
 ## Context
 
-Recent DashSpec ADRs ([0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)–[0081](DASHSPEC-ADR-0081-type-plugins.md)) describe:
+DashSpec ADRs [0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)–[0081](DASHSPEC-ADR-0081-type-plugins.md) need one stack for typed ports, `FlowGraph`, transform plugins, n8n-like Designer, and runtime — without a second “studio engine.”
 
-- typed **in/out ports** on a **`FlowGraph`**;
-- **transform plugins** as graph steps;
-- **Data Flow Graph** (read-only) and **n8n-like Designer** (palette, wires, per-node preview);
-- card **`input`** wiring from graph outputs.
+Historical confusion: CIDE packaged **bus + compute steps** under `Cockpit/` and named compute steps **CCU** (ADR 0097). Normatively:
 
-These must be **one implementation**, not a custom DashSpec runtime plus a separate “studio engine.”
+| Layer | Question it answers | Vocabulary |
+|-------|---------------------|------------|
+| **DataFlow** | **What** data moves **where**, how it is **transformed** on the path | **Source**, **Transform**, typed **ports**, **edges**, **bus**, port **batch** |
+| **Cockpit** (later, optional consumer) | **Where** a human/agent **sees** meaning (attention, CDS, instrument strips) | **CCU** (fold for display), **cockpit channel**, compositor, surface |
 
-Cascade IDE already has that substrate (mis-packaged under `Cockpit/` in-repo):
+**CCU does not live in DataFlow.** In DataFlow the compute step is a **Transform** ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)). A cockpit instrument may **subscribe** to DataFlow (events + port metadata) and run its **own** CCU to build a strip DTO — that is integration, not part of the data-plane graph.
 
-| CIDE ADR | **DataFlow** role |
-|----------|-------------------|
-| **0094** ingestion / transport | async delivery, backpressure between producers and consumers |
-| **0099** `IDataBus` | typed in-process events |
-| **0097** CCU | compute step: raw/stream → **DTO batch** on an output |
-
-**Cockpit** ([0036](https://github.com/AI-Guiders/cascade-ide/blob/develop/docs/adr/0036-cds-channel-compositor-surface-pipeline.md) CDS, instrument strips) sits **above** and is **optional** for DashSpec BI — Host cards consume **port batches** directly.
+DashSpec Host (BI) **consumes DataFlow directly** (card `input` ← port batch). Cockpit wiring is **not required** for v1.
 
 ## Decision
 
-### One model, three surfaces (same stack)
-
-| Surface | What it is | Shared underneath |
-|---------|------------|-------------------|
-| **Authoring text** | `.dashflow`, `.dashchannel`, card `input` | F# `FlowGraph` IR ([0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) |
-| **Authoring visual** | n8n-like Designer, matrix wiring ([0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) P4) | **Same IR** — edit graph, not a parallel schema |
-| **Runtime** | Channel nodes + transform plugins + filter nodes | **DataFlow executor**: graph = DAG of CCU-like steps on **DataBus** + typed **port batches** |
-
-No third “presentation runtime” for diagrams vs data: **diagram binds to card `input`**; data reaches inputs only through **executed graph ports**.
+### Separation (normative)
 
 ```text
-Modeling (F#)     compile  →  FlowGraph IR
-                                ↓
-Execution         run      →  per-node: source | transform plugin | apply_filters
-                                ↓ DataBus (lifecycle) + port batches (payload)
-Host / Designer   observe  →  FlowRunSnapshot + schema preview + row preview per node
+[ DataFlow ]     sources, transforms, typed ports, executor, bus, FlowRunSnapshot
+      ↑
+      │  (optional, later)
+[ Cockpit ]      CDS, cockpit channels, CCU → instrument DTO, compositor, surface
 ```
 
-### Graph node = DataFlow step
+- **DataFlow describes** routing and transformation of **domain payloads** (e.g. `rows R`).
+- **Cockpit connects to DataFlow** when a product needs PFD/MFD-style attention — it does not own the graph.
 
-| Dashflow IR | DataFlow primitive |
-|-------------|-------------------|
-| **Channel node** | Source step (connector DAL) → output port batch `rows R` |
-| **Transformer node** | CCU — [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) plugin, N inputs / M outputs |
-| **Edge** | Typed port wire — validated in Modeling; runtime moves batch ref or cache key |
-| **Card `input`** | Consumer port on graph boundary (sink or named export) |
-| **Designer “preview this node”** | Run subgraph or single node; subscribe to `PortDataReady` + [0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schema |
+### Terminology mapping (CIDE heritage → federation)
 
-**n8n-like UI** is a **view/controller over `FlowGraph` + live `FlowRunSnapshot`** — same types CIDE would use for any DataFlow graph editor pattern, domain-specific node palette only.
+| CIDE / old docs | **DataFlow** (use this) | **Cockpit only** |
+|-----------------|-------------------------|------------------|
+| ADR 0094 ingestion | **Transport** | — |
+| ADR 0099 DataBus | **DataFlow bus** (lifecycle + domain events) | — |
+| ADR 0097 **CCU** | **Transform** (plugin / builtin) | CCU = fold **for display channel** |
+| “Channel” (data port) | **Port** / **edge** on `FlowGraph` | “Channel” = instrument strip |
+| ProjectionGraph (event → field) | **Transform wiring** + run snapshot | cockpit **ProjectionGraph** for IDE Health |
+
+When migrating CIDE/CDP code into platform packages, **rename by layer**: DataFlow packages say **Transform**; Cockpit packages keep **CCU** where the output is a **cockpit channel DTO**.
+
+### One model, three surfaces (DashSpec)
+
+| Surface | Shared underneath |
+|---------|-------------------|
+| `.dashflow` / `.dashchannel` / card `input` | F# **`FlowGraph` IR** + [0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
+| n8n-like Designer | **Same IR**; preview = **same executor** |
+| Runtime | **DataFlow executor**: DAG of sources + **transforms**; bus + port batches |
+
+```text
+DashSpec.Modeling (F#)   compile  →  FlowGraph IR
+DashSpec.Execution       run      →  source | transform use … | apply_filters
+                                   →  bus + port batches + FlowRunSnapshot
+Host / Designer          observe  →  snapshot + per-node schema / row preview
+```
+
+### Modeling reference (graph IR) — **CDP / Ide.Session**, not Cockpit.Channels
+
+**Port typing and edge validation** for `FlowGraph` should follow the same discipline as CDP’s session graph modeling (not IDE Health algebra):
+
+| Reference | Repo / package | Reuse pattern |
+|-----------|----------------|---------------|
+| Graph DU, relations, validation, patch | `guiders-fsharp` **`AIGuiders.Platform.Modeling.Ide.Session`** (`SolutionGraph`, `GraphValidation`, `GraphPatch`, …) | How CDP models **nodes, edges, validate, diagnose** |
+| Dogfood wiring | **`cdp-mcp`** (`CdpMcp` → `Modeling.Ide.Session` + `Execution.Ide.Session`; desk **bus bridge** only at runtime) | Planet F# IR + C# execution split ([ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md)) |
+
+**DashSpec-owned:** dashflow grammar, `FlowGraph` node kinds, `DashType` on ports ([0079](DASHSPEC-ADR-0079-dashflow-type-system.md)). **Federation-owned (target):** generic DataFlow bus/event/batch contracts. **Do not** put `FlowGraph` parse IR in `Modeling.Cockpit.*`.
+
+Cockpit F# (`Modeling.Cockpit.DataBus` / `ProjectionGraph`) remains relevant for **bus event catalogs** and **cockpit-side** projection — not for BI graph modeling.
+
+### DataFlow graph primitives (DashSpec)
+
+| IR / runtime | Role |
+|--------------|------|
+| **Source** (channel node) | Connector fetch → output port `rows R` |
+| **Transform** | [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) plugin; N→M typed ports |
+| **Edge** | Modeling proves port compatibility; runtime passes batch or cache key |
+| **Sink** | Card `input`, export port, or future cockpit subscription point |
+| **Bus** | `NodeStarted`, `PortDataReady`, `GraphInvalidated`, … |
+| **FlowRunSnapshot** | Run status for Designer/Host — **not** CDS |
 
 ### Federation packages (target)
 
-| Layer | Repo | Target `PackageId` |
-|-------|------|---------------------|
-| Modeling | `guiders-fsharp` | `AIGuiders.Platform.Modeling.DataFlow` (event shapes, port batch metadata, graph-run snapshot schema) |
-| Execution | `guiders-platform` | `AIGuiders.Platform.Execution.DataFlow` (DataBus, transport, executor helpers, abstractions) |
+| Layer | `PackageId` (introduce / migrate) |
+|-------|-----------------------------------|
+| Modeling | `AIGuiders.Platform.Modeling.DataFlow` (+ graph-run schema; **not** CCU types) |
+| Execution | `AIGuiders.Platform.Execution.DataFlow` (bus, transport, `ITransform`, executor helpers) |
 
-Interim pins may use `*.Cockpit.DataBus` until rename; behavior is **DataFlow**, not cockpit semantics.
+Interim: `*.Cockpit.DataBus` pins until rename; **semantics** are DataFlow.
 
-**DashSpec planet:** `DashSpec.Modeling.*` owns **dashflow grammar + `FlowGraph` DU**; **does not** fork bus/CCU — pins federation DataFlow packages in `DashSpec.Execution.*`.
+**CIDE/CDP migration:** move bus + **transform** execution into **DataFlow**; leave **CCU + cockpit channels + CDS** under **Cockpit**.
 
-**CIDE:** migrate `CascadeIDE.Cockpit/DataBus`, ComputingUnits, ingestion into platform **DataFlow**; Cockpit folder keeps CDS/composition/instrument channels only.
+### Out of scope
 
-### Out of scope here
-
-- **MCP**, agent tools, MCPlane — separate planet/habitat concerns; they may *read* dashboards later but **do not define** dashflow execution.
-- **Cockpit** projection of report UI — only if we explicitly build a cockpit-style shell; default Host path is Blazor + DataFlow subscriptions.
+- MCP / MCPlane as part of DataFlow design.
+- Requiring Cockpit for DashSpec Host refresh.
+- Using **CCU** as a public name in DataFlow APIs or dashflow DSL.
 
 ## Phased delivery (DashSpec)
 
 | Phase | Deliverable |
 |-------|-------------|
-| **E0** | Graph executor on DataFlow bus; port batches; Host refresh from outputs |
-| **E1** | Read-only Data Flow Graph from IR + `FlowRunSnapshot` |
-| **E2** | Designer: palette, typed port drag-wire, per-node preview — **same executor** |
-| **E3** | Federation package rename; shared conformance with CIDE DataFlow |
-
-Align with [0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) P1–P4: parser and Studio are **front-ends**, not alternate runtimes.
+| **E0** | `FlowGraph` modeling (Ide.Session-style validation) + executor + transforms + bus |
+| **E1** | Read-only graph UI + `FlowRunSnapshot` |
+| **E2** | Designer on same IR + executor preview |
+| **E3** | Platform `Modeling/Execution.DataFlow` packages; CIDE/CDP rename split |
 
 ## Non-goals
 
-- A DashSpec-only event system parallel to DataBus.
+- CCU inside DataFlow layer.
+- Cockpit CDS as dashflow SSOT.
 - Designer IR ≠ `FlowGraph` IR.
-- Implementing dashflow through Cockpit CDS or MCP snapshots.
 
 ## Consequences
 
-- **0078–0081** features land as **graph + DataFlow**, one roadmap.
-- Transform/type plugins ([0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [0081](DASHSPEC-ADR-0081-type-plugins.md)) are **nodes and port types** on the same engine.
-- CIDE and DashSpec can share **executor and bus** code; only node catalogs and DSL differ.
+- Clear onboarding: **DataFlow = data plane**; **Cockpit = optional presentation consumer**.
+- DashSpec transform plugins align with **Transform**, not CCU.
+- Graph modeling aligns with **CDP session-graph** practice; runtime aligns with **shared bus** (CDP desk bridge pattern).
