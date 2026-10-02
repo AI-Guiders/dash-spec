@@ -34,7 +34,7 @@ public class LusSpecsSyntaxTests
         }
 
         var text = File.ReadAllText(path);
-        var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!, LusParseOptions);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!, LusParseOptions);
         Assert.NotEmpty(doc.Filters);
 
         foreach (var card in doc.Cards)

@@ -10,7 +10,7 @@ public sealed class PhraseTemplateTests
     [Fact]
     public void Parse_on_click_invoke_with_call_args()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -54,7 +54,7 @@ public sealed class PhraseTemplateTests
             ],
         };
 
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"

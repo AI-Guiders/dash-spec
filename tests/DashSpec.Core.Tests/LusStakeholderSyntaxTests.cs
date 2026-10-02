@@ -17,7 +17,7 @@ public class LusStakeholderSyntaxTests
         }
 
         var text = File.ReadAllText(path);
-        var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!);
 
         Assert.Equal(6, doc.Filters.Count);
         Assert.True(doc.Cards.Count >= 20, $"cards={doc.Cards.Count}");

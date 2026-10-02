@@ -22,7 +22,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_date_block_with_underscore_name()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -44,7 +44,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_on_syntax_filter_followed_by_block_filter()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -68,7 +68,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_top_filter_defaults_block()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -87,7 +87,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_period_grain_then_top_filter()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -106,7 +106,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_soak_filters_up_to_period_grain()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -134,7 +134,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_soak_filters_section()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -165,7 +165,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_top_as_on_declaration()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -182,7 +182,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_column_as_label()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -202,7 +202,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_default_in_defaults_block_preserves_label()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -225,7 +225,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_block_multiline()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -245,7 +245,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_date_filter_inline_widget_day_and_grain_filter()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -279,7 +279,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_date_filter_inline_range_without_widget_does_not_bleed_into_next_line()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -307,7 +307,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_field_filter_single_select_combobox()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -335,7 +335,7 @@ public class FilterParserTests
     [Fact]
     public void Parse_filter_ref_does_not_consume_next_line_filter()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -364,7 +364,7 @@ public class FilterParserTests
                 ["x"] = "bucket_start_utc",
                 ["y"] = "event_count",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "lus.v_hourly_activity"),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_hourly_activity", RowsType: "FixtureRow"),
             ["activity_slot"],
             []);
 
@@ -381,7 +381,7 @@ public class FilterParserTests
                 Widget: "day"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, filterIndex, SqlDialect.TSql);
+        var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("bucket_start_utc >= @activity_slot_from", query.Sql);
         Assert.Contains("bucket_start_utc < DATEADD(day, 1, @activity_slot_to)", query.Sql);

@@ -21,7 +21,7 @@
 | **`TypedRowBatch`** | `Schema` + `IReadOnlyList<TypedDataRow>` |
 | **`TypedDataRow`** | Ordinal-backed getters (`GetInt32`, `GetString`, `GetDateTimeUtc`, …) |
 
-SQL-shaped **inferred flat rows** use generated type names (e.g. `SqlInferredRow`) until author UDTs land in Modeling; schema is still **required** on every batch.
+Row **`RowTypeSchema`** on every batch comes from **Modeling** (`type` … `end type` / `.dashtype` includes). **No** `SqlInferredRow` or reader inference in connectors or Execution.
 
 **Forbidden in data plane:** `RowBatch`, `DataRow`, `object?[]` row buffers, `GetValueOrDefault(string)` on rows.
 
@@ -41,7 +41,7 @@ Severity: **Error**. Tests (`tests/**`) are out of scope for DSPEC031–034 (fix
 
 ### 3. Connector contract
 
-`IDataSourceConnector.QueryAsync` returns **`TypedRowBatch`** with schema inferred from the reader ([0079](DASHSPEC-ADR-0079-dashflow-type-system.md) §5 SQL→DashSpec mapping).
+`IDataSourceConnector.QueryAsync` returns **`TypedRowBatch`** materialized with **`CompiledQuery.RowSchema`** (Modeling SSOT). **No** reader inference (`SqlInferredRow`).
 
 ### 4. Phasing
 
@@ -49,7 +49,7 @@ Severity: **Error**. Tests (`tests/**`) are out of scope for DSPEC031–034 (fix
 |-------|-------------|
 | **B0** | This ADR + DSPEC031–034 + `TypedRowBatch` model |
 | **B1** | Migrate Execution / Core / Host; remove `RowBatch` |
-| **B2** | Author `type` … `end type` → `RowTypeSchema` from Modeling (replaces inference names) |
+| **B2** | Modeling SSOT: `type` … `end type`, `datasource … rows R`, `RowTypeCatalog` / `CompiledQuery.RowSchema`; **no inference fallback** |
 
 ## Non-goals (B0)
 

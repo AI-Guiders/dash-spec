@@ -35,7 +35,7 @@ public class ToolbarFilterVisibilityTests
 
 
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(StakeholderSpecPath), Path.GetDirectoryName(StakeholderSpecPath)!);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(StakeholderSpecPath), Path.GetDirectoryName(StakeholderSpecPath)!);
 
         var map = FilterBinding.MapFiltersToCards(doc);
 

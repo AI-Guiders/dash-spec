@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Filter
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
+open DashSpec.Modeling.Parse.Types
 
 module DashboardShellParser =
 
@@ -110,6 +111,11 @@ module DashboardShellParser =
             let grid = LayoutParser.parseGrid reader
             if ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone then
                 ctx.Layout <- grid
+            reader.SkipNewlines()
+            true
+        elif reader.TryKeyword "type" then
+            let rowType = TypeModuleParser.parseTypeBlockAfterKeyword reader
+            ctx.Includes.RegisterRowType rowType
             reader.SkipNewlines()
             true
         elif reader.TryKeyword "palette" then

@@ -14,7 +14,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_applies_optional_date_and_field_filters()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -40,7 +40,7 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -52,7 +52,7 @@ public class QueryCompilerTests
             ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v_daily_active_users.app_name"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index);
+        var query = QueryCompiler.Compile(card, filters, index, document);
 
         Assert.Contains("usage_date >= @usage_date_from", query.Sql);
         Assert.Contains("app_name = @app_name_0", query.Sql);
@@ -62,7 +62,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_cell_drill_overlay_overrides_session_filters_for_bound_names()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -86,7 +86,7 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -102,7 +102,7 @@ public class QueryCompilerTests
         overlay.SetDate("usage_date", new DateOnly(2026, 6, 3), new DateOnly(2026, 6, 3));
         overlay.SetField("app_name", "Tekla Structures");
 
-        var query = QueryCompiler.Compile(card, filters, index, cellDrillOverlay: overlay);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql, null, cellDrillOverlay: overlay);
 
         Assert.Contains("usage_date >= @usage_date_from", query.Sql);
         Assert.Contains("app_name = @app_name_0", query.Sql);
@@ -113,7 +113,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_cell_drill_overlay_applies_bucket_start_utc_field()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               configuration
@@ -136,7 +136,7 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
         var filters = new FilterState();
         var index = new Dictionary<string, Model.FilterDefinition>
@@ -147,7 +147,7 @@ public class QueryCompilerTests
         var overlay = new CardCellDrillOverlay();
         overlay.SetField("bucket", "2026-06-03T08:05:00");
 
-        var query = QueryCompiler.Compile(card, filters, index, cellDrillOverlay: overlay);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql, null, cellDrillOverlay: overlay);
 
         Assert.Contains("bucket_start_utc = @bucket_0", query.Sql);
         Assert.Equal("2026-06-03T08:05:00", query.Parameters.First(p => p.Name == "@bucket_0").Value);
@@ -156,7 +156,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_sql_datasource_wraps_subquery_and_applies_filters()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               configuration
@@ -182,7 +182,7 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -191,7 +191,7 @@ public class QueryCompilerTests
             ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.TSql);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql);
 
         Assert.Contains("FROM (SELECT user_sam", query.Sql);
         Assert.Contains(") AS _dashspec_q", query.Sql);
@@ -201,7 +201,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_postgres_dialect_uses_interval_for_date_upper_bound()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               configuration
@@ -227,7 +227,7 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
@@ -236,7 +236,7 @@ public class QueryCompilerTests
             ["usage_date"] = new(Model.FilterKind.Date, "usage_date", null, "usage_date"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.Postgres);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.Postgres);
 
         Assert.Contains("INTERVAL '1 day'", query.Sql);
         Assert.DoesNotContain("DATEADD", query.Sql);
@@ -245,7 +245,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_table_uses_top_limit()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -258,9 +258,9 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>());
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), DashSpecTestRowTypes.Catalog);
 
         Assert.StartsWith("SELECT TOP 100", query.Sql, StringComparison.OrdinalIgnoreCase);
     }
@@ -268,7 +268,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_postgres_table_uses_trailing_limit()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               configuration
               sqldialect = postgres
@@ -284,9 +284,14 @@ public class QueryCompilerTests
               end card
               end report
             end dashboard
-""").Cards[0];
+"""); var card = document.Cards[0];
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), SqlDialect.Postgres);
+        var query = QueryCompiler.Compile(
+            card,
+            new FilterState(),
+            new Dictionary<string, Model.FilterDefinition>(),
+            document,
+            SqlDialect.Postgres);
 
         Assert.Contains("LIMIT 100", query.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("TOP", query.Sql, StringComparison.OrdinalIgnoreCase);
@@ -295,7 +300,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_table_uses_bound_top_filter()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -324,7 +329,7 @@ public class QueryCompilerTests
         var filters = new FilterState();
         filters.SetTop("row_limit", 75);
 
-        var query = QueryCompiler.Compile(card, filters, index);
+        var query = QueryCompiler.Compile(card, filters, index, doc);
 
         Assert.StartsWith("SELECT TOP 75", query.Sql, StringComparison.OrdinalIgnoreCase);
     }
@@ -340,7 +345,7 @@ public class QueryCompilerTests
                 ["x"] = "app_name",
                 ["y"] = "peak_concurrent_proxy",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "lus.v_peak_concurrent_by_period"),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_peak_concurrent_by_period", RowsType: "FixtureRow"),
             ["period_grain", "period_start", "app_name"],
             []);
 
@@ -360,7 +365,7 @@ public class QueryCompilerTests
             ["app_name"] = new(FilterKind.Field, "app_name", null, "lus.v_peak.app_name"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, filterIndex);
+        var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("period_start = @period_start_anchor", query.Sql);
         Assert.Contains("period_grain = @period_grain_0", query.Sql);
@@ -371,7 +376,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_bound_top_filter_does_not_add_where_clause()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -406,7 +411,7 @@ public class QueryCompilerTests
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
         filters.SetTop("row_limit", 50);
 
-        var query = QueryCompiler.Compile(card, filters, index);
+        var query = QueryCompiler.Compile(card, filters, index, doc);
 
         Assert.Contains("usage_date >= @usage_date_from", query.Sql);
         Assert.DoesNotContain("row_limit", query.Sql, StringComparison.OrdinalIgnoreCase);
@@ -426,7 +431,7 @@ public class QueryCompilerTests
                 ["reference"] = "purchased_seats",
                 ["order_by"] = "utilization_pct DESC, app_name",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "lus.v_stakeholder_peak_over_limit"),
+            new DataSourceDefinition(DataSourceKind.View, "lus.v_stakeholder_peak_over_limit", RowsType: "FixtureRow"),
             ["chart_top"],
             []);
 
@@ -438,7 +443,7 @@ public class QueryCompilerTests
             ["chart_top"] = new(FilterKind.Top, "chart_top", "10", null, MaxValue: 50),
         };
 
-        var query = QueryCompiler.Compile(card, filters, filterIndex);
+        var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);
 
         Assert.StartsWith("SELECT TOP 15", query.Sql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("ORDER BY utilization_pct DESC, app_name", query.Sql);
@@ -460,7 +465,7 @@ public class QueryCompilerTests
                 ["value"] = "launch_count",
                 ["order_by"] = "launch_count DESC, form",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "luf.v_launches_by_form"),
+            new DataSourceDefinition(DataSourceKind.View, "luf.v_launches_by_form", RowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
@@ -471,7 +476,7 @@ public class QueryCompilerTests
             ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-30d..today", "usage_date"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.TSql);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql);
 
         Assert.Contains("SUM(launch_count) AS launch_count", query.Sql);
         Assert.Contains("GROUP BY form", query.Sql);
@@ -490,7 +495,7 @@ public class QueryCompilerTests
             {
                 ["value"] = "distinct_users",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_active_users"),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_active_users", RowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
@@ -501,7 +506,7 @@ public class QueryCompilerTests
             ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("SUM(distinct_users) AS distinct_users", query.Sql);
         Assert.Contains("usage_date >= @usage_date_from", query.Sql);
@@ -519,7 +524,7 @@ public class QueryCompilerTests
                 ["value"] = "peak_concurrent_proxy",
                 ["aggregate"] = "max",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy"),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy", RowsType: "FixtureRow"),
             ["usage_date", "app_name"],
             []);
 
@@ -532,7 +537,7 @@ public class QueryCompilerTests
             ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v_daily_peak_concurrent_proxy.app_name"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("MAX(peak_concurrent_proxy) AS peak_concurrent_proxy", query.Sql);
         Assert.Contains("app_name = @app_name_0", query.Sql);
@@ -550,11 +555,11 @@ public class QueryCompilerTests
                 ["value"] = "kpi",
                 ["aggregate"] = "none",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_kpi"),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_kpi", RowsType: "FixtureRow"),
             [],
             []);
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>());
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("SELECT kpi FROM demo.v_kpi", query.Sql);
         Assert.DoesNotContain("SUM(", query.Sql);
@@ -574,7 +579,7 @@ public class QueryCompilerTests
                     ["x"] = "usage_date",
                     ["y"] = "peak_concurrent_proxy",
                 }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak"),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak", RowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
@@ -591,7 +596,7 @@ public class QueryCompilerTests
             ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
-        var query = QueryCompiler.Compile(card, filters, index, SqlDialect.TSql, reportTimePolicy: policy);
+        var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql, reportTimePolicy: policy);
 
         Assert.Contains("bucket_start_utc AT TIME ZONE 'UTC'", query.Sql);
         Assert.Contains("AT TIME ZONE 'Russian Standard Time'", query.Sql);
@@ -602,7 +607,7 @@ public class QueryCompilerTests
     [Fact]
     public void Parse_configuration_reads_time_basis_and_work_column()
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               configuration
                 time_basis = working
@@ -628,7 +633,7 @@ public class QueryCompilerTests
     [Fact]
     public void Parse_tab_configuration_accepts_work_time_column()
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @tab overview
               configuration
                 sqldialect = tsql
