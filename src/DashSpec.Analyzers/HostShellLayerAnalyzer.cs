@@ -59,7 +59,7 @@ public sealed class HostShellLayerAnalyzer : DiagnosticAnalyzer
         }
 
         var path = context.Node.SyntaxTree.FilePath;
-        if (!IsHostProject(path))
+        if (!DashSpecLayerPaths.IsHostProject(path))
         {
             return;
         }
@@ -100,9 +100,6 @@ public sealed class HostShellLayerAnalyzer : DiagnosticAnalyzer
                 break;
         }
     }
-
-    private static bool IsHostProject(string path) =>
-        path.Contains($"{Path.DirectorySeparatorChar}DashSpec.Host{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsUnderRendering(string path) =>
         path.Contains($"{Path.DirectorySeparatorChar}Services{Path.DirectorySeparatorChar}Rendering{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);

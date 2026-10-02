@@ -54,4 +54,15 @@ public sealed class LayerDependencyTests
 
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
     }
+
+    [Fact]
+    public void Execution_Runtime_must_not_reference_SqlClient()
+    {
+        var result = Types.InAssembly(RuntimeAssembly)
+            .ShouldNot()
+            .HaveDependencyOn("Microsoft.Data.SqlClient")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
+    }
 }
