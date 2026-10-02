@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.CodeCenter
+namespace DashSpec.CodeCenter
 
 /// ADR-0067 InvariantLaws entry point — delegates to graph rule engine.
 module DashSpecInvariantLaws =

@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.CodeCenter
+namespace DashSpec.CodeCenter
 
 open System.Collections.Generic
 open AIGuiders.Platform.Modeling.Core.Identity

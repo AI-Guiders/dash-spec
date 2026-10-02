@@ -5,7 +5,7 @@ using AIGuiders.Platform.Modeling.Core.Identity;
 using AIGuiders.Platform.Modeling.LanguageIntelligence.Relations;
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
-using DashSpec.Modeling.CodeCenter;
+using DashSpec.CodeCenter;
 
 namespace DashSpec.CodeCenter.Plugin;
 
