@@ -27,7 +27,7 @@ public class ChartDataBuilderTests
             ["value"] = "peak_concurrent_apps",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -82,7 +82,7 @@ public class ChartDataBuilderTests
             ["color_normalize"] = "map",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -116,7 +116,7 @@ public class ChartDataBuilderTests
             ["color_normalize"] = "column",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -157,7 +157,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "user.short",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -209,7 +209,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -252,7 +252,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -293,7 +293,7 @@ public class ChartDataBuilderTests
                 ["y_format"] = "raw",
             });
 
-            var rows = RowBatchTestKit.FromDictionaries(
+            var rows = TypedRowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -338,7 +338,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -373,7 +373,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -400,7 +400,7 @@ public class ChartDataBuilderTests
             ["value"] = "peak_concurrent_proxy",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
             Enumerable.Range(1, 12)
                 .Select(i => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -431,7 +431,7 @@ public class ChartDataBuilderTests
             ["x_format"] = "time.short",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -475,7 +475,7 @@ public class ChartDataBuilderTests
             ["x_format"] = "time.short",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -513,7 +513,7 @@ public class ChartDataBuilderTests
             ["orientation"] = "horizontal",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -553,7 +553,7 @@ public class ChartDataBuilderTests
             ["value"] = "launch_count",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -592,7 +592,7 @@ public class ChartDataBuilderTests
             ["value"] = "launch_count",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -635,7 +635,7 @@ public class ChartDataBuilderTests
             ["value"] = "n",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "a", ["n"] = 50d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "b", ["n"] = 40d },
@@ -673,7 +673,7 @@ public class ChartDataBuilderTests
             ["bins"] = "4",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 1d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 2d },
@@ -705,7 +705,7 @@ public class ChartDataBuilderTests
             ["y"] = "peak_apps",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -748,7 +748,7 @@ public class ChartDataBuilderTests
             ["size"] = "intensity",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -789,7 +789,7 @@ public class ChartDataBuilderTests
             ["value"] = "idle_minutes",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -835,7 +835,7 @@ public class ChartDataBuilderTests
             ["y"] = "peak",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -880,7 +880,7 @@ public class ChartDataBuilderTests
             ["max"] = "20",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -913,7 +913,7 @@ public class ChartDataBuilderTests
             ["value"] = "speed",
         });
 
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -980,7 +980,7 @@ public class ChartDataBuilderTests
         });
 
         var start = new DateTime(2026, 6, 23, 9, 0, 0);
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -1024,7 +1024,7 @@ public class ChartDataBuilderTests
 
         var day = new DateOnly(2026, 9, 24);
         var start = new DateTime(2026, 9, 24, 9, 5, 0, DateTimeKind.Utc);
-        var rows = RowBatchTestKit.FromDictionaries(
+        var rows = TypedRowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {

@@ -7,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class ChartSeriesPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -26,7 +26,7 @@ internal static class ChartSeriesPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            var bucket = TimeSeriesGrid.TryParseBucket(row.GetValueOrDefault(xColumn));
+            var bucket = TimeSeriesGrid.TryParseBucket(row.GetClr(xColumn));
             if (bucket is null)
             {
                 continue;
@@ -41,9 +41,9 @@ internal static class ChartSeriesPayloadBuilder
 
             var seriesKey = seriesColumn is null
                 ? "default"
-                : PayloadRowFormatters.FormatValue(row.GetValueOrDefault(seriesColumn));
+                : PayloadRowFormatters.FormatValue(row.GetClr(seriesColumn));
 
-            seriesValues[seriesKey] = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(yColumn));
+            seriesValues[seriesKey] = PayloadRowFormatters.ToDouble(row.GetClr(yColumn));
         }
 
         if (useTimeGrid && buckets.Count > 0)

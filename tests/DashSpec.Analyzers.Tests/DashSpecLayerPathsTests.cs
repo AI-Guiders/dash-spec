@@ -21,4 +21,10 @@ public sealed class DashSpecLayerPathsTests
     [InlineData(@"D:\open\dash-spec\connectors\DashSpec.Connector.SqlServer\X.cs", false)]
     public void IsUntypedRowBagForbiddenLayer(string path, bool expected) =>
         Assert.Equal(expected, DashSpecLayerPaths.IsUntypedRowBagForbiddenLayer(path));
+
+    [Theory]
+    [InlineData(@"D:\open\dash-spec\src\DashSpec.Abstractions\Data\Acquisition\X.cs", true)]
+    [InlineData(@"D:\open\dash-spec\src\DashSpec.Abstractions\Data\TypedRowBatch.cs", false)]
+    public void IsAcquisitionMaterializationLayer(string path, bool expected) =>
+        Assert.Equal(expected, DashSpecLayerPaths.IsAcquisitionMaterializationLayer(path));
 }

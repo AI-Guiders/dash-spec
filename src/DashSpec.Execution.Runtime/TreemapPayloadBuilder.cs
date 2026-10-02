@@ -6,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class TreemapPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var categoryColumn = DiagramBindings.Column(diagram, "x");
@@ -15,13 +15,13 @@ internal static class TreemapPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(valueColumn), out var value) ||
+            if (!MeasureValues.TryReadDouble(row.GetClr(valueColumn), out var value) ||
                 value <= 0)
             {
                 continue;
             }
 
-            var raw = row.GetValueOrDefault(categoryColumn);
+            var raw = row.GetClr(categoryColumn);
             var label = raw is null or DBNull
                 ? "(null)"
                 : Convert.ToString(raw, System.Globalization.CultureInfo.InvariantCulture) ?? "(null)";

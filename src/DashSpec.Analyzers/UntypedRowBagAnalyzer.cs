@@ -19,7 +19,7 @@ public sealed class UntypedRowBagAnalyzer : DiagnosticAnalyzer
     private static readonly DiagnosticDescriptor Rule = new(
         UntypedRowBagId,
         "Untyped row dictionaries are forbidden outside connectors",
-        "Use RowBatch / DataRow from DashSpec.Abstractions.Data instead of Dictionary<string, object?> for query rows (ADR-0085 A1)",
+        "Use TypedRowBatch / TypedDataRow from DashSpec.Abstractions.Data instead of Dictionary<string, object?> for query rows (ADR-0087)",
         "Architecture",
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
