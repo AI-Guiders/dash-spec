@@ -101,7 +101,7 @@ wiring {
 type UtilizationRow = record {
   user_sam: string
   usage_day: local_date
-  concurrent_apps: int where >= 0
+  concurrent_apps: int
 }
 
 channel utilization {
