@@ -28,7 +28,7 @@
 | `.dashcatalog` | `@catalog <id>` | `default`, `entry …` — flat, без `catalog { }` |
 | `.dashchannel` | `@channel <id>` | data channel library entry — [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) |
 | `.dashflow` | `@flow <id>` | channels, transformers, wires — [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) |
-| `.dashtype` | `@types` / `type` roots | UDT and predicates — [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
+| `.dashtype` | `@types` / `type` roots | UDT (primitives + aggregates) — [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
 
 ### File-level `.dashinclude` ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md))
 
