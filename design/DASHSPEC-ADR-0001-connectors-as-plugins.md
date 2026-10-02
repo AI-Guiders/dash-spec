@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted · v0.2 |
 | **Date** | 2026-06-24 |
-| **Relates to** | Forge [FORGE-ADR-0014](https://github.com/AI-Guiders/agent-forge) (microkernel + plugins) |
+| **Relates to** | Forge [FORGE-ADR-0014](https://github.com/AI-Guiders/agent-forge) (microkernel + plugins), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
 
 ## Context
 
