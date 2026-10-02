@@ -95,6 +95,8 @@ Parameters are **plugin-defined** (TOML-like key/value in block); no arbitrary e
 
 Renaming: there is **no special node type `semantic_time`** — only `transform use to_zone` (or equivalent id).
 
+Federation **DataFlow** names these steps **Transforms**, not cockpit **CCUs** ([ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)).
+
 ### DSL power budget
 
 | In spec | In plugin (C#/F#) |
