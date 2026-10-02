@@ -100,7 +100,7 @@ wiring {
 ```text
 type UtilizationRow
   string UserSam
-  local_date UsageDay
+  Date UsageDay
   int ConcurrentApps
 end type
 
