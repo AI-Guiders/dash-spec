@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) |
+| **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md), [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md) |
 
 ## Context
 
@@ -16,19 +16,23 @@ Three enforcement layers (all run on `dotnet build` / CI):
 
 ### 1. Roslyn analyzers (`DashSpec.Analyzers`)
 
-Referenced as `Analyzer` from `DashSpec.Host` only.
+Referenced as `Analyzer` from `DashSpec.Host`, `DashSpec.Core`, `DashSpec.Execution.Runtime`, `DashSpec.Execution.Compilation`, and `connectors/*` (see [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md)).
 
 | Id | Rule |
 |----|------|
 | **DSCHOST001** | `ChartDataBuilder`, `MatrixPayloadBuilder`, `AxisLabelSort` only under `Services/Rendering/` |
 | **DSCHOST002** | `LabelFormat` only under `Services/Rendering/`, `Program.cs`, `Services/Diagnostics/` |
 | **DSCHOST003** | `DateValueCodec` forbidden under `Components/` and `Services/Presentation/` |
+| **DSPEC020** | SQL client types only under `connectors/**` |
+| **DSPEC021** | External I/O forbidden in `Execution.Runtime` |
+
+Layer paths: **`LogicalPath`** via `AIGuiders.Platform.Paths` ([ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md)).
 
 Severity: **Error** (blocks compile).
 
-### 2. Source guards (`architecture/host-source-guards.json`)
+### 2. Source guards (`architecture/host-source-guards.json`) — legacy
 
-Regex rules on `src/DashSpec.Host` paths, validated by `DashSpec.Architecture.Tests`.
+Regex rules on `src/DashSpec.Host` paths, validated by `DashSpec.Architecture.Tests`. **New architecture rules use Roslyn (§1) or NetArchTest (§3), not JSON.** This file shrinks as Host shell migration ([ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md)) completes.
 
 - Report nav heuristics (`Tabs.Count > 1`, `Pages.Count > 1`, …) — **ARCH-0074-***.
 - Payload APIs in UI/presentation folders.
