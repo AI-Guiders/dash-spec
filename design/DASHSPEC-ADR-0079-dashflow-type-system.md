@@ -51,8 +51,8 @@ The type system describes **values**, not object identity.
 |----------|---------|
 | `bool` | |
 | `int` | 32-bit signed integer |
-| `decimal` | Fixed-scale decimal (scale in predicate or mapping metadata) |
-| `string` | Unicode text (length/refinement via predicate) |
+| `decimal` | Fixed-scale decimal (precision/scale in SQL mapping metadata when inferred) |
+| `string` | Unicode text |
 | `instant` | Absolute UTC point in time (wire: ISO-8601 UTC) |
 | `local_date` | Calendar date without timezone (reporting calendar) |
 | `local_datetime` | Local wall-clock without storing offset in the value |
@@ -60,13 +60,33 @@ The type system describes **values**, not object identity.
 
 **Forbidden as data-plane types:** `string` masquerading as `instant` / `local_date` on ports (display formatting belongs in **present**, or derived typed columns from `semantic_time`).
 
-#### Aggregates
+#### Aggregates (algebraic — not SQL `GROUP BY`)
 
-| Form | Use |
-|------|-----|
-| `record { f: T, … }` | One row shape |
-| `rows R` | Port type for tables / card inputs (`R` = record) |
-| `list T` | Rare; scalars series — prefer `rows` with one column |
+**Aggregate types** compose primitives into larger **value** shapes. This is the rich part of the type system; it is still not a programming language (no user-defined functions on types).
+
+| Kind | Syntax | Role |
+|------|--------|------|
+| **Product** | `record { f: T, … }` | Named row / struct (one logical row) |
+| **Nominal alias** | `type Name = record { … }` | UDT reused on ports |
+| **Optional** | `optional T` | Missing value explicit (no silent `null`) |
+| **Sum / enum** | `enum { A, B, C }` | Closed discriminated set (status, grain, …) |
+| **Homogeneous list** | `list T` | Ordered values (uncommon on ports; prefer `rows`) |
+| **Rowset** | `rows R` | **Primary port type** for channel/transform → card (`R` = record) |
+
+**Not in the type language:** SQL aggregation (`SUM`, `GROUP BY`) — that is a **named transform step** (`aggregate { … }`) whose **output** is a new `rows R'` type, not a separate “aggregate type” keyword.
+
+Composition example:
+
+```text
+type Grain = enum { day, hour, five_minute }
+
+type ActivityRow = record {
+  grain: Grain
+  usage_day: local_date
+  peak: int
+  app_name: string
+}
+```
 
 #### User-defined types (UDT)
 
@@ -94,23 +114,11 @@ Dashboard / report graph filter ports use dedicated types, e.g.:
 
 Filter **application** lives in the **report internal flow** ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) amendment), not inside channel nodes.
 
-### 4. Predicates (refinements on value types)
+### 4. Refinement predicates (non-goals v1)
 
-Not a programming language — **constraints** on fields or type aliases:
+**Refinement predicates** (`string where non_empty`, `int where >= 0`) are **not** part of dashflow v1. The intended expressiveness in authoring is **primitives + algebraic aggregates** (§3), not a predicate calculus.
 
-```text
-type UserSam = string where non_empty
-type PeakApps = int where >= 0
-type UsageDay = local_date
-```
-
-| Rule | Meaning |
-|------|---------|
-| Predicates are **compile-time** checks where provable | e.g. non-empty literal, known schema |
-| Predicates may be **runtime-validated** at channel boundary | e.g. SQL row violates `>= 0` → diagnostic at fetch |
-| No arbitrary expressions | Closed catalog: `non_empty`, `>= 0`, `precision(p,s)`, `max_length(n)`, … |
-
-Predicates enable richer Designer hints without turning DSL into a YP.
+SQL column metadata (length, precision) may be stored as **mapping annotations** on inferred fields for Designer hints; that is not a separate type-level `where` syntax until a future ADR explicitly adds it.
 
 ### 5. SQL and .NET — mapping layers, not the language
 
@@ -126,8 +134,8 @@ SQL column metadata  ──infer──►  DashSpec type  ──emit──►  .
 |----------------------|----------|
 | `bit` | `bool` |
 | `int`, `bigint` | `int` (widen rules explicit) |
-| `decimal(p,s)` | `decimal` + predicate `precision(p,s)` |
-| `nvarchar(n)` / `varchar(n)` | `string` + `max_length(n)` |
+| `decimal(p,s)` | `decimal` (p,s in mapping annotation) |
+| `nvarchar(n)` / `varchar(n)` | `string` (n in mapping annotation) |
 | `date` | `local_date` |
 | `datetime2`, `datetimeoffset` (UTC normalized) | `instant` |
 | `time` | `duration` or `time_of_day` (ADR add if needed) |
@@ -176,7 +184,7 @@ Channel may declare **param surface** (names + filter **types** compatible with 
 
 | Phase | Deliverable |
 |-------|-------------|
-| **T0** | F# `DashType` DU + predicates; port typing on `FlowGraph` |
+| **T0** | F# `DashType` DU (primitives + aggregates); port typing on `FlowGraph` |
 | **T1** | SQL schema infer → proposed types; lock file / explicit `output` |
 | **T2** | Diagram field compatibility vs `rows R` |
 | **T3** | Designer schema preview from Modeling |
