@@ -224,6 +224,7 @@ end type
 ```
 
 - Definitions live in `.dashtype`, module `types { }`, or stdlib (`lus.types`).
+- **Semantic types** with non-trivial behavior use **type plugins** ([ADR-0081](DASHSPEC-ADR-0081-type-plugins.md)); structural aggregates stay in `type` … `end type` blocks.
 - SQL infer may propose a **flat** aggregate; authors may refactor to nested UDTs when the domain warrants it (no automatic nesting from dots in column names in v1).
 - **SQL column → field:** channel `from view` maps `user_sam` columns to aggregate fields (`UserSam` or explicit `map user_sam → UserSam` in channel body when names differ).
 
