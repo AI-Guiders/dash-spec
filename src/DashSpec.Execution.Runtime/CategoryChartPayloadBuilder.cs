@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 
@@ -6,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class CategoryChartPayloadBuilder
 {
     public static ChartPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -22,7 +23,7 @@ internal static class CategoryChartPayloadBuilder
         var ordered = new List<(string Label, double? Value, double? Reference, string? Color)>();
         var indexByLabel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             var label = PayloadRowFormatters.FormatValue(row.GetValueOrDefault(xColumn));
             if (string.IsNullOrWhiteSpace(label))

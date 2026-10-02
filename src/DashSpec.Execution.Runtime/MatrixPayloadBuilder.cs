@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 
 using DashSpec.Core.Model;
@@ -10,7 +11,7 @@ internal static class MatrixPayloadBuilder
     private const string DefaultTooltipMergeSplit = ", ";
 
     public static MatrixPayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform = null,
         TooltipDefinition? tooltip = null)
@@ -46,7 +47,7 @@ internal static class MatrixPayloadBuilder
         var yIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var yTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             var rawX = row.GetValueOrDefault(xColumn);
             var x = PayloadRowFormatters.FormatHeatmapAxisLabel(rawX, xFormat);
@@ -109,7 +110,7 @@ internal static class MatrixPayloadBuilder
         double min = double.PositiveInfinity;
         double max = double.NegativeInfinity;
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             var x = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(xColumn), xFormat);
             var y = PayloadRowFormatters.FormatHeatmapAxisLabel(row.GetValueOrDefault(yColumn), yFormat);
@@ -174,7 +175,7 @@ internal static class MatrixPayloadBuilder
     }
 
     private static MatrixPayload BuildHourGrid(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         string xColumn,
         string yColumn,
         string valueColumn,
@@ -186,13 +187,13 @@ internal static class MatrixPayloadBuilder
         DiagramDefinition diagram)
     {
         var buckets = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
-        var bucketRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
+        var bucketRows = new SortedDictionary<DateTime, Dictionary<string, DataRow>>(
             Comparer<DateTime>.Default);
         var yLabels = new List<string>();
         var yIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var yTotals = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var row in rows)
+        foreach (var row in rows.Rows)
         {
             var bucket = TimeSeriesGrid.TryParseBucket(row.GetValueOrDefault(xColumn));
             if (bucket is null)
@@ -211,7 +212,7 @@ internal static class MatrixPayloadBuilder
             {
                 seriesValues = new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
                 buckets[xKey] = seriesValues;
-                bucketRows[xKey] = new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.OrdinalIgnoreCase);
+                bucketRows[xKey] = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
             }
 
             if (!yIndex.ContainsKey(y))
@@ -256,7 +257,7 @@ internal static class MatrixPayloadBuilder
             var day = buckets.Keys.First().Date;
             var (rangeStart, rangeEnd) = ResolveUtcStorageWindow(day, axisWindow);
             var expanded = new SortedDictionary<DateTime, Dictionary<string, double?>>(Comparer<DateTime>.Default);
-            var expandedRows = new SortedDictionary<DateTime, Dictionary<string, IReadOnlyDictionary<string, object?>>>(
+            var expandedRows = new SortedDictionary<DateTime, Dictionary<string, DataRow>>(
                 Comparer<DateTime>.Default);
             for (var slot = rangeStart; slot < rangeEnd; slot = slot.Add(xStep))
             {
@@ -264,8 +265,8 @@ internal static class MatrixPayloadBuilder
                     ? new Dictionary<string, double?>(values, StringComparer.OrdinalIgnoreCase)
                     : new Dictionary<string, double?>(StringComparer.OrdinalIgnoreCase);
                 expandedRows[slot] = bucketRows.TryGetValue(slot, out var rowMap)
-                    ? new Dictionary<string, IReadOnlyDictionary<string, object?>>(rowMap, StringComparer.OrdinalIgnoreCase)
-                    : new Dictionary<string, IReadOnlyDictionary<string, object?>>(StringComparer.OrdinalIgnoreCase);
+                    ? new Dictionary<string, DataRow>(rowMap, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
             }
 
             buckets = expanded;

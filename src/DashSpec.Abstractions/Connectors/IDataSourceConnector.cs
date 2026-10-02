@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 
 namespace DashSpec.Abstractions.Connectors;
@@ -7,7 +8,7 @@ public interface IDataSourceConnector
 {
     string Id { get; }
 
-    Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> QueryAsync(
+    Task<RowBatch> QueryAsync(
         CompiledQuery query,
         CancellationToken cancellationToken = default);
 

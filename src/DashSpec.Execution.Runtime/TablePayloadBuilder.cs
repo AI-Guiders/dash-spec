@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -5,16 +6,16 @@ namespace DashSpec.Execution.Runtime;
 internal static class TablePayloadBuilder
 {
     public static TablePayload Build(
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows,
+        RowBatch rows,
         DiagramDefinition diagram)
     {
         var columns = diagram.Properties.TryGetValue("columns", out var raw)
             ? raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            : rows.FirstOrDefault()?.Keys.ToArray() ?? [];
+            : rows.IsEmpty ? [] : rows.ColumnNames.ToArray();
         var columnFormats = ColumnFormatMap.Parse(
             diagram.Properties.GetValueOrDefault("column_formats"));
 
-        var tableRows = rows
+        var tableRows = rows.Rows
             .Select(row => columns
                 .Select(column =>
                 {

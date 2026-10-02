@@ -27,7 +27,7 @@ public class ChartDataBuilderTests
             ["value"] = "peak_concurrent_apps",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -50,7 +50,7 @@ public class ChartDataBuilderTests
                 ["peak_concurrent_apps"] = 10,
                 ["peak_apps"] = "Tekla, AutoCAD",
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram, tooltip: PeakAppsTooltip);
 
@@ -82,7 +82,7 @@ public class ChartDataBuilderTests
             ["color_normalize"] = "map",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -96,7 +96,7 @@ public class ChartDataBuilderTests
                 ["user_name"] = "bob",
                 ["peak_concurrent_apps"] = 10d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -116,7 +116,7 @@ public class ChartDataBuilderTests
             ["color_normalize"] = "column",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -136,7 +136,7 @@ public class ChartDataBuilderTests
                 ["user_name"] = "alice",
                 ["peak_concurrent_apps"] = 6d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -157,7 +157,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "user.short",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -185,7 +185,7 @@ public class ChartDataBuilderTests
                 ["user_name"] = "LonelySoul",
                 ["peak_concurrent_apps"] = 6,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram, tooltip: PeakAppsTooltip);
 
@@ -209,7 +209,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -229,7 +229,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Google Chrome",
                 ["event_count"] = 15d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -252,7 +252,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -272,7 +272,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Tekla",
                 ["peak_concurrent_proxy"] = 2d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -293,7 +293,7 @@ public class ChartDataBuilderTests
                 ["y_format"] = "raw",
             });
 
-            IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+            var rows = RowBatchTestKit.FromDictionaries(
             [
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -313,7 +313,7 @@ public class ChartDataBuilderTests
                     ["app_name"] = "Tekla",
                     ["peak_concurrent_proxy"] = 2d,
                 },
-            ];
+            ]);
 
             var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -338,7 +338,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -346,7 +346,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Cursor IDE",
                 ["event_count"] = 81d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -373,7 +373,7 @@ public class ChartDataBuilderTests
             ["y_format"] = "raw",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -381,7 +381,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Cursor IDE",
                 ["event_count"] = 5d,
             },
-        ];
+        ]);
 
         var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
 
@@ -400,14 +400,15 @@ public class ChartDataBuilderTests
             ["value"] = "peak_concurrent_proxy",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows = Enumerable.Range(1, 12)
-            .Select(i => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["usage_date"] = new DateOnly(2026, 6, 23),
-                ["app_name"] = $"product-{i:D2}",
-                ["peak_concurrent_proxy"] = i,
-            })
-            .ToArray();
+        var rows = RowBatchTestKit.FromDictionaries(
+            Enumerable.Range(1, 12)
+                .Select(i => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["usage_date"] = new DateOnly(2026, 6, 23),
+                    ["app_name"] = $"product-{i:D2}",
+                    ["peak_concurrent_proxy"] = i,
+                })
+                .ToArray());
 
         var matrix = ChartDataBuilder.BuildHeatmap(
             rows,
@@ -430,7 +431,7 @@ public class ChartDataBuilderTests
             ["x_format"] = "time.short",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -442,7 +443,7 @@ public class ChartDataBuilderTests
                 ["bucket"] = new DateTime(2026, 6, 24, 8, 5, 0),
                 ["n"] = 2d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -474,7 +475,7 @@ public class ChartDataBuilderTests
             ["x_format"] = "time.short",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -486,7 +487,7 @@ public class ChartDataBuilderTests
                 ["bucket"] = new DateTime(2026, 6, 24, 7, 25, 0),
                 ["n"] = 2d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -512,7 +513,7 @@ public class ChartDataBuilderTests
             ["orientation"] = "horizontal",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -524,7 +525,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "AutoCAD",
                 ["peak_concurrent_proxy"] = 8d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -552,7 +553,7 @@ public class ChartDataBuilderTests
             ["value"] = "launch_count",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -564,7 +565,7 @@ public class ChartDataBuilderTests
                 ["location"] = "/MOC",
                 ["launch_count"] = 177d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -591,7 +592,7 @@ public class ChartDataBuilderTests
             ["value"] = "launch_count",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -608,7 +609,7 @@ public class ChartDataBuilderTests
                 ["location"] = "/SPOC-K",
                 ["launch_count"] = 10d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -634,13 +635,13 @@ public class ChartDataBuilderTests
             ["value"] = "n",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "a", ["n"] = 50d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "b", ["n"] = 40d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "c", ["n"] = 30d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "d", ["n"] = 10d },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "c",
@@ -672,13 +673,13 @@ public class ChartDataBuilderTests
             ["bins"] = "4",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 1d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 2d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 8d },
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 9d },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "h",
@@ -704,7 +705,7 @@ public class ChartDataBuilderTests
             ["y"] = "peak_apps",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -716,7 +717,7 @@ public class ChartDataBuilderTests
                 ["idle_minutes"] = 40d,
                 ["peak_apps"] = 7d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "s",
@@ -747,7 +748,7 @@ public class ChartDataBuilderTests
             ["size"] = "intensity",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -761,7 +762,7 @@ public class ChartDataBuilderTests
                 ["peak_apps"] = 7d,
                 ["intensity"] = 328d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "s",
@@ -788,7 +789,7 @@ public class ChartDataBuilderTests
             ["value"] = "idle_minutes",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -805,7 +806,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Word",
                 ["idle_minutes"] = 5d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "b",
@@ -834,7 +835,7 @@ public class ChartDataBuilderTests
             ["y"] = "peak",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -851,7 +852,7 @@ public class ChartDataBuilderTests
                 ["app_name"] = "Skip",
                 ["peak"] = 0d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "t",
@@ -879,13 +880,13 @@ public class ChartDataBuilderTests
             ["max"] = "20",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
                 ["peak"] = 35d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "g",
@@ -912,7 +913,7 @@ public class ChartDataBuilderTests
             ["value"] = "speed",
         });
 
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -924,7 +925,7 @@ public class ChartDataBuilderTests
                 ["direction"] = "E",
                 ["speed"] = 7d,
             },
-        ];
+        ]);
 
         var card = new CardDefinition(
             "w",
@@ -979,7 +980,7 @@ public class ChartDataBuilderTests
         });
 
         var start = new DateTime(2026, 6, 23, 9, 0, 0);
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -995,7 +996,7 @@ public class ChartDataBuilderTests
                 ["segment_end_utc"] = start.AddMinutes(25),
                 ["chart_color"] = "#00ff00",
             },
-        ];
+        ]);
 
         var payload = ChartDataBuilder.BuildGantt(rows, diagram);
 
@@ -1023,7 +1024,7 @@ public class ChartDataBuilderTests
 
         var day = new DateOnly(2026, 9, 24);
         var start = new DateTime(2026, 9, 24, 9, 5, 0, DateTimeKind.Utc);
-        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows =
+        var rows = RowBatchTestKit.FromDictionaries(
         [
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
             {
@@ -1033,7 +1034,7 @@ public class ChartDataBuilderTests
                 ["segment_end_utc"] = start.AddMinutes(5),
                 ["chart_color"] = "#ff0000",
             },
-        ];
+        ]);
 
         var payload = ChartDataBuilder.BuildGantt(rows, diagram);
 

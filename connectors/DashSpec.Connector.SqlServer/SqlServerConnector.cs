@@ -1,4 +1,5 @@
 using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
@@ -12,7 +13,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
 
     public string Id => "sqlserver";
 
-    public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> QueryAsync(
+    public async Task<RowBatch> QueryAsync(
         CompiledQuery query,
         CancellationToken cancellationToken = default)
     {
@@ -29,26 +30,27 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var rows = new List<IReadOnlyDictionary<string, object?>>();
+        var columnNames = Enumerable.Range(0, reader.FieldCount).Select(reader.GetName).ToArray();
+        var rowValues = new List<object?[]>();
         var maxRows = ResolveMaxRows();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
-            if (rows.Count >= maxRows)
+            if (rowValues.Count >= maxRows)
             {
                 throw new InvalidOperationException(
                     $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [connectors.sqlserver] max_rows.");
             }
 
-            var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            var cells = new object?[reader.FieldCount];
             for (var i = 0; i < reader.FieldCount; i++)
             {
-                row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                cells[i] = reader.IsDBNull(i) ? null : reader.GetValue(i);
             }
 
-            rows.Add(row);
+            rowValues.Add(cells);
         }
 
-        return rows;
+        return RowBatch.Create(columnNames, rowValues);
     }
 
     public async Task<IReadOnlyList<string>> QueryDistinctStringsAsync(

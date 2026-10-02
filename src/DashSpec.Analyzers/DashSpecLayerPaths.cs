@@ -7,6 +7,9 @@ internal static class DashSpecLayerPaths
 {
     private const string ConnectorsPrefix = "connectors";
     private const string ExecutionRuntimePrefix = "src/DashSpec.Execution.Runtime";
+    private const string ExecutionCompilationPrefix = "src/DashSpec.Execution.Compilation";
+    private const string CorePrefix = "src/DashSpec.Core";
+    private const string AbstractionsPrefix = "src/DashSpec.Abstractions";
     private const string HostPrefix = "src/DashSpec.Host";
 
     public static bool IsConnectorAcquisitionLayer(string? physicalPath) =>
@@ -18,4 +21,11 @@ internal static class DashSpecLayerPaths
 
     public static bool IsHostProject(string? physicalPath) =>
         LogicalPathCompat.ContainsLayerSegment(physicalPath, HostPrefix);
+
+    public static bool IsUntypedRowBagForbiddenLayer(string? physicalPath) =>
+        LogicalPathCompat.ContainsLayerSegment(physicalPath, ExecutionRuntimePrefix)
+        || LogicalPathCompat.ContainsLayerSegment(physicalPath, ExecutionCompilationPrefix)
+        || LogicalPathCompat.ContainsLayerSegment(physicalPath, CorePrefix)
+        || LogicalPathCompat.ContainsLayerSegment(physicalPath, AbstractionsPrefix)
+        || IsHostProject(physicalPath);
 }
