@@ -158,13 +158,8 @@ type Date
 end type
 
 type DateTime
-  int Year
-  int Month
-  int Day
-  int Hour
-  int Minute
-  int Second
-  UtcOffset Offset
+  Date Day
+  Time Clock
 end type
 
 type Week
