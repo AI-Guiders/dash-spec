@@ -678,6 +678,19 @@ public class DashboardParseTests
         }
     }
 
+    [Theory]
+    [InlineData("sticky", MatrixAxisScrollMode.Sticky)]
+    [InlineData("none", MatrixAxisScrollMode.None)]
+    [InlineData("scroll", MatrixAxisScrollMode.None)]
+    public void VizAxisPresentationParser_ParseAxisScroll(string raw, MatrixAxisScrollMode expected)
+    {
+        var props = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["axis_scroll"] = raw,
+        };
+        Assert.Equal(expected, VizAxisPresentationParser.ParseAxisScroll(props));
+    }
+
     [Fact]
     public void DateValueCodec_CombineDisplayLocalToStorageUtc_matches_matrix_axis()
     {

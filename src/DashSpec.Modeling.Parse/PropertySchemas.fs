@@ -179,7 +179,8 @@ module PropertySchemas =
           spec "value" ColumnBinding
           spec "height" Scalar
           spec "visible_rows" Scalar
-          spec "color_normalize" Scalar ]
+          spec "color_normalize" Scalar
+          spec "axis_scroll" Scalar ]
 
     let ganttDiagram =
         [ spec "y" ColumnBinding
