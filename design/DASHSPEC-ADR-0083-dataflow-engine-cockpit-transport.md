@@ -53,7 +53,7 @@ When migrating CIDE/CDP code into platform packages, **rename by layer**: DataFl
 
 | Surface | Shared underneath |
 |---------|-------------------|
-| `.dashflow` / `.dashchannel` / card `input` | F# **`FlowGraph` IR** + [0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
+| `.dashflow` / `.dashsource` / card `input` | F# **`FlowGraph` IR** + [0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
 | n8n-like Designer | **Same IR**; preview = **same executor** |
 | Runtime | **DataFlow executor**: DAG of sources + **transforms**; bus + port batches |
 
@@ -81,7 +81,7 @@ Cockpit F# (`Modeling.Cockpit.DataBus` / `ProjectionGraph`) remains relevant for
 
 | IR / runtime | Role |
 |--------------|------|
-| **Source** (channel node) | Connector fetch → output port `rows R` |
+| **Source** (graph node) | Connector fetch → output port `rows R` |
 | **Transform** | [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) plugin; N→M typed ports |
 | **Edge** | Modeling proves port compatibility; runtime passes batch or cache key |
 | **Sink** | Card `input`, export port, or future cockpit subscription point |

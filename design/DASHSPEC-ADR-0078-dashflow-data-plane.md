@@ -1,4 +1,4 @@
-# DASHSPEC-ADR-0078: Dashflow — data plane (channels, transformers, card inputs)
+# DASHSPEC-ADR-0078: Dashflow — data plane (sources, transformers, card inputs)
 
 | | |
 |---|---|
@@ -18,7 +18,7 @@ The product evolved toward **BI semantics** without a named data layer:
 
 | Concern | Where it lives today | Nature |
 |---------|----------------------|--------|
-| SQL extract + `bind` filters | `QueryCompiler`, card `datasource` | channel-like, but per card |
+| SQL extract + `bind` filters | `QueryCompiler`, card `datasource` | per-card only (legacy) |
 | UTC facts → reporting calendar / TZ | `LabelFormat.DisplayTimeZone`, `DateValueCodec`, report `date_format` | **semantic transform**, not SQL |
 | Axis order on formatted labels | `LabelFormat.TryParseChronological`, `MatrixPayloadBuilder` | transform + present blurred |
 | Hour / time grid gap-fill | `TimeSeriesGrid`, `MatrixPayloadBuilder.BuildHourGrid` | **shape transform** on rowset |
@@ -30,11 +30,11 @@ Result: **two ETL layers** (DB + Execution.Runtime), the second **implicit**, no
 
 Split **data flow** from **presentation**:
 
-- **Channel** — boundary to external data; declares **typed outputs** ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) and optional **param surface** for filters (types only).
+- **Source** — graph node: boundary to external data (`from view` / `from sql`); declares **typed outputs** ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) and optional **param surface** for filters (types only). Authoring keyword: **`source <id>`** (not `channel` — avoids cockpit / wire confusion).
 - **Transformer** — N inputs → M outputs; declarative steps (including time/TZ/grain).
-- **Card** (and optionally sheet/report) — declares **inputs** wired to flow ports; **diagram / present** only.
+- **Card** — declares **inputs** wired to flow ports; **diagram / present** only.
 
-Optional sugar: `use channel` on a card when one input maps 1:1. Legacy `datasource` on card compiles to an anonymous inline channel (migration path, not dashspec-2 default).
+Legacy card **`datasource { … }`** compiles to an anonymous inline **`source`** in the resolved graph (migration). Optional sugar: **`use source`** on a card when one input maps 1:1.
 
 ## Decision
 
@@ -43,7 +43,7 @@ Optional sugar: `use channel` on a card when one input maps 1:1. Legacy `datasou
 ```text
 [ Connector plugins ]     infrastructure (credentials, dialect) — ADR-0001
         ↓
-[ Dashflow graph ]        channels + transformers + wires
+[ Dashflow graph ]        sources + transformers + wires (edges)
         ↓
 [ Report / sheet / card ] inputs + diagram + presentation
 ```
@@ -51,7 +51,7 @@ Optional sugar: `use channel` on a card when one input maps 1:1. Legacy `datasou
 | Plane | Owns | Does not own |
 |-------|------|----------------|
 | **DB** | Domain facts, agg, views, UTC storage | UI formats |
-| **Channel** | `from view` / `from sql`, param surface (filter **types**), **typed** `output` | `diagram`, filter **values** |
+| **Source** (node) | `from view` / `from sql`, param surface (filter **types**), **typed** `output` | `diagram`, filter **values** |
 | **Transformer** | Steps on rowsets (semantic time, aggregate, limit, …) | SQL connection strings |
 | **Present** | `diagram`, `presentation`, viz plugins, human labels (`as`) | Ad-hoc SQL per card |
 
@@ -63,14 +63,14 @@ Execution resolves a single graph per module (or shared included flow):
 
 ```text
 FlowGraph
-├── nodes: ChannelNode | TransformerNode
+├── nodes: SourceNode | TransformerNode | ApplyFiltersNode
 ├── edges: (producerPort → consumerPort)
-└── metadata: bind names propagated to channel nodes
+└── metadata: bind names propagated to source nodes
 ```
 
 | Node | Ports |
 |------|--------|
-| **Channel** | outputs only (≥1); each port typed `rows R` ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)); optional param surface for filter types |
+| **Source** | outputs only (≥1); each port typed `rows R` ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)); optional param surface for filter types |
 | **Apply filters** (report graph) | row `in` / `out` + filter value ports; wires dashboard filters explicitly |
 | **Transformer** | inputs (≥1), outputs (≥1) |
 | **Card** (consumer, in report IR) | inputs (≥0); each input references `(nodeId, outputPort)` + column mapping to diagram |
@@ -81,8 +81,8 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 
 | Extension | Root | Contents |
 |-----------|------|----------|
-| `.dashchannel` | `@channel <id>` | optional standalone channel library entry |
-| `.dashflow` | `@flow <id>` | channels, transformers, wires |
+| `.dashsource` | `@source <id>` | optional standalone source library entry |
+| `.dashflow` | `@flow <id>` | sources, transformers, wires |
 
 Module wiring ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)):
 
@@ -95,7 +95,7 @@ wiring {
 
 `.dashtransform` remains **presentation / series chrome** ([ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md)) — **not** a dashflow data transformer. Data steps use `transformer` inside `.dashflow` only.
 
-### Channel (sketch grammar)
+### Source (sketch grammar)
 
 ```text
 type UtilizationRow
@@ -104,7 +104,7 @@ type UtilizationRow
   int ConcurrentApps
 end type
 
-channel utilization {
+source utilization {
   from view demo.v_daily_peak_concurrent_apps_per_user
   params { usage_date: UsageDateRange, app_name: rows SelectedAppNames }
   output utilization: rows UtilizationRow
@@ -113,7 +113,7 @@ channel utilization {
 
 - `from` — `view` | `sql query` | `sql file` ([ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md)).
 - **Output** is the stable typed API for downstream transformers and card inputs.
-- Filter **values** connect in the **report internal flow** (`apply_filters`), not on the channel node.
+- Filter **values** connect in the **report internal flow** (`apply_filters`), not on the source node.
 
 ### Transformer (sketch grammar)
 
@@ -151,7 +151,7 @@ card peak_table as "Top users" {
 ```
 
 - **`formats` on diagram** — present layer; chronological sort uses data-plane `sort_key` when present (no re-parsing `dd.MM` strings).
-- **`use channel X`** — sugar: single implicit `input` from channel default output.
+- **`use source X`** — sugar: single implicit `input` from source default output.
 
 ### Implicit transforms today → v1 target
 
@@ -159,7 +159,7 @@ card peak_table as "Top users" {
 |-----------------------------|-------------|
 | `LabelFormat` + `DisplayTimeZone` + report `date_format` | `transform use to_zone` (builtin plugin) |
 | `TimeSeriesGrid` / hour grid fill | `transformer time_grid` (deferred; document as follow-up) |
-| Per-card `datasource` | Anonymous `channel __card_<id>` in resolved graph |
+| Per-card `datasource` | Anonymous `source __card_<id>` in resolved graph |
 | `MatrixPayloadBuilder` axis parse of display strings | Prefer explicit sort columns from `to_zone` output |
 
 Until dashflow lands in the parser, **behavior unchanged**; new features that add post-SQL semantics must be implemented as if they will become a **named transformer step** (no new hidden statics on card path).
@@ -169,7 +169,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | Phase | Deliverable |
 |-------|-------------|
 | **P0** (this ADR) | Terminology, `FlowGraph` contract, file kinds, split from `.dashtransform` |
-| **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy `datasource` → inline channel |
+| **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy card `datasource` → inline `source` |
 | **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
 | **P3** | `.dashflow` parse + `wiring { flow … }`; card `input` |
 | **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps |
@@ -181,7 +181,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 - **Data Flow Graph** (read-only): resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) port schemas + live **`FlowRunSnapshot`** from the executor.
 - **Data Flow Designer** (n8n-like): palette, **typed in/out ports**, drag-wire — **mutates the same `FlowGraph` IR** as `.dashflow`; per-node preview invokes the **same graph executor** (subgraph / single node), not a mock pipeline.
 
-Implementation stack: federation **DataFlow** model (transport, DataBus, CCU-shaped transform plugins, port batches) — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md). Not a separate Studio engine; not MCP.
+Implementation stack: federation **DataFlow** model (transport, DataBus, **Transform** plugins, port batches) — [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md). Not a separate Studio engine; not MCP.
 
 ## Non-goals
 
@@ -200,7 +200,7 @@ Implementation stack: federation **DataFlow** model (transport, DataBus, CCU-sha
 
 ```text
 @flow stakeholder {
-  channel executive {
+  source executive {
     from view demo.v_stakeholder_kpi_executive
     params { usage_date: UsageDateRange, app_name: rows SelectedAppNames }
     output kpi: rows StakeholderKpiRow
