@@ -2,51 +2,57 @@ using System.Data.Common;
 
 namespace DashSpec.Abstractions.Data.Acquisition;
 
-/// <summary>Maps ADO readers to <see cref="TypedRowBatch"/> (acquisition-only; DSPEC031–034).</summary>
+/// <summary>Maps ADO readers to <see cref="TypedRowBatch"/> using Modeling-provided <see cref="RowTypeSchema"/> (DSPEC031–034).</summary>
 public static class SqlRowMaterializer
 {
-    public static RowTypeSchema InferSchema(DbDataReader reader, string typeName = "SqlInferredRow")
-    {
-        ArgumentNullException.ThrowIfNull(reader);
-
-        var fields = new RowFieldSchema[reader.FieldCount];
-        for (var i = 0; i < reader.FieldCount; i++)
-        {
-            fields[i] = new RowFieldSchema(
-                reader.GetName(i),
-                MapFieldType(reader.GetFieldType(i)),
-                reader.GetFieldType(i) == typeof(string) || Nullable.GetUnderlyingType(reader.GetFieldType(i)) is not null);
-        }
-
-        return new RowTypeSchema(typeName, fields);
-    }
-
-    public static DashValue[] ReadRow(DbDataReader reader, RowTypeSchema schema)
+    public static int[] ResolveColumnOrdinals(DbDataReader reader, RowTypeSchema schema)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(schema);
+
+        var ordinals = new int[schema.FieldCount];
+        for (var i = 0; i < schema.FieldCount; i++)
+        {
+            ordinals[i] = reader.GetOrdinal(schema.Fields[i].Name);
+        }
+
+        return ordinals;
+    }
+
+    public static DashValue[] ReadRow(DbDataReader reader, RowTypeSchema schema, int[] columnOrdinals)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(columnOrdinals);
+
+        if (columnOrdinals.Length != schema.FieldCount)
+        {
+            throw new ArgumentException("Column ordinal map length must match schema field count.", nameof(columnOrdinals));
+        }
 
         var cells = new DashValue[schema.FieldCount];
         for (var i = 0; i < schema.FieldCount; i++)
         {
             var field = schema.Fields[i];
-            if (reader.IsDBNull(i))
+            var ordinal = columnOrdinals[i];
+            if (reader.IsDBNull(ordinal))
             {
                 cells[i] = DashValue.NullOf(field.Kind);
                 continue;
             }
 
-            cells[i] = ConvertCell(reader.GetValue(i), field.Kind);
+            cells[i] = ConvertCell(reader.GetValue(ordinal), field.Kind);
         }
 
         return cells;
     }
 
-    public static TypedRowBatch ReadAll(DbDataReader reader, int maxRows, string typeName = "SqlInferredRow")
+    public static TypedRowBatch ReadAll(DbDataReader reader, int maxRows, RowTypeSchema schema)
     {
         ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(schema);
 
-        var schema = InferSchema(reader, typeName);
+        var columnOrdinals = ResolveColumnOrdinals(reader, schema);
         var rows = new List<DashValue[]>();
         while (reader.Read())
         {
@@ -55,13 +61,13 @@ public static class SqlRowMaterializer
                 throw new InvalidOperationException($"SQL result exceeded max_rows ({maxRows}).");
             }
 
-            rows.Add(ReadRow(reader, schema));
+            rows.Add(ReadRow(reader, schema, columnOrdinals));
         }
 
         return TypedRowBatch.Create(schema, rows);
     }
 
-    public static DashPrimitiveKind MapFieldType(Type fieldType)
+    public static DashPrimitiveKind MapClrType(Type fieldType)
     {
         var underlying = Nullable.GetUnderlyingType(fieldType) ?? fieldType;
         return underlying switch

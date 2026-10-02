@@ -212,7 +212,7 @@ public class SpecModulesTests
             "datasource = \"dbo.t\"",
         ]);
 
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -235,7 +235,7 @@ public class SpecModulesTests
     [Fact]
     public void Parse_dashboard_palette_directive()
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -256,7 +256,7 @@ public class SpecModulesTests
     [Fact]
     public void Parse_palette_file_directive()
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               configuration
@@ -440,7 +440,7 @@ public class SpecModulesTests
         var parseOptions = CreateExtendedPluginParseOptions();
         try
         {
-            var soak = DashSpecParser.Parse(File.ReadAllText(soakPath), dir, parseOptions);
+            var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
             Assert.Equal("palettes/demo-apps.dashpalette", soak.PalettePath);
             Assert.Equal("demo_apps", soak.ColorPalette);
 
@@ -450,7 +450,7 @@ public class SpecModulesTests
             var overviewPath = Path.Combine(dir, "demo-overview.dashspec");
             if (File.Exists(overviewPath))
             {
-                var overview = DashSpecParser.Parse(File.ReadAllText(overviewPath), dir, parseOptions);
+                var overview = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(overviewPath), dir, parseOptions);
                 var overviewLibrary = SpecLibraryComposer.Load(
                     overviewPath,
                     overview.DiagramLibraryPath,
@@ -467,7 +467,7 @@ public class SpecModulesTests
             }
 
             var stakePath = Path.Combine(dir, "demo-stakeholder.dashspec");
-            var stake = DashSpecParser.Parse(File.ReadAllText(stakePath), dir, parseOptions);
+            var stake = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(stakePath), dir, parseOptions);
             Assert.Equal("demo_apps", stake.ColorPalette);
         }
         catch (DashSpecParseException ex) when (ex.Message.Contains("ADR-0029", StringComparison.OrdinalIgnoreCase))
@@ -533,7 +533,7 @@ public class SpecModulesTests
 
             SpecIncludeResolver.SetStdlibRootForTests(Path.Combine(dir, "stdlib"));
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   !include "diagrams/activity.dashdiagram"
                   report
@@ -588,7 +588,7 @@ public class SpecModulesTests
                 end bar
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   !include "presentations/bar-tall.dashpresentation"
                   !include "diagrams/util.dashdiagram"
@@ -623,7 +623,7 @@ public class SpecModulesTests
     [Fact]
     public void Parse_treats_unknown_diagram_ident_as_library_preset()
     {
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -647,7 +647,7 @@ public class SpecModulesTests
     [Fact]
     public void CardDiagramResolver_throws_when_preset_missing()
     {
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -669,7 +669,7 @@ public class SpecModulesTests
     [Fact]
     public void Parse_diagram_library_preset_reference()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -707,7 +707,7 @@ public class SpecModulesTests
             "series = \"app_name\"",
         ]);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"

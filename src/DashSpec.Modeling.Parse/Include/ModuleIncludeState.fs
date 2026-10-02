@@ -7,11 +7,13 @@ open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
+open DashSpec.Modeling.Core
 
 type ModuleIncludeState() =
     let diagrams = Dictionary<string, SpecIncludeFragment>(StringComparer.OrdinalIgnoreCase)
     let chartChromePresets = Dictionary<string, PresentationBlock>(StringComparer.OrdinalIgnoreCase)
     let tooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
+    let rowTypes = Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase)
 
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
@@ -56,6 +58,13 @@ type ModuleIncludeState() =
         LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Toolbar context
         toolbarBoard <- Some board
 
+    member this.RegisterRowType(definition: RowTypeDef) =
+        if String.IsNullOrWhiteSpace definition.Name then invalidArg "definition" "Row type name is required."
+        if rowTypes.ContainsKey definition.Name then
+            raise (DashSpecParseException($"Duplicate row type '{definition.Name}' in module includes."))
+        rowTypes.[definition.Name] <- definition
+
     member _.ExportChartChromePresets() = chartChromePresets :> IReadOnlyDictionary<_, _>
     member _.ExportTooltips() = tooltips :> IReadOnlyDictionary<_, _>
+    member _.ExportRowTypes() = rowTypes :> IReadOnlyDictionary<_, _>
     member _.Diagrams = diagrams :> IReadOnlyDictionary<_, _>

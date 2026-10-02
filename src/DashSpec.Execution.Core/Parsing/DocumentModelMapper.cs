@@ -1,4 +1,5 @@
 using System.Linq;
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
@@ -13,6 +14,7 @@ using FsharpLayout = DashSpec.Modeling.Parse.Layout;
 using FsharpPresentation = DashSpec.Modeling.Parse.Presentation;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform;
+using FsharpTypes = DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -43,7 +45,8 @@ internal static class DocumentModelMapper
             ToDictionaryOrNull(document.CommandAliases, static x => x),
             ToCore(document.FormatDefaults),
             MapOptional(document.CardsChrome, ToCore),
-            MapOptional(document.TimePolicy, ToCore));
+            MapOptional(document.TimePolicy, ToCore),
+            ToRowTypeSchemas(document.ResolvedRowTypes));
 
     private static ReportTimePolicy ToCore(FsharpDocument.ReportTimePolicy policy) =>
         new(
@@ -258,7 +261,21 @@ internal static class DocumentModelMapper
             ToCore(source.Kind),
             source.Value,
             MapOptional(source.SqlCarrier, ToCore),
-            FirstOrNull(source.Sheet));
+            FirstOrNull(source.Sheet),
+            source.RowsType);
+
+    private static IReadOnlyDictionary<string, RowTypeSchema> ToRowTypeSchemas(
+        IReadOnlyDictionary<string, DashSpec.Modeling.Core.RowTypeDef> types)
+    {
+        if (types.Count == 0)
+        {
+            return DashboardDocument.EmptyRowTypeSchemas;
+        }
+
+        return types.Values
+            .Select(FsharpTypes.toSchema)
+            .ToDictionary(static s => s.TypeName, static s => s, StringComparer.OrdinalIgnoreCase);
+    }
 
     private static LayoutDefinition ToCore(FsharpLayout.LayoutDefinition layout) =>
         new(layout.Columns, layout.GapPx);

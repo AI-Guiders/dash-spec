@@ -8,7 +8,7 @@ public sealed class EndSyntaxTests
     [Fact]
     public void Parse_end_card_and_page_stakeholder_style()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "R"
@@ -31,7 +31,7 @@ public sealed class EndSyntaxTests
     [Fact]
     public void Parse_end_syntax_card_with_title()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
             
             report
@@ -53,7 +53,7 @@ public sealed class EndSyntaxTests
     [Fact]
     public void Parse_page_toolbar_and_derive()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "R"

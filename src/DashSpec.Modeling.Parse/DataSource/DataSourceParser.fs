@@ -8,6 +8,18 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DataSourceParser =
 
+    let private readRowsType (reader: TokenReader) =
+        reader.SkipNewlines()
+        if not (reader.TryKeyword "rows") then
+            raise (DashSpecParseException("datasource requires rows <RowType> (Modeling SSOT; ADR-0087 B2)."))
+        let typeName = reader.ReadIdent()
+        if String.IsNullOrWhiteSpace typeName then
+            raise (DashSpecParseException("datasource rows requires a type name."))
+        typeName
+
+    let private withRowsType (reader: TokenReader) (def: DataSourceDefinition) =
+        { def with RowsType = readRowsType reader }
+
     let private unwrapRawSql (raw: string) =
         let trimmed = raw.Trim()
         if trimmed.StartsWith("[[", StringComparison.Ordinal) && trimmed.EndsWith("]]", StringComparison.Ordinal) then
@@ -43,11 +55,11 @@ module DataSourceParser =
         if reader.TryKeyword "query" then
             let body = readSqlQueryText reader
             SqlReadOnlyValidator.validateSqlBody body
-            { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None }
+            withRowsType reader { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None; RowsType = "" }
         elif reader.TryKeyword "file" then
             let path = readSqlFileReference reader
             validateSqlFileExists path specDirectory
-            { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None }
+            withRowsType reader { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None; RowsType = "" }
         else
             raise (DashSpecParseException("datasource sql requires 'query' or 'file' (e.g. datasource sql query \"SELECT …\" or datasource sql file \"sql/x.sql\")."))
 
@@ -64,11 +76,11 @@ module DataSourceParser =
             elif reader.TryKeyword "query" then
                 let body = readSqlQueryText reader
                 SqlReadOnlyValidator.validateSqlBody body
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None }
+                parsed <- Some { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None; RowsType = "" }
             elif reader.TryKeyword "file" then
                 let path = readSqlFileReference reader
                 validateSqlFileExists path specDirectory
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None }
+                parsed <- Some { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None; RowsType = "" }
             else
                 raise (reader.Unexpected "query or file after from")
             reader.SkipNewlines()
@@ -76,7 +88,7 @@ module DataSourceParser =
         reader.Expect TokenKind.RBrace
 
         match parsed with
-        | Some value -> value
+        | Some value -> withRowsType reader value
         | None -> raise (DashSpecParseException("datasource sql { } requires from query or from file."))
 
     let private parseXlsxFile (reader: TokenReader) (specDirectory: string option) =
@@ -98,13 +110,13 @@ module DataSourceParser =
                 Some name
             else
                 None
-        { Kind = DataSourceKind.Xlsx; Value = path; SqlCarrier = None; Sheet = sheet }
+        withRowsType reader { Kind = DataSourceKind.Xlsx; Value = path; SqlCarrier = None; Sheet = sheet; RowsType = "" }
 
     let parse (reader: TokenReader) (specDirectory: string option) =
         if reader.TryKeyword "view" then
             let name = reader.ReadQualifiedName()
             SqlReadOnlyValidator.validateViewReference name
-            { Kind = DataSourceKind.View; Value = name; SqlCarrier = None; Sheet = None }
+            withRowsType reader { Kind = DataSourceKind.View; Value = name; SqlCarrier = None; Sheet = None; RowsType = "" }
         elif reader.TryKeyword "sql" then
             if reader.IsAt TokenKind.LBrace then parseSqlBlock reader specDirectory
             else parseSqlInline reader specDirectory

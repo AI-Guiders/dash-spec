@@ -14,16 +14,37 @@ public static class QueryCompiler
         CardDefinition card,
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
+        RowTypeCatalog rowTypes,
         SqlDialect sqlDialect = SqlDialect.TSql,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null) =>
-        Compile(card, filters, filterDefinitions, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay, reportTimePolicy);
+        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay, reportTimePolicy);
 
     public static CompiledQuery Compile(
         CardDefinition card,
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
+        DashboardDocument document,
+        SqlDialect sqlDialect = SqlDialect.TSql,
+        string? specDirectory = null,
+        CardCellDrillOverlay? cellDrillOverlay = null,
+        ReportTimePolicy? reportTimePolicy = null) =>
+        Compile(
+            card,
+            filters,
+            filterDefinitions,
+            RowTypeCatalog.FromDocument(document),
+            sqlDialect,
+            specDirectory,
+            cellDrillOverlay,
+            reportTimePolicy);
+
+    public static CompiledQuery Compile(
+        CardDefinition card,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
+        RowTypeCatalog rowTypes,
         ISqlDialectBackend dialect,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
@@ -32,7 +53,10 @@ public static class QueryCompiler
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
         ArgumentNullException.ThrowIfNull(filterDefinitions);
+        ArgumentNullException.ThrowIfNull(rowTypes);
         ArgumentNullException.ThrowIfNull(dialect);
+
+        var rowSchema = rowTypes.GetRequired(card.DataSource.RowsType);
 
         var fromClause = card.DataSource.Kind switch
         {
@@ -63,7 +87,8 @@ public static class QueryCompiler
                     orderBy: string.Empty,
                     tableLimit,
                     dialect),
-                parameters);
+                parameters,
+                rowSchema);
         }
 
         if (TryBuildCategoryAggregateSelect(card.Diagram, out var aggregateSelect, out var groupBy))
@@ -78,7 +103,8 @@ public static class QueryCompiler
                     ResolveOrderBy(card),
                     tableLimit,
                     dialect),
-                parameters);
+                parameters,
+                rowSchema);
         }
 
         return new CompiledQuery(
@@ -90,7 +116,8 @@ public static class QueryCompiler
                 ResolveOrderBy(card),
                 tableLimit,
                 dialect),
-            parameters);
+            parameters,
+            rowSchema);
     }
 
     private static string BuildSelectSql(

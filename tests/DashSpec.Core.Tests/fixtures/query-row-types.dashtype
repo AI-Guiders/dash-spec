@@ -1,0 +1,25 @@
+@types query_fixture
+
+type FixtureRow
+  optional date usage_date
+  optional string app_name
+  optional string x
+  optional string y
+  optional string category
+  optional decimal peak_concurrent_proxy
+  optional decimal value
+  optional decimal utilization_pct
+  optional string color
+  optional string reference
+  optional int count
+  optional string name
+  optional string label
+  optional datetime occurred_at
+  optional date day
+  optional string series
+  optional string stakeholder
+  optional string product
+  optional string column_a
+  optional string column_b
+  optional string value_col
+end type

@@ -14,7 +14,7 @@ public class ChartRuntimeTests
     [Fact]
     public void Parse_presentation_and_transform_blocks()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               configuration
@@ -65,7 +65,7 @@ public class ChartRuntimeTests
             "other = \"Other\"",
         ]);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -114,7 +114,7 @@ public class ChartRuntimeTests
             });
         Assert.True(fromDiagram.IsHorizontal);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -172,7 +172,7 @@ public class ChartRuntimeTests
             });
         Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -287,7 +287,7 @@ public class ChartRuntimeTests
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
         Assert.Equal(ChartAxisScale.Decimal, decimalDefault.ValueAxisScale);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -345,7 +345,7 @@ public class ChartRuntimeTests
     [Fact]
     public void ResolveChartPresentation_reads_category_value_axis_labels_from_bar_diagram()
     {
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -389,7 +389,7 @@ public class ChartRuntimeTests
             return;
         }
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(specPath), baseDir);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(specPath), baseDir);
         var library = SpecLibraryComposer.Load(specPath, doc.DiagramLibraryPath, doc.PalettePath, baseDir, doc);
         var card = doc.Cards.Single(c => c.Id == "stakeholder_utilization");
         var resolved = CardDiagramResolver.Resolve(card, library);
@@ -410,7 +410,7 @@ public class ChartRuntimeTests
             "y_max = \"100\"",
         ]);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               configuration
               diagramlibrary = "lib.toml"
@@ -459,7 +459,7 @@ public class ChartRuntimeTests
     [Fact]
     public void CategoryChartPayloadBuilder_uses_color_column_when_bound()
     {
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               configuration
               diagramlibrary = "lib.toml"
@@ -507,7 +507,7 @@ public class ChartRuntimeTests
     [Fact]
     public void TablePresentation_reads_width_density_and_column_filters_from_presentation()
     {
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
               report

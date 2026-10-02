@@ -9,7 +9,7 @@ public class StructuredSyntaxTests
     [Fact]
     public void Parse_filter_id_first_bind_show()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
                 title = "T"
@@ -41,7 +41,7 @@ public class StructuredSyntaxTests
     [Fact]
     public void Parse_filter_field_qualified_column()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
                 title = "T"
@@ -65,7 +65,7 @@ public class StructuredSyntaxTests
     [Fact]
     public void Parse_structured_card_with_override_for()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
                 title = "T"

@@ -88,6 +88,9 @@ module rec DashboardComposer =
         let moduleTooltips =
             Dictionary<string, TooltipDefinition>(document.ResolvedModuleTooltips, StringComparer.OrdinalIgnoreCase)
 
+        let rowTypes =
+            Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(document.ResolvedRowTypes, StringComparer.OrdinalIgnoreCase)
+
         let mutable formatDefaults = document.FormatDefaults
         let mutable timePolicy = document.TimePolicy
 
@@ -159,6 +162,11 @@ module rec DashboardComposer =
                     | true, _ -> ()
                     | false, _ -> moduleTooltips.[pair.Key] <- pair.Value
 
+                for pair in Option.defaultValue DashboardDocument.emptyRowTypes tabModule.RowTypes do
+                    if rowTypes.ContainsKey pair.Key then
+                        raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares row type '{pair.Key}'."))
+                    rowTypes.[pair.Key] <- pair.Value
+
                 let label = tab.Label |> Option.orElse tabModule.Label
 
                 mergedTabs.Add
@@ -180,7 +188,8 @@ module rec DashboardComposer =
                 ModuleTooltips = Some(moduleTooltips :> IReadOnlyDictionary<_, _>)
                 Pages = Some(pages :> IReadOnlyList<_>)
                 FormatDefaults = formatDefaults
-                TimePolicy = timePolicy }
+                TimePolicy = timePolicy
+                RowTypes = Some(rowTypes :> IReadOnlyDictionary<_, _>) }
 
         DashboardValidator.validate merged
         merged

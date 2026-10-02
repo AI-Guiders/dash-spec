@@ -8,6 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
     <ProjectReference Include="..\..\..\guiders-fsharp\src\AIGuiders.Platform.Modeling.Core\AIGuiders.Platform.Modeling.Core.fsproj" />
   </ItemGroup>
@@ -69,6 +70,8 @@
     <Compile Include="Filter\FiltersChromeParser.fs" />
     <Compile Include="Filter\FilterParser.fs" />
     <Compile Include="Filter\FilterLayoutRefResolver.fs" />
+    <Compile Include="Types\TypeModuleParser.fs" />
+    <Compile Include="Types\RowTypeSchemaBridge.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />

@@ -31,7 +31,8 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var schema = SqlRowMaterializer.InferSchema(reader);
+        var schema = query.RowSchema;
+        var columnOrdinals = SqlRowMaterializer.ResolveColumnOrdinals(reader, schema);
         var rowValues = new List<DashValue[]>();
         var maxRows = ResolveMaxRows();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -42,7 +43,7 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
                     $"SQL result exceeded max_rows ({maxRows}). Narrow filters or raise [connectors.postgres] max_rows.");
             }
 
-            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema));
+            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
         }
 
         return TypedRowBatch.Create(schema, rowValues);

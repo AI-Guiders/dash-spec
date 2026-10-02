@@ -182,6 +182,7 @@ public sealed class LoadDiagnosticsService(
                                     card,
                                     loaded.Filters,
                                     loaded.FilterIndex,
+                                    loaded.Document,
                                     loaded.Document.SqlDialect,
                                     loaded.SpecDirectory,
                                     reportTimePolicy: reportTime),

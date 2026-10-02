@@ -9,7 +9,7 @@ public class CardClickBehaviourTests
     [Fact]
     public void Parse_on_click_show_list_from_tooltip_copy()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab demo
               report
               title = "demo"
@@ -58,7 +58,7 @@ public class CardClickBehaviourTests
     [Fact]
     public void Parse_on_click_goto_and_set_filters()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -100,7 +100,7 @@ public class CardClickBehaviourTests
     [Fact]
     public void Parse_on_click_drill_table_from_cell_binds_filters()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -127,7 +127,7 @@ public class CardClickBehaviourTests
     [Fact]
     public void Parse_on_click_rejects_unknown_show_format()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @tab demo
               report
               title = "demo"
@@ -151,7 +151,7 @@ public class CardClickBehaviourTests
     [Fact]
     public void Parse_on_click_show_accepts_split_on_tooltip_source()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab demo
               report
               title = "demo"

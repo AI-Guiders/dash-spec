@@ -17,6 +17,7 @@
     <Compile Include="SyntaxClassifierTests.fs" />
     <Compile Include="SyntaxTreeTests.fs" />
     <Compile Include="LayoutModuleParserTests.fs" />
+    <Compile Include="TypeModuleParserTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
