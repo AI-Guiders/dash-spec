@@ -5,7 +5,8 @@ open DashSpec.Modeling.Parse.Lexing
 
 module SyntaxTree =
 
-    let parse text = SyntaxTreeParser.parse text
+    /// Block-surface syntax tree (same entry as Code Center concept graph build).
+    let parse text = DashSpecSurfaceSyntax.parse text
 
     let classifiedSpans (tree: ParseTree) : IReadOnlyList<DashSpecSyntaxSpan> =
         tree.Tokens

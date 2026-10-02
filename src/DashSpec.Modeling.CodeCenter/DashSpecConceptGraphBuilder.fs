@@ -76,4 +76,13 @@ module DashSpecConceptGraphBuilder =
           Edges = edges }
 
     let buildFromText (text: string) =
-        build (SyntaxTree.parse text)
+        build (DashSpecSurfaceSyntax.parse text)
+
+    /// Deepest outline tier containing <paramref name="offset" /> (prefer over raw AST walk for diagnostics).
+    let findTierAt (graph: DashSpecConceptGraph) (offset: int) =
+        graph.Tiers
+        |> Map.toList
+        |> List.choose (fun (_, tier) ->
+            if tier.Span.Start <= offset && offset < tier.Span.End then Some tier else None)
+        |> List.sortBy (fun tier -> tier.Span.Length)
+        |> List.tryLast
