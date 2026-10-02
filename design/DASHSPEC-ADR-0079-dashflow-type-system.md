@@ -35,9 +35,9 @@ The type system describes **values**, not object identity.
 | Allowed | Not in v1 type system |
 |---------|------------------------|
 | Primitives (§3) | Reference types, `class`, entity identity |
-| `record` (product of fields) | Pointer / shared mutable row handles |
-| `optional T` | `null` as a silent third state without `optional` |
-| `rows R` where `R` is a record | Opaque cursor types on ports |
+| UDT (`type` … `end type`) | Pointer / shared mutable row handles |
+| `optional` on a field line | `null` as a silent third state without `optional` |
+| `rows R` where `R` is a UDT | Opaque cursor types on ports |
 
 `rows R` is a **value snapshot stream** at the type level (immutable batch semantics). Execution may stream implementation-wise; the **contract** is value-shaped.
 
@@ -99,9 +99,11 @@ OrderDetail.CustomerAddress.City
 
 **Rowset on ports:** `rows OrderDetail` — a table whose rows are `OrderDetail` values. Channel/transform outputs use `rows <AggregateType>`.
 
-**Also supported (compact alias):** `type Name = record { f: T, … }` in IR and tooling; canonical surface syntax for authors is **`type` … `end type`** above.
+**Surface syntax (normative):** all aggregates and filter types use **`type` … `end type`** blocks ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) block family). **No** `record { }`, `enum { }`, or brace-literal type forms in `.dashspec` / `.dashtype` / `.dashflow` — same rule as `presentation { }` living in `.dashpresentation`, not inline braces for types.
 
-**Optional / enum / list** (when needed): `optional T`, `enum { … }`, `list T` — same value-only rules; nesting applies (`list Address` rare; prefer flat columns or child row types in v2).
+Optional fields: `optional string Notes` on a field line inside `type` … `end type`. Enumerations and lists: defined with block keywords in a future grammar amendment (not `{ }` sugar).
+
+Modeling (F#) may use an internal `DashType` DU; that is **not** an alternate authoring syntax.
 
 **Not in the type language:** SQL `GROUP BY` / `SUM` — that is a **transform step** producing a new `rows R'` aggregate type.
 
