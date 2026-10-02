@@ -5,7 +5,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 module SyntaxTree =
 
-    let parse text = DashSpecAstParser.parse text
+    let parse text = SyntaxTreeParser.parse text
 
     let classifiedSpans (tree: ParseTree) : IReadOnlyList<DashSpecSyntaxSpan> =
         tree.Tokens
