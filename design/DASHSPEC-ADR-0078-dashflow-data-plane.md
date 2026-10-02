@@ -106,7 +106,7 @@ end type
 
 channel utilization {
   from view lus.v_daily_peak_concurrent_apps_per_user
-  params { usage_date: date_range, app_name: field_set<string> }
+  params { usage_date: UsageDateRange, app_name: rows SelectedAppNames }
   output utilization: rows UtilizationRow
 }
 ```
@@ -205,7 +205,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 @flow stakeholder {
   channel executive {
     from view lus.v_stakeholder_kpi_executive
-    params { usage_date: date_range, app_name: field_set<string> }
+    params { usage_date: UsageDateRange, app_name: rows SelectedAppNames }
     output kpi: rows StakeholderKpiRow
   }
 
