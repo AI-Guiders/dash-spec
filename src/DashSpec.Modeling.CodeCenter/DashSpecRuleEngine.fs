@@ -1,9 +1,8 @@
-namespace DashSpec.Modeling.Authoring
+namespace DashSpec.Modeling.CodeCenter
 
 open System
 open System.Collections.Generic
 open AIGuiders.Platform.Modeling.Core.Identity
-open DashSpec.Modeling.Parse.Document
 open DashSpec.Modeling.Parse.Syntax
 
 /// Single-pass rule engine over concept graph (AST walk + graph predicates).
@@ -96,23 +95,6 @@ module DashSpecRuleEngine =
             | _ -> None
         | None -> None
 
-    let private documentCardIds (document: DashboardDocument) =
-        document.Cards |> Seq.map (fun card -> card.Id) |> Set.ofSeq
-
-    let private evaluateDocumentAlignment (graph: DashSpecConceptGraph) =
-        match graph.Document with
-        | None -> []
-        | Some document ->
-            let declared = documentCardIds document
-
-            graph.Tiers
-            |> Map.toList
-            |> List.choose (fun (_, tier) ->
-                match tier.Kind with
-                | DashSpecConceptKind.CardReference cardId when not (Set.contains cardId declared) ->
-                    Some(DashSpecRuleViolation.CardReferenceMissingFromDocument(cardId, tier.Span))
-                | _ -> None)
-
     /// One document-order pass: block-balance stack machine + concept graph predicates.
     let evaluateViolations (graph: DashSpecConceptGraph) : DashSpecRuleViolation list =
         let violations = ResizeArray<DashSpecRuleViolation>()
@@ -173,7 +155,6 @@ module DashSpecRuleEngine =
             let frame = blockStack.Peek()
             signal (DashSpecRuleViolation.UnclosedBlock(frame.Keyword, frame.Span))
 
-        violations.AddRange(evaluateDocumentAlignment graph)
         violations |> Seq.toList
 
     let evaluate (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =

@@ -20,9 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DashSpec.Modeling.Authoring\DashSpec.Modeling.Authoring.fsproj" />
-    <ProjectReference Include="..\..\src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
-    <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="..\..\src\DashSpec.Host\DashSpec.Host.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
