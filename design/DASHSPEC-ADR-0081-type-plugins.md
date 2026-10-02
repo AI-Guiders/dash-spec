@@ -42,8 +42,9 @@ DashSpec exposes only what Modeling and Designer need **without** executing arbi
 ```text
 import types from ursa.types
 
-channel kpi from sql.view {
-  output rows KpiRow
+source kpi {
+  from view demo.v_kpi
+  output kpi: rows KpiRow
 }
 
 type KpiRow
@@ -109,7 +110,7 @@ Promote to **SQL view column** or **builtin stdlib type** when the domain is uni
 
 | Persona | Typical work | Writes C#/dll? |
 |---------|----------------|----------------|
-| **Report author** | `.dashspec`, cards, filters, channel `from view`, graph wiring with **builtin** transform ids | No |
+| **Report author** | `.dashspec`, cards, filters, source `from view`, graph wiring with **builtin** transform ids | No |
 | **Power author** | `.dashtype`, `.dashflow`, nested UDTs, report internal graph, runtime `[[plugins.load]]` of **vendor-shipped** packages | No — but needs platform literacy (manifest ids, signatures) |
 | **Platform / product dev** | New connectors, transforms, semantic types; promote recurring patterns into **stdlib builtins** | Yes |
 
@@ -134,6 +135,6 @@ Plugins are an **escape hatch**, not the default authoring path. Success metric 
 
 ## Consequences
 
-- **Trilogy:** connector (source) → channel (rows) → transform (row ops) → **type plugin (value meaning)** — symmetric mental model for platform extenders.
+- **Trilogy:** connector → **source** (typed rows) → **transform** (row ops) → **type plugin** (value meaning) — symmetric mental model for platform extenders.
 - Complex logic concentrates in normal languages (C#/F#); DashSpec remains **wiring + types-as-names + manifests**.
-- Versioning: breaking manifest changes are **dll major** events; locked `.dashtype` / channel output declarations detect drift at compile time.
+- Versioning: breaking manifest changes are **dll major** events; locked `.dashtype` / source output declarations detect drift at compile time.

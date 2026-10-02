@@ -58,14 +58,14 @@ path = "transforms/Lus.Custom.dll"
 
 ```text
 transformer localize {
-  input raw from channel_util.out
+  input raw from util.out
   transform use to_zone
   zone = Europe/Moscow
   output localized
 }
 
 transformer custom_peak {
-  input raw from channel_util.out
+  input raw from util.out
   transform use demo.peak_enrichment
   output enriched
 }
@@ -120,7 +120,7 @@ If logic is stable and shared → promote to **SQL view** or **builtin** transfo
 ## Non-goals
 
 - Executing arbitrary C# from spec strings.
-- Transform plugins that open their own SQL connections (use **channel** + connector instead).
+- Transform plugins that open their own SQL connections (use a **source** node + connector instead).
 
 ## Consequences
 
