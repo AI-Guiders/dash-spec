@@ -105,6 +105,18 @@ Loading: same `[[plugins.load]]` as connectors/transforms; registry merges built
 
 Promote to **SQL view column** or **builtin stdlib type** when the domain is universal; keep **product plugin** for one-off semantics.
 
+### Author personas (honest split)
+
+| Persona | Typical work | Writes C#/dll? |
+|---------|----------------|----------------|
+| **Report author** | `.dashspec`, cards, filters, channel `from view`, graph wiring with **builtin** transform ids | No |
+| **Power author** | `.dashtype`, `.dashflow`, nested UDTs, report internal graph, runtime `[[plugins.load]]` of **vendor-shipped** packages | No — but needs platform literacy (manifest ids, signatures) |
+| **Platform / product dev** | New connectors, transforms, semantic types; promote recurring patterns into **stdlib builtins** | Yes |
+
+**Target:** ~**95%** of dashboards never load a custom type plugin. They use stdlib (`Date`, `Time`, `DateTime`, filters-as-UDT), builtin transforms (`to_zone`, `apply_filters`, `project`), and **SQL views** for heavy shaping. The remaining ~5% is product-specific semantics (money rules, proprietary codes) — that author is effectively a **developer** or consumes a dll built by the platform team.
+
+Plugins are an **escape hatch**, not the default authoring path. Success metric for the stdlib: each release shrinks the 5% by promoting stable patterns to builtins (same as connectors and transforms).
+
 ## Phased delivery
 
 | Phase | Deliverable |
