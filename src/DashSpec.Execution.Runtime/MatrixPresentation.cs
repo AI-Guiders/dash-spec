@@ -20,6 +20,7 @@ public sealed record MatrixPresentation(
     int ValueLabelsThresholdPx = VizAxisPresentationParser.DefaultValueLabelsThresholdPx,
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
+    MatrixAxisScrollMode AxisScroll = MatrixAxisScrollMode.Sticky,
     string? ToolbarValueLabels = null,
     string? ToolbarAxisLabelsX = null,
     string? ToolbarAxisLabelsY = null,
@@ -46,6 +47,7 @@ public sealed record MatrixPresentation(
         var toolbarValueLabels = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_value_labels");
         var toolbarAxisLabelsX = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_x");
         var toolbarAxisLabelsY = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
+        var axisScroll = VizAxisPresentationParser.ParseAxisScroll(diagram.Properties);
 
         return new MatrixPresentation(
             height,
@@ -63,6 +65,7 @@ public sealed record MatrixPresentation(
             valueLabelsThreshold,
             axisLabelsX,
             axisLabelsY,
+            axisScroll,
             toolbarValueLabels,
             toolbarAxisLabelsX,
             toolbarAxisLabelsY,

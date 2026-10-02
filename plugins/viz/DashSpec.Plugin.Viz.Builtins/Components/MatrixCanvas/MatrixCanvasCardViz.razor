@@ -1,6 +1,7 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
+@using MatrixAxisScrollMode = DashSpec.Core.Model.MatrixAxisScrollMode
 @using DashSpec.Execution.Runtime
 @implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
@@ -34,6 +35,7 @@
                       ValueLabelsThresholdPx="@spec.ValueLabelsThresholdPx"
                       ShowAxisLabelsX="@showAxisX"
                       ShowAxisLabelsY="@showAxisY"
+                      AxisScroll="@(presentation?.AxisScroll ?? MatrixAxisScrollMode.Sticky)"
                       ShowGradientLegend="@showLegend"
                       LegendMinText="@(showLegend ? presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null)"
                       LegendMaxText="@(showLegend ? presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null)"

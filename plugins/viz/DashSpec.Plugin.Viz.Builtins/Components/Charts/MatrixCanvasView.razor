@@ -127,12 +127,35 @@ else
 
     [Parameter] public bool ShowAxisLabelsY { get; set; } = true;
 
+    [Parameter] public MatrixAxisScrollMode AxisScroll { get; set; } = MatrixAxisScrollMode.Sticky;
+
     [Parameter] public int ValueLabelsThresholdPx { get; set; } = VizAxisPresentationParser.DefaultValueLabelsThresholdPx;
 
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
 
-    private string HostCssClass =>
-        $"{(ShowAxisLabelsX ? null : "matrix-canvas-host--hide-x-labels")} {(ShowAxisLabelsY ? null : "matrix-canvas-host--hide-y-labels")}".Trim();
+    private string HostCssClass
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (!ShowAxisLabelsX)
+            {
+                parts.Add("matrix-canvas-host--hide-x-labels");
+            }
+
+            if (!ShowAxisLabelsY)
+            {
+                parts.Add("matrix-canvas-host--hide-y-labels");
+            }
+
+            if (AxisScroll is MatrixAxisScrollMode.Sticky)
+            {
+                parts.Add("matrix-canvas-host--axis-sticky");
+            }
+
+            return string.Join(' ', parts);
+        }
+    }
 
     private string? _mountedPayloadKey;
     private const int TargetVisibleXLabels = 14;
