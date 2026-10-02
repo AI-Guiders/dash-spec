@@ -83,8 +83,8 @@ module DashSpecBlockFormatter =
                     if trimmed.Length = 0 then output.Add("")
                     else
                         match BlockFormatterRules.classifyLine trimmed with
-                        | BlockFormatterRules.Blank -> output.Add("")
-                        | BlockFormatterRules.End _ ->
+                        | BlockSurfaceLineClassifier.Blank -> output.Add("")
+                        | BlockSurfaceLineClassifier.End _ ->
                             if options.DashSpecPreserveBlankLineBeforeEnd then
                                 maybeInsertBlankBeforeEnd options previousNonBlank output
                             else
@@ -96,27 +96,27 @@ module DashSpecBlockFormatter =
                                 else 0
 
                             emitClosedLine endIndent trimmed
-                        | BlockFormatterRules.BraceClose ->
+                        | BlockSurfaceLineClassifier.BraceClose ->
                             let closeIndent =
                                 if stack.Count > 0 then stack.Pop().EndIndent
                                 elif moduleStarted then 1
                                 else 0
 
                             emitClosedLine closeIndent trimmed
-                        | BlockFormatterRules.ModuleHeader _ ->
+                        | BlockSurfaceLineClassifier.ModuleHeader _ ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
                             moduleStarted <- true
                             stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                        | BlockFormatterRules.BlockOpener _ ->
+                        | BlockSurfaceLineClassifier.BlockOpener _ ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
                             stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                        | BlockFormatterRules.BraceOpen ->
+                        | BlockSurfaceLineClassifier.BraceOpen ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
                             stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                        | BlockFormatterRules.Content ->
+                        | BlockSurfaceLineClassifier.Content ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
 
