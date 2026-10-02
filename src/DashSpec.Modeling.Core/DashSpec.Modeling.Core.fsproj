@@ -11,5 +11,7 @@
     <Compile Include="ParseErrors.fs" />
     <Compile Include="Diagnostics.fs" />
     <Compile Include="TypeSystem.fs" />
+    <Compile Include="TypeCatalog.fs" />
+    <Compile Include="DataFlowGraph.fs" />
   </ItemGroup>
 </Project>
