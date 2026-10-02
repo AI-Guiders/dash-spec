@@ -18,21 +18,27 @@ module RowTypeSchemaBridge =
         | DashPrimitive.Time -> DashPrimitiveKind.Time
         | DashPrimitive.DateTime -> DashPrimitiveKind.DateTime
 
-    let toSchema (def: RowTypeDef) =
-        let fields =
-            def.Fields
-            |> Array.map (fun field -> RowFieldSchema(field.Name, toKind field.Kind, field.Optional))
-            :> IReadOnlyList<_>
+    let toSchema (catalog: TypeCatalog) (def: RowTypeDef) =
+        match TypeCatalog.flattenRowType catalog def.Name with
+        | Result.Error message -> raise (DashSpecParseException(message))
+        | Result.Ok fields ->
+            let rowFields =
+                fields
+                |> List.map (fun field -> RowFieldSchema(field.Path, toKind field.Kind, field.Optional))
+                :> IReadOnlyList<_>
 
-        RowTypeSchema(def.Name, fields)
+            RowTypeSchema(def.Name, rowFields)
 
     let toCatalog (defs: RowTypeDef seq) =
+        let catalog = TypeCatalog.ofDefinitions defs
+
+        match TypeCatalog.validate catalog with
+        | Result.Error errors -> raise (DashSpecParseException(String.Join("; ", errors)))
+        | Result.Ok () -> ()
+
         let map = Dictionary<string, RowTypeSchema>(StringComparer.OrdinalIgnoreCase)
 
         for def in defs do
-            if map.ContainsKey def.Name then
-                raise (DashSpecParseException($"Duplicate row type '{def.Name}'."))
-
-            map.[def.Name] <- toSchema def
+            map.[def.Name] <- toSchema catalog def
 
         map :> IReadOnlyDictionary<_, _>
