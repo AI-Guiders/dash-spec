@@ -5,7 +5,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 module SyntaxTree =
 
-    /// Block-surface syntax tree (same entry as Code Center concept graph build).
+    /// Outline projection only — prefer <c>DashSpec.Modeling.Authoring.DashSpecAuthoringEntry.parse</c> for IR + graph.
     let parse text = DashSpecSurfaceSyntax.parse text
 
     let classifiedSpans (tree: ParseTree) : IReadOnlyList<DashSpecSyntaxSpan> =
