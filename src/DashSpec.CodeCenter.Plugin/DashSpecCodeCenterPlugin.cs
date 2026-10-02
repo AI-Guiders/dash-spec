@@ -1,7 +1,7 @@
 using AIGuiders.Platform.Execution.Language;
 using AIGuiders.Platform.Modeling.CodeCenter;
 using AIGuiders.Platform.Modeling.Language;
-using DashSpec.Modeling.CodeCenter;
+using DashSpec.CodeCenter;
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
 using DashSpec.Modeling.Language.Adapters.DashSpec;

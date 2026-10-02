@@ -22,7 +22,7 @@
 
   <Project Path="src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
 
-  <Project Path="src\DashSpec.Modeling.CodeCenter\DashSpec.Modeling.CodeCenter.fsproj" />
+  <Project Path="src\DashSpec.CodeCenter\DashSpec.CodeCenter.fsproj" />
 
   <Project Path="src\DashSpec.CodeCenter.Plugin\DashSpec.CodeCenter.Plugin.csproj" />
 
