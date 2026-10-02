@@ -105,6 +105,8 @@ Renaming: there is **no special node type `semantic_time`** — only `transform 
 
 If logic is stable and shared → promote to **SQL view** or **builtin** transform; one-off → plugin.
 
+**Coverage goal:** most report authors only ever use **builtin** transform ids; custom dll is platform-team / product-dev territory ([ADR-0081](DASHSPEC-ADR-0081-type-plugins.md) personas).
+
 ## Phased delivery
 
 | Phase | Deliverable |
