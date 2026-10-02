@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (concept + IR; parser / runtime phased) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
+| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) |
 
 ## Context
 
@@ -120,28 +120,23 @@ channel utilization {
 ```text
 transformer reporting_calendar {
   input raw from utilization.utilization
-  output localized {
-    step semantic_time {
-      reporting_zone = Europe/Moscow
-      columns {
-        bucket_start_utc → usage_day_local (date)
-        bucket_start_utc → sort_key (instant)
-      }
-    }
+  transform use to_zone {
+    zone = Europe/Moscow
   }
+  output localized
 }
 ```
 
-Closed **step catalog** (v1 subset, grow explicitly per ADR):
+Transform steps are **plugins** ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)): builtins (`to_zone`, `apply_filters`, `project`, …) ship with Host; heavy logic → product dll + `transform use <id>`.
 
-| Step kind | Purpose | v1 |
-|-----------|---------|-----|
-| `semantic_time` | UTC → reporting zone; calendar columns; sort keys vs display | **yes** (formalizes today’s `LabelFormat` + report defaults) |
+| Builtin id (illustrative) | Purpose | v1 |
+|---------------------------|---------|-----|
+| `to_zone` | `DateTime` UTC+0 → reporting `Date`/`Time`/`DateTime` + offset | **yes** (replaces today’s `LabelFormat` + TZ) |
+| `apply_filters` | Wire dashboard filter values into rowset | yes |
 | `project` / `rename` | Column select/rename | yes |
 | `aggregate` / `group` | Group-by measures | deferred |
 | `sort` / `limit` | Top-N rowsets | deferred |
 | `join` | Multi-input | deferred (IR allows N inputs) |
-| `series_top` | Move from card `transform series` | optional v1.1 |
 
 ### Card inputs (sketch grammar)
 
@@ -162,10 +157,10 @@ card peak_table as "Top users" {
 
 | Current (Execution.Runtime) | Target node |
 |-----------------------------|-------------|
-| `LabelFormat` + `DisplayTimeZone` + report `date_format` | `semantic_time` transformer (or channel post-step preset) |
+| `LabelFormat` + `DisplayTimeZone` + report `date_format` | `transform use to_zone` (builtin plugin) |
 | `TimeSeriesGrid` / hour grid fill | `transformer time_grid` (deferred; document as follow-up) |
 | Per-card `datasource` | Anonymous `channel __card_<id>` in resolved graph |
-| `MatrixPayloadBuilder` axis parse of display strings | Prefer explicit sort columns from `semantic_time` |
+| `MatrixPayloadBuilder` axis parse of display strings | Prefer explicit sort columns from `to_zone` output |
 
 Until dashflow lands in the parser, **behavior unchanged**; new features that add post-SQL semantics must be implemented as if they will become a **named transformer step** (no new hidden statics on card path).
 
@@ -175,7 +170,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 |-------|-------------|
 | **P0** (this ADR) | Terminology, `FlowGraph` contract, file kinds, split from `.dashtransform` |
 | **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy `datasource` → inline channel |
-| **P2** | `semantic_time` step in Execution; wire report `date_format` / host display TZ to one graph node |
+| **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
 | **P3** | `.dashflow` parse + `wiring { flow … }`; card `input` |
 | **P4** | Studio matrix authoring; shared flows across tabs; `aggregate` / `join` steps |
 
@@ -211,12 +206,8 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 
   transformer executive_local {
     input kpi from executive.kpi
-    output kpi_local {
-      step semantic_time {
-        reporting_zone = Europe/Moscow
-        date_format = "dd.MM"
-      }
-    }
+    transform use to_zone { zone = Europe/Moscow }
+    output kpi_local
   }
 }
 
