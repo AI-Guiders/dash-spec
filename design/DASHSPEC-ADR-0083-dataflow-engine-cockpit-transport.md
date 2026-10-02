@@ -45,13 +45,26 @@ Graph run snapshot (CDS-analog)  →  Host refresh, Designer preview, MCP pulse
 
 Modeling (F#) stays **outside** the bus: compile-time `FlowGraph` only. Runtime emits events; Host/Designer/MCP **subscribe**.
 
-### Federation path
+### Federation packages (already named — not `Modeling.Communication`)
+
+Hyperlane split matches [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md):
+
+| Layer | Repo | Packages (examples) |
+|-------|------|---------------------|
+| **Modeling** (schemas, rules, event shapes) | `guiders-fsharp` | `AIGuiders.Platform.Modeling.Cockpit.DataBus`, `.Cockpit.Cds`, `.Cockpit.Channels`, `.Cockpit.Composition`, `.Cockpit.Ids`, `.Cockpit.Rules` |
+| **Execution** (runtime, DI, adapters) | `guiders-platform` | `AIGuiders.Platform.Execution.Cockpit.Abstractions`, `.Cockpit.DataBus`, `.Cockpit.Channels`, `.Cockpit.Cds`, `.Cockpit.Composition`, `.Cockpit.Transport`, `.Execution.MCPlane` |
+
+`Execution.Cockpit.DataBus` is intentionally thin; event SSOT lives in **F#** `Modeling.Cockpit.DataBus` (`UseGuidersModelingCockpitDataBus` in `eng/Guiders.Modeling.props`).
+
+**CIDE / Glass:** today still carry **`CascadeIDE.Cockpit.*`** in-repo (reference impl). Target: **pin platform Cockpit packages** and shrink CIDE to composition + UI — same trajectory as `AIGuiders.Platform.CommandPlane` (CIDE already pins / `UseLocalGuidersPlatform`).
+
+**Dashflow-specific Modeling** (optional new grain): `AIGuiders.Platform.Modeling.Cockpit.DataFlow` — `FlowRunSnapshot`, graph lifecycle events, port schema refs — **or** extend `Modeling.Cockpit.DataBus` event catalog with a `dataflow/` namespace. DashSpec `FlowGraph` IR itself stays **`DashSpec.Modeling.*`** (planet DSL); only **transport + agent snapshot** are federation Cockpit.
 
 | Phase | Transport |
 |-------|-----------|
-| **P0** | In-process `IDataBus` contract aligned with `CascadeIDE.Cockpit.DataBus` (copy or shared **guiders-platform** package when extracted) |
-| **P1** | Channel DTO + event type IDs documented for **MCPlane** truncation rules (agent observation) |
-| **P2** | Conformance vectors: graph run → pulse JSON shape matches Federation Cockpit snapshot schema |
+| **P0** | DashSpec.Execution pins `Execution.Cockpit.DataBus` + `Abstractions`; no fork of `IDataBus` |
+| **P1** | Register dashflow events in Modeling.Cockpit.DataBus; MCPlane pulse for graph runs |
+| **P2** | Conformance vectors; CIDE deletes duplicate bus when on same package versions |
 
 DashSpec Host is a **planet consumer**, not owner of the bus SSOT — same as [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) for plugins.
 
