@@ -15,6 +15,7 @@
   <ItemGroup>
     <Compile Include="DiagnosticInterop.fs" />
     <Compile Include="DiagnosticsTests.fs" />
+    <Compile Include="TypeCatalogTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
