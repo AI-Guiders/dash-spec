@@ -12,7 +12,7 @@ public class XlsxOpenRowSetTests
     [Fact]
     public void Compile_xlsx_datasource_emits_openrowset()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               configuration
               sqldialect = tsql
@@ -27,12 +27,13 @@ public class XlsxOpenRowSetTests
               end card
               end report
             end dashboard
-            """).Cards[0];
+            """); var card = document.Cards[0];
 
         var query = QueryCompiler.Compile(
             card,
             new FilterState(),
             new Dictionary<string, FilterDefinition>(),
+            document,
             SqlDialect.TSql,
             specDirectory: @"D:\specs");
 
@@ -45,7 +46,7 @@ public class XlsxOpenRowSetTests
     [Fact]
     public void Compile_xlsx_datasource_rejects_non_tsql()
     {
-        var card = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -57,13 +58,14 @@ public class XlsxOpenRowSetTests
               end card
               end report
             end dashboard
-            """).Cards[0];
+            """); var card = document.Cards[0];
 
         var error = Assert.Throws<InvalidOperationException>(() =>
             QueryCompiler.Compile(
                 card,
                 new FilterState(),
                 new Dictionary<string, FilterDefinition>(),
+                document,
                 SqlDialect.Postgres));
 
         Assert.Contains("OPENROWSET", error.Message);

@@ -14,7 +14,7 @@ public class SqlDataSourceParserTests
     [Fact]
     public void Parse_sql_datasource_reads_inline_select()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -77,14 +77,14 @@ public class SqlDataSourceParserTests
             end dashboard
             """;
 
-        var ex = Assert.ThrowsAny<Exception>(() => DashSpecParser.Parse(spec));
+        var ex = Assert.ThrowsAny<Exception>(() => DashSpecTestRowTypes.ParseDashboard(spec));
         Assert.Contains("datasource sql", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void Parse_sql_datasource_allows_keyword_inside_string_literal()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -115,7 +115,7 @@ public class SqlDataSourceParserTests
     [Fact]
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -143,7 +143,7 @@ public class SqlDataSourceParserTests
 
         try
         {
-            var fileDoc = DashSpecParser.Parse("""
+            var fileDoc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"
@@ -161,7 +161,7 @@ public class SqlDataSourceParserTests
             Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
             Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
 
-            var blockDoc = DashSpecParser.Parse("""
+            var blockDoc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"

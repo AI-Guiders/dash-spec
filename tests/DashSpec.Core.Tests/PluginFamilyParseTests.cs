@@ -36,7 +36,7 @@ public sealed class PluginFamilyParseTests
             end tab
             """;
 
-        var document = DashSpecParser.Parse(text);
+        var document = DashSpecTestRowTypes.ParseDashboard(text);
         Assert.NotNull(document.ModuleExtensions);
         Assert.Contains("card_export", document.ModuleExtensions!.EnabledPluginIds);
     }
@@ -80,7 +80,7 @@ public sealed class PluginFamilyParseTests
             end tab
             """;
 
-        var document = DashSpecParser.Parse(text, specDirectory: null, options);
+        var document = DashSpecTestRowTypes.ParseDashboard(text, specDirectory: null, options);
         var card = document.Cards.Single();
         Assert.Single(card.ExtensionBlocks);
         Assert.Equal("buttons", card.ExtensionBlocks[0].Keyword);
@@ -130,7 +130,7 @@ public sealed class PluginFamilyParseTests
             end tab
             """;
 
-        var document = DashSpecParser.Parse(text, specDirectory: null, options);
+        var document = DashSpecTestRowTypes.ParseDashboard(text, specDirectory: null, options);
         var card = document.Cards.Single();
         var views = Assert.Single(card.ExtensionBlocks);
         Assert.Equal("views", views.Keyword);

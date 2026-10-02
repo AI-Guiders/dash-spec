@@ -40,7 +40,7 @@ public sealed class ReportTimeConfigurationRegressionTests
     [Fact]
     public void Document_parser_maps_work_time_column_from_configuration()
     {
-        var document = DashSpecParser.Parse(EmbeddedOverviewConfigurationTab, specDirectory: null, TabParseOptions);
+        var document = DashSpecTestRowTypes.ParseDashboard(EmbeddedOverviewConfigurationTab, specDirectory: null, TabParseOptions);
 
         Assert.NotNull(document.TimePolicy);
         Assert.Equal(ReportTimeBasis.Calendar, document.TimePolicy!.Basis);
@@ -65,7 +65,7 @@ public sealed class ReportTimeConfigurationRegressionTests
             MergeReferencedTabModules = true,
         };
 
-        var doc = DashSpecParser.Parse(
+        var doc = DashSpecTestRowTypes.ParseDashboard(
             File.ReadAllText(DocsOverview),
             Path.GetDirectoryName(DocsOverview)!,
             options);

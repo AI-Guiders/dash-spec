@@ -58,7 +58,7 @@ public sealed class DemoCatalogRegressionTests
             return;
         }
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
         Assert.NotEmpty(doc.Filters);
         Assert.NotEmpty(doc.Cards);
 
@@ -96,7 +96,7 @@ public sealed class DemoCatalogRegressionTests
             return;
         }
 
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab detail
             configuration
               sqldialect = tsql
@@ -163,7 +163,7 @@ public sealed class DemoCatalogRegressionTests
             return;
         }
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
         var card = doc.Cards.Single(c => string.Equals(c.Id, "peak_concurrent_proxy", StringComparison.OrdinalIgnoreCase));
 
         Assert.NotNull(card.InteriorBoard);

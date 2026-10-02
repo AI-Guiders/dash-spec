@@ -32,10 +32,10 @@ public class DirectiveParserTests
             """;
 
         Assert.Equal("demo.toml", DashSpecParser.ReadRuntimePath(text));
-        var doc = DashSpecParser.Parse(text);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text);
         Assert.Equal("t", doc.Id);
         Assert.Equal("T", doc.Title);
-        Assert.Equal("t", DashSpecParser.Parse(text).Id);
+        Assert.Equal("t", DashSpecTestRowTypes.ParseDashboard(text).Id);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class DirectiveParserTests
             """;
 
         Assert.Equal(SqlDialect.Postgres, DashSpecParser.ReadSqlDialect(text));
-        Assert.Equal(SqlDialect.Postgres, DashSpecParser.Parse(text).SqlDialect);
+        Assert.Equal(SqlDialect.Postgres, DashSpecTestRowTypes.ParseDashboard(text).SqlDialect);
     }
 
 }

@@ -12,6 +12,7 @@ open DashSpec.Modeling.Parse.Include
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
+open DashSpec.Modeling.Parse.Types
 
 module rec DocumentModuleParser =
 
@@ -42,6 +43,13 @@ module rec DocumentModuleParser =
                   Tooltip = None })
             |> dict
             |> fun map -> Dictionary<string, ModuleDiagramDefinition>(map, StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
+
+    let private exportModuleRowTypes (includes: ModuleIncludeState) =
+        if includes.ExportRowTypes().Count = 0 then
+            DashboardDocument.emptyRowTypes
+        else
+            Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase)
+            :> IReadOnlyDictionary<_, _>
 
     let isBlockModuleFormat (text: string) =
         if String.IsNullOrWhiteSpace text then
@@ -115,7 +123,8 @@ module rec DocumentModuleParser =
               Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
               CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>)
               FormatDefaults = result.Shell.FormatDefaults
-              TimePolicy = result.Shell.TimePolicy }
+              TimePolicy = result.Shell.TimePolicy
+              RowTypes = Some(exportModuleRowTypes result.Shell.Includes) }
 
         DashboardValidator.validate document
         document
@@ -158,7 +167,8 @@ module rec DocumentModuleParser =
           Pages = Some(dashShell.Pages :> IReadOnlyList<_>)
           CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
           FormatDefaults = dashShell.FormatDefaults
-          TimePolicy = dashShell.TimePolicy }
+          TimePolicy = dashShell.TimePolicy
+          RowTypes = Some(exportModuleRowTypes dashShell.Includes) }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -222,7 +232,8 @@ module rec DocumentModuleParser =
           ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
           Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
           FormatDefaults = result.Shell.FormatDefaults
-          TimePolicy = result.Shell.TimePolicy }
+          TimePolicy = result.Shell.TimePolicy
+          RowTypes = Some(exportModuleRowTypes result.Shell.Includes) }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None
@@ -580,6 +591,10 @@ module rec DocumentModuleParser =
             elif reader.TryKeyword "title" then
                 reader.Expect TokenKind.Eq
                 setModuleLabel (reader.ReadString())
+                reader.SkipNewlines()
+            elif reader.TryKeyword "type" then
+                let rowType = TypeModuleParser.parseTypeBlockAfterKeyword reader
+                shell.Includes.RegisterRowType rowType
                 reader.SkipNewlines()
             elif reader.TryKeyword "standalone" then
                 if mode = ReportBodyMode.TabEmbedded then

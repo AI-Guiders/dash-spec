@@ -111,6 +111,7 @@ public sealed class CardRenderService(
             effective,
             filters,
             filterIndex,
+            document,
             document.SqlDialect,
             specDirectory,
             reportTimePolicy: reportTime);
@@ -173,6 +174,7 @@ public sealed class CardRenderService(
                     effective,
                     priorFilters,
                     filterIndex,
+                    document,
                     document.SqlDialect,
                     specDirectory,
                     reportTimePolicy: reportTime);
@@ -350,6 +352,7 @@ public sealed class CardRenderService(
                     effective,
                     filters,
                     filterIndex,
+                    document,
                     document.SqlDialect,
                     specDirectory,
                     drillOverlay,

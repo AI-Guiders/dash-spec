@@ -32,7 +32,7 @@ public class DashboardParseTests
             end dashboard
             """;
 
-        var doc = DashSpecParser.Parse(text);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text);
         Assert.Equal("soak_id", doc.Id);
         Assert.Equal("My **Title**", doc.Title);
     }
@@ -47,7 +47,7 @@ public class DashboardParseTests
             "demo-soak.dashspec"));
 
         var text = File.ReadAllText(path);
-        var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!);
 
         Assert.Equal("demo_soak", doc.Id);
         Assert.Equal("sqlserver", doc.ConnectorId);
@@ -74,7 +74,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_layout_and_place()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -105,7 +105,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_bind_block_syntax()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -132,7 +132,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_card_local_filters_placement()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -175,7 +175,7 @@ public class DashboardParseTests
     public void Parse_rejects_bound_filter_without_placement()
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
-            DashSpecParser.Parse("""
+            DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"
@@ -202,7 +202,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_filters_chrome_and_tabs()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -251,7 +251,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_filters_chrome_sticky_modes()
     {
-        var line = DashSpecParser.Parse("""
+        var line = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -263,7 +263,7 @@ public class DashboardParseTests
 """);
         Assert.True(line.FiltersChrome.IsStickyLine);
 
-        var card = DashSpecParser.Parse("""
+        var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -275,7 +275,7 @@ public class DashboardParseTests
 """);
         Assert.True(card.FiltersChrome.IsStickyCard);
 
-        var none = DashSpecParser.Parse("""
+        var none = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -292,7 +292,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_filters_chrome_apply_block_and_sugar()
     {
-        var block = DashSpecParser.Parse("""
+        var block = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -309,7 +309,7 @@ public class DashboardParseTests
         Assert.False(block.FiltersChrome.IsAutoApply);
         Assert.Equal(FiltersChromeDefinition.ApplyControlButton, block.FiltersChrome.ApplyControl);
 
-        var sugar = DashSpecParser.Parse("""
+        var sugar = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -326,7 +326,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_toolbar_chrome_cells_labeled_and_inline()
     {
-        var labeled = DashSpecParser.Parse("""
+        var labeled = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -339,7 +339,7 @@ public class DashboardParseTests
 """);
         Assert.True(labeled.FiltersChrome.IsToolbarLabeledCells);
 
-        var inline = DashSpecParser.Parse("""
+        var inline = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -356,7 +356,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_heatmap_diagram_kind()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -392,7 +392,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_heatmap_inspect_and_tooltip_entity()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -435,7 +435,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_heatmap_rejects_legacy_tooltip_properties()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -458,7 +458,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_heatmap_allows_extension_presentation_properties()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -513,7 +513,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_bar_reference_column_as_label()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -537,7 +537,7 @@ public class DashboardParseTests
     [Fact]
     public void Parse_card_legend_block()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
                 title = "T"
@@ -764,7 +764,7 @@ public class DashboardParseTests
     [InlineData("defaults", "end defaults")]
     public void Parse_report_format_defaults_block_sets_format_defaults(string blockKeyword, string endKeyword)
     {
-        var document = DashSpecParser.Parse($$"""
+        var document = DashSpecTestRowTypes.ParseDashboard($$"""
             @dashboard t
               report
                 title = "T"
@@ -834,7 +834,7 @@ public class DashboardParseTests
     public void Parse_rejects_legacy_where_block()
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
-            DashSpecParser.Parse("""
+            DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"
@@ -861,7 +861,7 @@ public class DashboardParseTests
     [Fact]
     public void TabLayoutCompactor_bumps_full_width_table_below_same_row_charts()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"

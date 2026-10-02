@@ -47,7 +47,7 @@ internal static class TypedRowBatchTestKit
                 continue;
             }
 
-            return SqlRowMaterializer.MapFieldType(value.GetType());
+            return SqlRowMaterializer.MapClrType(value.GetType());
         }
 
         return DashPrimitiveKind.String;

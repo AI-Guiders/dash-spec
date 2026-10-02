@@ -164,7 +164,7 @@ public sealed class DashSpecBlockFormatterTests
 
         var text = File.ReadAllText(path);
         var formatted = DashSpecDocumentPipeline.Format(text, path, Path.GetDirectoryName(path));
-        var doc = CoreDashSpecParser.Parse(formatted, Path.GetDirectoryName(path)!);
+        var doc = DashSpecTestRowTypes.ParseDashboard(formatted, Path.GetDirectoryName(path)!);
         Assert.Equal("demo_soak", doc.Id);
         Assert.True(doc.Cards.Count > 0);
     }

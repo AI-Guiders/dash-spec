@@ -34,7 +34,7 @@ public class DemoSpecsSyntaxTests
         }
 
         var text = File.ReadAllText(path);
-        var doc = DashSpecParser.Parse(text, Path.GetDirectoryName(path)!, DemoParseOptions);
+        var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!, DemoParseOptions);
         Assert.NotEmpty(doc.Filters);
 
         foreach (var card in doc.Cards)
