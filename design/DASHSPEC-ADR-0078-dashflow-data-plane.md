@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (concept + IR; parser / runtime phased) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
+| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) |
 
 ## Context
 
@@ -30,7 +30,7 @@ Result: **two ETL layers** (DB + Execution.Runtime), the second **implicit**, no
 
 Split **data flow** from **presentation**:
 
-- **Channel** — boundary to external data; declares **outputs** (typed column contract + filter interface).
+- **Channel** — boundary to external data; declares **typed outputs** ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) and optional **param surface** for filters (types only).
 - **Transformer** — N inputs → M outputs; declarative steps (including time/TZ/grain).
 - **Card** (and optionally sheet/report) — declares **inputs** wired to flow ports; **diagram / present** only.
 
@@ -51,7 +51,7 @@ Optional sugar: `use channel` on a card when one input maps 1:1. Legacy `datasou
 | Plane | Owns | Does not own |
 |-------|------|----------------|
 | **DB** | Domain facts, agg, views, UTC storage | UI formats |
-| **Channel** | `from view` / `from sql`, `bind` filter surface, **output** schema | `diagram` |
+| **Channel** | `from view` / `from sql`, param surface (filter **types**), **typed** `output` | `diagram`, filter **values** |
 | **Transformer** | Steps on rowsets (semantic time, aggregate, limit, …) | SQL connection strings |
 | **Present** | `diagram`, `presentation`, viz plugins, human labels (`as`) | Ad-hoc SQL per card |
 
@@ -70,7 +70,8 @@ FlowGraph
 
 | Node | Ports |
 |------|--------|
-| **Channel** | outputs only (≥1); optional `bind` keys ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md)) |
+| **Channel** | outputs only (≥1); each port typed `rows R` ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)); optional param surface for filter types |
+| **Apply filters** (report graph) | row `in` / `out` + filter value ports; wires dashboard filters explicitly |
 | **Transformer** | inputs (≥1), outputs (≥1) |
 | **Card** (consumer, in report IR) | inputs (≥0); each input references `(nodeId, outputPort)` + column mapping to diagram |
 
@@ -97,17 +98,22 @@ wiring {
 ### Channel (sketch grammar)
 
 ```text
+type UtilizationRow = record {
+  user_sam: string
+  usage_day: local_date
+  concurrent_apps: int where >= 0
+}
+
 channel utilization {
   from view demo.v_daily_peak_concurrent_apps_per_user
-  bind usage_date, app_name
-  output utilization {
-    columns user_sam, usage_date, concurrent_apps
-  }
+  params { usage_date: date_range, app_name: field_set<string> }
+  output utilization: rows UtilizationRow
 }
 ```
 
 - `from` — `view` | `sql query` | `sql file` ([ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md)).
-- **Output** is the stable API for downstream transformers and card inputs.
+- **Output** is the stable typed API for downstream transformers and card inputs.
+- Filter **values** connect in the **report internal flow** (`apply_filters`), not on the channel node.
 
 ### Transformer (sketch grammar)
 
@@ -175,11 +181,17 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 
 **Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).
 
+## Future surfaces
+
+- **Data Flow Graph** (read-only) from resolved `FlowGraph` + [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md) schemas.
+- **Data Flow Designer** (n8n-like): palette of node kinds, **typed ports**, per-node preview — same IR as text.
+
 ## Non-goals
 
 - Replacing SQL views as primary ETL.
 - General-purpose ETL language (Airflow/dbt in spec).
 - Parser changes in the same PR as this ADR.
+- Dynamic typing or reference types in the flow graph ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)).
 
 ## Consequences
 
@@ -193,8 +205,8 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 @flow stakeholder {
   channel executive {
     from view demo.v_stakeholder_kpi_executive
-    bind usage_date, app_name
-    output kpi { columns * }
+    params { usage_date: date_range, app_name: field_set<string> }
+    output kpi: rows StakeholderKpiRow
   }
 
   transformer executive_local {
