@@ -99,9 +99,11 @@ OrderDetail.CustomerAddress.City
 
 **Rowset on ports:** `rows OrderDetail` — a table whose rows are `OrderDetail` values. Channel/transform outputs use `rows <AggregateType>`.
 
-**Surface syntax (normative):** all aggregates and filter types use **`type` … `end type`** blocks ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) block family). **No** `record { }`, `enum { }`, or brace-literal type forms in `.dashspec` / `.dashtype` / `.dashflow` — same rule as `presentation { }` living in `.dashpresentation`, not inline braces for types.
+**Surface syntax (normative):** all types use **`type` … `end type`** blocks ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) block family). **No** brace-literal type forms (`record { }`, `enum { }`, `list<>`) in authoring.
 
-Optional fields: `optional string Notes` on a field line inside `type` … `end type`. Enumerations and lists: defined with block keywords in a future grammar amendment (not `{ }` sugar).
+Optional SQL nullability: `optional string Notes` on a field line.
+
+**No `enum` or `list` types (v1):** closed categories are `string` / `int` columns or small UDTs; “many values” (e.g. field `IN`) is either multiple rows on a dedicated filter port type (see below) or transform/SQL — not a generic `list T` in the type language.
 
 Modeling (F#) may use an internal `DashType` DU; that is **not** an alternate authoring syntax.
 
@@ -121,13 +123,22 @@ end type
 
 #### Filter value types (separate from row types)
 
-Dashboard / report graph filter ports use dedicated types, e.g.:
+Filter ports use the same **`type` … `end type`** blocks (not generic collections):
 
-| Type | Role |
-|------|------|
-| `date_range` | Closed-open range on `local_date` or `instant` (step declares which) |
-| `field_set<string>` | `IN` selection |
-| `top_n` | Limit semantics |
+```text
+type UsageDateRange
+  local_date From
+  local_date To
+end type
+
+type SelectedAppNames
+  string AppName
+end type
+```
+
+`apply_filters` wiring: dashboard filter → port typed `UsageDateRange` or **`rows SelectedAppNames`** when the UI is multi-select `IN` (one row per chosen value — reuses `rows`, no `list`).
+
+`top_n` and similar: either fields on a small filter UDT or a dedicated transform parameter — not a built-in `list`/`enum`.
 
 Filter **application** lives in the **report internal flow** ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) amendment), not inside channel nodes.
 
