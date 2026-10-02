@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted (surfaces-as-plugins detail: [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md)) |
 | **Date** | 2026-09-01 |
 | **Relates to** | [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md) · [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md) · [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) · [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md) · [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md) · [ADR-0043](DASHSPEC-ADR-0043-filter-command-palette.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) · [GUIDERS-ADR-0053](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0053-planet-responsibilities.md) · [GUIDERS-ADR-0055](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0055-surface-wpf-guild-deck-authoring.md) · URSA [ADR 2026-07-07](https://github.com/AI-Guiders/ursa-license-usage/blob/main/docs/adr/ADR_2026-07-07_DashSpec_Product_Boundaries_RU.md) · [dash-spec-studio KB](https://github.com/AI-Guiders/kb/blob/main/knowledge/work/projects/aiguiders-open/dash-spec-studio/README.md) |
 
@@ -40,7 +40,7 @@ URSA ADR (2026-07-07) already splits **dash-spec platform** vs **planet content*
 |---------|------|--------|
 | **DashSpec.Host (web)** | **Consumption viewer** — browser deploy for stakeholders; filters, drill, slash palette | **Production** (LUS) |
 | **DashSpec Studio (desktop)** | **Authoring viewer** — spec tree, layout board, Data Lab, Script Pad, Report Preview | Planned planet |
-| **Embed / SDK** (future) | Partner app, iframe, scheduled render | Latent — second consumer ADR |
+| **Surface.Bff / Partner** (future) | SPA, partner portal, iframe — HTTP over same session | [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md) |
 
 **One-liner:** *DashSpec Platform = git-native semantic BI engine. Web Host = deployment viewer. Studio = engineering viewer. One `.dashspec`, many projections.*
 
