@@ -7,7 +7,19 @@
     <LangVersion>14</LangVersion>
     <RootNamespace>DashSpec.Abstractions</RootNamespace>
     <Version>0.2.0</Version>
+    <IsPackable>true</IsPackable>
+    <PackageId>DashSpec.Abstractions</PackageId>
+    <Title>DashSpec SDK — plugin contracts</Title>
+    <Description>Stable interfaces for DashSpec connectors, dataflow transforms, semantic types, and host extensions. See docs/sdk and DASHSPEC-ADR-0082.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/AI-Guiders/dash-spec</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AI-Guiders/dash-spec</RepositoryUrl>
+    <PackageTags>dashspec;sdk;plugin;connector</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\docs\sdk\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
