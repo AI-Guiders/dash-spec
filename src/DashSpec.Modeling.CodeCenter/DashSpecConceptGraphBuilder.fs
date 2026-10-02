@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.Authoring
+namespace DashSpec.Modeling.CodeCenter
 
 open System.Collections.Generic
 open AIGuiders.Platform.Modeling.Core.Identity
@@ -73,10 +73,8 @@ module DashSpecConceptGraphBuilder =
         { Tree = tree
           RootId = rootId
           Tiers = tiers
-          Edges = edges
-          Document = None }
+          Edges = edges }
 
-    /// Prefer <see cref="DashSpecAuthoringEntry.parse"/> — outline-only fallback (no IR attach).
     let buildFromText (text: string) =
         build (DashSpecSurfaceSyntax.parse text)
 

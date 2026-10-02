@@ -1,4 +1,4 @@
-namespace DashSpec.Modeling.Authoring
+namespace DashSpec.Modeling.CodeCenter
 
 open System
 open DashSpec.Modeling.Parse.Syntax
@@ -12,7 +12,6 @@ type DashSpecRuleKind =
     | UnclosedBlock
     | EmptyOutlineSpan
     | CardReferenceOutsideCards
-    | CardReferenceMissingFromDocument
     | RoundTripOutlineChanged
 
 /// Typed rule signals before message rendering (ADR-0067 InvariantLaws / conformance).
@@ -27,7 +26,6 @@ type DashSpecRuleViolation =
     | UnclosedBlock of keyword: DashSpecBlockKeyword * span: TextSpan
     | EmptyOutlineSpan of label: string * span: TextSpan
     | CardReferenceOutsideCards of cardId: string * span: TextSpan
-    | CardReferenceMissingFromDocument of cardId: string * span: TextSpan
 
 /// Ordered rule catalog — append only; DS codes derive from list position.
 module DashSpecRuleRegistry =
@@ -39,7 +37,6 @@ module DashSpecRuleRegistry =
           DashSpecRuleKind.UnclosedBlock
           DashSpecRuleKind.EmptyOutlineSpan
           DashSpecRuleKind.CardReferenceOutsideCards
-          DashSpecRuleKind.CardReferenceMissingFromDocument
           DashSpecRuleKind.RoundTripOutlineChanged ]
 
     let allKinds = orderedKinds
@@ -60,12 +57,10 @@ module DashSpecRuleRegistry =
         | DashSpecRuleViolation.UnclosedBlock _ -> DashSpecRuleKind.UnclosedBlock
         | DashSpecRuleViolation.EmptyOutlineSpan _ -> DashSpecRuleKind.EmptyOutlineSpan
         | DashSpecRuleViolation.CardReferenceOutsideCards _ -> DashSpecRuleKind.CardReferenceOutsideCards
-        | DashSpecRuleViolation.CardReferenceMissingFromDocument _ -> DashSpecRuleKind.CardReferenceMissingFromDocument
 
     let severity (kind: DashSpecRuleKind) =
         match kind with
         | DashSpecRuleKind.CardReferenceOutsideCards -> "warning"
-        | DashSpecRuleKind.CardReferenceMissingFromDocument -> "warning"
         | _ -> "error"
 
     let span (violation: DashSpecRuleViolation) =
@@ -76,7 +71,6 @@ module DashSpecRuleRegistry =
         | DashSpecRuleViolation.UnclosedBlock(_, span) -> span
         | DashSpecRuleViolation.EmptyOutlineSpan(_, span) -> span
         | DashSpecRuleViolation.CardReferenceOutsideCards(_, span) -> span
-        | DashSpecRuleViolation.CardReferenceMissingFromDocument(_, span) -> span
 
     let message (violation: DashSpecRuleViolation) =
         match violation with
@@ -90,8 +84,6 @@ module DashSpecRuleRegistry =
         | DashSpecRuleViolation.EmptyOutlineSpan(label, _) -> $"outline node '{label}' has empty span"
         | DashSpecRuleViolation.CardReferenceOutsideCards(cardId, _) ->
             $"card reference '{cardId}' is not nested under a cards block"
-        | DashSpecRuleViolation.CardReferenceMissingFromDocument(cardId, _) ->
-            $"card reference '{cardId}' is not declared in the Modeling document IR"
 
     let messageFor (kind: DashSpecRuleKind) =
         match kind with

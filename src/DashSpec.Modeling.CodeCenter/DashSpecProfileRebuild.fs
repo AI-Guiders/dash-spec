@@ -3,7 +3,6 @@ namespace DashSpec.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.CodeCenter
 open AIGuiders.Platform.Modeling.Core.Identity
 open AIGuiders.Platform.Modeling.LanguageIntelligence.Relations
-open DashSpec.Modeling.Authoring
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Syntax
 
@@ -61,7 +60,7 @@ module DashSpecProfileRebuild =
 
     let rebuild (text: string) : DocumentSnapshot * DashSpecConceptGraph * ProfileLawDiagnostic list =
         try
-            let graph, diagnostics = DashSpecAuthoringEntry.parseAndBuild text None
+            let graph, diagnostics = DashSpecSerializeRules.parseAndBuild text
 
             let nodes =
                 federationNodes graph
@@ -82,8 +81,7 @@ module DashSpecProfileRebuild =
                 { Tree = { Text = text; Root = DashSpecAstNode.CompilationUnit { Id = emptyId; Span = TextSpan.Create 0 0; Members = Array.empty }; Tokens = Array.empty }
                   RootId = emptyId
                   Tiers = Map.empty
-                  Edges = []
-                  Document = None }
+                  Edges = [] }
 
             let snapshot =
                 { Text = text
