@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
+open DashSpec.Modeling.Core
 
 type SqlDialect =
     | TSql
@@ -122,7 +123,8 @@ type DashboardDocument =
       Pages: IReadOnlyList<ReportPageDefinition> option
       CommandAliases: IReadOnlyDictionary<string, string> option
       FormatDefaults: ReportFormatDefaults
-      TimePolicy: ReportTimePolicy option }
+      TimePolicy: ReportTimePolicy option
+      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -137,6 +139,9 @@ module DashboardDocument =
 
     let emptyCommandAliases =
         Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
+
+    let emptyRowTypes =
+        Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
 
 type DashboardDocument with
     member this.ResolvedModuleDiagrams =
@@ -154,6 +159,11 @@ type DashboardDocument with
         | None -> DashboardDocument.emptyModuleTooltips
         | Some tooltips -> tooltips
 
+    member this.ResolvedRowTypes =
+        match this.RowTypes with
+        | None -> DashboardDocument.emptyRowTypes
+        | Some types -> types
+
 [<CLIMutable>]
 type TabModuleContent =
     { TabId: string
@@ -166,7 +176,8 @@ type TabModuleContent =
       ModuleTooltips: IReadOnlyDictionary<string, TooltipDefinition> option
       Pages: IReadOnlyList<ReportPageDefinition> option
       FormatDefaults: ReportFormatDefaults
-      TimePolicy: ReportTimePolicy option }
+      TimePolicy: ReportTimePolicy option
+      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option }
 
 type DashboardShellContext(mode: DashboardShellMode) =
     member val Mode = mode with get, set

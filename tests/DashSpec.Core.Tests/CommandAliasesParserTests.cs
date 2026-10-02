@@ -8,7 +8,7 @@ public class CommandAliasesParserTests
     [Fact]
     public void Parse_commands_block_maps_aliases_to_filter_ids()
     {
-        var document = DashSpecParser.Parse("""
+        var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard demo
               report
               title = "Demo"

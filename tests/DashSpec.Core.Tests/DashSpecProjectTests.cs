@@ -68,7 +68,7 @@ public sealed class DashSpecProjectTests
                 end bar
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   import "diagrams/activity.dashdiagram"
                   report

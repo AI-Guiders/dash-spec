@@ -10,5 +10,6 @@
   <ItemGroup>
     <Compile Include="ParseErrors.fs" />
     <Compile Include="Diagnostics.fs" />
+    <Compile Include="TypeSystem.fs" />
   </ItemGroup>
 </Project>

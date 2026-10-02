@@ -10,5 +10,6 @@ internal static class DashboardValidator
         FilterPlacementAnalyzer.Validate(document);
         PageAnalyzer.Validate(document);
         TabAnalyzer.Validate(document);
+        RowTypeAnalyzer.Validate(document);
     }
 }

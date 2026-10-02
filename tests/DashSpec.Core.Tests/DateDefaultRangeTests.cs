@@ -35,7 +35,7 @@ public class DateDefaultRangeTests
     public void Parse_rejects_magic_preset_names()
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
-            DashSpecParser.Parse("""
+            DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"

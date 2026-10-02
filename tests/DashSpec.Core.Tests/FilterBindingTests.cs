@@ -21,7 +21,7 @@ public class FilterBindingTests
             "demo-soak.dashspec"));
         var specDir = Path.GetDirectoryName(soakPath)!;
 
-        var doc = DashSpecParser.Parse(File.ReadAllText(soakPath), specDir);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), specDir);
 
         SpecLibrary? library = null;
 

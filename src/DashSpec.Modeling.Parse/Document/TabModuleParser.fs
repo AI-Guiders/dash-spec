@@ -55,7 +55,12 @@ module TabModuleParser =
           ModuleTooltips = None
           Pages = if shell.Pages.Count = 0 then None else Some(shell.Pages :> IReadOnlyList<_>)
           FormatDefaults = shell.FormatDefaults
-          TimePolicy = shell.TimePolicy }
+          TimePolicy = shell.TimePolicy
+          RowTypes =
+            if shell.Includes.ExportRowTypes().Count = 0 then
+                None
+            else
+                Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>) }
 
     let composeStandalone (text: string) (specDirectory: string option) =
         if String.IsNullOrWhiteSpace text then
@@ -119,7 +124,12 @@ module TabModuleParser =
                   else
                       Some(shell.CommandAliases :> IReadOnlyDictionary<_, _>)
               FormatDefaults = shell.FormatDefaults
-              TimePolicy = shell.TimePolicy }
+              TimePolicy = shell.TimePolicy
+              RowTypes =
+                if shell.Includes.ExportRowTypes().Count = 0 then
+                    None
+                else
+                    Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>) }
 
         DashboardValidator.validate document
         document

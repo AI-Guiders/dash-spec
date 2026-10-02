@@ -49,7 +49,7 @@ public class DocumentModuleParserTests
                 end tab
                 """;
 
-            var doc = DashSpecParser.Parse(text, dir);
+            var doc = DashSpecTestRowTypes.ParseDashboard(text, dir);
 
             Assert.Equal("t", doc.Id);
             Assert.Equal("Tab title", doc.Title);

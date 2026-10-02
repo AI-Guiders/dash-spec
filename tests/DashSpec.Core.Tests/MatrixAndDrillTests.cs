@@ -49,7 +49,7 @@ public sealed class DrillDownPhraseTests
             ],
         };
 
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"

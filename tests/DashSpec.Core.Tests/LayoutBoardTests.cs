@@ -14,7 +14,7 @@ public class LayoutBoardTests
     [Fact]
     public void Parse_card_ref_and_tab_layout_board()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   wiring
   layout board
@@ -63,7 +63,7 @@ end tab
     [Fact]
     public void TabLayoutBoardResolver_places_2x2_grid()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   wiring
   layout board
@@ -112,7 +112,7 @@ end tab
     [Fact]
     public void TabLayoutBoardResolver_single_cell_row_is_full_width()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   wiring
   layout board
@@ -156,7 +156,7 @@ end tab
     [Fact]
     public void TabLayoutBoardResolver_uneven_rows_distribute_per_row()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   wiring
   layout board
@@ -235,7 +235,7 @@ end tab
                 [ T F ]
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   report
   title = "demo"
@@ -292,7 +292,7 @@ end tab
                 [ Q ]
                 """);
 
-            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @tab demo
                   !include "layouts/grid.dashlayout"
                   wiring
@@ -323,7 +323,7 @@ end tab
     [Fact]
     public void Parse_filter_ref_and_toolbar_layout_board()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -359,7 +359,7 @@ end tab
     [Fact]
     public void ToolbarLayoutCompactor_places_board_on_grid()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -399,7 +399,7 @@ end tab
     [Fact]
     public void ToolbarLayoutCompactor_applies_weighted_board_row()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -437,7 +437,7 @@ end tab
     [Fact]
     public void ToolbarLayoutCompactor_filter_place_overrides_board()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -512,7 +512,7 @@ end tab
                 end dashboard
                 """);
 
-            var doc = DashSpecParser.Parse(File.ReadAllText(Path.Combine(dir, "root.dashspec")), dir);
+            var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(Path.Combine(dir, "root.dashspec")), dir);
 
             Assert.NotNull(doc.ToolbarBoard);
             Assert.Equal(["d1", "f1", "f2"], doc.DashboardFilters);
@@ -526,7 +526,7 @@ end tab
     [Fact]
     public void Parse_toolbar_board_rejects_flat_list_combo()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -580,7 +580,7 @@ end tab
                 [ D ]
                 """);
 
-            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @tab demo
                   !include "layouts/tb.dashlayout"
                   report
@@ -617,7 +617,7 @@ end tab
                 [ Q ]
                 """);
 
-            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+            var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   !include "layouts/grid.dashlayout"
                   report
@@ -666,7 +666,7 @@ end tab
                 [ T ]
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @tab demo
                   !include "layouts/grouped.dashlayout"
                   report
@@ -715,7 +715,7 @@ end tab
     [Fact]
     public void TabLayoutPlanner_places_nest_in_bracket_cell_with_inner_rows()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
   wiring
   layout board

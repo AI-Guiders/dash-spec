@@ -14,4 +14,5 @@ type DataSourceDefinition =
     { Kind: DataSourceKind
       Value: string
       SqlCarrier: DataSourceSqlCarrier option
-      Sheet: string option }
+      Sheet: string option
+      RowsType: string }

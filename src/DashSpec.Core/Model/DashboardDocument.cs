@@ -1,3 +1,5 @@
+using DashSpec.Abstractions.Data;
+
 namespace DashSpec.Core.Model;
 
 public sealed record DashboardDocument(
@@ -23,7 +25,8 @@ public sealed record DashboardDocument(
     IReadOnlyDictionary<string, string>? CommandAliases = null,
     ReportFormatDefaults? FormatDefaults = null,
     CardsChromeDefinition? CardsChrome = null,
-    ReportTimePolicy? TimePolicy = null)
+    ReportTimePolicy? TimePolicy = null,
+    IReadOnlyDictionary<string, RowTypeSchema>? RowTypeSchemas = null)
 {
     public CardsChromeDefinition ResolvedCardsChrome => CardsChrome ?? CardsChromeDefinition.Default;
     public ReportFormatDefaults ResolvedFormatDefaults => FormatDefaults ?? ReportFormatDefaults.Empty;
@@ -50,6 +53,12 @@ public sealed record DashboardDocument(
 
     public IReadOnlyDictionary<string, TooltipDefinition> ResolvedModuleTooltips =>
         ModuleTooltips ?? EmptyModuleTooltips;
+
+    public static IReadOnlyDictionary<string, RowTypeSchema> EmptyRowTypeSchemas { get; } =
+        new Dictionary<string, RowTypeSchema>(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, RowTypeSchema> ResolvedRowTypeSchemas =>
+        RowTypeSchemas ?? EmptyRowTypeSchemas;
 }
 
 public sealed record FilterDefinition(
@@ -139,7 +148,8 @@ public sealed record DataSourceDefinition(
     DataSourceKind Kind,
     string Value,
     DataSourceSqlCarrier? SqlCarrier = null,
-    string? Sheet = null);
+    string? Sheet = null,
+    string RowsType = "");
 
 public enum DataSourceKind
 {

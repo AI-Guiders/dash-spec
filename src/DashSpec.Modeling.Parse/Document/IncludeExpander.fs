@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
+open DashSpec.Modeling.Parse.Types
 
 module IncludeExpander =
 
@@ -24,7 +25,7 @@ module IncludeExpander =
         if File.Exists path then path
         else
             let extensions =
-                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip" |]
+                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip"; ".dashtype" |]
 
             let mutable resolved = path
 
@@ -98,6 +99,10 @@ module IncludeExpander =
         let id, definition = TooltipModuleParser.parseTooltipFileWithId (File.ReadAllText path)
         state.RegisterTooltip(id, definition)
 
+    let private registerTypesFile (path: string) (state: ModuleIncludeState) =
+        for def in TypeModuleParser.parseTypesModule (File.ReadAllText path) do
+            state.RegisterRowType def
+
     let rec private expandDashInclude
         (path: string)
         (specDirectory: string)
@@ -160,6 +165,7 @@ module IncludeExpander =
         | ".dashinclude" -> expandDashInclude path specDirectory moduleKind state tolerateIncompleteIncludes
         | ".dashpresentation" -> registerPresentationFile path specDirectory state
         | ".dashtooltip" -> registerTooltipFile path state
+        | ".dashtype" -> registerTypesFile path state
         | ".dashtransform" ->
             raise (DashSpecParseException($"!include '{path}': register transform via .dashdiagram or card block, not module include."))
         | extension ->

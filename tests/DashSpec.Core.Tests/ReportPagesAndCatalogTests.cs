@@ -9,7 +9,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_report_page_assigns_page_id_to_cards()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -44,7 +44,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_goto_page_and_entry()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -73,7 +73,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_goto_entry_preserving_filters()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -101,7 +101,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_goto_entry_preserving_matching_filters()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
@@ -187,7 +187,7 @@ public sealed class ReportPagesAndCatalogTests
                 end tab
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard soak
                   report
                   title = "Soak"
@@ -223,7 +223,7 @@ public sealed class ReportPagesAndCatalogTests
                 [ a b ]
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @tab t
                   report
                   title = "T"
@@ -258,7 +258,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void ValidateSpec_rejects_card_outside_page_when_pages_declared()
     {
-        Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"

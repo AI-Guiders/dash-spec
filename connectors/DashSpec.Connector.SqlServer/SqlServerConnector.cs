@@ -31,7 +31,8 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        var schema = SqlRowMaterializer.InferSchema(reader);
+        var schema = query.RowSchema;
+        var columnOrdinals = SqlRowMaterializer.ResolveColumnOrdinals(reader, schema);
         var rowValues = new List<DashValue[]>();
         var maxRows = ResolveMaxRows();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -42,7 +43,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
                     $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [connectors.sqlserver] max_rows.");
             }
 
-            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema));
+            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
         }
 
         return TypedRowBatch.Create(schema, rowValues);

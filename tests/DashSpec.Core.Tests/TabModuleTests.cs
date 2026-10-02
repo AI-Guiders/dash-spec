@@ -37,7 +37,7 @@ public class TabModuleTests
                 end tab
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"
@@ -71,7 +71,7 @@ public class TabModuleTests
     [Fact]
     public void Validate_allows_binding_filter_hosted_on_another_card()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -114,7 +114,7 @@ public class TabModuleTests
     [Fact]
     public void Validate_rejects_binding_filter_without_explicit_host()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -170,7 +170,7 @@ public class TabModuleTests
                 end tab
                 """);
 
-            var doc = DashSpecParser.Parse("""
+            var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
                   report
                   title = "T"
@@ -204,7 +204,7 @@ public class TabModuleTests
     [Fact]
     public void Parse_tab_dashspec_requires_spec_directory()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse("""
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
               report
               title = "T"
@@ -225,7 +225,7 @@ public class TabModuleTests
     [Fact]
     public void Parse_tab_root_standalone_document()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab soak
               wiring
               use connector sqlserver

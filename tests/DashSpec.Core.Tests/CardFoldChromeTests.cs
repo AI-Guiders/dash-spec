@@ -9,7 +9,7 @@ public class CardFoldChromeTests
     [Fact]
     public void Parse_card_chrome_fold_independent()
     {
-        var doc = DashSpecParser.Parse("""
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t
               report
               title = "T"
