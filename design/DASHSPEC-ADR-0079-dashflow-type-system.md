@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (normative for dashflow; phased implementation) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
+| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
 ## Context
 
@@ -63,7 +63,7 @@ There is **no** separate type for “UTC facts” vs “local display”. Everyt
 | `UtcOffset.TotalMinutes` | Meaning |
 |--------------------------|---------|
 | **0** | UTC frame (what SQL stores as `datetime2` / `occurred_at_utc` — clock reads **in UTC**) |
-| **≠ 0** | Same types, civil frame shifted (e.g. reporting zone after `semantic_time`) |
+| **≠ 0** | Same types, civil frame shifted (e.g. reporting zone after builtin `to_zone` — [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)) |
 
 So **“UTC+0” is not another primitive** — it is **`Time` / `Date` / `DateTime` with `Offset` zero**. “Local” is the **same types** with another offset (and fields adjusted when converting).
 
@@ -179,16 +179,27 @@ end type
 
 | Type | Role |
 |------|------|
-| **UtcOffset** | Fixed offset from UTC (`TotalMinutes`; `0` = UTC civil frame). IANA zone → offset resolved in **`semantic_time`** (DST rules live there, not in every row) |
+| **UtcOffset** | Fixed offset from UTC (`TotalMinutes`; `0` = UTC civil frame). IANA zone → offset resolved in **`transform use to_zone`** (DST rules live in the plugin, not in every row) |
 | **Time** | Time of day in the frame of **`Offset`** (often paired with `Date`; alone for `time`-only SQL columns) |
 | **Date** | Calendar day in the frame of **`Offset`** |
-| **DateTime** | Full timestamp (`datetime2`, `bucket_start_utc`, …) — **`Offset` 0** when channel reads UTC from SQL |
+| **DateTime** | **`Date` + `Time`** (same idea as .NET `DateTime` ≈ `DateOnly` + `TimeOnly`, but nested UDTs). Modeling **requires** `Day.Offset` = `Clock.Offset` |
 | **Week** | ISO week bucket in that calendar frame |
 | **Month** / **Year** | Reporting grain labels on axes and group-by transforms |
 
-`semantic_time` rewrites **`Date` / `Time` / `DateTime`** fields: same types, new `Offset` and component values for the reporting zone. Converting **UTC+0 → Moscow** is not a type change.
+The **`to_zone`** transform rewrites **`Date` / `Time` / `DateTime`** fields: same types, new `Offset` and component values for the reporting zone. Converting **UTC+0 → Moscow** is not a type change.
 
-Row fields from SQL UTC typically use **`DateTime`** (or separate **`Date`** + **`Time`**, both `Offset` 0) on the channel; after `semantic_time`, **`Date UsageDay`** may drop time part with `Offset` set for filters/axes.
+Row fields from SQL UTC typically use **`DateTime`** (`Day` and `Clock` both **`Offset` 0**) on the channel; after **`to_zone`**, a row may expose only **`Date UsageDay`** or **`Time PeakTime`** with reporting offset.
+
+#### Parallel to .NET (conceptual, not naming SSOT)
+
+| .NET (modern) | DashSpec stdlib |
+|---------------|-----------------|
+| `DateOnly` | `Date` (+ `UtcOffset` on the value) |
+| `TimeOnly` | `Time` (+ `UtcOffset`) |
+| `DateTime` (date + time, no offset in the struct) | `DateTime` = nested **`Date Day`** + **`Time Clock`** |
+| `DateTimeOffset` (instant + fixed offset) | Same **`DateTime`** when `Day.Offset` = `Clock.Offset`; zone/DST via **`to_zone`**, not a second primitive |
+
+DashSpec does **not** use CLR type names in spec; Execution maps aggregates at the connector boundary.
 
 Row example:
 
@@ -273,7 +284,7 @@ Ambiguous columns (untyped `sql` ad-hoc) **must** be annotated in channel output
 | `int` | `int` |
 | `decimal` | `decimal` |
 | `string` | `string` |
-| `Date` / `Time` / `DateTime` / `UtcOffset` | Structured values; Execution maps to `DateOnly` / `TimeOnly` / `DateTimeOffset` per field + `Offset` (Execution ADR note) |
+| `Date` / `Time` / `DateTime` / `UtcOffset` | Execution maps to `DateOnly` / `TimeOnly` / `DateTime` or `DateTimeOffset` per field rules; composed `DateTime` expands to day + clock with matching offset |
 | `optional T` | `T?` |
 
 Authors **never** write `DateTime` in `.dashspec` / `.dashflow`.
@@ -290,7 +301,7 @@ input raw: rows StakeholderKpiRow
 Transform steps declare **type transformers** in the catalog, e.g.:
 
 ```text
-semantic_time: (rows R, zone, …) → rows R'
+to_zone: (rows R, zone, …) → rows R'
 ```
 
 where `R'` is computed by Modeling rules (e.g. `DateTime` UTC+0 → `Date`/`Time` with reporting `UtcOffset`). Invalid step chain = compile error.
