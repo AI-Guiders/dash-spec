@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>DashSpec.Modeling.CodeCenter</RootNamespace>
-    <AssemblyName>DashSpec.Modeling.CodeCenter</AssemblyName>
-    <Description>DashSpec AST graph bridge for federation CodeCenter session (D41).</Description>
-    <PackageId>DashSpec.Modeling.CodeCenter</PackageId>
+    <RootNamespace>DashSpec.CodeCenter</RootNamespace>
+    <AssemblyName>DashSpec.CodeCenter</AssemblyName>
+    <Description>Federation Code Center adapter for DashSpec (plugin session + profile).</Description>
+    <PackageId>DashSpec.CodeCenter</PackageId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>

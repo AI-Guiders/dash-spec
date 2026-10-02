@@ -1,6 +1,6 @@
 using AIGuiders.Surface.Wpf.Abstractions;
 using AIGuiders.Surface.Wpf.CodeCenter;
-using DashSpec.Modeling.CodeCenter;
+using DashSpec.CodeCenter;
 using Microsoft.FSharp.Collections;
 using Microsoft.FSharp.Core;
 
