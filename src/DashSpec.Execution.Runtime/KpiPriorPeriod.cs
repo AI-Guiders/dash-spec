@@ -56,7 +56,7 @@ public static class KpiPriorPeriod
     }
 
     public static bool TryReadScalar(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         out double value)
     {
@@ -67,7 +67,7 @@ public static class KpiPriorPeriod
             return false;
         }
 
-        return MeasureValues.TryReadDouble(rows[0].GetValueOrDefault(column), out value);
+        return MeasureValues.TryReadDouble(rows[0].GetClr(column), out value);
     }
 
     public static (string Text, string Tone) FormatDelta(double current, double prior)

@@ -6,7 +6,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class ScatterPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         var xColumn = DiagramBindings.Column(diagram, "x");
@@ -16,15 +16,15 @@ internal static class ScatterPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            if (!MeasureValues.TryReadDouble(row.GetValueOrDefault(xColumn), out var x) ||
-                !MeasureValues.TryReadDouble(row.GetValueOrDefault(yColumn), out var y))
+            if (!MeasureValues.TryReadDouble(row.GetClr(xColumn), out var x) ||
+                !MeasureValues.TryReadDouble(row.GetClr(yColumn), out var y))
             {
                 continue;
             }
 
             double? size = null;
             if (hasSize &&
-                MeasureValues.TryReadDouble(row.GetValueOrDefault(sizeColumn), out var sizeValue))
+                MeasureValues.TryReadDouble(row.GetClr(sizeColumn), out var sizeValue))
             {
                 size = sizeValue;
             }

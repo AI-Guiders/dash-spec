@@ -7,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 internal static class CategoryChartPayloadBuilder
 {
     public static ChartPayload Build(
-        RowBatch rows,
+        TypedRowBatch rows,
         DiagramDefinition diagram,
         SeriesTransformSettings? seriesTransform,
         CardDefinition card,
@@ -25,18 +25,18 @@ internal static class CategoryChartPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            var label = PayloadRowFormatters.FormatValue(row.GetValueOrDefault(xColumn));
+            var label = PayloadRowFormatters.FormatValue(row.GetClr(xColumn));
             if (string.IsNullOrWhiteSpace(label))
             {
                 continue;
             }
 
-            var value = PayloadRowFormatters.ToDouble(row.GetValueOrDefault(yColumn));
+            var value = PayloadRowFormatters.ToDouble(row.GetClr(yColumn));
             var reference = hasReference
-                ? PayloadRowFormatters.ToDouble(row.GetValueOrDefault(referenceColumn))
+                ? PayloadRowFormatters.ToDouble(row.GetClr(referenceColumn))
                 : null;
             var color = hasColorColumn
-                ? PayloadRowFormatters.FormatValue(row.GetValueOrDefault(colorColumn))
+                ? PayloadRowFormatters.FormatValue(row.GetClr(colorColumn))
                 : null;
 
             if (indexByLabel.TryGetValue(label, out var existingIndex))

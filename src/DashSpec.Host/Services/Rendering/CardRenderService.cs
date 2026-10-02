@@ -440,7 +440,7 @@ public sealed class CardRenderService(
     }
 
     private static string? FormatNumber(
-        DashSpec.Abstractions.Data.RowBatch rows,
+        DashSpec.Abstractions.Data.TypedRowBatch rows,
         DiagramDefinition diagram)
     {
         if (rows.IsEmpty)
@@ -448,7 +448,7 @@ public sealed class CardRenderService(
             return null;
         }
 
-        var value = rows[0].GetValueOrDefault(DiagramBindings.Column(diagram, "value"));
+        var value = rows[0].GetClr(DiagramBindings.Column(diagram, "value"));
         if (value is null or DBNull)
         {
             return null;
