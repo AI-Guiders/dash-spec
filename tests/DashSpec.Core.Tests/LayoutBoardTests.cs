@@ -16,12 +16,12 @@ public class LayoutBoardTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
-  wiring
+  connect
   layout board
   [ Q E ]
   [ T F ]
   end layout board
-  end wiring
+  end connect
   report
   title = "Demo"
   card peak_by_app as "Peak" ref Q
@@ -65,12 +65,12 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
-  wiring
+  connect
   layout board
   [ Q E ]
   [ T F ]
   end layout board
-  end wiring
+  end connect
   report
   title = "demo"
   card a as "A" ref Q
@@ -114,12 +114,12 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
-  wiring
+  connect
   layout board
   [ Q W ]
   [ E ]
   end layout board
-  end wiring
+  end connect
   report
   title = "demo"
   card a as "A" ref Q
@@ -158,13 +158,13 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
-  wiring
+  connect
   layout board
   [ Q E ]
   [ R T Y ]
   [ F ]
   end layout board
-  end wiring
+  end connect
   report
   title = "demo"
   card q as "Q" ref Q
@@ -295,11 +295,11 @@ end tab
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @tab demo
                   !include "layouts/grid.dashlayout"
-                  wiring
+                  connect
                   layout board
                   [ Q ]
                   end layout board
-                  end wiring
+                  end connect
                   report
                   title = "demo"
                   card a as "A" ref Q
@@ -717,7 +717,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 @tab demo
-  wiring
+  connect
   layout board
   nest strip {
     [ E ]
@@ -725,7 +725,7 @@ end tab
   }
   [ Q strip ]
   end layout board
-  end wiring
+  end connect
   report
   title = "demo"
   card wide as "Wide" ref Q

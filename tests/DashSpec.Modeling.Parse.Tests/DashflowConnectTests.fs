@@ -5,7 +5,7 @@ open System.IO
 open Xunit
 open DashSpec.Modeling.Parse.Document
 
-module DashflowWiringTests =
+module DashflowConnectTests =
 
     let private typesText =
         """
@@ -20,6 +20,7 @@ end type
 @flow peak
 
 source utilization {
+  use connector sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -49,22 +50,22 @@ end flow
 """
 
     [<Fact>]
-    let ``wiring flow resolves dashflow graph on tab module`` () =
-        let dir = Path.Combine(Path.GetTempPath(), "dashflow-wiring-" + Guid.NewGuid().ToString("N"))
+    let ``connect flow resolves dashflow graph on tab module`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "dashflow-connect-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "types.dashtype"), typesText)
         File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
 
         let specText =
             $"""
-@tab flow_wiring_test
+@tab flow_connect_test
 
-wiring
+connect
   flow "peak.dashflow"
-end wiring
+end connect
 {minimalTabReport}
 
-end tab flow_wiring_test
+end tab flow_connect_test
 """
 
         try
@@ -77,6 +78,7 @@ end tab flow_wiring_test
                 Assert.Equal("peak", module'.FlowId)
                 Assert.Empty(module'.Diagnostics)
                 Assert.Equal(Some "peak.dashflow", document.DashflowPath)
+                Assert.Equal(Some "sqlserver", module'.Sources.[0].ConnectorId)
         finally
             try
                 Directory.Delete(dir, true)
@@ -113,7 +115,7 @@ end tab flow_include_test
                 ()
 
     [<Fact>]
-    let ``wiring flow and include dashflow are rejected`` () =
+    let ``connect flow and include dashflow are rejected`` () =
         let dir = Path.Combine(Path.GetTempPath(), "dashflow-dup-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "types.dashtype"), typesText)
@@ -124,9 +126,9 @@ end tab flow_include_test
 @tab flow_dup_test
 
 !include "peak.dashflow"
-wiring
+connect
   flow "peak.dashflow"
-end wiring
+end connect
 {minimalTabReport}
 
 end tab flow_dup_test
@@ -141,3 +143,22 @@ end tab flow_dup_test
                 Directory.Delete(dir, true)
             with _ ->
                 ()
+
+    [<Fact>]
+    let ``wiring keyword is rejected`` () =
+        let specText =
+            """
+@tab x
+wiring
+end wiring
+report "T"
+  card c as "C" {
+    diagram table { columns x }
+    datasource { from view v }
+  }
+end report
+end tab x
+"""
+        Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () ->
+            DocumentModuleParser.parseDocumentDefault specText None |> ignore)
+        |> ignore

@@ -13,6 +13,7 @@ type SourceFrom =
 
 type DashflowSourceDef =
     { Id: string
+      ConnectorId: string option
       From: SourceFrom
       OutputPort: string
       OutputRowType: string

@@ -18,8 +18,7 @@
   !include "diagrams/my-tab/*.dashdiagram"
   # optional bundle: !include "imports/my-tab.dashinclude"
 
-  wiring {
-    use connector sqlserver
+  connect {
     use palette demo_apps
     layout grid {
       columns = 12

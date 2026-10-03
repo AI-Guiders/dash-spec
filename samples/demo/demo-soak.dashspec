@@ -9,14 +9,13 @@
     end configuration
 
     !include "diagrams/*.dashdiagram"
-    wiring
-        use connector sqlserver
+    connect
         use palette demo_apps
         layout grid
             columns = 12
             gap = 16
         end grid
-    end wiring
+    end connect
 
     report
         title = "DashSpec — Demo soak"

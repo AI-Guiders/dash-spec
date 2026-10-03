@@ -10,7 +10,7 @@ module DashSpecKeywords =
 
     let isBlockKeyword (value: string) =
         match value.ToLowerInvariant() with
-        | "runtime" | "configuration" | "wiring" | "report" | "extensions" | "links" | "surfaces"
+        | "runtime" | "configuration" | "connect" | "report" | "extensions" | "links" | "surfaces"
         | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"

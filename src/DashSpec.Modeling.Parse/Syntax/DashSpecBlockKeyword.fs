@@ -23,7 +23,7 @@ type DashSpecBlockKeyword =
     | Click
     | Runtime
     | Configuration
-    | Wiring
+    | Connect
     | Report
     | Extensions
     | Overrides
@@ -64,7 +64,7 @@ module DashSpecBlockKeyword =
         | "layout" -> Some DashSpecBlockKeyword.Layout
         | "runtime" -> Some DashSpecBlockKeyword.Runtime
         | "configuration" -> Some DashSpecBlockKeyword.Configuration
-        | "wiring" -> Some DashSpecBlockKeyword.Wiring
+        | "connect" -> Some DashSpecBlockKeyword.Connect
         | "report" -> Some DashSpecBlockKeyword.Report
         | "extensions" -> Some DashSpecBlockKeyword.Extensions
         | "overrides" -> Some DashSpecBlockKeyword.Overrides
@@ -112,7 +112,7 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Transform
         | DashSpecBlockKeyword.Variables
         | DashSpecBlockKeyword.Presentation
-        | DashSpecBlockKeyword.Wiring
+        | DashSpecBlockKeyword.Connect
         | DashSpecBlockKeyword.Runtime
         | DashSpecBlockKeyword.Configuration
         | DashSpecBlockKeyword.Report
@@ -142,7 +142,7 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Click -> "click"
         | DashSpecBlockKeyword.Runtime -> "runtime"
         | DashSpecBlockKeyword.Configuration -> "configuration"
-        | DashSpecBlockKeyword.Wiring -> "wiring"
+        | DashSpecBlockKeyword.Connect -> "connect"
         | DashSpecBlockKeyword.Report -> "report"
         | DashSpecBlockKeyword.Extensions -> "extensions"
         | DashSpecBlockKeyword.Overrides -> "overrides"

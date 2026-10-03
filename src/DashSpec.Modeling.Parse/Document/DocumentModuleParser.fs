@@ -110,7 +110,7 @@ module rec DocumentModuleParser =
         let document =
             { Id = tabId
               Title = title
-              ConnectorId = result.Shell.ConnectorId
+              ConnectorId = None
               SqlDialect = result.SqlDialect
               DiagramLibraryPath = result.DiagramLibraryPath
               PalettePath = result.PalettePath
@@ -158,7 +158,7 @@ module rec DocumentModuleParser =
 
         { Id = dashboardId
           Title = reportTitle.Value
-          ConnectorId = dashShell.ConnectorId
+          ConnectorId = None
           SqlDialect = sqlDialect
           DiagramLibraryPath = diagramLibraryPath
           PalettePath = palettePath
@@ -275,7 +275,7 @@ module rec DocumentModuleParser =
                         match props.TryGetValue "manifest" with
                         | true, value -> Some value
                         | false, _ -> None
-                    elif reader.TryKeyword "configuration" || reader.TryKeyword "wiring" || reader.TryKeyword "report" then
+                    elif reader.TryKeyword "configuration" || reader.TryKeyword "connect" || reader.TryKeyword "report" then
                         None
                     elif reader.TryKeyword "extensions" then
                         skipTopLevelSection reader "extensions"
@@ -314,8 +314,8 @@ module rec DocumentModuleParser =
                     elif reader.TryKeyword "runtime" then
                         skipTopLevelSection reader "runtime"
                         loop ()
-                    elif reader.TryKeyword "wiring" then
-                        skipTopLevelSection reader "wiring"
+                    elif reader.TryKeyword "connect" then
+                        skipTopLevelSection reader "connect"
                         loop ()
                     elif reader.TryKeyword "report" then None
                     elif reader.TryKeyword "extensions" then
@@ -335,12 +335,11 @@ module rec DocumentModuleParser =
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
         let mutable diagramLibraryPath = None
-        let mutable connectorId = None
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
-        let mutable wiringLayoutBoard = None
-        let mutable wiringToolbarBoard = None
-        let mutable flowWiringPath = None
+        let mutable connectLayoutBoard = None
+        let mutable connectToolbarBoard = None
+        let mutable flowConnectPath = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -361,13 +360,12 @@ module rec DocumentModuleParser =
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
                     (fun v -> diagramLibraryPath <- v)
-                    (fun v -> connectorId <- v)
                     (fun v -> paletteUse <- v)
                     (fun v -> layout <- v)
                     (fun v -> moduleExtensions <- v)
-                    (fun lb -> wiringLayoutBoard <- Some lb)
-                    (fun tb -> wiringToolbarBoard <- Some tb)
-                    (fun v -> flowWiringPath <- v)
+                    (fun lb -> connectLayoutBoard <- Some lb)
+                    (fun tb -> connectToolbarBoard <- Some tb)
+                    (fun v -> flowConnectPath <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -379,12 +377,11 @@ module rec DocumentModuleParser =
                         None
                         None
                         includes
-                        connectorId
                         paletteUse
                         layout
-                        wiringLayoutBoard
-                        wiringToolbarBoard
-                        flowWiringPath
+                        connectLayoutBoard
+                        connectToolbarBoard
+                        flowConnectPath
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -418,12 +415,11 @@ module rec DocumentModuleParser =
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
         let mutable diagramLibraryPath = None
-        let mutable connectorId = None
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
-        let mutable wiringLayoutBoard = None
-        let mutable wiringToolbarBoard = None
-        let mutable flowWiringPath = None
+        let mutable connectLayoutBoard = None
+        let mutable connectToolbarBoard = None
+        let mutable flowConnectPath = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -444,13 +440,12 @@ module rec DocumentModuleParser =
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
                     (fun v -> diagramLibraryPath <- v)
-                    (fun v -> connectorId <- v)
                     (fun v -> paletteUse <- v)
                     (fun v -> layout <- v)
                     (fun v -> moduleExtensions <- v)
-                    (fun lb -> wiringLayoutBoard <- Some lb)
-                    (fun tb -> wiringToolbarBoard <- Some tb)
-                    (fun v -> flowWiringPath <- v)
+                    (fun lb -> connectLayoutBoard <- Some lb)
+                    (fun tb -> connectToolbarBoard <- Some tb)
+                    (fun v -> flowConnectPath <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -462,12 +457,11 @@ module rec DocumentModuleParser =
                         (Some tabId)
                         parentFilters
                         includes
-                        connectorId
                         paletteUse
                         layout
-                        wiringLayoutBoard
-                        wiringToolbarBoard
-                        flowWiringPath
+                        connectLayoutBoard
+                        connectToolbarBoard
+                        flowConnectPath
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -505,13 +499,12 @@ module rec DocumentModuleParser =
         (setSqlDialect: SqlDialect -> unit)
         (setPalettePath: string option -> unit)
         (setDiagramLibraryPath: string option -> unit)
-        (setConnectorId: string option -> unit)
         (setPaletteUse: string option -> unit)
         (setLayout: LayoutDefinition -> unit)
         (setModuleExtensions: ModuleExtensionsDefinition -> unit)
         (setLayoutBoard: LayoutBoardDefinition -> unit)
         (setToolbarBoard: LayoutBoardDefinition -> unit)
-        (setFlowWiringPath: string option -> unit)
+        (setFlowConnectPath: string option -> unit)
         (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
         =
         if reader.TryKeyword "runtime" then
@@ -552,19 +545,19 @@ module rec DocumentModuleParser =
                     reader.SkipNewlines()
                     true
                 elif reader.TryKeyword "wiring" then
-                    let wiredConnector, wiredPalette, layout, layoutBoard, toolbarBoard, flowPath = parseWiringBlock reader
+                    raise (DashSpecParseException("Module section 'wiring' was removed; use 'connect' (palette, flow, layout)."))
+                elif reader.TryKeyword "connect" then
+                    let wiredPalette, layout, layoutBoard, toolbarBoard, flowPath = parseConnectBlock reader
                     setLayout layout
                     if layoutBoard.IsSome then setLayoutBoard layoutBoard.Value
                     if toolbarBoard.IsSome then setToolbarBoard toolbarBoard.Value
-                    setConnectorId wiredConnector
                     setPaletteUse wiredPalette
-                    setFlowWiringPath flowPath
+                    setFlowConnectPath flowPath
                     reader.SkipNewlines()
                     true
                 else false
 
-    let private parseWiringBlock (reader: TokenReader) : string option * string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
-        let mutable connectorId = None
+    let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
         let mutable layoutBoard = None
@@ -574,20 +567,20 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
 
-        while not (BlockSyntax.isBlockEnd reader "wiring" None) && not reader.IsEof do
+        while not (BlockSyntax.isBlockEnd reader "connect" None) && not reader.IsEof do
             reader.SkipNewlines()
 
-            if BlockSyntax.isBlockEnd reader "wiring" None then ()
+            if BlockSyntax.isBlockEnd reader "connect" None then ()
             elif reader.TryKeyword "use" then
                 let useKind = reader.ReadIdent()
                 let useId = reader.ReadIdent()
 
                 if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
-                    connectorId <- Some useId
+                    raise (DashSpecParseException("use connector belongs on dashflow source nodes, not in connect { }."))
                 elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
                     paletteUse <- Some useId
                 else
-                    raise (DashSpecParseException($"wiring use must be connector or palette, got '{useKind}'."))
+                    raise (DashSpecParseException($"connect use must be palette, got '{useKind}'."))
             elif reader.TryKeyword "flow" then
                 flowPath <- Some(reader.ReadString())
             elif reader.TryKeyword "layout" then
@@ -601,8 +594,8 @@ module rec DocumentModuleParser =
             else
                 raise (reader.Unexpected())
 
-        BlockSyntax.expectBlockEnd reader "wiring" (None: string option)
-        connectorId, paletteUse, layout, layoutBoard, toolbarBoard, flowPath
+        BlockSyntax.expectBlockEnd reader "connect" (None: string option)
+        paletteUse, layout, layoutBoard, toolbarBoard, flowPath
 
     let private parseReportDefaultsBlock (reader: TokenReader) (shell: DashboardShellContext) (blockKeyword: string) =
         shell.FormatDefaults <-
@@ -892,12 +885,11 @@ module rec DocumentModuleParser =
         (tabModuleId: string option)
         (parentFilters: IReadOnlyList<FilterDefinition> option)
         (includes: ModuleIncludeState)
-        (connectorId: string option)
         (paletteUse: string option)
         (layout: LayoutDefinition)
         (layoutBoard: LayoutBoardDefinition option)
         (toolbarBoard: LayoutBoardDefinition option)
-        (flowWiringPath: string option)
+        (flowConnectPath: string option)
         (parseOptions: DashSpecParseOptions)
         (moduleExtensions: ModuleExtensionsDefinition)
         (timePolicy: ReportTimePolicy option)
@@ -912,8 +904,7 @@ module rec DocumentModuleParser =
         shell.SpecDirectory <- specDirectory
         shell.TabModuleId <- tabModuleId
         shell.ParentFilters <- parentFilters
-        shell.ConnectorId <- connectorId
-        shell.FlowWiringPath <- flowWiringPath
+        shell.FlowConnectPath <- flowConnectPath
         shell.ColorPalette <- paletteUse
         shell.Layout <- layout
         shell.LayoutBoard <- layoutBoard |> Option.orElse includes.LayoutBoard

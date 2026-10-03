@@ -458,7 +458,7 @@ Host умеет работать как Windows Service (`Microsoft.Extensions.H
 
 ### Parse error после правки DSL
 
-Сверься с [ADR-0024](../design/DASHSPEC-ADR-0024-document-authoring-layers.md) (блоки `runtime` / `configuration` / `wiring` / `report`) и живым `samples/demo/`.
+Сверься с [ADR-0024](../design/DASHSPEC-ADR-0024-document-authoring-layers.md) (блоки `runtime` / `configuration` / `connect` / `report`) и живым `samples/demo/`.
 
 ---
 
