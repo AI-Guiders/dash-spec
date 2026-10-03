@@ -29,9 +29,6 @@ module FlowPortsParser =
         | PortShape.Scalar -> DashPortType.Scalar decl.ValueType
 
     let private readStreamShapeKeyword (reader: TokenReader) =
-        if reader.TryKeyword "table" then
-            raise (DashSpecParseException("row-batch ports use 'stream', not 'table'."))
-
         if reader.TryKeyword "stream" then
             PortShape.Stream
         else
