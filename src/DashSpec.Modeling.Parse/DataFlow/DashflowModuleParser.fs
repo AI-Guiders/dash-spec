@@ -8,27 +8,6 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DashflowModuleParser =
 
-    let private readQualifiedName (reader: TokenReader) =
-        let first = reader.ReadIdent()
-        let mutable name = first
-
-        while reader.IsAt TokenKind.Dot do
-            reader.Advance()
-            name <- $"{name}.{reader.ReadIdent()}"
-
-        name
-
-    let private parseWireAfterFrom (reader: TokenReader) =
-        reader.ExpectKeyword "from"
-        let qualified = reader.ReadIdent()
-
-        match qualified.Split('.', 2, StringSplitOptions.RemoveEmptyEntries) with
-        | [| nodeId; portName |] -> { NodeId = nodeId; PortName = portName }
-        | _ ->
-            raise (
-                DashSpecParseException($"wire reference requires node.port after from, got '{qualified}'.")
-            )
-
     let private readRowsOutput (reader: TokenReader) =
         if not (reader.TryKeyword "rows") then
             raise (DashSpecParseException("output requires rows <RowType>."))
@@ -89,7 +68,7 @@ module DashflowModuleParser =
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "from" then
                 if reader.TryKeyword "view" then
-                    let viewName = readQualifiedName reader
+                    let viewName = AccessorGrammar.readDotted reader
                     from <- Some { Kind = SourceFromKind.View; Value = viewName }
                 elif reader.TryKeyword "sql" then
                     if reader.TryKeyword "query" then
@@ -143,7 +122,7 @@ module DashflowModuleParser =
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "input" then
                 let portName = reader.ReadIdent()
-                let wire = parseWireAfterFrom reader
+                let wire = AccessorGrammar.readFlowWireAfterFrom reader
                 inputs.Add((portName, wire))
             elif reader.TryKeyword "output" then
                 let portName = reader.ReadIdent()
