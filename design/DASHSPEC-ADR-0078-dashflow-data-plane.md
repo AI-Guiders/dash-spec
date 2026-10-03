@@ -85,6 +85,8 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | `.dashflow` | `@flow <id>` … `end flow` | sources, transformers, **links** |
 | (inline) | `!include` / `wiring { flow "path.dashflow" }` | same IR; no second file-root grammar in tab |
 
+**File root:** `@flow <id>` (same family as `@diagram`, [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md)); graph body closes with **`end flow`** via shared `BlockSyntax` (ADR-0036) — not `end @flow`, not EOF.
+
 **Authoring:** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). Optional **`default input`** / **`default output`** name which port links use when the edge omits `[port]` brackets (required when a node has multiple inputs or outputs). Dashflow has **no** diagram labels — only **named ports** and **wires**. **Edges:** `producer [outPort] -> [inPort] consumer` — bracket **left** of `-+>` is the producer **output** port; bracket **right** is the consumer **input** port (`foo [bar] -> [poo] bazz`). Arrow is any `-+>` (`->`, `-->`, … — **dash count is not semantic**). Omitted brackets resolve via defaults or the sole port on the node. **Not supported:** inline `input … from node.port`, bare `output: rows R` outside `ports`, or trailing port names after the consumer node. Scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph.
 
 ```text
