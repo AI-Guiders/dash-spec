@@ -6,7 +6,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 /// Surface accessor chain: left-associative `.` (receiver.member).
 /// Conceptually `. : Accessor -> string -> Accessor` — not a single lexer token.
-/// Flow graph wires (`from node.port`) compile via DataFlow.FlowPortRefParser to Core.FlowNodePortRef — not a generic qualified name.
+/// SQL/view dotted names only — flow graph wires use link lines (`producer [out] -> [in] consumer`), not accessor chains.
 module AccessorGrammar =
 
     [<RequireQualifiedAccess>]

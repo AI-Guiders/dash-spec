@@ -31,7 +31,7 @@ module DashflowModuleParserTests =
         | Result.Ok () -> Assert.True(TypeCatalog.tryGet catalog "DateTime" |> Option.isSome)
 
     [<Fact>]
-    let ``parse dashflow source and transformer wires`` () =
+    let ``parse dashflow source transformer ports and link`` () =
         let typesText =
             """
 type UtilizationRow
@@ -43,20 +43,30 @@ end type
 
         let flowText =
             """
-@flow stakeholder_peak
+dataflow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
-  output utilization: rows UtilizationRow
+  ports
+    default output utilization
+    output stream utilization: UtilizationRow
+  end ports
 }
 
 transformer reporting_calendar {
-  input raw from utilization.utilization
+  ports
+    default input raw
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
   transform use to_zone {
     zone = Europe/Moscow
   }
-  output localized: rows UtilizationRow
 }
+
+utilization [utilization] -> [raw] reporting_calendar
+
+end dataflow stakeholder_peak
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
@@ -66,9 +76,12 @@ transformer reporting_calendar {
         Assert.Empty(module'.Diagnostics)
         Assert.Equal(1, module'.Sources.Length)
         Assert.Equal("demo.v_daily_peak", module'.Sources.[0].From.Value)
+        Assert.Equal(1, module'.Links.Length)
+        Assert.Equal(Some "utilization", module'.Links.[0].FromPort)
+        Assert.Equal(Some "raw", module'.Links.[0].ToPort)
 
     [<Fact>]
-    let ``parse dataflow block with arrow links`` () =
+    let ``parse dataflow block with arrow links and defaults`` () =
         let typesText =
             """
 type UtilizationRow
@@ -152,7 +165,7 @@ transformer joiner {
   end ports
 }
 
-utilization --> joiner
+utilization -> joiner
 
 end dataflow multi_in
 """
