@@ -55,6 +55,18 @@ module DashflowModuleParser =
 
         reader.Expect TokenKind.RBrace
 
+    let private applySourcePorts (ports: FlowPortsParser.ParsedPorts) (outputPort: byref<string>) (outputRowType: byref<string>) =
+        if ports.Inputs.Length > 0 then
+            raise (DashSpecParseException("source ports block cannot declare input ports."))
+
+        match ports.Outputs with
+        | [||] -> ()
+        | [| (name, rowType) |] ->
+            outputPort <- name
+            outputRowType <- rowType
+        | _ ->
+            raise (DashSpecParseException("source requires exactly one output port in ports block (v1)."))
+
     let private parseSourceBlock (reader: TokenReader) (sourceId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
@@ -66,6 +78,8 @@ module DashflowModuleParser =
             reader.SkipNewlines()
 
             if reader.IsAt TokenKind.RBrace then ()
+            elif reader.TryKeyword "ports" then
+                applySourcePorts (FlowPortsParser.parsePortsBlock reader) &outputPort &outputRowType
             elif reader.TryKeyword "from" then
                 if reader.TryKeyword "view" then
                     let viewName = AccessorGrammar.readDotted reader
@@ -93,7 +107,7 @@ module DashflowModuleParser =
                 outputPort <- portName
                 outputRowType <- rowType
             else
-                raise (reader.Unexpected "from or output")
+                raise (reader.Unexpected "from, ports, or output")
 
             reader.SkipNewlines()
 
@@ -103,7 +117,7 @@ module DashflowModuleParser =
         | None -> raise (DashSpecParseException($"source '{sourceId}' requires from view or from sql."))
         | Some value ->
             if String.IsNullOrWhiteSpace outputPort then
-                raise (DashSpecParseException($"source '{sourceId}' requires output <port>: rows <Type>."))
+                raise (DashSpecParseException($"source '{sourceId}' requires a ports block or legacy output declaration."))
 
             { Id = sourceId
               From = value
@@ -113,13 +127,21 @@ module DashflowModuleParser =
     let private parseTransformerBlock (reader: TokenReader) (transformerId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
-        let inputs = ResizeArray<string * FlowNodePortRef option>()
+        let inputs = ResizeArray<DashflowInputDecl>()
         let outputs = ResizeArray<string * string>()
 
         while not (reader.IsAt TokenKind.RBrace) && not reader.IsEof do
             reader.SkipNewlines()
 
             if reader.IsAt TokenKind.RBrace then ()
+            elif reader.TryKeyword "ports" then
+                let ports = FlowPortsParser.parsePortsBlock reader
+
+                for name, rowType in ports.Inputs do
+                    inputs.Add({ Name = name; RowType = Some rowType; Wire = None })
+
+                for pair in ports.Outputs do
+                    outputs.Add pair
             elif reader.TryKeyword "input" then
                 let portName = reader.ReadIdent()
 
@@ -129,7 +151,7 @@ module DashflowModuleParser =
                     else
                         None
 
-                inputs.Add((portName, wire))
+                inputs.Add({ Name = portName; RowType = None; Wire = wire })
             elif reader.TryKeyword "output" then
                 let portName = reader.ReadIdent()
                 reader.Expect TokenKind.Colon
@@ -138,7 +160,7 @@ module DashflowModuleParser =
             elif reader.TryKeyword "transform" then
                 skipTransformStep reader
             else
-                raise (reader.Unexpected "input, output, or transform")
+                raise (reader.Unexpected "ports, input, output, or transform")
 
             reader.SkipNewlines()
 
@@ -186,7 +208,7 @@ module DashflowModuleParser =
         | Some value -> value
         | None ->
             match transformer.Inputs with
-            | [| (name, _) |] -> name
+            | [| input |] -> input.Name
             | _ ->
                 raise (
                     DashSpecParseException(
@@ -229,17 +251,20 @@ module DashflowModuleParser =
                   Kind = FlowNodeKind.Transformer
                   Inputs =
                     transformer.Inputs
-                    |> Array.map (fun (name, _) -> { Name = name; Type = DashPortType.Rows "" })
+                    |> Array.map (fun input ->
+                        let rowType = defaultArg input.RowType ""
+
+                        { Name = input.Name; Type = DashPortType.Rows rowType })
                   Outputs = outputPorts }
 
         for transformer in transformers do
-            for inputPort, wire in transformer.Inputs do
-                match wire with
+            for input in transformer.Inputs do
+                match input.Wire with
                 | None -> ()
                 | Some producer ->
                     edges.Add
                         { From = producer
-                          To = { NodeId = transformer.Id; PortName = inputPort } }
+                          To = { NodeId = transformer.Id; PortName = input.Name } }
 
         for link in links do
             match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, link.ToNode, StringComparison.OrdinalIgnoreCase)) with
