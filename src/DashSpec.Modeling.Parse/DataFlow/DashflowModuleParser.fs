@@ -113,7 +113,7 @@ module DashflowModuleParser =
     let private parseTransformerBlock (reader: TokenReader) (transformerId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
-        let inputs = ResizeArray<string * FlowNodePortRef>()
+        let inputs = ResizeArray<string * FlowNodePortRef option>()
         let outputs = ResizeArray<string * string>()
 
         while not (reader.IsAt TokenKind.RBrace) && not reader.IsEof do
@@ -122,7 +122,13 @@ module DashflowModuleParser =
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "input" then
                 let portName = reader.ReadIdent()
-                let wire = FlowPortRefParser.readProducerAfterFrom reader
+
+                let wire =
+                    if reader.TryKeyword "from" then
+                        Some(FlowPortRefParser.readProducerRef reader)
+                    else
+                        None
+
                 inputs.Add((portName, wire))
             elif reader.TryKeyword "output" then
                 let portName = reader.ReadIdent()
@@ -142,6 +148,52 @@ module DashflowModuleParser =
           Inputs = inputs.ToArray()
           Outputs = outputs.ToArray() }
 
+    let private tryDefaultProducerPort
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (nodeId: string)
+        =
+        match sources |> Array.tryFind (fun s -> String.Equals(s.Id, nodeId, StringComparison.OrdinalIgnoreCase)) with
+        | Some source -> Some source.OutputPort
+        | None ->
+            match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, nodeId, StringComparison.OrdinalIgnoreCase)) with
+            | None -> None
+            | Some transformer ->
+                match transformer.Outputs with
+                | [| (name, _) |] -> Some name
+                | _ -> None
+
+    let private resolveProducerPort
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (nodeId: string)
+        (port: string option)
+        =
+        match port with
+        | Some value -> value
+        | None ->
+            match tryDefaultProducerPort sources transformers nodeId with
+            | Some name -> name
+            | None ->
+                raise (
+                    DashSpecParseException(
+                        $"flow link from '{nodeId}' requires an explicit output port when the node has multiple outputs."
+                    )
+                )
+
+    let private resolveConsumerPort (transformer: DashflowTransformerDef) (port: string option) =
+        match port with
+        | Some value -> value
+        | None ->
+            match transformer.Inputs with
+            | [| (name, _) |] -> name
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"flow link to '{transformer.Id}' requires an explicit input port name when the transformer has multiple inputs."
+                    )
+                )
+
     let private tryOutputType (nodes: IReadOnlyDictionary<string, FlowNode>) (ref: FlowNodePortRef) =
         match nodes.TryGetValue ref.NodeId with
         | false, _ -> None
@@ -150,7 +202,11 @@ module DashflowModuleParser =
             |> Array.tryFind (fun port -> String.Equals(port.Name, ref.PortName, StringComparison.OrdinalIgnoreCase))
             |> Option.map (fun port -> port.Type)
 
-    let private buildGraph (sources: DashflowSourceDef[]) (transformers: DashflowTransformerDef[]) =
+    let private buildGraph
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (links: FlowLinkDef[])
+        =
         let nodeList = ResizeArray<FlowNode>()
         let edges = ResizeArray<FlowEdge>()
 
@@ -176,10 +232,26 @@ module DashflowModuleParser =
                     |> Array.map (fun (name, _) -> { Name = name; Type = DashPortType.Rows "" })
                   Outputs = outputPorts }
 
-            for portName, wire in transformer.Inputs do
+        for transformer in transformers do
+            for inputPort, wire in transformer.Inputs do
+                match wire with
+                | None -> ()
+                | Some producer ->
+                    edges.Add
+                        { From = producer
+                          To = { NodeId = transformer.Id; PortName = inputPort } }
+
+        for link in links do
+            match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, link.ToNode, StringComparison.OrdinalIgnoreCase)) with
+            | None ->
+                raise (DashSpecParseException($"flow link target '{link.ToNode}' is not a transformer in this dataflow block."))
+            | Some transformer ->
+                let fromPortName = resolveProducerPort sources transformers link.FromNode link.FromPort
+                let toPortName = resolveConsumerPort transformer link.ToPort
+
                 edges.Add
-                    { From = { NodeId = wire.NodeId; PortName = wire.PortName }
-                      To = { NodeId = transformer.Id; PortName = portName } }
+                    { From = FlowNodePortRef.producer link.FromNode fromPortName
+                      To = { NodeId = transformer.Id; PortName = toPortName } }
 
         let nodeMap =
             let map = Dictionary<string, FlowNode>(StringComparer.OrdinalIgnoreCase)
@@ -216,26 +288,17 @@ module DashflowModuleParser =
 
         FlowGraph.ofNodes patchedNodes edges
 
-    let parseModule (text: string) (typeCatalog: TypeCatalog) =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
-        let reader = ParserUtilities.createReader text
-        reader.SkipFileDirectives()
-        reader.SkipNewlines()
-        reader.Expect TokenKind.At
-        reader.ExpectKeyword "flow"
-        let flowId = reader.ReadIdent()
-
-        if String.IsNullOrWhiteSpace flowId then
-            raise (DashSpecParseException("@flow requires an id."))
-
-        reader.SkipNewlines()
-        let sources = ResizeArray<DashflowSourceDef>()
-        let transformers = ResizeArray<DashflowTransformerDef>()
-
-        while not reader.IsEof do
+    let private parseFlowBody
+        (reader: TokenReader)
+        (sources: ResizeArray<DashflowSourceDef>)
+        (transformers: ResizeArray<DashflowTransformerDef>)
+        (links: ResizeArray<FlowLinkDef>)
+        (isDone: unit -> bool)
+        =
+        while not (isDone ()) && not reader.IsEof do
             reader.SkipNewlines()
 
-            if reader.IsEof then ()
+            if isDone () then ()
             elif reader.TryKeyword "source" then
                 let sourceId = reader.ReadIdent()
                 sources.Add(parseSourceBlock reader sourceId)
@@ -243,13 +306,76 @@ module DashflowModuleParser =
                 let transformerId = reader.ReadIdent()
                 transformers.Add(parseTransformerBlock reader transformerId)
             else
-                raise (reader.Unexpected "source or transformer")
+                let saved = reader.SavePosition()
+                let nodeId = reader.ReadIdent()
 
-        let graph = buildGraph (sources.ToArray()) (transformers.ToArray())
+                match FlowLinkParser.tryParseLink reader nodeId with
+                | Some link -> links.Add link
+                | None ->
+                    reader.RestorePosition saved
+                    raise (reader.Unexpected "source, transformer, or flow link")
+
+    let private finishModule
+        (flowId: string)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (links: FlowLinkDef[])
+        (typeCatalog: TypeCatalog)
+        =
+        let graph = buildGraph sources transformers links
         let diagnostics = FlowGraph.typeCheck graph typeCatalog
 
         { FlowId = flowId
-          Sources = sources.ToArray()
-          Transformers = transformers.ToArray()
+          Sources = sources
+          Transformers = transformers
+          Links = links
           Graph = graph
           Diagnostics = diagnostics |> List.toArray }
+
+    /// Inline or fragment root: `dataflow &lt;id&gt;` … `end dataflow` (optional matching id).
+    let parseDataflowBlock (reader: TokenReader) (typeCatalog: TypeCatalog) =
+        let flowId = reader.ReadIdent()
+
+        if String.IsNullOrWhiteSpace flowId then
+            raise (DashSpecParseException("dataflow requires an id."))
+
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let sources = ResizeArray<DashflowSourceDef>()
+        let transformers = ResizeArray<DashflowTransformerDef>()
+        let links = ResizeArray<FlowLinkDef>()
+
+        parseFlowBody
+            reader
+            sources
+            transformers
+            links
+            (fun () -> BlockSyntax.isBlockEnd reader "dataflow" (Some flowId))
+
+        BlockSyntax.expectBlockEnd reader "dataflow" (Some flowId)
+
+        finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
+
+    /// `.dashflow` file root (`@flow &lt;id&gt;` …) or `dataflow` block.
+    let parseModule (text: string) (typeCatalog: TypeCatalog) =
+        if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
+        let reader = ParserUtilities.createReader text
+        reader.SkipFileDirectives()
+        reader.SkipNewlines()
+
+        if reader.TryKeyword "dataflow" then
+            parseDataflowBlock reader typeCatalog
+        else
+            reader.Expect TokenKind.At
+            reader.ExpectKeyword "flow"
+            let flowId = reader.ReadIdent()
+
+            if String.IsNullOrWhiteSpace flowId then
+                raise (DashSpecParseException("@flow requires an id."))
+
+            let sources = ResizeArray<DashflowSourceDef>()
+            let transformers = ResizeArray<DashflowTransformerDef>()
+            let links = ResizeArray<FlowLinkDef>()
+            parseFlowBody reader sources transformers links (fun () -> reader.IsEof)
+
+            finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
