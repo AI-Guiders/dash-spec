@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
+open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Core
 
 type SqlDialect =
@@ -124,7 +125,9 @@ type DashboardDocument =
       CommandAliases: IReadOnlyDictionary<string, string> option
       FormatDefaults: ReportFormatDefaults
       TimePolicy: ReportTimePolicy option
-      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option }
+      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option
+      DashflowPath: string option
+      Dashflow: DashflowModule option }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -177,7 +180,9 @@ type TabModuleContent =
       Pages: IReadOnlyList<ReportPageDefinition> option
       FormatDefaults: ReportFormatDefaults
       TimePolicy: ReportTimePolicy option
-      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option }
+      RowTypes: IReadOnlyDictionary<string, RowTypeDef> option
+      DashflowPath: string option
+      Dashflow: DashflowModule option }
 
 type DashboardShellContext(mode: DashboardShellMode) =
     member val Mode = mode with get, set
@@ -191,6 +196,7 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val Tabs = ResizeArray<TabDefinition>()
     member val Cards = ResizeArray<CardDefinition>()
     member val ConnectorId: string option = None with get, set
+    member val FlowWiringPath: string option = None with get, set
     member val ColorPalette: string option = None with get, set
     member val Layout = LayoutDefinition.Default with get, set
     member val FiltersChrome = FiltersChromeDefinition.Default with get, set

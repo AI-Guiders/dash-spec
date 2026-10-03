@@ -60,7 +60,9 @@ module TabModuleParser =
             if shell.Includes.ExportRowTypes().Count = 0 then
                 None
             else
-                Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>) }
+                Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>)
+          DashflowPath = None
+          Dashflow = None }
 
     let composeStandalone (text: string) (specDirectory: string option) =
         if String.IsNullOrWhiteSpace text then
@@ -129,7 +131,9 @@ module TabModuleParser =
                 if shell.Includes.ExportRowTypes().Count = 0 then
                     None
                 else
-                    Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>) }
+                    Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>)
+              DashflowPath = None
+              Dashflow = None }
 
         DashboardValidator.validate document
         document

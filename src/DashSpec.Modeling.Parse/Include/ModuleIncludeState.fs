@@ -8,12 +8,14 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Core
+open DashSpec.Modeling.Parse.DataFlow
 
 type ModuleIncludeState() =
     let diagrams = Dictionary<string, SpecIncludeFragment>(StringComparer.OrdinalIgnoreCase)
     let chartChromePresets = Dictionary<string, PresentationBlock>(StringComparer.OrdinalIgnoreCase)
     let tooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
     let rowTypes = Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase)
+    let mutable dashflowModule: DashflowModule option = None
 
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
@@ -63,6 +65,14 @@ type ModuleIncludeState() =
         if rowTypes.ContainsKey definition.Name then
             raise (DashSpecParseException($"Duplicate row type '{definition.Name}' in module includes."))
         rowTypes.[definition.Name] <- definition
+
+    member _.DashflowModule = dashflowModule
+
+    member this.RegisterDashflow(module': DashflowModule) =
+        if dashflowModule.IsSome then
+            raise (DashSpecParseException("Module includes declare more than one .dashflow graph."))
+
+        dashflowModule <- Some module'
 
     member _.ExportChartChromePresets() = chartChromePresets :> IReadOnlyDictionary<_, _>
     member _.ExportTooltips() = tooltips :> IReadOnlyDictionary<_, _>

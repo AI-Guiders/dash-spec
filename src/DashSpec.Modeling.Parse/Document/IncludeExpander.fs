@@ -11,6 +11,7 @@ open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Types
+open DashSpec.Modeling.Parse.DataFlow
 
 module IncludeExpander =
 
@@ -25,7 +26,7 @@ module IncludeExpander =
         if File.Exists path then path
         else
             let extensions =
-                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip"; ".dashtype" |]
+                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip"; ".dashtype"; ".dashflow" |]
 
             let mutable resolved = path
 
@@ -103,6 +104,11 @@ module IncludeExpander =
         for def in TypeModuleParser.parseTypesModule (File.ReadAllText path) do
             state.RegisterRowType def
 
+    let private registerDashflowFile (path: string) (state: ModuleIncludeState) =
+        let catalog = TypeCatalog.ofDefinitions (state.ExportRowTypes().Values)
+        let module' = DashflowResolver.parseFile path catalog
+        state.RegisterDashflow module'
+
     let rec private expandDashInclude
         (path: string)
         (specDirectory: string)
@@ -166,6 +172,7 @@ module IncludeExpander =
         | ".dashpresentation" -> registerPresentationFile path specDirectory state
         | ".dashtooltip" -> registerTooltipFile path state
         | ".dashtype" -> registerTypesFile path state
+        | ".dashflow" -> registerDashflowFile path state
         | ".dashtransform" ->
             raise (DashSpecParseException($"!include '{path}': register transform via .dashdiagram or card block, not module include."))
         | extension ->
