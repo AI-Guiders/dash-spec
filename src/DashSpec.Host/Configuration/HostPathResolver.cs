@@ -67,7 +67,7 @@ public sealed class HostPathResolver : IHostPathResolver
                 """
                 В .dashspec нет runtime { manifest = … } — укажите в блоке @dashboard/@tab, например:
                   runtime { manifest = "demo.toml" }
-                Файл runtime (TOML) должен содержать [connectors.*] и [plugins].
+                Файл runtime (TOML) должен содержать [providers.*] и [plugins].
                 """);
         }
 

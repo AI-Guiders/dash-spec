@@ -26,9 +26,9 @@ public static class DashSpecPluginLoader
             ActiveBundle = string.IsNullOrWhiteSpace(toml.Plugins.ActiveBundle)
                 ? "standard"
                 : toml.Plugins.ActiveBundle,
-            DefaultConnectorId = string.IsNullOrWhiteSpace(toml.Plugins.DefaultConnectorId)
+            DefaultProviderId = string.IsNullOrWhiteSpace(toml.Plugins.DefaultProviderId)
                 ? "sqlserver"
-                : toml.Plugins.DefaultConnectorId,
+                : toml.Plugins.DefaultProviderId,
             Bundles = toml.Plugins.Bundles
                 .Select(x => new DashSpecBundleDefinition
                 {
@@ -42,7 +42,7 @@ public static class DashSpecPluginLoader
                     Id = x.Id,
                     Assembly = x.Assembly,
                     Tier = ParseTier(x.Tier),
-                    IsConnector = x.IsConnector,
+                    IsProvider = x.IsProvider,
                 })
                 .ToList(),
         };
@@ -91,7 +91,7 @@ public static class DashSpecPluginLoader
 
         foreach (var entry in manifest.Plugins.Where(x => pluginIds.Contains(x.Id, StringComparer.OrdinalIgnoreCase)))
         {
-            if (entry.IsConnector)
+            if (entry.IsProvider)
             {
                 continue;
             }

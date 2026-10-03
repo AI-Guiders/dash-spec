@@ -19,20 +19,20 @@ public sealed class RuntimeConnectorResolver(
     private readonly ConcurrentDictionary<string, IDataSourceConnector> _byKey =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public IDataSourceConnector Resolve(string runtimeConfigPath, string? connectorId)
+    public IDataSourceConnector Resolve(string runtimeConfigPath, string? providerId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(runtimeConfigPath);
 
-        var id = string.IsNullOrWhiteSpace(connectorId)
-            ? pluginManifest.DefaultConnectorId
-            : connectorId;
+        var id = string.IsNullOrWhiteSpace(providerId)
+            ? pluginManifest.DefaultProviderId
+            : providerId;
 
         if (string.Equals(
                 runtimeConfigPath,
                 hostContext.StartupRuntimeConfigPath,
                 StringComparison.OrdinalIgnoreCase))
         {
-            return connectorRegistry.Resolve(id, pluginManifest.DefaultConnectorId);
+            return connectorRegistry.Resolve(id, pluginManifest.DefaultProviderId);
         }
 
         var key = $"{runtimeConfigPath}::{id}";
@@ -43,30 +43,30 @@ public sealed class RuntimeConnectorResolver(
     {
         var sep = key.LastIndexOf("::", StringComparison.Ordinal);
         var runtimeConfigPath = key[..sep];
-        var connectorId = key[(sep + 2)..];
+        var providerId = key[(sep + 2)..];
 
         var runtime = tomlLoader.LoadFile(runtimeConfigPath);
 
-        if (!TryGetConnectorSection(runtime, connectorId, out var section) ||
+        if (!TryGetProviderSection(runtime, providerId, out var section) ||
             string.IsNullOrWhiteSpace(section.ConnectionString))
         {
             var available = string.Join(
                 ", ",
-                runtime.Connectors.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+                runtime.Providers.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
             throw new InvalidOperationException(
-                $"Runtime '{Path.GetFileName(runtimeConfigPath)}' has no connection_string for connector '{connectorId}'. " +
+                $"Runtime '{Path.GetFileName(runtimeConfigPath)}' has no connection_string for provider '{providerId}'. " +
                 $"Available: {(string.IsNullOrEmpty(available) ? "(none)" : available)}.");
         }
 
-        return ConnectorInstanceFactory.Create(connectorId, section);
+        return ConnectorInstanceFactory.Create(providerId, section);
     }
 
-    private static bool TryGetConnectorSection(
+    private static bool TryGetProviderSection(
         DashSpecTomlRoot runtime,
-        string connectorId,
-        out ConnectorTomlSection section)
+        string providerId,
+        out ProviderTomlSection section)
     {
-        if (runtime.Connectors.TryGetValue(connectorId, out section!))
+        if (runtime.Providers.TryGetValue(providerId, out section!))
         {
             return true;
         }

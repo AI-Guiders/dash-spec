@@ -9,8 +9,8 @@ namespace DashSpec.Host.Services.Connectors;
 /// <summary>Constructs connector instances for per-entry runtime TOML bindings.</summary>
 internal static class ConnectorInstanceFactory
 {
-    public static IDataSourceConnector Create(string connectorId, ConnectorTomlSection section) =>
-        connectorId.ToLowerInvariant() switch
+    public static IDataSourceConnector Create(string providerId, ProviderTomlSection section) =>
+        providerId.ToLowerInvariant() switch
         {
             "sqlserver" => new SqlServerConnector(Options.Create(new SqlServerConnectorOptions
             {
@@ -25,6 +25,6 @@ internal static class ConnectorInstanceFactory
                 MaxRows = section.MaxRows,
             })),
             _ => throw new InvalidOperationException(
-                $"Per-entry runtime binding supports connector ids: sqlserver, postgres (got '{connectorId}')."),
+                $"Per-entry runtime binding supports provider ids: sqlserver, postgres (got '{providerId}')."),
         };
 }

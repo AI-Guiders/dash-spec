@@ -13,7 +13,7 @@ public sealed class DashSpecTomlRoot
 
     public ReportTimeTomlSection ReportTime { get; set; } = new();
 
-    public Dictionary<string, ConnectorTomlSection> Connectors { get; set; } =
+    public Dictionary<string, ProviderTomlSection> Providers { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
     public PluginsTomlSection Plugins { get; set; } = new();
@@ -104,7 +104,7 @@ public sealed class CatalogGitTomlSection
     public string SyncRepoSlug { get; set; } = string.Empty;
 }
 
-public sealed class ConnectorTomlSection
+public sealed class ProviderTomlSection
 {
     public string ConnectionString { get; set; } = string.Empty;
 
@@ -117,7 +117,7 @@ public sealed class ConnectorTomlSection
 
 public sealed class PluginsTomlSection
 {
-    public string DefaultConnectorId { get; set; } = "sqlserver";
+    public string DefaultProviderId { get; set; } = "sqlserver";
 
     public string ActiveBundle { get; set; } = "standard";
 
@@ -141,5 +141,5 @@ public sealed class PluginLoadTomlEntry
 
     public string Tier { get; set; } = "extended";
 
-    public bool IsConnector { get; set; }
+    public bool IsProvider { get; set; }
 }

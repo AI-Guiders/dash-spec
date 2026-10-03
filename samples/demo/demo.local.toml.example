@@ -1,12 +1,13 @@
 # Local override for demo-soak.dashspec — copy and set your server.
 # Save as demo.local.toml (gitignored) or point @runtime in .dashspec to this file.
 
-[connectors.sqlserver]
+[providers.sqlserver]
 connection_string = "Server=YOUR_SERVER;Database=DashSpecDemo;Trusted_Connection=True;TrustServerCertificate=True"
 
 [plugins]
-default_connector_id = "sqlserver"
+default_provider_id = "sqlserver"
 
 [[plugins.load]]
 id = "sqlserver"
 assembly = "DashSpec.Connector.SqlServer.dll"
+is_provider = true
