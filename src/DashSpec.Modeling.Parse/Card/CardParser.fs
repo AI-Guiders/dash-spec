@@ -382,6 +382,7 @@ module CardParser =
         let includeFragment = ref SpecIncludeFragmentResolver.emptyFragment
         let inspect = ref None
         let tooltip = ref None
+        let flowInput = ref None
         let inlineTooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
 
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
@@ -498,6 +499,11 @@ module CardParser =
                 let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
                 if placement.Value.IsNone then placement.Value <- parsedPlacement
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
+                reader.SkipNewlines()
+            elif reader.TryKeyword "input" then
+                if flowInput.Value.IsSome then
+                    raise (DashSpecParseException($"Card '{id}': only one flow input is supported in v1."))
+                flowInput.Value <- Some(CardFlowInputParser.parse reader id)
                 reader.SkipNewlines()
             elif reader.TryKeyword "datasource" then
                 dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
@@ -656,8 +662,8 @@ module CardParser =
         if dataSource.Value.IsNone && useCardPreset.IsNone then
             dataSource.Value <- Some primaryDataSource
 
-        if dataSource.Value.IsNone && useCardPreset.IsNone then
-            raise (DashSpecParseException("Card requires a datasource block or use <card-preset>."))
+        if dataSource.Value.IsNone && useCardPreset.IsNone && flowInput.Value.IsNone then
+            raise (DashSpecParseException("Card requires a datasource block, flow input, or use <card-preset>."))
 
         { Id = id
           Title = title.Value
@@ -693,4 +699,5 @@ module CardParser =
           OversizeMessage = oversizeMessage
           Chrome = chrome.Value
           Inspect = inspect.Value
-          Tooltip = tooltip.Value }
+          Tooltip = tooltip.Value
+          FlowInput = flowInput.Value }

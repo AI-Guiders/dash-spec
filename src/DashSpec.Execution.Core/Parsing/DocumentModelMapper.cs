@@ -15,6 +15,7 @@ using FsharpPresentation = DashSpec.Modeling.Parse.Presentation;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform;
 using FsharpTypes = DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge;
+using FsharpDataFlow = DashSpec.Modeling.Parse.DataFlow;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -46,7 +47,9 @@ internal static class DocumentModelMapper
             ToCore(document.FormatDefaults),
             MapOptional(document.CardsChrome, ToCore),
             MapOptional(document.TimePolicy, ToCore),
-            ToRowTypeSchemas(document.ResolvedRowTypes));
+            ToRowTypeSchemas(document.ResolvedRowTypes),
+            FirstOrNull(document.DashflowPath),
+            MapOptional(document.Dashflow, ToCoreDashflow));
 
     private static ReportTimePolicy ToCore(FsharpDocument.ReportTimePolicy policy) =>
         new(
@@ -178,7 +181,8 @@ internal static class DocumentModelMapper
             FirstOrNull(card.OversizeMessage),
             MapOptional(card.Chrome, ToCore),
             MapOptional(card.Inspect, ToCore),
-            MapOptional(card.Tooltip, ToCoreTooltip));
+            MapOptional(card.Tooltip, ToCoreTooltip),
+            MapOptional(card.FlowInput, ToCoreFlowInput));
 
     private static CardDiagramSlotDefinition ToCore(FsharpCard.CardDiagramSlot slot) =>
         new(
@@ -474,4 +478,61 @@ internal static class DocumentModelMapper
                 static x => x.Value,
                 StringComparer.OrdinalIgnoreCase));
     }
+
+    private static CardFlowInputDefinition ToCoreFlowInput(FsharpCard.CardFlowInput input) =>
+        new(input.Alias, input.NodeId, input.PortName);
+
+    private static DashflowModuleDefinition ToCoreDashflow(FsharpDataFlow.DashflowModule module) =>
+        new(
+            module.FlowId,
+            module.Sources.Select(ToCoreDashflowSource).ToList(),
+            module.Transformers.Select(ToCoreDashflowTransformer).ToList(),
+            module.Links.Select(ToCoreDashflowLink).ToList());
+
+    private static DashflowSourceDefinition ToCoreDashflowSource(FsharpDataFlow.DashflowSourceDef source)
+    {
+        var (providerInfer, providerId) = ToCoreProvider(source.Provider);
+        return new(
+            source.Id,
+            providerInfer,
+            providerId,
+            ToCoreSourceFromKind(source.From.Kind),
+            source.From.Value,
+            source.OutputPort,
+            source.OutputRowType);
+    }
+
+    private static (bool Infer, string? Id) ToCoreProvider(FsharpDataFlow.DashflowProviderBinding binding) =>
+        (
+            FsharpDataFlow.DashflowProviderBridge.isInfer(binding),
+            MapOptional(FsharpDataFlow.DashflowProviderBridge.tryNamedId(binding), static x => x));
+
+    private static DashflowSourceFromKind ToCoreSourceFromKind(FsharpDataFlow.SourceFromKind kind)
+    {
+        if (kind.Equals(FsharpDataFlow.SourceFromKind.View))
+        {
+            return DashflowSourceFromKind.View;
+        }
+
+        if (kind.Equals(FsharpDataFlow.SourceFromKind.SqlQuery))
+        {
+            return DashflowSourceFromKind.SqlQuery;
+        }
+
+        return DashflowSourceFromKind.SqlFile;
+    }
+
+    private static DashflowTransformerDefinition ToCoreDashflowTransformer(FsharpDataFlow.DashflowTransformerDef transformer) =>
+        new(
+            transformer.Id,
+            transformer.Outputs.Select(static x => x.Item1).ToList(),
+            FirstOrNull(transformer.DefaultInputPort),
+            FirstOrNull(transformer.DefaultOutputPort));
+
+    private static DashflowLinkDefinition ToCoreDashflowLink(FsharpDataFlow.FlowLinkDef link) =>
+        new(
+            link.FromNode,
+            FirstOrNull(link.FromPort),
+            link.ToNode,
+            FirstOrNull(link.ToPort));
 }

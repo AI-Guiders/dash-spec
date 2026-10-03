@@ -105,7 +105,7 @@ public sealed class CardRenderService(
         CancellationToken cancellationToken)
     {
         var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
-        var effective = resolved.Card;
+        var effective = FlowCardExecution.ApplyFlowInput(resolved.Card, document);
         var reportTime = ResolveReportTime(document);
         var query = QueryCompiler.Compile(
             effective,

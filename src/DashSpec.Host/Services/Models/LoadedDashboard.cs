@@ -14,4 +14,5 @@ public sealed record LoadedDashboard(
     FilterState Filters,
     IReadOnlyDictionary<string, IReadOnlyList<string>> FieldOptions,
     string SourceLabel,
-    string? SpecDirectory);
+    string? SpecDirectory,
+    string RuntimeConfigPath);

@@ -76,6 +76,7 @@
     <Compile Include="Types\TypeModuleParser.fs" />
     <Compile Include="Types\RowTypeSchemaBridge.fs" />
     <Compile Include="DataFlow\DashflowTypes.fs" />
+    <Compile Include="DataFlow\DashflowProviderBridge.fs" />
     <Compile Include="DataFlow\FlowPortsParser.fs" />
     <Compile Include="DataFlow\FlowLinkParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
@@ -91,6 +92,7 @@
     <Compile Include="Phrase\PhraseLineReader.fs" />
     <Compile Include="Phrase\PhraseTemplateMatcher.fs" />
     <Compile Include="Card\CardTypes.fs" />
+    <Compile Include="Card\CardFlowInputParser.fs" />
     <Compile Include="Card\ExtensionBlockParser.fs" />
     <Compile Include="Card\ModuleExtensionsParser.fs" />
     <Compile Include="Card\CardLimitsParser.fs" />

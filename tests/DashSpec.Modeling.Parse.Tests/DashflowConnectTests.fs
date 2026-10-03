@@ -39,14 +39,9 @@ end flow
       int ConcurrentApps
     end type
     card c as "C" {
+      input rows from utilization.utilization
       diagram table {
         columns UserSam
-      }
-      datasource {
-
-        
-        infer
-from view demo.v_daily_peak
       }
     }
   end report
@@ -84,6 +79,11 @@ end tab flow_connect_test
                 match module'.Sources.[0].Provider with
                 | DashflowProviderBinding.Named id -> Assert.Equal("sqlserver", id)
                 | _ -> Assert.Fail("Expected named provider sqlserver")
+
+                let card = document.Cards.[0]
+                Assert.True(card.FlowInput.IsSome)
+                Assert.Equal("utilization", card.FlowInput.Value.NodeId)
+                Assert.Equal("utilization", card.FlowInput.Value.PortName)
         finally
             try
                 Directory.Delete(dir, true)
