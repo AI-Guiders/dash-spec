@@ -7,11 +7,13 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Loading;
+using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Viz;
 
 public sealed class DashboardSessionService(
     IDashboardSpecLoader specLoader,
+    RuntimeConnectorResolver runtimeConnectorResolver,
     ICardRenderer cardRenderService,
     ICardViewState cardViewState,
     CatalogSourceState catalogState,
@@ -25,6 +27,7 @@ public sealed class DashboardSessionService(
     private FilterState? _filters;
     private SpecLibrary? _specLibrary;
     private string? _specDirectory;
+    private string? _runtimeConfigPath;
     private string? _activeCatalogEntryId;
     private string? _currentSpecReference;
     private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
@@ -142,13 +145,17 @@ public sealed class DashboardSessionService(
     {
         var effectiveCard = ResolveEffectiveCard(card);
         var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
+        var providerId = FlowCardExecution.ResolveProviderId(Document, effectiveCard);
+        var connector = runtimeConnectorResolver.Resolve(
+            _runtimeConfigPath ?? throw new InvalidOperationException("Dashboard not loaded."),
+            providerId);
         return cardRenderService.RenderAsync(
             effectiveCard,
             Document,
             queryFilters,
             FilterIndex,
             _specLibrary,
-            _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
+            connector,
             _specDirectory,
             cancellationToken);
     }
@@ -159,13 +166,17 @@ public sealed class DashboardSessionService(
     {
         var effectiveCard = ResolveEffectiveCard(card);
         var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
+        var providerId = FlowCardExecution.ResolveProviderId(Document, effectiveCard);
+        var connector = runtimeConnectorResolver.Resolve(
+            _runtimeConfigPath ?? throw new InvalidOperationException("Dashboard not loaded."),
+            providerId);
         return cardRenderService.RenderInteriorSlotsAsync(
             effectiveCard,
             Document,
             queryFilters,
             FilterIndex,
             _specLibrary,
-            _connector ?? throw new InvalidOperationException("Dashboard not loaded."),
+            connector,
             _specDirectory,
             cancellationToken);
     }
@@ -195,6 +206,7 @@ public sealed class DashboardSessionService(
         _filters = loaded.Filters;
         _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         _specDirectory = loaded.SpecDirectory;
+        _runtimeConfigPath = loaded.RuntimeConfigPath;
         LoadedSpecSource = loaded.SourceLabel;
     }
 }

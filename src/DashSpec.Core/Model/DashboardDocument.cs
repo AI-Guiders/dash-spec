@@ -26,7 +26,9 @@ public sealed record DashboardDocument(
     ReportFormatDefaults? FormatDefaults = null,
     CardsChromeDefinition? CardsChrome = null,
     ReportTimePolicy? TimePolicy = null,
-    IReadOnlyDictionary<string, RowTypeSchema>? RowTypeSchemas = null)
+    IReadOnlyDictionary<string, RowTypeSchema>? RowTypeSchemas = null,
+    string? DashflowPath = null,
+    DashflowModuleDefinition? Dashflow = null)
 {
     public CardsChromeDefinition ResolvedCardsChrome => CardsChrome ?? CardsChromeDefinition.Default;
     public ReportFormatDefaults ResolvedFormatDefaults => FormatDefaults ?? ReportFormatDefaults.Empty;
@@ -138,7 +140,8 @@ public sealed record CardDefinition(
     string? OversizeMessage = null,
     CardChromeDefinition? Chrome = null,
     InspectPresentation? Inspect = null,
-    TooltipDefinition? Tooltip = null);
+    TooltipDefinition? Tooltip = null,
+    CardFlowInputDefinition? FlowInput = null);
 public sealed record DiagramDefinition(
     string Kind,
     IReadOnlyDictionary<string, string> Properties,

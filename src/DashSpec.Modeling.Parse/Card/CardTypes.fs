@@ -100,6 +100,12 @@ type FilterDeriveDefinition =
       GrainFilterName: string option }
 
 [<CLIMutable>]
+type CardFlowInput =
+    { Alias: string
+      NodeId: string
+      PortName: string }
+
+[<CLIMutable>]
 type CardDiagramSlot =
     { SlotRef: string
       Diagram: DiagramDefinition
@@ -141,7 +147,8 @@ type CardDefinition =
       OversizeMessage: string option
       Chrome: CardChromeDefinition option
       Inspect: InspectPresentation option
-      Tooltip: TooltipDefinition option }
+      Tooltip: TooltipDefinition option
+      FlowInput: CardFlowInput option }
 
 module CardBindResolver =
     let dashboardToken = "dashboard"
