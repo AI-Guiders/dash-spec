@@ -85,12 +85,14 @@ dataflow stakeholder_peak
 source utilization {
   from view demo.v_daily_peak
   ports
+    default output utilization
     output stream utilization: UtilizationRow
   end ports
 }
 
 transformer reporting_calendar {
   ports
+    default input raw
     input stream raw: UtilizationRow
     output stream localized: UtilizationRow
   end ports
@@ -99,7 +101,7 @@ transformer reporting_calendar {
   }
 }
 
-utilization --> reporting_calendar raw
+utilization --> reporting_calendar
 
 end dataflow stakeholder_peak
 """
@@ -112,4 +114,52 @@ end dataflow stakeholder_peak
         Assert.Equal(1, module'.Links.Length)
         Assert.Equal("utilization", module'.Links.[0].FromNode)
         Assert.Equal("reporting_calendar", module'.Links.[0].ToNode)
-        Assert.Equal(Some "raw", module'.Links.[0].ToPort)
+        Assert.Equal(None, module'.Links.[0].ToPort)
+        Assert.Equal(Some "raw", module'.Transformers.[0].DefaultInputPort)
+
+        let edge =
+            module'.Graph.Edges
+            |> Array.find (fun e -> e.To.NodeId = "reporting_calendar")
+
+        Assert.Equal("raw", edge.To.PortName)
+
+    [<Fact>]
+    let ``default input resolves link when transformer has multiple inputs`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+dataflow multi_in
+
+source utilization {
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer joiner {
+  ports
+    default input primary
+    input stream primary: UtilizationRow
+    input stream secondary: UtilizationRow
+    output stream merged: UtilizationRow
+  end ports
+}
+
+utilization --> joiner
+
+end dataflow multi_in
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Empty(module'.Diagnostics)
+        let edge = module'.Graph.Edges |> Array.exactlyOne
+        Assert.Equal("primary", edge.To.PortName)

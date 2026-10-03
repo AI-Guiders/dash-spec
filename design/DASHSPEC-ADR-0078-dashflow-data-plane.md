@@ -85,7 +85,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | `.dashflow` | `@flow <id>` **or** `dataflow <id>` … `end dataflow` | sources, transformers, **links** |
 | (inline) | `dataflow <id>` … `end dataflow` inside `.dashspec` / tab | same IR; optional `!include "flows/x.dashflow"` |
 
-**Authoring (normative direction):** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). **Edges** are PlantUML-style **links** (`producer --> consumer inputPort`) for **stream** inputs; scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph. Legacy `output name: rows R` and inline `input … from` remain accepted temporarily.
+**Authoring (normative direction):** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). Optional **`default input`** / **`default output`** name which port links use when the edge omits an explicit port (required when a node has multiple inputs or outputs). Dashflow has **no** separate notion of diagram labels on nodes or edges — only **named ports** and **wires** between them. **Edges** are graph **links** (direction: producer **output** → consumer **input**); link surface syntax is evolving (`producer --> consumer`, later `out`/`in` roles). Scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph. Legacy `output name: rows R` and inline `input … from` remain accepted temporarily.
 
 ```text
 dataflow stakeholder_peak
@@ -93,19 +93,22 @@ dataflow stakeholder_peak
 source utilization {
   from view demo.v_daily_peak
   ports
+    default output utilization
     output stream utilization: UtilizationRow
   end ports
 }
 
 transformer reporting_calendar {
   ports
+    default input raw
+    default output localized
     input stream raw: UtilizationRow
     output stream localized: UtilizationRow
   end ports
   transform use to_zone { zone = Europe/Moscow }
 }
 
-utilization --> reporting_calendar raw
+utilization --> reporting_calendar
 
 end dataflow stakeholder_peak
 ```
