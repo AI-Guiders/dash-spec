@@ -117,6 +117,9 @@ module TypeCatalog =
             with :? DashSpecParseException as ex ->
                 errors.Add($"{typeName}: {ex.Message}")
 
+        for lawError in TypeInvariantLaws.validate catalog.Definitions do
+            errors.Add(lawError)
+
         if errors.Count = 0 then Result.Ok() else Result.Error(errors |> Seq.toList)
 
     /// <summary>Resolve a field path relative to a row type (ADR-0079 field paths).</summary>

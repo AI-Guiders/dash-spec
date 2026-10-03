@@ -1,0 +1,36 @@
+type UtcOffset
+  int TotalMinutes
+end type
+
+type Time
+  int Hour
+  int Minute
+  int Second
+  UtcOffset Offset
+end type
+
+type Date
+  int Year
+  int Month
+  int Day
+  UtcOffset Offset
+end type
+
+type DateTime
+  Date Day
+  Time Clock
+end type
+
+type Week
+  int Year
+  int WeekNumber
+end type
+
+type Month
+  int Year
+  int MonthNumber
+end type
+
+type Year
+  int Year
+end type
