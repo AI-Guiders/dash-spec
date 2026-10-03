@@ -146,19 +146,33 @@ module DashSpecLexer =
                         i <- i + 1
                         atLineStart <- false
                 | '-' ->
-                    if i + 2 < text.Length && text.[i + 1] = '-' && text.[i + 2] = '>' then
-                        tokens.Add({ Kind = TokenKind.FlowArrow; Value = "-->"; Start = start; Length = 3 })
-                        i <- i + 3
-                        atLineStart <- false
-                    else
+                    if i + 1 < text.Length && Char.IsDigit text.[i + 1] then
                         let relStart = i
                         i <- i + 1
                         while i < text.Length && (Char.IsDigit text.[i] || text.[i] = 'd' || text.[i] = 'D') do
                             i <- i + 1
-                        if i <= relStart + 1 then
-                            raise (DashSpecParseException($"Invalid '-' at position {relStart}. Use -Nd for relative days or --> for flow links."))
                         tokens.Add({ Kind = TokenKind.RelativeDay; Value = text.[relStart..i - 1]; Start = relStart; Length = i - relStart })
                         atLineStart <- false
+                    else
+                        let arrowStart = i
+                        let mutable j = i
+                        while j < text.Length && text.[j] = '-' do
+                            j <- j + 1
+
+                        if j < text.Length && text.[j] = '>' && j > arrowStart then
+                            let len = j - arrowStart + 1
+                            tokens.Add(
+                                { Kind = TokenKind.FlowArrow
+                                  Value = text.[arrowStart..j]
+                                  Start = arrowStart
+                                  Length = len })
+                            i <- j + 1
+                            atLineStart <- false
+                        else
+                            raise (
+                                DashSpecParseException(
+                                    $"Invalid '-' at position {arrowStart}. Use -Nd for relative days or -+> for flow links."
+                                ))
                 | ',' -> tokens.Add({ Kind = TokenKind.Comma; Value = ","; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | ':' -> tokens.Add({ Kind = TokenKind.Colon; Value = ":"; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | '"' ->
