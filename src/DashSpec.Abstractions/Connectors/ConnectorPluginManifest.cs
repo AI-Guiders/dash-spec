@@ -2,7 +2,7 @@ namespace DashSpec.Abstractions.Connectors;
 
 public sealed class ConnectorPluginManifest
 {
-    public string DefaultConnectorId { get; set; } = "sqlserver";
+    public string DefaultProviderId { get; set; } = "sqlserver";
 
     public List<ConnectorPluginEntry> Plugins { get; set; } = [];
 }

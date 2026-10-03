@@ -153,10 +153,10 @@ public sealed class HostBootstrapService(
                 $"Config '{configPath}' must define [[plugins.load]] entries.");
         }
 
-        if (root.Connectors.Values.All(section => string.IsNullOrWhiteSpace(section.ConnectionString)))
+        if (root.Providers.Values.All(section => string.IsNullOrWhiteSpace(section.ConnectionString)))
         {
             throw new InvalidOperationException(
-                $"Config '{configPath}' must define at least one [connectors.*] connection_string.");
+                $"Config '{configPath}' must define at least one [providers.*] connection_string.");
         }
     }
 }

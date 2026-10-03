@@ -20,8 +20,21 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
         }
 
         var text = File.ReadAllText(path, Encoding.UTF8);
+        RejectLegacyConnectorTomlKeys(text, path);
         return TomlSerializer.Deserialize<DashSpecTomlRoot>(text, SerializerOptions)
             ?? new DashSpecTomlRoot();
+    }
+
+    private static void RejectLegacyConnectorTomlKeys(string text, string path)
+    {
+        if (text.Contains("[connectors.", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("default_connector_id", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("is_connector", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Runtime manifest '{path}' uses removed keys ([connectors.*], default_connector_id, is_connector). " +
+                "Use [providers.*], default_provider_id, is_provider.");
+        }
     }
 
     public DashSpecTomlRoot Merge(DashSpecTomlRoot root, DashSpecTomlRoot overlay)
@@ -43,11 +56,11 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
             root.Access.ApiKey = overlay.Access.ApiKey;
         }
 
-        foreach (var (connectorId, section) in overlay.Connectors)
+        foreach (var (providerId, section) in overlay.Providers)
         {
-            if (!root.Connectors.TryGetValue(connectorId, out var existing))
+            if (!root.Providers.TryGetValue(providerId, out var existing))
             {
-                root.Connectors[connectorId] = section;
+                root.Providers[providerId] = section;
                 continue;
             }
 
@@ -67,9 +80,9 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(overlay.Plugins.DefaultConnectorId))
+        if (!string.IsNullOrWhiteSpace(overlay.Plugins.DefaultProviderId))
         {
-            root.Plugins.DefaultConnectorId = overlay.Plugins.DefaultConnectorId;
+            root.Plugins.DefaultProviderId = overlay.Plugins.DefaultProviderId;
         }
 
         if (overlay.Plugins.Load.Count > 0)
@@ -97,35 +110,35 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
             yield return new KeyValuePair<string, string?>("Dashboard:CatalogPath", root.Dashboard.CatalogPath);
         }
 
-        foreach (var (connectorId, section) in root.Connectors)
+        foreach (var (providerId, section) in root.Providers)
         {
             if (!string.IsNullOrWhiteSpace(section.ConnectionString))
             {
                 yield return new KeyValuePair<string, string?>(
-                    $"Connectors:{ToPascalCase(connectorId)}:ConnectionString",
+                    $"Providers:{ToPascalCase(providerId)}:ConnectionString",
                     section.ConnectionString);
             }
 
             if (section.CommandTimeoutSeconds > 0)
             {
                 yield return new KeyValuePair<string, string?>(
-                    $"Connectors:{ToPascalCase(connectorId)}:CommandTimeoutSeconds",
+                    $"Providers:{ToPascalCase(providerId)}:CommandTimeoutSeconds",
                     section.CommandTimeoutSeconds.ToString());
             }
 
             if (section.MaxRows > 0)
             {
                 yield return new KeyValuePair<string, string?>(
-                    $"Connectors:{ToPascalCase(connectorId)}:MaxRows",
+                    $"Providers:{ToPascalCase(providerId)}:MaxRows",
                     section.MaxRows.ToString());
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(root.Plugins.DefaultConnectorId))
+        if (!string.IsNullOrWhiteSpace(root.Plugins.DefaultProviderId))
         {
             yield return new KeyValuePair<string, string?>(
-                "DashSpec:DefaultConnectorId",
-                root.Plugins.DefaultConnectorId);
+                "DashSpec:DefaultProviderId",
+                root.Plugins.DefaultProviderId);
         }
 
         for (var i = 0; i < root.Plugins.Load.Count; i++)

@@ -15,9 +15,9 @@ public static class ConnectorPluginLoader
     public static ConnectorPluginManifest LoadManifest(DashSpecTomlRoot toml) =>
         new()
         {
-            DefaultConnectorId = string.IsNullOrWhiteSpace(toml.Plugins.DefaultConnectorId)
+            DefaultProviderId = string.IsNullOrWhiteSpace(toml.Plugins.DefaultProviderId)
                 ? "sqlserver"
-                : toml.Plugins.DefaultConnectorId,
+                : toml.Plugins.DefaultProviderId,
             Plugins = toml.Plugins.Load
                 .Where(x => !string.IsNullOrWhiteSpace(x.Id) && !string.IsNullOrWhiteSpace(x.Assembly))
                 .Select(x => new ConnectorPluginEntry { Id = x.Id, Assembly = x.Assembly })
