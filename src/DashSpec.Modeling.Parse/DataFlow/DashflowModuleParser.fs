@@ -70,19 +70,23 @@ module DashflowModuleParser =
         | _ ->
             raise (DashSpecParseException("source requires exactly one output port in ports block (v1)."))
 
+        ports.DefaultOutput
+
     let private parseSourceBlock (reader: TokenReader) (sourceId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
         let mutable from: SourceFrom option = None
         let mutable outputPort = ""
         let mutable outputRowType = ""
+        let mutable defaultOutputPort = None
 
         while not (reader.IsAt TokenKind.RBrace) && not reader.IsEof do
             reader.SkipNewlines()
 
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "ports" then
-                applySourcePorts (FlowPortsParser.parsePortsBlock reader) &outputPort &outputRowType
+                let ports = FlowPortsParser.parsePortsBlock reader
+                defaultOutputPort <- applySourcePorts ports &outputPort &outputRowType
             elif reader.TryKeyword "from" then
                 if reader.TryKeyword "view" then
                     let viewName = AccessorGrammar.readDotted reader
@@ -125,13 +129,16 @@ module DashflowModuleParser =
             { Id = sourceId
               From = value
               OutputPort = outputPort
-              OutputRowType = outputRowType }
+              OutputRowType = outputRowType
+              DefaultOutputPort = defaultOutputPort }
 
     let private parseTransformerBlock (reader: TokenReader) (transformerId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
         let inputs = ResizeArray<DashflowInputDecl>()
         let outputs = ResizeArray<string * string>()
+        let mutable defaultInputPort = None
+        let mutable defaultOutputPort = None
 
         while not (reader.IsAt TokenKind.RBrace) && not reader.IsEof do
             reader.SkipNewlines()
@@ -139,6 +146,8 @@ module DashflowModuleParser =
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "ports" then
                 let ports = FlowPortsParser.parsePortsBlock reader
+                defaultInputPort <- ports.DefaultInput
+                defaultOutputPort <- ports.DefaultOutput
 
                 for decl in ports.Inputs do
                     inputs.Add(
@@ -174,7 +183,9 @@ module DashflowModuleParser =
 
         { Id = transformerId
           Inputs = inputs.ToArray()
-          Outputs = outputs.ToArray() }
+          Outputs = outputs.ToArray()
+          DefaultInputPort = defaultInputPort
+          DefaultOutputPort = defaultOutputPort }
 
     let private tryDefaultProducerPort
         (sources: DashflowSourceDef[])
@@ -182,14 +193,20 @@ module DashflowModuleParser =
         (nodeId: string)
         =
         match sources |> Array.tryFind (fun s -> String.Equals(s.Id, nodeId, StringComparison.OrdinalIgnoreCase)) with
-        | Some source -> Some source.OutputPort
+        | Some source ->
+            match source.DefaultOutputPort with
+            | Some name -> Some name
+            | None -> Some source.OutputPort
         | None ->
             match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, nodeId, StringComparison.OrdinalIgnoreCase)) with
             | None -> None
             | Some transformer ->
-                match transformer.Outputs with
-                | [| (name, _) |] -> Some name
-                | _ -> None
+                match transformer.DefaultOutputPort with
+                | Some name -> Some name
+                | None ->
+                    match transformer.Outputs with
+                    | [| (name, _) |] -> Some name
+                    | _ -> None
 
     let private resolveProducerPort
         (sources: DashflowSourceDef[])
@@ -213,14 +230,17 @@ module DashflowModuleParser =
         match port with
         | Some value -> value
         | None ->
-            match transformer.Inputs with
-            | [| input |] -> input.Name
-            | _ ->
-                raise (
-                    DashSpecParseException(
-                        $"flow link to '{transformer.Id}' requires an explicit input port name when the transformer has multiple inputs."
+            match transformer.DefaultInputPort with
+            | Some name -> name
+            | None ->
+                match transformer.Inputs with
+                | [| input |] -> input.Name
+                | _ ->
+                    raise (
+                        DashSpecParseException(
+                            $"flow link to '{transformer.Id}' requires an explicit input port name when the transformer has multiple inputs and no default input is declared."
+                        )
                     )
-                )
 
     let private tryOutputType (nodes: IReadOnlyDictionary<string, FlowNode>) (ref: FlowNodePortRef) =
         match nodes.TryGetValue ref.NodeId with
