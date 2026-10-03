@@ -4,7 +4,7 @@
 dashhost = "../../samples/demo/demo.dashhost"
 
 [plugins]
-default_connector_id = "sqlserver"
+default_provider_id = "sqlserver"
 active_bundle = "standard"
 
 [[plugins.bundles]]
@@ -15,7 +15,7 @@ plugins = ["diagram_builtin", "on_click_default", "viz_chartjs", "viz_matrix_can
 id = "sqlserver"
 assembly = "DashSpec.Connector.SqlServer.dll"
 tier = "core"
-is_connector = true
+is_provider = true
 
 [[plugins.load]]
 id = "card_export"

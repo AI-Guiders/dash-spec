@@ -40,7 +40,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
             if (rowValues.Count >= maxRows)
             {
                 throw new InvalidOperationException(
-                    $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [connectors.sqlserver] max_rows.");
+                    $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [providers.sqlserver] max_rows.");
             }
 
             rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
@@ -97,7 +97,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
 
 public sealed class SqlServerConnectorOptions
 {
-    public const string SectionName = "Connectors:SqlServer";
+    public const string SectionName = "Providers:SqlServer";
 
     public string ConnectionString { get; set; } = string.Empty;
 

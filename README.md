@@ -37,22 +37,23 @@ sqlcmd -S localhost -d DashSpecDemo -E -i samples/demo/sql/bootstrap-demo-soak.s
 1. Host `dash-spec.toml` — `[host] dashhost` → `.dashhost` → `.dashcatalog`
 2. `.dashcatalog` — whitelist отчётов; `default` entry → первый экран
 3. `.dashspec` — `@module` + `runtime { manifest = "…" }`, `configuration { }`, `body` / `dashboard { }` ([ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md)); legacy: flat `@runtime`, `@sqldialect`
-4. TOML из `runtime.manifest` — connectors + plugins (deployment manifest, не DSL)
+4. TOML из `runtime.manifest` — providers + plugins (deployment manifest, не DSL)
 
 `samples/demo/demo.toml`:
 
 ```toml
-[connectors.sqlserver]
+[providers.sqlserver]
 connection_string = "Server=...;Database=DashSpecDemo;Trusted_Connection=True;TrustServerCertificate=True"
-command_timeout_seconds = 120   # SqlCommand timeout; 0 = connector default (120)
+command_timeout_seconds = 120   # SqlCommand timeout; 0 = provider plugin default (120)
 max_rows = 250000               # abort if result exceeds row count; 0 = default (250000)
 
 [plugins]
-default_connector_id = "sqlserver"
+default_provider_id = "sqlserver"
 
 [[plugins.load]]
 id = "sqlserver"
 assembly = "DashSpec.Connector.SqlServer.dll"
+is_provider = true
 ```
 
 Без `@runtime` host выдаст понятную ошибку. `@config` — deprecated alias.

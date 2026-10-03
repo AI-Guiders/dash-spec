@@ -25,7 +25,7 @@ runtime {
 
 | Ключ | Назначение |
 |------|------------|
-| `manifest` | **обязателен** в `runtime { }` — путь к TOML (относительно `.dashspec`): `[connectors.*]`, `[plugins]`, `[[plugins.load]]` |
+| `manifest` | **обязателен** в `runtime { }` — путь к TOML (относительно `.dashspec`): `[providers.*]`, `[plugins]`, `[[plugins.load]]` |
 
 Surface `@runtime "…"` и `@config "…"` **удалены** — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md).
 

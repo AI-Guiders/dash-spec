@@ -40,7 +40,7 @@ public interface IDataSourceConnector
 }
 ```
 
-Manifest: TOML из **`@runtime`** в `.dashspec` (alias `@config` deprecated) — секции `[connectors]`, `[plugins]`, `[[plugins.load]]`.
+Manifest: TOML из **`@runtime`** в `.dashspec` (alias `@config` deprecated) — секции `[providers.*]`, `[plugins]`, `[[plugins.load]]` (`is_provider = true` на data-plugin entries).
 
 Host bootstrap: `src/DashSpec.Host/dash-spec.toml` — **только** `[dashboard] spec_path` (где лежит `.dashspec`).
 

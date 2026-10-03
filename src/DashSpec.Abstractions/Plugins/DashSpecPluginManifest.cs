@@ -8,7 +8,7 @@ public sealed class DashSpecPluginManifest
 
     public List<DashSpecPluginLoadEntry> Plugins { get; set; } = [];
 
-    public string DefaultConnectorId { get; set; } = "sqlserver";
+    public string DefaultProviderId { get; set; } = "sqlserver";
 }
 
 public sealed class DashSpecBundleDefinition
@@ -26,5 +26,5 @@ public sealed class DashSpecPluginLoadEntry
 
     public PluginTier Tier { get; set; } = PluginTier.Extended;
 
-    public bool IsConnector { get; set; }
+    public bool IsProvider { get; set; }
 }

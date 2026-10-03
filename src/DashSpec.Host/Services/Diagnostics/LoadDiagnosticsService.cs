@@ -239,7 +239,7 @@ public sealed class LoadDiagnosticsService(
         {
             var connector = runtimeConnectorResolver.Resolve(
                 hostContext.StartupRuntimeConfigPath,
-                connectorId: null);
+                providerId: null);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(10));
             await connector.QueryDistinctStringsAsync("SELECT CAST(1 AS varchar(1))", cts.Token).ConfigureAwait(false);

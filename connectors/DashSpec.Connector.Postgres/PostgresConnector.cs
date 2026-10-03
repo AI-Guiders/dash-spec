@@ -40,7 +40,7 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
             if (rowValues.Count >= maxRows)
             {
                 throw new InvalidOperationException(
-                    $"SQL result exceeded max_rows ({maxRows}). Narrow filters or raise [connectors.postgres] max_rows.");
+                    $"SQL result exceeded max_rows ({maxRows}). Narrow filters or raise [providers.postgres] max_rows.");
             }
 
             rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
@@ -97,7 +97,7 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
 
 public sealed class PostgresConnectorOptions
 {
-    public const string SectionName = "Connectors:Postgres";
+    public const string SectionName = "Providers:Postgres";
 
     public string ConnectionString { get; set; } = string.Empty;
 
