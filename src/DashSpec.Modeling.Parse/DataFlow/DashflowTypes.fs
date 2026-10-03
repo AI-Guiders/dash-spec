@@ -25,7 +25,7 @@ type FlowLinkDef =
 
 type DashflowInputDecl =
     { Name: string
-      RowType: string option
+      PortType: DashPortType option
       Wire: FlowNodePortRef option }
 
 type DashflowTransformerDef =
