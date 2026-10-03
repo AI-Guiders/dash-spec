@@ -101,7 +101,7 @@ transformer reporting_calendar {
   }
 }
 
-utilization --> reporting_calendar
+utilization -> reporting_calendar
 
 end dataflow stakeholder_peak
 """
