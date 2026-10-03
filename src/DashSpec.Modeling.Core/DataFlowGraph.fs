@@ -109,7 +109,7 @@ module FlowGraph =
                     if not (TypeCatalog.portTypesCompatible outputPort.Type inputPort.Type) then
                         let describe (portType: DashPortType) =
                             match portType with
-                            | DashPortType.Table name -> $"table {name}"
+                            | DashPortType.Stream name -> $"stream {name}"
                             | DashPortType.Scalar name -> $"scalar {name}"
 
                         diagnostics.Add
@@ -128,7 +128,7 @@ module FlowGraph =
                         | Some _ -> ()
 
                     match outputPort.Type with
-                    | DashPortType.Table rowName -> validateCatalogType rowName
+                    | DashPortType.Stream rowName -> validateCatalogType rowName
                     | DashPortType.Scalar typeName -> validateCatalogType typeName
 
         diagnostics |> Seq.toList

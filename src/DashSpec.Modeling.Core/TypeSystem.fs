@@ -18,14 +18,14 @@ type DashType =
     | Named of typeName: string
     | FixedArray of element: DashPrimitive * length: int
 
-/// <summary>Data-flow port types — <c>table</c> / <c>scalar</c> surface (ADR-0078).</summary>
+/// <summary>Data-flow port types — <c>stream</c> / <c>scalar</c> surface (ADR-0078).</summary>
 [<RequireQualifiedAccess>]
 type DashPortType =
-    | Table of rowTypeName: string
+    | Stream of rowTypeName: string
     | Scalar of valueTypeName: string
 
-    /// <summary>Legacy alias for <see cref="Table"/>.</summary>
-    static member Rows name = DashPortType.Table name
+    /// <summary>Legacy IR alias.</summary>
+    static member Rows name = DashPortType.Stream name
 
 [<CLIMutable>]
 type RowFieldDef =
