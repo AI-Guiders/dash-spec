@@ -85,14 +85,14 @@ dataflow stakeholder_peak
 source utilization {
   from view demo.v_daily_peak
   ports
-    output utilization: UtilizationRow
+    output table utilization: UtilizationRow
   end ports
 }
 
 transformer reporting_calendar {
   ports
-    input raw: UtilizationRow
-    output localized: UtilizationRow
+    input table raw: UtilizationRow
+    output table localized: UtilizationRow
   end ports
   transform use to_zone {
     zone = Europe/Moscow

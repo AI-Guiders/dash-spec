@@ -151,4 +151,6 @@ module TypeCatalog =
 
     let portTypesCompatible (left: DashPortType) (right: DashPortType) =
         match left, right with
-        | DashPortType.Rows a, DashPortType.Rows b -> String.Equals(a, b, StringComparison.OrdinalIgnoreCase)
+        | DashPortType.Table a, DashPortType.Table b -> String.Equals(a, b, StringComparison.OrdinalIgnoreCase)
+        | DashPortType.Scalar a, DashPortType.Scalar b -> String.Equals(a, b, StringComparison.OrdinalIgnoreCase)
+        | _ -> false

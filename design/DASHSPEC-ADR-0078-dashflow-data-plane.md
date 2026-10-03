@@ -85,7 +85,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | `.dashflow` | `@flow <id>` **or** `dataflow <id>` … `end dataflow` | sources, transformers, **links** |
 | (inline) | `dataflow <id>` … `end dataflow` inside `.dashspec` / tab | same IR; optional `!include "flows/x.dashflow"` |
 
-**Authoring (normative direction):** contextual grammar — `:` types ports on **node declarations** (`output kpi: rows R`); **edges** are PlantUML-style **links** (`producer --> consumer inputPort`), not `node.port` accessor chains. SQL acquisition keeps dotted **external** names (`from view demo.v_daily`) via Accessor, outside the flow graph.
+**Authoring (normative direction):** port **signatures** in `ports` … `end ports` with explicit shape: `input table|scalar name: Type`, `output table name: Type` (table = row stream, scalar = single value UDT). **Edges** are PlantUML-style **links** (`producer --> consumer inputPort`) for **table** inputs; scalar inputs wire from report filters / bind (separate edges, later). SQL `from view demo.v_daily` stays Accessor, outside the graph. Legacy `output name: rows R` and inline `input … from` remain accepted temporarily.
 
 ```text
 dataflow stakeholder_peak
@@ -93,14 +93,14 @@ dataflow stakeholder_peak
 source utilization {
   from view demo.v_daily_peak
   ports
-    output utilization: UtilizationRow
+    output table utilization: UtilizationRow
   end ports
 }
 
 transformer reporting_calendar {
   ports
-    input raw: UtilizationRow
-    output localized: UtilizationRow
+    input table raw: UtilizationRow
+    output table localized: UtilizationRow
   end ports
   transform use to_zone { zone = Europe/Moscow }
 }
