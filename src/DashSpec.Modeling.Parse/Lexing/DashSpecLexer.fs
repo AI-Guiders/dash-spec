@@ -146,14 +146,19 @@ module DashSpecLexer =
                         i <- i + 1
                         atLineStart <- false
                 | '-' ->
-                    let relStart = i
-                    i <- i + 1
-                    while i < text.Length && (Char.IsDigit text.[i] || text.[i] = 'd' || text.[i] = 'D') do
+                    if i + 2 < text.Length && text.[i + 1] = '-' && text.[i + 2] = '>' then
+                        tokens.Add({ Kind = TokenKind.FlowArrow; Value = "-->"; Start = start; Length = 3 })
+                        i <- i + 3
+                        atLineStart <- false
+                    else
+                        let relStart = i
                         i <- i + 1
-                    if i <= relStart + 1 then
-                        raise (DashSpecParseException($"Invalid relative day at position {relStart}. Use form -Nd, e.g. -7d."))
-                    tokens.Add({ Kind = TokenKind.RelativeDay; Value = text.[relStart..i - 1]; Start = relStart; Length = i - relStart })
-                    atLineStart <- false
+                        while i < text.Length && (Char.IsDigit text.[i] || text.[i] = 'd' || text.[i] = 'D') do
+                            i <- i + 1
+                        if i <= relStart + 1 then
+                            raise (DashSpecParseException($"Invalid '-' at position {relStart}. Use -Nd for relative days or --> for flow links."))
+                        tokens.Add({ Kind = TokenKind.RelativeDay; Value = text.[relStart..i - 1]; Start = relStart; Length = i - relStart })
+                        atLineStart <- false
                 | ',' -> tokens.Add({ Kind = TokenKind.Comma; Value = ","; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | ':' -> tokens.Add({ Kind = TokenKind.Colon; Value = ":"; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | '"' ->

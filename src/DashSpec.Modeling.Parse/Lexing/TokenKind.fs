@@ -12,6 +12,7 @@ type TokenKind =
     | RelativeDay
     | Comma
     | Colon
+    | FlowArrow
     | LBracket
     | RBracket
     | LParen
