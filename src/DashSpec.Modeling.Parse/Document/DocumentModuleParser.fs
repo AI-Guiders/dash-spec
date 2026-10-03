@@ -576,7 +576,9 @@ module rec DocumentModuleParser =
                 let useId = reader.ReadIdent()
 
                 if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
-                    raise (DashSpecParseException("use connector belongs on dashflow source nodes, not in connect { }."))
+                    raise (DashSpecParseException("use connector was removed; declare 'use provider <id>' on dashflow source nodes."))
+                elif String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
+                    raise (DashSpecParseException("use provider belongs on dashflow source nodes, not in connect { }."))
                 elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
                     paletteUse <- Some useId
                 else

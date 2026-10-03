@@ -64,7 +64,7 @@ module DashflowModuleParser =
     let private parseSourceBlock (reader: TokenReader) (sourceId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
-        let mutable connectorId = None
+        let mutable providerId = None
         let mutable from: SourceFrom option = None
         let mutable outputPort = ""
         let mutable outputRowType = ""
@@ -77,10 +77,13 @@ module DashflowModuleParser =
             elif reader.TryKeyword "use" then
                 let useKind = reader.ReadIdent()
 
-                if not (String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use connector <id>' before from/ports."))
+                if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
+                    raise (DashSpecParseException($"source '{sourceId}': use 'provider <id>', not 'connector' (connector is the runtime plugin; provider selects the manifest entry)."))
 
-                connectorId <- Some(reader.ReadIdent())
+                if not (String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase)) then
+                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id>' before from/ports."))
+
+                providerId <- Some(reader.ReadIdent())
             elif reader.TryKeyword "ports" then
                 let ports = FlowPortsParser.parsePortsBlock reader
                 defaultOutputPort <- applySourcePorts ports &outputPort &outputRowType
@@ -118,7 +121,7 @@ module DashflowModuleParser =
                 raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port."))
 
             { Id = sourceId
-              ConnectorId = connectorId
+              ProviderId = providerId
               From = value
               OutputPort = outputPort
               OutputRowType = outputRowType

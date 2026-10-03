@@ -20,7 +20,7 @@ end type
 @flow peak
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -78,7 +78,7 @@ end tab flow_connect_test
                 Assert.Equal("peak", module'.FlowId)
                 Assert.Empty(module'.Diagnostics)
                 Assert.Equal(Some "peak.dashflow", document.DashflowPath)
-                Assert.Equal(Some "sqlserver", module'.Sources.[0].ConnectorId)
+                Assert.Equal(Some "sqlserver", module'.Sources.[0].ProviderId)
         finally
             try
                 Directory.Delete(dir, true)

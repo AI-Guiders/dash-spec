@@ -121,7 +121,7 @@ connect {
 }
 ```
 
-`use connector` **не** в `connect` — только на **`source`** в `.dashflow` ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)). Legacy card `datasource` → runtime manifest `default_connector_id`.
+`use provider` **не** в `connect` — только на **`source`** в `.dashflow` (id = ключ в manifest `[connectors.*]`, [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)). Legacy card `datasource` → runtime manifest `default_connector_id`.
 
 ### Layer 4: `report { }`
 

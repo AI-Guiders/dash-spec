@@ -93,7 +93,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 @flow stakeholder_peak
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -136,7 +136,7 @@ type UtilizationRow
 end type
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak_concurrent_apps_per_user
   ports
     output stream utilization: UtilizationRow
