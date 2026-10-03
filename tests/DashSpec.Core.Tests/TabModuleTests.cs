@@ -227,9 +227,8 @@ public class TabModuleTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab soak
-              wiring
-              use connector sqlserver
-              end wiring
+              connect
+              end connect
               report
               title = "Soak title"
               standalone
@@ -255,7 +254,7 @@ public class TabModuleTests
         Assert.Equal("soak", doc.Id);
         Assert.Equal("Soak title", doc.Title);
         Assert.Single(doc.Tabs);
-        Assert.Equal("sqlserver", doc.ConnectorId);
+        Assert.Null(doc.ConnectorId);
         Assert.Single(doc.Cards);
     }
 
@@ -267,9 +266,8 @@ public class TabModuleTests
               runtime
               manifest = "cfg.toml"
               end runtime
-              wiring
-              use connector sqlserver
-              end wiring
+              connect
+              end connect
               report
               card a as "A"
               diagram number

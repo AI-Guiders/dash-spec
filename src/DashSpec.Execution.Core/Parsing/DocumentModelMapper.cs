@@ -272,9 +272,7 @@ internal static class DocumentModelMapper
             return DashboardDocument.EmptyRowTypeSchemas;
         }
 
-        return types.Values
-            .Select(FsharpTypes.toSchema)
-            .ToDictionary(static s => s.TypeName, static s => s, StringComparer.OrdinalIgnoreCase);
+        return FsharpTypes.toCatalog(types.Values);
     }
 
     private static LayoutDefinition ToCore(FsharpLayout.LayoutDefinition layout) =>

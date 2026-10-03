@@ -18,7 +18,7 @@
 
 | Расширение | Корень | Содержимое |
 |------------|--------|------------|
-| `.dashspec` | `@dashboard` / `@tab` | `runtime`, `configuration`, `wiring`, `report` — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
+| `.dashspec` | `@dashboard` / `@tab` | `runtime`, `configuration`, `connect`, `report` — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
 | `.dashinclude` | `@include` | `layout`, `toolbar`, `diagram` registry (file-level) |
 | `.dashdiagram` | `@diagram <id>` | `!include`, `<kind> { }`, optional `presentation { }` / `series { }` — без inner `diagram` ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)) |
 | `.dashpresentation` | `@presentation <id>` | properties inline — **без** `presentation { }` |
@@ -66,7 +66,7 @@ Glob — см. [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) Layer 
 | **diagram** | `.dashdiagram`; на card — `diagram <id>` |
 | **presentation / transform** | `.dashdiagram` / stdlib via `!include` |
 | **datasource + bind** | **card** в `report { }` |
-| **palette** | `configuration.palette` + `wiring { use palette … }` |
+| **palette** | `configuration.palette` + `connect { use palette … }` |
 
 `@diagramlibrary`, `use <card-preset>`, card-level `include diagram` — **удалены** ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)).
 

@@ -50,7 +50,7 @@ public class DashboardParseTests
         var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!);
 
         Assert.Equal("demo_soak", doc.Id);
-        Assert.Equal("sqlserver", doc.ConnectorId);
+        Assert.Null(doc.ConnectorId);
         Assert.Equal(SqlDialect.TSql, doc.SqlDialect);
         Assert.Null(doc.DiagramLibraryPath);
         Assert.Equal("palettes/demo-apps.dashpalette", doc.PalettePath);

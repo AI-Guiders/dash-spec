@@ -21,7 +21,7 @@
   runtime { manifest = "demo-runtime.toml" }
   configuration { sqldialect = tsql palette = "palettes/demo-apps.dashpalette" }
   !include "imports/stakeholder.dashinclude"
-  wiring { use connector sqlserver use palette demo_apps }
+  connect { use palette demo_apps }
   report { … }
 }
 ```
@@ -42,7 +42,7 @@ Inner `tab id as "…" { filter … }` **внутри tab module** — **уда�
   runtime { … }
   configuration { … }
   !include "…/*.dashinclude"     # опционально, повторяемо
-  wiring { … }
+  connect { … }
   report ["Title"] { … }
 }
 ```
@@ -86,7 +86,7 @@ diagram "diagrams/stakeholder-peak-apps-heatmap.dashdiagram"
   ...
   !include "layouts/stakeholder-grid.dashlayout"
   !include "diagrams/stakeholder/*.dashdiagram"
-  wiring { ... }
+  connect { ... }
   report { ... }
 }
 ```
@@ -111,15 +111,17 @@ diagram "diagrams/stakeholder-peak-apps-heatmap.dashdiagram"
 
 В `.dashspec` секция `!include` — **повторяемая**, порядок строк = порядок merge registry.
 
-### Layer 3: `wiring`
+### Layer 3: `connect`
 
 ```text
-wiring {
-  use connector sqlserver
+connect {
   use palette demo_apps
+  flow "flows/stakeholder.dashflow"
   layout grid { columns = 12 gap = 16 }
 }
 ```
+
+`use connector` **не** в `connect` — только на **`source`** в `.dashflow` ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)). Legacy card `datasource` → runtime manifest `default_connector_id`.
 
 ### Layer 4: `report { }`
 
@@ -130,7 +132,7 @@ wiring {
   runtime { manifest = "demo-runtime.toml" }
   configuration { sqldialect = tsql palette = "palettes/demo-apps.dashpalette" }
   !include "imports/soak.dashinclude"
-  wiring { use connector sqlserver use palette demo_apps }
+  connect { use palette demo_apps }
 
   report "Demo — Dev Soak" {
     filter date usage_date on usage_date as "Дата отчёта" default -7d..today
@@ -151,7 +153,7 @@ wiring {
   runtime { manifest = "demo-runtime.toml" }
   configuration { sqldialect = tsql palette = "palettes/demo-apps.dashpalette" }
   !include "imports/stakeholder.dashinclude"
-  wiring { use connector sqlserver use palette demo_apps }
+  connect { use palette demo_apps }
 
   report {
     standalone {
@@ -284,7 +286,7 @@ docs/dashspec/
 
 | Класс | Файлы | Корень | Тело |
 |-------|-------|--------|------|
-| **Module** | `.dashspec` | `@dashboard id { }` / `@tab id { }` | named-секции: `runtime`, `wiring`, `report`, … |
+| **Module** | `.dashspec` | `@dashboard id { }` / `@tab id { }` | named-секции: `runtime`, `connect`, `report`, … |
 | **Fragment** | `.dashdiagram`, `.dashlayout`, `.dashpresentation`, `.dashpalette`, `.dashtransform`, `.dashcatalog` | `@kind id` (без outer `{ }`) | см. таблицу ниже |
 | **Registry** | `.dashinclude` | `@include id` | строки registry / `!include` |
 
@@ -367,7 +369,7 @@ line {
 | Было | Замена |
 |------|--------|
 | `@tab stakeholder` + `tab stakeholder { filter … }` | `@tab { report { standalone filters card } }` |
-| `@runtime "…"`, `connector`, `include layout` | `runtime { }`, `wiring { }`, `!include` |
+| `@runtime "…"`, `connector`, `include layout` | `runtime { }`, `connect { }`, `!include` |
 
 ### `.dashcatalog`
 
@@ -404,14 +406,14 @@ entry soak as "Demo — Dev Soak"
 | `include presentation` в diagram | `!include "path.dashpresentation"` |
 | `@runtime "…"`, flat `@sqldialect` | `runtime { }`, `configuration { }` |
 | `include` / card `include diagram` | inline `diagram kind { }` на card или `diagram <id>` + `.dashdiagram` (`@diagram id` + `kind { }`) |
-| `connector` / `palette` | `wiring { use … }` |
+| `connector` / `palette` | `connect { use … }` |
 | `dashboard "T" { }` | `@dashboard id { report "T" { } }` |
 | inner `tab id { filter }` в module | `filters { }` / `standalone { }` |
 | `@tab id` без `{ }` | `@tab id { … }` |
 
 ## Оценка подхода
 
-**За:** один визуальный скелет; слои manifest / wiring / report читаются без ADR; dual standalone/embed tab module явно через `standalone` vs `filters`; тот же `{ }` паттерн, что у `runtime`, `wiring`, `catalog`.
+**За:** один визуальный скелет; слои manifest / connect / report читаются без ADR; dual standalone/embed tab module явно через `standalone` vs `filters`; тот же `{ }` паттерн, что у `runtime`, `connect`, `catalog`.
 
 **Риски:** больше вложенности; strict order секций; modular — много файлов без convention.
 
@@ -443,9 +445,9 @@ ParseBlockBody(kind):
 |---------|------|-------------|--------|
 | Tab module | `@tab id { … }` в `.dashspec` | — | `ParseBlockBody(TabModule)` |
 | Diagram | `@diagram id` → `heatmap { }` | `card { diagram heatmap { } }` | `ParseKindBlock()` |
-| Layout | `@layout id` → `[ Q W ]` | `wiring { layout board { … } }` | `ParseLayoutBoard()` |
+| Layout | `@layout id` → `[ Q W ]` | `connect { layout board { … } }` | `ParseLayoutBoard()` |
 | Presentation | `@presentation id` → props | `card` / diagram-module: `presentation { }` | `ParsePresentationProps()` |
-| Palette | `@palette id` → const + map | `configuration.palette` path + `wiring { use palette }` | ref, не inline body |
+| Palette | `@palette id` → const + map | `configuration.palette` path + `connect { use palette }` | ref, не inline body |
 | Registry | `.dashinclude` строки | — | expand → `ParseDocument` per path |
 
 **Следствия:**

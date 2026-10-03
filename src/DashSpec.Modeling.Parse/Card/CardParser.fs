@@ -494,7 +494,7 @@ module CardParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "layout" then
                 if reader.TryPeekIdent().IsSome && String.Equals(reader.TryPeekIdent().Value, "grid", StringComparison.OrdinalIgnoreCase) then
-                    raise (DashSpecParseException($"Card '{id}': use dashboard wiring for layout grid; card layout is a bracket board only."))
+                    raise (DashSpecParseException($"Card '{id}': use module connect block for layout grid; card layout is a bracket board only."))
                 let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
                 if placement.Value.IsNone then placement.Value <- parsedPlacement
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard

@@ -102,11 +102,8 @@ module DashboardShellParser =
              && tryParseIncludeLayout reader ctx then
             true
         elif reader.TryKeyword "connector" then
-            let connectorId = reader.ReadIdent()
-            if ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone then
-                ctx.ConnectorId <- Some connectorId
-            reader.SkipNewlines()
-            true
+            reader.ReadIdent() |> ignore
+            raise (DashSpecParseException("Connector belongs on dashflow source nodes (use connector <id> inside source { }), not on the report module."))
         elif reader.TryKeyword "layout" then
             let grid = LayoutParser.parseGrid reader
             if ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone then

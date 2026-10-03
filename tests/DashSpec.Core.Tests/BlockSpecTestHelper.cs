@@ -8,8 +8,7 @@ internal static class BlockSpecTestHelper
         string title = "T",
         string id = "t",
         string? runtimeManifest = null,
-        bool connector = false,
-        string? wiringExtra = null)
+        string? connectExtra = null)
     {
         var lines = new List<string> { $"@dashboard {id}" };
 
@@ -23,20 +22,11 @@ internal static class BlockSpecTestHelper
             lines.Add("  end configuration");
         }
 
-        if (connector || wiringExtra is not null)
+        if (connectExtra is not null)
         {
-            lines.Add("  wiring");
-            if (connector)
-            {
-                lines.Add("    use connector sqlserver");
-            }
-
-            if (wiringExtra is not null)
-            {
-                lines.Add($"    {wiringExtra}");
-            }
-
-            lines.Add("  end wiring");
+            lines.Add("  connect");
+            lines.Add($"    {connectExtra}");
+            lines.Add("  end connect");
         }
 
         lines.Add("  report");
@@ -50,14 +40,14 @@ internal static class BlockSpecTestHelper
         string reportBody,
         string id = "extra",
         string? title = null,
-        bool connector = false)
+        string? connectExtra = null)
     {
         var lines = new List<string> { $"@tab {id}" };
-        if (connector)
+        if (connectExtra is not null)
         {
-            lines.Add("  wiring");
-            lines.Add("    use connector sqlserver");
-            lines.Add("  end wiring");
+            lines.Add("  connect");
+            lines.Add($"    {connectExtra}");
+            lines.Add("  end connect");
         }
 
         lines.Add("  report");

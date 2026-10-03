@@ -1,4 +1,4 @@
-﻿# DashSpec — справочник авторинга
+# DashSpec — справочник авторинга
 
 > Сгенерировано из XML-doc (`AuthoringCatalog` + парсеры). Не редактировать вручную.
 > Команда: `dotnet run --project src/DashSpec.DocGen`
@@ -44,10 +44,9 @@
             
              !include "layouts/soak-toolbar.dashlayout"
             
-             wiring
-               use connector sqlserver
+             connect
                use palette demo_apps
-             end wiring
+             end connect
             
              report
                title = "…"

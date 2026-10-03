@@ -132,12 +132,11 @@ public sealed class DashSpecBlockFormatterTests
             palette = "palettes/demo-apps.dashpalette"
             end configuration
             !include "diagrams/*.dashdiagram"
-            wiring
-            use connector sqlserver
+            connect
             layout grid
             columns = 12
             end grid
-            end wiring
+            end connect
             end dashboard
             """;
 
@@ -150,7 +149,7 @@ public sealed class DashSpecBlockFormatterTests
         Assert.Equal("    end configuration", lines[8]);
         Assert.Equal("", lines[9]);
         Assert.Equal("    !include \"diagrams/*.dashdiagram\"", lines[10]);
-        Assert.Equal("    wiring", lines[11]);
+        Assert.Equal("    connect", lines[11]);
     }
 
     [Fact]
