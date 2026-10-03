@@ -66,3 +66,46 @@ transformer reporting_calendar {
         Assert.Empty(module'.Diagnostics)
         Assert.Equal(1, module'.Sources.Length)
         Assert.Equal("lus.v_daily_peak", module'.Sources.[0].From.Value)
+
+    [<Fact>]
+    let ``parse dataflow block with arrow links`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+  int UsageDay
+  int ConcurrentApps
+end type
+"""
+
+        let flowText =
+            """
+dataflow stakeholder_peak
+
+source utilization {
+  from view lus.v_daily_peak
+  output utilization: rows UtilizationRow
+}
+
+transformer reporting_calendar {
+  input raw
+  transform use to_zone {
+    zone = Europe/Moscow
+  }
+  output localized: rows UtilizationRow
+}
+
+utilization --> reporting_calendar raw
+
+end dataflow stakeholder_peak
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Equal("stakeholder_peak", module'.FlowId)
+        Assert.Empty(module'.Diagnostics)
+        Assert.Equal(1, module'.Links.Length)
+        Assert.Equal("utilization", module'.Links.[0].FromNode)
+        Assert.Equal("reporting_calendar", module'.Links.[0].ToNode)
+        Assert.Equal(Some "raw", module'.Links.[0].ToPort)
