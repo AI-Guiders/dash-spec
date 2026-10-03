@@ -114,7 +114,7 @@ module DataSourceParser =
 
     let parse (reader: TokenReader) (specDirectory: string option) =
         if reader.TryKeyword "view" then
-            let name = reader.ReadQualifiedName()
+            let name = AccessorGrammar.readQualifiedName reader
             SqlReadOnlyValidator.validateViewReference name
             withRowsType reader { Kind = DataSourceKind.View; Value = name; SqlCarrier = None; Sheet = None; RowsType = "" }
         elif reader.TryKeyword "sql" then

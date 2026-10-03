@@ -37,6 +37,7 @@
     <Compile Include="Syntax\SyntaxTree.fs" />
     <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
     <Compile Include="PropertySchemas.fs" />
+    <Compile Include="AccessorGrammar.fs" />
     <Compile Include="MemberGrammar.fs" />
     <Compile Include="BlockGrammar.fs" />
     <Compile Include="PropertyBlockParser.fs" />

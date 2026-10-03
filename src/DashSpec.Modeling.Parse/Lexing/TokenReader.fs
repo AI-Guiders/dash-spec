@@ -138,15 +138,6 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         index <- index + 1
         value
 
-    member this.ReadQualifiedName() =
-        this.SkipNewlines()
-        match tokens.[index].Kind with
-        | TokenKind.Ident | TokenKind.Raw ->
-            let value = tokens.[index].Value
-            index <- index + 1
-            value
-        | _ -> raise (this.Unexpected "qualified name")
-
     member this.TryPeekIdent() =
         this.SkipNewlines()
         if tokens.[index].Kind <> TokenKind.Ident then None
@@ -205,24 +196,6 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
             index <- index + 1
             names.Add(this.ReadIdent())
         names :> IReadOnlyList<_>
-
-    member this.ReadColumnBinding() =
-        let column = this.ReadQualifiedName()
-        if this.TryKeyword "as" then
-            { Column = column; Alias = Some(this.ReadString()) }
-        elif tokens.[index].Kind = TokenKind.Ident && not (this.IsOnNewline()) then
-            let saved = this.SavePosition()
-            let alias = this.ReadIdent()
-            if this.RawKind = TokenKind.Eq then
-                this.RestorePosition saved
-                { Column = column; Alias = None }
-            elif String.Equals(alias, "end", StringComparison.OrdinalIgnoreCase) then
-                this.RestorePosition saved
-                { Column = column; Alias = None }
-            else
-                { Column = column; Alias = Some alias }
-        else
-            { Column = column; Alias = None }
 
     member private this.FormatRestOfLine(parts: ResizeArray<string>) =
         let sb = System.Text.StringBuilder()

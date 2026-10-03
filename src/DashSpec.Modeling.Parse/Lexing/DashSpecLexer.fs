@@ -9,9 +9,9 @@ open DashSpec.Modeling.Core
 module DashSpecLexer =
 
     let private isIdentStart (c: char) =
-        Char.IsLetter c || c = '_' || c = '.' || Char.IsDigit c
+        Char.IsLetter c || c = '_' || Char.IsDigit c
 
-    let private isIdentPart (c: char) = Char.IsLetterOrDigit c || c = '_' || c = '.'
+    let private isIdentPart (c: char) = Char.IsLetterOrDigit c || c = '_'
 
     let private skipToEndOfLine (text: string) (i: byref<int>) =
         while i < text.Length && text.[i] <> '\r' && text.[i] <> '\n' do
