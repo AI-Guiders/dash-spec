@@ -122,7 +122,7 @@ module DashflowModuleParser =
             if reader.IsAt TokenKind.RBrace then ()
             elif reader.TryKeyword "input" then
                 let portName = reader.ReadIdent()
-                let wire = AccessorGrammar.readFlowWireAfterFrom reader
+                let wire = FlowPortRefParser.readProducerAfterFrom reader
                 inputs.Add((portName, wire))
             elif reader.TryKeyword "output" then
                 let portName = reader.ReadIdent()

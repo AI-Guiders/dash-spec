@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Tests
 
 open Xunit
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 
@@ -32,8 +33,9 @@ module AccessorGrammarTests =
         | _ -> Assert.Fail("expected Name 'a' . 'b'")
 
     [<Fact>]
-    let ``flow wire uses two segment accessor`` () =
+    let ``flow producer port ref is graph endpoint`` () =
         let reader = ParserUtilities.createReader "from utilization.utilization"
-        let wire = AccessorGrammar.readFlowWireAfterFrom reader
-        Assert.Equal("utilization", wire.NodeId)
-        Assert.Equal("utilization", wire.PortName)
+        let portRef = DashSpec.Modeling.Parse.DataFlow.FlowPortRefParser.readProducerAfterFrom reader
+        Assert.Equal("utilization", portRef.NodeId)
+        Assert.Equal("utilization", portRef.PortName)
+        Assert.Equal("utilization.utilization", FlowNodePortRef.dotted portRef)
