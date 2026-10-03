@@ -56,7 +56,7 @@ module SyntaxTokenClassifier =
         | TokenKind.At | TokenKind.Bang -> DashSpecSyntaxKind.Keyword
         | TokenKind.Eq -> DashSpecSyntaxKind.Operator
         | TokenKind.Ident -> classifyIdent tokens index
-        | TokenKind.LBrace | TokenKind.RBrace | TokenKind.Comma | TokenKind.Colon | TokenKind.DotDot | TokenKind.Dot | TokenKind.Slash
+        | TokenKind.LBrace | TokenKind.RBrace | TokenKind.Comma | TokenKind.Colon | TokenKind.FlowArrow | TokenKind.DotDot | TokenKind.Dot | TokenKind.Slash
         | TokenKind.LBracket | TokenKind.RBracket | TokenKind.LParen | TokenKind.RParen -> DashSpecSyntaxKind.Punctuation
         | TokenKind.Newline | TokenKind.Eof -> failwith "trivia token passed to classifyToken"
 

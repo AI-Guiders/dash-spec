@@ -76,6 +76,7 @@
     <Compile Include="Types\TypeModuleParser.fs" />
     <Compile Include="Types\RowTypeSchemaBridge.fs" />
     <Compile Include="DataFlow\DashflowTypes.fs" />
+    <Compile Include="DataFlow\FlowLinkParser.fs" />
     <Compile Include="DataFlow\FlowPortRefParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />

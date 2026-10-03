@@ -82,7 +82,31 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | Extension | Root | Contents |
 |-----------|------|----------|
 | `.dashsource` | `@source <id>` | optional standalone source library entry |
-| `.dashflow` | `@flow <id>` | sources, transformers, wires |
+| `.dashflow` | `@flow <id>` **or** `dataflow <id>` … `end dataflow` | sources, transformers, **links** |
+| (inline) | `dataflow <id>` … `end dataflow` inside `.dashspec` / tab | same IR; optional `!include "flows/x.dashflow"` |
+
+**Authoring (normative direction):** contextual grammar — `:` types ports on **node declarations** (`output kpi: rows R`); **edges** are PlantUML-style **links** (`producer --> consumer inputPort`), not `node.port` accessor chains. SQL acquisition keeps dotted **external** names (`from view demo.v_daily`) via Accessor, outside the flow graph.
+
+```text
+dataflow stakeholder_peak
+
+source utilization {
+  from view demo.v_daily_peak
+  output utilization: rows UtilizationRow
+}
+
+transformer reporting_calendar {
+  input raw
+  transform use to_zone { zone = Europe/Moscow }
+  output localized: rows UtilizationRow
+}
+
+utilization --> reporting_calendar raw
+
+end dataflow stakeholder_peak
+```
+
+Legacy inline `input raw from node.port` in transformer bodies may be accepted temporarily; links + `dataflow` block are the target surface (P3).
 
 Module wiring ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)):
 
@@ -119,12 +143,12 @@ source utilization {
 
 ```text
 transformer reporting_calendar {
-  input raw from utilization.utilization
-  transform use to_zone {
-    zone = Europe/Moscow
-  }
-  output localized
+  input raw
+  transform use to_zone { zone = Europe/Moscow }
+  output localized: rows UtilizationRow
 }
+
+utilization --> reporting_calendar raw
 ```
 
 Transform steps are **plugins** ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)): builtins (`to_zone`, `apply_filters`, `project`, …) ship with Host; heavy logic → product dll + `transform use <id>`.

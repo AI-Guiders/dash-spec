@@ -17,14 +17,21 @@ type DashflowSourceDef =
       OutputPort: string
       OutputRowType: string }
 
+type FlowLinkDef =
+    { FromNode: string
+      FromPort: string option
+      ToNode: string
+      ToPort: string option }
+
 type DashflowTransformerDef =
     { Id: string
-      Inputs: (string * FlowNodePortRef)[]
+      Inputs: (string * FlowNodePortRef option)[]
       Outputs: (string * string)[] }
 
 type DashflowModule =
     { FlowId: string
       Sources: DashflowSourceDef[]
       Transformers: DashflowTransformerDef[]
+      Links: FlowLinkDef[]
       Graph: FlowGraph
       Diagnostics: FlowGraphDiagnostic[] }

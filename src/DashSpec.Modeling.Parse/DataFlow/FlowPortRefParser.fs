@@ -4,19 +4,20 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 
-/// Graph port endpoints (`from node.port`) — surface Accessor syntax, IR FlowNodePortRef on FlowGraph edges.
+/// Legacy inline producer refs (`from node.port`) — prefer `FlowLinkParser` in `dataflow` blocks.
 module FlowPortRefParser =
 
-    /// `from` + producer output on the flow graph (exactly `nodeId`.`outputPort`).
-    let readProducerAfterFrom (reader: TokenReader) =
-        reader.ExpectKeyword "from"
-
+    let readProducerRef (reader: TokenReader) =
         match AccessorGrammar.read reader with
         | AccessorGrammar.Accessor.Select (AccessorGrammar.Accessor.Name nodeId, portName) ->
             FlowNodePortRef.producer nodeId portName
         | accessor ->
             raise (
                 DashSpecParseException(
-                    $"flow input requires a producer port reference node.port after from, got '{accessor.Dotted}'."
+                    $"flow producer reference requires node.port, got '{accessor.Dotted}'."
                 )
             )
+
+    let readProducerAfterFrom (reader: TokenReader) =
+        reader.ExpectKeyword "from"
+        readProducerRef reader
