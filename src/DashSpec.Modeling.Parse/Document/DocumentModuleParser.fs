@@ -13,8 +13,13 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
 open DashSpec.Modeling.Parse.Types
+open DashSpec.Modeling.Parse.DataFlow
 
 module rec DocumentModuleParser =
+
+    let private resolveDashflowFields (shell: DashboardShellContext) =
+        let dashflow, path = DashflowDocumentResolver.resolve shell
+        path, dashflow
 
     type private ModuleShellResult =
         { Shell: DashboardShellContext
@@ -100,6 +105,8 @@ module rec DocumentModuleParser =
                 (result.Shell.DashboardFilters :> IReadOnlyList<_>)
                 result.Shell.ToolbarBoard
 
+        let dashflowPath, dashflow = resolveDashflowFields result.Shell
+
         let document =
             { Id = tabId
               Title = title
@@ -124,7 +131,9 @@ module rec DocumentModuleParser =
               CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>)
               FormatDefaults = result.Shell.FormatDefaults
               TimePolicy = result.Shell.TimePolicy
-              RowTypes = Some(exportModuleRowTypes result.Shell.Includes) }
+              RowTypes = Some(exportModuleRowTypes result.Shell.Includes)
+              DashflowPath = dashflowPath
+              Dashflow = dashflow }
 
         DashboardValidator.validate document
         document
@@ -144,6 +153,8 @@ module rec DocumentModuleParser =
                 (dashShell.Filters :> IReadOnlyList<_>)
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
+
+        let dashflowPath, dashflow = resolveDashflowFields dashShell
 
         { Id = dashboardId
           Title = reportTitle.Value
@@ -168,7 +179,9 @@ module rec DocumentModuleParser =
           CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
           FormatDefaults = dashShell.FormatDefaults
           TimePolicy = dashShell.TimePolicy
-          RowTypes = Some(exportModuleRowTypes dashShell.Includes) }
+          RowTypes = Some(exportModuleRowTypes dashShell.Includes)
+          DashflowPath = dashflowPath
+          Dashflow = dashflow }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -222,6 +235,8 @@ module rec DocumentModuleParser =
         if result.Shell.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
 
+        let dashflowPath, dashflow = resolveDashflowFields result.Shell
+
         { TabId = tabId
           Label = result.Shell.TabModuleLabel
           Filters = result.Shell.ExportedTabLocalFilters
@@ -233,7 +248,9 @@ module rec DocumentModuleParser =
           Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
           FormatDefaults = result.Shell.FormatDefaults
           TimePolicy = result.Shell.TimePolicy
-          RowTypes = Some(exportModuleRowTypes result.Shell.Includes) }
+          RowTypes = Some(exportModuleRowTypes result.Shell.Includes)
+          DashflowPath = dashflowPath
+          Dashflow = dashflow }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None
@@ -323,6 +340,7 @@ module rec DocumentModuleParser =
         let mutable layout = LayoutDefinition.Default
         let mutable wiringLayoutBoard = None
         let mutable wiringToolbarBoard = None
+        let mutable flowWiringPath = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -349,6 +367,7 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> wiringLayoutBoard <- Some lb)
                     (fun tb -> wiringToolbarBoard <- Some tb)
+                    (fun v -> flowWiringPath <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -365,6 +384,7 @@ module rec DocumentModuleParser =
                         layout
                         wiringLayoutBoard
                         wiringToolbarBoard
+                        flowWiringPath
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -403,6 +423,7 @@ module rec DocumentModuleParser =
         let mutable layout = LayoutDefinition.Default
         let mutable wiringLayoutBoard = None
         let mutable wiringToolbarBoard = None
+        let mutable flowWiringPath = None
         let mutable shell: DashboardShellContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -429,6 +450,7 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> wiringLayoutBoard <- Some lb)
                     (fun tb -> wiringToolbarBoard <- Some tb)
+                    (fun v -> flowWiringPath <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -445,6 +467,7 @@ module rec DocumentModuleParser =
                         layout
                         wiringLayoutBoard
                         wiringToolbarBoard
+                        flowWiringPath
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -488,6 +511,7 @@ module rec DocumentModuleParser =
         (setModuleExtensions: ModuleExtensionsDefinition -> unit)
         (setLayoutBoard: LayoutBoardDefinition -> unit)
         (setToolbarBoard: LayoutBoardDefinition -> unit)
+        (setFlowWiringPath: string option -> unit)
         (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
         =
         if reader.TryKeyword "runtime" then
@@ -528,22 +552,24 @@ module rec DocumentModuleParser =
                     reader.SkipNewlines()
                     true
                 elif reader.TryKeyword "wiring" then
-                    let wiredConnector, wiredPalette, layout, layoutBoard, toolbarBoard = parseWiringBlock reader
+                    let wiredConnector, wiredPalette, layout, layoutBoard, toolbarBoard, flowPath = parseWiringBlock reader
                     setLayout layout
                     if layoutBoard.IsSome then setLayoutBoard layoutBoard.Value
                     if toolbarBoard.IsSome then setToolbarBoard toolbarBoard.Value
                     setConnectorId wiredConnector
                     setPaletteUse wiredPalette
+                    setFlowWiringPath flowPath
                     reader.SkipNewlines()
                     true
                 else false
 
-    let private parseWiringBlock (reader: TokenReader) : string option * string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option =
+    let private parseWiringBlock (reader: TokenReader) : string option * string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
         let mutable connectorId = None
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
         let mutable layoutBoard = None
         let mutable toolbarBoard = None
+        let mutable flowPath = None
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -562,6 +588,8 @@ module rec DocumentModuleParser =
                     paletteUse <- Some useId
                 else
                     raise (DashSpecParseException($"wiring use must be connector or palette, got '{useKind}'."))
+            elif reader.TryKeyword "flow" then
+                flowPath <- Some(reader.ReadString())
             elif reader.TryKeyword "layout" then
                 match reader.TryPeekIdent() with
                 | Some kind when String.Equals(kind, "grid", StringComparison.OrdinalIgnoreCase) ->
@@ -574,7 +602,7 @@ module rec DocumentModuleParser =
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "wiring" (None: string option)
-        connectorId, paletteUse, layout, layoutBoard, toolbarBoard
+        connectorId, paletteUse, layout, layoutBoard, toolbarBoard, flowPath
 
     let private parseReportDefaultsBlock (reader: TokenReader) (shell: DashboardShellContext) (blockKeyword: string) =
         shell.FormatDefaults <-
@@ -869,6 +897,7 @@ module rec DocumentModuleParser =
         (layout: LayoutDefinition)
         (layoutBoard: LayoutBoardDefinition option)
         (toolbarBoard: LayoutBoardDefinition option)
+        (flowWiringPath: string option)
         (parseOptions: DashSpecParseOptions)
         (moduleExtensions: ModuleExtensionsDefinition)
         (timePolicy: ReportTimePolicy option)
@@ -884,6 +913,7 @@ module rec DocumentModuleParser =
         shell.TabModuleId <- tabModuleId
         shell.ParentFilters <- parentFilters
         shell.ConnectorId <- connectorId
+        shell.FlowWiringPath <- flowWiringPath
         shell.ColorPalette <- paletteUse
         shell.Layout <- layout
         shell.LayoutBoard <- layoutBoard |> Option.orElse includes.LayoutBoard

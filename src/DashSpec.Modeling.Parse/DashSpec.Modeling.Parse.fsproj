@@ -83,6 +83,7 @@
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
     <Compile Include="SpecIncludeResolver.fs" />
+    <Compile Include="DataFlow\DashflowResolver.fs" />
     <Compile Include="Include\SpecIncludeTypes.fs" />
     <Compile Include="Include\SpecIncludeFragmentResolver.fs" />
     <Compile Include="Include\ModuleIncludeState.fs" />
@@ -111,6 +112,7 @@
     <Compile Include="Document\DashboardValidationBridge.fs" />
     <Compile Include="Document\DashboardValidator.fs" />
     <Compile Include="Document\IncludeExpander.fs" />
+    <Compile Include="Document\DashflowDocumentResolver.fs" />
     <Compile Include="Document\TabParser.fs" />
     <Compile Include="Document\DefaultsBlockParser.fs" />
     <Compile Include="Document\DashboardShellParser.fs" />
