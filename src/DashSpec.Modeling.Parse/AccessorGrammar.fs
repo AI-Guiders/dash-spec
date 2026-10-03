@@ -6,6 +6,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 /// Surface accessor chain: left-associative `.` (receiver.member).
 /// Conceptually `. : Accessor -> string -> Accessor` — not a single lexer token.
+/// Flow graph wires (`from node.port`) compile via DataFlow.FlowPortRefParser to Core.FlowNodePortRef — not a generic qualified name.
 module AccessorGrammar =
 
     [<RequireQualifiedAccess>]
@@ -42,17 +43,6 @@ module AccessorGrammar =
         if accessor.SegmentCount <> count then
             let detail = message.Replace("{name}", accessor.Dotted, StringComparison.Ordinal)
             raise (DashSpecParseException(detail))
-
-    /// Flow wire: `from <sourceId>.<outputPort>` (one `.` application on a node name).
-    let readFlowWireAfterFrom (reader: TokenReader) =
-        reader.ExpectKeyword "from"
-        let accessor = read reader
-
-        match accessor with
-        | Accessor.Select (Accessor.Name nodeId, portName) -> { NodeId = nodeId; PortName = portName }
-        | _ ->
-            expectSegmentCount accessor 2 "wire reference requires node.port after from, got '{name}'."
-            invalidOp "unreachable"
 
     let readQualifiedName (reader: TokenReader) =
         reader.SkipNewlines()

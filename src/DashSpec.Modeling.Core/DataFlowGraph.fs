@@ -20,9 +20,23 @@ type FlowNode =
       Inputs: FlowPort[]
       Outputs: FlowPort[] }
 
+/// <summary>Endpoint on the <see cref="FlowGraph"/> — a node id and a port name (edge From/To), not an external SQL name.</summary>
 type FlowNodePortRef =
     { NodeId: string
       PortName: string }
+
+module FlowNodePortRef =
+
+    let producer nodeId portName =
+        if String.IsNullOrWhiteSpace nodeId then
+            invalidArg "nodeId" "Flow producer node id is required."
+
+        if String.IsNullOrWhiteSpace portName then
+            invalidArg "portName" "Flow producer port name is required."
+
+        { NodeId = nodeId; PortName = portName }
+
+    let dotted (ref: FlowNodePortRef) = $"{ref.NodeId}.{ref.PortName}"
 
 type FlowEdge =
     { From: FlowNodePortRef
