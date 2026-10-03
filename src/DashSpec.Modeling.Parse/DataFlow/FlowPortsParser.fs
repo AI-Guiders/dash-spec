@@ -6,12 +6,12 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 
-/// <c>ports</c> … <c>end ports</c> — <c>input table|scalar Name: Type</c>, <c>output table Name: Type</c>.
+/// <c>ports</c> … <c>end ports</c> — <c>input stream|scalar Name: Type</c>, <c>output stream Name: Type</c>.
 module FlowPortsParser =
 
     [<RequireQualifiedAccess>]
     type PortShape =
-        | Table
+        | Stream
         | Scalar
 
     type ParsedPortDecl =
@@ -25,8 +25,29 @@ module FlowPortsParser =
 
     let toDashPortType (decl: ParsedPortDecl) =
         match decl.Shape with
-        | PortShape.Table -> DashPortType.Table decl.ValueType
+        | PortShape.Stream -> DashPortType.Stream decl.ValueType
         | PortShape.Scalar -> DashPortType.Scalar decl.ValueType
+
+    let private readStreamShapeKeyword (reader: TokenReader) =
+        if reader.TryKeyword "table" then
+            raise (DashSpecParseException("row-batch ports use 'stream', not 'table'."))
+
+        if reader.TryKeyword "stream" then
+            PortShape.Stream
+        else
+            PortShape.Stream
+
+    let private readInputShape (reader: TokenReader) =
+        if reader.TryKeyword "scalar" then
+            PortShape.Scalar
+        else
+            readStreamShapeKeyword reader
+
+    let private readOutputShape (reader: TokenReader) =
+        if reader.TryKeyword "scalar" then
+            raise (DashSpecParseException("output ports must be stream (row batch)."))
+        else
+            readStreamShapeKeyword reader
 
     let private readValueTypeName (reader: TokenReader) =
         reader.SkipNewlines()
@@ -41,22 +62,6 @@ module FlowPortsParser =
             raise (DashSpecParseException("port declaration requires a type name after ':'."))
 
         typeName
-
-    let private readInputShape (reader: TokenReader) =
-        if reader.TryKeyword "table" then
-            PortShape.Table
-        elif reader.TryKeyword "scalar" then
-            PortShape.Scalar
-        else
-            PortShape.Table
-
-    let private readOutputShape (reader: TokenReader) =
-        if reader.TryKeyword "table" then
-            PortShape.Table
-        elif reader.TryKeyword "scalar" then
-            raise (DashSpecParseException("output ports must be table (row stream)."))
-        else
-            PortShape.Table
 
     let private readPortLine (reader: TokenReader) (shapeFor: TokenReader -> PortShape) =
         let shape = shapeFor reader
