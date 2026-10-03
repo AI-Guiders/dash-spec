@@ -29,9 +29,9 @@ public class DocumentModuleParserTests
                   sqldialect = tsql
                   end configuration
                   !include "diagrams/x.dashdiagram"
-                  wiring
-                  use connector sqlserver
-                  end wiring
+                  connect
+                  use palette demo_apps
+                  end connect
                   report
                   title = "Tab title"
                   standalone
@@ -53,7 +53,8 @@ public class DocumentModuleParserTests
 
             Assert.Equal("t", doc.Id);
             Assert.Equal("Tab title", doc.Title);
-            Assert.Equal("sqlserver", doc.ConnectorId);
+            Assert.Null(doc.ConnectorId);
+            Assert.Equal("demo_apps", doc.ColorPalette);
             Assert.Equal("number", doc.Cards[0].Diagram.Kind);
             Assert.Equal("cfg.toml", DashSpecParser.ReadRuntimePath(text));
         }

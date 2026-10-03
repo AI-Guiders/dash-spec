@@ -83,7 +83,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 |-----------|------|----------|
 | `.dashsource` | `@source <id>` | optional standalone source library entry |
 | `.dashflow` | `@flow <id>` … `end flow` | sources, transformers, **links** |
-| (inline) | `!include` / `wiring { flow "path.dashflow" }` | same IR; no second file-root grammar in tab |
+| (inline) | `!include` / `connect { flow "path.dashflow" }` | same IR; no second file-root grammar in tab |
 
 **File root:** `@flow <id>` (same family as `@diagram`, [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md)); graph body closes with **`end flow`** via shared `BlockSyntax` (ADR-0036) — not `end @flow`, not EOF.
 
@@ -93,6 +93,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 @flow stakeholder_peak
 
 source utilization {
+  use connector sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -118,8 +119,7 @@ end @flow stakeholder_peak
 Module wiring ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)):
 
 ```text
-wiring {
-  use connector sqlserver
+connect {
   flow "flows/stakeholder.dashflow"
 }
 ```
@@ -136,6 +136,7 @@ type UtilizationRow
 end type
 
 source utilization {
+  use connector sqlserver
   from view demo.v_daily_peak_concurrent_apps_per_user
   ports
     output stream utilization: UtilizationRow
@@ -206,7 +207,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | **P0** (this ADR) | Terminology, `FlowGraph` contract, file kinds, split from `.dashtransform` |
 | **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy card `datasource` → inline `source` |
 | **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
-| **P3** | `.dashflow` parse + `wiring { flow … }`; card `input` |
+| **P3** | `.dashflow` parse + `connect { flow … }`; card `input` |
 | **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps |
 
 **Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).

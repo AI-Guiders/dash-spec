@@ -47,10 +47,10 @@ public static class AuthoringCatalog
     ///
     /// !include "layouts/soak-toolbar.dashlayout"
     ///
-    /// wiring
-    ///   use connector sqlserver
+    /// connect
     ///   use palette demo_apps
-    /// end wiring
+    ///   flow "flows/report.dashflow"
+    /// end connect
     ///
     /// report
     ///   title = "…"
@@ -60,7 +60,7 @@ public static class AuthoringCatalog
     ///
     /// - **runtime** — только путь к TOML manifest (секреты и connectors в TOML, не в spec).
     /// - **configuration** — `sqldialect`, `palette`, …
-    /// - **wiring** — `use connector`, `use palette` (имена из manifest/runtime).
+    /// - **connect** — `use palette`, `flow "…"` (data graph); connector — на `source` в `.dashflow`.
     /// - **report** — фильтры, toolbar chrome, вкладки.
     ///
     /// Shell может ссылаться на tab modules: `tab overview as "…" dashspec "demo-overview.dashspec"`.
