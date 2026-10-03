@@ -60,7 +60,7 @@ public static class AuthoringCatalog
     ///
     /// - **runtime** — только путь к TOML manifest (секреты и connectors в TOML, не в spec).
     /// - **configuration** — `sqldialect`, `palette`, …
-    /// - **connect** — `use palette`, `flow "…"` (data graph); connector — на `source` в `.dashflow`.
+    /// - **connect** — `use palette`, `flow "…"` (data graph); `use provider` — на `source` в `.dashflow` (id из manifest `[connectors.*]`).
     /// - **report** — фильтры, toolbar chrome, вкладки.
     ///
     /// Shell может ссылаться на tab modules: `tab overview as "…" dashspec "demo-overview.dashspec"`.
