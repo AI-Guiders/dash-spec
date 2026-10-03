@@ -4,27 +4,41 @@ open System
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Lexing
 
-/// PlantUML-style flow links inside a `dataflow` block (`a --> b` optional input port name).
+/// Flow links: <c>producer [outPort] -&gt; [inPort] consumer</c> (brackets = port names; left = output, right = input).
 module FlowLinkParser =
 
-    let tryParseLink (reader: TokenReader) (fromNode: string) =
+    /// Optional <c>[port]</c> on the same line (output side before arrow, input side after arrow).
+    let tryReadBracketPortSameLine (reader: TokenReader) =
+        if reader.IsOnNewline() then
+            None
+        elif reader.RawKind <> TokenKind.LBracket then
+            None
+        else
+            reader.Advance()
+            let portName = reader.ReadIdentSameLine()
+
+            if String.IsNullOrWhiteSpace portName then
+                raise (DashSpecParseException("flow link port name is required inside []."))
+
+            if reader.RawKind <> TokenKind.RBracket then
+                raise (DashSpecParseException("flow link port requires closing ']'."))
+
+            reader.Advance()
+            Some portName
+
+    let tryParseLink (reader: TokenReader) (fromNode: string) (fromPort: string option) =
         if not (reader.IsAt TokenKind.FlowArrow) then
             None
         else
             reader.Advance()
+            let toPortFromBracket = tryReadBracketPortSameLine reader
             let toNode = reader.ReadIdent()
 
             if String.IsNullOrWhiteSpace toNode then
-                raise (DashSpecParseException("flow link requires a target node after -->."))
-
-            let toPort =
-                if reader.RawKind = TokenKind.Ident && not (reader.IsOnNewline()) then
-                    Some(reader.ReadIdentSameLine())
-                else
-                    None
+                raise (DashSpecParseException("flow link requires a target node after ->."))
 
             Some
                 { FromNode = fromNode
-                  FromPort = None
+                  FromPort = fromPort
                   ToNode = toNode
-                  ToPort = toPort }
+                  ToPort = toPortFromBracket }

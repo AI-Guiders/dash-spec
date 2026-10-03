@@ -85,7 +85,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | `.dashflow` | `@flow <id>` **or** `dataflow <id>` … `end dataflow` | sources, transformers, **links** |
 | (inline) | `dataflow <id>` … `end dataflow` inside `.dashspec` / tab | same IR; optional `!include "flows/x.dashflow"` |
 
-**Authoring (normative direction):** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). Optional **`default input`** / **`default output`** name which port links use when the edge omits an explicit port (required when a node has multiple inputs or outputs). Dashflow has **no** separate notion of diagram labels on nodes or edges — only **named ports** and **wires** between them. **Edges** are graph **links** (direction: producer **output** → consumer **input**). Link arrow is any `-+>` token (`->`, `-->`, `---->` — **dash count is not semantic**, unlike PlantUML layout hints). PlantUML’s arrow *middle* (e.g. `up` in `---up->`) is a **layout/router** concern; dashflow text has no spatial layout — if we use an arrow slot later, it is for **port roles** (`out` / `in`), not diagram routing. Link surface syntax is evolving (`producer -> consumer`, later explicit `out`/`in` on endpoints). Scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph. Legacy `output name: rows R` and inline `input … from` remain accepted temporarily.
+**Authoring:** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). Optional **`default input`** / **`default output`** name which port links use when the edge omits `[port]` brackets (required when a node has multiple inputs or outputs). Dashflow has **no** diagram labels — only **named ports** and **wires**. **Edges:** `producer [outPort] -> [inPort] consumer` — bracket **left** of `-+>` is the producer **output** port; bracket **right** is the consumer **input** port (`foo [bar] -> [poo] bazz`). Arrow is any `-+>` (`->`, `-->`, … — **dash count is not semantic**). Omitted brackets resolve via defaults or the sole port on the node. **Not supported:** inline `input … from node.port`, bare `output: rows R` outside `ports`, or trailing port names after the consumer node. Scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph.
 
 ```text
 dataflow stakeholder_peak
@@ -108,12 +108,10 @@ transformer reporting_calendar {
   transform use to_zone { zone = Europe/Moscow }
 }
 
-utilization --> reporting_calendar
+utilization [utilization] -> [raw] reporting_calendar
 
 end dataflow stakeholder_peak
 ```
-
-Legacy inline `input raw from node.port` in transformer bodies may be accepted temporarily; links + `dataflow` block are the target surface (P3).
 
 Module wiring ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)):
 
@@ -137,8 +135,9 @@ end type
 
 source utilization {
   from view demo.v_daily_peak_concurrent_apps_per_user
-  params { usage_date: UsageDateRange, app_name: rows SelectedAppNames }
-  output utilization: rows UtilizationRow
+  ports
+    output stream utilization: UtilizationRow
+  end ports
 }
 ```
 
@@ -150,12 +149,15 @@ source utilization {
 
 ```text
 transformer reporting_calendar {
-  input raw
+  ports
+    default input raw
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
   transform use to_zone { zone = Europe/Moscow }
-  output localized: rows UtilizationRow
 }
 
-utilization --> reporting_calendar raw
+utilization [utilization] -> [raw] reporting_calendar
 ```
 
 Transform steps are **plugins** ([ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md)): builtins (`to_zone`, `apply_filters`, `project`, …) ship with Host; heavy logic → product dll + `transform use <id>`.

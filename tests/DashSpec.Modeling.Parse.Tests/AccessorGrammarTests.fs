@@ -32,10 +32,3 @@ module AccessorGrammarTests =
         | AccessorGrammar.Accessor.Select(AccessorGrammar.Accessor.Name "a", "b") -> ()
         | _ -> Assert.Fail("expected Name 'a' . 'b'")
 
-    [<Fact>]
-    let ``flow producer port ref is graph endpoint`` () =
-        let reader = ParserUtilities.createReader "from utilization.utilization"
-        let portRef = DashSpec.Modeling.Parse.DataFlow.FlowPortRefParser.readProducerAfterFrom reader
-        Assert.Equal("utilization", portRef.NodeId)
-        Assert.Equal("utilization", portRef.PortName)
-        Assert.Equal("utilization.utilization", FlowNodePortRef.dotted portRef)
