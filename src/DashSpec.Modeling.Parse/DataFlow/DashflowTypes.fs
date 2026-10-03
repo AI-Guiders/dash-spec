@@ -15,7 +15,8 @@ type DashflowSourceDef =
     { Id: string
       From: SourceFrom
       OutputPort: string
-      OutputRowType: string }
+      OutputRowType: string
+      DefaultOutputPort: string option }
 
 type FlowLinkDef =
     { FromNode: string
@@ -31,7 +32,9 @@ type DashflowInputDecl =
 type DashflowTransformerDef =
     { Id: string
       Inputs: DashflowInputDecl[]
-      Outputs: (string * string)[] }
+      Outputs: (string * string)[]
+      DefaultInputPort: string option
+      DefaultOutputPort: string option }
 
 type DashflowModule =
     { FlowId: string
