@@ -121,7 +121,7 @@ connect {
 }
 ```
 
-`use provider` **не** в `connect` — только на **`source`** в `.dashflow` (id = ключ в manifest `[providers.*]`, [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)). Legacy card `datasource` → runtime manifest `default_provider_id`.
+`use provider` **не** в `connect` — только на **`source`** в `.dashflow` (`<id>` или **`infer`** → `default_provider_id`, [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md)). Legacy card `datasource` — то же намерение: **`datasource { infer … }`** (или `datasource infer view …`).
 
 ### Layer 4: `report { }`
 

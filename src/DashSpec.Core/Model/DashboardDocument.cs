@@ -149,7 +149,8 @@ public sealed record DataSourceDefinition(
     string Value,
     DataSourceSqlCarrier? SqlCarrier = null,
     string? Sheet = null,
-    string RowsType = "");
+    string RowsType = "",
+    bool ProviderInfer = false);
 
 public enum DataSourceKind
 {

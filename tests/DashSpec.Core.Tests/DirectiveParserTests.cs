@@ -25,7 +25,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -52,7 +52,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -78,7 +78,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard

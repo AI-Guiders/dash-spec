@@ -26,7 +26,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -91,7 +91,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -120,7 +120,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -160,7 +160,7 @@ public class DashboardParseTests
               diagram line
               x = bucket_start_utc y
               end line
-              datasource view dbo.activity
+              datasource infer view dbo.activity
               end card
               end report
             end dashboard
@@ -190,7 +190,7 @@ public class DashboardParseTests
                   diagram number
                   value = x
                   end number
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard
@@ -231,7 +231,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -367,7 +367,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               height = 360
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -410,7 +410,7 @@ public class DashboardParseTests
               label = "Состав в пике"
               as list
               end inspect
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -446,7 +446,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               tooltip = peak_apps
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -477,7 +477,7 @@ public class DashboardParseTests
               tooltip peak_apps
               source = peak_apps
               end tooltip
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -523,7 +523,7 @@ public class DashboardParseTests
               value = peak_concurrent_proxy
               reference = purchased_seats as "Куплено"
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -551,7 +551,7 @@ public class DashboardParseTests
                   max = "макс. {max}"
                 
                 end legend
-                datasource view dbo.t
+                datasource infer view dbo.t
               
               end card
             
@@ -849,7 +849,7 @@ public class DashboardParseTests
                   diagram line
                   x = usage_date y
                   end line
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   where [[usage_date]]
                   end card
                   end report
@@ -881,7 +881,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource view dbo.a
+              datasource infer view dbo.a
               end card
               card b as "B"
               place
@@ -892,7 +892,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource view dbo.b
+              datasource infer view dbo.b
               end card
               card c as "C"
               place
@@ -903,7 +903,7 @@ public class DashboardParseTests
               diagram table
               columns = a, b
               end table
-              datasource view dbo.c
+              datasource infer view dbo.c
               end card
               end report
             end dashboard

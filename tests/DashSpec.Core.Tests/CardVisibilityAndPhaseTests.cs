@@ -44,7 +44,7 @@ public sealed class CardVisibilityAndPhaseTests
               x = a y
               value = c
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end tab
@@ -70,7 +70,7 @@ public sealed class CardVisibilityAndPhaseTests
               diagram bar
               x = a y = b
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               card detail as "Detail"
               when user_name
@@ -80,7 +80,7 @@ public sealed class CardVisibilityAndPhaseTests
               x = a y
               value = c
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end tab
@@ -106,7 +106,7 @@ public sealed class CardVisibilityAndPhaseTests
               diagram bar
               x = a y = b
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end phase
               phase detail
@@ -115,7 +115,7 @@ public sealed class CardVisibilityAndPhaseTests
               x = a y
               value = c
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end phase
               end report
@@ -144,7 +144,7 @@ public sealed class CardVisibilityAndPhaseTests
               diagram bar
               x = a y = b
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end phase
               end report

@@ -30,7 +30,7 @@ public class CommandAliasesParserTests
               diagram number
               value = total
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard

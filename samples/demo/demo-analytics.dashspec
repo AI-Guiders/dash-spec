@@ -21,7 +21,7 @@
             end filters
 
             diagram demo_period_peak_by_app_bar
-                datasource view demo.v_peak_concurrent_by_period
+                datasource infer view demo.v_peak_concurrent_by_period
                 bind
                     period_grain, period_start, app_name
                 end bind
@@ -29,7 +29,7 @@
 
             card peak_apps_heatmap as "**Peak apps** per user"
                 diagram demo_peak_apps_heatmap
-                    datasource view demo.v_daily_peak_concurrent_apps_per_user
+                    datasource infer view demo.v_daily_peak_concurrent_apps_per_user
                     bind
                         usage_date, user_name
                     end bind
@@ -46,7 +46,7 @@
                 end filters
 
                 diagram demo_idle_table
-                    datasource view demo.v_daily_idle_minutes_by_user_app
+                    datasource infer view demo.v_daily_idle_minutes_by_user_app
                     bind
                         usage_date, user_name, app_name
                     end bind
@@ -54,7 +54,7 @@
 
                 card idle_histogram as "Idle minutes (histogram)"
                     diagram demo_idle_histogram
-                        datasource view demo.v_daily_idle_minutes_by_user_app
+                        datasource infer view demo.v_daily_idle_minutes_by_user_app
                         bind
                             usage_date, user_name, app_name
                         end bind
@@ -62,7 +62,7 @@
 
                     card idle_vs_peak_scatter as "Idle vs peak apps"
                         diagram demo_idle_vs_peak_scatter
-                            datasource sql file "sql/idle-vs-peak-scatter.sql"
+                            datasource infer sql file "sql/idle-vs-peak-scatter.sql"
                             bind
                                 usage_date, user_name, app_name
                             end bind
@@ -70,7 +70,7 @@
 
                         card idle_by_app_box as "Idle minutes by app (box)"
                             diagram demo_idle_by_app_box
-                                datasource view demo.v_daily_idle_minutes_by_user_app
+                                datasource infer view demo.v_daily_idle_minutes_by_user_app
                                 bind
                                     usage_date, user_name, app_name
                                 end bind
@@ -83,7 +83,7 @@
                                 end filters
 
                                 diagram demo_peak_by_app_treemap
-                                    datasource view demo.v_peak_concurrent_by_period
+                                    datasource infer view demo.v_peak_concurrent_by_period
                                     bind
                                         period_grain, period_start, app_name
                                     end bind
@@ -91,7 +91,7 @@
 
                                 card peak_gauge as "Peak concurrent (gauge)"
                                     diagram demo_peak_gauge
-                                        datasource view demo.v_daily_peak_concurrent_proxy
+                                        datasource infer view demo.v_daily_peak_concurrent_proxy
                                         bind
                                             usage_date, user_name, app_name
                                         end bind
@@ -104,7 +104,7 @@
                                         end filters
 
                                         diagram demo_peak_by_app_windrose
-                                            datasource view demo.v_peak_concurrent_by_period
+                                            datasource infer view demo.v_peak_concurrent_by_period
                                             bind
                                                 period_grain, period_start, app_name
                                             end bind

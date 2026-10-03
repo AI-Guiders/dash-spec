@@ -46,7 +46,7 @@ public sealed class SpecFragmentPathsTests
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard

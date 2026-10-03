@@ -133,7 +133,7 @@ public sealed class DemoCatalogRegressionTests
                 title = "Детализация событий"
                 filters events_top
                 data
-                  datasource view demo.v_events_detail
+                  datasource infer view demo.v_events_detail
                   bind usage_date
                 end data
                 view

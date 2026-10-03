@@ -30,7 +30,7 @@ public sealed class DashSpecProjectTests
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard
@@ -75,7 +75,7 @@ public sealed class DashSpecProjectTests
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard
