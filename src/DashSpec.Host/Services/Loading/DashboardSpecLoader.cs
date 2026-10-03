@@ -69,7 +69,8 @@ public sealed class DashboardSpecLoader(
             filters,
             fieldOptions,
             sourceLabel,
-            Path.GetDirectoryName(specFullPath));
+            Path.GetDirectoryName(specFullPath),
+            configPath);
     }
 
     public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
