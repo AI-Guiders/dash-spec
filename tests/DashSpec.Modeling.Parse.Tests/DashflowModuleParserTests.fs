@@ -46,7 +46,7 @@ end type
 @flow stakeholder_peak
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -97,7 +97,7 @@ end type
 @flow stakeholder_peak
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak
   ports
     default output utilization
@@ -152,7 +152,7 @@ end type
 @flow multi_in
 
 source utilization {
-  use connector sqlserver
+  use provider sqlserver
   from view demo.v_daily_peak
   ports
     output stream utilization: UtilizationRow

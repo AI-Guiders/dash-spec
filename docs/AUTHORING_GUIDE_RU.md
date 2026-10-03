@@ -57,7 +57,7 @@ Early preview **0.x** — DSL может меняться; ломающее — 
 runtime { manifest = "…" }     → какой TOML с connector
 configuration { sqldialect, palette }
 !include diagrams / presentations / layouts
-connect { use connector, palette, layout grid }
+connect { use palette, flow, layout grid } — provider на source в .dashflow
 report / body { filters, toolbar, tabs, cards }
 ```
 
