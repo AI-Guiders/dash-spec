@@ -345,13 +345,8 @@ module DashflowModuleParser =
           Graph = graph
           Diagnostics = diagnostics |> List.toArray }
 
-    /// `flow &lt;id&gt;` … `end flow` (optional matching id on `end`).
-    let parseFlowBlock (reader: TokenReader) (typeCatalog: TypeCatalog) =
-        let flowId = reader.ReadIdent()
-
-        if String.IsNullOrWhiteSpace flowId then
-            raise (DashSpecParseException("flow requires an id."))
-
+    /// Body after <c>@flow &lt;id&gt;</c> until <c>end flow</c> (optional matching id on <c>end</c>).
+    let private parseFlowEnvelope (reader: TokenReader) (flowId: string) (typeCatalog: TypeCatalog) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let sources = ResizeArray<DashflowSourceDef>()
@@ -369,7 +364,7 @@ module DashflowModuleParser =
 
         finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
 
-    /// `.dashflow` or inline fragment: `flow &lt;id&gt;` … `end flow`.
+    /// `.dashflow` fragment: <c>@flow &lt;id&gt;</c> … <c>end flow</c>.
     let parseModule (text: string) (typeCatalog: TypeCatalog) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
         let reader = ParserUtilities.createReader text
@@ -377,14 +372,17 @@ module DashflowModuleParser =
         reader.SkipNewlines()
 
         if reader.TryKeyword "dataflow" then
-            raise (DashSpecParseException("use 'flow' … 'end flow', not 'dataflow'."))
-        elif reader.TryKeyword "flow" then
-            parseFlowBlock reader typeCatalog
-        elif reader.IsAt TokenKind.At then
-            reader.Advance()
-            if reader.TryKeyword "flow" then
-                raise (DashSpecParseException("use 'flow <id>' … 'end flow' without '@'."))
-            else
-                raise (reader.Unexpected "flow")
-        else
-            raise (reader.Unexpected "flow")
+            raise (DashSpecParseException("use '@flow <id>' … 'end flow', not 'dataflow'."))
+
+        if reader.TryKeyword "flow" then
+            raise (DashSpecParseException("dashflow modules start with '@flow <id>', not a bare 'flow' keyword."))
+
+        reader.Expect TokenKind.At
+        reader.ExpectKeyword "flow"
+        let flowId = reader.ReadIdent()
+
+        if String.IsNullOrWhiteSpace flowId then
+            raise (DashSpecParseException("@flow requires an id."))
+
+        reader.SkipNewlines()
+        parseFlowEnvelope reader flowId typeCatalog

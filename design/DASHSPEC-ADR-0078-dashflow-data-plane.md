@@ -82,13 +82,13 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | Extension | Root | Contents |
 |-----------|------|----------|
 | `.dashsource` | `@source <id>` | optional standalone source library entry |
-| `.dashflow` | `flow <id>` … `end flow` | sources, transformers, **links** |
-| (inline) | `flow <id>` … `end flow` inside `.dashspec` / tab | same IR; optional `!include "flows/x.dashflow"` |
+| `.dashflow` | `@flow <id>` … `end flow` | sources, transformers, **links** |
+| (inline) | `!include` / `wiring { flow "path.dashflow" }` | same IR; no second file-root grammar in tab |
 
 **Authoring:** port **signatures** in `ports` … `end ports` with explicit shape: `input stream|scalar name: Type`, `output stream name: Type` (`stream` = row batch on the wire, `scalar` = single value UDT). Optional **`default input`** / **`default output`** name which port links use when the edge omits `[port]` brackets (required when a node has multiple inputs or outputs). Dashflow has **no** diagram labels — only **named ports** and **wires**. **Edges:** `producer [outPort] -> [inPort] consumer` — bracket **left** of `-+>` is the producer **output** port; bracket **right** is the consumer **input** port (`foo [bar] -> [poo] bazz`). Arrow is any `-+>` (`->`, `-->`, … — **dash count is not semantic**). Omitted brackets resolve via defaults or the sole port on the node. **Not supported:** inline `input … from node.port`, bare `output: rows R` outside `ports`, or trailing port names after the consumer node. Scalar inputs wire from report filters / bind (later). SQL `from view demo.v_daily` stays Accessor, outside the graph.
 
 ```text
-flow stakeholder_peak
+@flow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
@@ -110,7 +110,7 @@ transformer reporting_calendar {
 
 utilization [utilization] -> [raw] reporting_calendar
 
-end flow stakeholder_peak
+end @flow stakeholder_peak
 ```
 
 Module wiring ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)):
@@ -232,7 +232,7 @@ Implementation stack: federation **DataFlow** model (transport, DataBus, **Trans
 ## Example (demo-oriented, illustrative)
 
 ```text
-flow stakeholder
+@flow stakeholder
 
 source executive {
   from view demo.v_stakeholder_kpi_executive
