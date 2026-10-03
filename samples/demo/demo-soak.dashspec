@@ -70,7 +70,7 @@
 
             card peak_concurrent_kpi as "Peak concurrent (max)"
                 diagram demo_peak_kpi
-                    datasource view demo.v_daily_peak_concurrent_proxy
+                    datasource infer view demo.v_daily_peak_concurrent_proxy
                     bind
                         usage_date, user_name, app_name
                     end bind
@@ -78,7 +78,7 @@
 
                 card peak_sparkline as "Peak trend"
                     diagram demo_peak_sparkline
-                        datasource view demo.v_daily_peak_concurrent_proxy
+                        datasource infer view demo.v_daily_peak_concurrent_proxy
                         bind
                             usage_date, user_name, app_name
                         end bind
@@ -86,7 +86,7 @@
 
                     card peak_concurrent_proxy as "Peak concurrent (proxy)"
                         diagram demo_peak_concurrent_line
-                            datasource view demo.v_daily_peak_concurrent_proxy
+                            datasource infer view demo.v_daily_peak_concurrent_proxy
                             bind
                                 usage_date, user_name, app_name
                             end bind
@@ -94,7 +94,7 @@
 
                         card peak_stacked_bar as "Peak by product (stacked)"
                             diagram demo_peak_stacked_bar
-                                datasource view demo.v_daily_peak_concurrent_proxy
+                                datasource infer view demo.v_daily_peak_concurrent_proxy
                                 bind
                                     usage_date, user_name, app_name
                                 end bind
@@ -106,7 +106,7 @@
                                 end filters
 
                                 diagram demo_activity_5min_line
-                                    datasource view demo.v_five_minute_activity
+                                    datasource infer view demo.v_five_minute_activity
                                     bind
                                         usage_date, user_name, app_name
                                     end bind
@@ -114,7 +114,7 @@
 
                                 card activity_area as "Activity (area)"
                                     diagram demo_activity_area
-                                        datasource view demo.v_five_minute_activity
+                                        datasource infer view demo.v_five_minute_activity
                                         bind
                                             usage_date, user_name, app_name
                                         end bind
@@ -122,7 +122,7 @@
 
                                     card dau_by_product as "DAU by product"
                                         diagram demo_dau_bar
-                                            datasource view demo.v_daily_active_users
+                                            datasource infer view demo.v_daily_active_users
                                             bind
                                                 usage_date, user_name, app_name
                                             end bind
@@ -130,7 +130,7 @@
 
                                         card dau_by_product_donut as "DAU by product (donut)"
                                             diagram demo_dau_donut
-                                                datasource view demo.v_daily_active_users
+                                                datasource infer view demo.v_daily_active_users
                                                 bind
                                                     usage_date, user_name, app_name
                                                 end bind
@@ -142,7 +142,7 @@
                                                 end filters
 
                                                 diagram demo_events_detail_table
-                                                    datasource view demo.v_events_detail
+                                                    datasource infer view demo.v_events_detail
                                                     bind
                                                         app_name, user_name
                                                     end bind

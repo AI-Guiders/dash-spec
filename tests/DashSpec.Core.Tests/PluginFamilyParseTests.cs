@@ -30,7 +30,7 @@ public sealed class PluginFamilyParseTests
               diagram line
               x = usage_date y
               end line
-              datasource view demo.v_peak
+              datasource infer view demo.v_peak
               end card
               end report
             end tab
@@ -74,7 +74,7 @@ public sealed class PluginFamilyParseTests
               diagram line
               x = usage_date y
               end line
-              datasource view demo.v_peak
+              datasource infer view demo.v_peak
               end card
               end report
             end tab
@@ -124,7 +124,7 @@ public sealed class PluginFamilyParseTests
                 usage_date
               end bind
               diagram demo_peak_heatmap
-              datasource view demo.v_peak
+              datasource infer view demo.v_peak
               end card
               end report
             end tab

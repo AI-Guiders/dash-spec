@@ -60,7 +60,7 @@ public static class AuthoringCatalog
     ///
     /// - **runtime** — только путь к TOML manifest (секреты и providers в TOML, не в spec).
     /// - **configuration** — `sqldialect`, `palette`, …
-    /// - **connect** — `use palette`, `flow "…"` (data graph); `use provider` — на `source` в `.dashflow` (id из manifest `[providers.*]`).
+    /// - **connect** — `use palette`, `flow "…"` (data graph); `use provider` (id или infer) на `source` в `.dashflow`; card `datasource { infer … }` — то же намерение.
     /// - **report** — фильтры, toolbar chrome, вкладки.
     ///
     /// Shell может ссылаться на tab modules: `tab overview as "…" dashspec "demo-overview.dashspec"`.
@@ -144,7 +144,7 @@ public static class AuthoringCatalog
     /// card peak ref peak_card
     ///   title = "…"
     ///   data
-    ///     datasource view demo.v_…
+    ///     datasource infer view demo.v_…
     ///     bind usage_date, app_name
     ///   end data
     ///   diagram demo_peak_heatmap

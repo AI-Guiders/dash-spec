@@ -209,7 +209,7 @@ public class SpecModulesTests
             "y = \"peak\"",
             "[card.c1]",
             "diagram = \"d1\"",
-            "datasource = \"dbo.t\"",
+            "datasource infer = \"dbo.t\"",
         ]);
 
         var document = DashSpecTestRowTypes.ParseDashboard("""
@@ -244,7 +244,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -269,7 +269,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -540,7 +540,7 @@ public class SpecModulesTests
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard
@@ -596,7 +596,7 @@ public class SpecModulesTests
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource view dbo.t
+                  datasource infer view dbo.t
                   end card
                   end report
                 end dashboard
@@ -633,7 +633,7 @@ public class SpecModulesTests
               y = b
               value = c
               end diagram
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -653,7 +653,7 @@ public class SpecModulesTests
               title = "T"
               card a as "A"
               diagram missing_preset
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -675,7 +675,7 @@ public class SpecModulesTests
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -713,7 +713,7 @@ public class SpecModulesTests
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard

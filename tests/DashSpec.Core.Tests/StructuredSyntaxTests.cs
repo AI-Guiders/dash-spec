@@ -77,7 +77,7 @@ public class StructuredSyntaxTests
                 card peak
                   title = "Peak"
                   data
-                    datasource view demo.v_peak
+                    datasource infer view demo.v_peak
                     bind usage_date
                   end data
                   view

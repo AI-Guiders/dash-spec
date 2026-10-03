@@ -36,7 +36,7 @@ public class QueryCompilerTests
               y = peak_concurrent_proxy
               series = app_name
               end line
-              datasource view demo.v_daily_peak_concurrent_proxy
+              datasource infer view demo.v_daily_peak_concurrent_proxy
               end card
               end report
             end dashboard
@@ -82,7 +82,7 @@ public class QueryCompilerTests
               diagram table
               columns = host_name, user_sam
               end table
-              datasource view demo.v_drill
+              datasource infer view demo.v_drill
               end card
               end report
             end dashboard
@@ -132,7 +132,7 @@ public class QueryCompilerTests
               diagram table
               columns = user_sam
               end table
-              datasource view demo.v_five_minute_activity_at_bucket
+              datasource infer view demo.v_five_minute_activity_at_bucket
               end card
               end report
             end dashboard
@@ -178,7 +178,7 @@ public class QueryCompilerTests
               diagram bar
               x = user_sam y
               end bar
-              datasource sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
+              datasource infer sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
               end card
               end report
             end dashboard
@@ -223,7 +223,7 @@ public class QueryCompilerTests
               diagram line
               x = usage_date y
               end line
-              datasource view public.metrics
+              datasource infer view public.metrics
               end card
               end report
             end dashboard
@@ -254,7 +254,7 @@ public class QueryCompilerTests
               columns = id, name
               limit = 100
               end table
-              datasource view dbo.events
+              datasource infer view dbo.events
               end card
               end report
             end dashboard
@@ -280,7 +280,7 @@ public class QueryCompilerTests
               columns = id, name
               limit = 100
               end table
-              datasource view public.events
+              datasource infer view public.events
               end card
               end report
             end dashboard
@@ -318,7 +318,7 @@ public class QueryCompilerTests
               diagram table
               columns = id, name
               end table
-              datasource view dbo.events
+              datasource infer view dbo.events
               end card
               end report
             end dashboard
@@ -399,7 +399,7 @@ public class QueryCompilerTests
               diagram table
               columns = id, name
               end table
-              datasource view dbo.events
+              datasource infer view dbo.events
               end card
               end report
             end dashboard
@@ -619,7 +619,7 @@ public class QueryCompilerTests
               diagram number
               value = kpi
               end number
-              datasource view demo.v
+              datasource infer view demo.v
               end card
               end report
             end dashboard
@@ -646,7 +646,7 @@ public class QueryCompilerTests
               diagram number
               value = kpi
               end number
-              datasource view demo.v
+              datasource infer view demo.v
               end card
               end report
             end tab

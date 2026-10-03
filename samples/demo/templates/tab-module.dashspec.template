@@ -55,7 +55,7 @@
 
     card my_card as "Example card" ref Q {
       diagram my_diagram
-      datasource view demo.v_example
+      datasource infer view demo.v_example
       bind usage_date, app_name
     }
   }

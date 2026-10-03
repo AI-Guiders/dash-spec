@@ -145,7 +145,7 @@ source utilization {
 ```
 
 - `from` — `view` | `sql query` | `sql file` ([ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md)).
-- **`use provider <id>`** — which runtime data plugin entry to use (`<id>` = manifest `[providers.<id>]`; implementation assemblies remain under `connectors/` — [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md)). Omitted → `default_provider_id` in manifest when the source executes.
+- **`use provider <id>`** — manifest `[providers.<id>]` (implementation assemblies under `connectors/` — [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md)). **`use provider infer`** — explicit default (`default_provider_id`; same intent as card `datasource { infer … }`). Omission is a **parse error**; `infer` is reserved (not a manifest id).
 - **Output** is the stable typed API for downstream transformers and card inputs.
 - Filter **values** connect in the **report internal flow** (`apply_filters`), not on the source node.
 

@@ -93,7 +93,7 @@ public sealed class ReportPreviewSessionTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
             """));
 

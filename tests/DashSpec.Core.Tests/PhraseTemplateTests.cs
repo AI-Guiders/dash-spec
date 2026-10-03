@@ -22,7 +22,7 @@ public sealed class PhraseTemplateTests
               x = a y
               value = c
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end tab
@@ -66,7 +66,7 @@ public sealed class PhraseTemplateTests
               x = a y
               value = c
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end tab

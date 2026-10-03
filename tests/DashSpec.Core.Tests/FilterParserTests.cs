@@ -259,7 +259,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -293,7 +293,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -319,7 +319,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard

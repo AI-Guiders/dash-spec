@@ -636,7 +636,8 @@ module CardParser =
               Value = ""
               SqlCarrier = None
               Sheet = None
-              RowsType = "" }
+              RowsType = ""
+              ProviderInfer = true }
 
         let primaryKey, primaryDiagram, primaryDataSource, primaryBound, primaryLegend, primaryPresentation, primarySeriesTransform =
             if diagramSlotsFinal.Count = 0 && useCardPreset.IsSome then

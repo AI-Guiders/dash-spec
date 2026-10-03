@@ -31,7 +31,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource view dbo.x
+                  datasource infer view dbo.x
                   end card
                   end report
                 end tab
@@ -52,7 +52,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource view dbo.a
+                  datasource infer view dbo.a
                   end card
                   end report
                 end dashboard
@@ -89,7 +89,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               card guest as "Guest"
               filters host host
@@ -101,7 +101,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -132,7 +132,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               card guest as "Guest"
               bind
@@ -141,7 +141,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -164,7 +164,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource view dbo.x
+                  datasource infer view dbo.x
                   end card
                   end report
                 end tab
@@ -184,7 +184,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource view dbo.a
+                  datasource infer view dbo.a
                   end card
                   end report
                 end dashboard
@@ -213,7 +213,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.a
+              datasource infer view dbo.a
               end card
               end report
             end dashboard
@@ -245,7 +245,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource view dbo.a
+              datasource infer view dbo.a
               end card
               end report
             end tab
@@ -273,7 +273,7 @@ public class TabModuleTests
               diagram number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end tab
