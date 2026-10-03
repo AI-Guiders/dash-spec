@@ -208,7 +208,9 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | **P0** (this ADR) | Terminology, `FlowGraph` contract, file kinds, split from `.dashtransform` |
 | **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy card `datasource` → inline `source` |
 | **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
-| **P3** | `.dashflow` parse + `connect { flow … }`; card `input` |
+| **P3a** | `.dashflow` parse + `connect { flow … }` |
+| **P3b** | Card `input alias from node.port`; compile to source `datasource` + per-card provider from `use provider` / `infer` |
+| **P3** | P3a + P3b (data plane wiring into Host query path) |
 | **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps |
 
 **Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).
