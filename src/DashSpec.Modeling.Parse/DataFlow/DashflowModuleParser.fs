@@ -8,17 +8,6 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DashflowModuleParser =
 
-    let private readRowsOutput (reader: TokenReader) =
-        if not (reader.TryKeyword "rows") then
-            raise (DashSpecParseException("output requires rows <RowType>."))
-
-        let typeName = reader.ReadIdent()
-
-        if String.IsNullOrWhiteSpace typeName then
-            raise (DashSpecParseException("output rows requires a type name."))
-
-        typeName
-
     let private readInlineAssignmentValue (reader: TokenReader) =
         reader.SkipNewlines()
 
@@ -107,14 +96,8 @@ module DashflowModuleParser =
                         raise (DashSpecParseException("from sql requires query or file."))
                 else
                     raise (DashSpecParseException("source from requires view or sql."))
-            elif reader.TryKeyword "output" then
-                let portName = reader.ReadIdent()
-                reader.Expect TokenKind.Colon
-                let rowType = readRowsOutput reader
-                outputPort <- portName
-                outputRowType <- rowType
             else
-                raise (reader.Unexpected "from, ports, or output")
+                raise (reader.Unexpected "from or ports")
 
             reader.SkipNewlines()
 
@@ -124,7 +107,7 @@ module DashflowModuleParser =
         | None -> raise (DashSpecParseException($"source '{sourceId}' requires from view or from sql."))
         | Some value ->
             if String.IsNullOrWhiteSpace outputPort then
-                raise (DashSpecParseException($"source '{sourceId}' requires a ports block or legacy output declaration."))
+                raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port."))
 
             { Id = sourceId
               From = value
@@ -152,30 +135,14 @@ module DashflowModuleParser =
                 for decl in ports.Inputs do
                     inputs.Add(
                         { Name = decl.Name
-                          PortType = Some(FlowPortsParser.toDashPortType decl)
-                          Wire = None })
+                          PortType = Some(FlowPortsParser.toDashPortType decl) })
 
                 for decl in ports.Outputs do
                     outputs.Add((decl.Name, decl.ValueType))
-            elif reader.TryKeyword "input" then
-                let portName = reader.ReadIdent()
-
-                let wire =
-                    if reader.TryKeyword "from" then
-                        Some(FlowPortRefParser.readProducerRef reader)
-                    else
-                        None
-
-                inputs.Add({ Name = portName; PortType = None; Wire = wire })
-            elif reader.TryKeyword "output" then
-                let portName = reader.ReadIdent()
-                reader.Expect TokenKind.Colon
-                let rowType = readRowsOutput reader
-                outputs.Add((portName, rowType))
             elif reader.TryKeyword "transform" then
                 skipTransformStep reader
             else
-                raise (reader.Unexpected "ports, input, output, or transform")
+                raise (reader.Unexpected "ports or transform")
 
             reader.SkipNewlines()
 
@@ -286,15 +253,6 @@ module DashflowModuleParser =
                         { Name = input.Name; Type = portType })
                   Outputs = outputPorts }
 
-        for transformer in transformers do
-            for input in transformer.Inputs do
-                match input.Wire with
-                | None -> ()
-                | Some producer ->
-                    edges.Add
-                        { From = producer
-                          To = { NodeId = transformer.Id; PortName = input.Name } }
-
         for link in links do
             match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, link.ToNode, StringComparison.OrdinalIgnoreCase)) with
             | None ->
@@ -362,8 +320,9 @@ module DashflowModuleParser =
             else
                 let saved = reader.SavePosition()
                 let nodeId = reader.ReadIdent()
+                let fromPort = FlowLinkParser.tryReadBracketPortSameLine reader
 
-                match FlowLinkParser.tryParseLink reader nodeId with
+                match FlowLinkParser.tryParseLink reader nodeId fromPort with
                 | Some link -> links.Add link
                 | None ->
                     reader.RestorePosition saved
