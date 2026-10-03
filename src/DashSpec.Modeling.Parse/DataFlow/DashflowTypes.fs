@@ -11,9 +11,15 @@ type SourceFrom =
     { Kind: SourceFromKind
       Value: string }
 
+/// <summary>Manifest data plugin selection on a <c>source</c> node.</summary>
+type DashflowProviderBinding =
+    /// Same as legacy card <c>datasource</c> — runtime <c>default_provider_id</c>.
+    | Infer
+    | Named of id: string
+
 type DashflowSourceDef =
     { Id: string
-      ProviderId: string option
+      Provider: DashflowProviderBinding
       From: SourceFrom
       OutputPort: string
       OutputRowType: string

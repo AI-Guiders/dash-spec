@@ -31,6 +31,34 @@ module DashflowModuleParserTests =
         | Result.Ok () -> Assert.True(TypeCatalog.tryGet catalog "DateTime" |> Option.isSome)
 
     [<Fact>]
+    let ``source use provider infer binds manifest default`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+@flow infer_default
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+end flow infer_default
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+        Assert.Equal(DashflowProviderBinding.Infer, module'.Sources.[0].Provider)
+
+    [<Fact>]
     let ``parse dashflow source transformer ports and link`` () =
         let typesText =
             """

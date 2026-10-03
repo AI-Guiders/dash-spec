@@ -15,4 +15,6 @@ type DataSourceDefinition =
       Value: string
       SqlCarrier: DataSourceSqlCarrier option
       Sheet: string option
-      RowsType: string }
+      RowsType: string
+      /// <c>true</c> when <c>datasource { infer … }</c> — manifest <c>default_provider_id</c>.
+      ProviderInfer: bool }

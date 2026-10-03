@@ -23,7 +23,7 @@ public class XlsxOpenRowSetTests
               diagram table
               columns = app_name, seats
               end table
-              datasource xlsx file "reports/book.xlsx" sheet "Лист1"
+              datasource infer xlsx file "reports/book.xlsx" sheet "Лист1"
               end card
               end report
             end dashboard
@@ -54,7 +54,7 @@ public class XlsxOpenRowSetTests
               diagram table
               columns = app_name
               end table
-              datasource xlsx file "reports/book.xlsx"
+              datasource infer xlsx file "reports/book.xlsx"
               end card
               end report
             end dashboard

@@ -64,7 +64,7 @@ module DashflowModuleParser =
     let private parseSourceBlock (reader: TokenReader) (sourceId: string) =
         reader.Expect TokenKind.LBrace
         reader.SkipNewlines()
-        let mutable providerId = None
+        let mutable providerBinding = None
         let mutable from: SourceFrom option = None
         let mutable outputPort = ""
         let mutable outputRowType = ""
@@ -81,9 +81,18 @@ module DashflowModuleParser =
                     raise (DashSpecParseException($"source '{sourceId}': use 'provider <id>', not 'connector' (connector is the runtime plugin; provider selects the manifest entry)."))
 
                 if not (String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id>' before from/ports."))
+                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id|infer>' before from/ports."))
 
-                providerId <- Some(reader.ReadIdent())
+                let providerName = reader.ReadIdent()
+
+                if String.IsNullOrWhiteSpace providerName then
+                    raise (DashSpecParseException($"source '{sourceId}': use provider requires an id or infer."))
+
+                providerBinding <-
+                    if String.Equals(providerName, "infer", StringComparison.OrdinalIgnoreCase) then
+                        Some DashflowProviderBinding.Infer
+                    else
+                        Some(DashflowProviderBinding.Named providerName)
             elif reader.TryKeyword "ports" then
                 let ports = FlowPortsParser.parsePortsBlock reader
                 defaultOutputPort <- applySourcePorts ports &outputPort &outputRowType
@@ -120,12 +129,18 @@ module DashflowModuleParser =
             if String.IsNullOrWhiteSpace outputPort then
                 raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port."))
 
-            { Id = sourceId
-              ProviderId = providerId
-              From = value
-              OutputPort = outputPort
-              OutputRowType = outputRowType
-              DefaultOutputPort = defaultOutputPort }
+            match providerBinding with
+            | None ->
+                raise (
+                    DashSpecParseException(
+                        $"source '{sourceId}' requires use provider <id> or use provider infer (manifest default_provider_id; same as card datasource infer)."))
+            | Some binding ->
+                { Id = sourceId
+                  Provider = binding
+                  From = value
+                  OutputPort = outputPort
+                  OutputRowType = outputRowType
+                  DefaultOutputPort = defaultOutputPort }
 
     let private parseTransformerBlock (reader: TokenReader) (transformerId: string) =
         reader.Expect TokenKind.LBrace

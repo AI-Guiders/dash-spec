@@ -43,7 +43,10 @@ end flow
         columns UserSam
       }
       datasource {
-        from view demo.v_daily_peak
+
+        
+        infer
+from view demo.v_daily_peak
       }
     }
   end report
@@ -78,7 +81,9 @@ end tab flow_connect_test
                 Assert.Equal("peak", module'.FlowId)
                 Assert.Empty(module'.Diagnostics)
                 Assert.Equal(Some "peak.dashflow", document.DashflowPath)
-                Assert.Equal(Some "sqlserver", module'.Sources.[0].ProviderId)
+                match module'.Sources.[0].Provider with
+                | DashflowProviderBinding.Named id -> Assert.Equal("sqlserver", id)
+                | _ -> Assert.Fail("Expected named provider sqlserver")
         finally
             try
                 Directory.Delete(dir, true)
@@ -154,7 +159,9 @@ end wiring
 report "T"
   card c as "C" {
     diagram table { columns x }
-    datasource { from view v }
+    datasource {       infer
+from view v }
+
   }
 end report
 end tab x

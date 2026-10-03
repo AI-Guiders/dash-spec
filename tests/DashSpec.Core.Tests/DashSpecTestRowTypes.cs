@@ -21,7 +21,7 @@ internal static class DashSpecTestRowTypes
                   x = a
                   y = b
                   end bar
-                  datasource view dbo.t rows FixtureRow
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard

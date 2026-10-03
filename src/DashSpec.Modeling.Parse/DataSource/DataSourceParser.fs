@@ -8,6 +8,14 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DataSourceParser =
 
+    let private requireProviderInfer (reader: TokenReader) =
+        reader.SkipNewlines()
+
+        if not (reader.TryKeyword "infer") then
+            raise (
+                DashSpecParseException(
+                    "datasource requires 'infer' (manifest default_provider_id; same as dashflow 'use provider infer')."))
+
     let private readRowsType (reader: TokenReader) =
         reader.SkipNewlines()
         if not (reader.TryKeyword "rows") then
@@ -19,6 +27,14 @@ module DataSourceParser =
 
     let private withRowsType (reader: TokenReader) (def: DataSourceDefinition) =
         { def with RowsType = readRowsType reader }
+
+    let private inferred (kind: DataSourceKind) (value: string) (sqlCarrier: DataSourceSqlCarrier option) (sheet: string option) =
+        { Kind = kind
+          Value = value
+          SqlCarrier = sqlCarrier
+          Sheet = sheet
+          RowsType = ""
+          ProviderInfer = true }
 
     let private unwrapRawSql (raw: string) =
         let trimmed = raw.Trim()
@@ -55,11 +71,11 @@ module DataSourceParser =
         if reader.TryKeyword "query" then
             let body = readSqlQueryText reader
             SqlReadOnlyValidator.validateSqlBody body
-            withRowsType reader { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None; RowsType = "" }
+            withRowsType reader (inferred DataSourceKind.Sql body (Some DataSourceSqlCarrier.Query) None)
         elif reader.TryKeyword "file" then
             let path = readSqlFileReference reader
             validateSqlFileExists path specDirectory
-            withRowsType reader { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None; RowsType = "" }
+            withRowsType reader (inferred DataSourceKind.Sql path (Some DataSourceSqlCarrier.File) None)
         else
             raise (DashSpecParseException("datasource sql requires 'query' or 'file' (e.g. datasource sql query \"SELECT …\" or datasource sql file \"sql/x.sql\")."))
 
@@ -76,11 +92,11 @@ module DataSourceParser =
             elif reader.TryKeyword "query" then
                 let body = readSqlQueryText reader
                 SqlReadOnlyValidator.validateSqlBody body
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = body; SqlCarrier = Some DataSourceSqlCarrier.Query; Sheet = None; RowsType = "" }
+                parsed <- Some(inferred DataSourceKind.Sql body (Some DataSourceSqlCarrier.Query) None)
             elif reader.TryKeyword "file" then
                 let path = readSqlFileReference reader
                 validateSqlFileExists path specDirectory
-                parsed <- Some { Kind = DataSourceKind.Sql; Value = path; SqlCarrier = Some DataSourceSqlCarrier.File; Sheet = None; RowsType = "" }
+                parsed <- Some(inferred DataSourceKind.Sql path (Some DataSourceSqlCarrier.File) None)
             else
                 raise (reader.Unexpected "query or file after from")
             reader.SkipNewlines()
@@ -110,13 +126,15 @@ module DataSourceParser =
                 Some name
             else
                 None
-        withRowsType reader { Kind = DataSourceKind.Xlsx; Value = path; SqlCarrier = None; Sheet = sheet; RowsType = "" }
+        withRowsType reader (inferred DataSourceKind.Xlsx path None sheet)
 
     let parse (reader: TokenReader) (specDirectory: string option) =
+        requireProviderInfer reader
+
         if reader.TryKeyword "view" then
             let name = AccessorGrammar.readQualifiedName reader
             SqlReadOnlyValidator.validateViewReference name
-            withRowsType reader { Kind = DataSourceKind.View; Value = name; SqlCarrier = None; Sheet = None; RowsType = "" }
+            withRowsType reader (inferred DataSourceKind.View name None None)
         elif reader.TryKeyword "sql" then
             if reader.IsAt TokenKind.LBrace then parseSqlBlock reader specDirectory
             else parseSqlInline reader specDirectory

@@ -30,7 +30,7 @@ public class CardInteriorLayoutTests
               diagram ref D table
               columns = a, b
               end table
-              datasource view dbo.t
+              datasource infer view dbo.t
               bind
                 usage_date
               end bind
@@ -69,7 +69,7 @@ public class CardInteriorLayoutTests
               diagram number
               value = n
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               layout
               [ app_name ]
               end layout
@@ -96,7 +96,7 @@ public class CardInteriorLayoutTests
               diagram ref D number
               value = x
               end number
-              datasource view dbo.t
+              datasource infer view dbo.t
               layout
               [ A A ]
               end layout
@@ -132,11 +132,11 @@ public class CardInteriorLayoutTests
               columns = h, u
               end table
               data
-                datasource view dbo.heat
+                datasource infer view dbo.heat
                 bind usage_date
               end data
               data for drill
-                datasource view dbo.drill
+                datasource infer view dbo.drill
                 bind usage_date
               end data
               layout
@@ -176,7 +176,7 @@ public class CardInteriorLayoutTests
               card events_detail as "Detail"
               filters rows_top
               data
-                datasource view dbo.t
+                datasource infer view dbo.t
                 bind usage_date
               end data
               view
@@ -218,7 +218,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               bind usage_date, app_name
               end card
               end report
@@ -257,7 +257,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               bind usage_date, app_name
               end card
               end report
@@ -291,7 +291,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource view dbo.t
+              datasource infer view dbo.t
               bind usage_date, app_name
               end card
               end report

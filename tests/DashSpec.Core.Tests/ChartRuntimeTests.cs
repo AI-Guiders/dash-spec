@@ -36,7 +36,7 @@ public class ChartRuntimeTests
               other = "Прочее"
               max = 4
               end transform
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -80,7 +80,7 @@ public class ChartRuntimeTests
               transform series
               use = top5
               end transform
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -126,7 +126,7 @@ public class ChartRuntimeTests
               presentation
               use = bar_horizontal_320
               end presentation
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -181,7 +181,7 @@ public class ChartRuntimeTests
               category = app_name value
               scale_value = integer
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -296,7 +296,7 @@ public class ChartRuntimeTests
               x = app_name y
               scale_y = integer
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -355,7 +355,7 @@ public class ChartRuntimeTests
               value = peak_concurrent_proxy as "Пик (proxy)"
               orientation = horizontal
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -426,7 +426,7 @@ public class ChartRuntimeTests
               presentation
               use = bar_utilization_percent
               end presentation
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -472,7 +472,7 @@ public class ChartRuntimeTests
               value = utilization_pct
               color = chart_color
               end bar
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
@@ -522,7 +522,7 @@ public class ChartRuntimeTests
               column_filters = false
               height = 280
               end presentation
-              datasource view dbo.t
+              datasource infer view dbo.t
               end card
               end report
             end dashboard
