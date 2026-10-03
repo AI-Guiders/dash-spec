@@ -43,7 +43,7 @@ end type
 
         let flowText =
             """
-flow stakeholder_peak
+@flow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
@@ -93,7 +93,7 @@ end type
 
         let flowText =
             """
-flow stakeholder_peak
+@flow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
@@ -147,7 +147,7 @@ end type
 
         let flowText =
             """
-flow multi_in
+@flow multi_in
 
 source utilization {
   from view demo.v_daily_peak
@@ -178,7 +178,7 @@ end flow multi_in
         Assert.Equal("primary", edge.To.PortName)
 
     [<Fact>]
-    let ``rejects dataflow and at-flow roots`` () =
+    let ``rejects dataflow and bare flow roots`` () =
         let catalog = TypeCatalog.empty
 
         let dataflowRoot =
@@ -191,12 +191,12 @@ end flow x
             DashflowModuleParser.parseModule dataflowRoot catalog |> ignore)
         |> ignore
 
-        let atFlow =
+        let bareFlow =
             """
-@flow x
+flow x
 end flow x
 """
 
         Assert.Throws<DashSpecParseException>(fun () ->
-            DashflowModuleParser.parseModule atFlow catalog |> ignore)
+            DashflowModuleParser.parseModule bareFlow catalog |> ignore)
         |> ignore
