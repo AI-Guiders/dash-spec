@@ -18,10 +18,14 @@ type DashType =
     | Named of typeName: string
     | FixedArray of element: DashPrimitive * length: int
 
-/// <summary>Rowset port type — <c>rows R</c> on data-flow edges (ADR-0078 / 0079).</summary>
+/// <summary>Data-flow port types — <c>table</c> / <c>scalar</c> surface (ADR-0078).</summary>
 [<RequireQualifiedAccess>]
 type DashPortType =
-    | Rows of rowTypeName: string
+    | Table of rowTypeName: string
+    | Scalar of valueTypeName: string
+
+    /// <summary>Legacy alias for <see cref="Table"/>.</summary>
+    static member Rows name = DashPortType.Table name
 
 [<CLIMutable>]
 type RowFieldDef =

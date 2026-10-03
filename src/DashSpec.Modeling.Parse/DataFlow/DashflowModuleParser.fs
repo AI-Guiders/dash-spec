@@ -61,9 +61,12 @@ module DashflowModuleParser =
 
         match ports.Outputs with
         | [||] -> ()
-        | [| (name, rowType) |] ->
-            outputPort <- name
-            outputRowType <- rowType
+        | [| decl |] ->
+            if decl.Shape <> FlowPortsParser.PortShape.Table then
+                raise (DashSpecParseException("source output must be table."))
+
+            outputPort <- decl.Name
+            outputRowType <- decl.ValueType
         | _ ->
             raise (DashSpecParseException("source requires exactly one output port in ports block (v1)."))
 
@@ -137,11 +140,14 @@ module DashflowModuleParser =
             elif reader.TryKeyword "ports" then
                 let ports = FlowPortsParser.parsePortsBlock reader
 
-                for name, rowType in ports.Inputs do
-                    inputs.Add({ Name = name; RowType = Some rowType; Wire = None })
+                for decl in ports.Inputs do
+                    inputs.Add(
+                        { Name = decl.Name
+                          PortType = Some(FlowPortsParser.toDashPortType decl)
+                          Wire = None })
 
-                for pair in ports.Outputs do
-                    outputs.Add pair
+                for decl in ports.Outputs do
+                    outputs.Add((decl.Name, decl.ValueType))
             elif reader.TryKeyword "input" then
                 let portName = reader.ReadIdent()
 
@@ -151,7 +157,7 @@ module DashflowModuleParser =
                     else
                         None
 
-                inputs.Add({ Name = portName; RowType = None; Wire = wire })
+                inputs.Add({ Name = portName; PortType = None; Wire = wire })
             elif reader.TryKeyword "output" then
                 let portName = reader.ReadIdent()
                 reader.Expect TokenKind.Colon
@@ -239,12 +245,12 @@ module DashflowModuleParser =
                   Inputs = Array.empty
                   Outputs =
                     [| { Name = source.OutputPort
-                         Type = DashPortType.Rows source.OutputRowType } |] }
+                         Type = DashPortType.Table source.OutputRowType } |] }
 
         for transformer in transformers do
             let outputPorts =
                 transformer.Outputs
-                |> Array.map (fun (name, rowType) -> { Name = name; Type = DashPortType.Rows rowType })
+                |> Array.map (fun (name, rowType) -> { Name = name; Type = DashPortType.Table rowType })
 
             nodeList.Add
                 { Id = transformer.Id
@@ -252,9 +258,12 @@ module DashflowModuleParser =
                   Inputs =
                     transformer.Inputs
                     |> Array.map (fun input ->
-                        let rowType = defaultArg input.RowType ""
+                        let portType =
+                            match input.PortType with
+                            | Some value -> value
+                            | None -> DashPortType.Table ""
 
-                        { Name = input.Name; Type = DashPortType.Rows rowType })
+                        { Name = input.Name; Type = portType })
                   Outputs = outputPorts }
 
         for transformer in transformers do

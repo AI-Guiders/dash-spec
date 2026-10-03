@@ -109,7 +109,8 @@ module FlowGraph =
                     if not (TypeCatalog.portTypesCompatible outputPort.Type inputPort.Type) then
                         let describe (portType: DashPortType) =
                             match portType with
-                            | DashPortType.Rows name -> $"rows {name}"
+                            | DashPortType.Table name -> $"table {name}"
+                            | DashPortType.Scalar name -> $"scalar {name}"
 
                         diagnostics.Add
                             { Code = "DFLOW003"
@@ -117,14 +118,17 @@ module FlowGraph =
                                 $"Port type mismatch: {describe outputPort.Type} → {describe inputPort.Type} on edge {edge.From.NodeId}.{edge.From.PortName} → {edge.To.NodeId}.{edge.To.PortName}."
                               Edge = Some edge }
 
-                    match outputPort.Type with
-                    | DashPortType.Rows rowName ->
-                        match TypeCatalog.tryGet catalog rowName with
+                    let validateCatalogType typeName =
+                        match TypeCatalog.tryGet catalog typeName with
                         | None ->
                             diagnostics.Add
                                 { Code = "DFLOW004"
-                                  Message = $"Row type '{rowName}' is not defined in the type catalog."
+                                  Message = $"Type '{typeName}' is not defined in the type catalog."
                                   Edge = Some edge }
                         | Some _ -> ()
+
+                    match outputPort.Type with
+                    | DashPortType.Table rowName -> validateCatalogType rowName
+                    | DashPortType.Scalar typeName -> validateCatalogType typeName
 
         diagnostics |> Seq.toList
