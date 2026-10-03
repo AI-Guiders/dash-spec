@@ -16,7 +16,7 @@ module MemberGrammar =
         | PropertyValueType.Scalar -> reader.ReadScalarValue()
         | PropertyValueType.String -> reader.ReadString()
         | PropertyValueType.DateRange -> reader.ReadDateDefaultValue()
-        | PropertyValueType.QualifiedName -> reader.ReadQualifiedName()
+        | PropertyValueType.QualifiedName -> AccessorGrammar.readQualifiedName reader
         | PropertyValueType.CommaList -> reader.ReadCommaSeparatedValues()
         | PropertyValueType.RestOfLine -> reader.ReadRestOfLine()
         | PropertyValueType.ColumnBinding -> invalidOp "ColumnBinding must be handled separately."
@@ -45,7 +45,7 @@ module MemberGrammar =
             else
                 reader.Expect TokenKind.Eq
                 if spec.ValueType = PropertyValueType.ColumnBinding then
-                    writeColumnBinding values key (reader.ReadColumnBinding())
+                    writeColumnBinding values key (AccessorGrammar.readColumnBinding reader)
                 else
                     values.[key] <- readTypedValue reader spec.ValueType
         | false, _ ->

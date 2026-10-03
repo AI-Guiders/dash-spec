@@ -18,6 +18,7 @@
     <Compile Include="SyntaxTreeTests.fs" />
     <Compile Include="LayoutModuleParserTests.fs" />
     <Compile Include="TypeModuleParserTests.fs" />
+    <Compile Include="AccessorGrammarTests.fs" />
     <Compile Include="DashflowModuleParserTests.fs" />
   </ItemGroup>
   <ItemGroup>

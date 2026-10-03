@@ -392,7 +392,7 @@ module FilterParser =
         elif not (reader.TryKeywordSameLine "on") then
             None, None
         else
-            let binding = reader.ReadColumnBinding()
+            let binding = AccessorGrammar.readColumnBinding reader
             Some binding.Column, binding.Alias
 
     let private hasInlineProperties (reader: TokenReader) =
