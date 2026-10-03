@@ -43,7 +43,7 @@ end type
 
         let flowText =
             """
-dataflow stakeholder_peak
+flow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
@@ -66,7 +66,7 @@ transformer reporting_calendar {
 
 utilization [utilization] -> [raw] reporting_calendar
 
-end dataflow stakeholder_peak
+end flow stakeholder_peak
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
@@ -81,7 +81,7 @@ end dataflow stakeholder_peak
         Assert.Equal(Some "raw", module'.Links.[0].ToPort)
 
     [<Fact>]
-    let ``parse dataflow block with arrow links and defaults`` () =
+    let ``parse flow block with arrow links and defaults`` () =
         let typesText =
             """
 type UtilizationRow
@@ -93,7 +93,7 @@ end type
 
         let flowText =
             """
-dataflow stakeholder_peak
+flow stakeholder_peak
 
 source utilization {
   from view demo.v_daily_peak
@@ -116,7 +116,7 @@ transformer reporting_calendar {
 
 utilization -> reporting_calendar
 
-end dataflow stakeholder_peak
+end flow stakeholder_peak
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
@@ -147,7 +147,7 @@ end type
 
         let flowText =
             """
-dataflow multi_in
+flow multi_in
 
 source utilization {
   from view demo.v_daily_peak
@@ -167,7 +167,7 @@ transformer joiner {
 
 utilization -> joiner
 
-end dataflow multi_in
+end flow multi_in
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
@@ -176,3 +176,27 @@ end dataflow multi_in
         Assert.Empty(module'.Diagnostics)
         let edge = module'.Graph.Edges |> Array.exactlyOne
         Assert.Equal("primary", edge.To.PortName)
+
+    [<Fact>]
+    let ``rejects dataflow and at-flow roots`` () =
+        let catalog = TypeCatalog.empty
+
+        let dataflowRoot =
+            """
+dataflow x
+end flow x
+"""
+
+        Assert.Throws<DashSpecParseException>(fun () ->
+            DashflowModuleParser.parseModule dataflowRoot catalog |> ignore)
+        |> ignore
+
+        let atFlow =
+            """
+@flow x
+end flow x
+"""
+
+        Assert.Throws<DashSpecParseException>(fun () ->
+            DashflowModuleParser.parseModule atFlow catalog |> ignore)
+        |> ignore

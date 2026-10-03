@@ -256,7 +256,7 @@ module DashflowModuleParser =
         for link in links do
             match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, link.ToNode, StringComparison.OrdinalIgnoreCase)) with
             | None ->
-                raise (DashSpecParseException($"flow link target '{link.ToNode}' is not a transformer in this dataflow block."))
+                raise (DashSpecParseException($"flow link target '{link.ToNode}' is not a transformer in this flow block."))
             | Some transformer ->
                 let fromPortName = resolveProducerPort sources transformers link.FromNode link.FromPort
                 let toPortName = resolveConsumerPort transformer link.ToPort
@@ -345,12 +345,12 @@ module DashflowModuleParser =
           Graph = graph
           Diagnostics = diagnostics |> List.toArray }
 
-    /// Inline or fragment root: `dataflow &lt;id&gt;` … `end dataflow` (optional matching id).
-    let parseDataflowBlock (reader: TokenReader) (typeCatalog: TypeCatalog) =
+    /// `flow &lt;id&gt;` … `end flow` (optional matching id on `end`).
+    let parseFlowBlock (reader: TokenReader) (typeCatalog: TypeCatalog) =
         let flowId = reader.ReadIdent()
 
         if String.IsNullOrWhiteSpace flowId then
-            raise (DashSpecParseException("dataflow requires an id."))
+            raise (DashSpecParseException("flow requires an id."))
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -363,13 +363,13 @@ module DashflowModuleParser =
             sources
             transformers
             links
-            (fun () -> BlockSyntax.isBlockEnd reader "dataflow" (Some flowId))
+            (fun () -> BlockSyntax.isBlockEnd reader "flow" (Some flowId))
 
-        BlockSyntax.expectBlockEnd reader "dataflow" (Some flowId)
+        BlockSyntax.expectBlockEnd reader "flow" (Some flowId)
 
         finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
 
-    /// `.dashflow` file root (`@flow &lt;id&gt;` …) or `dataflow` block.
+    /// `.dashflow` or inline fragment: `flow &lt;id&gt;` … `end flow`.
     let parseModule (text: string) (typeCatalog: TypeCatalog) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
         let reader = ParserUtilities.createReader text
@@ -377,18 +377,14 @@ module DashflowModuleParser =
         reader.SkipNewlines()
 
         if reader.TryKeyword "dataflow" then
-            parseDataflowBlock reader typeCatalog
+            raise (DashSpecParseException("use 'flow' … 'end flow', not 'dataflow'."))
+        elif reader.TryKeyword "flow" then
+            parseFlowBlock reader typeCatalog
+        elif reader.IsAt TokenKind.At then
+            reader.Advance()
+            if reader.TryKeyword "flow" then
+                raise (DashSpecParseException("use 'flow <id>' … 'end flow' without '@'."))
+            else
+                raise (reader.Unexpected "flow")
         else
-            reader.Expect TokenKind.At
-            reader.ExpectKeyword "flow"
-            let flowId = reader.ReadIdent()
-
-            if String.IsNullOrWhiteSpace flowId then
-                raise (DashSpecParseException("@flow requires an id."))
-
-            let sources = ResizeArray<DashflowSourceDef>()
-            let transformers = ResizeArray<DashflowTransformerDef>()
-            let links = ResizeArray<FlowLinkDef>()
-            parseFlowBody reader sources transformers links (fun () -> reader.IsEof)
-
-            finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
+            raise (reader.Unexpected "flow")
