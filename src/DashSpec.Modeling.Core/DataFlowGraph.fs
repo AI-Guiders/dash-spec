@@ -9,6 +9,8 @@ type FlowNodeKind =
     | Source
     | Transformer
     | ApplyFilters
+    /// Named subprocess reference (ADR-0088); <see cref="FlowNode.InnerFlowId"/> holds nested flow id.
+    | Composite
 
 type FlowPort =
     { Name: string
@@ -18,7 +20,9 @@ type FlowNode =
     { Id: string
       Kind: FlowNodeKind
       Inputs: FlowPort[]
-      Outputs: FlowPort[] }
+      Outputs: FlowPort[]
+      /// Set when <see cref="FlowNodeKind.Composite"/> (nested <c>flow &lt;id&gt;</c>).
+      InnerFlowId: string option }
 
 /// <summary>Endpoint on the <see cref="FlowGraph"/> — a node id and a port name (edge From/To), not an external SQL name.</summary>
 type FlowNodePortRef =
