@@ -17,7 +17,7 @@ public sealed class EndSyntaxTests
               diagram bar
               category = x value = y
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end page
               end report
@@ -41,7 +41,7 @@ public sealed class EndSyntaxTests
                 diagram bar
                   category = x value = y
                 end bar
-                datasource infer view dbo.t
+                datasource infer view dbo.t rows FixtureRow
               end card
             end report
             """);
@@ -73,7 +73,7 @@ public sealed class EndSyntaxTests
               diagram bar
               category = x value = y
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               bind
                 usage_date
               end bind

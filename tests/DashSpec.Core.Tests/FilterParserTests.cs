@@ -24,6 +24,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -46,6 +47,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -70,6 +72,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -89,6 +92,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -108,6 +112,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -136,6 +141,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -167,6 +173,7 @@ public class FilterParserTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filter top events_top as "Строк (TOP)"
@@ -184,6 +191,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -204,6 +212,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -227,6 +236,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -247,6 +257,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -259,7 +270,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -281,6 +292,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -293,7 +305,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -309,6 +321,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -319,7 +332,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -337,6 +350,7 @@ public class FilterParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults

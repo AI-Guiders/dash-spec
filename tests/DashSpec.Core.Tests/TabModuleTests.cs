@@ -18,9 +18,10 @@ public class TabModuleTests
         Directory.CreateDirectory(dir);
         try
         {
+            DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
             File.WriteAllText(
                 Path.Combine(dir, "extra.dashspec"),
-                DashSpecTestRowTypes.PrepareSpecText("""
+                """
                 @tab extra
                   defaults
                     filter.n.limit = 5
@@ -30,13 +31,14 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x
+                  datasource infer view dbo.x rows FixtureRow
                   end card
                 end tab
-                """));
+                """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   filter field app_name on dbo.apps.name as "Apps"
@@ -50,7 +52,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.a
+                  datasource infer view dbo.a rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -71,6 +73,7 @@ public class TabModuleTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -87,7 +90,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               card guest as "Guest"
               filters host host
@@ -99,7 +102,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -114,6 +117,7 @@ public class TabModuleTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -130,7 +134,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               card guest as "Guest"
               bind
@@ -139,7 +143,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -155,21 +159,23 @@ public class TabModuleTests
         Directory.CreateDirectory(dir);
         try
         {
+            DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
             File.WriteAllText(
                 Path.Combine(dir, "extra.dashspec"),
-                DashSpecTestRowTypes.PrepareSpecText("""
+                """
                 @tab extra
                   card x as "X"
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x
+                  datasource infer view dbo.x rows FixtureRow
                   end card
                 end tab
-                """));
+                """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   tab overview as "Overview"
@@ -182,7 +188,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.a
+                  datasource infer view dbo.a rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -204,6 +210,7 @@ public class TabModuleTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               tab x dashspec "x.dashspec"
@@ -211,7 +218,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.a
+              datasource infer view dbo.a rows FixtureRow
               end card
               end report
             end dashboard
@@ -243,7 +250,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.a
+              datasource infer view dbo.a rows FixtureRow
               end card
               end report
             end tab
@@ -271,7 +278,7 @@ public class TabModuleTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end tab

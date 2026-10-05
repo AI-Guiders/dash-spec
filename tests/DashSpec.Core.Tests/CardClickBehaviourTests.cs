@@ -36,7 +36,7 @@ public class CardClickBehaviourTests
               use tooltip peak_apps
               as list
               end inspect
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               bind
                 usage_date
               end bind
@@ -80,7 +80,7 @@ public class CardClickBehaviourTests
               x = a y
               value = c
               end heatmap
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               bind
                 usage_date, user_name
               end bind
@@ -114,7 +114,7 @@ public class CardClickBehaviourTests
               x = a y
               value = c
               end heatmap
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end tab
@@ -139,7 +139,7 @@ public class CardClickBehaviourTests
               x = a y
               value = c
               end heatmap
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end tab
@@ -169,7 +169,7 @@ public class CardClickBehaviourTests
               inspect
               use tooltip peak_apps
               end inspect
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end tab

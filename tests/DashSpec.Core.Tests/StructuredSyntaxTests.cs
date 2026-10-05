@@ -11,6 +11,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
                 title = "T"
                 filters
@@ -43,6 +44,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
                 title = "T"
                 filters
@@ -67,6 +69,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
                 title = "T"
                 defaults
@@ -77,7 +80,7 @@ public class StructuredSyntaxTests
                 card peak
                   title = "Peak"
                   data
-                    datasource infer view demo.v_peak
+                    datasource infer view demo.v_peak rows FixtureRow
                     bind usage_date
                   end data
                   view

@@ -40,7 +40,7 @@ public class DocumentModuleParserTests
                   end standalone
                   card c as "C"
                   diagram x
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   bind
                     app
                   end bind

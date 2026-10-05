@@ -25,12 +25,13 @@ public sealed class DashSpecProjectTests
 
             File.WriteAllText(Path.Combine(workspace, "main.dashspec"), """
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   import "diagrams/util.dashdiagram"
                   report
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -70,12 +71,13 @@ public sealed class DashSpecProjectTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   import "diagrams/activity.dashdiagram"
                   report
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard

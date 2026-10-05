@@ -14,6 +14,7 @@ public class XlsxOpenRowSetTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               configuration
               sqldialect = tsql
               end configuration
@@ -48,6 +49,7 @@ public class XlsxOpenRowSetTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card sheet as "Sheet"

@@ -1,6 +1,7 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -58,7 +59,8 @@ public sealed class DemoCatalogRegressionTests
             return;
         }
 
-        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
+        // Catalog specs must be B2 on disk (infer + rows R); no test-time datasource rewrite.
+        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
         Assert.NotEmpty(doc.Filters);
         Assert.NotEmpty(doc.Cards);
 
@@ -133,7 +135,7 @@ public sealed class DemoCatalogRegressionTests
                 title = "Детализация событий"
                 filters events_top
                 data
-                  datasource infer view demo.v_events_detail
+                  datasource infer view demo.v_events_detail rows FixtureRow
                   bind usage_date
                 end data
                 view
@@ -163,7 +165,8 @@ public sealed class DemoCatalogRegressionTests
             return;
         }
 
-        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
+        // Catalog specs must be B2 on disk (infer + rows R); no test-time datasource rewrite.
+        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
         var card = doc.Cards.Single(c => string.Equals(c.Id, "peak_concurrent_proxy", StringComparison.OrdinalIgnoreCase));
 
         Assert.NotNull(card.InteriorBoard);

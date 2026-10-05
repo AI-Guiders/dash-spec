@@ -17,6 +17,7 @@ public class ChartRuntimeTests
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
+                  !include "query-row-types.dashtype"
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -36,7 +37,7 @@ public class ChartRuntimeTests
               other = "Прочее"
               max = 4
               end transform
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -67,6 +68,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
@@ -80,7 +82,7 @@ public class ChartRuntimeTests
               transform series
               use = top5
               end transform
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -116,6 +118,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
@@ -126,7 +129,7 @@ public class ChartRuntimeTests
               presentation
               use = bar_horizontal_320
               end presentation
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -174,6 +177,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
@@ -181,7 +185,7 @@ public class ChartRuntimeTests
               category = app_name value
               scale_value = integer
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -289,6 +293,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
@@ -296,7 +301,7 @@ public class ChartRuntimeTests
               x = app_name y
               scale_y = integer
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -347,6 +352,7 @@ public class ChartRuntimeTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card peak as "Peak"
@@ -355,7 +361,7 @@ public class ChartRuntimeTests
               value = peak_concurrent_proxy as "Пик (proxy)"
               orientation = horizontal
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -412,6 +418,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -426,7 +433,7 @@ public class ChartRuntimeTests
               presentation
               use = bar_utilization_percent
               end presentation
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -461,6 +468,7 @@ public class ChartRuntimeTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -472,7 +480,7 @@ public class ChartRuntimeTests
               value = utilization_pct
               color = chart_color
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -510,6 +518,7 @@ public class ChartRuntimeTests
         var card = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
@@ -522,7 +531,7 @@ public class ChartRuntimeTests
               column_filters = false
               height = 280
               end presentation
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard

@@ -5,17 +5,18 @@ namespace DashSpec.Core.Tests;
 public sealed class DashSpecTestRowTypesTests
 {
     [Fact]
-    public void ParseDashboard_appends_rows_to_infer_view_datasource()
+    public void ParseDashboard_requires_explicit_rows_on_datasource()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
               diagram number
               value = x
               end number
-              datasource infer view dbo.events
+              datasource infer view dbo.events rows FixtureRow
               end card
               end report
             end dashboard
