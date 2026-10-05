@@ -115,32 +115,40 @@ Optional: authors may **name** a subprocess when it helps (`flow report_filters 
 
 A nested **`flow <id> … end flow`** is not a different language: the body uses the **same** rules as the enclosing `@flow` (sources, transformers, links, further nested `flow` blocks). The only difference from the file root is the **keyword** (`@flow` vs `flow`) and that the block becomes a **`FlowNodeKind.Composite`** in the parent resolved graph.
 
-**Parent-facing ports** are declared explicitly on the nested block (same `ports` / `end ports` envelope as elsewhere, different lines):
+**Parent-facing ports** are not aliased. The composite node’s inputs/outputs are the **union** of inner boundary ports (same names as inside):
+
+| Boundary | Rule |
+|----------|------|
+| **Inputs** | Every **input** port on each **entry** transformer (no inner incoming edge to that node) that is not fed from inside the subprocess. |
+| **Outputs** | Every **output** port on each **exit** node (source or transformer with no inner outgoing edge). |
+
+Fork/join example — `alpha` has `alpha1`, `alpha2`; `beta` has `beta1`, `beta2`; parent sees all four on `example`:
 
 ```text
 flow example
-  transformer alpha { … }
-  transformer beta { … }
+  transformer alpha { ports input stream alpha1: …; input stream alpha2: …; … }
+  transformer beta  { ports input stream beta1: …; input stream beta2: …; … }
+  transformer merge { … }
   transformer gamma { … }
-  alpha -> beta -> gamma
-  ports
-    input p1
-    output p2
-  end ports
+  alpha -> merge
+  beta -> merge
+  merge -> gamma
 end flow
+
+feedA [out] -> [alpha1] example
+feedB [out] -> [beta2] example
+example [out] -> [in] downstream
 ```
 
-| Piece | Meaning |
-|-------|---------|
-| **`p1` / `p2`** | Parent-facing names in links (`… -> [p1] example`). |
-| **Entry / exit** | Resolved from the inner graph: **input** wires to the **entry** transformer (no inner predecessor); **output** from the **exit** node (no inner successor). Inner node ids are already in the body — authors do not repeat them in `ports`. |
-| **`[port]`** | Optional on `input p1` / `output p2` when entry/exit has multiple ports (same default rules as flow links). |
+Invalid: `feedA [out] -> [bar] example` → **no input port `bar` on nested flow `example`**.
 
-Sugar `source -> example -> sink` when the `ports` block exposes exactly one input and one output.
+Parent wiring uses the **same** link syntax as everywhere else (`producer [out] -> [inPort] consumer`). Sugar `source -> example -> sink` only when the composite exposes exactly one input and one output.
 
-Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): stream types on `p1`/`p2` are taken from the wired inner ports.
+Names must be **unique** across the boundary (duplicate `in` on two entry nodes is a compile error).
 
-**Studio extract** (C3) emits this `ports` block (names + `from` targets from the cut); no separate `boundary` keyword.
+Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): composite port types match the inner ports they mirror.
+
+**Studio extract** (C3) emits the inner body; boundary port set is derived from the cut (same union rule).
 
 ### IR
 
