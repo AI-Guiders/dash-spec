@@ -42,9 +42,17 @@ type DashflowTransformerDef =
       DefaultInputPort: string option
       DefaultOutputPort: string option }
 
+/// <summary>Parent port name wired to an inner node port on a nested <c>flow</c>.</summary>
+type DashflowCompositePortWire =
+    { ExternalName: string
+      InnerNodeId: string
+      InnerPortName: string }
+
 /// <summary>Named nested <c>flow &lt;id&gt;</c> — same body rules as <c>@flow</c> (ADR-0088).</summary>
 type DashflowNestedFlowDef =
     { Id: string
+      ExternalInputs: DashflowCompositePortWire[]
+      ExternalOutputs: DashflowCompositePortWire[]
       Sources: DashflowSourceDef[]
       Transformers: DashflowTransformerDef[]
       Links: FlowLinkDef[]

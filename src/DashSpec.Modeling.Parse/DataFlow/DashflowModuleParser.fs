@@ -244,71 +244,193 @@ module DashflowModuleParser =
             |> Array.tryFind (fun port -> String.Equals(port.Name, ref.PortName, StringComparison.OrdinalIgnoreCase))
             |> Option.map (fun port -> port.Type)
 
-    let private deriveCompositePorts (innerGraph: FlowGraph) =
-        let hasInputWire (nodeId: string) (portName: string) =
-            innerGraph.Edges
-            |> Array.exists (fun edge ->
-                String.Equals(edge.To.NodeId, nodeId, StringComparison.OrdinalIgnoreCase)
-                && String.Equals(edge.To.PortName, portName, StringComparison.OrdinalIgnoreCase))
+    let private portTypeOnInnerNode (innerGraph: FlowGraph) (nodeId: string) (portName: string) (inputs: bool) =
+        match innerGraph.Nodes.TryGetValue nodeId with
+        | false, _ ->
+            raise (DashSpecParseException($"nested flow ports: unknown inner node '{nodeId}'."))
+        | true, node ->
+            let ports = if inputs then node.Inputs else node.Outputs
 
-        let hasOutputWire (nodeId: string) (portName: string) =
-            innerGraph.Edges
-            |> Array.exists (fun edge ->
-                String.Equals(edge.From.NodeId, nodeId, StringComparison.OrdinalIgnoreCase)
-                && String.Equals(edge.From.PortName, portName, StringComparison.OrdinalIgnoreCase))
+            match ports |> Array.tryFind (fun p -> String.Equals(p.Name, portName, StringComparison.OrdinalIgnoreCase)) with
+            | None ->
+                raise (DashSpecParseException($"nested flow ports: node '{nodeId}' has no port '{portName}'."))
+            | Some port -> port.Type
 
+    let private compositePortsFromWires (nested: DashflowNestedFlowDef) =
         let inputs =
-            innerGraph.Nodes.Values
-            |> Seq.collect (fun node ->
-                node.Inputs
-                |> Array.choose (fun port ->
-                    if hasInputWire node.Id port.Name then None else Some port))
-            |> Seq.distinctBy (fun port -> port.Name, port.Type)
-            |> Seq.toArray
+            nested.ExternalInputs
+            |> Array.map (fun wire ->
+                { Name = wire.ExternalName
+                  Type = portTypeOnInnerNode nested.InnerGraph wire.InnerNodeId wire.InnerPortName true })
 
         let outputs =
-            innerGraph.Nodes.Values
-            |> Seq.collect (fun node ->
-                node.Outputs
-                |> Array.choose (fun port ->
-                    if hasOutputWire node.Id port.Name then None else Some port))
-            |> Seq.distinctBy (fun port -> port.Name, port.Type)
-            |> Seq.toArray
+            nested.ExternalOutputs
+            |> Array.map (fun wire ->
+                { Name = wire.ExternalName
+                  Type = portTypeOnInnerNode nested.InnerGraph wire.InnerNodeId wire.InnerPortName false })
 
         inputs, outputs
 
-    let private compositePorts (nested: DashflowNestedFlowDef) =
-        deriveCompositePorts nested.InnerGraph
-
     let private resolveCompositeConsumerPort (nested: DashflowNestedFlowDef) (port: string option) =
-        let inputs, _ = compositePorts nested
-
         match port with
-        | Some value -> value
+        | Some value ->
+            if
+                not (
+                    nested.ExternalInputs
+                    |> Array.exists (fun wire ->
+                        String.Equals(wire.ExternalName, value, StringComparison.OrdinalIgnoreCase))
+                )
+            then
+                raise (DashSpecParseException($"nested flow '{nested.Id}' has no input port '{value}'."))
+
+            value
         | None ->
-            match inputs with
-            | [| flowPort |] -> flowPort.Name
+            match nested.ExternalInputs with
+            | [| wire |] -> wire.ExternalName
             | _ ->
                 raise (
                     DashSpecParseException(
-                        $"flow link to nested flow '{nested.Id}' requires an explicit input port in [] when multiple external inputs are exposed."
+                        $"flow link to nested flow '{nested.Id}' requires an explicit input port in [] when multiple inputs are declared."
                     )
                 )
 
     let private resolveCompositeProducerPort (nested: DashflowNestedFlowDef) (port: string option) =
-        let _, outputs = compositePorts nested
-
         match port with
-        | Some value -> value
+        | Some value ->
+            if
+                not (
+                    nested.ExternalOutputs
+                    |> Array.exists (fun wire ->
+                        String.Equals(wire.ExternalName, value, StringComparison.OrdinalIgnoreCase))
+                )
+            then
+                raise (DashSpecParseException($"nested flow '{nested.Id}' has no output port '{value}'."))
+
+            value
         | None ->
-            match outputs with
-            | [| flowPort |] -> flowPort.Name
+            match nested.ExternalOutputs with
+            | [| wire |] -> wire.ExternalName
             | _ ->
                 raise (
                     DashSpecParseException(
-                        $"flow link from nested flow '{nested.Id}' requires an explicit output port in [] when multiple external outputs are exposed."
+                        $"flow link from nested flow '{nested.Id}' requires an explicit output port in [] when multiple outputs are declared."
                     )
                 )
+
+    let private hasInnerIncoming (innerGraph: FlowGraph) (nodeId: string) =
+        innerGraph.Edges
+        |> Array.exists (fun edge -> String.Equals(edge.To.NodeId, nodeId, StringComparison.OrdinalIgnoreCase))
+
+    let private hasInnerOutgoing (innerGraph: FlowGraph) (nodeId: string) =
+        innerGraph.Edges
+        |> Array.exists (fun edge -> String.Equals(edge.From.NodeId, nodeId, StringComparison.OrdinalIgnoreCase))
+
+    let private subprocessEntryTransformerId
+        (flowId: string)
+        (innerGraph: FlowGraph)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        =
+        let transformerEntries =
+            transformers
+            |> Array.choose (fun transformer ->
+                if hasInnerIncoming innerGraph transformer.Id then None else Some transformer.Id)
+
+        match transformerEntries with
+        | [| entryId |] -> entryId
+        | [||] ->
+            let sourceEntries =
+                sources |> Array.filter (fun source -> not (hasInnerIncoming innerGraph source.Id))
+
+            match sourceEntries with
+            | [| entrySource |] ->
+                match
+                    innerGraph.Edges
+                    |> Array.tryFind (fun edge ->
+                        String.Equals(edge.From.NodeId, entrySource.Id, StringComparison.OrdinalIgnoreCase))
+                with
+                | None ->
+                    raise (
+                        DashSpecParseException(
+                            $"nested flow '{flowId}': subprocess input requires a transformer entry; source '{entrySource.Id}' has no inner successor."
+                        ))
+                | Some edge -> edge.To.NodeId
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"nested flow '{flowId}': cannot resolve a single subprocess entry for input ports."
+                    ))
+        | _ ->
+            raise (
+                DashSpecParseException(
+                    $"nested flow '{flowId}': multiple entry transformers; specify inner input port with [port] on each input line."
+                ))
+
+    let private subprocessExitProducerId
+        (flowId: string)
+        (innerGraph: FlowGraph)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        =
+        let transformerExits =
+            transformers
+            |> Array.choose (fun transformer ->
+                if hasInnerOutgoing innerGraph transformer.Id then None else Some transformer.Id)
+
+        match transformerExits with
+        | [| exitId |] -> exitId
+        | [||] ->
+            let sourceExits =
+                sources |> Array.filter (fun source -> not (hasInnerOutgoing innerGraph source.Id))
+
+            match sourceExits with
+            | [| exitSource |] -> exitSource.Id
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"nested flow '{flowId}': cannot resolve a single subprocess exit for output ports."
+                    ))
+        | _ ->
+            raise (
+                DashSpecParseException(
+                    $"nested flow '{flowId}': multiple exit nodes; specify inner output port with [port] on each output line."
+                ))
+
+    let private resolveCompositeInputWire
+        (flowId: string)
+        (innerGraph: FlowGraph)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (decl: FlowCompositePortsParser.CompositePortDecl)
+        =
+        let entryNodeId = subprocessEntryTransformerId flowId innerGraph sources transformers
+
+        match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, entryNodeId, StringComparison.OrdinalIgnoreCase)) with
+        | None ->
+            raise (
+                DashSpecParseException(
+                    $"nested flow '{flowId}': subprocess input must attach to a transformer (entry '{entryNodeId}')."
+                ))
+        | Some transformer ->
+            let innerPortName = resolveConsumerPort transformer decl.InnerPortName
+
+            { ExternalName = decl.ExternalName
+              InnerNodeId = entryNodeId
+              InnerPortName = innerPortName }
+
+    let private resolveCompositeOutputWire
+        (flowId: string)
+        (innerGraph: FlowGraph)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (decl: FlowCompositePortsParser.CompositePortDecl)
+        =
+        let exitNodeId = subprocessExitProducerId flowId innerGraph sources transformers
+        let innerPortName = resolveProducerPort sources transformers exitNodeId decl.InnerPortName
+
+        { ExternalName = decl.ExternalName
+          InnerNodeId = exitNodeId
+          InnerPortName = innerPortName }
 
     let private buildScopeGraph
         (sources: DashflowSourceDef[])
@@ -358,7 +480,7 @@ module DashflowModuleParser =
                   InnerFlowId = None }
 
         for nested in nestedFlows do
-            let inputs, outputs = compositePorts nested
+            let inputs, outputs = compositePortsFromWires nested
 
             nodeList.Add
                 { Id = nested.Id
@@ -449,12 +571,28 @@ module DashflowModuleParser =
         (transformers: DashflowTransformerDef[])
         (nestedFlows: DashflowNestedFlowDef[])
         (links: FlowLinkDef[])
+        (inputDecls: FlowCompositePortsParser.CompositePortDecl[])
+        (outputDecls: FlowCompositePortsParser.CompositePortDecl[])
         (typeCatalog: TypeCatalog)
         =
+        if inputDecls.Length = 0 || outputDecls.Length = 0 then
+            raise (
+                DashSpecParseException(
+                    $"nested flow '{flowId}' requires a ports block with at least one input and one output (input <name> …)."
+                ))
+
         let innerGraph = buildScopeGraph sources transformers nestedFlows links
         let diagnostics = FlowGraph.typeCheck innerGraph typeCatalog
 
+        let externalInputs =
+            inputDecls |> Array.map (resolveCompositeInputWire flowId innerGraph sources transformers)
+
+        let externalOutputs =
+            outputDecls |> Array.map (resolveCompositeOutputWire flowId innerGraph sources transformers)
+
         { Id = flowId
+          ExternalInputs = externalInputs
+          ExternalOutputs = externalOutputs
           Sources = sources
           Transformers = transformers
           NestedFlows = nestedFlows
@@ -469,6 +607,7 @@ module DashflowModuleParser =
         (transformers: ResizeArray<DashflowTransformerDef>)
         (nestedFlows: ResizeArray<DashflowNestedFlowDef>)
         (links: ResizeArray<FlowLinkDef>)
+        (compositePorts: (ResizeArray<FlowCompositePortsParser.CompositePortDecl> * ResizeArray<FlowCompositePortsParser.CompositePortDecl>) option)
         (typeCatalog: TypeCatalog)
         (isDone: unit -> bool)
         =
@@ -476,6 +615,12 @@ module DashflowModuleParser =
             reader.SkipNewlines()
 
             if isDone () then ()
+            elif reader.TryKeyword "ports" then
+                match compositePorts with
+                | None ->
+                    raise (DashSpecParseException("ports on nested flow declare parent-facing wires; transformer/source ports use ports stream … end ports."))
+                | Some (inputs, outputs) ->
+                    FlowCompositePortsParser.parseCompositePortsBlock reader inputs outputs
             elif reader.TryKeyword "source" then
                 let sourceId = reader.ReadIdent()
                 ensureUniqueNodeId "source" sourceId seenIds
@@ -506,6 +651,8 @@ module DashflowModuleParser =
         let transformers = ResizeArray<DashflowTransformerDef>()
         let nestedFlows = ResizeArray<DashflowNestedFlowDef>()
         let links = ResizeArray<FlowLinkDef>()
+        let externalInputs = ResizeArray<FlowCompositePortsParser.CompositePortDecl>()
+        let externalOutputs = ResizeArray<FlowCompositePortsParser.CompositePortDecl>()
 
         parseFlowBody
             reader
@@ -514,6 +661,7 @@ module DashflowModuleParser =
             transformers
             nestedFlows
             links
+            (Some (externalInputs, externalOutputs))
             typeCatalog
             (fun () -> BlockSyntax.isBlockEnd reader "flow" (Some flowId))
 
@@ -525,6 +673,8 @@ module DashflowModuleParser =
             (transformers.ToArray())
             (nestedFlows.ToArray())
             (links.ToArray())
+            (externalInputs.ToArray())
+            (externalOutputs.ToArray())
             typeCatalog
 
     let private finishModule
@@ -563,6 +713,7 @@ module DashflowModuleParser =
             transformers
             nestedFlows
             links
+            None
             typeCatalog
             (fun () -> BlockSyntax.isBlockEnd reader "flow" (Some flowId))
 
