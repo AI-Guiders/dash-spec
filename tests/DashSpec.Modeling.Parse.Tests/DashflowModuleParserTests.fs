@@ -209,6 +209,81 @@ end flow multi_in
         Assert.Equal("primary", edge.To.PortName)
 
     [<Fact>]
+    let ``parse nested flow as composite node with parent links`` () =
+        let typesText =
+            """
+type RawRow
+  string Id
+end type
+
+type RichRow
+  string Id
+  string Label
+end type
+"""
+
+        let flowText =
+            """
+@flow pipeline
+
+source ingestion {
+  use provider infer
+  from view demo.v_raw
+  ports
+    output stream raw: RawRow
+  end ports
+}
+
+flow enrich
+  transformer one {
+    ports
+      input stream in: RawRow
+      output stream mid: RawRow
+    end ports
+  }
+  transformer two {
+    ports
+      input stream mid: RawRow
+      output stream out: RichRow
+    end ports
+  }
+  one -> two
+end flow
+
+transformer publish {
+  ports
+    default input out
+    input stream out: RichRow
+    output stream published: RichRow
+  end ports
+}
+
+ingestion [raw] -> [in] enrich
+enrich [out] -> publish
+
+end flow pipeline
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Equal(1, module'.NestedFlows.Length)
+        Assert.Equal("enrich", module'.NestedFlows.[0].Id)
+        Assert.Empty(module'.Diagnostics)
+
+        match module'.Graph.Nodes.TryGetValue "enrich" with
+        | false, _ -> Assert.Fail("composite node missing")
+        | true, node ->
+            Assert.Equal(FlowNodeKind.Composite, node.Kind)
+            Assert.Equal(Some "enrich", node.InnerFlowId)
+
+        let toEnrich =
+            module'.Graph.Edges
+            |> Array.find (fun e -> e.To.NodeId = "enrich")
+
+        Assert.Equal("in", toEnrich.To.PortName)
+
+    [<Fact>]
     let ``rejects dataflow and bare flow roots`` () =
         let catalog = TypeCatalog.empty
 

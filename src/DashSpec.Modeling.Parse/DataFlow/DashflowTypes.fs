@@ -42,10 +42,21 @@ type DashflowTransformerDef =
       DefaultInputPort: string option
       DefaultOutputPort: string option }
 
+/// <summary>Named nested <c>flow &lt;id&gt;</c> — same body rules as <c>@flow</c> (ADR-0088).</summary>
+type DashflowNestedFlowDef =
+    { Id: string
+      Sources: DashflowSourceDef[]
+      Transformers: DashflowTransformerDef[]
+      Links: FlowLinkDef[]
+      NestedFlows: DashflowNestedFlowDef[]
+      InnerGraph: FlowGraph
+      Diagnostics: FlowGraphDiagnostic[] }
+
 type DashflowModule =
     { FlowId: string
       Sources: DashflowSourceDef[]
       Transformers: DashflowTransformerDef[]
+      NestedFlows: DashflowNestedFlowDef[]
       Links: FlowLinkDef[]
       Graph: FlowGraph
       Diagnostics: FlowGraphDiagnostic[] }
