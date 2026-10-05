@@ -248,6 +248,10 @@ flow enrich
     end ports
   }
   one -> two
+  ports
+    input p1
+    output p2
+  end ports
 end flow
 
 transformer publish {
@@ -258,8 +262,8 @@ transformer publish {
   end ports
 }
 
-ingestion [raw] -> [in] enrich
-enrich [out] -> publish
+ingestion [raw] -> [p1] enrich
+enrich [p2] -> publish
 
 end flow pipeline
 """
@@ -281,7 +285,9 @@ end flow pipeline
             module'.Graph.Edges
             |> Array.find (fun e -> e.To.NodeId = "enrich")
 
-        Assert.Equal("in", toEnrich.To.PortName)
+        Assert.Equal("p1", toEnrich.To.PortName)
+        Assert.Equal("p1", module'.NestedFlows.[0].ExternalInputs.[0].ExternalName)
+        Assert.Equal("one", module'.NestedFlows.[0].ExternalInputs.[0].InnerNodeId)
 
     [<Fact>]
     let ``rejects dataflow and bare flow roots`` () =

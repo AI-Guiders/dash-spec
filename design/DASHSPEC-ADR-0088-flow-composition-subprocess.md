@@ -115,24 +115,38 @@ Optional: authors may **name** a subprocess when it helps (`flow report_filters 
 
 A nested **`flow <id> … end flow`** is not a different language: the body uses the **same** rules as the enclosing `@flow` (sources, transformers, links, further nested `flow` blocks). The only difference from the file root is the **keyword** (`@flow` vs `flow`) and that the block becomes a **`FlowNodeKind.Composite`** in the parent resolved graph.
 
-**External ports** on the composite are **not** a separate `boundary` surface in the spec. They are the **unwired** inner ports after the inner graph is built:
+**Parent-facing ports** are declared explicitly on the nested block (same `ports` / `end ports` envelope as elsewhere, different lines):
 
-| Direction | Rule |
-|-----------|------|
-| **Inputs** | Transformer input ports with **no** incoming inner edge. |
-| **Outputs** | Node output ports (source or transformer) with **no** outgoing inner edge. |
+```text
+flow example
+  transformer alpha { … }
+  transformer beta { … }
+  transformer gamma { … }
+  alpha -> beta -> gamma
+  ports
+    input p1
+    output p2
+  end ports
+end flow
+```
 
-Parent wiring uses those port names: `ingestion [raw] -> [in] enrich`, `enrich [out] -> publish`, or sugar `ingestion -> enrich -> publish` when exactly **one** external input and **one** external output are exposed.
+| Piece | Meaning |
+|-------|---------|
+| **`p1` / `p2`** | Parent-facing names in links (`… -> [p1] example`). |
+| **Entry / exit** | Resolved from the inner graph: **input** wires to the **entry** transformer (no inner predecessor); **output** from the **exit** node (no inner successor). Inner node ids are already in the body — authors do not repeat them in `ports`. |
+| **`[port]`** | Optional on `input p1` / `output p2` when entry/exit has multiple ports (same default rules as flow links). |
 
-Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): outer edges attach to the same stream types as the inner ports they connect to.
+Sugar `source -> example -> sink` when the `ports` block exposes exactly one input and one output.
 
-**Studio extract** (C3) rewrites a selection into `flow <id> … end flow`; port names come from the cut (unwired ports), not from extra keywords in the file.
+Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): stream types on `p1`/`p2` are taken from the wired inner ports.
+
+**Studio extract** (C3) emits this `ports` block (names + `from` targets from the cut); no separate `boundary` keyword.
 
 ### IR
 
 Resolved graph is still one `FlowGraph`, with two equivalent representations (tooling picks one; executor accepts both):
 
-1. **Collapsed:** composite node (`FlowNodeKind.Composite`, `InnerFlowId`) + stored inner `FlowGraph` for Designer / step debug; boundary ports = unwired inner ports on that subgraph.
+1. **Collapsed:** composite node (`FlowNodeKind.Composite`, `InnerFlowId`) + stored inner `FlowGraph`; external port list = `ports` block wires.
 2. **Flattened:** inner nodes renamed to stable qualified ids (`example/one`, …) and edges rewired — **same executor** as today ([ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)).
 
 Compilation **must not** duplicate SQL sources when flattening; cache keys use logical `(flowNodeId, outputPort, filter snapshot)` from [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md).
