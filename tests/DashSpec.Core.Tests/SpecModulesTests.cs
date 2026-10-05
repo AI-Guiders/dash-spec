@@ -214,6 +214,7 @@ public class SpecModulesTests
 
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               palette lus
@@ -237,6 +238,7 @@ public class SpecModulesTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               palette = "demo_apps"
@@ -244,7 +246,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -259,6 +261,7 @@ public class SpecModulesTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
+                  !include "query-row-types.dashtype"
               configuration
               palette = "palettes/brand.dashpalette"
               end configuration
@@ -269,7 +272,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -535,12 +538,13 @@ public class SpecModulesTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   !include "diagrams/activity.dashdiagram"
                   report
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -590,13 +594,14 @@ public class SpecModulesTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   !include "presentations/bar-tall.dashpresentation"
                   !include "diagrams/util.dashdiagram"
                   report
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -625,6 +630,7 @@ public class SpecModulesTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card a as "A"
@@ -633,7 +639,7 @@ public class SpecModulesTests
               y = b
               value = c
               end diagram
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -649,11 +655,12 @@ public class SpecModulesTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card a as "A"
               diagram missing_preset
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -671,11 +678,12 @@ public class SpecModulesTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -709,11 +717,12 @@ public class SpecModulesTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard

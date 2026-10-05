@@ -17,6 +17,7 @@ public class DashboardParseTests
     {
         const string text = """
             @dashboard soak_id
+                  !include "query-row-types.dashtype"
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -26,7 +27,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -46,8 +47,7 @@ public class DashboardParseTests
             "samples", "demo",
             "demo-soak.dashspec"));
 
-        var text = DashSpecTestRowTypes.PrepareSpecText(File.ReadAllText(path));
-        var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!);
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(path), Path.GetDirectoryName(path)!);
 
         Assert.Equal("demo_soak", doc.Id);
         Assert.Null(doc.ConnectorId);
@@ -76,6 +76,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               layout grid
@@ -91,7 +92,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -107,6 +108,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filter field app_name on app_name as "App"
@@ -120,7 +122,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -134,6 +136,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -160,7 +163,7 @@ public class DashboardParseTests
               diagram line
               x = bucket_start_utc y
               end line
-              datasource infer view dbo.activity
+              datasource infer view dbo.activity rows FixtureRow
               end card
               end report
             end dashboard
@@ -177,6 +180,7 @@ public class DashboardParseTests
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   defaults
@@ -190,7 +194,7 @@ public class DashboardParseTests
                   diagram number
                   value = x
                   end number
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -204,6 +208,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -231,7 +236,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -253,6 +258,7 @@ public class DashboardParseTests
     {
         var line = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filters chrome
@@ -265,6 +271,7 @@ public class DashboardParseTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filters chrome
@@ -277,6 +284,7 @@ public class DashboardParseTests
 
         var none = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filters chrome
@@ -294,6 +302,7 @@ public class DashboardParseTests
     {
         var block = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               filters chrome
@@ -311,6 +320,7 @@ public class DashboardParseTests
 
         var sugar = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               toolbar chrome
@@ -328,6 +338,7 @@ public class DashboardParseTests
     {
         var labeled = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               toolbar chrome
@@ -341,6 +352,7 @@ public class DashboardParseTests
 
         var inline = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               toolbar chrome
@@ -358,6 +370,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card h as "H"
@@ -367,7 +380,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               height = 360
               end heatmap
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -394,6 +407,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card h as "H"
@@ -410,7 +424,7 @@ public class DashboardParseTests
               label = "Состав в пике"
               as list
               end inspect
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -437,6 +451,7 @@ public class DashboardParseTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card h as "H"
@@ -446,7 +461,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               tooltip = peak_apps
               end heatmap
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -460,6 +475,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card h as "H"
@@ -477,7 +493,7 @@ public class DashboardParseTests
               tooltip peak_apps
               source = peak_apps
               end tooltip
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -515,6 +531,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card peak as "Peak"
@@ -523,7 +540,7 @@ public class DashboardParseTests
               value = peak_concurrent_proxy
               reference = purchased_seats as "Куплено"
               end bar
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -539,6 +556,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
                 title = "T"
               card h as "H"
@@ -551,7 +569,7 @@ public class DashboardParseTests
                   max = "макс. {max}"
                 
                 end legend
-                datasource infer view dbo.t
+                datasource infer view dbo.t rows FixtureRow
               
               end card
             
@@ -766,6 +784,7 @@ public class DashboardParseTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard($$"""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
                 title = "T"
                 {{blockKeyword}}
@@ -836,6 +855,7 @@ public class DashboardParseTests
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   defaults
@@ -849,7 +869,7 @@ public class DashboardParseTests
                   diagram line
                   x = usage_date y
                   end line
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   where [[usage_date]]
                   end card
                   end report
@@ -863,6 +883,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               tab s as "S"
@@ -881,7 +902,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource infer view dbo.a
+              datasource infer view dbo.a rows FixtureRow
               end card
               card b as "B"
               place
@@ -892,7 +913,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource infer view dbo.b
+              datasource infer view dbo.b rows FixtureRow
               end card
               card c as "C"
               place
@@ -903,7 +924,7 @@ public class DashboardParseTests
               diagram table
               columns = a, b
               end table
-              datasource infer view dbo.c
+              datasource infer view dbo.c rows FixtureRow
               end card
               end report
             end dashboard

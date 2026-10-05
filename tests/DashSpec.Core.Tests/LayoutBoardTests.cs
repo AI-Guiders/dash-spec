@@ -28,27 +28,27 @@ public class LayoutBoardTests
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card peak_apps as "Apps" ref E
   diagram heatmap
   x = a y
   value = c
   end heatmap
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card idle as "Idle" ref T
   diagram heatmap
   x = a y
   value = c
   end heatmap
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card utilization as "Util" ref F
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab
@@ -77,25 +77,25 @@ end tab
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card b as "B" ref E
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card c as "C" ref T
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card d as "D" ref F
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab
@@ -126,20 +126,20 @@ end tab
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card b as "B" ref W
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card c as "C" ref E
   diagram heatmap
   x = a y
   value = c
   end heatmap
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab
@@ -171,37 +171,37 @@ end tab
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card e as "E" ref E
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card r as "R" ref R
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card t as "T" ref T
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card y as "Y" ref Y
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card f as "F" ref F
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab
@@ -244,25 +244,25 @@ end tab
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card b as "B" ref E
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card c as "C" ref T
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card d as "D" ref F
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab
@@ -306,7 +306,7 @@ end tab
                   diagram bar
                   x = a y
                   end bar
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end tab
@@ -325,6 +325,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -344,7 +345,7 @@ end tab
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -361,6 +362,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               layout grid
@@ -383,7 +385,7 @@ end tab
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -401,6 +403,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               layout grid
@@ -422,7 +425,7 @@ end tab
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -439,6 +442,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               layout grid
@@ -461,7 +465,7 @@ end tab
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -490,6 +494,7 @@ end tab
                 """);
             File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   !include "layouts/tb.dashlayout"
                   report
                   title = "T"
@@ -506,7 +511,7 @@ end tab
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -528,6 +533,7 @@ end tab
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -545,7 +551,7 @@ end tab
               diagram number
               value = n
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -589,7 +595,7 @@ end tab
                   diagram bar
                   x = a y
                   end bar
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end tab
@@ -619,6 +625,7 @@ end tab
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   !include "layouts/grid.dashlayout"
                   report
                   title = "T"
@@ -633,7 +640,7 @@ end tab
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -675,19 +682,19 @@ end tab
                   diagram bar
                   x = a y
                   end bar
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   card b as "B" ref E
                   diagram bar
                   x = a y
                   end bar
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   card c as "C" ref T
                   diagram bar
                   x = a y
                   end bar
-                  datasource infer view dbo.t
+                  datasource infer view dbo.t rows FixtureRow
                   end card
                   end report
                 end tab
@@ -732,19 +739,19 @@ end tab
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card inner_a as "Inner A" ref E
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   card inner_b as "Inner B" ref T
   diagram bar
   x = a y
   end bar
-  datasource infer view dbo.t
+  datasource infer view dbo.t rows FixtureRow
   end card
   end report
 end tab

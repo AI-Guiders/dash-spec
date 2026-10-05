@@ -16,6 +16,7 @@ public class SqlDataSourceParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -54,6 +55,7 @@ public class SqlDataSourceParserTests
     {
         var spec = $$"""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -86,6 +88,7 @@ public class SqlDataSourceParserTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               defaults
@@ -117,6 +120,7 @@ public class SqlDataSourceParserTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
+                  !include "query-row-types.dashtype"
               report
               title = "T"
               card a as "A"
@@ -145,6 +149,7 @@ public class SqlDataSourceParserTests
         {
             var fileDoc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   card a as "A"
@@ -163,6 +168,7 @@ public class SqlDataSourceParserTests
 
             var blockDoc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
+                  !include "query-row-types.dashtype"
                   report
                   title = "T"
                   card b as "B"

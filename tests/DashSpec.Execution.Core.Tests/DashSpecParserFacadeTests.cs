@@ -20,7 +20,7 @@ public sealed class DashSpecParserFacadeTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -51,7 +51,7 @@ public sealed class DashSpecParserFacadeTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard

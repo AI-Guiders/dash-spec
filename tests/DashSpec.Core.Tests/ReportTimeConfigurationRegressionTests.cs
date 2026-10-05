@@ -26,7 +26,7 @@ public sealed class ReportTimeConfigurationRegressionTests
           diagram number
           value = kpi
           end number
-          datasource infer view demo.v
+          datasource infer view demo.v rows FixtureRow
           end card
           end report
         end tab

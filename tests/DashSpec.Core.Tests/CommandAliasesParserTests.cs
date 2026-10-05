@@ -10,6 +10,7 @@ public class CommandAliasesParserTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard demo
+                  !include "query-row-types.dashtype"
               report
               title = "Demo"
               commands
@@ -30,7 +31,7 @@ public class CommandAliasesParserTests
               diagram number
               value = total
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
