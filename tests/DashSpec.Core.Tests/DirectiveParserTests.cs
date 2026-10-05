@@ -16,6 +16,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
+                  !include "query-row-types.dashtype"
               runtime
               manifest = "demo.toml"
               end runtime
@@ -25,7 +26,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -43,6 +44,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
+                  !include "query-row-types.dashtype"
               runtime
               manifest = "legacy.toml"
               end runtime
@@ -52,7 +54,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard
@@ -66,6 +68,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
+                  !include "query-row-types.dashtype"
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -78,7 +81,7 @@ public class DirectiveParserTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows FixtureRow
               end card
               end report
             end dashboard

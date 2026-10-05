@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
@@ -6,26 +5,17 @@ using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Core.Tests;
 
+/// <summary>
+/// ADR-0087 B2: <c>datasource infer … rows &lt;RowType&gt;</c> plus declared row types (<c>type</c> or module <c>!include</c>).
+/// Legacy card datasource is migrated in spec text — not rewritten at parse time.
+/// </summary>
 internal static class DashSpecTestRowTypes
 {
-    private static readonly string FixtureDir = Path.Combine(AppContext.BaseDirectory, "fixtures");
+    internal static readonly string FixtureDir = Path.Combine(AppContext.BaseDirectory, "fixtures");
 
-    private static readonly Lazy<RowTypeCatalog> SharedCatalog = new(() =>
-        RowTypeCatalog.FromDocument(
-            DashSpecParser.Parse(
-                $"""
-                @dashboard t
-                  report
-                  title = "T"
-                  {InlineFixtureType}
-                  end report
-                end dashboard
-                """,
-                FixtureDir)));
+    internal const string ModuleTypesIncludeLine = "!include \"query-row-types.dashtype\"";
 
-    internal static RowTypeCatalog Catalog => SharedCatalog.Value;
-
-    internal const string InlineFixtureType = """
+    internal const string InlineFixtureTypeBlock = """
         type FixtureRow
           optional date usage_date
           optional string app_name
@@ -60,44 +50,41 @@ internal static class DashSpecTestRowTypes
         end type
         """;
 
-    internal static string PrepareSpecText(string dashspecText)
-    {
-        if (!dashspecText.Contains("datasource", StringComparison.OrdinalIgnoreCase))
-        {
-            return dashspecText;
-        }
+    private static readonly Lazy<RowTypeCatalog> SharedCatalog = new(() =>
+        RowTypeCatalog.FromDocument(
+            DashSpecParser.Parse(
+                """
+                @dashboard t
+                  !include "query-row-types.dashtype"
+                  report
+                  title = "T"
+                  end report
+                end dashboard
+                """,
+                FixtureDir)));
 
-        return EnsureInlineFixtureType(NormalizeDatasourceRows(dashspecText));
-    }
+    internal static RowTypeCatalog Catalog => SharedCatalog.Value;
 
     internal static DashboardDocument ParseDashboard(
         string dashspecText,
         string? specDirectory = null,
         DashSpecParseOptions? parseOptions = null)
     {
-        if (!dashspecText.Contains("datasource", StringComparison.OrdinalIgnoreCase))
-        {
-            return parseOptions is null
-                ? DashSpecParser.Parse(dashspecText, specDirectory)
-                : DashSpecParser.Parse(dashspecText, specDirectory, parseOptions);
-        }
-
-        var text = NormalizeDatasourceRows(dashspecText);
-        text = EnsureInlineFixtureType(text);
-
+        var directory = specDirectory ?? FixtureDir;
         return parseOptions is null
-            ? DashSpecParser.Parse(text, specDirectory ?? FixtureDir)
-            : DashSpecParser.Parse(text, specDirectory ?? FixtureDir, parseOptions);
+            ? DashSpecParser.Parse(dashspecText, directory)
+            : DashSpecParser.Parse(dashspecText, directory, parseOptions);
     }
 
+    /// <summary>Report fragment with explicit inline <c>FixtureRow</c> (for short snippets).</summary>
     internal static DashboardDocument ParseReport(string innerReportBody)
     {
-        var report = NormalizeDatasourceRows(innerReportBody);
         var text = $"""
             @dashboard t
               report
-              {InlineFixtureType}
-              {report}
+              title = "T"
+              {InlineFixtureTypeBlock}
+              {innerReportBody}
               end report
             end dashboard
             """;
@@ -106,47 +93,9 @@ internal static class DashSpecTestRowTypes
 
     internal static CardDefinition ParseCard(string innerReportBody) => ParseReport(innerReportBody).Cards[0];
 
-    private static string EnsureInlineFixtureType(string text)
+    internal static void SeedFixtureTypesDirectory(string specDirectory)
     {
-        if (text.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase))
-        {
-            return text;
-        }
-
-        var reportIndex = text.IndexOf("report", StringComparison.OrdinalIgnoreCase);
-        if (reportIndex < 0)
-        {
-            return text;
-        }
-
-        var lineEnd = text.IndexOf('\n', reportIndex);
-        if (lineEnd < 0)
-        {
-            lineEnd = text.Length;
-        }
-
-        return text.Insert(lineEnd + 1, InlineFixtureType + Environment.NewLine);
+        var source = Path.Combine(FixtureDir, "query-row-types.dashtype");
+        File.Copy(source, Path.Combine(specDirectory, "query-row-types.dashtype"), overwrite: true);
     }
-
-    private static string NormalizeDatasourceRows(string text)
-    {
-        text = Regex.Replace(
-            text,
-            @"\bdatasource\s+view\b",
-            "datasource infer view",
-            RegexOptions.IgnoreCase | RegexOptions.Multiline);
-        text = Regex.Replace(
-            text,
-            @"\s+rows\s+\w+",
-            string.Empty,
-            RegexOptions.IgnoreCase | RegexOptions.Multiline);
-        return AppendRowsSuffix(text);
-    }
-
-    private static string AppendRowsSuffix(string text) =>
-        Regex.Replace(
-            text,
-            @"(datasource\s+(?:infer\s+)?(?:view\s+\S+|sql(?:\s+query\s+""[^""]*""|\s+file\s+""[^""]*""|\s*\{[^}]*\})|xlsx\s+file\s+""[^""]*""(?:\s+sheet\s+""[^""]*"")?))(?!\s+rows\b)",
-            "$1 rows FixtureRow",
-            RegexOptions.IgnoreCase | RegexOptions.Multiline);
 }

@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\DashSpec.Core.Tests\fixtures\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="fixtures" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
   </ItemGroup>
 
