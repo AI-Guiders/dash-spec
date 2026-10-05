@@ -18,24 +18,22 @@ public class TabModuleTests
         Directory.CreateDirectory(dir);
         try
         {
-            File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
+            File.WriteAllText(
+                Path.Combine(dir, "extra.dashspec"),
+                DashSpecTestRowTypes.PrepareSpecText("""
                 @tab extra
-                  report
-                  filters
                   defaults
                     filter.n.limit = 5
                   end defaults
                   filter top n as "Top"
-                  end filters
                   card x as "X"
                   diagram number
                   value = n
                   end number
                   datasource infer view dbo.x
                   end card
-                  end report
                 end tab
-                """);
+                """));
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
@@ -157,18 +155,18 @@ public class TabModuleTests
         Directory.CreateDirectory(dir);
         try
         {
-            File.WriteAllText(Path.Combine(dir, "extra.dashspec"), """
+            File.WriteAllText(
+                Path.Combine(dir, "extra.dashspec"),
+                DashSpecTestRowTypes.PrepareSpecText("""
                 @tab extra
-                  report
                   card x as "X"
                   diagram number
                   value = n
                   end number
                   datasource infer view dbo.x
                   end card
-                  end report
                 end tab
-                """);
+                """));
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t

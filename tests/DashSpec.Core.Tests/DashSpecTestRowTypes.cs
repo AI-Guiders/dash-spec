@@ -12,20 +12,16 @@ internal static class DashSpecTestRowTypes
 
     private static readonly Lazy<RowTypeCatalog> SharedCatalog = new(() =>
         RowTypeCatalog.FromDocument(
-            ParseDashboard("""
+            DashSpecParser.Parse(
+                $"""
                 @dashboard t
                   report
                   title = "T"
-                  card c as "C"
-                  diagram bar
-                  x = a
-                  y = b
-                  end bar
-                  datasource infer view dbo.t rows FixtureRow
-                  end card
+                  {InlineFixtureType}
                   end report
                 end dashboard
-                """)));
+                """,
+                FixtureDir)));
 
     internal static RowTypeCatalog Catalog => SharedCatalog.Value;
 
@@ -64,6 +60,16 @@ internal static class DashSpecTestRowTypes
         end type
         """;
 
+    internal static string PrepareSpecText(string dashspecText)
+    {
+        if (!dashspecText.Contains("datasource", StringComparison.OrdinalIgnoreCase))
+        {
+            return dashspecText;
+        }
+
+        return EnsureInlineFixtureType(NormalizeDatasourceRows(dashspecText));
+    }
+
     internal static DashboardDocument ParseDashboard(
         string dashspecText,
         string? specDirectory = null,
@@ -76,7 +82,7 @@ internal static class DashSpecTestRowTypes
                 : DashSpecParser.Parse(dashspecText, specDirectory, parseOptions);
         }
 
-        var text = AppendRowsSuffix(dashspecText);
+        var text = NormalizeDatasourceRows(dashspecText);
         text = EnsureInlineFixtureType(text);
 
         return parseOptions is null
@@ -86,7 +92,7 @@ internal static class DashSpecTestRowTypes
 
     internal static DashboardDocument ParseReport(string innerReportBody)
     {
-        var report = AppendRowsSuffix(innerReportBody);
+        var report = NormalizeDatasourceRows(innerReportBody);
         var text = $"""
             @dashboard t
               report
@@ -122,10 +128,25 @@ internal static class DashSpecTestRowTypes
         return text.Insert(lineEnd + 1, InlineFixtureType + Environment.NewLine);
     }
 
+    private static string NormalizeDatasourceRows(string text)
+    {
+        text = Regex.Replace(
+            text,
+            @"\bdatasource\s+view\b",
+            "datasource infer view",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        text = Regex.Replace(
+            text,
+            @"\s+rows\s+\w+",
+            string.Empty,
+            RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        return AppendRowsSuffix(text);
+    }
+
     private static string AppendRowsSuffix(string text) =>
         Regex.Replace(
             text,
-            @"(datasource\s+(?:view\s+\S+|sql(?:\s+query\s+""[^""]*""|\s+file\s+""[^""]*""|\s*\{[^}]*\})|xlsx\s+file\s+""[^""]*""(?:\s+sheet\s+""[^""]*"")?))(?!\s+rows\b)",
+            @"(datasource\s+(?:infer\s+)?(?:view\s+\S+|sql(?:\s+query\s+""[^""]*""|\s+file\s+""[^""]*""|\s*\{[^}]*\})|xlsx\s+file\s+""[^""]*""(?:\s+sheet\s+""[^""]*"")?))(?!\s+rows\b)",
             "$1 rows FixtureRow",
             RegexOptions.IgnoreCase | RegexOptions.Multiline);
 }

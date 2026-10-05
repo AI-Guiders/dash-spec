@@ -93,7 +93,7 @@ public sealed class ReportPreviewSessionTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t
+              datasource infer view dbo.t rows DemoRow
               end card
             """));
 
@@ -104,6 +104,7 @@ public sealed class ReportPreviewSessionTests
               end runtime
               report
               title = "Preview"
+            {ExecutionTestRowTypes.InlineDemoRow}
             {cards}
               end report
             end dashboard
