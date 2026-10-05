@@ -46,7 +46,7 @@ public class DashboardParseTests
             "samples", "demo",
             "demo-soak.dashspec"));
 
-        var text = File.ReadAllText(path);
+        var text = DashSpecTestRowTypes.PrepareSpecText(File.ReadAllText(path));
         var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!);
 
         Assert.Equal("demo_soak", doc.Id);

@@ -1,0 +1,27 @@
+@types demo_rows
+
+type DemoRow
+  optional date usage_date
+  optional string app_name
+  optional string user_sam
+  optional string user_name
+  optional string user_id
+  optional decimal peak
+  optional decimal peak_concurrent_proxy
+  optional decimal value
+  optional int id
+  optional string name
+  optional string bucket_start_utc
+  optional datetime period_start
+  optional string period_grain
+  optional decimal utilization_pct
+  optional string category
+  optional string series
+  optional string label
+  optional int count
+  optional decimal launch_count
+  optional decimal distinct_users
+  optional decimal idle_seconds
+  optional string event_type
+  optional datetime occurred_at
+end type

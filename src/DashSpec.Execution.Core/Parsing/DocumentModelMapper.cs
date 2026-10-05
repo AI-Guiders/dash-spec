@@ -525,7 +525,7 @@ internal static class DocumentModelMapper
     private static DashflowTransformerDefinition ToCoreDashflowTransformer(FsharpDataFlow.DashflowTransformerDef transformer) =>
         new(
             transformer.Id,
-            transformer.Outputs.Select(static x => x.Item1).ToList(),
+            transformer.Outputs.Select(static x => new DashflowTransformerPortDefinition(x.Item1, x.Item2)).ToList(),
             FirstOrNull(transformer.DefaultInputPort),
             FirstOrNull(transformer.DefaultOutputPort));
 

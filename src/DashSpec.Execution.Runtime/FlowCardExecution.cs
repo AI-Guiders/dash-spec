@@ -13,7 +13,9 @@ public static class FlowCardExecution
         }
 
         var source = ResolveBackingSource(document.Dashflow, card.FlowInput);
-        var dataSource = ToDataSource(source);
+        var rowType = ResolvePortRowType(document.Dashflow, card.FlowInput.NodeId, card.FlowInput.PortName)
+            ?? source.OutputRowType;
+        var dataSource = ToDataSource(source) with { RowsType = rowType };
         return card with { DataSource = dataSource };
     }
 
@@ -68,7 +70,7 @@ public static class FlowCardExecution
             return null;
         }
 
-        if (!transformer.OutputPorts.Any(p => PortMatches(p, portName)))
+        if (!transformer.Outputs.Any(p => PortMatches(p.Name, portName)))
         {
             throw new InvalidOperationException(
                 $"Transformer '{nodeId}' has no output port '{portName}'.");
@@ -102,6 +104,30 @@ public static class FlowCardExecution
         }
 
         return TryResolveSource(flow, inbound.FromNode, upstreamPort ?? string.Empty);
+    }
+
+    private static string? ResolvePortRowType(
+        DashflowModuleDefinition flow,
+        string nodeId,
+        string portName)
+    {
+        var source = flow.Sources.FirstOrDefault(s =>
+            string.Equals(s.Id, nodeId, StringComparison.OrdinalIgnoreCase));
+        if (source is not null)
+        {
+            return PortMatches(source.OutputPort, portName) ? source.OutputRowType : null;
+        }
+
+        var transformer = flow.Transformers.FirstOrDefault(t =>
+            string.Equals(t.Id, nodeId, StringComparison.OrdinalIgnoreCase));
+        if (transformer is null)
+        {
+            return null;
+        }
+
+        return transformer.Outputs
+            .FirstOrDefault(p => PortMatches(p.Name, portName))
+            ?.RowType;
     }
 
     private static bool PortMatches(string expected, string actual) =>
