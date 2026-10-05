@@ -285,21 +285,24 @@ module DashflowModuleParser =
             String.Equals(edge.To.NodeId, nodeId, StringComparison.OrdinalIgnoreCase)
             && String.Equals(edge.To.PortName, portName, StringComparison.OrdinalIgnoreCase))
 
-    let private ensureUniqueBoundaryPortNames (flowId: string) (role: string) (wires: DashflowCompositePortWire[]) =
-        let seen = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    /// Composite <see cref="FlowPort.Name"/> must be unique; use <c>node.port</c> when the same inner port name appears on multiple boundary nodes.
+    let private assignBoundaryExternalNames (wires: DashflowCompositePortWire[]) =
+        let portNameCounts =
+            wires
+            |> Array.countBy (fun wire -> wire.InnerPortName.ToLowerInvariant())
+            |> Map.ofArray
 
-        for wire in wires do
-            match seen.TryGetValue wire.InnerPortName with
-            | true, otherNode ->
-                raise (
-                    DashSpecParseException(
-                        $"ambiguous {role} port '{wire.InnerPortName}' on nested flow '{flowId}' (nodes '{otherNode}' and '{wire.InnerNodeId}'); rename inner ports so boundary names are unique."
-                    ))
-            | false, _ ->
-                seen.[wire.InnerPortName] <- wire.InnerNodeId
+        wires
+        |> Array.map (fun wire ->
+            let needsQualified =
+                match Map.tryFind (wire.InnerPortName.ToLowerInvariant()) portNameCounts with
+                | Some count -> count > 1
+                | None -> false
 
-    let private finalizeBoundaryWires (wires: DashflowCompositePortWire[]) =
-        wires |> Array.map (fun wire -> { wire with ExternalName = wire.InnerPortName })
+            let externalName =
+                if needsQualified then $"{wire.InnerNodeId}.{wire.InnerPortName}" else wire.InnerPortName
+
+            { wire with ExternalName = externalName })
 
     let private tryResolveBoundaryPortRef
         (flowId: string)
@@ -416,10 +419,7 @@ module DashflowModuleParser =
         if externalInputs.Length = 0 && externalOutputs.Length = 0 then
             raise (DashSpecParseException($"nested flow '{flowId}' has no subprocess boundary ports (no entry inputs or exit outputs)."))
 
-        ensureUniqueBoundaryPortNames flowId "input" externalInputs
-        ensureUniqueBoundaryPortNames flowId "output" externalOutputs
-
-        finalizeBoundaryWires externalInputs, finalizeBoundaryWires externalOutputs
+        assignBoundaryExternalNames externalInputs, assignBoundaryExternalNames externalOutputs
 
     let private buildScopeGraph
         (sources: DashflowSourceDef[])
