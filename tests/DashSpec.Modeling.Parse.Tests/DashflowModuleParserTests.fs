@@ -286,6 +286,65 @@ end flow pipeline
         Assert.Equal("one", module'.NestedFlows.[0].ExternalInputs.[0].InnerNodeId)
 
     [<Fact>]
+    let ``composite input disambiguates duplicate inner port names with node dot port`` () =
+        let typesText =
+            """
+type Row
+  string Id
+end type
+"""
+
+        let flowText =
+            """
+@flow parent
+
+flow joinBox
+  transformer alpha {
+    ports
+      input stream alpha1: Row
+      output stream mid: Row
+    end ports
+  }
+  transformer beta {
+    ports
+      input stream alpha1: Row
+      output stream mid: Row
+    end ports
+  }
+  transformer merge {
+    ports
+      input stream a: Row
+      input stream b: Row
+      output stream out: Row
+    end ports
+  }
+  alpha [mid] -> [a] merge
+  beta [mid] -> [b] merge
+end flow
+
+source feedA {
+  use provider infer
+  from view demo.v_a
+  ports
+    output stream out: Row
+  end ports
+}
+
+feedA [out] -> [alpha.alpha1] joinBox
+
+end flow parent
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Empty(module'.Diagnostics)
+        Assert.Equal("alpha.alpha1", module'.NestedFlows.[0].ExternalInputs.[0].ExternalName)
+
+        let edge = module'.Graph.Edges |> Array.exactlyOne
+        Assert.Equal("alpha.alpha1", edge.To.PortName)
+
+    [<Fact>]
     let ``rejects dataflow and bare flow roots`` () =
         let catalog = TypeCatalog.empty
 
