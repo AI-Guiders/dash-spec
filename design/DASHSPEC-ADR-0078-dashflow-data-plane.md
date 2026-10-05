@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (concept + IR; parser / runtime phased) |
 | **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md) |
+| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) |
 
 ## Context
 
@@ -82,7 +82,7 @@ Authoring may be **declarative** (`.dashflow` text) or **matrix** (Studio: consu
 | Extension | Root | Contents |
 |-----------|------|----------|
 | `.dashsource` | `@source <id>` | optional standalone source library entry |
-| `.dashflow` | `@flow <id>` … `end flow` | sources, transformers, **links** |
+| `.dashflow` | `@flow <id>` … `end flow` | sources, transformers, **links**; nested **`flow <child> … end flow`** subprocesses ([ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md)) |
 | (inline) | `!include` / `connect { flow "path.dashflow" }` | same IR; no second file-root grammar in tab |
 
 **File root:** `@flow <id>` (same family as `@diagram`, [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md)); graph body closes with **`end flow`** via shared `BlockSyntax` (ADR-0036) — not `end @flow`, not EOF.
