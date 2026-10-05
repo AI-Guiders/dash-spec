@@ -95,19 +95,21 @@ Meaning:
 - `example` is the **boundary** of the inner `flow example { … } end flow` (or of `@flow example` from an include).
 - Outer edges attach to **boundary input** / **boundary output** of that fragment.
 
-### Entity-owned default flow
+### One module graph — no mandatory “default flow” per entity
 
-Every **flow-bearing entity** may carry its own **default flow** — the subprocess you get when you open that entity in the Data Flow Designer without naming a separate file:
+[ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) already resolves **one `FlowGraph` per tab/module**. That is the SSOT; report and card do **not** each require a hidden nested `flow`.
 
-| Entity | Default flow id (illustrative) | Typical contents |
-|--------|-------------------------------|------------------|
-| **Tab / module** | same as `@flow` root or `connect { flow … }` | sources, shared transformers, ports for reports |
-| **Report** | `report` (implicit) | `apply_filters`, fan-out to card inputs, report-only transforms |
-| **Card** | `card.<cardId>` (implicit) | optional micro-steps between `input` and diagram (v2+); v1 may be empty (single `input` only) |
+| Entity | Role in data plane |
+|--------|-------------------|
+| **Module** | Owns the graph (`@flow` / `connect { flow … }`, nested **`flow <id>`** only when the author names a subprocess). |
+| **Report** | **Scope** for filters, pages, toolbar — wiring is **nodes and edges in the module graph** (e.g. `apply_filters`), not an automatic implicit `flow report`. |
+| **Card** | **Consumer**: `input from node.port` points at a port on the **same** resolved graph; diagram stays present-only. |
 
-Authoring does **not** require a second vocabulary: the default flow is still a **`flow <id> … end flow`** block, either nested under the entity in the module file, in a sidecar `.dashflow`, or **materialized only in IR** when Studio extracts a selection (see boundary inference).
+Optional: authors may **name** a subprocess when it helps (`flow report_filters { … } end flow`) — that is explicit composition, not a runtime default container per entity.
 
-Parent graphs reference named subprocesses (`source -> example -> four`); **entity default** subprocesses are wired automatically (report cards `input from …` resolve against the report or module graph without repeating the outer shell).
+**Studio** may show a *filtered view* of the same graph (“cards on this report”, “nodes feeding this card”) — a **lens**, not a second flow IR. Extract subprocess still creates an explicit `flow <id>` with inferred boundaries (below).
+
+**Why skip per-entity default flows:** avoids merging subgraphs, duplicate ids (`card.foo` vs module), and ambiguity about where `apply_filters` lives. Inference applies to **cuts** (`flow example` wrapping `{1,2,3}`), not to spawning empty shells on every card/report.
 
 ### Boundary ports — explicit or inferred
 
@@ -148,17 +150,14 @@ Resolved graph is still one `FlowGraph`, with two equivalent representations (to
 
 Compilation **must not** duplicate SQL sources when flattening; cache keys use logical `(flowNodeId, outputPort, filter snapshot)` from [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md).
 
-### Report and card (where subprocesses live)
+### Where subprocesses live
 
-| Layer | Default flow | Named subprocess |
-|-------|--------------|------------------|
-| Module `@flow` | module graph | `flow calendar`, includes, … |
-| Report | implicit `flow report` (filters → shared rowsets) | optional nested `flow …` slices |
-| Card | implicit `flow card.<id>` (often empty / single input) | micro-pipeline before diagram when needed |
+- **Only** as **named** `flow <id> … end flow` (nested, included file, or Studio extract) inside the **module** graph.
+- **Report / card** participate via **ports and `input`**, not via an extra default subprocess layer.
 
-Card **diagram** stays present plane; it is not a flow node. Card **input** wires to a port on the **enclosing** graph (module or report default flow), not to SQL.
+Card **diagram** is not a flow node. **`input from a.b`** is an edge in the report IR that resolves to `(nodeId, port)` on the module `FlowGraph`.
 
-Studio **extract subprocess** = create `flow <id>` from selection + **infer** boundary ports from the cut; refactor parent edges to `… -> <id> -> …`.
+Studio **extract subprocess** = author an explicit `flow <id>` from a selection + **infer** boundary ports from the cut; parent edges become `… -> <id> -> …`.
 
 ### Non-goals (this ADR)
 
@@ -172,7 +171,6 @@ Studio **extract subprocess** = create `flow <id>` from selection + **infer** bo
 |-------|-------------|
 | **C0** (this ADR) | Terminology, boundary contract, parent `source -> example -> four` sugar, inferred boundaries |
 | **C1** | Parse nested `flow <id> … end flow` in same `@flow` file; IR `FlowCompositeNode` |
-| **C1b** | Entity default-flow metadata in IR; report/card scope for `input` resolution |
 | **C2** | `!include` + reference by id; flatten + typecheck; boundary inference in resolver |
 | **C3** | Designer extract/collapse subprocess; executor subgraph preview |
 
@@ -220,6 +218,6 @@ ingestion -> enrich -> publish
 ## Consequences
 
 - Authors can name and reuse pipeline segments without copy-paste `datasource` or duplicate transformers.
-- Entities **own** a default flow slice; card/report are not second-class — they participate in the same graph with inferred cut surfaces.
+- Card/report stay **views + consumers** on one module graph; subprocesses stay **explicit** (`flow id`) with inferred boundaries only when wrapping a cut.
 - Studio gains **extract subprocess** (infer in/out) and **collapse** (`flow id` box).
 - Parser and resolver gain a **composition + boundary inference** pass before `FlowGraph.typeCheck`.
