@@ -144,7 +144,7 @@ Invalid: `feedA [out] -> [bar] example` → **no input port `bar` on nested flow
 
 Parent wiring uses the **same** link syntax as everywhere else (`producer [out] -> [inPort] consumer`). Sugar `source -> example -> sink` only when the composite exposes exactly one input and one output.
 
-Names must be **unique** across the boundary (duplicate `in` on two entry nodes is a compile error).
+When the same port name appears on more than one boundary node (e.g. `alpha` and `beta` both have `alpha1`), the composite exposes **qualified** names (`alpha.alpha1`, `beta.alpha1`). Parent links use the same bracket syntax: `foo -> [alpha.alpha1] example`. Short `[alpha1]` works only when that inner port name is **unique** on the boundary (otherwise parse error: ambiguous, use `node.port`). This leaks inner node ids to the parent — intentional disambiguation, not a separate alias layer.
 
 Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): composite port types match the inner ports they mirror.
 
