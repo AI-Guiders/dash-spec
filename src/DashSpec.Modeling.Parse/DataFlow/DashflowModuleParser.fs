@@ -244,13 +244,88 @@ module DashflowModuleParser =
             |> Array.tryFind (fun port -> String.Equals(port.Name, ref.PortName, StringComparison.OrdinalIgnoreCase))
             |> Option.map (fun port -> port.Type)
 
-    let private buildGraph
+    let private deriveCompositePorts (innerGraph: FlowGraph) =
+        let hasInputWire (nodeId: string) (portName: string) =
+            innerGraph.Edges
+            |> Array.exists (fun edge ->
+                String.Equals(edge.To.NodeId, nodeId, StringComparison.OrdinalIgnoreCase)
+                && String.Equals(edge.To.PortName, portName, StringComparison.OrdinalIgnoreCase))
+
+        let hasOutputWire (nodeId: string) (portName: string) =
+            innerGraph.Edges
+            |> Array.exists (fun edge ->
+                String.Equals(edge.From.NodeId, nodeId, StringComparison.OrdinalIgnoreCase)
+                && String.Equals(edge.From.PortName, portName, StringComparison.OrdinalIgnoreCase))
+
+        let inputs =
+            innerGraph.Nodes.Values
+            |> Seq.collect (fun node ->
+                node.Inputs
+                |> Array.choose (fun port ->
+                    if hasInputWire node.Id port.Name then None else Some port))
+            |> Seq.distinctBy (fun port -> port.Name, port.Type)
+            |> Seq.toArray
+
+        let outputs =
+            innerGraph.Nodes.Values
+            |> Seq.collect (fun node ->
+                node.Outputs
+                |> Array.choose (fun port ->
+                    if hasOutputWire node.Id port.Name then None else Some port))
+            |> Seq.distinctBy (fun port -> port.Name, port.Type)
+            |> Seq.toArray
+
+        inputs, outputs
+
+    let private compositePorts (nested: DashflowNestedFlowDef) =
+        deriveCompositePorts nested.InnerGraph
+
+    let private resolveCompositeConsumerPort (nested: DashflowNestedFlowDef) (port: string option) =
+        let inputs, _ = compositePorts nested
+
+        match port with
+        | Some value -> value
+        | None ->
+            match inputs with
+            | [| flowPort |] -> flowPort.Name
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"flow link to nested flow '{nested.Id}' requires an explicit input port in [] when multiple external inputs are exposed."
+                    )
+                )
+
+    let private resolveCompositeProducerPort (nested: DashflowNestedFlowDef) (port: string option) =
+        let _, outputs = compositePorts nested
+
+        match port with
+        | Some value -> value
+        | None ->
+            match outputs with
+            | [| flowPort |] -> flowPort.Name
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"flow link from nested flow '{nested.Id}' requires an explicit output port in [] when multiple external outputs are exposed."
+                    )
+                )
+
+    let private buildScopeGraph
         (sources: DashflowSourceDef[])
         (transformers: DashflowTransformerDef[])
+        (nestedFlows: DashflowNestedFlowDef[])
         (links: FlowLinkDef[])
         =
         let nodeList = ResizeArray<FlowNode>()
         let edges = ResizeArray<FlowEdge>()
+
+        let nestedById =
+            let map = Dictionary<string, DashflowNestedFlowDef>(StringComparer.OrdinalIgnoreCase)
+
+            for nested in nestedFlows do
+                map.[nested.Id] <- nested
+
+            map :> IReadOnlyDictionary<_, _>
 
         for source in sources do
             nodeList.Add
@@ -259,7 +334,8 @@ module DashflowModuleParser =
                   Inputs = Array.empty
                   Outputs =
                     [| { Name = source.OutputPort
-                         Type = DashPortType.Stream source.OutputRowType } |] }
+                         Type = DashPortType.Stream source.OutputRowType } |]
+                  InnerFlowId = None }
 
         for transformer in transformers do
             let outputPorts =
@@ -278,19 +354,50 @@ module DashflowModuleParser =
                             | None -> DashPortType.Stream ""
 
                         { Name = input.Name; Type = portType })
-                  Outputs = outputPorts }
+                  Outputs = outputPorts
+                  InnerFlowId = None }
+
+        for nested in nestedFlows do
+            let inputs, outputs = compositePorts nested
+
+            nodeList.Add
+                { Id = nested.Id
+                  Kind = FlowNodeKind.Composite
+                  Inputs = inputs
+                  Outputs = outputs
+                  InnerFlowId = Some nested.Id }
+
+        let tryFindComposite (nodeId: string) =
+            match nestedById.TryGetValue nodeId with
+            | true, nested -> Some nested
+            | false, _ -> None
 
         for link in links do
+            let fromPortName =
+                match tryFindComposite link.FromNode with
+                | Some nested -> resolveCompositeProducerPort nested link.FromPort
+                | None -> resolveProducerPort sources transformers link.FromNode link.FromPort
+
             match transformers |> Array.tryFind (fun t -> String.Equals(t.Id, link.ToNode, StringComparison.OrdinalIgnoreCase)) with
-            | None ->
-                raise (DashSpecParseException($"flow link target '{link.ToNode}' is not a transformer in this flow block."))
             | Some transformer ->
-                let fromPortName = resolveProducerPort sources transformers link.FromNode link.FromPort
                 let toPortName = resolveConsumerPort transformer link.ToPort
 
                 edges.Add
                     { From = FlowNodePortRef.producer link.FromNode fromPortName
                       To = { NodeId = transformer.Id; PortName = toPortName } }
+            | None ->
+                match tryFindComposite link.ToNode with
+                | None ->
+                    raise (
+                        DashSpecParseException(
+                            $"flow link target '{link.ToNode}' is not a transformer or nested flow in this scope."
+                        ))
+                | Some nested ->
+                    let toPortName = resolveCompositeConsumerPort nested link.ToPort
+
+                    edges.Add
+                        { From = FlowNodePortRef.producer link.FromNode fromPortName
+                          To = { NodeId = nested.Id; PortName = toPortName } }
 
         let nodeMap =
             let map = Dictionary<string, FlowNode>(StringComparer.OrdinalIgnoreCase)
@@ -327,11 +434,42 @@ module DashflowModuleParser =
 
         FlowGraph.ofNodes patchedNodes edges
 
-    let private parseFlowBody
+    let private ensureUniqueNodeId (scope: string) (id: string) (seen: HashSet<string>) =
+        if String.IsNullOrWhiteSpace id then
+            raise (DashSpecParseException($"{scope} requires an id."))
+
+        if seen.Contains id then
+            raise (DashSpecParseException($"Duplicate flow id '{id}' in {scope}."))
+
+        seen.Add id |> ignore
+
+    let private finishNestedFlow
+        (flowId: string)
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (nestedFlows: DashflowNestedFlowDef[])
+        (links: FlowLinkDef[])
+        (typeCatalog: TypeCatalog)
+        =
+        let innerGraph = buildScopeGraph sources transformers nestedFlows links
+        let diagnostics = FlowGraph.typeCheck innerGraph typeCatalog
+
+        { Id = flowId
+          Sources = sources
+          Transformers = transformers
+          NestedFlows = nestedFlows
+          Links = links
+          InnerGraph = innerGraph
+          Diagnostics = diagnostics |> List.toArray }
+
+    let rec private parseFlowBody
         (reader: TokenReader)
+        (seenIds: HashSet<string>)
         (sources: ResizeArray<DashflowSourceDef>)
         (transformers: ResizeArray<DashflowTransformerDef>)
+        (nestedFlows: ResizeArray<DashflowNestedFlowDef>)
         (links: ResizeArray<FlowLinkDef>)
+        (typeCatalog: TypeCatalog)
         (isDone: unit -> bool)
         =
         while not (isDone ()) && not reader.IsEof do
@@ -340,10 +478,14 @@ module DashflowModuleParser =
             if isDone () then ()
             elif reader.TryKeyword "source" then
                 let sourceId = reader.ReadIdent()
+                ensureUniqueNodeId "source" sourceId seenIds
                 sources.Add(parseSourceBlock reader sourceId)
             elif reader.TryKeyword "transformer" then
                 let transformerId = reader.ReadIdent()
+                ensureUniqueNodeId "transformer" transformerId seenIds
                 transformers.Add(parseTransformerBlock reader transformerId)
+            elif reader.TryKeyword "flow" then
+                nestedFlows.Add(parseNestedFlowBlock reader typeCatalog seenIds)
             else
                 let saved = reader.SavePosition()
                 let nodeId = reader.ReadIdent()
@@ -353,21 +495,53 @@ module DashflowModuleParser =
                 | Some link -> links.Add link
                 | None ->
                     reader.RestorePosition saved
-                    raise (reader.Unexpected "source, transformer, or flow link")
+                    raise (reader.Unexpected "source, transformer, nested flow, or flow link")
+
+    and private parseNestedFlowBlock (reader: TokenReader) (typeCatalog: TypeCatalog) (seenIds: HashSet<string>) =
+        let flowId = reader.ReadIdent()
+        ensureUniqueNodeId "nested flow" flowId seenIds
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+        let sources = ResizeArray<DashflowSourceDef>()
+        let transformers = ResizeArray<DashflowTransformerDef>()
+        let nestedFlows = ResizeArray<DashflowNestedFlowDef>()
+        let links = ResizeArray<FlowLinkDef>()
+
+        parseFlowBody
+            reader
+            seenIds
+            sources
+            transformers
+            nestedFlows
+            links
+            typeCatalog
+            (fun () -> BlockSyntax.isBlockEnd reader "flow" (Some flowId))
+
+        BlockSyntax.expectBlockEnd reader "flow" (Some flowId)
+
+        finishNestedFlow
+            flowId
+            (sources.ToArray())
+            (transformers.ToArray())
+            (nestedFlows.ToArray())
+            (links.ToArray())
+            typeCatalog
 
     let private finishModule
         (flowId: string)
         (sources: DashflowSourceDef[])
         (transformers: DashflowTransformerDef[])
+        (nestedFlows: DashflowNestedFlowDef[])
         (links: FlowLinkDef[])
         (typeCatalog: TypeCatalog)
         =
-        let graph = buildGraph sources transformers links
+        let graph = buildScopeGraph sources transformers nestedFlows links
         let diagnostics = FlowGraph.typeCheck graph typeCatalog
 
         { FlowId = flowId
           Sources = sources
           Transformers = transformers
+          NestedFlows = nestedFlows
           Links = links
           Graph = graph
           Diagnostics = diagnostics |> List.toArray }
@@ -376,20 +550,31 @@ module DashflowModuleParser =
     let private parseFlowEnvelope (reader: TokenReader) (flowId: string) (typeCatalog: TypeCatalog) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
+        let seenIds = HashSet<string>(StringComparer.OrdinalIgnoreCase)
         let sources = ResizeArray<DashflowSourceDef>()
         let transformers = ResizeArray<DashflowTransformerDef>()
+        let nestedFlows = ResizeArray<DashflowNestedFlowDef>()
         let links = ResizeArray<FlowLinkDef>()
 
         parseFlowBody
             reader
+            seenIds
             sources
             transformers
+            nestedFlows
             links
+            typeCatalog
             (fun () -> BlockSyntax.isBlockEnd reader "flow" (Some flowId))
 
         BlockSyntax.expectBlockEnd reader "flow" (Some flowId)
 
-        finishModule flowId (sources.ToArray()) (transformers.ToArray()) (links.ToArray()) typeCatalog
+        finishModule
+            flowId
+            (sources.ToArray())
+            (transformers.ToArray())
+            (nestedFlows.ToArray())
+            (links.ToArray())
+            typeCatalog
 
     /// `.dashflow` fragment: <c>@flow &lt;id&gt;</c> … <c>end flow</c>.
     let parseModule (text: string) (typeCatalog: TypeCatalog) =
