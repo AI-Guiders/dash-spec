@@ -286,7 +286,7 @@ end flow pipeline
         Assert.Equal("one", module'.NestedFlows.[0].ExternalInputs.[0].InnerNodeId)
 
     [<Fact>]
-    let ``composite input disambiguates duplicate inner port names with node dot port`` () =
+    let ``duplicate boundary port names on nested flow is ambiguous`` () =
         let typesText =
             """
 type Row
@@ -322,27 +322,16 @@ flow joinBox
   beta [mid] -> [b] merge
 end flow
 
-source feedA {
-  use provider infer
-  from view demo.v_a
-  ports
-    output stream out: Row
-  end ports
-}
-
-feedA [out] -> [alpha.alpha1] joinBox
-
 end flow parent
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
-        let module' = DashflowModuleParser.parseModule flowText catalog
 
-        Assert.Empty(module'.Diagnostics)
-        Assert.Equal("alpha.alpha1", module'.NestedFlows.[0].ExternalInputs.[0].ExternalName)
+        let ex =
+            Assert.Throws<DashSpecParseException>(fun () ->
+                DashflowModuleParser.parseModule flowText catalog |> ignore)
 
-        let edge = module'.Graph.Edges |> Array.exactlyOne
-        Assert.Equal("alpha.alpha1", edge.To.PortName)
+        Assert.Contains("ambiguous", ex.Message)
 
     [<Fact>]
     let ``rejects dataflow and bare flow roots`` () =
