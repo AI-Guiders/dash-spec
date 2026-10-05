@@ -144,7 +144,9 @@ Invalid: `feedA [out] -> [bar] example` → **no input port `bar` on nested flow
 
 Parent wiring uses the **same** link syntax as everywhere else (`producer [out] -> [inPort] consumer`). Sugar `source -> example -> sink` only when the composite exposes exactly one input and one output.
 
-Boundary port names must be **unique** within the subprocess (same rule as a flat graph: two entry nodes cannot both expose `alpha1`). Otherwise compile error: **ambiguous** `input`/`output` port on nested flow `example` — rename inner ports (e.g. `beta1` on `beta`). Parent links always use those names: `foo -> [alpha1] example`. Optional qualified `[alpha.alpha1]` in brackets may still resolve when unambiguous; the compiler does **not** auto-qualify or invent `node.port` names in the IR.
+Inner nodes may reuse the same port name (e.g. `alpha1` on `alpha` and on `beta`). The composite node still needs **distinct** link names, so the IR uses `alpha1` when unique on the boundary and `alpha.alpha1` / `beta.alpha1` when not. That is not an author-facing alias layer — it is how the union is stored.
+
+**Ambiguous** is only on the **parent** link: `foo -> [alpha1] example` when both `alpha` and `beta` expose `alpha1` → error; use `foo -> [alpha.alpha1] example` or `[beta.alpha1]`. Unknown port → `no input port 'bar' on nested flow 'example'`.
 
 Typecheck ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)): composite port types match the inner ports they mirror.
 
