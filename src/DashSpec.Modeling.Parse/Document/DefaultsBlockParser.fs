@@ -49,7 +49,7 @@ module DefaultsBlockParser =
 
             if BlockSyntax.isBlockEnd reader blockKeyword None then ()
             else
-                let key = reader.ReadIdent()
+                let key = reader.ReadDottedPropertyKey()
 
                 if key.Equals("time_format", StringComparison.OrdinalIgnoreCase) then
                     reader.Expect TokenKind.Eq

@@ -117,7 +117,23 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         let allowQuoted = defaultArg allowQuoted false
         this.SkipNewlines()
         if allowQuoted && tokens.[index].Kind = TokenKind.String then this.ReadString()
-        else this.ReadIdent()
+        else this.ReadDottedPropertyKey()
+
+    /// <summary>Reads <c>filter.usage_date.range</c> style keys on one line.</summary>
+    member this.ReadDottedPropertyKey() =
+        let first = this.ReadIdent()
+        let sb = System.Text.StringBuilder(first)
+
+        while not (this.IsOnNewline()) && tokens.[index].Kind = TokenKind.Dot do
+            this.Advance()
+
+            if tokens.[index].Kind <> TokenKind.Ident then
+                raise (this.Unexpected "identifier after '.' in property key")
+
+            sb.Append('.') |> ignore
+            sb.Append(this.ReadIdentSameLine()) |> ignore
+
+        sb.ToString()
 
     member this.ReadScalarValue() =
         this.SkipNewlines()

@@ -26,8 +26,8 @@ public sealed class DashSpecParserFacadeTests
             end dashboard
             """;
 
-        var executionDoc = DashSpecParser.Parse(text);
-        var coreDoc = DashSpec.Core.Parsing.DashSpecParser.Parse(text);
+        var executionDoc = ExecutionTestRowTypes.Parse(text);
+        var coreDoc = ExecutionTestRowTypes.Parse(text);
 
         Assert.Equal(coreDoc.Id, executionDoc.Id);
         Assert.Equal(coreDoc.Cards.Count, executionDoc.Cards.Count);

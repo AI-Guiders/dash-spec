@@ -22,9 +22,11 @@ public enum DashflowSourceFromKind
     SqlFile,
 }
 
+public sealed record DashflowTransformerPortDefinition(string Name, string RowType);
+
 public sealed record DashflowTransformerDefinition(
     string Id,
-    IReadOnlyList<string> OutputPorts,
+    IReadOnlyList<DashflowTransformerPortDefinition> Outputs,
     string? DefaultInputPort,
     string? DefaultOutputPort);
 
