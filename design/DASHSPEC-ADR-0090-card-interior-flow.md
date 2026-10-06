@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | Accepted (parser v1) |
 | **Date** | 2026-10-06 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) |
+| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md) |
 
 ## Context
 
@@ -136,7 +136,7 @@ Or interior-only edges inside `card … flow` once `apply` nodes exist. **Non-go
 | Phase | Deliverable |
 |-------|-------------|
 | **v1** (done) | Auto-wire inputs↔slots; `bind <slot>` inside `flow` |
-| **v2a** | `apply <id>` interior node + multi-hop links; desugar v1 `bind` |
+| **v2a** | `apply <id> on <slot>` (+ optional `use` / `feed … to`); desugar v1 `bind` |
 | **v2b** | Optional `filterwire` (or module-level wiring block) for chrome/query/wire edges; Studio matrix |
 | **v2c** | Core round-trip `CardInteriorFlowGraph` + filter wiring on `CardDefinition` |
 
