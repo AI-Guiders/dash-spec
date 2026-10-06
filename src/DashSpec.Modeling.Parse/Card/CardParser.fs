@@ -145,13 +145,20 @@ module CardParser =
         (reader: TokenReader)
         (cardId: string)
         (specDirectory: string option)
+        (slotBuilder: CardDiagramSlotBuilder.Builder)
+        (slotName: string)
         =
         let dataSource = ref None
         let boundFilters = ResizeArray<string>()
         parseDataBlock reader cardId specDirectory dataSource boundFilters
         match dataSource.Value with
-        | None -> raise (DashSpecParseException($"Card '{cardId}': data block requires datasource."))
         | Some ds -> ds, boundFilters :> IReadOnlyList<_>
+        | None ->
+            if slotBuilder.Slots.ContainsKey slotName
+               && slotBuilder.Slots.[slotName].FlowInput.IsSome then
+                CardDiagramSlotBuilder.unboundFlowDataSource, boundFilters :> IReadOnlyList<_>
+            else
+                raise (DashSpecParseException($"Card '{cardId}': data block requires datasource or a prior 'input for {slotName}'."))
 
     let private parseDiagramStatement
         (reader: TokenReader)
@@ -437,7 +444,7 @@ module CardParser =
                     let slotName = reader.ReadIdent()
                     if String.IsNullOrWhiteSpace slotName then
                         raise (DashSpecParseException($"Card '{id}': data for requires slot id."))
-                    let ds, slotBind = parseDataBlockForSlot reader id specDirectory
+                    let ds, slotBind = parseDataBlockForSlot reader id specDirectory slotBuilder slotName
                     CardDiagramSlotBuilder.applyData slotBuilder slotName ds slotBind
                 else
                     parseDataBlock reader id specDirectory dataSource boundFilters
@@ -501,9 +508,14 @@ module CardParser =
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
                 reader.SkipNewlines()
             elif reader.TryKeyword "input" then
-                if flowInput.Value.IsSome then
-                    raise (DashSpecParseException($"Card '{id}': only one flow input is supported in v1."))
-                flowInput.Value <- Some(CardFlowInputParser.parse reader id)
+                let parsed = CardFlowInputParser.parse reader id
+                match parsed.ForSlot with
+                | Some slotRef ->
+                    CardDiagramSlotBuilder.applyFlowInput slotBuilder slotRef parsed.Input id
+                | None ->
+                    if flowInput.Value.IsSome then
+                        raise (DashSpecParseException($"Card '{id}': only one card-level flow input is supported; use 'input for <slot>' for additional slots."))
+                    flowInput.Value <- Some parsed.Input
                 reader.SkipNewlines()
             elif reader.TryKeyword "datasource" then
                 dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
@@ -662,8 +674,21 @@ module CardParser =
         if dataSource.Value.IsNone && useCardPreset.IsNone then
             dataSource.Value <- Some primaryDataSource
 
-        if dataSource.Value.IsNone && useCardPreset.IsNone && flowInput.Value.IsNone then
+        let anySlotFlowInput =
+            diagramSlotsFinal.Values |> Seq.exists (fun slot -> slot.FlowInput.IsSome)
+
+        if dataSource.Value.IsNone && useCardPreset.IsNone && flowInput.Value.IsNone && not anySlotFlowInput then
             raise (DashSpecParseException("Card requires a datasource block, flow input, or use <card-preset>."))
+
+        let resolvedCardFlowInput =
+            match flowInput.Value with
+            | Some fi -> Some fi
+            | None ->
+                let primaryKey = CardDiagramSlotBuilder.resolvePrimarySlotKey slotBuilder interiorBoard.Value
+                if diagramSlotsFinal.ContainsKey primaryKey then
+                    diagramSlotsFinal.[primaryKey].FlowInput
+                else
+                    None
 
         { Id = id
           Title = title.Value
@@ -700,4 +725,4 @@ module CardParser =
           Chrome = chrome.Value
           Inspect = inspect.Value
           Tooltip = tooltip.Value
-          FlowInput = flowInput.Value }
+          FlowInput = resolvedCardFlowInput }

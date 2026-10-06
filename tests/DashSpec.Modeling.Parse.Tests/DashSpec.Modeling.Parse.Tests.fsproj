@@ -22,6 +22,7 @@
     <Compile Include="TimeShiftLexerTests.fs" />
     <Compile Include="DashflowModuleParserTests.fs" />
     <Compile Include="DemoSampleParseTests.fs" />
+    <Compile Include="MultiSlotFlowInputParseTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />

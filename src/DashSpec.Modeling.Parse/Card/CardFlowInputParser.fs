@@ -6,8 +6,22 @@ open DashSpec.Modeling.Parse.Lexing
 
 module CardFlowInputParser =
 
+    [<CLIMutable>]
+    type ParseResult =
+        { ForSlot: string option
+          Input: CardFlowInput }
+
     let parse (reader: TokenReader) (cardId: string) =
         reader.SkipNewlines()
+        let forSlot =
+            if reader.TryKeyword "for" then
+                let slotRef = reader.ReadIdent()
+                if String.IsNullOrWhiteSpace slotRef then
+                    raise (DashSpecParseException($"Card '{cardId}': input for requires a diagram slot id."))
+                Some slotRef
+            else
+                None
+
         let alias = reader.ReadIdent()
 
         if String.IsNullOrWhiteSpace alias then
@@ -27,6 +41,8 @@ module CardFlowInputParser =
         if String.IsNullOrWhiteSpace portName then
             raise (DashSpecParseException($"Card '{cardId}': input '{alias}' requires a port name after '.'."))
 
-        { Alias = alias
-          NodeId = nodeId
-          PortName = portName }
+        { ForSlot = forSlot
+          Input =
+            { Alias = alias
+              NodeId = nodeId
+              PortName = portName } }
