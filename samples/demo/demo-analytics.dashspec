@@ -10,7 +10,6 @@
 
     connect
         use palette demo_apps
-        flow "flows/demo-period-peak.dashflow"
     end connect
 
     report
@@ -20,9 +19,7 @@
                 period_grain
                 period_start
             end filters
-
-            input rows from period_peak.rows
-
+            input rows from period_peak_tz.rows
             diagram demo_period_peak_by_app_bar
                 bind
                     period_grain, period_start, app_name
@@ -30,86 +27,82 @@
             end card
 
             card peak_apps_heatmap as "**Peak apps** per user"
+                input rows from peak_apps_tz.rows
                 diagram demo_peak_apps_heatmap
-                    datasource infer view demo.v_daily_peak_concurrent_apps_per_user rows FixtureRow
                     bind
                         usage_date, user_name
                     end bind
-
                     legend
-                    min = "min apps"
-                    max = "max **{max}**"
-                end legend
-            end card
-
-            card idle_table as "Idle minutes (user × app)"
-                filters
-                    idle_top
-                end filters
-
-                diagram demo_idle_table
-                    datasource infer view demo.v_daily_idle_minutes_by_user_app rows FixtureRow
-                    bind
-                        usage_date, user_name, app_name
-                    end bind
+                        min = "min apps"
+                        max = "max **{max}**"
+                    end legend
                 end card
 
-                card idle_histogram as "Idle minutes (histogram)"
-                    diagram demo_idle_histogram
-                        datasource infer view demo.v_daily_idle_minutes_by_user_app rows FixtureRow
+                card idle_table as "Idle minutes (user × app)"
+                    filters
+                        idle_top
+                    end filters
+                    input rows from idle_tz.rows
+                    diagram demo_idle_table
                         bind
                             usage_date, user_name, app_name
                         end bind
                     end card
 
-                    card idle_vs_peak_scatter as "Idle vs peak apps"
-                        diagram demo_idle_vs_peak_scatter
-                            datasource infer sql file "sql/idle-vs-peak-scatter.sql" rows FixtureRow
+                    card idle_histogram as "Idle minutes (histogram)"
+                        input rows from idle_tz.rows
+                        diagram demo_idle_histogram
                             bind
                                 usage_date, user_name, app_name
                             end bind
                         end card
 
-                        card idle_by_app_box as "Idle minutes by app (box)"
-                            diagram demo_idle_by_app_box
-                                datasource infer view demo.v_daily_idle_minutes_by_user_app rows FixtureRow
+                        card idle_vs_peak_scatter as "Idle vs peak apps"
+                            input rows from idle_scatter_tz.rows
+                            diagram demo_idle_vs_peak_scatter
                                 bind
                                     usage_date, user_name, app_name
                                 end bind
                             end card
 
-                            card peak_by_app_treemap as "Peak by app (treemap)"
-                                filters
-                                    period_grain
-                                    period_start
-                                end filters
-
-                                diagram demo_peak_by_app_treemap
-                                    datasource infer view demo.v_peak_concurrent_by_period rows FixtureRow
+                            card idle_by_app_box as "Idle minutes by app (box)"
+                                input rows from idle_tz.rows
+                                diagram demo_idle_by_app_box
                                     bind
-                                        period_grain, period_start, app_name
+                                        usage_date, user_name, app_name
                                     end bind
                                 end card
 
-                                card peak_gauge as "Peak concurrent (gauge)"
-                                    diagram demo_peak_gauge
-                                        datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
+                                card peak_by_app_treemap as "Peak by app (treemap)"
+                                    filters
+                                        period_grain
+                                        period_start
+                                    end filters
+                                    input rows from period_peak_tz.rows
+                                    diagram demo_peak_by_app_treemap
                                         bind
-                                            usage_date, user_name, app_name
+                                            period_grain, period_start, app_name
                                         end bind
                                     end card
 
-                                    card peak_by_app_windrose as "Peak by app (wind rose)"
-                                        filters
-                                            period_grain
-                                            period_start
-                                        end filters
-
-                                        diagram demo_peak_by_app_windrose
-                                            datasource infer view demo.v_peak_concurrent_by_period rows FixtureRow
+                                    card peak_gauge as "Peak concurrent (gauge)"
+                                        input rows from daily_peak_tz.rows
+                                        diagram demo_peak_gauge
                                             bind
-                                                period_grain, period_start, app_name
+                                                usage_date, user_name, app_name
                                             end bind
                                         end card
-                                    end report
-                                end tab
+
+                                        card peak_by_app_windrose as "Peak by app (wind rose)"
+                                            filters
+                                                period_grain
+                                                period_start
+                                            end filters
+                                            input rows from period_peak_tz.rows
+                                            diagram demo_peak_by_app_windrose
+                                                bind
+                                                    period_grain, period_start, app_name
+                                                end bind
+                                            end card
+                                        end report
+                                    end tab

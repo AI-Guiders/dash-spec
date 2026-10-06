@@ -12,6 +12,7 @@
     !include "demo-rows.dashtype"
     connect
         use palette demo_apps
+        flow "flows/demo-report.dashflow"
         layout grid
             columns = 12
             gap = 16
@@ -70,32 +71,32 @@
             end tab
 
             card peak_concurrent_kpi as "Peak concurrent (max)"
+                input rows from daily_peak_tz.rows
                 diagram demo_peak_kpi
-                    datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
                     bind
                         usage_date, user_name, app_name
                     end bind
                 end card
 
                 card peak_sparkline as "Peak trend"
+                    input rows from daily_peak_tz.rows
                     diagram demo_peak_sparkline
-                        datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
                         bind
                             usage_date, user_name, app_name
                         end bind
                     end card
 
                     card peak_concurrent_proxy as "Peak concurrent (proxy)"
+                        input rows from daily_peak_tz.rows
                         diagram demo_peak_concurrent_line
-                            datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
                             bind
                                 usage_date, user_name, app_name
                             end bind
                         end card
 
                         card peak_stacked_bar as "Peak by product (stacked)"
+                            input rows from daily_peak_tz.rows
                             diagram demo_peak_stacked_bar
-                                datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
                                 bind
                                     usage_date, user_name, app_name
                                 end bind
@@ -105,33 +106,32 @@
                                 filters
                                     activity_slot
                                 end filters
-
+                                input rows from activity_tz.rows
                                 diagram demo_activity_5min_line
-                                    datasource infer view demo.v_five_minute_activity rows FixtureRow
                                     bind
                                         usage_date, user_name, app_name
                                     end bind
                                 end card
 
                                 card activity_area as "Activity (area)"
+                                    input rows from activity_tz.rows
                                     diagram demo_activity_area
-                                        datasource infer view demo.v_five_minute_activity rows FixtureRow
                                         bind
                                             usage_date, user_name, app_name
                                         end bind
                                     end card
 
                                     card dau_by_product as "DAU by product"
+                                        input rows from dau_tz.rows
                                         diagram demo_dau_bar
-                                            datasource infer view demo.v_daily_active_users rows FixtureRow
                                             bind
                                                 usage_date, user_name, app_name
                                             end bind
                                         end card
 
                                         card dau_by_product_donut as "DAU by product (donut)"
+                                            input rows from dau_tz.rows
                                             diagram demo_dau_donut
-                                                datasource infer view demo.v_daily_active_users rows FixtureRow
                                                 bind
                                                     usage_date, user_name, app_name
                                                 end bind
@@ -141,9 +141,8 @@
                                                 filters
                                                     events_top
                                                 end filters
-
+                                                input rows from events_tz.rows
                                                 diagram demo_events_detail_table
-                                                    datasource infer view demo.v_events_detail rows FixtureRow
                                                     bind
                                                         app_name, user_name
                                                     end bind
