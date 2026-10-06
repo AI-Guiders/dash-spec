@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted (Phase 1 in code) |
 | **Date** | 2026-10-06 |
 | **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) |
 
@@ -114,7 +114,7 @@ end dashboard
 2. **Selective import** — `using diagram <id> from "relative/path.dashdiagram"` (id must match `@diagram` in file; linker validates).
 3. **Qualified use (optional v1.1)** — `diagram ref heatmap stakeholder.peak_apps_heatmap` when multiple imports could clash; if omitted, unqualified id must be unique in the dependency closure.
 
-**Glob in envelope — rejected** for the target language. Lint: `DSxxxx: glob in using/import is not allowed; list units or use tooling`.
+**Glob in envelope** — allowed as **project-style membership** (slnx / `Compile Include`): expand to a deterministic path set, then **link** (no semantic merge order). Lex sort is for CI diff only. `!include` / `import "…/*"` remain valid; `using "…"` is an alias. `LinkOnlyReferencedDiagramUnits` (default runtime) parses only report-referenced `.dashdiagram` files from that set; types/flow/layout units in the set are still loaded.
 
 ### Name resolution
 
