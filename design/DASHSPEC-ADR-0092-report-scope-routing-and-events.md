@@ -99,15 +99,15 @@ card activity_5min as "Activity 5-min" {
 Host browse (detail cards consume host chrome):
 
 ```text
-page stakeholder_peak {
+page analytics_drill {
   flow
-    browse_peak.user_name -> host chrome card peak_detail_table
-    browse_peak.app_name -> host chrome card peak_detail_table
+    events_browse.user_name -> host chrome card events_detail
+    events_browse.app_name -> host chrome card events_detail
   end flow
 
-  card browse_peak …
-  card peak_detail_table …
-    filters host browse_peak
+  card events_browse …
+  card events_detail …
+    filters host events_browse
   end card
 }
 ```

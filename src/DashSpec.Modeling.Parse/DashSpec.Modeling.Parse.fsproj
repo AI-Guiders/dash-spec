@@ -79,6 +79,7 @@
     <Compile Include="DataFlow\DashflowProviderBridge.fs" />
     <Compile Include="DataFlow\FlowPortsParser.fs" />
     <Compile Include="DataFlow\FlowLinkParser.fs" />
+    <Compile Include="DataFlow\FlowLinkBlockParser.fs" />
     <Compile Include="DataFlow\TransformStepParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />
