@@ -61,8 +61,6 @@ report "Interior"
   input heatmap from utilization.utilization
   input drill from drill_src.rows
   flow
-    heatmap -> heatmap
-    drill -> drill
     bind heatmap usage_date
     bind drill usage_date
   end flow
@@ -86,7 +84,7 @@ end tab card_interior_flow
             let card = document.Cards.[0]
             Assert.Equal(2, card.CardInputs.Count)
             Assert.True(card.InteriorFlow.IsSome)
-            Assert.Equal(2, card.InteriorFlow.Value.Links.Count)
+            Assert.Empty(card.InteriorFlow.Value.Links)
             Assert.Equal(2, card.InteriorFlow.Value.SlotBinds.Count)
             let heatmap = card.DiagramSlots.["heatmap"]
             let drill = card.DiagramSlots.["drill"]

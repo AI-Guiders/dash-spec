@@ -29,14 +29,13 @@ input heatmap from daily_peak_concurrent_proxy_heatmap_tz.rows
 input drill from daily_peak_concurrent_proxy_at_peak_tz.rows
 
 flow
-  heatmap -> heatmap
-  drill -> drill
   bind heatmap usage_date, app_name
   bind drill usage_date, app_name
 end flow
 ```
 
-- Links reuse [FlowLinkParser](src/DashSpec.Modeling.Parse/DataFlow/FlowLinkParser.fs) (`->` = producer to consumer).
+- When a card `input` alias matches a diagram slot id (`input heatmap` + slot `heatmap`), wiring is **implicit** (no `heatmap -> heatmap`).
+- Explicit wiring when names differ: `facts -> heatmap` (same [FlowLinkParser](src/DashSpec.Modeling.Parse/DataFlow/FlowLinkParser.fs) arrow), or shorthand `slot heatmap` (= feed input `heatmap` into slot `heatmap`).
 - `bind <slotRef>` accepts comma list or block (same filter names as `data for … bind`).
 - Legacy `input for <slot> from …` and `data for <slot> bind …` remain valid.
 

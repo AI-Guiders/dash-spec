@@ -54,12 +54,22 @@ module CardInteriorFlowParser =
             elif reader.TryKeyword "bind" then
                 slotBinds.Add(parseSlotBind reader cardId)
                 reader.SkipNewlines()
+            elif reader.TryKeyword "slot" then
+                let slotRef = reader.ReadIdent()
+                if String.IsNullOrWhiteSpace slotRef then
+                    raise (DashSpecParseException($"Card '{cardId}': slot requires a diagram slot id."))
+                links.Add
+                    { FromNode = slotRef
+                      FromPort = None
+                      ToNode = slotRef
+                      ToPort = None }
+                reader.SkipNewlines()
             else
                 let saved = reader.SavePosition()
                 let fromNode = reader.ReadIdent()
 
                 if String.IsNullOrWhiteSpace fromNode then
-                    raise (reader.Unexpected "bind, flow link, or end flow")
+                    raise (reader.Unexpected "bind, slot, flow link, or end flow")
 
                 let fromPort = FlowLinkParser.tryReadBracketPortSameLine reader
 
@@ -67,7 +77,10 @@ module CardInteriorFlowParser =
                 | Some link -> links.Add link
                 | None ->
                     reader.RestorePosition saved
-                    raise (reader.Unexpected "bind or flow link (producer [port] -> [port] consumer)")
+                    raise (
+                        reader.Unexpected
+                            "bind, slot <id>, or flow link (inputAlias [port] -> [port] slotRef)"
+                    )
 
         BlockSyntax.expectBlockEnd reader "flow" None
 
