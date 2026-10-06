@@ -72,7 +72,7 @@ public static class KpiPriorPeriod
 
     public static (string Text, string Tone) FormatDelta(double current, double prior)
     {
-        var culture = CultureInfo.CurrentCulture;
+        var culture = LabelFormat.ResolveReportCulture();
         var absolute = current - prior;
         var tone = absolute switch
         {

@@ -471,7 +471,7 @@ public sealed class CardRenderService(
 
     private static string FormatScalarMeasure(object value, DiagramDefinition diagram)
     {
-        var culture = CultureInfo.CurrentCulture;
+        var culture = LabelFormat.ResolveReportCulture();
         var preferInteger =
             diagram.Properties.TryGetValue("scale_value", out var scale) &&
             scale.Equals("integer", StringComparison.OrdinalIgnoreCase);

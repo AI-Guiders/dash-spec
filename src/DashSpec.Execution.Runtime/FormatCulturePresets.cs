@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using DashSpec.Core.Localization;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -7,16 +8,14 @@ namespace DashSpec.Execution.Runtime;
 /// <summary>Maps named format presets to BCL patterns for a report culture (ru-RU, en-US, en-GB, …).</summary>
 public static partial class FormatCulturePresets
 {
-    internal const string FallbackCultureName = "ru-RU";
-
     public static CultureInfo ResolveCulture(ReportFormatDefaults? defaults, CultureInfo? uiCulture)
     {
         if (!string.IsNullOrWhiteSpace(defaults?.Culture))
         {
-            return CultureInfo.GetCultureInfo(defaults.Culture.Trim());
+            return DashSpecCultures.Resolve(defaults.Culture);
         }
 
-        return uiCulture ?? CultureInfo.GetCultureInfo(FallbackCultureName);
+        return uiCulture ?? DashSpecCultures.Get(DashSpecCultures.FallbackName);
     }
 
     public static string ResolvePresetPattern(string preset, CultureInfo culture)

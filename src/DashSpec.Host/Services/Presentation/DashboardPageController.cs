@@ -958,7 +958,9 @@ public sealed class DashboardPageController : IDisposable
             ActivePageId = ActivePageId,
             SwitchableCards = BuildSwitchableCards(),
             VizToolbarCards = BuildVizToolbarCards(),
-            Culture = _cultureAmbient.Culture,
+            Culture = FormatCulturePresets.ResolveCulture(
+                _session.Document.ResolvedFormatDefaults,
+                _cultureAmbient.Culture),
         };
 
     IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
