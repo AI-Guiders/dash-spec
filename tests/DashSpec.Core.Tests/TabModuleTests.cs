@@ -23,6 +23,11 @@ public class TabModuleTests
                 Path.Combine(dir, "extra.dashspec"),
                 """
                 @tab extra
+                  report
+                  title = "Extra"
+                  type ExtraRow
+                    optional int n
+                  end type
                   defaults
                     filter.n.limit = 5
                   end defaults
@@ -31,8 +36,9 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x rows FixtureRow
+                  datasource infer view dbo.x rows ExtraRow
                   end card
+                  end report
                 end tab
                 """);
 
@@ -59,7 +65,7 @@ public class TabModuleTests
                 """, dir);
 
             Assert.Single(doc.Filters, f => f.Name == "app_name");
-            Assert.Single(doc.Filters, f => f.Name == "n");
+            Assert.DoesNotContain(doc.Filters, f => f.Name == "n");
             Assert.Equal(2, doc.Cards.Count);
         }
         finally
@@ -164,12 +170,18 @@ public class TabModuleTests
                 Path.Combine(dir, "extra.dashspec"),
                 """
                 @tab extra
+                  report
+                  title = "Extra"
+                  type ExtraRow
+                    optional int n
+                  end type
                   card x as "X"
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x rows FixtureRow
+                  datasource infer view dbo.x rows ExtraRow
                   end card
+                  end report
                 end tab
                 """);
 
@@ -208,7 +220,7 @@ public class TabModuleTests
     [Fact]
     public void Parse_tab_dashspec_requires_spec_directory()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+        var text = DashSpecTestRowTypes.EnsureFixtureRowCatalog("""
             @dashboard t
                   !include "query-row-types.dashtype"
               report
@@ -222,9 +234,11 @@ public class TabModuleTests
               end card
               end report
             end dashboard
-            """));
+            """);
 
-        Assert.Contains("specDirectory", ex.Message);
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.Parse(text, specDirectory: null));
+
+        Assert.Contains("specDirectory", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

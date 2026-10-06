@@ -182,7 +182,7 @@ public class QueryCompilerTests
               diagram bar
               x = user_sam y
               end bar
-              datasource infer sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam"
+              datasource infer sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam" rows FixtureRow
               end card
               end report
             end dashboard
