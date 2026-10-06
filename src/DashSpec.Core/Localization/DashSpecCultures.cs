@@ -2,34 +2,30 @@ using System.Globalization;
 
 namespace DashSpec.Core.Localization;
 
-/// <summary>BCL culture names for DashSpec (host + report). Not tied to a single product locale.</summary>
+/// <summary>BCL culture names for DashSpec (host + report). Specific cultures only (<c>ru-RU</c>, <c>en-US</c>, …).</summary>
 public static class DashSpecCultures
 {
-    public const string FallbackName = "ru-RU";
+    /// <summary>Cold-start default in bootstrap TOML / dashhost when unset — not a silent runtime fallback.</summary>
+    public const string BootstrapDefaultName = "ru-RU";
 
-    /// <summary>Resolve host <c>language</c> or report <c>culture</c> (e.g. <c>en</c>, <c>en-GB</c>, <c>ru-RU</c>).</summary>
-    public static CultureInfo Resolve(string? cultureOrLanguage)
+    /// <summary>Parse a specific culture name (must include region, e.g. <c>en-GB</c>).</summary>
+    public static CultureInfo Parse(string cultureName)
     {
-        if (string.IsNullOrWhiteSpace(cultureOrLanguage))
+        if (string.IsNullOrWhiteSpace(cultureName))
         {
-            return Get(FallbackName);
+            throw new ArgumentException("Culture name is required.", nameof(cultureName));
         }
 
-        var token = cultureOrLanguage.Trim();
-        if (token.Contains('-', StringComparison.Ordinal))
+        var trimmed = cultureName.Trim();
+        if (!trimmed.Contains('-', StringComparison.Ordinal))
         {
-            return Get(token);
+            throw new ArgumentException(
+                $"Use a specific culture name (e.g. {BootstrapDefaultName}, en-US), not '{trimmed}'.",
+                nameof(cultureName));
         }
 
-        return token.ToLowerInvariant() switch
-        {
-            "en" => Get("en-US"),
-            "ru" => Get("ru-RU"),
-            _ => Get(token),
-        };
+        return CultureInfo.GetCultureInfo(trimmed);
     }
-
-    public static CultureInfo Get(string name) => CultureInfo.GetCultureInfo(name);
 
     public static DateTime StartOfCalendarWeek(DateTime date, CultureInfo culture)
     {

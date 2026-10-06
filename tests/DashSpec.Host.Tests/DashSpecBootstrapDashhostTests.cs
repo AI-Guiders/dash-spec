@@ -83,7 +83,7 @@ public sealed class DashSpecBootstrapDashhostTests
             Path.Combine(root, "dash-spec.local.toml"),
             """
             [presentation]
-            language = "en"
+            language = "en-US"
             """);
 
         try

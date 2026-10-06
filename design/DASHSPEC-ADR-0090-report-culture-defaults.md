@@ -22,13 +22,15 @@ defaults {
 }
 ```
 
-Value is a **BCL culture name** (`ru-RU`, `en-US`, `en-GB`, …). Shorthand `ru` / `en` in host TOML maps to `ru-RU` / `en-US` via `DashSpecCultures.Resolve`.
+Value is a **specific BCL culture name** (`ru-RU`, `en-US`, `en-GB`, …). Neutral shorthand (`ru`, `en`) is rejected (`DashSpecCultures.Parse`).
+
+Host bootstrap `[presentation].language` and `@host` `configuration.language` use the same rule. Cold-start default in code/TOML model: `ru-RU` (`DashSpecCultures.BootstrapDefaultName`).
 
 ### Precedence (presentation locale)
 
 1. `defaults.culture` on the loaded dashboard document.
 2. Host UI culture (`[presentation].language` / request localization).
-3. Fallback `ru-RU` (legacy compatibility).
+3. `CultureInfo.CurrentCulture` only when neither report nor host culture is available (e.g. unit tests without ambient).
 
 Runtime entry point: `LabelFormat.ResolveReportCulture()` / `FormatCulturePresets.ResolveCulture`.
 

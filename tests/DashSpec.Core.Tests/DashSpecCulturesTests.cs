@@ -7,13 +7,22 @@ namespace DashSpec.Core.Tests;
 public sealed class DashSpecCulturesTests
 {
     [Theory]
-    [InlineData("en", "en-US")]
-    [InlineData("ru", "ru-RU")]
-    [InlineData("en-GB", "en-GB")]
-    [InlineData(null, "ru-RU")]
-    public void Resolve_maps_host_language_tokens(string? token, string expectedName)
+    [InlineData("ru-RU")]
+    [InlineData("en-US")]
+    [InlineData("en-GB")]
+    public void Parse_accepts_specific_culture_names(string name)
     {
-        Assert.Equal(expectedName, DashSpecCultures.Resolve(token).Name);
+        Assert.Equal(name, DashSpecCultures.Parse(name).Name);
+    }
+
+    [Theory]
+    [InlineData("ru")]
+    [InlineData("en")]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Parse_rejects_shorthand_and_empty(string? token)
+    {
+        Assert.ThrowsAny<Exception>(() => DashSpecCultures.Parse(token!));
     }
 
     [Fact]
@@ -30,6 +39,6 @@ public sealed class DashSpecCulturesTests
         Assert.Equal(DayOfWeek.Sunday, usSunday.DayOfWeek);
         Assert.Equal(new DateTime(2026, 9, 20), usSunday.Date);
         Assert.Equal(DayOfWeek.Monday, ruMonday.DayOfWeek);
-        Assert.Equal(new DateTime(2026, 9, 22), ruMonday.Date);
+        Assert.Equal(new DateTime(2026, 9, 21), ruMonday.Date);
     }
 }

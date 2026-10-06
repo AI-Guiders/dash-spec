@@ -107,7 +107,9 @@ var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey
 
 builder.Configuration.AddInMemoryCollection(tomlLoader.Flatten(dashSpecToml));
 
-static CultureInfo ResolveUiCulture(string? language) => DashSpecCultures.Resolve(language);
+static CultureInfo ResolveUiCulture(string? language) =>
+    DashSpecCultures.Parse(
+        string.IsNullOrWhiteSpace(language) ? DashSpecCultures.BootstrapDefaultName : language);
 
 var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
 var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);
