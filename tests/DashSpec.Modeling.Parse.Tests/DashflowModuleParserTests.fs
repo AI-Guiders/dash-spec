@@ -72,7 +72,7 @@ end type
 
         let flowText =
             """
-@flow stakeholder_peak
+@flow demo_peak_report
 
 source utilization {
   use provider sqlserver
@@ -96,13 +96,13 @@ transformer reporting_calendar {
 
 utilization [utilization] -> [raw] reporting_calendar
 
-end flow stakeholder_peak
+end flow demo_peak_report
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
         let module' = DashflowModuleParser.parseModule flowText catalog
 
-        Assert.Equal("stakeholder_peak", module'.FlowId)
+        Assert.Equal("demo_peak_report", module'.FlowId)
         Assert.Empty(module'.Diagnostics)
         Assert.Equal(1, module'.Sources.Length)
         Assert.Equal("demo.v_daily_peak", module'.Sources.[0].From.Value)
@@ -129,7 +129,7 @@ end type
 
         let flowText =
             """
-@flow stakeholder_peak
+@flow demo_peak_report
 
 source utilization {
   use provider sqlserver
@@ -153,13 +153,13 @@ transformer reporting_calendar {
 
 utilization -> reporting_calendar
 
-end flow stakeholder_peak
+end flow demo_peak_report
 """
 
         let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
         let module' = DashflowModuleParser.parseModule flowText catalog
 
-        Assert.Equal("stakeholder_peak", module'.FlowId)
+        Assert.Equal("demo_peak_report", module'.FlowId)
         Assert.Empty(module'.Diagnostics)
         Assert.Equal(1, module'.Links.Length)
         Assert.Equal("utilization", module'.Links.[0].FromNode)

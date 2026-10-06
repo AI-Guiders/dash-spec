@@ -14,6 +14,7 @@
     <Compile Include="TypeInvariantLaws.fs" />
     <Compile Include="TypeCatalog.fs" />
     <Compile Include="DataFlowGraph.fs" />
+    <Compile Include="WiringGraph.fs" />
     <Compile Include="UtcOffsetZoneLiteral.fs" />
     <Compile Include="IanaZoneConverter.fs" />
     <Compile Include="TimeShiftToIanaResolver.fs" />
