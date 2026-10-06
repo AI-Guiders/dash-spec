@@ -62,7 +62,7 @@ public sealed class DashSpecBootstrapDashhostTests
     }
 
     [Fact]
-    public void LoadBootstrap_rejects_presentation_in_local_toml()
+    public void LoadBootstrap_rejects_legacy_presentation_fields_in_local_toml()
     {
         using var provider = HostTestServices.CreateProvider();
         var hostBootstrap = provider.GetRequiredService<IHostBootstrap>();
@@ -78,12 +78,9 @@ public sealed class DashSpecBootstrapDashhostTests
             """
             [host]
             dashhost = "dashspec/demo.dashhost"
-            """);
-        File.WriteAllText(
-            Path.Combine(root, "dash-spec.local.toml"),
-            """
+
             [presentation]
-            language = "en-US"
+            color_scheme = "light"
             """);
 
         try

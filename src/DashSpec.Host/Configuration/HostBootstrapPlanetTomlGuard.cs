@@ -39,8 +39,7 @@ internal static class HostBootstrapPlanetTomlGuard
         string.IsNullOrWhiteSpace(configPath) ? "dash-spec TOML" : $"'{configPath}'";
 
     private static bool HasPresentationInToml(PresentationTomlSection presentation) =>
-        !string.IsNullOrWhiteSpace(presentation.Language)
-        || !string.IsNullOrWhiteSpace(presentation.DisplayTimeZone)
+        !string.IsNullOrWhiteSpace(presentation.DisplayTimeZone)
         || !string.IsNullOrWhiteSpace(presentation.ColorScheme)
         || !string.IsNullOrWhiteSpace(presentation.LargeFieldFilterLayout);
 }

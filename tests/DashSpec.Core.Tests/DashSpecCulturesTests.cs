@@ -16,13 +16,24 @@ public sealed class DashSpecCulturesTests
     }
 
     [Theory]
-    [InlineData("ru")]
-    [InlineData("en")]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Parse_rejects_shorthand_and_empty(string? token)
+    [InlineData("ru", "ru-RU")]
+    [InlineData("en", "en-US")]
+    [InlineData("ru-RU", "ru-RU")]
+    public void NormalizeStoredLanguage_upgrades_legacy_shorthand(string stored, string expected)
     {
-        Assert.ThrowsAny<Exception>(() => DashSpecCultures.Parse(token!));
+        Assert.Equal(expected, DashSpecCultures.NormalizeStoredLanguage(stored));
+    }
+
+    [Fact]
+    public void Parse_accepts_normalized_shorthand()
+    {
+        Assert.Equal("ru-RU", DashSpecCultures.Parse("ru").Name);
+    }
+
+    [Fact]
+    public void Parse_rejects_empty()
+    {
+        Assert.ThrowsAny<Exception>(() => DashSpecCultures.Parse("   "));
     }
 
     [Fact]
