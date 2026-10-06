@@ -23,5 +23,5 @@ module DemoSampleParseTests =
         Assert.Equal(18, document.Cards.Count)
         Assert.Equal(8, document.Filters.Count)
         Assert.True(document.Dashflow.IsSome)
-        Assert.Equal(9, document.Dashflow.Value.Sources.Length)
+        Assert.Equal(8, document.Dashflow.Value.Sources.Length)
         Assert.True(document.Cards |> Seq.forall (fun c -> c.FlowInput.IsSome))
