@@ -104,6 +104,9 @@ public sealed class ReportPreviewSessionTests
               end runtime
               report
               title = "Preview"
+              type FixtureRow
+                optional decimal value
+              end type
             {cards}
               end report
             end dashboard

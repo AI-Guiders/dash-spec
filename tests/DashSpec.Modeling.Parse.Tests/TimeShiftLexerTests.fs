@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Tests
 
 open Xunit
+open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
@@ -28,6 +29,13 @@ module TimeShiftLexerTests =
             |> List.find (fun t -> t.Kind = TokenKind.IanaZone)
 
         Assert.Equal("Europe/Moscow", zone.Value)
+
+    [<Fact>]
+    let ``scalar reader accepts dotted format presets`` () =
+        let reader = ParserUtilities.createReader "x_format = time.short\n"
+        reader.ReadIdent() |> ignore
+        reader.Expect TokenKind.Eq
+        Assert.Equal("time.short", reader.ReadScalarValue())
 
     [<Fact>]
     let ``syntax classifier colors TimeShift as number`` () =

@@ -620,6 +620,23 @@ module CardParser =
             if scratch.DataSource.IsNone && dataSource.Value.IsSome then
                 scratch.DataSource <- dataSource.Value
 
+        if flowInput.Value.IsSome then
+            let flowDataPlaceholder =
+                { Kind = DataSourceKind.View
+                  Value = ""
+                  SqlCarrier = None
+                  Sheet = None
+                  RowsType = ""
+                  ProviderInfer = true }
+
+            for slotRef in slotBuilder.Order do
+                let scratch = slotBuilder.Slots.[slotRef]
+                if scratch.Diagram.IsSome && scratch.DataSource.IsNone then
+                    scratch.DataSource <- Some flowDataPlaceholder
+
+            if dataSource.Value.IsNone then
+                dataSource.Value <- Some flowDataPlaceholder
+
         let diagramSlotsFinal =
             match CardDiagramSlotBuilder.build slotBuilder id with
             | Some map -> map
