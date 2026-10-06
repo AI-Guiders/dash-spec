@@ -150,9 +150,7 @@ public sealed class HostSettingsService(
 
         if (string.Equals(key, HostSettingsSections.KeyLanguage, StringComparison.OrdinalIgnoreCase))
         {
-            presentation.Language = string.IsNullOrWhiteSpace(value)
-                ? "ru"
-                : value.Trim().ToLowerInvariant();
+            presentation.Language = string.IsNullOrWhiteSpace(value) ? "ru" : value.Trim();
             presentationSignals.NotifyChanged();
             return;
         }

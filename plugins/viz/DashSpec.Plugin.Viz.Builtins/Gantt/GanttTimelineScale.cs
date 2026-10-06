@@ -1,3 +1,4 @@
+using DashSpec.Core.Localization;
 using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Plugin.Viz.Builtins.Gantt;
@@ -164,11 +165,8 @@ public static class GanttTimelineScale
     {
         var spanMinutes = (axisEnd - axisStart).TotalMinutes;
         var ticks = new List<GanttTimelineTick>();
-        var cursor = axisStart.Date;
-        while (cursor.DayOfWeek != DayOfWeek.Monday && cursor > axisStart.Date.AddDays(-7))
-        {
-            cursor = cursor.AddDays(-1);
-        }
+        var culture = LabelFormat.ResolveReportCulture();
+        var cursor = DashSpecCultures.StartOfCalendarWeek(axisStart, culture);
 
         while (cursor <= axisEnd)
         {

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using DashSpec.Core.Localization;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 
@@ -33,6 +34,9 @@ public static partial class LabelFormat
 
     public static void ClearReportDefaults() =>
         ReportDefaults.Value = null;
+
+    /// <summary>Effective BCL culture for the active report (defaults.culture → host UI → <see cref="DashSpecCultures.FallbackName"/>).</summary>
+    public static CultureInfo ResolveReportCulture() => ReportCulture;
 
     public static string ResolveTimeFormat(string? diagramFormat) =>
         CoalesceFormat(diagramFormat, ReportDefaults.Value?.TimeFormat, "time.short");
