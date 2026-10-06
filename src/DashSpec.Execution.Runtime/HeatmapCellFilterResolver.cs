@@ -218,6 +218,6 @@ public static class HeatmapCellFilterResolver
             return true;
         }
 
-        return TimeOnly.TryParse(raw, CultureInfo.CurrentCulture, DateTimeStyles.None, out time);
+        return TimeOnly.TryParse(raw, LabelFormat.ResolveReportCulture(), DateTimeStyles.None, out time);
     }
 }

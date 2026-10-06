@@ -1,3 +1,4 @@
+using DashSpec.Core.Model;
 using DashSpec.Execution.Runtime;
 using DashSpec.Plugin.Viz.Builtins.Gantt;
 using Xunit;
@@ -36,6 +37,24 @@ public class GanttTimelineScaleTests
 
         Assert.NotEmpty(ticks);
         Assert.True(ticks.Count >= 8);
+    }
+
+    [Fact]
+    public void BuildTicks_weekly_aligns_to_report_culture_first_day_of_week()
+    {
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults(Culture: "en-US"));
+        try
+        {
+            var start = new DateTime(2026, 9, 24, 0, 0, 0);
+            var end = new DateTime(2026, 10, 20, 0, 0, 0);
+            var ticks = GanttTimelineScale.BuildTicks(start, end, "date.short");
+
+            Assert.Contains(ticks, t => t.Label == "9/27");
+        }
+        finally
+        {
+            LabelFormat.ClearReportDefaults();
+        }
     }
 
     [Fact]

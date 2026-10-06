@@ -1,3 +1,4 @@
+using DashSpec.Core.Localization;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
@@ -106,10 +107,7 @@ var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey
 
 builder.Configuration.AddInMemoryCollection(tomlLoader.Flatten(dashSpecToml));
 
-static CultureInfo ResolveUiCulture(string? language) =>
-    string.Equals(language, "en", StringComparison.OrdinalIgnoreCase)
-        ? CultureInfo.GetCultureInfo("en-US")
-        : CultureInfo.GetCultureInfo("ru-RU");
+static CultureInfo ResolveUiCulture(string? language) => DashSpecCultures.Resolve(language);
 
 var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
 var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);
@@ -121,7 +119,12 @@ DashSpec.Core.Runtime.TooltipTemplate.CellValueFormatter = static value =>
 builder.Services.AddLocalization();
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    var supported = new[] { CultureInfo.GetCultureInfo("ru-RU"), CultureInfo.GetCultureInfo("en-US") };
+    var supported = new[]
+    {
+        CultureInfo.GetCultureInfo("ru-RU"),
+        CultureInfo.GetCultureInfo("en-US"),
+        CultureInfo.GetCultureInfo("en-GB"),
+    };
     options.SupportedCultures = supported;
     options.SupportedUICultures = supported;
     options.DefaultRequestCulture = new RequestCulture(uiCulture);

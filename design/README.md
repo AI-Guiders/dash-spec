@@ -77,3 +77,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md) | Report time basis & work calendar | Accepted |
 | [0070](DASHSPEC-ADR-0070-table-column-formats-block.md) | Table `formats` block | Accepted |
 | [0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) | Block + member grammar | Accepted |
+| [0090](DASHSPEC-ADR-0090-report-culture-defaults.md) | Report `culture` as locale SSOT | Accepted |
