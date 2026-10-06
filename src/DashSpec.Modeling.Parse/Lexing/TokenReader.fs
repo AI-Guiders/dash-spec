@@ -81,6 +81,14 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         index <- index + 1
         value
 
+    member this.ReadTimeShift() =
+        this.SkipNewlines()
+        if tokens.[index].Kind <> TokenKind.TimeShift then
+            raise (this.Unexpected "UTC offset literal (TimeShift)")
+        let value = tokens.[index].Value
+        index <- index + 1
+        value
+
     member _.PushBlockClose style = blockCloseStyles.Push style
 
     member _.PopBlockClose() =
@@ -245,7 +253,7 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
             | TokenKind.Dot ->
                 parts.Add(".")
                 index <- index + 1
-            | TokenKind.Ident | TokenKind.Raw | TokenKind.String ->
+            | TokenKind.Ident | TokenKind.TimeShift | TokenKind.Raw | TokenKind.String ->
                 parts.Add(tokens.[index].Value)
                 index <- index + 1
             | _ -> continueReading <- false
