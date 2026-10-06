@@ -32,9 +32,9 @@ Split **data flow** from **presentation**:
 
 - **Source** — graph node: boundary to external data (`from view` / `from sql`); declares **typed outputs** ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)) and optional **param surface** for filters (types only). Authoring keyword: **`source <id>`** (not `channel` — avoids cockpit / wire confusion).
 - **Transformer** — N inputs → M outputs; declarative steps (including time/TZ/grain).
-- **Card** — declares **inputs** wired to flow ports; **diagram / present** only.
+- **Card** — declares **`input … from node.port`**; **diagram / present** only (no SQL carrier on the card).
 
-Legacy card **`datasource { … }`** compiles to an anonymous inline **`source`** in the resolved graph (migration). Optional sugar: **`use source`** on a card when one input maps 1:1.
+Pre-dashflow specs may still parse **`datasource { … }` on a diagram** ([ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md)) for older reports; that path does **not** populate `FlowGraph` and is **not** synthesized into anonymous sources. Migration = author a **named `source`** in `.dashflow` and wire the card.
 
 ## Decision
 
@@ -188,7 +188,6 @@ card peak_table as "Top users" {
 ```
 
 - **`formats` on diagram** — present layer; chronological sort uses data-plane `sort_key` when present (no re-parsing `dd.MM` strings).
-- **`use source X`** — sugar: single implicit `input` from source default output.
 
 ### Implicit transforms today → v1 target
 
@@ -196,7 +195,7 @@ card peak_table as "Top users" {
 |-----------------------------|-------------|
 | `LabelFormat` + `DisplayTimeZone` + report `date_format` | `transform use to_zone` (builtin plugin) |
 | `TimeSeriesGrid` / hour grid fill | `transformer time_grid` (deferred; document as follow-up) |
-| Per-card `datasource` | Anonymous `source __card_<id>` in resolved graph |
+| Per-card `datasource` (old specs) | Named **`source`** in `.dashflow` + card `input from …` (authoring migration; no IR synthesis) |
 | `MatrixPayloadBuilder` axis parse of display strings | Prefer explicit sort columns from `to_zone` output |
 
 Until dashflow lands in the parser, **behavior unchanged**; new features that add post-SQL semantics must be implemented as if they will become a **named transformer step** (no new hidden statics on card path).
@@ -206,7 +205,6 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | Phase | Deliverable |
 |-------|-------------|
 | **P0** (this ADR) | Terminology, `FlowGraph` contract, file kinds, split from `.dashtransform` |
-| **P1** | F# Modeling: `FlowGraph` DU + resolve; compile legacy card `datasource` → inline `source` |
 | **P2** | `to_zone` builtin plugin in Execution; wire report `date_format` / host display TZ to one graph node |
 | **P3a** | `.dashflow` parse + `connect { flow … }` |
 | **P3b** | Card `input alias from node.port`; compile to source `datasource` + per-card provider from `use provider` / `infer` |
@@ -215,7 +213,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | **P3b bind** | `DocumentFlowBinder.MaterializeFlowCards` at parse/validate (single SSOT): `input from node.port` → `DataSourceDefinition` (+ `ProviderId` when named). `FlowInput` remains for transformer path only; Host does not re-bind. |
 | **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps; shared flow cache keys |
 
-**Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).
+**Reuse trigger (authoring):** duplicate `from view` on the same view in one module **or** a second card needs the same localized stream → extract a **shared `source` / `transformer`** in `.dashflow` (see `samples/demo/flows/demo-report.dashflow`), not per-card SQL.
 
 ## Future surfaces (same runtime as text authoring)
 
@@ -230,6 +228,7 @@ Implementation stack: federation **DataFlow** model (transport, DataBus, **Trans
 - General-purpose ETL language (Airflow/dbt in spec).
 - Parser changes in the same PR as this ADR.
 - Dynamic typing or reference types in the flow graph ([ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md)).
+- **Compat layer:** auto-compiling card `datasource` into anonymous `FlowGraph` nodes (rejected — one graph SSOT is **authored** `.dashflow`, bind via `DocumentFlowBinder` only).
 
 ## Consequences
 
@@ -263,8 +262,8 @@ executive [kpi] -> [kpi] executive_local
 
 end flow stakeholder
 
-# In report — many cards wire to flow outputs (card inputs TBD):
 card kpi_peak as "Peak" {
+  input kpi from executive_local.kpi_local
   diagram kpi_tile { value = peak_util … }
 }
 ```
