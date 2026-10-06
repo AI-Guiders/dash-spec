@@ -12,10 +12,10 @@ public static partial class FormatCulturePresets
     {
         if (!string.IsNullOrWhiteSpace(defaults?.Culture))
         {
-            return DashSpecCultures.Resolve(defaults.Culture);
+            return DashSpecCultures.Parse(defaults.Culture);
         }
 
-        return uiCulture ?? DashSpecCultures.Get(DashSpecCultures.FallbackName);
+        return uiCulture ?? CultureInfo.CurrentCulture;
     }
 
     public static string ResolvePresetPattern(string preset, CultureInfo culture)

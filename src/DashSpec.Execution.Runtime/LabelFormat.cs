@@ -35,7 +35,7 @@ public static partial class LabelFormat
     public static void ClearReportDefaults() =>
         ReportDefaults.Value = null;
 
-    /// <summary>Effective BCL culture for the active report (defaults.culture → host UI → <see cref="DashSpecCultures.FallbackName"/>).</summary>
+    /// <summary>Effective BCL culture for the active report (defaults.culture → host UI → <see cref="CultureInfo.CurrentCulture"/>).</summary>
     public static CultureInfo ResolveReportCulture() => ReportCulture;
 
     public static string ResolveTimeFormat(string? diagramFormat) =>

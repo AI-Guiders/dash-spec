@@ -21,7 +21,7 @@ public sealed class HostModuleParserTests
             catalog "catalogs/demo.dashcatalog"
 
             configuration
-              language = ru
+              language = "ru-RU"
               display_timezone = "Europe/Moscow"
             end configuration
 
@@ -49,7 +49,7 @@ public sealed class HostModuleParserTests
 
         Assert.Equal("demo", host.Id);
         Assert.Equal("catalogs/demo.dashcatalog", host.CatalogPath);
-        Assert.Equal("ru", host.Configuration["language"]);
+        Assert.Equal("ru-RU", host.Configuration["language"]);
         Assert.Equal("Demo", host.Presentation["product_title"]);
         Assert.Equal("Отчёт", host.Presentation["catalog_label"]);
         Assert.Single(host.Links);

@@ -1,3 +1,5 @@
+using DashSpec.Core.Localization;
+
 namespace DashSpec.Host.Configuration;
 
 public sealed class DashSpecTomlRoot
@@ -57,7 +59,7 @@ public sealed class PresentationTomlSection
     /// <summary>UI color scheme (remark 24): dark default | light | contrast. Empty = dark.</summary>
     public string ColorScheme { get; set; } = string.Empty;
 
-    /// <summary>UI culture (remark 23): ru | en | ru-RU | en-US | en-GB | …. Empty = ru-RU.</summary>
+    /// <summary>UI culture (remark 23): BCL specific name (<c>ru-RU</c>, <c>en-US</c>, …). Empty in TOML → cold-start <see cref="DashSpecCultures.BootstrapDefaultName"/> at host startup.</summary>
     public string Language { get; set; } = string.Empty;
 
     /// <summary>Long field filter layout (remark 7): scroll | expand. Empty = scroll.</summary>

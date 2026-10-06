@@ -1,6 +1,7 @@
 @page "/admin"
 @page "/admin/{SectionId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DashSpec.Core.Localization
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Git
 @using DashSpec.Host.Services.Presentation
@@ -149,8 +150,9 @@
                     <div class="field">
                         <label>Interface language (remark 23)</label>
                         <InputSelect @bind-Value="_presentation.Language" class="input">
-                            <option value="ru">Русский</option>
-                            <option value="en">English</option>
+                            <option value="ru-RU">Русский (ru-RU)</option>
+                            <option value="en-US">English (en-US)</option>
+                            <option value="en-GB">English (en-GB)</option>
                         </InputSelect>
                         <span class="muted">Applied on host restart. Empty = ru-RU.</span>
                     </div>
@@ -253,7 +255,9 @@
         _presentation.DisplayTimeZone = string.IsNullOrWhiteSpace(Bootstrap.Presentation.DisplayTimeZone)
             ? "Europe/Moscow"
             : Bootstrap.Presentation.DisplayTimeZone;
-        _presentation.Language = Bootstrap.Presentation.Language ?? "";
+        _presentation.Language = string.IsNullOrWhiteSpace(Bootstrap.Presentation.Language)
+            ? DashSpecCultures.BootstrapDefaultName
+            : Bootstrap.Presentation.Language;
         _presentation.ColorScheme = Bootstrap.Presentation.ColorScheme ?? "";
         _presentation.LargeFieldFilterLayout = FilterLargeListOptions.Normalize(Bootstrap.Presentation.LargeFieldFilterLayout);
     }
@@ -261,7 +265,7 @@
     private readonly PresentationForm _presentation = new()
     {
         DisplayTimeZone = "Europe/Moscow",
-        Language = "",
+        Language = DashSpecCultures.BootstrapDefaultName,
         LargeFieldFilterLayout = FilterLargeListOptions.Scroll,
     };
 
