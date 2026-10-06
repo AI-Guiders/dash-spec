@@ -9,7 +9,6 @@ namespace DashSpec.Execution.Runtime;
 public static partial class LabelFormat
 {
     private static readonly AsyncLocal<ReportFormatDefaults?> ReportDefaults = new();
-    private static readonly CultureInfo DefaultCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly HashSet<string> NamedPresets = new(StringComparer.OrdinalIgnoreCase)
     {
         "date.short",
@@ -122,24 +121,35 @@ public static partial class LabelFormat
             return DateTime.Today.Add(time.ToTimeSpan());
         }
 
-        if (IsNamedPreset(format))
+        if (FormatCulturePresets.IsNamedPreset(format))
         {
-            if (format.Equals("date.short", StringComparison.OrdinalIgnoreCase)
-                && DateOnly.TryParseExact(label, "dd.MM", DefaultCulture, DateTimeStyles.None, out var shortDay))
-            {
-                return shortDay.ToDateTime(TimeOnly.MinValue);
-            }
-
-            if (format.Equals("date.full", StringComparison.OrdinalIgnoreCase)
-                && DateOnly.TryParseExact(label, "dd.MM.yyyy", DefaultCulture, DateTimeStyles.None, out var fullDay))
-            {
-                return fullDay.ToDateTime(TimeOnly.MinValue);
-            }
-
+            var culture = ReportCulture;
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
             if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
-                && DateTime.TryParseExact(label, "dd.MM HH:mm", DefaultCulture, DateTimeStyles.None, out var shortDateTime))
+                || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase))
             {
-                return shortDateTime;
+                if (DateTime.TryParseExact(
+                        label,
+                        pattern,
+                        format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
+                            ? CultureInfo.InvariantCulture
+                            : culture,
+                        DateTimeStyles.None,
+                        out var shortDateTime))
+                {
+                    return shortDateTime;
+                }
+            }
+            else if (DateOnly.TryParseExact(
+                         label,
+                         pattern,
+                         format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
+                             ? CultureInfo.InvariantCulture
+                             : culture,
+                         DateTimeStyles.None,
+                         out var presetDay))
+            {
+                return presetDay.ToDateTime(TimeOnly.MinValue);
             }
         }
         else if (TryParseExactDisplay(label, format, out var custom))
@@ -162,12 +172,15 @@ public static partial class LabelFormat
             return DateTime.Today.Add(fallbackTime.ToTimeSpan());
         }
 
-        if (DateOnly.TryParseExact(label, "dd.MM", DefaultCulture, DateTimeStyles.None, out var fallbackDay))
+        var fallbackCulture = ReportCulture;
+        var shortDatePattern = FormatCulturePresets.ResolvePresetPattern("date.short", fallbackCulture);
+        if (DateOnly.TryParseExact(label, shortDatePattern, fallbackCulture, DateTimeStyles.None, out var fallbackDay))
         {
             return fallbackDay.ToDateTime(TimeOnly.MinValue);
         }
 
-        if (DateTime.TryParseExact(label, "dd.MM HH:mm", DefaultCulture, DateTimeStyles.None, out var fallbackDateTime))
+        var shortDateTimePattern = FormatCulturePresets.ResolvePresetPattern("datetime.short", fallbackCulture);
+        if (DateTime.TryParseExact(label, shortDateTimePattern, fallbackCulture, DateTimeStyles.None, out var fallbackDateTime))
         {
             return fallbackDateTime;
         }
@@ -332,18 +345,20 @@ public static partial class LabelFormat
             return display.ToString("G", ResolveCulture(forSystem: true));
         }
 
+        if (FormatCulturePresets.IsNamedPreset(format))
+        {
+            var culture = ReportCulture;
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
+            var formatCulture = format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
+                || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
+                    ? CultureInfo.InvariantCulture
+                    : culture;
+            return display.ToString(pattern, formatCulture);
+        }
+
         if (IsNamedPreset(format))
         {
-            return format.ToLowerInvariant() switch
-            {
-                "date.short" => display.ToString("dd.MM", DefaultCulture),
-                "date.full" => display.ToString("dd.MM.yyyy", DefaultCulture),
-                "date.iso" => display.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                "time.short" => display.ToString("HH:mm", DefaultCulture),
-                "datetime.short" => display.ToString("dd.MM HH:mm", DefaultCulture),
-                "datetime.iso" => display.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-                _ => display.ToString("G", ResolveCulture(forSystem: true)),
-            };
+            return display.ToString("G", ResolveCulture(forSystem: true));
         }
 
         return ApplyCustomFormat(display, format);
@@ -356,16 +371,26 @@ public static partial class LabelFormat
             return date.ToString("d", ResolveCulture(forSystem: true));
         }
 
+        if (FormatCulturePresets.IsNamedPreset(format))
+        {
+            var culture = ReportCulture;
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
+            var formatCulture = format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
+                || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
+                    ? CultureInfo.InvariantCulture
+                    : culture;
+            if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
+                || format.Equals("time.short", StringComparison.OrdinalIgnoreCase))
+            {
+                return date.ToString(FormatCulturePresets.ResolvePresetPattern("date.short", culture), culture);
+            }
+
+            return date.ToString(pattern, formatCulture);
+        }
+
         if (IsNamedPreset(format))
         {
-            return format.ToLowerInvariant() switch
-            {
-                "date.short" => date.ToString("dd.MM", DefaultCulture),
-                "date.full" => date.ToString("dd.MM.yyyy", DefaultCulture),
-                "date.iso" or "datetime.iso" => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                "datetime.short" => date.ToString("dd.MM", DefaultCulture),
-                _ => date.ToString("d", ResolveCulture(forSystem: true)),
-            };
+            return date.ToString("d", ResolveCulture(forSystem: true));
         }
 
         return ApplyCustomFormat(date, format);
@@ -395,19 +420,17 @@ public static partial class LabelFormat
         }
     }
 
-    private static CultureInfo ResolveCulture(bool forSystem)
-    {
-        if (forSystem)
-        {
-            return UiCulture ?? CultureInfo.CurrentCulture;
-        }
+    private static CultureInfo ReportCulture =>
+        FormatCulturePresets.ResolveCulture(ReportDefaults.Value, UiCulture);
 
-        return UiCulture ?? DefaultCulture;
-    }
+    private static CultureInfo ResolveCulture(bool forSystem) =>
+        forSystem
+            ? UiCulture ?? CultureInfo.CurrentCulture
+            : ReportCulture;
 
     private static string FormatScalar(object value, string? format)
     {
-        var text = Convert.ToString(value, UiCulture ?? DefaultCulture) ?? string.Empty;
+        var text = Convert.ToString(value, ReportCulture) ?? string.Empty;
         return string.IsNullOrWhiteSpace(format) || format.Equals("raw", StringComparison.OrdinalIgnoreCase)
             ? text
             : Format(text, format);
@@ -430,7 +453,7 @@ public static partial class LabelFormat
         DateValueCodec.TryParseStoredDateOnly(raw, out date);
 
     private static bool TryParseTimeLabel(string text, out TimeOnly time) =>
-        TimeOnly.TryParse(text, DefaultCulture, DateTimeStyles.None, out time)
+        TimeOnly.TryParse(text, ReportCulture, DateTimeStyles.None, out time)
         || TimeOnly.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out time);
 
     private static bool FormatContainsClock(string format) =>

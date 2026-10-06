@@ -148,7 +148,10 @@ public static class GanttTimelineScale
             var left = (cursor - axisStart).TotalMinutes / spanMinutes * 100d;
             if (left >= 0 && left <= 100)
             {
-                ticks.Add(new GanttTimelineTick(cursor.ToString("dd.MM"), left, cursor.Day == 1));
+                ticks.Add(new GanttTimelineTick(
+                    LabelFormat.FormatObject(cursor, LabelFormat.ResolveDateFormat(null)),
+                    left,
+                    cursor.Day == 1));
             }
 
             cursor = cursor.AddDays(1);
@@ -172,7 +175,10 @@ public static class GanttTimelineScale
             var left = (cursor - axisStart).TotalMinutes / spanMinutes * 100d;
             if (left >= 0 && left <= 100)
             {
-                ticks.Add(new GanttTimelineTick(cursor.ToString("dd.MM"), left, true));
+                ticks.Add(new GanttTimelineTick(
+                    LabelFormat.FormatObject(cursor, LabelFormat.ResolveDateFormat(null)),
+                    left,
+                    true));
             }
 
             cursor = cursor.AddDays(7);

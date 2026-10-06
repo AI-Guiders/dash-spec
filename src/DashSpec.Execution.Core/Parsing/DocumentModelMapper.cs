@@ -89,7 +89,8 @@ internal static class DocumentModelMapper
         new(
             FirstOrNull(defaults.TimeFormat),
             FirstOrNull(defaults.DateFormat),
-            FirstOrNull(defaults.DateTimeFormat));
+            FirstOrNull(defaults.DateTimeFormat),
+            FirstOrNull(defaults.Culture));
 
     private static TabDefinition ToCore(FsharpDocument.TabDefinition tab) =>
         new(
