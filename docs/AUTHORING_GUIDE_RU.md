@@ -106,7 +106,9 @@ catalog "catalogs/my_prod.dashcatalog"
 |-------|------|
 | `filter <name> …` | Объявление: date / field / top, колонка, default, label, widget |
 | `toolbar …` | Что рисуется на панели |
-| `bind a, b` на card | **Что реально попадает в SQL этой карточки** |
+| `bind a, b` на card | **Что реально попадает в SQL этой карточки** (legacy; новые карточки — link lines в `card … flow`, [ADR-0090](../design/DASHSPEC-ADR-0090-card-interior-flow.md)) |
+
+Сводка по единому графу (module / card / report): [ADR-0091](../design/DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md), report chrome / host / клики — [ADR-0092](../design/DASHSPEC-ADR-0092-report-scope-routing-and-events.md) (реализация P3).
 
 ### Инвариант
 
