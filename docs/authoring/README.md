@@ -15,6 +15,8 @@
 | [design/DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md](../../design/DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md) | Единый граф: `flow` + link lines (module, card, report) |
 | [design/DASHSPEC-ADR-0090-card-interior-flow.md](../../design/DASHSPEC-ADR-0090-card-interior-flow.md) | Card `flow`: только links |
 | [design/DASHSPEC-ADR-0092-report-scope-routing-and-events.md](../../design/DASHSPEC-ADR-0092-report-scope-routing-and-events.md) | Report/page: chrome, host, derive, click (P3) |
+
+Тесты в `tests/`: только **demo**-имена (`samples/demo`, `demo_*`, `UtilizationRow`) — без LUS / product paths.
 | [editor/vscode-dashspec/README.md](../../editor/vscode-dashspec/README.md) | VSIX / LSP |
 
 ## Обновить справочник

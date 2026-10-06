@@ -51,10 +51,23 @@ module FlowLinkParser =
         else
             reader.Advance()
             let toPortFromBracket = tryReadBracketPortSameLine reader
-            let toNode = reader.ReadIdent()
+            let firstTarget = reader.ReadIdent()
 
-            if String.IsNullOrWhiteSpace toNode then
+            if String.IsNullOrWhiteSpace firstTarget then
                 raise (DashSpecParseException("flow link requires a target node after ->."))
+
+            let toNode =
+                if reader.IsOnNewline() then
+                    firstTarget
+                else
+                    match reader.TryPeekIdent() with
+                    | Some second when
+                        String.Equals(firstTarget, "chrome", StringComparison.OrdinalIgnoreCase)
+                        || String.Equals(firstTarget, "host", StringComparison.OrdinalIgnoreCase)
+                        ->
+                        reader.ReadIdent() |> ignore
+                        $"{firstTarget}.{second}"
+                    | _ -> firstTarget
 
             Some
                 { FromNode = fromNode

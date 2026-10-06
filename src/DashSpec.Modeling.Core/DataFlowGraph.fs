@@ -50,6 +50,9 @@ type FlowGraph =
     { Nodes: IReadOnlyDictionary<string, FlowNode>
       Edges: FlowEdge[] }
 
+/// <summary>Module dashflow subgraph alias (ADR-0091 P4).</summary>
+type Graph = FlowGraph
+
 type FlowGraphDiagnostic =
     { Code: string
       Message: string
