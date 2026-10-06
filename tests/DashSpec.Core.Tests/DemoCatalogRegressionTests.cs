@@ -17,11 +17,8 @@ public sealed class DemoCatalogRegressionTests
 
     private static readonly string[] CatalogFileNames =
     [
-        "demo-detail.dashspec",
-        "demo-overview.dashspec",
-        "demo-stakeholder.dashspec",
         "demo-soak.dashspec",
-        "demo-versions.dashspec",
+        "demo-analytics.dashspec",
     ];
 
     private static DashSpecParseOptions DemoParseOptions { get; } = new()
@@ -156,31 +153,4 @@ public sealed class DemoCatalogRegressionTests
         _ = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
     }
 
-    [Fact]
-    public void Parse_overview_peak_concurrent_proxy_views_and_tooltip_click()
-    {
-        var path = Path.Combine(DocsRoot, "demo-overview.dashspec");
-        if (!File.Exists(path))
-        {
-            return;
-        }
-
-        // Catalog specs must be B2 on disk (infer + rows R); no test-time datasource rewrite.
-        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
-        var card = doc.Cards.Single(c => string.Equals(c.Id, "peak_concurrent_proxy", StringComparison.OrdinalIgnoreCase));
-
-        Assert.NotNull(card.InteriorBoard);
-        Assert.NotNull(card.ExtensionBlocks);
-        Assert.Contains(card.ExtensionBlocks!, b => string.Equals(b.Keyword, "views", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(card.ClickBehaviour);
-        var drill = Assert.IsType<DrillTableFromCellEffect>(card.ClickBehaviour!.Effects[0]);
-        Assert.Equal(2, drill.Binds.Count);
-        Assert.Contains(drill.Binds, b => b.FilterName == "usage_date" && b.Field == "x");
-        Assert.Contains(drill.Binds, b => b.FilterName == "app_name" && b.Field == "y");
-
-        var placements = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
-        Assert.Equal(2, placements.Count);
-        Assert.True(placements.ContainsKey("heatmap"));
-        Assert.True(placements.ContainsKey("drill"));
-    }
 }

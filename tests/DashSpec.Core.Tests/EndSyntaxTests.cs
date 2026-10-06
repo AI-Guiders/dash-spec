@@ -6,7 +6,7 @@ namespace DashSpec.Core.Tests;
 public sealed class EndSyntaxTests
 {
     [Fact]
-    public void Parse_end_card_and_page_stakeholder_style()
+    public void Parse_end_card_and_page_scoped_layout()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab t

@@ -37,7 +37,7 @@ internal static class DashSpecTestRowTypes
           optional datetime occurred_at
           optional date day
           optional string series
-          optional string stakeholder
+          optional string segment
           optional string product
           optional string column_a
           optional string column_b
