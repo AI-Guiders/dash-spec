@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
@@ -37,16 +39,48 @@ public static class DocumentFlowBinder
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(document);
 
-        if (card.FlowInput is null || document.Dashflow is null)
+        if (document.Dashflow is null)
         {
             return card;
         }
 
-        if (!string.IsNullOrWhiteSpace(card.DataSource.Value))
+        var result = card;
+        if (result.FlowInput is not null && string.IsNullOrWhiteSpace(result.DataSource.Value))
         {
-            return card;
+            result = FlowCardExecution.ApplyFlowInput(result, document);
         }
 
-        return FlowCardExecution.ApplyFlowInput(card, document);
+        if (result.DiagramSlots is not { Count: > 0 })
+        {
+            return result;
+        }
+
+        var slots = new Dictionary<string, CardDiagramSlotDefinition>(StringComparer.OrdinalIgnoreCase);
+        var changed = false;
+        foreach (var (slotRef, slot) in result.DiagramSlots)
+        {
+            var materialized = FlowCardExecution.ApplyFlowInputToSlot(slot, document);
+            if (!ReferenceEquals(materialized, slot))
+            {
+                changed = true;
+            }
+
+            slots[slotRef] = materialized;
+        }
+
+        if (!changed)
+        {
+            return result;
+        }
+
+        var primaryRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(result);
+        if (slots.TryGetValue(primaryRef, out var primary) &&
+            string.IsNullOrWhiteSpace(result.DataSource.Value) &&
+            !string.IsNullOrWhiteSpace(primary.DataSource.Value))
+        {
+            result = result with { DataSource = primary.DataSource };
+        }
+
+        return result with { DiagramSlots = slots };
     }
 }

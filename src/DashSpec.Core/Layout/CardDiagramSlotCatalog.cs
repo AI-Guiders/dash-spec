@@ -22,7 +22,8 @@ public static class CardDiagramSlotCatalog
                 card.BoundFilters,
                 card.Legend,
                 card.Presentation,
-                card.SeriesTransform),
+                card.SeriesTransform,
+                card.FlowInput),
         };
     }
 

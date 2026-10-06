@@ -195,4 +195,73 @@ public sealed class FlowCardExecutionTests
         Assert.Equal(12, transformed[0].Get("bucket_start_utc").AsDateTimeUtc().Hour);
         Assert.True(transformed[0].Get("bucket_start_utc").IsDisplayWallClockDateTime);
     }
+
+    [Fact]
+    public void MaterializeCard_materializes_per_slot_flow_inputs()
+    {
+        var flow = Flow with
+        {
+            Sources =
+            [
+                Flow.Sources[0],
+                new DashflowSourceDefinition(
+                    "drill_src",
+                    ProviderInfer: false,
+                    ProviderId: "postgres",
+                    DashflowSourceFromKind.View,
+                    "demo.v_drill",
+                    "rows",
+                    "UtilizationRow"),
+            ],
+        };
+
+        var slots = new Dictionary<string, CardDiagramSlotDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["heatmap"] = new CardDiagramSlotDefinition(
+                "heatmap",
+                new DiagramDefinition("heatmap", new Dictionary<string, string>()),
+                new DataSourceDefinition(DataSourceKind.View, string.Empty),
+                [],
+                FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
+            ["drill"] = new CardDiagramSlotDefinition(
+                "drill",
+                new DiagramDefinition("table", new Dictionary<string, string>()),
+                new DataSourceDefinition(DataSourceKind.View, string.Empty),
+                [],
+                FlowInput: new CardFlowInputDefinition("rows", "drill_src", "rows")),
+        };
+
+        var card = new CardDefinition(
+            "c",
+            "C",
+            slots["heatmap"].Diagram,
+            new DataSourceDefinition(DataSourceKind.View, string.Empty),
+            [],
+            [],
+            DiagramSlotRef: "heatmap",
+            DiagramSlots: slots,
+            FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
+
+        var document = new DashboardDocument(
+            "t",
+            "T",
+            null,
+            SqlDialect.TSql,
+            null,
+            null,
+            null,
+            LayoutDefinition.Default,
+            FiltersChromeDefinition.Default,
+            [],
+            [],
+            [],
+            [card],
+            Dashflow: flow);
+
+        var materialized = DocumentFlowBinder.MaterializeCard(card, document);
+
+        Assert.Equal("demo.v_daily_peak", materialized.DiagramSlots!["heatmap"].DataSource.Value);
+        Assert.Equal("demo.v_drill", materialized.DiagramSlots!["drill"].DataSource.Value);
+        Assert.Equal("demo.v_daily_peak", materialized.DataSource.Value);
+    }
 }

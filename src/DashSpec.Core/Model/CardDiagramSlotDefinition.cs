@@ -8,4 +8,5 @@ public sealed record CardDiagramSlotDefinition(
     IReadOnlyList<string> BoundFilters,
     LegendDefinition? Legend = null,
     PresentationBlock? Presentation = null,
-    SeriesTransformBlock? SeriesTransform = null);
+    SeriesTransformBlock? SeriesTransform = null,
+    CardFlowInputDefinition? FlowInput = null);
