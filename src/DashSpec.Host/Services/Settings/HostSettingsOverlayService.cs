@@ -67,7 +67,7 @@ public sealed class HostSettingsOverlayService(IHostDatabaseInitializer hostData
         bootstrap.Presentation.Language = HostOpsResolution.ResolveLanguage(
             bootstrap.Presentation.Language,
             bootstrap.Presentation.Language,
-            string.IsNullOrWhiteSpace(language) ? null : language.Trim().ToLowerInvariant());
+            string.IsNullOrWhiteSpace(language) ? null : language.Trim());
 
         var largeLayout = Get(rows, HostSettingsSections.SectionPresentation, HostSettingsSections.KeyLargeFieldFilterLayout);
         if (!string.IsNullOrWhiteSpace(largeLayout))

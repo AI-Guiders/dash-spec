@@ -3,7 +3,7 @@
 catalog "demo-catalog.dashcatalog"
 
 configuration
-  language = ru
+  language = "ru-RU"
   display_timezone = "Europe/Moscow"
 end configuration
 

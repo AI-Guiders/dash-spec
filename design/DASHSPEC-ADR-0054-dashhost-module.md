@@ -32,7 +32,7 @@ GDL block module, как `@catalog` / `@layout`:
 catalog "dashspec/catalogs/demo.dashcatalog"
 
 configuration
-  language = ru
+  language = "ru-RU"
   display_timezone = Europe/Moscow
 end configuration
 

@@ -1,3 +1,4 @@
+using DashSpec.Core.Localization;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
 using DashSpec.Host.Configuration;
@@ -109,7 +110,7 @@ public sealed class HostBootstrapService(
         if (host.Configuration.TryGetValue("language", out var language)
             && !string.IsNullOrWhiteSpace(language))
         {
-            bootstrap.Presentation.Language = language.Trim();
+            bootstrap.Presentation.Language = DashSpecCultures.Parse(language.Trim()).Name;
         }
 
         if (host.Configuration.TryGetValue("display_timezone", out var timeZone)

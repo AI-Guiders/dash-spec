@@ -1,13 +1,18 @@
+using DashSpec.Core.Localization;
 using DashSpec.Host.Configuration;
 
 namespace DashSpec.Host.Services.Localization;
 
-/// <summary>UI string localizer (remark 23: interface language switch). Default ru-RU, en fallback.</summary>
+/// <summary>UI string localizer (remark 23: interface language switch). Russian vs English string tables.</summary>
 public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
 {
     private bool Ru =>
-        string.IsNullOrWhiteSpace(bootstrap.Presentation.Language) ||
-        bootstrap.Presentation.Language.Trim().Equals("ru", StringComparison.OrdinalIgnoreCase);
+        DashSpecCultures.Parse(
+                string.IsNullOrWhiteSpace(bootstrap.Presentation.Language)
+                    ? DashSpecCultures.BootstrapDefaultName
+                    : bootstrap.Presentation.Language)
+            .TwoLetterISOLanguageName
+            .Equals("ru", StringComparison.OrdinalIgnoreCase);
 
     public string T(string key) => Ru ? RuMap(key) : En(key);
 

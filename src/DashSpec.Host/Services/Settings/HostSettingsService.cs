@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using DashSpec.Core.Localization;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Host.Services.Presentation;
@@ -150,7 +151,9 @@ public sealed class HostSettingsService(
 
         if (string.Equals(key, HostSettingsSections.KeyLanguage, StringComparison.OrdinalIgnoreCase))
         {
-            presentation.Language = string.IsNullOrWhiteSpace(value) ? "ru" : value.Trim();
+            presentation.Language = string.IsNullOrWhiteSpace(value)
+                ? DashSpecCultures.BootstrapDefaultName
+                : value.Trim();
             presentationSignals.NotifyChanged();
             return;
         }
