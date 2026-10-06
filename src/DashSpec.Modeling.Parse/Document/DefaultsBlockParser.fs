@@ -31,7 +31,7 @@ module DefaultsBlockParser =
 
     let private readDefaultValue (reader: TokenReader) =
         match reader.RawKind with
-        | TokenKind.RelativeDay -> reader.ReadDateDefaultValue()
+        | TokenKind.RelativeDay | TokenKind.Ident -> reader.ReadDateDefaultValue()
         | _ -> reader.ReadScalarValue()
 
     let parse
