@@ -12,11 +12,41 @@ public static class FlowCardExecution
             return card;
         }
 
-        var source = ResolveBackingSource(document.Dashflow, card.FlowInput);
-        var rowType = ResolvePortRowType(document.Dashflow, card.FlowInput.NodeId, card.FlowInput.PortName)
-            ?? source.OutputRowType;
-        var dataSource = ToDataSource(source) with { RowsType = rowType };
+        if (!string.IsNullOrWhiteSpace(card.DataSource.Value))
+        {
+            return card;
+        }
+
+        var dataSource = MaterializeDataSource(document.Dashflow, card.FlowInput);
         return card with { DataSource = dataSource };
+    }
+
+    public static CardDiagramSlotDefinition ApplyFlowInputToSlot(
+        CardDiagramSlotDefinition slot,
+        DashboardDocument document)
+    {
+        if (slot.FlowInput is null || document.Dashflow is null)
+        {
+            return slot;
+        }
+
+        if (!string.IsNullOrWhiteSpace(slot.DataSource.Value))
+        {
+            return slot;
+        }
+
+        var dataSource = MaterializeDataSource(document.Dashflow, slot.FlowInput);
+        return slot with { DataSource = dataSource };
+    }
+
+    public static DataSourceDefinition MaterializeDataSource(
+        DashflowModuleDefinition flow,
+        CardFlowInputDefinition input)
+    {
+        var source = ResolveBackingSource(flow, input);
+        var rowType = ResolvePortRowType(flow, input.NodeId, input.PortName)
+            ?? source.OutputRowType;
+        return ToDataSource(source) with { RowsType = rowType };
     }
 
     public static string? ResolveProviderId(CardDefinition card)

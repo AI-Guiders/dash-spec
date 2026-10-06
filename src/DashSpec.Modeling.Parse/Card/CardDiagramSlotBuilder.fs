@@ -19,7 +19,8 @@ module CardDiagramSlotBuilder =
           BoundFilters: ResizeArray<string>
           mutable Legend: LegendDefinition option
           mutable Presentation: PresentationBlock option
-          mutable SeriesTransform: SeriesTransformBlock option }
+          mutable SeriesTransform: SeriesTransformBlock option
+          mutable FlowInput: CardFlowInput option }
 
     type Builder =
         { Slots: Dictionary<string, SlotScratch>
@@ -39,7 +40,8 @@ module CardDiagramSlotBuilder =
                   BoundFilters = ResizeArray<string>()
                   Legend = None
                   Presentation = None
-                  SeriesTransform = None }
+                  SeriesTransform = None
+                  FlowInput = None }
             builder.Order.Add slotRef
 
         if builder.PrimarySlotRef.IsNone then
@@ -77,6 +79,12 @@ module CardDiagramSlotBuilder =
         slot.BoundFilters.Clear()
         slot.BoundFilters.AddRange boundFilters
 
+    let applyFlowInput (builder: Builder) (slotRef: string) (input: CardFlowInput) (cardId: string) =
+        let slot = ensure builder slotRef
+        if slot.FlowInput.IsSome then
+            raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' declares more than one flow input."))
+        slot.FlowInput <- Some input
+
     let pruneDataOnlyDiagramSlot (builder: Builder) =
         let diagramSlotCount =
             builder.Slots.Values |> Seq.filter (fun s -> s.Diagram.IsSome) |> Seq.length
@@ -102,7 +110,7 @@ module CardDiagramSlotBuilder =
                     if idx >= 0 then
                         builder.Order.RemoveAt idx
 
-    let private unboundFlowDataSource =
+    let unboundFlowDataSource =
         { Kind = DataSourceKind.View
           Value = ""
           SqlCarrier = None
@@ -110,14 +118,20 @@ module CardDiagramSlotBuilder =
           RowsType = ""
           ProviderInfer = false }
 
+    let private resolveSlotFlowInput (scratch: SlotScratch) (cardFlowInput: CardFlowInput option) =
+        match scratch.FlowInput with
+        | Some fi -> Some fi
+        | None -> cardFlowInput
+
     let build (builder: Builder) (cardId: string) (flowInput: CardFlowInput option) =
         if builder.Slots.Count = 0 then
             None
         else
-            let flowBacked = Option.isSome flowInput
             let built = Dictionary<string, CardDiagramSlot>(StringComparer.OrdinalIgnoreCase)
             for slotRef in builder.Order do
                 let scratch = builder.Slots.[slotRef]
+                let slotFlowInput = resolveSlotFlowInput scratch flowInput
+                let flowBacked = Option.isSome slotFlowInput
                 match scratch.Diagram, scratch.DataSource with
                 | Some diagram, Some dataSource ->
                     built.[slotRef] <-
@@ -127,7 +141,8 @@ module CardDiagramSlotBuilder =
                           BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
                           Legend = scratch.Legend
                           Presentation = scratch.Presentation
-                          SeriesTransform = scratch.SeriesTransform }
+                          SeriesTransform = scratch.SeriesTransform
+                          FlowInput = slotFlowInput }
                 | Some diagram, None when flowBacked ->
                     built.[slotRef] <-
                         { SlotRef = slotRef
@@ -136,7 +151,8 @@ module CardDiagramSlotBuilder =
                           BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
                           Legend = scratch.Legend
                           Presentation = scratch.Presentation
-                          SeriesTransform = scratch.SeriesTransform }
+                          SeriesTransform = scratch.SeriesTransform
+                          FlowInput = slotFlowInput }
                 | None, _ ->
                     raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a diagram."))
                 | _, None ->

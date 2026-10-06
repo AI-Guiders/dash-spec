@@ -141,7 +141,7 @@ public sealed class CardRenderService(
         var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
         var topFilterScopeHint = CardFilterScopeHints.ResolveTopFilterScope(card, document);
         var interiorSlotRenders = await RenderSecondarySlotsAsync(
-            card,
+            effective,
             document,
             filters,
             filterIndex,
@@ -343,12 +343,13 @@ public sealed class CardRenderService(
                 Legend = slot.Legend,
                 Presentation = slot.Presentation,
                 SeriesTransform = slot.SeriesTransform,
+                FlowInput = slot.FlowInput ?? card.FlowInput,
             };
 
             try
             {
                 var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
-                var effective = resolved.Card;
+                var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
                 var drillOverlay = cellDrill.Get(card.Id);
                 var query = QueryCompiler.Compile(
                     effective,
@@ -360,6 +361,7 @@ public sealed class CardRenderService(
                     drillOverlay,
                     ResolveReportTime(document));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
+                rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
                 var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
                 var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix

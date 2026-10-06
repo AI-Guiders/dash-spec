@@ -193,7 +193,8 @@ internal static class DocumentModelMapper
             slot.BoundFilters.ToList(),
             MapOptional(slot.Legend, ToCore),
             MapOptional(slot.Presentation, ToCore),
-            MapOptional(slot.SeriesTransform, ToCore));
+            MapOptional(slot.SeriesTransform, ToCore),
+            MapOptional(slot.FlowInput, ToCoreFlowInput));
 
     private static LegendDefinition ToCore(FsharpCard.LegendDefinition legend) =>
         new(

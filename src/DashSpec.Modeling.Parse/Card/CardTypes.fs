@@ -113,7 +113,8 @@ type CardDiagramSlot =
       BoundFilters: IReadOnlyList<string>
       Legend: LegendDefinition option
       Presentation: PresentationBlock option
-      SeriesTransform: SeriesTransformBlock option }
+      SeriesTransform: SeriesTransformBlock option
+      FlowInput: CardFlowInput option }
 
 [<CLIMutable>]
 type CardDefinition =
