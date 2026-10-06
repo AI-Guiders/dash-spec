@@ -17,4 +17,5 @@ type DataSourceDefinition =
       Sheet: string option
       RowsType: string
       /// <c>true</c> when <c>datasource { infer … }</c> — manifest <c>default_provider_id</c>.
-      ProviderInfer: bool }
+      ProviderInfer: bool
+      ProviderId: string option }
