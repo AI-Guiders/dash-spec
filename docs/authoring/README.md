@@ -38,6 +38,6 @@ dotnet run --project src/DashSpec.DocGen -- .
 
 Строка с `#note` без валидного hex бросает ошибку — для пояснений используй `//` или `/* */`. Для многострочного списка цветов — `"#rrggbb"` или `[#e11d48, …]` на одной строке после `[`.
 
-## demo
+## Dogfood sample
 
-Примеры: `DashSpecDemo/docs/dashspec/` (soak shell + tab modules).
+Reference в этом репо: [`samples/demo/`](../../samples/demo/) (`demo-soak.dashspec`, `flows/demo-report.dashflow`). Продуктовые отчёты (demo и др.) — только в planet-репо, не в `dash-spec`.
