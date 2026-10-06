@@ -204,19 +204,23 @@ module DashSpecLexer =
                     while i < text.Length && isIdentPart text.[i] do i <- i + 1
 
                     let mutable value = text.[start..i - 1]
+                    let mutable kind = TokenKind.Ident
 
-                    if String.Equals(value, "UTC", StringComparison.OrdinalIgnoreCase) && i < text.Length then
-                        match text.[i] with
-                        | '+' | '-' ->
-                            i <- i + 1
+                    if String.Equals(value, "UTC", StringComparison.OrdinalIgnoreCase) then
+                        kind <- TokenKind.TimeShift
 
-                            while i < text.Length && (Char.IsDigit text.[i] || text.[i] = ':') do
+                        if i < text.Length then
+                            match text.[i] with
+                            | '+' | '-' ->
                                 i <- i + 1
 
-                            value <- text.[start..i - 1]
-                        | _ -> ()
+                                while i < text.Length && (Char.IsDigit text.[i] || text.[i] = ':') do
+                                    i <- i + 1
 
-                    tokens.Add({ Kind = TokenKind.Ident; Value = value; Start = start; Length = i - start })
+                                value <- text.[start..i - 1]
+                            | _ -> ()
+
+                    tokens.Add({ Kind = kind; Value = value; Start = start; Length = i - start })
                     atLineStart <- false
                 | c -> raise (DashSpecParseException($"Unexpected character '{c}' at position {i}.", i))
         tokens.Add({ Kind = TokenKind.Eof; Value = ""; Start = text.Length; Length = 0 })

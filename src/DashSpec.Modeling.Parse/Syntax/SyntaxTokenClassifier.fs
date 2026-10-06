@@ -52,7 +52,7 @@ module SyntaxTokenClassifier =
         match token.Kind with
         | TokenKind.LineComment | TokenKind.BlockComment -> DashSpecSyntaxKind.Comment
         | TokenKind.String | TokenKind.Raw -> DashSpecSyntaxKind.String
-        | TokenKind.HexColor | TokenKind.RelativeDay -> DashSpecSyntaxKind.Number
+        | TokenKind.HexColor | TokenKind.RelativeDay | TokenKind.TimeShift -> DashSpecSyntaxKind.Number
         | TokenKind.At | TokenKind.Bang -> DashSpecSyntaxKind.Keyword
         | TokenKind.Eq -> DashSpecSyntaxKind.Operator
         | TokenKind.Ident -> classifyIdent tokens index

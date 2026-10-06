@@ -6,12 +6,25 @@ open DashSpec.Modeling.Parse.Lexing
 
 module TransformStepParser =
 
+    let private readZoneParameterValue (reader: TokenReader) =
+        reader.SkipNewlines()
+
+        match reader.CurrentKind with
+        | TokenKind.TimeShift -> reader.ReadTimeShift()
+        | TokenKind.String -> reader.ReadString()
+        | TokenKind.Ident ->
+            raise (
+                DashSpecParseException(
+                    "zone requires a UTC offset literal (TimeShift), e.g. UTC+3 — not a named time zone identifier."))
+        | _ -> raise (reader.Unexpected "UTC offset literal (TimeShift)")
+
     let private readAssignmentValue (reader: TokenReader) =
         reader.SkipNewlines()
 
         let first =
             match reader.CurrentKind with
             | TokenKind.String -> reader.ReadString()
+            | TokenKind.TimeShift -> reader.ReadTimeShift()
             | TokenKind.Ident -> reader.ReadIdent()
             | _ -> raise (reader.Unexpected "assignment value")
 
@@ -92,7 +105,13 @@ module TransformStepParser =
                 else
                     let key = reader.ReadIdent()
                     reader.Expect TokenKind.Eq
-                    let value = readAssignmentValue reader
+
+                    let value =
+                        if String.Equals(key, "zone", StringComparison.OrdinalIgnoreCase) then
+                            readZoneParameterValue reader
+                        else
+                            readAssignmentValue reader
+
                     parameters.Add({ Key = key; Value = value })
 
             reader.Expect TokenKind.RBrace
