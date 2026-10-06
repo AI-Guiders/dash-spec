@@ -106,14 +106,8 @@ type CardFlowInput =
       PortName: string }
 
 [<CLIMutable>]
-type CardInteriorSlotBind =
-    { SlotRef: string
-      FilterNames: IReadOnlyList<string> }
-
-[<CLIMutable>]
 type CardInteriorFlowDefinition =
-    { Links: IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.FlowLinkDef>
-      SlotBinds: IReadOnlyList<CardInteriorSlotBind> }
+    { Links: IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.FlowLinkDef> }
 
 [<CLIMutable>]
 type CardDiagramSlot =
