@@ -12,6 +12,8 @@ type TokenKind =
     | RelativeDay
     /// <summary>Fixed UTC civil offset literal (<c>UTC</c>, <c>UTC+3</c>, <c>UTC+03:30</c>) for dashflow <c>to_zone</c>.</summary>
     | TimeShift
+    /// <summary>IANA tz id (<c>Europe/Moscow</c>, <c>America/New_York</c>, …) — converted to TimeShift at resolve.</summary>
+    | IanaZone
     | Comma
     | Colon
     | FlowArrow

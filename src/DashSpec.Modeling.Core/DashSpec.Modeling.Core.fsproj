@@ -15,5 +15,9 @@
     <Compile Include="TypeCatalog.fs" />
     <Compile Include="DataFlowGraph.fs" />
     <Compile Include="UtcOffsetZoneLiteral.fs" />
+    <Compile Include="IanaZoneConverter.fs" />
+    <Compile Include="TimeShiftToIanaResolver.fs" />
+    <Compile Include="ZoneResolveReference.fs" />
+    <Compile Include="BuiltinScalarTransforms.fs" />
   </ItemGroup>
 </Project>
