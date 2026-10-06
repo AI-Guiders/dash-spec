@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Localization;
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
@@ -75,6 +76,11 @@ public static partial class LabelFormat
         if (raw is DateOnly day)
         {
             return day.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (raw is DashDisplayDateTime display)
+        {
+            return display.Civil;
         }
 
         if (raw is DateTime dt)
@@ -228,6 +234,9 @@ public static partial class LabelFormat
 
         return value switch
         {
+            DashDisplayDateTime display => FormatDisplayDateTime(
+                display.Civil,
+                string.IsNullOrWhiteSpace(format) ? ResolveDefaultForDateTime(display.Civil) : format.Trim()),
             DateTime dt => FormatStoredDateTime(dt, format),
             DateTimeOffset dto => FormatStoredDateTime(dto.UtcDateTime, format),
             DateOnly d => FormatDateOnly(d, format ?? ResolveDateFormat(null)),

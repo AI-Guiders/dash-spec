@@ -12,6 +12,7 @@ public readonly struct DashValue : IEquatable<DashValue>
     private readonly DateOnly _date;
     private readonly TimeOnly _time;
     private readonly DateTime _dateTimeUtc;
+    private readonly bool _dateTimeIsDisplayWallClock;
 
     private DashValue(DashPrimitiveKind kind, bool isNull)
     {
@@ -69,6 +70,13 @@ public readonly struct DashValue : IEquatable<DashValue>
         _dateTimeUtc = DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Utc);
     }
 
+    private DashValue(DateTime displayCivil, bool displayWallClock)
+    {
+        Kind = DashPrimitiveKind.DateTime;
+        _dateTimeIsDisplayWallClock = displayWallClock;
+        _dateTimeUtc = DateTime.SpecifyKind(displayCivil, DateTimeKind.Unspecified);
+    }
+
     public DashPrimitiveKind Kind { get; }
 
     public bool IsNull => _isNull;
@@ -88,6 +96,12 @@ public readonly struct DashValue : IEquatable<DashValue>
     public static DashValue FromTime(TimeOnly value) => new(value);
 
     public static DashValue FromDateTimeUtc(DateTime value) => new(value);
+
+    /// <summary>Reporting civil time after dashflow <c>to_zone</c> (not UTC storage).</summary>
+    public static DashValue FromDateTimeDisplayWallClock(DateTime civil) => new(civil, displayWallClock: true);
+
+    public bool IsDisplayWallClockDateTime =>
+        Kind == DashPrimitiveKind.DateTime && !_isNull && _dateTimeIsDisplayWallClock;
 
     public bool AsBool() => Kind == DashPrimitiveKind.Bool && !_isNull
         ? _bool
@@ -134,7 +148,9 @@ public readonly struct DashValue : IEquatable<DashValue>
                 DashPrimitiveKind.Duration => TimeSpan.FromTicks(_durationTicks),
                 DashPrimitiveKind.Date => _date,
                 DashPrimitiveKind.Time => _time,
-                DashPrimitiveKind.DateTime => _dateTimeUtc,
+                DashPrimitiveKind.DateTime => _dateTimeIsDisplayWallClock
+                    ? new DashDisplayDateTime(_dateTimeUtc)
+                    : _dateTimeUtc,
                 _ => null,
             };
 
