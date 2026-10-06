@@ -39,15 +39,14 @@ internal static class GanttPayloadBuilder
 
         foreach (var row in rows.Rows)
         {
-            if (!TryReadDateTime(row.GetClr(startColumn), out var startUtc) ||
-                !TryReadDateTime(row.GetClr(endColumn), out var endUtc) ||
-                endUtc <= startUtc)
+            var startRaw = row.GetClr(startColumn);
+            var endRaw = row.GetClr(endColumn);
+            if (!TryCoercePresentTimeline(startRaw, out var start) ||
+                !TryCoercePresentTimeline(endRaw, out var end) ||
+                end <= start)
             {
                 continue;
             }
-
-            var start = LabelFormat.ToDisplayTime(startUtc);
-            var end = LabelFormat.ToDisplayTime(endUtc);
             if (hasFixedAxis && (start >= axisEnd || end <= axisStart))
             {
                 continue;
@@ -212,10 +211,38 @@ internal static class GanttPayloadBuilder
         return string.IsNullOrWhiteSpace(text) ? DefaultBarColor : text.Trim();
     }
 
+    private static bool TryCoercePresentTimeline(object? raw, out DateTime value)
+    {
+        switch (raw)
+        {
+            case DashDisplayDateTime display:
+                value = display.Civil;
+                return true;
+            case DateTime dt:
+                value = LabelFormat.ToDisplayTime(dt);
+                return true;
+            case DateTimeOffset dto:
+                value = LabelFormat.ToDisplayTime(dto.UtcDateTime);
+                return true;
+            case DateOnly date:
+                value = date.ToDateTime(TimeOnly.MinValue);
+                return true;
+            case string text when DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed):
+                value = LabelFormat.ToDisplayTime(parsed);
+                return true;
+            default:
+                value = default;
+                return false;
+        }
+    }
+
     private static bool TryReadDateTime(object? raw, out DateTime value)
     {
         switch (raw)
         {
+            case DashDisplayDateTime display:
+                value = display.Civil;
+                return true;
             case DateTime dt:
                 value = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
                 return true;
