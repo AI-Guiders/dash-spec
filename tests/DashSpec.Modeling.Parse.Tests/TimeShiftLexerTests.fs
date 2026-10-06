@@ -17,6 +17,19 @@ module TimeShiftLexerTests =
         Assert.Equal(expected, shift.Value)
 
     [<Fact>]
+    let ``lexer emits IanaZone for region slash city`` () =
+        let tokens =
+            DashSpecLexer.tokenize "Europe/Moscow"
+            |> Seq.filter (fun t -> t.Kind <> TokenKind.Newline)
+            |> Seq.toList
+
+        let zone =
+            tokens
+            |> List.find (fun t -> t.Kind = TokenKind.IanaZone)
+
+        Assert.Equal("Europe/Moscow", zone.Value)
+
+    [<Fact>]
     let ``syntax classifier colors TimeShift as number`` () =
         let kinds =
             DashSpecSyntaxClassifier.classify "zone = UTC+3\n"

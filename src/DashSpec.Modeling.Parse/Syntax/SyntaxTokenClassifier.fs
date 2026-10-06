@@ -51,7 +51,7 @@ module SyntaxTokenClassifier =
     let classifyToken (tokens: Token[]) index (token: Token) =
         match token.Kind with
         | TokenKind.LineComment | TokenKind.BlockComment -> DashSpecSyntaxKind.Comment
-        | TokenKind.String | TokenKind.Raw -> DashSpecSyntaxKind.String
+        | TokenKind.String | TokenKind.Raw | TokenKind.IanaZone -> DashSpecSyntaxKind.String
         | TokenKind.HexColor | TokenKind.RelativeDay | TokenKind.TimeShift -> DashSpecSyntaxKind.Number
         | TokenKind.At | TokenKind.Bang -> DashSpecSyntaxKind.Keyword
         | TokenKind.Eq -> DashSpecSyntaxKind.Operator

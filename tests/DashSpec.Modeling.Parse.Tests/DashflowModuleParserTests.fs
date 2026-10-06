@@ -1,5 +1,6 @@
 namespace DashSpec.Modeling.Parse.Tests
 
+open System
 open System.IO
 open Xunit
 open DashSpec.Modeling.Core
@@ -111,6 +112,7 @@ end flow stakeholder_peak
 
         let step = module'.Transformers.[0].Steps |> Array.exactlyOne
         Assert.Equal("to_zone", step.PluginId)
+        Assert.Equal("timeshift", step.Parameters |> Array.find (fun p -> p.Key = "zone_kind") |> fun p -> p.Value)
         Assert.Equal("UTC+3", step.Parameters |> Array.find (fun p -> p.Key = "zone") |> fun p -> p.Value)
         Assert.Equal("180", step.Parameters |> Array.find (fun p -> p.Key = "offset_minutes") |> fun p -> p.Value)
 
@@ -430,7 +432,99 @@ end flow x
         |> ignore
 
     [<Fact>]
-    let ``to_zone rejects IANA zone ids`` () =
+    let ``iana_to_timeshift converts IANA zone to offset_minutes`` () =
+        let previous = ZoneResolveReference.Utc
+        ZoneResolveReference.Utc <- System.DateTime(2026, 1, 15, 12, 0, 0, System.DateTimeKind.Utc)
+
+        try
+            let typesText =
+                """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+            let flowText =
+                """
+@flow iana_zone
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer reporting_calendar {
+  ports
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
+  transform use iana_to_timeshift {
+    iana = Europe/Moscow
+  }
+}
+
+utilization -> reporting_calendar
+
+end flow iana_zone
+"""
+
+            let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+            let module' = DashflowModuleParser.parseModule flowText catalog
+            let step = module'.Transformers.[0].Steps |> Array.exactlyOne
+
+            Assert.Equal("iana_to_timeshift", step.PluginId)
+            Assert.Equal("Europe/Moscow", step.Parameters |> Array.find (fun p -> p.Key = "iana") |> fun p -> p.Value)
+            Assert.Equal("180", step.Parameters |> Array.find (fun p -> p.Key = "offset_minutes") |> fun p -> p.Value)
+        finally
+            ZoneResolveReference.Utc <- previous
+
+    [<Fact>]
+    let ``to_zone rejects IANA zone literal`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+@flow bad_to_zone
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer reporting_calendar {
+  ports
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
+  transform use to_zone {
+    zone = Europe/Moscow
+  }
+}
+
+utilization -> reporting_calendar
+
+end flow bad_to_zone
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+
+        Assert.Throws<DashSpecParseException>(fun () ->
+            DashflowModuleParser.parseModule flowText catalog |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``iana_to_timeshift rejects unknown zone ids`` () =
         let typesText =
             """
 type UtilizationRow
@@ -455,8 +549,8 @@ transformer reporting_calendar {
     input stream raw: UtilizationRow
     output stream localized: UtilizationRow
   end ports
-  transform use to_zone {
-    zone = Europe/Moscow
+  transform use iana_to_timeshift {
+    zone = America/NotARealCity_XX
   }
 }
 
@@ -470,6 +564,57 @@ end flow bad_zone
         Assert.Throws<DashSpecParseException>(fun () ->
             DashflowModuleParser.parseModule flowText catalog |> ignore)
         |> ignore
+
+    [<Fact>]
+    let ``timeshift_to_iana resolves offset to representative iana`` () =
+        let previous = ZoneResolveReference.Utc
+        ZoneResolveReference.Utc <- System.DateTime(2026, 1, 15, 12, 0, 0, System.DateTimeKind.Utc)
+
+        try
+            let typesText =
+                """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+            let flowText =
+                """
+@flow reverse_zone
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer zone_label {
+  ports
+    input stream raw: UtilizationRow
+    output stream labeled: UtilizationRow
+  end ports
+  transform use timeshift_to_iana {
+    zone = UTC+3
+  }
+}
+
+utilization -> zone_label
+
+end flow reverse_zone
+"""
+
+            let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+            let module' = DashflowModuleParser.parseModule flowText catalog
+            let step = module'.Transformers.[0].Steps |> Array.exactlyOne
+
+            Assert.Equal("timeshift_to_iana", step.PluginId)
+            Assert.Equal("180", step.Parameters |> Array.find (fun p -> p.Key = "offset_minutes") |> fun p -> p.Value)
+            Assert.Equal("true", step.Parameters |> Array.find (fun p -> p.Key = "lossy") |> fun p -> p.Value)
+            Assert.False(String.IsNullOrWhiteSpace(step.Parameters |> Array.find (fun p -> p.Key = "iana") |> fun p -> p.Value))
+        finally
+            ZoneResolveReference.Utc <- previous
 
     [<Fact>]
     let ``to_zone accepts offset_minutes only`` () =
