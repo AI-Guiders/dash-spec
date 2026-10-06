@@ -64,7 +64,7 @@
 
                     card idle_vs_peak_scatter as "Idle vs peak apps"
                         diagram demo_idle_vs_peak_scatter
-                            datasource infer sql file "sql/idle-vs-peak-scatter.sql"
+                            datasource infer sql file "sql/idle-vs-peak-scatter.sql" rows FixtureRow
                             bind
                                 usage_date, user_name, app_name
                             end bind
