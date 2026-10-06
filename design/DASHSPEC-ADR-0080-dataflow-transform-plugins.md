@@ -86,7 +86,7 @@ transform use to_zone {
 
 Parameters are **plugin-defined** (TOML-like key/value in block); no arbitrary expressions in spec — only literals and references to report params / filter ports.
 
-**`to_zone`:** `zone` must be a **fixed UTC offset** (`UTC`, `UTC+3`, `UTC+03:30`, …) or **`offset_minutes`** — not IANA / Windows zone ids. Parser normalizes to `offset_minutes` in the resolved step.
+**`to_zone`:** `zone` must be a **fixed UTC offset** (`UTC`, `UTC+3`, `UTC+03:30`, …) or **`offset_minutes`** — not IANA / Windows zone ids. Lexer emits a dedicated **`TimeShift`** token for `UTC±…` literals; parser normalizes to `offset_minutes` in the resolved step.
 
 ### Builtins vs custom
 

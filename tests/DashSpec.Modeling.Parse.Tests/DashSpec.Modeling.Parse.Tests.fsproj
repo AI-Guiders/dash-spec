@@ -19,6 +19,7 @@
     <Compile Include="LayoutModuleParserTests.fs" />
     <Compile Include="TypeModuleParserTests.fs" />
     <Compile Include="AccessorGrammarTests.fs" />
+    <Compile Include="TimeShiftLexerTests.fs" />
     <Compile Include="DashflowModuleParserTests.fs" />
   </ItemGroup>
   <ItemGroup>
