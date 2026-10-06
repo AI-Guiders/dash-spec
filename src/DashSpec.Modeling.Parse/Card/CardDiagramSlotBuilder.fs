@@ -49,6 +49,8 @@ module CardDiagramSlotBuilder =
 
         builder.Slots.[slotRef]
 
+    let ensureSlot (builder: Builder) (slotRef: string) = ensure builder slotRef
+
     let resolveSlotRef (builder: Builder) (explicitRef: string option) =
         match explicitRef with
         | Some r when not (String.IsNullOrWhiteSpace r) -> r
