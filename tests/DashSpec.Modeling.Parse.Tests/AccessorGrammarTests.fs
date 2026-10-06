@@ -11,7 +11,7 @@ module AccessorGrammarTests =
     let ``lexer emits dot tokens inside view names`` () =
         let tokens = DashSpecLexer.tokenize "demo.v_daily_peak"
         Assert.Equal(TokenKind.Ident, tokens.[0].Kind)
-        Assert.Equal("lus", tokens.[0].Value)
+        Assert.Equal("demo", tokens.[0].Value)
         Assert.Equal(TokenKind.Dot, tokens.[1].Kind)
         Assert.Equal(TokenKind.Ident, tokens.[2].Kind)
         Assert.Equal("v_daily_peak", tokens.[2].Value)
