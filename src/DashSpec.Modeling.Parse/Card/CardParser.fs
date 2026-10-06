@@ -390,6 +390,8 @@ module CardParser =
         let inspect = ref None
         let tooltip = ref None
         let flowInput = ref None
+        let cardInputs = Dictionary<string, CardFlowInput>(StringComparer.OrdinalIgnoreCase)
+        let interiorFlow = ref None
         let inlineTooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
 
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
@@ -507,15 +509,31 @@ module CardParser =
                 if placement.Value.IsNone then placement.Value <- parsedPlacement
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
                 reader.SkipNewlines()
+            elif reader.TryKeyword "flow" then
+                if interiorFlow.Value.IsSome then
+                    raise (DashSpecParseException($"Card '{id}': duplicate flow block."))
+                let parsed = CardInteriorFlowParser.parseFlowBlock reader id
+                interiorFlow.Value <-
+                    Some
+                        { Links = parsed.Links
+                          SlotBinds =
+                            parsed.SlotBinds
+                            |> Seq.map (fun b -> { SlotRef = b.SlotRef; FilterNames = b.FilterNames })
+                            |> Seq.toList
+                            :> IReadOnlyList<_> }
+                reader.SkipNewlines()
             elif reader.TryKeyword "input" then
                 let parsed = CardFlowInputParser.parse reader id
                 match parsed.ForSlot with
                 | Some slotRef ->
                     CardDiagramSlotBuilder.applyFlowInput slotBuilder slotRef parsed.Input id
                 | None ->
-                    if flowInput.Value.IsSome then
-                        raise (DashSpecParseException($"Card '{id}': only one card-level flow input is supported; use 'input for <slot>' for additional slots."))
-                    flowInput.Value <- Some parsed.Input
+                    if cardInputs.ContainsKey parsed.Input.Alias then
+                        raise (DashSpecParseException($"Card '{id}': duplicate card input alias '{parsed.Input.Alias}'."))
+                    cardInputs.[parsed.Input.Alias] <- parsed.Input
+                    if String.Equals(parsed.Input.Alias, "rows", StringComparison.OrdinalIgnoreCase)
+                       || cardInputs.Count = 1 then
+                        flowInput.Value <- Some parsed.Input
                 reader.SkipNewlines()
             elif reader.TryKeyword "datasource" then
                 dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
@@ -632,6 +650,8 @@ module CardParser =
             if scratch.DataSource.IsNone && dataSource.Value.IsSome then
                 scratch.DataSource <- dataSource.Value
 
+        CardInteriorFlowResolver.applyToBuilder slotBuilder id interiorFlow.Value (cardInputs :> IReadOnlyDictionary<_, _>)
+
         let diagramSlotsFinal =
             match CardDiagramSlotBuilder.build slotBuilder id flowInput.Value with
             | Some map -> map
@@ -677,7 +697,11 @@ module CardParser =
         let anySlotFlowInput =
             diagramSlotsFinal.Values |> Seq.exists (fun slot -> slot.FlowInput.IsSome)
 
-        if dataSource.Value.IsNone && useCardPreset.IsNone && flowInput.Value.IsNone && not anySlotFlowInput then
+        if dataSource.Value.IsNone
+           && useCardPreset.IsNone
+           && flowInput.Value.IsNone
+           && cardInputs.Count = 0
+           && not anySlotFlowInput then
             raise (DashSpecParseException("Card requires a datasource block, flow input, or use <card-preset>."))
 
         let resolvedCardFlowInput =
@@ -725,4 +749,6 @@ module CardParser =
           Chrome = chrome.Value
           Inspect = inspect.Value
           Tooltip = tooltip.Value
-          FlowInput = resolvedCardFlowInput }
+          FlowInput = resolvedCardFlowInput
+          CardInputs = cardInputs :> IReadOnlyDictionary<_, _>
+          InteriorFlow = interiorFlow.Value }
