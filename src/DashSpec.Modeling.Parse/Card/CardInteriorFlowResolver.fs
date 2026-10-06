@@ -86,7 +86,7 @@ module CardInteriorFlowResolver =
         | false, _ ->
             raise (
                 DashSpecParseException(
-                    $"Card '{cardId}': flow link producer '{link.FromNode}' is not a card input alias; use module link 'node [port] -> [rows] slot' or declare 'input {link.FromNode} from node.port'."
+                    $"Card '{cardId}': flow link producer '{link.FromNode}' is not a card input alias."
                 )
             )
 
