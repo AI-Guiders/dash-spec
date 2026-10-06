@@ -24,7 +24,9 @@ defaults {
 
 Value is a **specific BCL culture name** (`ru-RU`, `en-US`, `en-GB`, …). Neutral shorthand (`ru`, `en`) is rejected (`DashSpecCultures.Parse`).
 
-Host bootstrap `[presentation].language` and `@host` `configuration.language` use the same rule. Cold-start default in code/TOML model: `ru-RU` (`DashSpecCultures.BootstrapDefaultName`).
+Host bootstrap `[presentation].language` and `@host` `configuration.language` use the same rule. Shipped `dash-spec.toml` sets `language = "ru-RU"` explicitly.
+
+Legacy WitDB / stored values `ru` and `en` are upgraded to `ru-RU` / `en-US` on host bootstrap (`NormalizeStoredLanguage` + one-row WitDB patch).
 
 ### Precedence (presentation locale)
 

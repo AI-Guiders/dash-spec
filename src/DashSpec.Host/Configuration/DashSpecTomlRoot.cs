@@ -1,5 +1,3 @@
-using DashSpec.Core.Localization;
-
 namespace DashSpec.Host.Configuration;
 
 public sealed class DashSpecTomlRoot

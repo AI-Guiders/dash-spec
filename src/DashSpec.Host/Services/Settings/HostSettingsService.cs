@@ -28,6 +28,13 @@ public sealed class HostSettingsService(
     {
         section = section.Trim();
         key = key.Trim();
+        if (string.Equals(section, HostSettingsSections.SectionPresentation, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(key, HostSettingsSections.KeyLanguage, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(value))
+        {
+            value = DashSpecCultures.NormalizeStoredLanguage(value);
+        }
+
         var row = db.HostSettings.FirstOrDefault(x => x.Section == section && x.Key == key);
         if (row is null)
         {
@@ -153,7 +160,7 @@ public sealed class HostSettingsService(
         {
             presentation.Language = string.IsNullOrWhiteSpace(value)
                 ? DashSpecCultures.BootstrapDefaultName
-                : value.Trim();
+                : DashSpecCultures.NormalizeStoredLanguage(value);
             presentationSignals.NotifyChanged();
             return;
         }
