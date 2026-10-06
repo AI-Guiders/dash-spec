@@ -89,7 +89,7 @@ transformer reporting_calendar {
     output stream localized: UtilizationRow
   end ports
   transform use to_zone {
-    zone = Europe/Moscow
+    zone = UTC+3
   }
 }
 
@@ -108,6 +108,11 @@ end flow stakeholder_peak
         Assert.Equal(1, module'.Links.Length)
         Assert.Equal(Some "utilization", module'.Links.[0].FromPort)
         Assert.Equal(Some "raw", module'.Links.[0].ToPort)
+
+        let step = module'.Transformers.[0].Steps |> Array.exactlyOne
+        Assert.Equal("to_zone", step.PluginId)
+        Assert.Equal("UTC+3", step.Parameters |> Array.find (fun p -> p.Key = "zone") |> fun p -> p.Value)
+        Assert.Equal("180", step.Parameters |> Array.find (fun p -> p.Key = "offset_minutes") |> fun p -> p.Value)
 
     [<Fact>]
     let ``parse flow block with arrow links and defaults`` () =
@@ -140,7 +145,7 @@ transformer reporting_calendar {
     output stream localized: UtilizationRow
   end ports
   transform use to_zone {
-    zone = Europe/Moscow
+    zone = UTC+3
   }
 }
 
@@ -423,3 +428,86 @@ end flow x
         Assert.Throws<DashSpecParseException>(fun () ->
             DashflowModuleParser.parseModule bareFlow catalog |> ignore)
         |> ignore
+
+    [<Fact>]
+    let ``to_zone rejects IANA zone ids`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+@flow bad_zone
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer reporting_calendar {
+  ports
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
+  transform use to_zone {
+    zone = Europe/Moscow
+  }
+}
+
+utilization -> reporting_calendar
+
+end flow bad_zone
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+
+        Assert.Throws<DashSpecParseException>(fun () ->
+            DashflowModuleParser.parseModule flowText catalog |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``to_zone accepts offset_minutes only`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+@flow minutes_only
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+transformer reporting_calendar {
+  ports
+    input stream raw: UtilizationRow
+    output stream localized: UtilizationRow
+  end ports
+  transform use to_zone {
+    offset_minutes = 180
+  }
+}
+
+utilization -> reporting_calendar
+
+end flow minutes_only
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+        let step = module'.Transformers.[0].Steps |> Array.exactlyOne
+        Assert.Equal("180", step.Parameters |> Array.exactlyOne |> fun p -> p.Value)

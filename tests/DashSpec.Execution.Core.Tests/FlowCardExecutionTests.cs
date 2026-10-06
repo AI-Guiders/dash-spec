@@ -23,7 +23,8 @@ public sealed class FlowCardExecutionTests
                 "reporting_calendar",
                 [new DashflowTransformerPortDefinition("localized", "UtilizationRowLocalized")],
                 DefaultInputPort: "raw",
-                DefaultOutputPort: "localized"),
+                DefaultOutputPort: "localized",
+                Steps: []),
         ],
         [
             new DashflowLinkDefinition("utilization", "utilization", "reporting_calendar", "raw"),

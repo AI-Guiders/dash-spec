@@ -24,11 +24,18 @@ public enum DashflowSourceFromKind
 
 public sealed record DashflowTransformerPortDefinition(string Name, string RowType);
 
+public sealed record DashflowTransformParameterDefinition(string Key, string Value);
+
+public sealed record DashflowTransformStepDefinition(
+    string PluginId,
+    IReadOnlyList<DashflowTransformParameterDefinition> Parameters);
+
 public sealed record DashflowTransformerDefinition(
     string Id,
     IReadOnlyList<DashflowTransformerPortDefinition> Outputs,
     string? DefaultInputPort,
-    string? DefaultOutputPort);
+    string? DefaultOutputPort,
+    IReadOnlyList<DashflowTransformStepDefinition> Steps);
 
 public sealed record DashflowLinkDefinition(
     string FromNode,

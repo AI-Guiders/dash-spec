@@ -60,7 +60,7 @@ path = "transforms/Lus.Custom.dll"
 transformer localize {
   input raw from util.out
   transform use to_zone
-  zone = Europe/Moscow
+  zone = UTC+3
   output localized
 }
 
@@ -80,11 +80,13 @@ Optional block sugar (same id):
 
 ```text
 transform use to_zone {
-  zone = Europe/Moscow
+  zone = UTC+3
 }
 ```
 
 Parameters are **plugin-defined** (TOML-like key/value in block); no arbitrary expressions in spec — only literals and references to report params / filter ports.
+
+**`to_zone`:** `zone` must be a **fixed UTC offset** (`UTC`, `UTC+3`, `UTC+03:30`, …) or **`offset_minutes`** — not IANA / Windows zone ids. Parser normalizes to `offset_minutes` in the resolved step.
 
 ### Builtins vs custom
 

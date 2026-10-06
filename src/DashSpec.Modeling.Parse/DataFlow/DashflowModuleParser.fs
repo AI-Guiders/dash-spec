@@ -8,42 +8,6 @@ open DashSpec.Modeling.Parse.Lexing
 
 module DashflowModuleParser =
 
-    let private readInlineAssignmentValue (reader: TokenReader) =
-        reader.SkipNewlines()
-
-        let first =
-            match reader.CurrentKind with
-            | TokenKind.String -> reader.ReadString()
-            | TokenKind.Ident -> reader.ReadIdent()
-            | _ -> raise (reader.Unexpected "assignment value")
-
-        let sb = System.Text.StringBuilder(first)
-
-        while not (reader.IsOnNewline()) && reader.RawKind = TokenKind.Slash do
-            reader.Advance()
-            sb.Append('/') |> ignore
-            ignore (sb.Append(reader.ReadIdentSameLine()))
-
-        sb.ToString()
-
-    let private skipTransformStep (reader: TokenReader) =
-        reader.ExpectKeyword "use"
-        reader.ReadIdent() |> ignore
-        reader.Expect TokenKind.LBrace
-
-        while not (reader.IsAt TokenKind.RBrace) && not reader.IsEof do
-            reader.SkipNewlines()
-
-            if reader.IsAt TokenKind.RBrace then ()
-            else
-                reader.ReadIdent() |> ignore
-
-                if reader.IsAt TokenKind.Eq then
-                    reader.Advance()
-                    readInlineAssignmentValue reader |> ignore
-
-        reader.Expect TokenKind.RBrace
-
     let private applySourcePorts (ports: FlowPortsParser.ParsedPorts) (outputPort: byref<string>) (outputRowType: byref<string>) =
         if ports.Inputs.Length > 0 then
             raise (DashSpecParseException("source ports block cannot declare input ports."))
@@ -147,6 +111,7 @@ module DashflowModuleParser =
         reader.SkipNewlines()
         let inputs = ResizeArray<DashflowInputDecl>()
         let outputs = ResizeArray<string * string>()
+        let steps = ResizeArray<DashflowTransformStepDef>()
         let mutable defaultInputPort = None
         let mutable defaultOutputPort = None
 
@@ -167,7 +132,7 @@ module DashflowModuleParser =
                 for decl in ports.Outputs do
                     outputs.Add((decl.Name, decl.ValueType))
             elif reader.TryKeyword "transform" then
-                skipTransformStep reader
+                steps.Add(TransformStepParser.parseTransformUseBlock reader transformerId)
             else
                 raise (reader.Unexpected "ports or transform")
 
@@ -179,7 +144,8 @@ module DashflowModuleParser =
           Inputs = inputs.ToArray()
           Outputs = outputs.ToArray()
           DefaultInputPort = defaultInputPort
-          DefaultOutputPort = defaultOutputPort }
+          DefaultOutputPort = defaultOutputPort
+          Steps = steps.ToArray() }
 
     let private tryDefaultProducerPort
         (sources: DashflowSourceDef[])

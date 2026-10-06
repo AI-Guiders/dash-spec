@@ -179,7 +179,7 @@ end type
 
 | Type | Role |
 |------|------|
-| **UtcOffset** | Fixed offset from UTC (`TotalMinutes`; `0` = UTC civil frame). IANA zone → offset resolved in **`transform use to_zone`** (DST rules live in the plugin, not in every row) |
+| **UtcOffset** | Fixed offset from UTC (`TotalMinutes`; `0` = UTC civil frame). Authoring: **`transform use to_zone { zone = UTC±… }`** or **`offset_minutes`** — fixed offset only (no IANA / Windows zone ids in dashflow) |
 | **Time** | Time of day in the frame of **`Offset`** (often paired with `Date`; alone for `time`-only SQL columns) |
 | **Date** | Calendar day in the frame of **`Offset`** |
 | **DateTime** | **`Date` + `Time`** (same idea as .NET `DateTime` ≈ `DateOnly` + `TimeOnly`, but nested UDTs). Modeling **requires** `Day.Offset` = `Clock.Offset` |
