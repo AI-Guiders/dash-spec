@@ -331,6 +331,7 @@ module rec DocumentModuleParser =
 
     let private parseDashboardShell (reader: TokenReader) (dashboardId: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) : DashboardShellContext * SqlDialect * string option * string option * string option =
         let includes = ModuleIncludeState()
+        let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -356,6 +357,7 @@ module rec DocumentModuleParser =
                     DocumentModuleKind.Dashboard
                     specDirectory
                     includes
+                    pendingModuleLinks
                     parseOptions
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
@@ -370,6 +372,9 @@ module rec DocumentModuleParser =
             then
                 ()
             elif reader.TryKeyword "report" then
+                reportTitle <- readOptionalReportTitle reader
+                flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Dashboard specDirectory parseOptions reader
+
                 let created =
                     createShell
                         DashboardShellMode.DashboardBody
@@ -387,12 +392,14 @@ module rec DocumentModuleParser =
                         timePolicyAcc
 
                 shell <- Some created
-                reportTitle <- readOptionalReportTitle reader
                 let mutable moduleLabel = None
                 parseReportBlock reader created ReportBodyMode.DashboardRoot (fun label -> moduleLabel <- Some label)
                 if reportTitle.IsNone then reportTitle <- moduleLabel
             else
                 raise (reader.Unexpected())
+
+        if pendingModuleLinks.Count > 0 then
+            flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Dashboard specDirectory parseOptions reader
 
         if not reader.IsEof then
             BlockSyntax.expectBlockEnd reader "dashboard" (Some dashboardId)
@@ -411,6 +418,7 @@ module rec DocumentModuleParser =
         (parseOptions: DashSpecParseOptions)
         =
         let includes = ModuleIncludeState()
+        let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -436,6 +444,7 @@ module rec DocumentModuleParser =
                     DocumentModuleKind.Tab
                     specDirectory
                     includes
+                    pendingModuleLinks
                     parseOptions
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
@@ -450,6 +459,9 @@ module rec DocumentModuleParser =
             then
                 ()
             elif reader.TryKeyword "report" then
+                reportTitle <- readOptionalReportTitle reader
+                flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Tab specDirectory parseOptions reader
+
                 let created =
                     createShell
                         mode
@@ -467,7 +479,6 @@ module rec DocumentModuleParser =
                         timePolicyAcc
 
                 shell <- Some created
-                reportTitle <- readOptionalReportTitle reader
                 let mutable moduleLabel = None
                 parseReportBlock reader created reportMode (fun label -> moduleLabel <- Some label)
 
@@ -477,6 +488,9 @@ module rec DocumentModuleParser =
                 if reportTitle.IsNone then reportTitle <- moduleLabel
             else
                 raise (reader.Unexpected())
+
+        if pendingModuleLinks.Count > 0 then
+            flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Tab specDirectory parseOptions reader
 
         if not reader.IsEof then
             BlockSyntax.expectBlockEnd reader "tab" (Some tabId)
@@ -495,6 +509,7 @@ module rec DocumentModuleParser =
         (moduleKind: DocumentModuleKind)
         (specDirectory: string option)
         (includes: ModuleIncludeState)
+        (pendingModuleLinks: ResizeArray<ModuleLinkDirective>)
         (parseOptions: DashSpecParseOptions)
         (setSqlDialect: SqlDialect -> unit)
         (setPalettePath: string option -> unit)
@@ -531,14 +546,28 @@ module rec DocumentModuleParser =
             reader.SkipNewlines()
             true
         else
-            match reader.TryModuleInclude() with
-            | Some includeReference ->
-                match specDirectory with
-                | None -> raise (DashSpecParseException("!include requires specDirectory when parsing."))
-                | Some dir ->
-                    IncludeExpander.expand includeReference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
+            match reader.TryEnvelopeLinkDirective() with
+            | Some directive ->
+                match parseOptions.ModuleLinkMode, specDirectory with
+                | ModuleLinkMode.LegacySequential, Some dir ->
+                    match directive with
+                    | ModuleLinkDirective.PathReference reference ->
+                        IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
+                    | ModuleLinkDirective.DiagramFrom _ ->
+                        IncludeExpander.linkEnvelope [ directive ] dir moduleKind includes parseOptions None None
+
                     reader.SkipNewlines()
                     true
+                | ModuleLinkMode.LegacySequential, None ->
+                    raise (DashSpecParseException("!include requires specDirectory when parsing."))
+                | ModuleLinkMode.MembershipUnion, None ->
+                    raise (DashSpecParseException("Module links require specDirectory when parsing."))
+                | ModuleLinkMode.MembershipUnion, Some _ ->
+                    pendingModuleLinks.Add directive
+                    reader.SkipNewlines()
+                    true
+                | _ ->
+                    raise (DashSpecParseException("Unknown module link mode."))
             | None ->
                 if reader.TryKeyword "extensions" then
                     setModuleExtensions (Card.ModuleExtensionsParser.parse reader)
@@ -556,6 +585,37 @@ module rec DocumentModuleParser =
                     reader.SkipNewlines()
                     true
                 else false
+
+    let private flushEnvelopeModuleLinks
+        (pending: ResizeArray<ModuleLinkDirective>)
+        (includes: ModuleIncludeState)
+        (moduleKind: DocumentModuleKind)
+        (specDirectory: string option)
+        (parseOptions: DashSpecParseOptions)
+        (reader: TokenReader)
+        =
+        if pending.Count = 0 then ()
+        else
+            match specDirectory with
+            | None -> raise (DashSpecParseException("Module links require specDirectory when parsing."))
+            | Some dir ->
+                match parseOptions.ModuleLinkMode with
+                | ModuleLinkMode.LegacySequential ->
+                    for directive in pending do
+                        match directive with
+                        | ModuleLinkDirective.PathReference reference ->
+                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
+                        | ModuleLinkDirective.DiagramFrom _ ->
+                            IncludeExpander.linkEnvelope [ directive ] dir moduleKind includes parseOptions None None
+
+                    pending.Clear()
+                | ModuleLinkMode.MembershipUnion ->
+                    let diagramIds, rowTypes = ReportReferenceScanner.scanReportBody reader
+
+                    IncludeExpander.linkEnvelope pending dir moduleKind includes parseOptions (Some diagramIds) (Some rowTypes)
+                    pending.Clear()
+                | _ ->
+                    raise (DashSpecParseException("Unknown module link mode."))
 
     let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
         let mutable paletteUse = None

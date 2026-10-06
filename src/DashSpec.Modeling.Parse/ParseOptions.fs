@@ -2,6 +2,7 @@ namespace DashSpec.Modeling.Parse
 
 open System
 open System.Collections.Generic
+open DashSpec.Modeling.Parse.Include
 
 module PhraseScopes =
     let onClick = "card.on_click"
@@ -29,6 +30,9 @@ type PhraseTemplateDescriptor =
 type DashSpecParseOptions =
     { MergeReferencedTabModules: bool
       TolerateIncompleteIncludes: bool
+      ModuleLinkMode: ModuleLinkMode
+      /// When true, .dashdiagram units matched only by glob are parsed only if referenced from report (ADR-0089).
+      LinkOnlyReferencedDiagramUnits: bool
       ExtensionBlockKeywords: IReadOnlySet<string>
       ExtensionBlockPluginIds: IReadOnlyDictionary<string, string>
       PhraseTemplates: IReadOnlyList<PhraseTemplateDescriptor>
@@ -40,6 +44,8 @@ module DashSpecParseOptions =
     let defaultOptions =
         { MergeReferencedTabModules = true
           TolerateIncompleteIncludes = false
+          ModuleLinkMode = ModuleLinkMode.MembershipUnion
+          LinkOnlyReferencedDiagramUnits = true
           ExtensionBlockKeywords = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
           ExtensionBlockPluginIds = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
           PhraseTemplates = Array.empty
@@ -50,4 +56,5 @@ module DashSpecParseOptions =
         { defaultOptions with
             MergeReferencedTabModules = false
             TolerateIncompleteIncludes = true
+            LinkOnlyReferencedDiagramUnits = false
             ExtensionBlockKeywords = HashSet<string>([ "views" ], StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }
