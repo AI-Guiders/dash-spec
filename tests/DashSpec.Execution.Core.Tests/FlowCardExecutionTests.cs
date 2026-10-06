@@ -94,7 +94,8 @@ public sealed class FlowCardExecutionTests
             [card],
             Dashflow: Flow);
 
-        Assert.Equal("postgres", FlowCardExecution.ResolveProviderId(document, card));
+        var materialized = DocumentFlowBinder.MaterializeCard(card, document);
+        Assert.Equal("postgres", FlowCardExecution.ResolveProviderId(materialized));
     }
 
     [Fact]
@@ -177,7 +178,7 @@ public sealed class FlowCardExecutionTests
             ],
             Dashflow: flow);
 
-        var card = FlowCardExecution.ApplyFlowInput(document.Cards[0], document);
+        var card = DocumentFlowBinder.MaterializeCard(document.Cards[0], document);
         var schema = new RowTypeSchema(
             "UtilizationRowLocalized",
             [new RowFieldSchema("bucket_start_utc", DashPrimitiveKind.DateTime)]);

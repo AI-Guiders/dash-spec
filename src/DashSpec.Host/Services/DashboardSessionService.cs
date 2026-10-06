@@ -143,9 +143,9 @@ public sealed class DashboardSessionService(
 
     public Task<CardRenderResult> RenderCardAsync(CardDefinition card, CancellationToken cancellationToken = default)
     {
-        var effectiveCard = ResolveEffectiveCard(card);
+        var effectiveCard = DocumentFlowBinder.MaterializeCard(ResolveEffectiveCard(card), Document);
         var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
-        var providerId = FlowCardExecution.ResolveProviderId(Document, effectiveCard);
+        var providerId = FlowCardExecution.ResolveProviderId(effectiveCard);
         var connector = runtimeConnectorResolver.Resolve(
             _runtimeConfigPath ?? throw new InvalidOperationException("Dashboard not loaded."),
             providerId);
@@ -164,9 +164,9 @@ public sealed class DashboardSessionService(
         CardDefinition card,
         CancellationToken cancellationToken = default)
     {
-        var effectiveCard = ResolveEffectiveCard(card);
+        var effectiveCard = DocumentFlowBinder.MaterializeCard(ResolveEffectiveCard(card), Document);
         var queryFilters = cardLocalFilters.ComposeQueryFilters(Filters, card, FilterIndex);
-        var providerId = FlowCardExecution.ResolveProviderId(Document, effectiveCard);
+        var providerId = FlowCardExecution.ResolveProviderId(effectiveCard);
         var connector = runtimeConnectorResolver.Resolve(
             _runtimeConfigPath ?? throw new InvalidOperationException("Dashboard not loaded."),
             providerId);

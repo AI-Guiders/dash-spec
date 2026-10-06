@@ -212,6 +212,7 @@ Until dashflow lands in the parser, **behavior unchanged**; new features that ad
 | **P3b** | Card `input alias from node.port`; compile to source `datasource` + per-card provider from `use provider` / `infer` |
 | **P3** | P3a + P3b (data plane wiring into Host query path) |
 | **P3c** | Host runs transformer steps on `TypedRowBatch` after SQL (`DashflowBatchExecutor`; v1 builtin `to_zone` on `DateTime` columns). `to_zone` emits `DashDisplayDateTime` so present layer does not re-apply host `DisplayTimeZone`. |
+| **P3b bind** | `DocumentFlowBinder.MaterializeFlowCards` at parse/validate (single SSOT): `input from node.port` → `DataSourceDefinition` (+ `ProviderId` when named). `FlowInput` remains for transformer path only; Host does not re-bind. |
 | **P4** | Data Flow Designer + matrix authoring (same IR + DataFlow executor per [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md)); `aggregate` / `join` steps; shared flow cache keys |
 
 **Trigger to start P1:** duplicate `datasource view` on the same view in one tab **or** second consumer needs the same localized stream (demo executive KPI pattern).

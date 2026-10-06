@@ -3,6 +3,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Execution.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpDocument = DashSpec.Modeling.Parse.Document;
 using FsharpParseOptions = DashSpec.Modeling.Parse.DashSpecParseOptions;
@@ -17,7 +18,8 @@ internal static class DocumentParseRegistration
     {
         FsharpDocument.DashboardValidationBridge.registerAction(document =>
         {
-            DashboardValidator.Validate(DocumentModelMapper.ToCore(document));
+            var core = DocumentFlowBinder.MaterializeFlowCards(DocumentModelMapper.ToCore(document));
+            DashboardValidator.Validate(core);
         });
 
         DocumentParseBridge.Parse = (text, specDirectory, parseOptions) =>
@@ -28,7 +30,7 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                return DocumentModelMapper.ToCore(document);
+                return DocumentFlowBinder.MaterializeFlowCards(DocumentModelMapper.ToCore(document));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {

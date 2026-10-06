@@ -17,19 +17,7 @@ public static class SpecResolver
         ArgumentNullException.ThrowIfNull(parsed);
 
         var cards = parsed.Cards
-            .Select(card =>
-            {
-                var resolved = CardResolver.Resolve(card, library, parsed.DashboardFilters);
-                if (resolved.Card.FlowInput is null || parsed.Dashflow is null)
-                {
-                    return resolved;
-                }
-
-                return resolved with
-                {
-                    Card = FlowCardExecution.ApplyFlowInput(resolved.Card, parsed),
-                };
-            })
+            .Select(card => CardResolver.Resolve(card, library, parsed.DashboardFilters))
             .ToList();
 
         CardSemanticValidator.Validate(parsed, cards);
@@ -42,13 +30,7 @@ public static class SpecResolver
         string cardId)
     {
         var card = parsed.Cards.Single(c => string.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase));
-        var resolved = CardResolver.Resolve(card, library, parsed.DashboardFilters);
-        if (resolved.Card.FlowInput is null || parsed.Dashflow is null)
-        {
-            return resolved;
-        }
-
-        return resolved with { Card = FlowCardExecution.ApplyFlowInput(resolved.Card, parsed) };
+        return CardResolver.Resolve(card, library, parsed.DashboardFilters);
     }
 }
 
