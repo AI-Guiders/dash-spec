@@ -13,6 +13,56 @@ module DashSpecLexer =
 
     let private isIdentPart (c: char) = Char.IsLetterOrDigit c || c = '_'
 
+    let private ianaRegionPrefixes =
+        set
+            [ "Africa"
+              "America"
+              "Antarctica"
+              "Arctic"
+              "Asia"
+              "Atlantic"
+              "Australia"
+              "Brazil"
+              "Canada"
+              "Chile"
+              "Europe"
+              "Indian"
+              "Mexico"
+              "Pacific"
+              "US"
+              "CET"
+              "CST6CDT"
+              "EET"
+              "EST"
+              "EST5EDT"
+              "Etc"
+              "HST"
+              "MET"
+              "MST"
+              "MST7MDT"
+              "PST8PDT"
+              "WET" ]
+
+    let private isIanaRegionPrefix (value: string) =
+        Seq.exists (fun prefix -> String.Equals(prefix, value, StringComparison.OrdinalIgnoreCase)) ianaRegionPrefixes
+
+    let private tryConsumeIanaPath (text: string) (start: int) (i: byref<int>) (firstSegment: string) =
+        if not (isIanaRegionPrefix firstSegment) || i >= text.Length || text.[i] <> '/' then
+            false
+        else
+            while i < text.Length && text.[i] = '/' do
+                i <- i + 1
+
+                if i >= text.Length || not (isIdentStart text.[i]) then
+                    raise (DashSpecParseException("IANA zone path requires an identifier after '/'.", i))
+
+                i <- i + 1
+
+                while i < text.Length && isIdentPart text.[i] do
+                    i <- i + 1
+
+            true
+
     let private skipToEndOfLine (text: string) (i: byref<int>) =
         while i < text.Length && text.[i] <> '\r' && text.[i] <> '\n' do
             i <- i + 1
@@ -219,6 +269,9 @@ module DashSpecLexer =
 
                                 value <- text.[start..i - 1]
                             | _ -> ()
+                    elif tryConsumeIanaPath text start &i value then
+                        kind <- TokenKind.IanaZone
+                        value <- text.[start..i - 1]
 
                     tokens.Add({ Kind = kind; Value = value; Start = start; Length = i - start })
                     atLineStart <- false

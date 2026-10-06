@@ -86,13 +86,21 @@ transform use to_zone {
 
 Parameters are **plugin-defined** (TOML-like key/value in block); no arbitrary expressions in spec — only literals and references to report params / filter ports.
 
-**`to_zone`:** `zone` must be a **fixed UTC offset** (`UTC`, `UTC+3`, `UTC+03:30`, …) or **`offset_minutes`** — not IANA / Windows zone ids. Lexer emits a dedicated **`TimeShift`** token for `UTC±…` literals; parser normalizes to `offset_minutes` in the resolved step.
+**Zone builtins (scalar, BCL `TimeZoneInfo`):**
+
+| Plugin id | In | Out | Notes |
+|-----------|----|-----|--------|
+| **`iana_to_timeshift`** | `iana` / `zone` = **`IanaZone`** | `offset_minutes` (+ echo `iana`) | DST-aware offset at reference UTC instant (`ZoneResolveReference` at parse; runtime uses report policy later) |
+| **`timeshift_to_iana`** | `zone` = **`TimeShift`** or `offset_minutes` | `iana` (+ `lossy=true`) | **Lossy** — many IANA ids share one offset; picks a stable representative |
+| **`to_zone`** | row batch + **`TimeShift`** (wire or `zone` / `offset_minutes`) | localized rows | Does **not** accept IANA; chain **`iana_to_timeshift`** first |
+
+Lexer: **`TimeShift`** (`UTC+3`) and **`IanaZone`** (`Europe/Moscow`) are distinct tokens. Implementation: `DashSpec.Core.Transforms` (+ parse-time validation in `BuiltinScalarTransforms`).
 
 ### Builtins vs custom
 
 | Kind | Examples | Ship |
 |------|----------|------|
-| **Builtin plugins** | `to_zone`, `to_grain`, `apply_filters`, `project`, `join` | In `DashSpec.Execution.Runtime` or `DashSpec.Transform.Builtins` |
+| **Builtin plugins** | `to_zone`, `iana_to_timeshift`, `timeshift_to_iana`, `to_grain`, `apply_filters`, `project`, `join` | In `DashSpec.Execution.Runtime` or `DashSpec.Transform.Builtins` |
 | **Product plugins** | demo-specific enrichment, odd joins | Customer / `demo.*` dll |
 
 Renaming: there is **no special node type `semantic_time`** — only `transform use to_zone` (or equivalent id).

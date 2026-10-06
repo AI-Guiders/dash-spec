@@ -20,7 +20,7 @@ module UtcOffsetZoneLiteral =
             let trimmed = text.Trim()
 
             if trimmed.Contains('/') || trimmed.Contains('\\') then
-                Result.Error "zone must be a fixed UTC offset (e.g. UTC+3), not an IANA or Windows time zone id."
+                Result.Error "zone with '/' must use an IANA zone literal (e.g. Europe/Moscow), not a TimeShift literal."
             elif trimmed.Contains(' ') then
                 Result.Error "zone must be a fixed UTC offset (e.g. UTC+3), not a named time zone."
             else
