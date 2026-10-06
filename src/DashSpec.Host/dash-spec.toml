@@ -3,6 +3,9 @@
 [host]
 dashhost = "../../samples/demo/demo.dashhost"
 
+[presentation]
+language = "ru-RU"
+
 [plugins]
 default_provider_id = "sqlserver"
 active_bundle = "standard"

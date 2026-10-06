@@ -8,9 +8,9 @@ public sealed class DashboardLocalizer(DashSpecTomlRoot bootstrap)
 {
     private bool Ru =>
         DashSpecCultures.Parse(
-                string.IsNullOrWhiteSpace(bootstrap.Presentation.Language)
-                    ? DashSpecCultures.BootstrapDefaultName
-                    : bootstrap.Presentation.Language)
+                DashSpecCultures.NormalizeStoredLanguage(bootstrap.Presentation.Language) is { Length: > 0 } name
+                    ? name
+                    : DashSpecCultures.BootstrapDefaultName)
             .TwoLetterISOLanguageName
             .Equals("ru", StringComparison.OrdinalIgnoreCase);
 
