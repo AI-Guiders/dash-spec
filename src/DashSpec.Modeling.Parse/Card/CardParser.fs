@@ -650,7 +650,8 @@ module CardParser =
             if scratch.DataSource.IsNone && dataSource.Value.IsSome then
                 scratch.DataSource <- dataSource.Value
 
-        CardInteriorFlowResolver.applyToBuilder slotBuilder id interiorFlow.Value (cardInputs :> IReadOnlyDictionary<_, _>)
+        if cardInputs.Count > 0 || interiorFlow.Value.IsSome then
+            CardInteriorFlowResolver.applyToBuilder slotBuilder id interiorFlow.Value (cardInputs :> IReadOnlyDictionary<_, _>)
 
         let diagramSlotsFinal =
             match CardDiagramSlotBuilder.build slotBuilder id flowInput.Value with
