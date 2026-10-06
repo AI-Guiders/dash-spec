@@ -16,8 +16,8 @@ public sealed class CatalogParserTests
             entry soak as "Dev Soak"
               dashspec "demo-soak.dashspec"
             
-            entry stakeholder as "Stakeholder"
-              dashspec "demo-stakeholder.dashspec"
+            entry analytics as "Analytics"
+              dashspec "demo-analytics.dashspec"
             """;
 
         var catalog = CatalogParser.Parse(text);

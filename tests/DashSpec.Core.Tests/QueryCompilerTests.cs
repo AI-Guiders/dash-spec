@@ -440,7 +440,7 @@ public class QueryCompilerTests
                 ["reference"] = "purchased_seats",
                 ["order_by"] = "utilization_pct DESC, app_name",
             }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_stakeholder_peak_over_limit", RowsType: "FixtureRow"),
+            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak_over_limit", RowsType: "FixtureRow"),
             ["chart_top"],
             []);
 

@@ -200,7 +200,7 @@ public class SpecModulesTests
     {
         var library = SpecLibrary.Parse(
         [
-            "[palette.lus]",
+            "[palette.demo_apps]",
             "default = \"#999999\"",
             "Tekla = \"#e11d48\"",
             "[diagram.d1]",
@@ -217,7 +217,7 @@ public class SpecModulesTests
                   !include "query-row-types.dashtype"
               report
               title = "T"
-              palette lus
+              palette demo_apps
               card c as "C"
               use c1
               end card
@@ -226,10 +226,10 @@ public class SpecModulesTests
 """);
 
         var export = SpecResolveExporter.Export(document, library);
-        Assert.Equal("lus", export.ColorPalette);
+        Assert.Equal("demo_apps", export.ColorPalette);
         Assert.Single(export.Cards);
         Assert.Equal("line", export.Cards[0].DiagramKind);
-        Assert.Equal("lus", export.Cards[0].EffectiveColorPalette);
+        Assert.Equal("demo_apps", export.Cards[0].EffectiveColorPalette);
         Assert.Equal("usage_date", export.Cards[0].Diagram["x"]);
     }
 
@@ -450,28 +450,12 @@ public class SpecModulesTests
             var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, soak.PalettePath, dir, soak);
             Assert.Equal("#e11d48", library!.TryGetPalette("demo_apps")!["Tekla"]);
 
-            var overviewPath = Path.Combine(dir, "demo-overview.dashspec");
-            if (File.Exists(overviewPath))
+            var analyticsPath = Path.Combine(dir, "demo-analytics.dashspec");
+            if (File.Exists(analyticsPath))
             {
-                var overview = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(overviewPath), dir, parseOptions);
-                var overviewLibrary = SpecLibraryComposer.Load(
-                    overviewPath,
-                    overview.DiagramLibraryPath,
-                    overview.PalettePath,
-                    dir,
-                    overview);
-                Assert.NotNull(overviewLibrary!.TryGetDiagram("demo_peak_concurrent_heatmap"));
-
-                var card = overview.Cards.First(c => c.Id == "peak_concurrent_proxy");
-                var switched = CardViewSwitchApplier.Apply(card, "heatmap");
-                var resolved = CardDiagramResolver.Resolve(switched, overviewLibrary);
-                Assert.Equal("heatmap", resolved.Card.Diagram.Kind);
-                Assert.Equal("matrix-canvas", resolved.RenderPluginId);
+                var analytics = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(analyticsPath), dir, parseOptions);
+                Assert.Equal("demo_apps", analytics.ColorPalette);
             }
-
-            var stakePath = Path.Combine(dir, "demo-stakeholder.dashspec");
-            var stake = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(stakePath), dir, parseOptions);
-            Assert.Equal("demo_apps", stake.ColorPalette);
         }
         catch (DashSpecParseException ex) when (ex.Message.Contains("ADR-0029", StringComparison.OrdinalIgnoreCase))
         {

@@ -6,8 +6,8 @@ namespace DashSpec.Core.Tests;
 
 public sealed class DisplayResolutionTests
 {
-    private static readonly DashboardDocument StakeholderDoc = new(
-        "stakeholder",
+    private static readonly DashboardDocument SampleCatalogDoc = new(
+        "customer_reports",
         "Report DSL Title",
         "sqlserver",
         SqlDialect.TSql,
@@ -18,7 +18,7 @@ public sealed class DisplayResolutionTests
         FiltersChromeDefinition.Default,
         [],
         [],
-        [new TabDefinition("stakeholder", "Tab Label", ["peak_by_app"])],
+        [new TabDefinition("customer_reports", "Tab Label", ["peak_by_app"])],
         [
             new CardDefinition(
                 "peak_by_app",
@@ -36,31 +36,31 @@ public sealed class DisplayResolutionTests
                 []),
         ]);
 
-    private static readonly CatalogEntryDefinition StakeholderEntry = new(
+    private static readonly CatalogEntryDefinition SampleCatalogEntry = new(
         "peak_by_app",
-        "№1 Пик одновременности по ПО",
-        "demo-stakeholder-peak-by-app.dashspec");
+        "Peak by app (catalog)",
+        "demo-peak-by-app.dashspec");
 
     [Fact]
     public void CatalogProd_report_header_prefers_report_title_over_entry()
     {
-        var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry);
+        var context = ResolutionContext.ForCatalog(SampleCatalogDoc, SampleCatalogEntry);
         Assert.Equal("Report DSL Title", DisplayResolution.ResolveReportHeaderTitle(context));
     }
 
     [Fact]
     public void CatalogProd_report_header_falls_back_to_entry_title()
     {
-        var doc = StakeholderDoc with { Title = "" };
-        var context = ResolutionContext.ForCatalog(doc, StakeholderEntry);
-        Assert.Equal("№1 Пик одновременности по ПО", DisplayResolution.ResolveReportHeaderTitle(context));
+        var doc = SampleCatalogDoc with { Title = "" };
+        var context = ResolutionContext.ForCatalog(doc, SampleCatalogEntry);
+        Assert.Equal("Peak by app (catalog)", DisplayResolution.ResolveReportHeaderTitle(context));
     }
 
     [Fact]
     public void CatalogProd_card_chrome_suppressed_when_id_matches_entry()
     {
-        var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry);
-        var card = StakeholderDoc.Cards[0];
+        var context = ResolutionContext.ForCatalog(SampleCatalogDoc, SampleCatalogEntry);
+        var card = SampleCatalogDoc.Cards[0];
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("peak_by_app", resolved.Title);
         Assert.False(resolved.ShowChromeTitle);
@@ -69,8 +69,8 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void CatalogProd_card_chrome_shown_for_non_entry_id()
     {
-        var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry);
-        var card = StakeholderDoc.Cards[1];
+        var context = ResolutionContext.ForCatalog(SampleCatalogDoc, SampleCatalogEntry);
+        var card = SampleCatalogDoc.Cards[1];
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("Detail slice", resolved.Title);
         Assert.True(resolved.ShowChromeTitle);
@@ -79,8 +79,8 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void SoakDev_card_chrome_uses_card_title()
     {
-        var context = ResolutionContext.ForSoak(StakeholderDoc);
-        var card = StakeholderDoc.Cards[1];
+        var context = ResolutionContext.ForSoak(SampleCatalogDoc);
+        var card = SampleCatalogDoc.Cards[1];
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("Detail slice", resolved.Title);
         Assert.True(resolved.ShowChromeTitle);
@@ -89,28 +89,28 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void SoakDev_report_header_uses_report_title()
     {
-        var context = ResolutionContext.ForSoak(StakeholderDoc, StakeholderDoc.Tabs[0]);
+        var context = ResolutionContext.ForSoak(SampleCatalogDoc, SampleCatalogDoc.Tabs[0]);
         Assert.Equal("Report DSL Title", DisplayResolution.ResolveReportHeaderTitle(context));
     }
 
     [Fact]
     public void DashboardEmbed_card_chrome_falls_back_to_entry_title()
     {
-        var card = StakeholderDoc.Cards[0] with { Title = "" };
-        var context = ResolutionContext.ForEmbed(StakeholderDoc, StakeholderEntry);
+        var card = SampleCatalogDoc.Cards[0] with { Title = "" };
+        var context = ResolutionContext.ForEmbed(SampleCatalogDoc, SampleCatalogEntry);
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
-        Assert.Equal("№1 Пик одновременности по ПО", resolved.Title);
+        Assert.Equal("Peak by app (catalog)", resolved.Title);
         Assert.True(resolved.ShowChromeTitle);
     }
 
     [Fact]
     public void Card_chrome_title_hidden_when_chrome_requests_it()
     {
-        var card = StakeholderDoc.Cards[1] with
+        var card = SampleCatalogDoc.Cards[1] with
         {
             Chrome = new CardChromeDefinition(CardBoundFilterChrome.Hidden, HideTitle: true),
         };
-        var context = ResolutionContext.ForSoak(StakeholderDoc);
+        var context = ResolutionContext.ForSoak(SampleCatalogDoc);
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("Detail slice", resolved.Title);
         Assert.False(resolved.ShowChromeTitle);
@@ -159,8 +159,8 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Tab_label_catalog_prod_prefers_entry_title_for_single_tab()
     {
-        var context = ResolutionContext.ForCatalog(StakeholderDoc, StakeholderEntry, StakeholderDoc.Tabs[0]);
-        Assert.Equal("№1 Пик одновременности по ПО", DisplayResolution.ResolveTabLabel(context));
+        var context = ResolutionContext.ForCatalog(SampleCatalogDoc, SampleCatalogEntry, SampleCatalogDoc.Tabs[0]);
+        Assert.Equal("Peak by app (catalog)", DisplayResolution.ResolveTabLabel(context));
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class DisplayResolutionTests
             new TabDefinition("overview", "Обзор", []),
             new TabDefinition("detail", "Детализация", []),
         ];
-        var soakDoc = StakeholderDoc with { Tabs = soakTabs };
+        var soakDoc = SampleCatalogDoc with { Tabs = soakTabs };
         var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.dashspec");
         var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
         Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));
@@ -180,7 +180,7 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Page_nav_title_falls_back_to_id()
     {
-        var page = new ReportPageDefinition("details", null, TabId: "stakeholder");
+        var page = new ReportPageDefinition("details", null, TabId: "customer_reports");
         Assert.Equal("details", DisplayResolution.ResolvePageNavTitle(page));
     }
 

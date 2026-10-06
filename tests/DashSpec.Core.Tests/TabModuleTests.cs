@@ -267,7 +267,7 @@ public class TabModuleTests
     public void ReadDashboardHeader_reads_tab_root_id()
     {
         const string text = """
-            @tab stakeholder
+            @tab analytics_tab
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -284,6 +284,6 @@ public class TabModuleTests
             end tab
             """;
 
-        Assert.Equal(("stakeholder", "stakeholder"), DashSpecParser.ReadDashboardHeader(text));
+        Assert.Equal(("analytics_tab", "analytics_tab"), DashSpecParser.ReadDashboardHeader(text));
     }
 }

@@ -388,16 +388,32 @@ public class ChartRuntimeTests
     [Fact]
     public void ResolveChartPresentation_merges_nested_presentation_y_max_for_utilization_bar()
     {
-        var baseDir = @"samples/demo";
-        var specPath = Path.Combine(baseDir, "demo-stakeholder.dashspec");
-        if (!File.Exists(specPath))
-        {
-            return;
-        }
+        var library = SpecLibrary.Parse(
+        [
+            "[presentation.bar_utilization_percent]",
+            "scale_value = \"percent\"",
+            "value_axis_max = \"100\"",
+        ]);
 
-        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(specPath), baseDir);
-        var library = SpecLibraryComposer.Load(specPath, doc.DiagramLibraryPath, doc.PalettePath, baseDir, doc);
-        var card = doc.Cards.Single(c => c.Id == "stakeholder_utilization");
+        var card = DashSpecTestRowTypes.ParseDashboard("""
+            @dashboard t
+                  !include "query-row-types.dashtype"
+              report
+              title = "T"
+              card utilization_bar as "Utilization"
+              diagram bar
+              category = app_name
+              value = utilization_pct
+              end bar
+              datasource infer view demo.v_utilization_by_app rows FixtureRow
+              presentation
+                use bar_utilization_percent
+              end presentation
+              end card
+              end report
+            end dashboard
+            """).Cards[0];
+
         var resolved = CardDiagramResolver.Resolve(card, library);
         var presentation = CardChromeResolver.ResolveChartPresentation(resolved.Card, library);
 
