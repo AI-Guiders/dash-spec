@@ -71,4 +71,4 @@ Parse resolves links onto `CardDiagramSlot` (`FlowInput`, `BoundFilters`); [Docu
 ## Follow-up
 
 - `slot … ports in …` parse + lint (edge must target declared port).
-- Report-level route links (`filter -> chrome card`).
+- Report-level route links — [ADR-0092](DASHSPEC-ADR-0092-report-scope-routing-and-events.md).

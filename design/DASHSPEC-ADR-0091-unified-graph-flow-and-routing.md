@@ -35,7 +35,7 @@ producer [outPort] -> [inPort] consumer
 |-------|-----------|---------|
 | Module | `@flow` / `connect { flow … }` | `raw [raw] -> [raw] peak_tz` |
 | Card | `card … flow … end flow` | [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md) |
-| Report (later) | `report` / tab | `usage_date -> chrome dashboard` |
+| Report / page | `report` / `page` `flow` | See [ADR-0092](DASHSPEC-ADR-0092-report-scope-routing-and-events.md) |
 
 **Not** a second notation: no `bind` lists for wiring, no `input … from` in new specs (legacy parse only).
 
@@ -75,7 +75,7 @@ One matrix / canvas: same edge shape; filter views by `edgeKind`.
 |-------|-------------|
 | **P1** (current) | Card `flow` = links only; flow/route inference; legacy `input` parse |
 | **P2** | `slot` + `ports`; Graph IR export |
-| **P3** | Report chrome/host route links; event edges |
+| **P3** | [ADR-0092](DASHSPEC-ADR-0092-report-scope-routing-and-events.md): report/page chrome, host, derive, events |
 | **P4** | Rename module IR `FlowGraph` → `Graph` subgraph |
 
 ## Non-goals
