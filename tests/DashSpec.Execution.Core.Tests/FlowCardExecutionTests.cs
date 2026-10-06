@@ -1,4 +1,6 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Model;
+using DashSpec.Core.Transforms;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -127,5 +129,69 @@ public sealed class FlowCardExecutionTests
 
         Assert.Equal("UtilizationRowLocalized", resolved.DataSource.RowsType);
         Assert.Equal("demo.v_daily_peak", resolved.DataSource.Value);
+    }
+
+    [Fact]
+    public void CardDataPipeline_runs_to_zone_on_transformer_path()
+    {
+        var flow = Flow with
+        {
+            Transformers =
+            [
+                new DashflowTransformerDefinition(
+                    "reporting_calendar",
+                    [new DashflowTransformerPortDefinition("localized", "UtilizationRowLocalized")],
+                    DefaultInputPort: "raw",
+                    DefaultOutputPort: "localized",
+                    Steps:
+                    [
+                        new DashflowTransformStepDefinition(
+                            BuiltinScalarTransformIds.ToZone,
+                            [new DashflowTransformParameterDefinition("offset_minutes", "180")]),
+                    ]),
+            ],
+        };
+
+        var document = new DashboardDocument(
+            "t",
+            "T",
+            null,
+            SqlDialect.TSql,
+            null,
+            null,
+            null,
+            LayoutDefinition.Default,
+            FiltersChromeDefinition.Default,
+            [],
+            [],
+            [],
+            [
+                new CardDefinition(
+                    "c",
+                    "C",
+                    new DiagramDefinition("table", new Dictionary<string, string>()),
+                    new DataSourceDefinition(DataSourceKind.View, string.Empty, RowsType: string.Empty),
+                    [],
+                    [],
+                    FlowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
+            ],
+            Dashflow: flow);
+
+        var card = FlowCardExecution.ApplyFlowInput(document.Cards[0], document);
+        var schema = new RowTypeSchema(
+            "UtilizationRowLocalized",
+            [new RowFieldSchema("bucket_start_utc", DashPrimitiveKind.DateTime)]);
+        var utc = new DateTime(2026, 1, 15, 9, 0, 0, DateTimeKind.Utc);
+        var batch = TypedRowBatch.Create(
+            schema,
+            new List<DashValue[]>
+            {
+                new[] { DashValue.FromDateTimeUtc(utc) },
+            });
+
+        var transformed = DashflowCardDataPipeline.ApplyTransforms(document, card, batch);
+
+        Assert.Equal(12, transformed[0].Get("bucket_start_utc").AsDateTimeUtc().Hour);
+        Assert.True(transformed[0].Get("bucket_start_utc").IsDisplayWallClockDateTime);
     }
 }

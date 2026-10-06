@@ -1,0 +1,12 @@
+@flow demo_period_peak
+
+source period_peak {
+  use provider infer
+  from view demo.v_peak_concurrent_by_period
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+end flow demo_period_peak

@@ -116,6 +116,7 @@ public sealed class CardRenderService(
             specDirectory,
             reportTimePolicy: reportTime);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
+        rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
             ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -179,6 +180,7 @@ public sealed class CardRenderService(
                     specDirectory,
                     reportTimePolicy: reportTime);
                 var priorRows = await connector.QueryAsync(priorQuery, cancellationToken).ConfigureAwait(false);
+                priorRows = DashflowCardDataPipeline.ApplyTransforms(document, effective, priorRows);
                 if (KpiPriorPeriod.TryReadScalar(priorRows, effective.Diagram, out var priorValue))
                 {
                     (numberDelta, numberDeltaTone) = KpiPriorPeriod.FormatDelta(currentValue, priorValue);

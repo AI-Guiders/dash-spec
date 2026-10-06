@@ -10,6 +10,7 @@
 
     connect
         use palette demo_apps
+        flow "flows/demo-period-peak.dashflow"
     end connect
 
     report
@@ -20,8 +21,9 @@
                 period_start
             end filters
 
+            input rows from period_peak.rows
+
             diagram demo_period_peak_by_app_bar
-                datasource infer view demo.v_peak_concurrent_by_period rows FixtureRow
                 bind
                     period_grain, period_start, app_name
                 end bind
