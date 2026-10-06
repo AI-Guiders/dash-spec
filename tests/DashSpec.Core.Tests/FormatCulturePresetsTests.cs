@@ -7,6 +7,8 @@ namespace DashSpec.Core.Tests;
 
 public sealed class FormatCulturePresetsTests
 {
+    static FormatCulturePresetsTests() => DashSpecTestCulture.Ensure();
+
     [Fact]
     public void ResolveCulture_prefers_report_over_ui()
     {
@@ -31,7 +33,7 @@ public sealed class FormatCulturePresetsTests
         }
         finally
         {
-            LabelFormat.UiCulture = null;
+            DashSpecTestCulture.Ensure();
         }
     }
 
@@ -48,7 +50,7 @@ public sealed class FormatCulturePresetsTests
         finally
         {
             LabelFormat.ClearReportDefaults();
-            LabelFormat.UiCulture = null;
+            DashSpecTestCulture.Ensure();
         }
     }
 }

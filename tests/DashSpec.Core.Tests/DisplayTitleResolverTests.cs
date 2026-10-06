@@ -7,6 +7,8 @@ namespace DashSpec.Core.Tests;
 
 public sealed class DisplayTitleResolverTests
 {
+    static DisplayTitleResolverTests() => DashSpecTestCulture.Ensure();
+
     private static readonly FilterDefinition ChartTop = new(
         FilterKind.Top,
         "chart_top",

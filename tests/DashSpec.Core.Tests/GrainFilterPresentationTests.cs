@@ -7,6 +7,8 @@ namespace DashSpec.Core.Tests;
 
 public class GrainFilterPresentationTests
 {
+    static GrainFilterPresentationTests() => DashSpecTestCulture.Ensure();
+
     private static readonly IReadOnlyDictionary<string, FilterDefinition> Index =
         new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {

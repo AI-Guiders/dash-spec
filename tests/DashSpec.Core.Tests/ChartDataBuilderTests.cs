@@ -11,6 +11,8 @@ namespace DashSpec.Core.Tests;
 
 public class ChartDataBuilderTests
 {
+    static ChartDataBuilderTests() => DashSpecTestCulture.Ensure();
+
     private static TooltipDefinition PeakAppsTooltip =>
         new("peak_apps", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
