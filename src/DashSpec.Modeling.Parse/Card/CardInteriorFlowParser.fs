@@ -7,44 +7,16 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Lexing
 
-/// Card-local wiring: module inputs → slots (+ bind on slots). Not merged into module dashflow (ADR-0078).
+/// Card-local wiring (flow + route links). See ADR-0091.
 module CardInteriorFlowParser =
 
     [<CLIMutable>]
-    type CardInteriorSlotBind =
-        { SlotRef: string
-          FilterNames: IReadOnlyList<string> }
-
-    [<CLIMutable>]
-    type CardInteriorFlowDefinition =
-        { Links: IReadOnlyList<FlowLinkDef>
-          SlotBinds: IReadOnlyList<CardInteriorSlotBind> }
-
-    let private parseSlotBind (reader: TokenReader) (cardId: string) =
-        let slotRef = reader.ReadIdent()
-
-        if String.IsNullOrWhiteSpace slotRef then
-            raise (DashSpecParseException($"Card '{cardId}': bind requires a diagram slot id."))
-
-        let filters =
-            if reader.IsOnNewline() then
-                reader.SkipNewlines()
-                if BlockSyntax.isBlockEnd reader "bind" None then
-                    BlockSyntax.expectBlockEnd reader "bind" None
-                    Array.empty :> IReadOnlyList<_>
-                else
-                    PropertyBlockParser.parseCommaListBlock reader "bind" "bind"
-            else
-                reader.ReadCommaListInline()
-
-        { SlotRef = slotRef
-          FilterNames = filters }
+    type CardInteriorFlowDefinition = { Links: IReadOnlyList<FlowLinkDef> }
 
     let parseFlowBlock (reader: TokenReader) (cardId: string) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let links = ResizeArray<FlowLinkDef>()
-        let slotBinds = ResizeArray<CardInteriorSlotBind>()
 
         while not (BlockSyntax.isBlockEnd reader "flow" None) && not reader.IsEof do
             reader.SkipNewlines()
@@ -52,24 +24,23 @@ module CardInteriorFlowParser =
             if BlockSyntax.isBlockEnd reader "flow" None then
                 ()
             elif reader.TryKeyword "bind" then
-                slotBinds.Add(parseSlotBind reader cardId)
-                reader.SkipNewlines()
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': 'bind' inside flow was removed; use route links: filterId -> [filterId] slotRef (see ADR-0091)."
+                    )
+                )
             elif reader.TryKeyword "slot" then
-                let slotRef = reader.ReadIdent()
-                if String.IsNullOrWhiteSpace slotRef then
-                    raise (DashSpecParseException($"Card '{cardId}': slot requires a diagram slot id."))
-                links.Add
-                    { FromNode = slotRef
-                      FromPort = None
-                      ToNode = slotRef
-                      ToPort = None }
-                reader.SkipNewlines()
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': 'slot' inside flow was removed; use module link node [port] -> [rows] slotRef."
+                    )
+                )
             else
                 let saved = reader.SavePosition()
                 let fromNode = reader.ReadIdent()
 
                 if String.IsNullOrWhiteSpace fromNode then
-                    raise (reader.Unexpected "bind, slot, flow link, or end flow")
+                    raise (reader.Unexpected "flow link (producer [port] -> [port] consumer)")
 
                 let fromPort = FlowLinkParser.tryReadBracketPortSameLine reader
 
@@ -79,10 +50,9 @@ module CardInteriorFlowParser =
                     reader.RestorePosition saved
                     raise (
                         reader.Unexpected
-                            "bind, slot <id>, or flow link (inputAlias [port] -> [port] slotRef)"
+                            "flow link (module node [port] -> [rows] slot, or filter -> [filter] slot)"
                     )
 
         BlockSyntax.expectBlockEnd reader "flow" None
 
-        { Links = links :> IReadOnlyList<_>
-          SlotBinds = slotBinds :> IReadOnlyList<_> }
+        { Links = links :> IReadOnlyList<_> }

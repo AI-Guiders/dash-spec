@@ -33,7 +33,7 @@ end flow
 """
 
     [<Fact>]
-    let ``card flow wires inputs to slots and bind`` () =
+    let ``card flow links module ports and filters to slots`` () =
         let dir = Path.Combine(Path.GetTempPath(), "card-interior-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
@@ -54,15 +54,18 @@ report "Interior"
     filter.usage_date.range = -7d..today
   end defaults
   filter date usage_date on usage_date as "Date"
+  filter field app_name on dbo.t.app as "App"
   card peak as "Peak"
   diagram ref drill table
     columns = UserSam
   end table
-  input heatmap from utilization.utilization
-  input drill from drill_src.rows
   flow
-    bind heatmap usage_date
-    bind drill usage_date
+    utilization [utilization] -> [rows] heatmap
+    drill_src [rows] -> [rows] drill
+    usage_date -> [usage_date] heatmap
+    app_name -> [app_name] heatmap
+    usage_date -> [usage_date] drill
+    app_name -> [app_name] drill
   end flow
   view
     diagram ref heatmap table
@@ -82,15 +85,13 @@ end tab card_interior_flow
         try
             let document = DocumentModuleParser.parseDocumentDefault specText (Some dir)
             let card = document.Cards.[0]
-            Assert.Equal(2, card.CardInputs.Count)
             Assert.True(card.InteriorFlow.IsSome)
-            Assert.Empty(card.InteriorFlow.Value.Links)
-            Assert.Equal(2, card.InteriorFlow.Value.SlotBinds.Count)
+            Assert.Equal(6, card.InteriorFlow.Value.Links.Count)
             let heatmap = card.DiagramSlots.["heatmap"]
             let drill = card.DiagramSlots.["drill"]
             Assert.Equal("utilization", heatmap.FlowInput.Value.NodeId)
             Assert.Equal("drill_src", drill.FlowInput.Value.NodeId)
-            Assert.Equal<string list>([ "usage_date" ], heatmap.BoundFilters |> Seq.toList)
+            Assert.Equal<string list>([ "usage_date"; "app_name" ], heatmap.BoundFilters |> Seq.toList)
         finally
             try
                 Directory.Delete(dir, true)

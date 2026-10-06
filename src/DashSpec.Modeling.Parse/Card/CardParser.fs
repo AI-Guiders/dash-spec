@@ -513,14 +513,7 @@ module CardParser =
                 if interiorFlow.Value.IsSome then
                     raise (DashSpecParseException($"Card '{id}': duplicate flow block."))
                 let parsed = CardInteriorFlowParser.parseFlowBlock reader id
-                interiorFlow.Value <-
-                    Some
-                        { Links = parsed.Links
-                          SlotBinds =
-                            parsed.SlotBinds
-                            |> Seq.map (fun b -> { SlotRef = b.SlotRef; FilterNames = b.FilterNames })
-                            |> Seq.toList
-                            :> IReadOnlyList<_> }
+                interiorFlow.Value <- Some { Links = parsed.Links }
                 reader.SkipNewlines()
             elif reader.TryKeyword "input" then
                 let parsed = CardFlowInputParser.parse reader id
@@ -651,7 +644,12 @@ module CardParser =
                 scratch.DataSource <- dataSource.Value
 
         if cardInputs.Count > 0 || interiorFlow.Value.IsSome then
-            CardInteriorFlowResolver.applyToBuilder slotBuilder id interiorFlow.Value (cardInputs :> IReadOnlyDictionary<_, _>)
+            CardInteriorFlowResolver.applyToBuilder
+                slotBuilder
+                id
+                filters
+                interiorFlow.Value
+                (cardInputs :> IReadOnlyDictionary<_, _>)
 
         let diagramSlotsFinal =
             match CardDiagramSlotBuilder.build slotBuilder id flowInput.Value with
