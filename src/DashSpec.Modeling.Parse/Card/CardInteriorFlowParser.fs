@@ -7,7 +7,6 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Lexing
 
-/// Card-local wiring (flow + route links). See ADR-0091.
 module CardInteriorFlowParser =
 
     [<CLIMutable>]
@@ -24,23 +23,15 @@ module CardInteriorFlowParser =
             if BlockSyntax.isBlockEnd reader "flow" None then
                 ()
             elif reader.TryKeyword "bind" then
-                raise (
-                    DashSpecParseException(
-                        $"Card '{cardId}': 'bind' inside flow was removed; use route links: filterId -> [filterId] slotRef (see ADR-0091)."
-                    )
-                )
+                raise (DashSpecParseException($"Card '{cardId}': 'bind' is not valid in a flow block."))
             elif reader.TryKeyword "slot" then
-                raise (
-                    DashSpecParseException(
-                        $"Card '{cardId}': 'slot' inside flow was removed; use module link node [port] -> [rows] slotRef."
-                    )
-                )
+                raise (DashSpecParseException($"Card '{cardId}': 'slot' is not valid in a flow block."))
             else
                 let saved = reader.SavePosition()
                 let fromNode = reader.ReadIdent()
 
                 if String.IsNullOrWhiteSpace fromNode then
-                    raise (reader.Unexpected "flow link (producer [port] -> [port] consumer)")
+                    raise (reader.Unexpected "link line in flow block")
 
                 let fromPort = FlowLinkParser.tryReadBracketPortSameLine reader
 
@@ -48,10 +39,7 @@ module CardInteriorFlowParser =
                 | Some link -> links.Add link
                 | None ->
                     reader.RestorePosition saved
-                    raise (
-                        reader.Unexpected
-                            "flow link (module node [port] -> [rows] slot, or filter -> [filter] slot)"
-                    )
+                    raise (reader.Unexpected "link line in flow block")
 
         BlockSyntax.expectBlockEnd reader "flow" None
 
