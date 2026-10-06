@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Document
 
 open System
+open System.Collections.Generic
 open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
@@ -14,62 +15,6 @@ open DashSpec.Modeling.Parse.Types
 open DashSpec.Modeling.Parse.DataFlow
 
 module IncludeExpander =
-
-    let private isIncomplete (reference: string) =
-        if String.IsNullOrWhiteSpace reference then true
-        elif reference.Contains '*' then false
-        else reference.EndsWith "/" || reference.EndsWith "\\"
-
-    let private resolveExistingIncludePath (reference: string) (specDirectory: string) =
-        let path = SpecIncludeResolver.resolvePath reference specDirectory
-
-        if File.Exists path then path
-        else
-            let extensions =
-                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip"; ".dashtype"; ".dashflow" |]
-
-            let mutable resolved = path
-
-            for ext in extensions do
-                let withExt =
-                    if path.EndsWith(ext, StringComparison.OrdinalIgnoreCase) then path
-                    else path + ext
-
-                if File.Exists withExt then resolved <- withExt
-
-            resolved
-
-    let private resolvePaths (reference: string) (specDirectory: string) =
-        if not (reference.Contains '*') then
-            seq { yield resolveExistingIncludePath reference specDirectory }
-        else
-            let combined = Path.GetFullPath(Path.Combine(specDirectory, reference))
-            let directory = Path.GetDirectoryName combined
-
-            if String.IsNullOrWhiteSpace directory then
-                raise (DashSpecParseException($"!include glob has no directory: '{reference}'."))
-
-            let pattern = Path.GetFileName combined
-
-            if String.IsNullOrWhiteSpace pattern then
-                raise (DashSpecParseException($"!include glob requires a file pattern: '{reference}'."))
-
-            if not (Directory.Exists directory) then
-                Seq.empty
-            else
-                Directory.GetFiles(directory, pattern)
-                |> Array.sortWith (fun left right -> String.Compare(left, right, StringComparison.OrdinalIgnoreCase))
-                |> Seq.ofArray
-
-    let private resolveLayoutPath (path: string) =
-        if File.Exists path then path
-        elif File.Exists(path + ".dashlayout") then path + ".dashlayout"
-        else path
-
-    let private resolveDiagramPath (path: string) =
-        if File.Exists path then path
-        elif File.Exists(path + ".dashdiagram") then path + ".dashdiagram"
-        else path
 
     let private assignLayoutBoard (board: LayoutBoardDefinition) (moduleKind: DocumentModuleKind) (state: ModuleIncludeState) =
         match moduleKind with
@@ -109,52 +54,14 @@ module IncludeExpander =
         let module' = DashflowResolver.parseFile path catalog
         state.RegisterDashflow module'
 
-    let rec private expandDashInclude
-        (path: string)
-        (specDirectory: string)
-        (moduleKind: DocumentModuleKind)
-        (state: ModuleIncludeState)
-        (tolerateIncompleteIncludes: bool)
-        =
-        let reader = ParserUtilities.createReader (File.ReadAllText path)
+    let private peekDiagramModuleId (text: string) =
+        let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
+        reader.Expect TokenKind.At
+        reader.ExpectKeyword "diagram"
+        reader.ReadIdent()
 
-        if reader.IsAt TokenKind.At then
-            reader.Advance()
-
-            if reader.TryKeyword "include" then
-                reader.ReadIdent() |> ignore
-                reader.SkipNewlines()
-
-        while not reader.IsEof do
-            match reader.TryModuleInclude() with
-            | Some nested ->
-                expand nested (Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue specDirectory) moduleKind state tolerateIncompleteIncludes
-                reader.SkipNewlines()
-            | None ->
-                if reader.TryKeyword "layout" then
-                    let layoutReference = reader.ReadString()
-                    let layoutPath =
-                        layoutReference
-                        |> fun reference -> SpecIncludeResolver.resolvePath reference specDirectory
-                        |> resolveLayoutPath
-
-                    assignLayoutBoard (LayoutModuleParser.parseLayoutFile (File.ReadAllText layoutPath)) moduleKind state
-                    reader.SkipNewlines()
-                elif reader.TryKeyword "diagram" then
-                    let diagramReference = reader.ReadString()
-
-                    let diagramPath =
-                        diagramReference
-                        |> fun reference -> SpecIncludeResolver.resolvePath reference specDirectory
-                        |> resolveDiagramPath
-
-                    registerDiagramFile diagramPath specDirectory state
-                    reader.SkipNewlines()
-                else
-                    raise (reader.Unexpected())
-
-    and private expandFile
+    let registerUnitFile
         (path: string)
         (specDirectory: string)
         (moduleKind: DocumentModuleKind)
@@ -168,7 +75,8 @@ module IncludeExpander =
         | ".dashlayout" ->
             assignLayoutBoard (LayoutModuleParser.parseLayoutFile (File.ReadAllText path)) moduleKind state
         | ".dashdiagram" -> registerDiagramFile path specDirectory state
-        | ".dashinclude" -> expandDashInclude path specDirectory moduleKind state tolerateIncompleteIncludes
+        | ".dashinclude" ->
+            raise (DashSpecParseException($"Internal error: .dashinclude '{path}' must be expanded before registration."))
         | ".dashpresentation" -> registerPresentationFile path specDirectory state
         | ".dashtooltip" -> registerTooltipFile path state
         | ".dashtype" -> registerTypesFile path state
@@ -178,7 +86,64 @@ module IncludeExpander =
         | extension ->
             raise (DashSpecParseException($"!include '{path}': unsupported extension '{extension}'."))
 
-    and expand
+    let linkEnvelope
+        (directives: IReadOnlyList<ModuleLinkDirective>)
+        (specDirectory: string)
+        (moduleKind: DocumentModuleKind)
+        (state: ModuleIncludeState)
+        (parseOptions: DashSpecParseOptions)
+        (reportDiagramIds: ISet<string> option)
+        (reportRowTypes: ISet<string> option)
+        =
+        if directives.Count = 0 then ()
+        else
+            let selective =
+                directives
+                |> Seq.choose (function
+                    | ModuleLinkDirective.DiagramFrom(id, path) -> Some(id, path)
+                    | _ -> None)
+                |> dict
+
+            let paths =
+                IncludeMembership.collectUnitPaths directives specDirectory parseOptions.TolerateIncompleteIncludes
+
+            let requireReferenced = parseOptions.LinkOnlyReferencedDiagramUnits
+
+            for path in paths do
+                let ext = Path.GetExtension(path).ToLowerInvariant()
+
+                let shouldRegister =
+                    if not requireReferenced then true
+                    elif ext = ".dashdiagram" then
+                        let diagramId = peekDiagramModuleId (File.ReadAllText path)
+
+                        selective.ContainsKey diagramId
+                        || (match reportDiagramIds with
+                            | None -> true
+                            | Some ids -> ids.Contains diagramId)
+                    elif ext = ".dashtype" || ext = ".dashflow" || ext = ".dashlayout" || ext = ".dashpresentation" || ext = ".dashtooltip" then
+                        true
+                    else true
+
+                if shouldRegister then
+                    registerUnitFile path specDirectory moduleKind state parseOptions.TolerateIncompleteIncludes
+
+            for KeyValue(expectedId, path) in selective do
+                let resolved = IncludeMembership.resolveExistingIncludePath path specDirectory
+
+                if not (File.Exists resolved) then
+                    raise (FileNotFoundException($"using diagram '{expectedId}' from '{path}' was not found.", resolved))
+
+                let baseDirectory =
+                    Path.GetDirectoryName resolved |> Option.ofObj |> Option.defaultValue specDirectory
+
+                let actualId, _ =
+                    SpecIncludeFragmentResolver.foldDiagramModuleWithId (File.ReadAllText resolved) baseDirectory
+
+                if not (String.Equals(actualId, expectedId, StringComparison.OrdinalIgnoreCase)) then
+                    raise (DashSpecParseException($"using diagram '{expectedId}' from '{path}' exports '@diagram {actualId}', id mismatch."))
+
+    let expand
         (reference: string)
         (specDirectory: string)
         (moduleKind: DocumentModuleKind)
@@ -191,8 +156,13 @@ module IncludeExpander =
         if String.IsNullOrWhiteSpace specDirectory then
             invalidArg "specDirectory" "Spec directory is required."
 
-        if tolerateIncompleteIncludes && isIncomplete reference then
+        if tolerateIncompleteIncludes && IncludeMembership.isIncomplete reference then
             ()
         else
-            for path in resolvePaths reference specDirectory do
-                expandFile path specDirectory moduleKind state tolerateIncompleteIncludes
+            let directives = ResizeArray([ ModuleLinkDirective.PathReference reference ])
+
+            linkEnvelope directives specDirectory moduleKind state
+                { DashSpecParseOptions.defaultOptions with
+                    TolerateIncompleteIncludes = tolerateIncompleteIncludes }
+                None
+                None

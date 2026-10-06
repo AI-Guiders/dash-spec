@@ -16,6 +16,7 @@
     <Compile Include="Lexing\TokenKind.fs" />
     <Compile Include="Lexing\Token.fs" />
     <Compile Include="Lexing\DashSpecKeywords.fs" />
+    <Compile Include="Include\ModuleLinkTypes.fs" />
     <Compile Include="Lexing\BlockCloseStyle.fs" />
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
@@ -86,6 +87,7 @@
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
     <Compile Include="SpecIncludeResolver.fs" />
+    <Compile Include="Include\IncludeMembership.fs" />
     <Compile Include="DataFlow\DashflowResolver.fs" />
     <Compile Include="DataFlow\DashflowPathResolver.fs" />
     <Compile Include="Include\SpecIncludeTypes.fs" />
@@ -118,6 +120,7 @@
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
     <Compile Include="Document\DashboardValidationBridge.fs" />
     <Compile Include="Document\DashboardValidator.fs" />
+    <Compile Include="Document\ReportReferenceScanner.fs" />
     <Compile Include="Document\IncludeExpander.fs" />
     <Compile Include="Document\DashflowDocumentResolver.fs" />
     <Compile Include="Document\DocumentFlowMaterializer.fs" />

@@ -24,6 +24,7 @@
     <Compile Include="DemoSampleParseTests.fs" />
     <Compile Include="MultiSlotFlowInputParseTests.fs" />
     <Compile Include="CardInteriorFlowParseTests.fs" />
+    <Compile Include="ModuleLinkTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />

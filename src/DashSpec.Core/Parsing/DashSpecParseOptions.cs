@@ -11,6 +11,7 @@ public sealed class DashSpecParseOptions
     {
         MergeReferencedTabModules = false,
         TolerateIncompleteIncludes = true,
+        LinkOnlyReferencedDiagramUnits = false,
         ExtensionBlockKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "views" },
     };
 
@@ -18,6 +19,12 @@ public sealed class DashSpecParseOptions
 
     /// <summary>Editor/LSP: skip <c>!include</c> paths ending in <c>/</c> or <c>\</c> (in-progress completion).</summary>
     public bool TolerateIncompleteIncludes { get; init; }
+
+    /// <summary>Legacy: process each include line in source order. Default: union glob membership then link (ADR-0089).</summary>
+    public ModuleLinkMode ModuleLinkMode { get; init; } = ModuleLinkMode.MembershipUnion;
+
+    /// <summary>Parse only report-referenced .dashdiagram units from glob membership (runtime default).</summary>
+    public bool LinkOnlyReferencedDiagramUnits { get; init; } = true;
 
     public IReadOnlySet<string> ExtensionBlockKeywords { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);

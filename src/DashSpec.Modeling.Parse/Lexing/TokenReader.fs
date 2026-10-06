@@ -292,6 +292,23 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
                 raise (DashSpecParseException("Expected 'include' after '!'."))
             Some(this.ReadString())
 
+    member this.TryModuleLinkDirective() =
+        this.SkipNewlines()
+        if not (this.TryKeyword "using") then None
+        elif this.IsAt TokenKind.String then
+            Some(DashSpec.Modeling.Parse.Include.ModuleLinkDirective.PathReference(this.ReadString()))
+        elif this.TryKeyword "diagram" then
+            let diagramId = this.ReadIdent()
+            this.ExpectKeyword "from"
+            Some(DashSpec.Modeling.Parse.Include.ModuleLinkDirective.DiagramFrom(diagramId, this.ReadString()))
+        else
+            raise (this.Unexpected("string path or diagram <id> from \"path\""))
+
+    member this.TryEnvelopeLinkDirective() =
+        match this.TryModuleLinkDirective() with
+        | Some directive -> Some directive
+        | None -> this.TryModuleInclude() |> Option.map DashSpec.Modeling.Parse.Include.ModuleLinkDirective.PathReference
+
     member this.SkipFileDirectives() =
         this.SkipNewlines()
         let mutable continueDirectives = true
@@ -330,6 +347,11 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
                 continueDirectives <- false
 
     member internal _.SourceText = sourceText
+
+    member _.ModuleSource =
+        match sourceText with
+        | Some text -> text
+        | None -> String.Empty
 
     member internal _.Tokens = tokens
 
