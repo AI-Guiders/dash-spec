@@ -1,0 +1,171 @@
+@flow demo_report
+
+source daily_peak_raw {
+  use provider infer
+  from view demo.v_daily_peak_concurrent_proxy
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer daily_peak_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+daily_peak_raw [raw] -> [raw] daily_peak_tz
+
+source activity_raw {
+  use provider infer
+  from view demo.v_five_minute_activity
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer activity_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+activity_raw [raw] -> [raw] activity_tz
+
+source dau_raw {
+  use provider infer
+  from view demo.v_daily_active_users
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer dau_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+dau_raw [raw] -> [raw] dau_tz
+
+source period_peak_raw {
+  use provider infer
+  from view demo.v_peak_concurrent_by_period
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer period_peak_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+period_peak_raw [raw] -> [raw] period_peak_tz
+
+source peak_apps_raw {
+  use provider infer
+  from view demo.v_daily_peak_concurrent_apps_per_user
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer peak_apps_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+peak_apps_raw [raw] -> [raw] peak_apps_tz
+
+source idle_raw {
+  use provider infer
+  from view demo.v_daily_idle_minutes_by_user_app
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer idle_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+idle_raw [raw] -> [raw] idle_tz
+
+source idle_scatter_raw {
+  use provider infer
+  from sql file "sql/idle-vs-peak-scatter.sql"
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer idle_scatter_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+idle_scatter_raw [raw] -> [raw] idle_scatter_tz
+
+source events_raw {
+  use provider infer
+  from view demo.v_events_detail
+  ports
+    default output raw
+    output stream raw: FixtureRow
+  end ports
+}
+
+transformer events_tz {
+  ports
+    default input raw
+    default output rows
+    input stream raw: FixtureRow
+    output stream rows: FixtureRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+}
+
+events_raw [raw] -> [raw] events_tz
+
+end flow demo_report
