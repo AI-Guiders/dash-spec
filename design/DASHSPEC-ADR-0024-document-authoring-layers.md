@@ -474,6 +474,7 @@ DashboardComposer            # compose root + tab refs + embed merge (без par
 
 | Тема | Статус |
 |------|--------|
+| `using` / `import` compilation units; deprecate envelope glob `!include` | [ADR-0089](DASHSPEC-ADR-0089-document-modules-using-import.md) (proposed) |
 | single declaration, layout by id; deprecate `ref` | [ADR-0027](DASHSPEC-ADR-0027-single-declaration-and-layout-ids.md) (proposed) |
 | inspect (tooltip) vs diagram bindings | [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md) (proposed) |
 | bounded `on click` (show/set/goto) | [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) |
