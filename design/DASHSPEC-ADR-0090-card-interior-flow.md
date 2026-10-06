@@ -28,21 +28,21 @@ Parser classifies each link ([CardInteriorFlowResolver](../src/DashSpec.Modeling
 | Report `filter` id | Slot + `[filter]` port | **Route** → `BoundFilters` |
 | Card `input` alias (legacy) | Slot | **Flow** (prefer module link) |
 
-**Example** (`activity_5min`):
+**Example** (multi-slot card):
 
 ```text
 flow
-  five_minute_activity_drilldown_tz [rows] -> [rows] heatmap
-  five_minute_activity_at_bucket_tz [rows] -> [rows] drill
-  activity_slot -> [activity_slot] heatmap
-  activity_slot -> [activity_slot] drill
+  report_heatmap_tz [rows] -> [rows] heatmap
+  report_drill_tz [rows] -> [rows] drill
+  usage_date -> [usage_date] heatmap
+  usage_date -> [usage_date] drill
   app_name -> [app_name] heatmap
   app_name -> [app_name] drill
-  activity_bucket_time -> [activity_bucket_time] drill
+  bucket_time -> [bucket_time] drill
 end flow
 ```
 
-No `heatmap -> heatmap`. No `bind <slot> …` inside `flow` (removed).
+`bind` inside `flow` is a parse error.
 
 ### Definitions stay blocks
 
