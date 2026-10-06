@@ -12,6 +12,8 @@ namespace DashSpec.Core.Tests;
 
 public class DashboardParseTests
 {
+    static DashboardParseTests() => DashSpecTestCulture.Ensure();
+
     [Fact]
     public void ReadDashboardHeader_reads_id_and_title()
     {
@@ -773,8 +775,15 @@ public class DashboardParseTests
     {
         LabelFormat.DisplayTimeZone = null;
         LabelFormat.UiCulture = CultureInfo.GetCultureInfo("en-US");
-        var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
-        Assert.Contains("6/15/2024", LabelFormat.FormatObject(value, "system"));
+        try
+        {
+            var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
+            Assert.Contains("6/15/2024", LabelFormat.FormatObject(value, "system"));
+        }
+        finally
+        {
+            DashSpecTestCulture.Ensure();
+        }
     }
 
     [Theory]

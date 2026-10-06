@@ -64,6 +64,7 @@ public sealed class DateValueCodecTests
         finally
         {
             CultureInfo.CurrentCulture = previous;
+            DashSpecTestCulture.Ensure();
         }
     }
 

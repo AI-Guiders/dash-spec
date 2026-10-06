@@ -209,7 +209,7 @@ public class SpecModulesTests
             "y = \"peak\"",
             "[card.c1]",
             "diagram = \"d1\"",
-            "datasource infer = \"dbo.t\"",
+            "datasource = \"dbo.t\"",
         ]);
 
         var document = DashSpecTestRowTypes.ParseDashboard("""

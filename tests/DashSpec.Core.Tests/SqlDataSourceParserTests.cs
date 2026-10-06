@@ -33,7 +33,7 @@ public class SqlDataSourceParserTests
               diagram bar
               x = user_sam y
               end bar
-              datasource infer sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
+              datasource infer sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam" rows FixtureRow
               end card
               end report
             end dashboard
@@ -73,14 +73,14 @@ public class SqlDataSourceParserTests
               x = a
               y = b
               end bar
-              datasource infer sql query "{{sqlBody.Replace("\"", "\\\"")}}"
+              datasource infer sql query "{{sqlBody.Replace("\"", "\\\"")}}" rows FixtureRow
               end card
               end report
             end dashboard
             """;
 
         var ex = Assert.ThrowsAny<Exception>(() => DashSpecTestRowTypes.ParseDashboard(spec));
-        Assert.Contains("datasource infer sql", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("datasource sql", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class SqlDataSourceParserTests
               diagram bar
               x = title y
               end bar
-              datasource infer sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
+              datasource infer sql query "SELECT title FROM t WHERE title = 'DELETE is ok'" rows FixtureRow
               end card
               end report
             end dashboard
@@ -156,7 +156,7 @@ public class SqlDataSourceParserTests
                   diagram bar
                   x = user_sam y
                   end bar
-                  datasource infer sql file "queries/top.sql"
+                  datasource infer sql file "queries/top.sql" rows FixtureRow
                   end card
                   end report
                 end dashboard
@@ -179,7 +179,7 @@ public class SqlDataSourceParserTests
                   SELECT user_sam, COUNT(*) AS peak
                   FROM t
                   GROUP BY user_sam
-                  ]]
+                  ]] rows FixtureRow
                   end card
                   end report
                 end dashboard
