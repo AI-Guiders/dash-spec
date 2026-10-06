@@ -1,13 +1,11 @@
 using System.Linq;
-using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
-using DashSpec.Execution.Runtime;
+using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;
+using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;
+using ParseDoc = DashSpec.Modeling.Parse.Document;
 using Microsoft.FSharp.Core;
-using FsharpDocument = DashSpec.Modeling.Parse.Document;
-using FsharpParseOptions = DashSpec.Modeling.Parse.DashSpecParseOptions;
-using FsharpPhrase = DashSpec.Modeling.Parse;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -16,21 +14,20 @@ internal static class DocumentParseRegistration
 {
     internal static void Register()
     {
-        FsharpDocument.DashboardValidationBridge.registerAction(document =>
+        ParseDoc.DashboardValidationBridge.registerAction(document =>
         {
-            var core = DocumentFlowBinder.MaterializeFlowCards(DocumentModelMapper.ToCore(document));
-            DashboardValidator.Validate(core);
+            DashboardValidator.Validate(DocumentModelMapper.ToCore(document));
         });
 
         DocumentParseBridge.Parse = (text, specDirectory, parseOptions) =>
         {
             try
             {
-                var document = FsharpDocument.DashboardComposer.parse(
+                var document = ParseDoc.DashboardComposer.parse(
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                return DocumentFlowBinder.MaterializeFlowCards(DocumentModelMapper.ToCore(document));
+                return DocumentModelMapper.ToCore(document);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -42,7 +39,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FromFsharpOption(FsharpDocument.DashboardParser.readRuntimePath(text));
+                return FromFsharpOption(ParseDoc.DashboardParser.readRuntimePath(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -54,7 +51,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FromFsharpOption(FsharpDocument.DashboardParser.readRuntimePath(text));
+                return FromFsharpOption(ParseDoc.DashboardParser.readRuntimePath(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -66,7 +63,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FromFsharpOption(FsharpDocument.DashboardParser.readDiagramLibraryPath(text));
+                return FromFsharpOption(ParseDoc.DashboardParser.readDiagramLibraryPath(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -78,7 +75,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FromFsharpOption(FsharpDocument.DashboardParser.readPalettePath(text));
+                return FromFsharpOption(ParseDoc.DashboardParser.readPalettePath(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -90,7 +87,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return ToCore(FsharpDocument.DashboardParser.readSqlDialect(text));
+                return ToCore(ParseDoc.DashboardParser.readSqlDialect(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -102,7 +99,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                var (id, title) = FsharpDocument.DashboardParser.readDashboardHeader(text);
+                var (id, title) = ParseDoc.DashboardParser.readDashboardHeader(text);
                 return (id, title);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
@@ -115,7 +112,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FsharpDocument.DocumentModuleParser.isBlockModuleFormat(text);
+                return ParseDoc.DocumentModuleParser.isBlockModuleFormat(text);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -127,7 +124,7 @@ internal static class DocumentParseRegistration
         {
             try
             {
-                return FsharpDocument.DashboardComposer.isTabRootDocument(text);
+                return ParseDoc.DashboardComposer.isTabRootDocument(text);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -145,41 +142,41 @@ internal static class DocumentParseRegistration
         return items.Length > 0 ? items[0] : null;
     }
 
-    private static FsharpParseOptions ToFsharp(DashSpecParseOptions options) =>
+    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Core.Parsing.DashSpecParseOptions options) =>
         new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,
             TolerateIncompleteIncludes = options.TolerateIncompleteIncludes,
             ExtensionBlockKeywords = options.ExtensionBlockKeywords,
             ExtensionBlockPluginIds = options.ExtensionBlockPluginIds,
-            PhraseTemplates = options.PhraseTemplates.Select(ToFsharp).ToList(),
+            PhraseTemplates = options.PhraseTemplates.Select(ToFsharpPhraseTemplate).ToList(),
             KnownActionHandlers = options.KnownActionHandlers,
             KnownInteractionHandlers = options.KnownInteractionHandlers,
         };
 
-    private static FsharpPhrase.PhraseTemplateDescriptor ToFsharp(PhraseTemplateDescriptor template) =>
+    private static DashSpec.Modeling.Parse.PhraseTemplateDescriptor ToFsharpPhraseTemplate(CorePhraseTemplate template) =>
         new()
         {
             PluginId = template.PluginId,
             HandlerId = template.HandlerId,
             Scope = template.Scope,
             Pattern = template.Pattern,
-            Slots = template.Slots.Select(ToFsharp).ToList(),
+            Slots = template.Slots.Select(ToFsharpPhraseSlot).ToList(),
         };
 
-    private static FsharpPhrase.PhraseSlotDescriptor ToFsharp(PhraseSlotDescriptor slot) =>
+    private static DashSpec.Modeling.Parse.PhraseSlotDescriptor ToFsharpPhraseSlot(CorePhraseSlot slot) =>
         new()
         {
             Name = slot.Name,
-            Kind = (FsharpPhrase.PhraseSlotKind)(int)slot.Kind,
+            Kind = (DashSpec.Modeling.Parse.PhraseSlotKind)(int)slot.Kind,
             Optional = slot.Optional,
         };
 
-    private static SqlDialect ToCore(FsharpDocument.SqlDialect dialect)
+    private static SqlDialect ToCore(ParseDoc.SqlDialect dialect)
     {
-        if (dialect.Equals(FsharpDocument.SqlDialect.TSql)) return SqlDialect.TSql;
-        if (dialect.Equals(FsharpDocument.SqlDialect.Postgres)) return SqlDialect.Postgres;
-        if (dialect.Equals(FsharpDocument.SqlDialect.Generic)) return SqlDialect.Generic;
+        if (dialect.Equals(ParseDoc.SqlDialect.TSql)) return SqlDialect.TSql;
+        if (dialect.Equals(ParseDoc.SqlDialect.Postgres)) return SqlDialect.Postgres;
+        if (dialect.Equals(ParseDoc.SqlDialect.Generic)) return SqlDialect.Generic;
         throw new ArgumentOutOfRangeException(nameof(dialect), dialect, "Unknown SQL dialect.");
     }
 }

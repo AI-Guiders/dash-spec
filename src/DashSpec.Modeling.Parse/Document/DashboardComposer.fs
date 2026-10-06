@@ -53,15 +53,18 @@ module rec DashboardComposer =
 
         let document = DocumentModuleParser.parseDocument text specDirectory parseOptions
 
-        if
-            parseOptions.MergeReferencedTabModules
-            && document.Tabs |> Seq.exists (fun t -> not (String.IsNullOrWhiteSpace(Option.defaultValue "" t.DashspecPath)))
-        then
-            match specDirectory with
-            | None | Some "" -> raise (DashSpecParseException("Tab dashspec references require specDirectory when parsing."))
-            | Some dir -> mergeTabModules document dir parseOptions
-        else
-            document
+        let merged =
+            if
+                parseOptions.MergeReferencedTabModules
+                && document.Tabs |> Seq.exists (fun t -> not (String.IsNullOrWhiteSpace(Option.defaultValue "" t.DashspecPath)))
+            then
+                match specDirectory with
+                | None | Some "" -> raise (DashSpecParseException("Tab dashspec references require specDirectory when parsing."))
+                | Some dir -> mergeTabModules document dir parseOptions
+            else
+                document
+
+        DocumentFlowMaterializer.materialize merged
 
     let parseDefault (text: string) (specDirectory: string option) =
         parse text specDirectory DashSpecParseOptions.defaultOptions
@@ -205,5 +208,6 @@ module rec DashboardComposer =
                 Dashflow = dashflow
                 DashflowPath = dashflowPath }
 
-        DashboardValidator.validate merged
-        merged
+        let materialized = DocumentFlowMaterializer.materialize merged
+        DashboardValidator.validate materialized
+        materialized

@@ -269,7 +269,8 @@ internal static class DocumentModelMapper
             MapOptional(source.SqlCarrier, ToCore),
             FirstOrNull(source.Sheet),
             source.RowsType,
-            source.ProviderInfer);
+            source.ProviderInfer,
+            FirstOrNull(source.ProviderId));
 
     private static IReadOnlyDictionary<string, RowTypeSchema> ToRowTypeSchemas(
         IReadOnlyDictionary<string, DashSpec.Modeling.Core.RowTypeDef> types)

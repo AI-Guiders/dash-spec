@@ -5,7 +5,8 @@ using DashSpec.Core.Model;
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>
-/// Single bind point: card <c>input from node.port</c> → concrete <see cref="DataSourceDefinition"/> (ADR-0078 P3b).
+/// Legacy runtime materialize for documents parsed without <see cref="DashSpec.Modeling.Parse.Document.DocumentFlowMaterializer"/>.
+/// Parse pipeline materializes in Modeling; this path is idempotent when datasources are already resolved.
 /// </summary>
 public static class DocumentFlowBinder
 {

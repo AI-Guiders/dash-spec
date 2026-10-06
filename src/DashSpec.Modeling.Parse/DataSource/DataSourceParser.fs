@@ -34,7 +34,8 @@ module DataSourceParser =
           SqlCarrier = sqlCarrier
           Sheet = sheet
           RowsType = ""
-          ProviderInfer = true }
+          ProviderInfer = true
+          ProviderId = None }
 
     let private unwrapRawSql (raw: string) =
         let trimmed = raw.Trim()
