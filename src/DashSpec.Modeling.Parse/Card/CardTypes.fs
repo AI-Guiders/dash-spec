@@ -106,6 +106,16 @@ type CardFlowInput =
       PortName: string }
 
 [<CLIMutable>]
+type CardInteriorSlotBind =
+    { SlotRef: string
+      FilterNames: IReadOnlyList<string> }
+
+[<CLIMutable>]
+type CardInteriorFlowDefinition =
+    { Links: IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.FlowLinkDef>
+      SlotBinds: IReadOnlyList<CardInteriorSlotBind> }
+
+[<CLIMutable>]
 type CardDiagramSlot =
     { SlotRef: string
       Diagram: DiagramDefinition
@@ -149,7 +159,9 @@ type CardDefinition =
       Chrome: CardChromeDefinition option
       Inspect: InspectPresentation option
       Tooltip: TooltipDefinition option
-      FlowInput: CardFlowInput option }
+      FlowInput: CardFlowInput option
+      CardInputs: IReadOnlyDictionary<string, CardFlowInput>
+      InteriorFlow: CardInteriorFlowDefinition option }
 
 module CardBindResolver =
     let dashboardToken = "dashboard"
