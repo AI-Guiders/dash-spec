@@ -44,7 +44,74 @@ end flow
 - Transform/filter **nodes** inside card flow (multi-hop `input -> filters -> slot`).
 - Merging interior flow into module `FlowGraph` IR.
 
-## Follow-up
+## Follow-up (v2): interior graph nodes + filter wiring
 
-- Optional `apply` / filter nodes as interior transformers (same link syntax).
-- Core/Studio round-trip of `CardInputs` + `InteriorFlow` on `CardDefinition`.
+### Two graphs (do not merge into module dashflow)
+
+| Graph | Question it answers | v1 today |
+|-------|-------------------|----------|
+| **Card interior data** | Which module port → which slot, with which filters on the query path? | Implicit input↔slot + `bind <slot> …` |
+| **Filter wiring** | Which filter *definitions* participate where (card chrome, slot query, host, wire-only)? | `filters` / `filters host`, per-slot `bind`, comments in spec |
+
+Both can use the same **arrow** (`producer -> consumer`) and the same Studio matrix later; they compile to **card-scoped IR**, not nodes in `DashboardDocument.Dashflow` ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) `ApplyFiltersNode` is the semantic template).
+
+### Interior `apply` nodes (data path)
+
+Named filter-application step on the row path ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) names only — compile semantics unchanged):
+
+```text
+input heatmap from daily_peak_concurrent_proxy_heatmap_tz.rows
+
+flow
+  apply peak_heatmap
+    usage_date
+    app_name
+  end apply
+
+  heatmap -> peak_heatmap -> heatmap
+end flow
+```
+
+- `apply <id> … end apply` — interior node: row `in` / row `out` + filter name list (same as v1 `bind <slot>`).
+- Links: `inputAlias -> applyId -> slotRef` when a slot needs a **named** step (shared apply across slots, or documentation).
+- When names match and no chain is needed, v1 stays: auto-wire + `bind heatmap …` (desugars to a single apply on that slot).
+
+Runtime: still `BoundFilters` per slot + `QueryCompiler`; v2 preserves IR as an explicit `CardInteriorFlowGraph` for Designer and diff-friendly specs.
+
+### Filter wiring graph (UI + query participation)
+
+Filter **definitions** (`filter usage_date … bind date column = …`) stay in report scope. The wiring graph records **edges**, not SQL:
+
+| Edge kind | Example | Meaning |
+|-----------|---------|---------|
+| **chrome** | `usage_date` on card `filters { … }` | Widget placement (local / host / dashboard) |
+| **query** | `usage_date` in `apply` / `bind` on slot | Participates in SQL for that slot |
+| **wire** | `activity_bucket_time` set on click, bind only on `drill` | Value propagation without heatmap SQL ([LUS overview](samples/demo/) pattern) |
+
+Authoring target (sketch):
+
+```text
+filterwire
+  usage_date -> chrome peak_concurrent_proxy
+  usage_date -> query peak_heatmap
+  app_name -> query peak_heatmap
+  activity_bucket_time -> wire activity_5min.drill
+end filterwire
+```
+
+Or interior-only edges inside `card … flow` once `apply` nodes exist. **Non-goal:** duplicate `filter … bind column` in the graph — column binding remains on the filter definition ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md)).
+
+### Phasing
+
+| Phase | Deliverable |
+|-------|-------------|
+| **v1** (done) | Auto-wire inputs↔slots; `bind <slot>` inside `flow` |
+| **v2a** | `apply <id>` interior node + multi-hop links; desugar v1 `bind` |
+| **v2b** | Optional `filterwire` (or module-level wiring block) for chrome/query/wire edges; Studio matrix |
+| **v2c** | Core round-trip `CardInteriorFlowGraph` + filter wiring on `CardDefinition` |
+
+### Open questions
+
+- Should `filters host` collapse into wiring edges (host card as chrome hub)?
+- Same `apply` node referenced from two slots (one SQL policy) vs copy per slot?
+- Report-level graph vs card-level only for wire-only filters shared across cards?
