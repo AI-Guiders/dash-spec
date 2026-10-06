@@ -17,11 +17,8 @@ public class DemoSpecsSyntaxTests
 
     public static TheoryData<string> DemoSpecPaths =>
     [
-        @"samples/demo\demo-stakeholder.dashspec",
-        @"samples/demo\demo-overview.dashspec",
-        @"samples/demo\demo-versions.dashspec",
-        @"samples/demo\demo-detail.dashspec",
         @"samples/demo\demo-soak.dashspec",
+        @"samples/demo\demo-analytics.dashspec",
     ];
 
     [Theory]

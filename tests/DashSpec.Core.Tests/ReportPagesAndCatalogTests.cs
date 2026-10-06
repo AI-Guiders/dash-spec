@@ -132,8 +132,8 @@ public sealed class ReportPagesAndCatalogTests
             
             default soak
             
-            group stakeholder
-              title = "Заказчик"
+            group customer
+              title = "Customer"
               entry peak as "Peak"
               dashspec "peak.dashspec"
             end group
@@ -144,9 +144,9 @@ public sealed class ReportPagesAndCatalogTests
 
         Assert.NotNull(catalog.Groups);
         Assert.Single(catalog.Groups);
-        Assert.Equal("stakeholder", catalog.Groups[0].Id);
-        Assert.Equal("Заказчик", catalog.Groups[0].Title);
-        Assert.Equal("stakeholder", catalog.Entries[0].GroupId);
+        Assert.Equal("customer", catalog.Groups[0].Id);
+        Assert.Equal("Customer", catalog.Groups[0].Title);
+        Assert.Equal("customer", catalog.Entries[0].GroupId);
         Assert.Null(catalog.Entries[1].GroupId);
     }
 
@@ -171,10 +171,10 @@ public sealed class ReportPagesAndCatalogTests
                 end tab
                 """);
 
-            File.WriteAllText(Path.Combine(dir, "stakeholder.dashspec"), """
-                @tab stakeholder
+            File.WriteAllText(Path.Combine(dir, "paged.dashspec"), """
+                @tab paged_reports
                   report
-                  title = "Stakeholder"
+                  title = "Paged reports"
                   page p1
                   card paged as "Paged"
                   diagram bar
@@ -193,7 +193,7 @@ public sealed class ReportPagesAndCatalogTests
                   report
                   title = "Soak"
                   tab overview dashspec "overview.dashspec"
-                  tab stakeholder dashspec "stakeholder.dashspec"
+                  tab paged_reports dashspec "paged.dashspec"
                   end report
                 end dashboard
                 """, dir);
@@ -201,7 +201,7 @@ public sealed class ReportPagesAndCatalogTests
             Assert.Equal(2, doc.Tabs.Count);
             Assert.NotNull(doc.Pages);
             Assert.Single(doc.Pages);
-            Assert.Equal("stakeholder", doc.Pages[0].TabId);
+            Assert.Equal("paged_reports", doc.Pages[0].TabId);
             Assert.Null(doc.Cards.First(c => c.Id == "plain").PageId);
             Assert.Equal("p1", doc.Cards.First(c => c.Id == "paged").PageId);
         }
