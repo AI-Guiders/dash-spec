@@ -35,12 +35,21 @@ type DashflowInputDecl =
     { Name: string
       PortType: DashPortType option }
 
+type DashflowTransformParam =
+    { Key: string
+      Value: string }
+
+type DashflowTransformStepDef =
+    { PluginId: string
+      Parameters: DashflowTransformParam[] }
+
 type DashflowTransformerDef =
     { Id: string
       Inputs: DashflowInputDecl[]
       Outputs: (string * string)[]
       DefaultInputPort: string option
-      DefaultOutputPort: string option }
+      DefaultOutputPort: string option
+      Steps: DashflowTransformStepDef[] }
 
 /// <summary>Parent port name wired to an inner node port on a nested <c>flow</c>.</summary>
 type DashflowCompositePortWire =

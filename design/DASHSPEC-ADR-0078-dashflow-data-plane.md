@@ -108,7 +108,7 @@ transformer reporting_calendar {
     input stream raw: UtilizationRow
     output stream localized: UtilizationRow
   end ports
-  transform use to_zone { zone = Europe/Moscow }
+  transform use to_zone { zone = UTC+3 }
 }
 
 utilization [utilization] -> [raw] reporting_calendar
@@ -158,7 +158,7 @@ transformer reporting_calendar {
     input stream raw: UtilizationRow
     output stream localized: UtilizationRow
   end ports
-  transform use to_zone { zone = Europe/Moscow }
+  transform use to_zone { zone = UTC+3 }
 }
 
 utilization [utilization] -> [raw] reporting_calendar
@@ -254,7 +254,7 @@ transformer executive_local {
     input stream kpi: StakeholderKpiRow
     output stream kpi_local: StakeholderKpiRow
   end ports
-  transform use to_zone { zone = Europe/Moscow }
+  transform use to_zone { zone = UTC+3 }
 }
 
 executive [kpi] -> [kpi] executive_local

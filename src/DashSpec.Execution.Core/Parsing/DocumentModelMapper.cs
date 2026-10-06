@@ -527,7 +527,13 @@ internal static class DocumentModelMapper
             transformer.Id,
             transformer.Outputs.Select(static x => new DashflowTransformerPortDefinition(x.Item1, x.Item2)).ToList(),
             FirstOrNull(transformer.DefaultInputPort),
-            FirstOrNull(transformer.DefaultOutputPort));
+            FirstOrNull(transformer.DefaultOutputPort),
+            transformer.Steps.Select(ToCoreTransformStep).ToList());
+
+    private static DashflowTransformStepDefinition ToCoreTransformStep(FsharpDataFlow.DashflowTransformStepDef step) =>
+        new(
+            step.PluginId,
+            step.Parameters.Select(static p => new DashflowTransformParameterDefinition(p.Key, p.Value)).ToList());
 
     private static DashflowLinkDefinition ToCoreDashflowLink(FsharpDataFlow.FlowLinkDef link) =>
         new(

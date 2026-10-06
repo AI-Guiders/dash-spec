@@ -202,7 +202,21 @@ module DashSpecLexer =
                 | c when isIdentStart c ->
                     i <- i + 1
                     while i < text.Length && isIdentPart text.[i] do i <- i + 1
-                    tokens.Add({ Kind = TokenKind.Ident; Value = text.[start..i - 1]; Start = start; Length = i - start })
+
+                    let mutable value = text.[start..i - 1]
+
+                    if String.Equals(value, "UTC", StringComparison.OrdinalIgnoreCase) && i < text.Length then
+                        match text.[i] with
+                        | '+' | '-' ->
+                            i <- i + 1
+
+                            while i < text.Length && (Char.IsDigit text.[i] || text.[i] = ':') do
+                                i <- i + 1
+
+                            value <- text.[start..i - 1]
+                        | _ -> ()
+
+                    tokens.Add({ Kind = TokenKind.Ident; Value = value; Start = start; Length = i - start })
                     atLineStart <- false
                 | c -> raise (DashSpecParseException($"Unexpected character '{c}' at position {i}.", i))
         tokens.Add({ Kind = TokenKind.Eof; Value = ""; Start = text.Length; Length = 0 })

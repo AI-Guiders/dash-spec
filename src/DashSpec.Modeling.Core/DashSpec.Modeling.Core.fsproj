@@ -14,5 +14,6 @@
     <Compile Include="TypeInvariantLaws.fs" />
     <Compile Include="TypeCatalog.fs" />
     <Compile Include="DataFlowGraph.fs" />
+    <Compile Include="UtcOffsetZoneLiteral.fs" />
   </ItemGroup>
 </Project>
