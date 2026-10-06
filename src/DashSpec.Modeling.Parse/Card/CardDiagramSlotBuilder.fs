@@ -102,10 +102,19 @@ module CardDiagramSlotBuilder =
                     if idx >= 0 then
                         builder.Order.RemoveAt idx
 
-    let build (builder: Builder) (cardId: string) =
+    let private unboundFlowDataSource =
+        { Kind = DataSourceKind.View
+          Value = ""
+          SqlCarrier = None
+          Sheet = None
+          RowsType = ""
+          ProviderInfer = false }
+
+    let build (builder: Builder) (cardId: string) (flowInput: CardFlowInput option) =
         if builder.Slots.Count = 0 then
             None
         else
+            let flowBacked = Option.isSome flowInput
             let built = Dictionary<string, CardDiagramSlot>(StringComparer.OrdinalIgnoreCase)
             for slotRef in builder.Order do
                 let scratch = builder.Slots.[slotRef]
@@ -119,10 +128,19 @@ module CardDiagramSlotBuilder =
                           Legend = scratch.Legend
                           Presentation = scratch.Presentation
                           SeriesTransform = scratch.SeriesTransform }
+                | Some diagram, None when flowBacked ->
+                    built.[slotRef] <-
+                        { SlotRef = slotRef
+                          Diagram = diagram
+                          DataSource = unboundFlowDataSource
+                          BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
+                          Legend = scratch.Legend
+                          Presentation = scratch.Presentation
+                          SeriesTransform = scratch.SeriesTransform }
                 | None, _ ->
                     raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a diagram."))
                 | _, None ->
-                    raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a data block or datasource."))
+                    raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a data block, flow input, or datasource."))
 
             Some(built :> IReadOnlyDictionary<_, _>)
 

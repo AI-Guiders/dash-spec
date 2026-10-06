@@ -153,7 +153,8 @@ public sealed record DataSourceDefinition(
     DataSourceSqlCarrier? SqlCarrier = null,
     string? Sheet = null,
     string RowsType = "",
-    bool ProviderInfer = false);
+    bool ProviderInfer = false,
+    string? ProviderId = null);
 
 public enum DataSourceKind
 {

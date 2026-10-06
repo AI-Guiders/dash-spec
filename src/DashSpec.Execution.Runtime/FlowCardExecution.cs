@@ -19,15 +19,15 @@ public static class FlowCardExecution
         return card with { DataSource = dataSource };
     }
 
-    public static string? ResolveProviderId(DashboardDocument document, CardDefinition card)
+    public static string? ResolveProviderId(CardDefinition card)
     {
-        if (card.FlowInput is null || document.Dashflow is null)
+        if (card.FlowInput is not null && string.IsNullOrWhiteSpace(card.DataSource.Value))
         {
-            return null;
+            throw new InvalidOperationException(
+                $"Card '{card.Id}' has flow input but no materialized datasource; call DocumentFlowBinder.MaterializeCard first.");
         }
 
-        var source = ResolveBackingSource(document.Dashflow, card.FlowInput);
-        return source.ProviderInfer ? null : source.ProviderId;
+        return card.DataSource.ProviderInfer ? null : card.DataSource.ProviderId;
     }
 
     public static DashflowExecutionPath ResolvePath(DashboardDocument document, CardFlowInputDefinition input)
@@ -79,19 +79,22 @@ public static class FlowCardExecution
                 DataSourceKind.View,
                 source.FromValue,
                 RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer),
+                ProviderInfer: source.ProviderInfer,
+                ProviderId: source.ProviderInfer ? null : source.ProviderId),
             DashflowSourceFromKind.SqlQuery => new DataSourceDefinition(
                 DataSourceKind.Sql,
                 source.FromValue,
                 DataSourceSqlCarrier.Query,
                 RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer),
+                ProviderInfer: source.ProviderInfer,
+                ProviderId: source.ProviderInfer ? null : source.ProviderId),
             DashflowSourceFromKind.SqlFile => new DataSourceDefinition(
                 DataSourceKind.Sql,
                 source.FromValue,
                 DataSourceSqlCarrier.File,
                 RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer),
+                ProviderInfer: source.ProviderInfer,
+                ProviderId: source.ProviderInfer ? null : source.ProviderId),
             _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.FromKind}'."),
         };
 }
