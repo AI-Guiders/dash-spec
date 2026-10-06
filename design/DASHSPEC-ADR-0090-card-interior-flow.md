@@ -53,28 +53,58 @@ end flow
 | **Card interior data** | Which module port → which slot, with which filters on the query path? | Implicit input↔slot + `bind <slot> …` |
 | **Filter wiring** | Which filter *definitions* participate where (card chrome, slot query, host, wire-only)? | `filters` / `filters host`, per-slot `bind`, comments in spec |
 
-Both can use the same **arrow** (`producer -> consumer`) and the same Studio matrix later; they compile to **card-scoped IR**, not nodes in `DashboardDocument.Dashflow` ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) `ApplyFiltersNode` is the semantic template).
+Card interior uses **`->` only when endpoints differ** (e.g. `drill_src -> drill`). Repeating the same id twice (`heatmap -> … -> heatmap`) is **not** target syntax — slot is a **sink** named once.
+
+Filter wiring and Studio matrix can share edge IR later; they compile to **card-scoped** structures, not module `DashboardDocument.Dashflow` ([ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) `ApplyFiltersNode` is the semantic template).
 
 ### Interior `apply` nodes (data path)
 
-Named filter-application step on the row path ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) names only — compile semantics unchanged):
+Named filter-application step on the row path ([ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) names only — compile semantics unchanged).
+
+**Default (v1):** auto-wire `input <slot>` + `bind <slot> f1, f2` — no graph literals.
+
+**Named apply on one slot** (v2) — slot appears **once**:
 
 ```text
 input heatmap from daily_peak_concurrent_proxy_heatmap_tz.rows
 
 flow
-  apply peak_heatmap
+  apply peak_heatmap on heatmap
     usage_date
     app_name
   end apply
-
-  heatmap -> peak_heatmap -> heatmap
 end flow
 ```
 
-- `apply <id> … end apply` — interior node: row `in` / row `out` + filter name list (same as v1 `bind <slot>`).
-- Links: `inputAlias -> applyId -> slotRef` when a slot needs a **named** step (shared apply across slots, or documentation).
-- When names match and no chain is needed, v1 stays: auto-wire + `bind heatmap …` (desugars to a single apply on that slot).
+**Shared apply across slots:**
+
+```text
+flow
+  apply peak_shared
+    usage_date
+    app_name
+  end apply
+  use peak_shared on heatmap, drill
+end flow
+```
+
+**Input alias ≠ slot id** — one explicit feed, not a loop:
+
+```text
+input heatmap_rows from daily_peak_concurrent_proxy_heatmap_tz.rows
+
+flow
+  feed heatmap_rows to heatmap
+  apply peak_heatmap on heatmap
+    usage_date, app_name
+  end apply
+end flow
+```
+
+(`feed <inputAlias> to <slotRef>` or `heatmap_rows -> heatmap` — same semantics; prefer `feed … to` when arrow would look like a cycle.)
+
+- `apply <id> on <slotRef>` attaches filter list to that slot’s query path; input is auto-wired when aliases match, else `feed … to`.
+- v1 `bind <slot> …` desugars to anonymous `apply` on that slot.
 
 Runtime: still `BoundFilters` per slot + `QueryCompiler`; v2 preserves IR as an explicit `CardInteriorFlowGraph` for Designer and diff-friendly specs.
 
