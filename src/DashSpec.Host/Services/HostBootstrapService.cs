@@ -32,7 +32,10 @@ public sealed class HostBootstrapService(
         }
 
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
-        bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
+        if (!ShouldSkipLocalHostOverlay(environment))
+        {
+            bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
+        }
 
         if (string.IsNullOrWhiteSpace(bootstrap.Host.Dashhost))
         {
@@ -131,6 +134,13 @@ public sealed class HostBootstrapService(
             bootstrap.Presentation.LargeFieldFilterLayout = filterLayout.Trim();
         }
     }
+
+    private static bool ShouldSkipLocalHostOverlay(IHostEnvironment environment) =>
+        string.Equals(environment.EnvironmentName, "E2E", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(
+            Environment.GetEnvironmentVariable("DASHSPEC_SKIP_LOCAL_CONFIG"),
+            "1",
+            StringComparison.Ordinal);
 
     private DashSpecTomlRoot OverlayOptionalToml(DashSpecTomlRoot root, string path)
     {

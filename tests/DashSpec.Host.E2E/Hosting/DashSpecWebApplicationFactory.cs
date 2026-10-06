@@ -4,6 +4,10 @@ using Microsoft.Extensions.Hosting;
 
 namespace DashSpec.Host.E2E.Hosting;
 
+/// <summary>
+/// Boots Host with committed <c>dash-spec.toml</c> only (skips gitignored <c>dash-spec.local.toml</c>).
+/// Planet SSOT: <c>samples/demo/demo.dashhost</c> → default catalog entry <c>demo_soak</c>.
+/// </summary>
 public sealed class DashSpecWebApplicationFactory : WebApplicationFactory<Program>
 {
     /// <summary>Real HTTP endpoint for Playwright (TestServer is in-memory only).</summary>
@@ -16,7 +20,8 @@ public sealed class DashSpecWebApplicationFactory : WebApplicationFactory<Progra
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseContentRoot(ResolveHostProjectDirectory());
-        builder.UseEnvironment(Environments.Development);
+        Environment.SetEnvironmentVariable("DASHSPEC_SKIP_LOCAL_CONFIG", "1");
+        builder.UseEnvironment("E2E");
         builder.UseSetting(WebHostDefaults.DetailedErrorsKey, "true");
     }
 
