@@ -84,6 +84,8 @@ Glob — см. [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) Layer 
 
 - `include_once` / zip `!import`
 
+**Follow-up:** module envelope linking via `using` / `import` and dependency closure (replacing eager glob registry) — [ADR-0089](DASHSPEC-ADR-0089-document-modules-using-import.md).
+
 ## Consequences
 
 - demo: `.dashinclude` + `diagram <id>` на card; `datasource`/`bind` в `report { }`.
