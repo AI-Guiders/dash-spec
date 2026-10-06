@@ -1,6 +1,6 @@
 @types demo_rows
 
-type DemoRow
+type FixtureRow
   optional date usage_date
   optional string app_name
   optional string user_sam

@@ -93,6 +93,8 @@ module rec DashboardComposer =
 
         let mutable formatDefaults = document.FormatDefaults
         let mutable timePolicy = document.TimePolicy
+        let mutable dashflow = document.Dashflow
+        let mutable dashflowPath = document.DashflowPath
 
         for tab in document.Tabs do
             if String.IsNullOrWhiteSpace(Option.defaultValue "" tab.DashspecPath) then
@@ -167,6 +169,16 @@ module rec DashboardComposer =
                         raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares row type '{pair.Key}'."))
                     rowTypes.[pair.Key] <- pair.Value
 
+                match tabModule.Dashflow with
+                | None -> ()
+                | Some moduleFlow ->
+                    match dashflow with
+                    | None ->
+                        dashflow <- Some moduleFlow
+                        dashflowPath <- tabModule.DashflowPath
+                    | Some _ ->
+                        raise (DashSpecParseException($"Tab module '{tab.Id}' declares dashflow but parent dashboard already has a module flow graph."))
+
                 let label = tab.Label |> Option.orElse tabModule.Label
 
                 mergedTabs.Add
@@ -189,7 +201,9 @@ module rec DashboardComposer =
                 Pages = Some(pages :> IReadOnlyList<_>)
                 FormatDefaults = formatDefaults
                 TimePolicy = timePolicy
-                RowTypes = Some(rowTypes :> IReadOnlyDictionary<_, _>) }
+                RowTypes = Some(rowTypes :> IReadOnlyDictionary<_, _>)
+                Dashflow = dashflow
+                DashflowPath = dashflowPath }
 
         DashboardValidator.validate merged
         merged

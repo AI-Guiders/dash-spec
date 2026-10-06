@@ -155,7 +155,20 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         this.SkipNewlines()
         match tokens.[index].Kind with
         | TokenKind.String -> this.ReadString()
-        | TokenKind.Ident -> this.ReadIdent()
+        | TokenKind.Ident ->
+            let first = this.ReadIdent()
+            let sb = System.Text.StringBuilder(first)
+
+            while not (this.IsOnNewline()) && tokens.[index].Kind = TokenKind.Dot do
+                this.Advance()
+
+                if tokens.[index].Kind <> TokenKind.Ident then
+                    raise (this.Unexpected "identifier after '.' in scalar value")
+
+                sb.Append('.') |> ignore
+                sb.Append(this.ReadIdentSameLine()) |> ignore
+
+            sb.ToString()
         | TokenKind.RelativeDay ->
             let value = tokens.[index].Value
             index <- index + 1
