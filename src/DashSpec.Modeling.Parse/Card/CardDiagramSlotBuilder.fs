@@ -118,7 +118,8 @@ module CardDiagramSlotBuilder =
           SqlCarrier = None
           Sheet = None
           RowsType = ""
-          ProviderInfer = false }
+          ProviderInfer = false
+          ProviderId = None }
 
     let private resolveSlotFlowInput (scratch: SlotScratch) (cardFlowInput: CardFlowInput option) =
         match scratch.FlowInput with
