@@ -63,6 +63,10 @@ module DefaultsBlockParser =
                     reader.Expect TokenKind.Eq
                     formats <- { formats with DateTimeFormat = Some(reader.ReadString()) }
                     reader.SkipNewlines()
+                elif key.Equals("culture", StringComparison.OrdinalIgnoreCase) then
+                    reader.Expect TokenKind.Eq
+                    formats <- { formats with Culture = Some(reader.ReadString()) }
+                    reader.SkipNewlines()
                 else
                     match tryParseFilterPropertyKey key with
                     | Some(filterName, property) ->
@@ -70,7 +74,7 @@ module DefaultsBlockParser =
                         FilterScopeDefaults.set filterDefaults filterName property (readDefaultValue reader)
                         reader.SkipNewlines()
                     | None ->
-                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use time_format, date_format, datetime_format, or filter.<id>.<property>."))
+                        raise (DashSpecParseException($"Unknown defaults property '{key}'. Use culture, time_format, date_format, datetime_format, or filter.<id>.<property>."))
 
         BlockSyntax.expectBlockEnd reader blockKeyword (None: string option)
         formats

@@ -788,6 +788,7 @@ public class DashboardParseTests
               report
                 title = "T"
                 {{blockKeyword}}
+                  culture = "en-GB"
                   time_format = "HH:mm"
                   date_format = "dd.MM.yyyy"
                   datetime_format = "dd.MM.yyyy HH:mm"
@@ -796,6 +797,7 @@ public class DashboardParseTests
             end dashboard
             """);
 
+        Assert.Equal("en-GB", document.ResolvedFormatDefaults.Culture);
         Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat);
         Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat);
         Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat);
