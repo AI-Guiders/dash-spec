@@ -17,7 +17,7 @@ public sealed class ReportFormatReadingGuideTests
 
         Assert.Equal("дд.мм", model.Rows[0].Pattern);
         Assert.Equal("03.08", model.Rows[0].Example);
-        Assert.Equal("ЧЧ:mm", model.Rows[1].Pattern);
+        Assert.Equal("ЧЧ:мм", model.Rows[1].Pattern);
         Assert.Equal("14:05", model.Rows[1].Example);
         Assert.Contains("МСК", model.TimeZoneLabel);
     }

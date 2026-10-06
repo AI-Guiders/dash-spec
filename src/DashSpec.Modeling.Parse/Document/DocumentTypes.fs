@@ -63,17 +63,19 @@ type ModuleDiagramDefinition =
 type ReportFormatDefaults =
     { TimeFormat: string option
       DateFormat: string option
-      DateTimeFormat: string option }
+      DateTimeFormat: string option
+      Culture: string option }
 
 [<RequireQualifiedAccess>]
 module ReportFormatDefaults =
     let empty =
-        { TimeFormat = None; DateFormat = None; DateTimeFormat = None }
+        { TimeFormat = None; DateFormat = None; DateTimeFormat = None; Culture = None }
 
     let merge (baseFmt: ReportFormatDefaults) (overlay: ReportFormatDefaults) =
         { TimeFormat = overlay.TimeFormat |> Option.orElse baseFmt.TimeFormat
           DateFormat = overlay.DateFormat |> Option.orElse baseFmt.DateFormat
-          DateTimeFormat = overlay.DateTimeFormat |> Option.orElse baseFmt.DateTimeFormat }
+          DateTimeFormat = overlay.DateTimeFormat |> Option.orElse baseFmt.DateTimeFormat
+          Culture = overlay.Culture |> Option.orElse baseFmt.Culture }
 
 [<RequireQualifiedAccess>]
 type ReportTimeBasis =

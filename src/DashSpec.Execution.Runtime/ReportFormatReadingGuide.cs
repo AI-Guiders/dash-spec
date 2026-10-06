@@ -6,7 +6,6 @@ namespace DashSpec.Execution.Runtime;
 /// <summary>Human-readable legend for report <c>defaults</c> date/time formats (how to read labels on charts and filters).</summary>
 public static class ReportFormatReadingGuide
 {
-    private static readonly CultureInfo SampleCulture = CultureInfo.GetCultureInfo("ru-RU");
     private static readonly DateOnly SampleDate = new(2026, 8, 3);
     private static readonly DateTime SampleClock = new(2026, 8, 3, 14, 5, 0, DateTimeKind.Unspecified);
 
@@ -16,17 +15,18 @@ public static class ReportFormatReadingGuide
     {
         var dateFormat = ResolveDateFormat(defaults);
         var timeFormat = ResolveTimeFormat(defaults);
+        var culture = FormatCulturePresets.ResolveCulture(defaults, null);
 
         return new ReportFormatReadingGuideModel(
             [
                 new ReportFormatGuideRow(
                     "Даты",
-                    DescribePattern(dateFormat, isTime: false),
-                    FormatSampleDate(dateFormat)),
+                    DescribePattern(dateFormat, isTime: false, culture),
+                    FormatSampleDate(dateFormat, culture)),
                 new ReportFormatGuideRow(
                     "Время",
-                    DescribePattern(timeFormat, isTime: true),
-                    FormatSampleTime(timeFormat)),
+                    DescribePattern(timeFormat, isTime: true, culture),
+                    FormatSampleTime(timeFormat, culture)),
             ],
             DescribeTimeZone(displayTimeZone));
     }
@@ -49,36 +49,12 @@ public static class ReportFormatReadingGuide
             ? "time.short"
             : defaults.TimeFormat.Trim();
 
-    private static string DescribePattern(string format, bool isTime)
+    private static string DescribePattern(string format, bool isTime, CultureInfo culture)
     {
-        if (format.Equals("date.short", StringComparison.OrdinalIgnoreCase))
+        if (FormatCulturePresets.IsNamedPreset(format))
         {
-            return "дд.мм";
-        }
-
-        if (format.Equals("date.full", StringComparison.OrdinalIgnoreCase))
-        {
-            return "дд.мм.гггг";
-        }
-
-        if (format.Equals("date.iso", StringComparison.OrdinalIgnoreCase))
-        {
-            return "гггг-мм-дд";
-        }
-
-        if (format.Equals("time.short", StringComparison.OrdinalIgnoreCase))
-        {
-            return "ЧЧ:мм";
-        }
-
-        if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase))
-        {
-            return "дд.мм ЧЧ:мм";
-        }
-
-        if (format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase))
-        {
-            return "гггг-мм-дд ЧЧ:мм";
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
+            return TranslateCustomPattern(pattern, isTime);
         }
 
         return TranslateCustomPattern(format, isTime);
@@ -92,7 +68,12 @@ public static class ReportFormatReadingGuide
             .Replace("MM", "мм", StringComparison.Ordinal)
             .Replace("HH", "ЧЧ", StringComparison.Ordinal);
 
-        if (!isTime && translated.Contains('м') && !translated.Contains('Ч'))
+        if (isTime)
+        {
+            return translated.Replace("mm", "мм", StringComparison.Ordinal);
+        }
+
+        if (translated.Contains('м') && !translated.Contains('Ч'))
         {
             return translated;
         }
@@ -100,57 +81,48 @@ public static class ReportFormatReadingGuide
         return translated;
     }
 
-    private static string FormatSampleDate(string format)
+    private static string FormatSampleDate(string format, CultureInfo culture)
     {
-        if (format.Equals("date.short", StringComparison.OrdinalIgnoreCase))
+        if (FormatCulturePresets.IsNamedPreset(format))
         {
-            return SampleDate.ToString("dd.MM", SampleCulture);
-        }
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
+            var formatCulture = format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
+                || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
+                    ? CultureInfo.InvariantCulture
+                    : culture;
+            if (format.StartsWith("datetime", StringComparison.OrdinalIgnoreCase))
+            {
+                return SampleClock.ToString(pattern, formatCulture);
+            }
 
-        if (format.Equals("date.full", StringComparison.OrdinalIgnoreCase))
-        {
-            return SampleDate.ToString("dd.MM.yyyy", SampleCulture);
-        }
-
-        if (format.Equals("date.iso", StringComparison.OrdinalIgnoreCase))
-        {
-            return SampleDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        }
-
-        if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase))
-        {
-            return SampleClock.ToString("dd.MM HH:mm", SampleCulture);
-        }
-
-        if (format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase))
-        {
-            return SampleClock.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+            return SampleDate.ToString(pattern, formatCulture);
         }
 
         try
         {
-            return SampleDate.ToString(format, SampleCulture);
+            return SampleDate.ToString(format, culture);
         }
         catch (FormatException)
         {
-            return SampleDate.ToString("dd.MM.yyyy", SampleCulture);
+            return SampleDate.ToString(culture.DateTimeFormat.ShortDatePattern, culture);
         }
     }
 
-    private static string FormatSampleTime(string format)
+    private static string FormatSampleTime(string format, CultureInfo culture)
     {
-        if (format.Equals("time.short", StringComparison.OrdinalIgnoreCase))
+        if (FormatCulturePresets.IsNamedPreset(format))
         {
-            return SampleClock.ToString("HH:mm", SampleCulture);
+            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
+            return SampleClock.ToString(pattern, culture);
         }
 
         try
         {
-            return SampleClock.ToString(format, SampleCulture);
+            return SampleClock.ToString(format, culture);
         }
         catch (FormatException)
         {
-            return SampleClock.ToString("HH:mm", SampleCulture);
+            return SampleClock.ToString(culture.DateTimeFormat.ShortTimePattern, culture);
         }
     }
 
