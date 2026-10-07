@@ -140,9 +140,4 @@ module TabModuleParser =
               ReportScopeFlow = shell.ReportScopeFlow
               WiringGraph = WiringGraph.empty }
 
-        let document =
-            { documentWithoutGraph with
-                WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
-
-        DashboardValidator.validate document
-        document
+        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
