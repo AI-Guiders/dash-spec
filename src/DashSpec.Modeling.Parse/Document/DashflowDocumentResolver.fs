@@ -5,11 +5,11 @@ open DashSpec.Modeling.Parse.DataFlow
 
 module DashflowDocumentResolver =
 
-    let private typeCatalog (shell: DashboardShellContext) =
+    let private typeCatalog (shell: ReportCompileContext) =
         TypeCatalog.ofDefinitions (shell.Includes.ExportRowTypes().Values)
 
     /// <summary>Resolve module data flow from <c>connect { flow }</c> or <c>!include</c> of <c>.dashflow</c>.</summary>
-    let resolve (shell: DashboardShellContext) : DashflowModule option * string option =
+    let resolve (shell: ReportCompileContext) : DashflowModule option * string option =
         match shell.Includes.DashflowModule, shell.FlowConnectPath, shell.SpecDirectory with
         | Some _, Some _, _ ->
             raise (DashSpecParseException("Declare data flow either via connect { flow \"…\" } or !include of a .dashflow file, not both."))

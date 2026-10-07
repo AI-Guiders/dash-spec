@@ -12,13 +12,13 @@ open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
 open DashSpec.Modeling.Parse.Types
 
-module DashboardShellParser =
+module ReportBodyParser =
 
-    let private toolbarContext (ctx: DashboardShellContext) (blockName: string) =
+    let private toolbarContext (ctx: ReportCompileContext) (blockName: string) =
         { AssignToolbarBoard = fun board -> ctx.AssignToolbarBoard(board, blockName)
           AddDashboardFilters = fun names -> ctx.DashboardFilters.AddRange names }
 
-    let private parseFiltersChrome (reader: TokenReader) (ctx: DashboardShellContext) (assign: bool) =
+    let private parseFiltersChrome (reader: TokenReader) (ctx: ReportCompileContext) (assign: bool) =
         if reader.TryKeywordSameLine "dashboard" then
             if assign then
                 ToolbarPlacementParser.parse reader (toolbarContext ctx "filters dashboard") "filters dashboard"
@@ -32,10 +32,10 @@ module DashboardShellParser =
         else
             ToolbarPlacementParser.discard reader "toolbar"
 
-    let parseFiltersChromePublic (reader: TokenReader) (ctx: DashboardShellContext) (assign: bool) =
+    let parseFiltersChromePublic (reader: TokenReader) (ctx: ReportCompileContext) (assign: bool) =
         parseFiltersChrome reader ctx assign
 
-    let private tryParseIncludeToolbar (reader: TokenReader) (ctx: DashboardShellContext) =
+    let private tryParseIncludeToolbar (reader: TokenReader) (ctx: ReportCompileContext) =
         if not (reader.TryKeyword "include") then false
         else
             let kind, reference = DiagramModuleParser.readIncludeReference reader
@@ -49,7 +49,7 @@ module DashboardShellParser =
                 reader.SkipNewlines()
                 true
 
-    let private tryParseIncludeLayout (reader: TokenReader) (ctx: DashboardShellContext) =
+    let private tryParseIncludeLayout (reader: TokenReader) (ctx: ReportCompileContext) =
         if not (reader.TryKeyword "include") then false
         else
             let kind, reference = DiagramModuleParser.readIncludeReference reader
@@ -66,7 +66,7 @@ module DashboardShellParser =
                 true
 
     let private applyTabModuleBlock
-        (ctx: DashboardShellContext)
+        (ctx: ReportCompileContext)
         (moduleLabel: string option)
         (moduleFilters: IReadOnlyList<FilterDefinition>)
         (moduleLayout: LayoutBoardDefinition option)
@@ -79,15 +79,15 @@ module DashboardShellParser =
         ctx.LayoutBoard <- ctx.LayoutBoard |> Option.orElse moduleLayout
 
         match ctx.Mode with
-        | DashboardShellMode.TabModuleStandalone -> ctx.Filters.AddRange moduleFilters
-        | DashboardShellMode.TabModuleEmbedded -> ctx.TabLocalFilters.AddRange moduleFilters
+        | ReportCompileMode.TabStandalone -> ctx.Filters.AddRange moduleFilters
+        | ReportCompileMode.TabEmbedded -> ctx.TabLocalFilters.AddRange moduleFilters
         | _ -> ()
 
-    let private parseTabStatement (reader: TokenReader) (ctx: DashboardShellContext) =
+    let private parseTabStatement (reader: TokenReader) (ctx: ReportCompileContext) =
         match ctx.Mode with
-        | DashboardShellMode.DashboardBody -> ctx.Tabs.Add(TabParser.parse reader)
-        | DashboardShellMode.TabModuleStandalone
-        | DashboardShellMode.TabModuleEmbedded ->
+        | ReportCompileMode.Dashboard -> ctx.Tabs.Add(TabParser.parse reader)
+        | ReportCompileMode.TabStandalone
+        | ReportCompileMode.TabEmbedded ->
             match ctx.TabModuleId with
             | None | Some "" -> raise (DashSpecParseException("Tab module shell requires @tab id before tab block."))
             | Some tabModuleId ->
@@ -95,10 +95,10 @@ module DashboardShellParser =
                     TabParser.parseModuleLocalBlock reader tabModuleId true
                 applyTabModuleBlock ctx moduleLabel moduleFilters moduleLayout
 
-    let rec tryParseStatement (reader: TokenReader) (ctx: DashboardShellContext) =
-        if ctx.Mode = DashboardShellMode.DashboardBody && tryParseIncludeToolbar reader ctx then
+    let rec tryParseStatement (reader: TokenReader) (ctx: ReportCompileContext) =
+        if ctx.Mode = ReportCompileMode.Dashboard && tryParseIncludeToolbar reader ctx then
             true
-        elif (ctx.Mode = DashboardShellMode.TabModuleStandalone || ctx.Mode = DashboardShellMode.TabModuleEmbedded)
+        elif (ctx.Mode = ReportCompileMode.TabStandalone || ctx.Mode = ReportCompileMode.TabEmbedded)
              && tryParseIncludeLayout reader ctx then
             true
         elif reader.TryKeyword "connector" then
@@ -106,7 +106,7 @@ module DashboardShellParser =
             raise (DashSpecParseException("Data provider belongs on dashflow source nodes (use provider <id> inside source { }), not on the report module."))
         elif reader.TryKeyword "layout" then
             let grid = LayoutParser.parseGrid reader
-            if ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone then
+            if ctx.Mode = ReportCompileMode.Dashboard || ctx.Mode = ReportCompileMode.TabStandalone then
                 ctx.Layout <- grid
             reader.SkipNewlines()
             true
@@ -120,13 +120,13 @@ module DashboardShellParser =
                 if reader.RawKind = TokenKind.Eq then
                     reader.Advance()
                 reader.ReadScalarValue()
-            if ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone then
+            if ctx.Mode = ReportCompileMode.Dashboard || ctx.Mode = ReportCompileMode.TabStandalone then
                 ctx.ColorPalette <- Some palette
             reader.SkipNewlines()
             true
         elif reader.TryKeyword "filters" || reader.TryKeyword "toolbar" then
             let assign =
-                ctx.Mode = DashboardShellMode.DashboardBody || ctx.Mode = DashboardShellMode.TabModuleStandalone
+                ctx.Mode = ReportCompileMode.Dashboard || ctx.Mode = ReportCompileMode.TabStandalone
             parseFiltersChrome reader ctx assign
             reader.SkipNewlines()
             true
@@ -147,8 +147,8 @@ module DashboardShellParser =
             true
         elif reader.TryKeyword "filter" then
             let filter = FilterParser.parse reader ctx.ResolveFilterProperty
-            if ctx.Mode = DashboardShellMode.TabModuleEmbedded then
-                ctx.ShellFilters.Add filter
+            if ctx.Mode = ReportCompileMode.TabEmbedded then
+                ctx.ReportScopeFilters.Add filter
             else
                 ctx.Filters.Add filter
             reader.SkipNewlines()

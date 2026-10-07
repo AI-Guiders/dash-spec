@@ -14,13 +14,13 @@ Qualified scope flows (`data` / `show` / `wire` / `action`) were applied by call
 
 ### SSOT module
 
-**`DocumentCompilePipeline.ScopeFlows`** (alias `DashboardShellWiringPipeline`) is the **only** place that defines **post-parse scope flow order** on `DashboardShellContext`:
+**`DocumentCompilePipeline.ScopeFlows`** (alias `ReportScopeFlowPipeline`) is the **only** place that defines **post-parse scope flow order** on `ReportCompileContext`:
 
 1. **`ScopeDataFlow`** — report/page `data flow` → `card.<id>.<slot>` (and validation that every slot is wired).
 2. **`ScopePlacementFlow`** — `placement flow` → report / page / card toolbars.
 3. **`ScopeRouteFlow`** — show / wire / action → chrome, host, events.
 
-Entry points call **`DocumentCompilePipeline.finalizeShell`** once after the report body is parsed — same lifecycle idea as `IncludeExpander.linkEnvelope` for includes (one orchestrator, not scattered calls). See [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md).
+Entry points call **`DocumentCompilePipeline.compileScopeFlows`** once after the report body is parsed — same lifecycle idea as `IncludeExpander.linkEnvelope` for includes (one orchestrator, not scattered calls). See [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md).
 
 ### Parse vs wire
 
@@ -28,7 +28,7 @@ Entry points call **`DocumentCompilePipeline.finalizeShell`** once after the rep
 |-------|----------------|
 | Token parse (`CardParser`, `parseReportBlock`, …) | Collect AST; card slots may use **deferred** data placeholders until wiring runs. |
 | `IncludeExpander` / `connect` | Register external units (diagram, dashflow, layout, …). |
-| **`DocumentCompilePipeline.finalizeShell`** | Resolve all scope **flow** sections onto cards. |
+| **`DocumentCompilePipeline.compileScopeFlows`** | Resolve all scope **flow** sections onto cards. |
 | `DocumentFlowMaterializer.materialize` | Resolve dashflow node → `DataSource` on cards (document level). |
 | `DocumentWiringGraphBuilder.build` | Export unified graph for Studio. |
 
@@ -37,7 +37,7 @@ New applicators for scope flows **register a phase** in `DocumentCompilePipeline
 ### Relation to `FlowGraphKindRegistry`
 
 - **Registry** = author-facing qualified block keywords (`data flow`, …).
-- **Pipeline** = runtime order those partitions are applied to the shell.
+- **Pipeline** = runtime order those partitions are applied to `ReportCompileContext`.
 
 ## Non-goals (v1)
 

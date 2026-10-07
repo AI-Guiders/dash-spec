@@ -138,8 +138,8 @@
     <Compile Include="Document\ReportScopePlacementApplicator.fs" />
     <Compile Include="Document\DocumentWiringGraphBuilder.fs" />
     <Compile Include="Document\DocumentCompilePipeline.fs" />
-    <Compile Include="Document\DashboardShellWiringPipeline.fs" />
-    <Compile Include="Document\DashboardShellParser.fs" />
+    <Compile Include="Document\ReportScopeFlowPipeline.fs" />
+    <Compile Include="Document\ReportBodyParser.fs" />
     <Compile Include="Document\DocumentModuleParser.fs" />
     <Compile Include="Document\DashboardParser.fs" />
     <Compile Include="Document\DashboardComposer.fs" />

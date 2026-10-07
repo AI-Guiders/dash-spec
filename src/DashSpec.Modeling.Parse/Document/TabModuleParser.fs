@@ -32,14 +32,14 @@ module TabModuleParser =
         if not (String.Equals(tabId, expectedTabId, StringComparison.OrdinalIgnoreCase)) then
             raise (DashSpecParseException($"Tab dashspec for '{expectedTabId}' must declare @tab '{expectedTabId}', found '{tabId}'."))
 
-        let shell = DashboardShellContext DashboardShellMode.TabModuleEmbedded
+        let shell = ReportCompileContext ReportCompileMode.TabEmbedded
         shell.SpecDirectory <- specDirectory
         shell.TabModuleId <- Some tabId
         shell.ParentFilters <- parentFilters
 
         reader.SkipNewlines()
         while not reader.IsEof do
-            if not (DashboardShellParser.tryParseStatement reader shell) then
+            if not (ReportBodyParser.tryParseStatement reader shell) then
                 if reader.IsEof then () else raise (reader.Unexpected())
 
         if shell.Cards.Count = 0 then
@@ -75,13 +75,13 @@ module TabModuleParser =
         let palettePath = reader.ConsumedPalettePath
 
         let tabId = readTabDirective reader
-        let shell = DashboardShellContext DashboardShellMode.TabModuleStandalone
+        let shell = ReportCompileContext ReportCompileMode.TabStandalone
         shell.SpecDirectory <- specDirectory
         shell.TabModuleId <- Some tabId
 
         reader.SkipNewlines()
         while not reader.IsEof do
-            if not (DashboardShellParser.tryParseStatement reader shell) then
+            if not (ReportBodyParser.tryParseStatement reader shell) then
                 raise (reader.Unexpected())
 
         if shell.Cards.Count = 0 then
@@ -98,7 +98,7 @@ module TabModuleParser =
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames (shell.Filters :> IReadOnlyList<_>) (shell.DashboardFilters :> IReadOnlyList<_>) shell.ToolbarBoard
 
-        DocumentCompilePipeline.finalizeShell shell
+        DocumentCompilePipeline.compileScopeFlows shell
 
         let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
 
