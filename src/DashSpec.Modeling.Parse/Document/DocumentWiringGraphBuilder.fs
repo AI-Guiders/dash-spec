@@ -256,6 +256,42 @@ module DocumentWiringGraphBuilder =
 
         merged :> IReadOnlyList<_>
 
+    let private scopeDataLinks (sections: FlowGraphSections) =
+        FlowGraphSections.linksFor sections FlowGraphKind.Data
+
+    let private addScopeDataFlowLinks
+        (nodes: Dictionary<string, WiringNode>)
+        (edges: ResizeArray<WiringEdge>)
+        (filters: IReadOnlyList<FilterDefinition>)
+        (links: IReadOnlyList<FlowLinkDef>)
+        (scope: string option)
+        =
+        let filterNames = HashSet<string>(filters |> Seq.map (fun f -> f.Name), StringComparer.OrdinalIgnoreCase)
+
+        for link in links do
+            match CardDataFlowTargets.tryCardSlot link.ToNode with
+            | None -> ()
+            | Some(cardId, slotRef) ->
+                let slotNode = $"{cardId}.{slotRef}"
+                addNode nodes cardId WiringNodeKind.Card scope
+                addNode nodes slotNode WiringNodeKind.Slot scope
+
+                let kind =
+                    if filterNames.Contains link.FromNode then
+                        WiringEdgeKind.Route
+                    else
+                        addNode nodes link.FromNode WiringNodeKind.ModuleNode scope
+                        WiringEdgeKind.Flow
+
+                addEdge
+                    edges
+                    { From = link.FromNode
+                      FromPort = link.FromPort
+                      To = slotNode
+                      ToPort = link.ToPort
+                      Kind = kind
+                      Scope = scope }
+
     let private addScopeFlowLinks (edges: ResizeArray<WiringEdge>) (links: IReadOnlyList<FlowLinkDef>) (scope: string option) =
         for link in links do
             let kind = classifyScopeLink link
@@ -319,11 +355,17 @@ module DocumentWiringGraphBuilder =
                 lowerPageDerive nodes edges page
 
                 match page.ScopeFlow with
-                | Some flow -> addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) (Some $"page:{page.Id}")
+                | Some flow ->
+                    let pageScope = Some $"page:{page.Id}"
+                    addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) pageScope
+                    addScopeDataFlowLinks nodes edges document.Filters (scopeDataLinks flow.Sections) pageScope
                 | None -> ()
 
         match document.ReportScopeFlow with
-        | Some flow -> addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) (Some "report")
+        | Some flow ->
+            let reportScope = Some "report"
+            addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) reportScope
+            addScopeDataFlowLinks nodes edges document.Filters (scopeDataLinks flow.Sections) reportScope
         | None -> ()
 
         WiringGraph.create nodes.Values edges

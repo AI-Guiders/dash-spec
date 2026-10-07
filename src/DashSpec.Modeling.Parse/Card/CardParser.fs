@@ -125,26 +125,21 @@ module CardParser =
 
         names :> IReadOnlyList<_>, manualApply, applySplitIndex, chromeBoard.Value
 
-    let private parseDataBlock
-        (reader: TokenReader)
-        (cardId: string)
-        (specDirectory: string option)
-        (dataSource: DataSourceDefinition option ref)
-        (boundFilters: ResizeArray<string>)
-        =
+    let private rejectLegacyCardData (cardId: string) (what: string) =
+        raise (
+            DashSpecParseException(
+                $"Card '{cardId}': {what} removed; declare sources in module dashflow and wire report/page/card data flow (module [port] -> [rows] card.<id>.<slot> or slot on card)."
+            )
+        )
+
+    let private parseDataBlock (reader: TokenReader) (cardId: string) (_specDirectory: string option) (_dataSource: DataSourceDefinition option ref) (_boundFilters: ResizeArray<string>) =
+        rejectLegacyCardData cardId "data { }"
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         while not (BlockSyntax.isBlockEnd reader "data" None) && not reader.IsEof do
             reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "data" None then ()
-            elif reader.TryKeyword "datasource" then
-                dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "bind" then
-                boundFilters.AddRange(parseBind reader)
-                reader.SkipNewlines()
-            else
-                raise (reader.Unexpected "datasource or bind")
+            if not (BlockSyntax.isBlockEnd reader "data" None) then
+                rejectLegacyCardData cardId "data { }"
         BlockSyntax.expectBlockEnd reader "data" None
 
     let private parseDataBlockForSlot
@@ -453,19 +448,12 @@ module CardParser =
                 CardInteriorFlowParser.rejectLegacyFlow reader id
             elif reader.TryKeyword "data" then
                 if reader.TryKeyword "for" then
-                    let slotName = reader.ReadIdent()
-                    if String.IsNullOrWhiteSpace slotName then
-                        raise (DashSpecParseException($"Card '{id}': data for requires slot id."))
-                    let ds, slotBind = parseDataBlockForSlot reader id specDirectory slotBuilder slotName
-                    CardDiagramSlotBuilder.applyData slotBuilder slotName ds slotBind
+                    rejectLegacyCardData id "data for"
                 else
                     parseDataBlock reader id specDirectory dataSource boundFilters
-                    match dataSource.Value with
-                    | Some ds ->
-                        let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
-                        CardDiagramSlotBuilder.applyData slotBuilder slotRef ds (boundFilters :> IReadOnlyList<_>)
-                    | None -> ()
                 reader.SkipNewlines()
+            elif reader.TryKeyword "input" then
+                rejectLegacyCardData id "input"
             elif reader.TryKeyword "view" then
                 parseViewBlock reader id specDirectory includes parseOptions slotBuilder diagram diagramSlotRef legend presentation seriesTransform includeFragment
                 reader.SkipNewlines()
@@ -524,27 +512,8 @@ module CardParser =
                 if placement.Value.IsNone then placement.Value <- parsedPlacement
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
                 reader.SkipNewlines()
-            elif reader.TryKeyword "input" then
-                let parsed = CardFlowInputParser.parse reader id
-                match parsed.ForSlot with
-                | Some slotRef ->
-                    CardDiagramSlotBuilder.applyFlowInput slotBuilder slotRef parsed.Input id
-                | None ->
-                    if cardInputs.ContainsKey parsed.Input.Alias then
-                        raise (DashSpecParseException($"Card '{id}': duplicate card input alias '{parsed.Input.Alias}'."))
-                    cardInputs.[parsed.Input.Alias] <- parsed.Input
-                    if String.Equals(parsed.Input.Alias, "rows", StringComparison.OrdinalIgnoreCase)
-                       || cardInputs.Count = 1 then
-                        flowInput.Value <- Some parsed.Input
-                reader.SkipNewlines()
             elif reader.TryKeyword "datasource" then
-                dataSource.Value <- Some(DataSourceParser.parse reader specDirectory)
-                match dataSource.Value with
-                | Some ds ->
-                    let slotRef = CardDiagramSlotBuilder.resolveSlotRef slotBuilder diagramSlotRef.Value
-                    CardDiagramSlotBuilder.applyData slotBuilder slotRef ds (boundFilters :> IReadOnlyList<_>)
-                | None -> ()
-                reader.SkipNewlines()
+                rejectLegacyCardData id "datasource"
             elif reader.TryKeyword "legend" then
                 legend.Value <- Some(parseLegend reader)
                 reader.SkipNewlines()
@@ -713,7 +682,7 @@ module CardParser =
            && flowInput.Value.IsNone
            && cardInputs.Count = 0
            && not anySlotFlowInput then
-            raise (DashSpecParseException("Card requires a datasource block, flow input, or use <card-preset>."))
+            raise (DashSpecParseException("Card requires data flow wiring, report/page data flow, or use <card-preset>."))
 
         let resolvedCardFlowInput =
             match flowInput.Value with

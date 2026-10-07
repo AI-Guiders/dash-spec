@@ -5,48 +5,23 @@ open System.IO
 open Xunit
 open DashSpec.Modeling.Parse.Document
 
-module MultiSlotFlowInputParseTests =
-
-    let private flowText =
-        """
-@flow peak
-
-source utilization {
-  use provider sqlserver
-  from view demo.v_heat
-  ports
-    default output utilization
-    output stream utilization: UtilizationRow
-  end ports
-}
-
-source drill_src {
-  use provider sqlserver
-  from view demo.v_drill
-  ports
-    default output rows
-    output stream rows: UtilizationRow
-  end ports
-}
-
-end flow
-"""
+module ReportScopeDataFlowTests =
 
     [<Fact>]
-    let ``report data flow binds module outputs per diagram slot`` () =
-        let dir = Path.Combine(Path.GetTempPath(), "multi-slot-flow-" + Guid.NewGuid().ToString("N"))
+    let ``report data flow wires module node to card slot`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "report-data-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), CardInteriorFlowParseTests.flowTextForReuse)
 
         let specText =
             """
-@tab multi_slot_flow
+@tab report_data_flow
 
 connect
   flow "peak.dashflow"
 end connect
 
-report "Multi"
+report "Scope"
   type UtilizationRow
     string UserSam
   end type
@@ -78,22 +53,16 @@ report "Multi"
   end card
 end report
 
-end tab multi_slot_flow
+end tab report_data_flow
 """
 
         try
             let document = DocumentModuleParser.parseDocumentDefault specText (Some dir)
             let card = document.Cards.[0]
-            Assert.Equal(2, card.DiagramSlots.Count)
             let heatmap = card.DiagramSlots.["heatmap"]
-            let drill = card.DiagramSlots.["drill"]
             Assert.True(heatmap.FlowInput.IsSome)
-            Assert.True(drill.FlowInput.IsSome)
             Assert.Equal("utilization", heatmap.FlowInput.Value.NodeId)
-            Assert.Equal("drill_src", drill.FlowInput.Value.NodeId)
-            Assert.Equal("rows", drill.FlowInput.Value.PortName)
-            Assert.True(card.FlowInput.IsSome)
-            Assert.Equal("utilization", card.FlowInput.Value.NodeId)
+            Assert.Contains("usage_date", heatmap.BoundFilters)
         finally
             try
                 Directory.Delete(dir, true)

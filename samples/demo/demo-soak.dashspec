@@ -71,7 +71,9 @@
             end tab
 
             card peak_concurrent_kpi as "Peak concurrent (max)"
-                input rows from daily_peak_tz.rows
+                data flow
+                    daily_peak_tz [rows] -> [rows] __diagram__
+                end data flow
                 diagram demo_peak_kpi
                     bind
                         usage_date, user_name, app_name
@@ -79,7 +81,9 @@
                 end card
 
                 card peak_sparkline as "Peak trend"
-                    input rows from daily_peak_tz.rows
+                    data flow
+                        daily_peak_tz [rows] -> [rows] __diagram__
+                    end data flow
                     diagram demo_peak_sparkline
                         bind
                             usage_date, user_name, app_name
@@ -87,7 +91,9 @@
                     end card
 
                     card peak_concurrent_proxy as "Peak concurrent (proxy)"
-                        input rows from daily_peak_tz.rows
+                        data flow
+                            daily_peak_tz [rows] -> [rows] __diagram__
+                        end data flow
                         diagram demo_peak_concurrent_line
                             bind
                                 usage_date, user_name, app_name
@@ -95,7 +101,9 @@
                         end card
 
                         card peak_stacked_bar as "Peak by product (stacked)"
-                            input rows from daily_peak_tz.rows
+                            data flow
+                                daily_peak_tz [rows] -> [rows] __diagram__
+                            end data flow
                             diagram demo_peak_stacked_bar
                                 bind
                                     usage_date, user_name, app_name
@@ -104,9 +112,11 @@
 
                             card activity_5min as "Activity 5-min"
                                 show flow
-                                    activity_slot -> [panel] chrome.card.activity_5min
+                                    activity_slot -> [toolbar] chrome.card.activity_5min
                                 end show flow
-                                input rows from activity_tz.rows
+                                data flow
+                                    activity_tz [rows] -> [rows] __diagram__
+                                end data flow
                                 diagram demo_activity_5min_line
                                     bind
                                         usage_date, user_name, app_name
@@ -114,7 +124,9 @@
                                 end card
 
                                 card activity_area as "Activity (area)"
-                                    input rows from activity_tz.rows
+                                    data flow
+                                        activity_tz [rows] -> [rows] __diagram__
+                                    end data flow
                                     diagram demo_activity_area
                                         bind
                                             usage_date, user_name, app_name
@@ -122,7 +134,9 @@
                                     end card
 
                                     card dau_by_product as "DAU by product"
-                                        input rows from dau_tz.rows
+                                        data flow
+                                            dau_tz [rows] -> [rows] __diagram__
+                                        end data flow
                                         diagram demo_dau_bar
                                             bind
                                                 usage_date, user_name, app_name
@@ -130,7 +144,9 @@
                                         end card
 
                                         card dau_by_product_donut as "DAU by product (donut)"
-                                            input rows from dau_tz.rows
+                                            data flow
+                                                dau_tz [rows] -> [rows] __diagram__
+                                            end data flow
                                             diagram demo_dau_donut
                                                 bind
                                                     usage_date, user_name, app_name
@@ -139,9 +155,11 @@
 
                                             card events_detail as "Events detail"
                                                 show flow
-                                                    events_top -> [panel] chrome.card.events_detail
+                                                    events_top -> [toolbar] chrome.card.events_detail
                                                 end show flow
-                                                input rows from events_tz.rows
+                                                data flow
+                                                    events_tz [rows] -> [rows] __diagram__
+                                                end data flow
                                                 diagram demo_events_detail_table
                                                     bind
                                                         app_name, user_name
