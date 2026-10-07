@@ -4,7 +4,9 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Platform;
+using DashSpec.Abstractions.Viewer;
 using DashSpec.Surface.Blazor.Configuration;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Core.Platform;
 using DashSpec.Core.Runtime;
@@ -32,4 +34,16 @@ public static class HostViewerServiceCollectionExtensions
         CultureInfo uiCulture,
         TimeZoneInfo displayTimeZone) =>
         services.AddDashSpecBlazorViewerSession(uiCulture, displayTimeZone);
+
+    /// <summary>Host → Surface viewer port adapters (ADR-0099 B3).</summary>
+    public static IServiceCollection AddDashSpecHostViewerPorts(this IServiceCollection services)
+    {
+        services.AddSingleton<HostPresentationSignals>();
+        services.AddSingleton<ICatalogUsageClient, CatalogUsageClientAdapter>();
+        services.AddSingleton<IViewerExternalLinksProvider, ViewerExternalLinksProviderAdapter>();
+        services.AddSingleton<IViewerShellChrome, ViewerShellChromeAdapter>();
+        services.AddSingleton<IViewerPresentationOptions, ViewerPresentationOptionsAdapter>();
+        services.AddSingleton<ILayoutSlotRendererRegistry, LayoutSlotRendererRegistry>();
+        return services;
+    }
 }
