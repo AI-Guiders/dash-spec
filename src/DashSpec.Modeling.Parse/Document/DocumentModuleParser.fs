@@ -14,6 +14,7 @@ open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
 open DashSpec.Modeling.Parse.Types
 open DashSpec.Modeling.Parse.DataFlow
+open DashSpec.Modeling.Parse.Project
 
 module rec DocumentModuleParser =
 
@@ -21,8 +22,15 @@ module rec DocumentModuleParser =
         let dashflow, path = DashflowDocumentResolver.resolve shell
         path, dashflow
 
-    let private applyModuleHeader (shell: ReportCompileContext) (header: ModuleHeader) =
+    let private applyModuleHeader
+        (shell: ReportCompileContext)
+        (header: ModuleHeader)
+        (diagnostics: ResizeArray<DashSpecDiagnostic>)
+        =
         shell.ModuleNamespace <- header.Namespace
+
+        if header.Namespace.IsNone then
+            ModuleImportResolver.warnMissingNamespace diagnostics
 
         for directive in header.Imports do
             shell.ModuleImports.Add directive
@@ -84,9 +92,23 @@ module rec DocumentModuleParser =
                 else
                     not reader.IsEof
 
-    let private composeTabStandalone (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
+    let private composeTabStandalone
+        (reader: TokenReader)
+        (specDirectory: string option)
+        (parseOptions: DashSpecParseOptions)
+        (diagnostics: ResizeArray<DashSpecDiagnostic>)
+        =
         let tabId = reader.ReadIdent()
-        let result = parseTabReportCompile reader tabId ReportCompileMode.TabStandalone specDirectory None ReportBodyMode.TabStandalone parseOptions
+        let result =
+            parseTabReportCompile
+                reader
+                tabId
+                ReportCompileMode.TabStandalone
+                specDirectory
+                None
+                ReportBodyMode.TabStandalone
+                parseOptions
+                diagnostics
 
         if result.Context.Cards.Count = 0 then
             raise (DashSpecParseException($"Standalone @tab '{tabId}' must declare at least one card."))
@@ -150,7 +172,7 @@ module rec DocumentModuleParser =
     let private parseDashboard (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let dashboardId = reader.ReadIdent()
         let (dashShell: ReportCompileContext), sqlDialect, palettePath, diagramLibraryPath, (reportTitle: string option) =
-            parseDashboardReport reader dashboardId specDirectory parseOptions
+            parseDashboardReport reader dashboardId specDirectory parseOptions (ResizeArray())
 
         if reportTitle.IsNone || String.IsNullOrWhiteSpace (reportTitle.Value) then
             raise (DashSpecParseException($"@dashboard '{dashboardId}' report requires a title string."))
@@ -199,7 +221,12 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
 
-    let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
+    let parseDocumentWithDiagnostics
+        (text: string)
+        (specDirectory: string option)
+        (parseOptions: DashSpecParseOptions)
+        (diagnostics: ResizeArray<DashSpecDiagnostic>)
+        =
         if String.IsNullOrWhiteSpace text then
             invalidArg "text" "Text is required."
 
@@ -208,7 +235,7 @@ module rec DocumentModuleParser =
         reader.Expect TokenKind.At
 
         if reader.TryKeyword "tab" then
-            composeTabStandalone reader specDirectory parseOptions
+            composeTabStandalone reader specDirectory parseOptions diagnostics
         elif reader.TryKeyword "dashboard" then
             let document = parseDashboard reader specDirectory parseOptions
 
@@ -220,6 +247,9 @@ module rec DocumentModuleParser =
                 document
         else
             raise (DashSpecParseException("Block module must start with @dashboard or @tab."))
+
+    let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
+        parseDocumentWithDiagnostics text specDirectory parseOptions (ResizeArray())
 
     let parseDocumentDefault (text: string) (specDirectory: string option) =
         parseDocument text specDirectory DashSpecParseOptions.defaultOptions
@@ -244,7 +274,15 @@ module rec DocumentModuleParser =
             raise (DashSpecParseException($"Tab dashspec for '{expectedTabId}' must declare @tab '{expectedTabId}', found '{tabId}'."))
 
         let result =
-            parseTabReportCompile reader tabId ReportCompileMode.TabEmbedded specDirectory parentFilters ReportBodyMode.TabEmbedded parseOptions
+            parseTabReportCompile
+                reader
+                tabId
+                ReportCompileMode.TabEmbedded
+                specDirectory
+                parentFilters
+                ReportBodyMode.TabEmbedded
+                parseOptions
+                (ResizeArray())
 
         if result.Context.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
@@ -350,7 +388,13 @@ module rec DocumentModuleParser =
 
             loop ()
 
-    let private parseDashboardReport (reader: TokenReader) (dashboardId: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) : ReportCompileContext * SqlDialect * string option * string option * string option =
+    let private parseDashboardReport
+        (reader: TokenReader)
+        (dashboardId: string)
+        (specDirectory: string option)
+        (parseOptions: DashSpecParseOptions)
+        (diagnostics: ResizeArray<DashSpecDiagnostic>)
+        : ReportCompileContext * SqlDialect * string option * string option * string option =
         let includes = ModuleIncludeState()
         let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
@@ -369,6 +413,14 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let moduleHeader = ModuleHeaderParser.parse reader
+
+        ModuleImportResolver.applyHeaderImports
+            moduleHeader
+            specDirectory
+            DocumentModuleKind.Dashboard
+            includes
+            parseOptions
+            diagnostics
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "dashboard" (Some dashboardId)) do
             reader.SkipNewlines()
@@ -413,7 +465,7 @@ module rec DocumentModuleParser =
                         moduleExtensions
                         timePolicyAcc
 
-                applyModuleHeader created moduleHeader
+                applyModuleHeader created moduleHeader diagnostics
                 shell <- Some created
                 let mutable moduleLabel = None
                 parseReportBlock reader created ReportBodyMode.DashboardRoot (fun label -> moduleLabel <- Some label)
@@ -439,6 +491,7 @@ module rec DocumentModuleParser =
         (parentFilters: IReadOnlyList<FilterDefinition> option)
         (reportMode: ReportBodyMode)
         (parseOptions: DashSpecParseOptions)
+        (diagnostics: ResizeArray<DashSpecDiagnostic>)
         =
         let includes = ModuleIncludeState()
         let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
@@ -458,6 +511,14 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let moduleHeader = ModuleHeaderParser.parse reader
+
+        ModuleImportResolver.applyHeaderImports
+            moduleHeader
+            specDirectory
+            DocumentModuleKind.Tab
+            includes
+            parseOptions
+            diagnostics
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "tab" (Some tabId)) do
             reader.SkipNewlines()
@@ -502,7 +563,7 @@ module rec DocumentModuleParser =
                         moduleExtensions
                         timePolicyAcc
 
-                applyModuleHeader created moduleHeader
+                applyModuleHeader created moduleHeader diagnostics
                 shell <- Some created
                 let mutable moduleLabel = None
                 parseReportBlock reader created reportMode (fun label -> moduleLabel <- Some label)
@@ -573,6 +634,13 @@ module rec DocumentModuleParser =
         else
             match reader.TryEnvelopeLinkDirective() with
             | Some directive ->
+                if not (DashSpecProjectLocator.legacyIncludesAllowed parseOptions specDirectory) then
+                    raise (
+                        DashSpecParseException(
+                            "Legacy !include/import paths are disabled; declare 'namespace' and 'import <kind> from <Namespace>' in the module header (ADR-0098)."
+                        )
+                    )
+
                 match parseOptions.ModuleLinkMode, specDirectory with
                 | ModuleLinkMode.LegacySequential, Some dir ->
                     match directive with
@@ -704,6 +772,7 @@ module rec DocumentModuleParser =
 
         while not (BlockSyntax.isBlockEnd reader "report" None) && not reader.IsEof do
             reader.SkipNewlines()
+            ModuleImportGuard.rejectModuleImportInBody reader "Report"
 
             if BlockSyntax.isBlockEnd reader "report" None then ()
             elif reader.TryKeyword "title" then
@@ -779,6 +848,7 @@ module rec DocumentModuleParser =
 
         while not (BlockSyntax.isBlockEnd reader "page" (Some pageId)) && not reader.IsEof do
             reader.SkipNewlines()
+            ModuleImportGuard.rejectModuleImportInBody reader $"Page '{pageId}'"
 
             if BlockSyntax.isBlockEnd reader "page" (Some pageId) then ()
             elif reader.TryKeyword "title" then

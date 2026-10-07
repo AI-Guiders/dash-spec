@@ -13,23 +13,23 @@ module ModuleHeaderParserTests =
         let reader =
             ParserUtilities.createReader
                 """
-namespace Lus.Stakeholder
+namespace Demo.Analytics
 
-import diagrams from Lus.Stakeholder.Diagrams as stk
-import flows from Lus.Report
+import diagrams from Demo.Analytics.Diagrams as dia
+import flows from Demo.Shared.Flows
 
 runtime
 """
 
         let header = ModuleHeaderParser.parse reader
-        Assert.Equal(Some "Lus.Stakeholder", header.Namespace)
+        Assert.Equal(Some "Demo.Analytics", header.Namespace)
         Assert.Equal(2, header.Imports.Count)
         Assert.Equal(ImportKind.Diagrams, header.Imports.[0].Kind)
-        Assert.Equal("Lus.Stakeholder.Diagrams", header.Imports.[0].Namespace)
-        Assert.Equal(Some "stk", header.Imports.[0].Alias)
+        Assert.Equal("Demo.Analytics.Diagrams", header.Imports.[0].Namespace)
+        Assert.Equal(Some "dia", header.Imports.[0].Alias)
         Assert.Equal(ImportKind.Flows, header.Imports.[1].Kind)
         Assert.Equal(None, header.Imports.[1].Alias)
-        Assert.Equal("Report", ModuleImportDirective.effectiveQualifier header.Imports.[1])
+        Assert.Equal("Flows", ModuleImportDirective.effectiveQualifier header.Imports.[1])
         Assert.True(reader.TryKeyword "runtime")
 
     [<Fact>]
