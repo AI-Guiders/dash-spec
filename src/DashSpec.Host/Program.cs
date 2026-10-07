@@ -11,6 +11,7 @@ using DashSpec.Host.Endpoints;
 using DashSpec.Host.Middleware;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using DashSpec.Host.Services.Localization;
 using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;

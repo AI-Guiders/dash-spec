@@ -1,6 +1,6 @@
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Catalog;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Services.Health;

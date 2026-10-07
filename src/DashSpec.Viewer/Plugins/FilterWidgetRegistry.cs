@@ -1,7 +1,7 @@
 using DashSpec.Core.Model;
 using DashSpec.Filters;
 
-namespace DashSpec.Host.Plugins;
+namespace DashSpec.Viewer.Plugins;
 
 public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
 {

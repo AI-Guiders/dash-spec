@@ -2,14 +2,14 @@ using System.Reflection;
 using System.Runtime.Loader;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Filters;
-using DashSpec.Viz;
+using DashSpec.Abstractions.Viewer;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Plugins.Builtins;
-using DashSpec.Plugin.Filter.Builtins;
-using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Services.Presentation;
+using DashSpec.Viewer;
+using DashSpec.Viewer.Plugins;
+using DashSpec.Viz;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -58,30 +58,17 @@ public static class DashSpecPluginLoader
         var registry = new DashSpecContributorRegistry();
         var commandRegistry = new DashSpecCommandPluginRegistry();
 
-        RegisterBuiltIn(new ScopeBuiltinPlugin(), registry, services, configuration, commandRegistry);
-        RegisterBuiltIn(new DiagramBuiltinPlugin(), registry, services, configuration, commandRegistry);
-        RegisterBuiltIn(new OnClickDefaultPlugin(), registry, services, configuration, commandRegistry);
-        foreach (var vizPlugin in VizBuiltinsPluginCatalog.CreateAll())
-        {
-            RegisterBuiltIn(vizPlugin, registry, services, configuration, commandRegistry);
-        }
+        ViewerPluginBootstrap.RegisterBuiltInPlugins(
+            registry,
+            services,
+            configuration,
+            plugin => RegisterCommandPlugin(plugin, commandRegistry));
 
-        foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
-        {
-            RegisterBuiltIn(filterPlugin, registry, services, configuration, commandRegistry);
-        }
-
-        RegisterBuiltIn(new CardViewsBuiltinPlugin(), registry, services, configuration, commandRegistry);
-
+        services.AddSingleton<OnClickInteractionService>();
+        services.AddSingleton<IOnClickInteractionService>(sp => sp.GetRequiredService<OnClickInteractionService>());
         services.AddScoped<ICardViewState, CardViewStateService>();
         services.AddScoped<ICardVizDisplayState, CardVizDisplayStateService>();
-        var cardVizComponents = registry.BuildCardVizComponentRegistry();
-        services.AddSingleton(cardVizComponents);
-        services.AddSingleton<ICardVizComponentResolver>(cardVizComponents);
-        services.AddSingleton(registry.BuildVizCardToolbarRegistry());
-        services.AddSingleton(registry.BuildFilterWidgetComponentRegistry());
-        services.AddSingleton<FilterWidgetRegistry>();
-        services.AddSingleton<IFilterWidgetComponentResolver>(sp => sp.GetRequiredService<FilterWidgetRegistry>());
+        ViewerPluginBootstrap.RegisterViewerServices(services, registry);
 
         var activeBundle = ResolveActiveBundle(manifest);
         var pluginIds = ResolveBundlePluginIds(manifest, activeBundle);
@@ -116,9 +103,11 @@ public static class DashSpecPluginLoader
         services.AddSingleton(commandRegistry);
         services.AddSingleton(registry);
         services.AddSingleton(manifest);
-        services.AddSingleton(sp => sp.GetRequiredService<DashSpecContributorRegistry>().BuildCapabilities(activeBundle));
-        services.AddSingleton<VizPluginRegistry>();
-        services.AddScoped<DashSpecActionDispatcher>();
+        var capabilities = registry.BuildCapabilities(activeBundle);
+        services.AddSingleton(capabilities);
+        services.AddSingleton<IViewerPluginHost>(sp => new ViewerPluginHost(
+            sp.GetRequiredService<DashSpecContributorRegistry>(),
+            sp.GetRequiredService<DashSpecPluginCapabilities>()));
 
         return registry;
     }

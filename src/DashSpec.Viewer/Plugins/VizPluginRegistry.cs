@@ -1,7 +1,7 @@
 using DashSpec.Abstractions.Viz;
 using DashSpec.Core.Model;
 
-namespace DashSpec.Host.Plugins;
+namespace DashSpec.Viewer.Plugins;
 
 public sealed class VizPluginRegistry
 {

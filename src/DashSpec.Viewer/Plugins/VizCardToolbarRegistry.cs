@@ -1,4 +1,4 @@
-namespace DashSpec.Host.Plugins;
+namespace DashSpec.Viewer.Plugins;
 
 public sealed class VizCardToolbarRegistry
 {

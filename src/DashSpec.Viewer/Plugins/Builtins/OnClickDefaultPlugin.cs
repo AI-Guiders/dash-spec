@@ -3,7 +3,7 @@ using DashSpec.Viz;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DashSpec.Host.Plugins.Builtins;
+namespace DashSpec.Viewer.Plugins.Builtins;
 
 public sealed class OnClickDefaultPlugin : IDashSpecPlugin
 {
@@ -15,8 +15,6 @@ public sealed class OnClickDefaultPlugin : IDashSpecPlugin
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<OnClickInteractionService>();
-        services.AddSingleton<IOnClickInteractionService>(sp => sp.GetRequiredService<OnClickInteractionService>());
     }
 
     public void RegisterContributors(IDashSpecContributorRegistry registry)

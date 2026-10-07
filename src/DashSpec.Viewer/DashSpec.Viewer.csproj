@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14</LangVersion>
+    <RootNamespace>DashSpec.Viewer</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Filters\DashSpec.Filters.csproj" />
+    <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
+    <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
+    <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Builtins\DashSpec.Plugin.Viz.Builtins.csproj" />
+  </ItemGroup>
+
+</Project>
