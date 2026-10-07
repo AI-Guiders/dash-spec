@@ -704,7 +704,7 @@ module rec DocumentModuleParser =
                     pending.Clear()
                 | ModuleLinkMode.MembershipUnion ->
                     let reportDiagramIds, reportRowTypes =
-                        ReportReferenceScanner.scanModuleText reader.ModuleSource
+                        ReportReferenceScanner.scanModuleLinkEnvelope reader.ModuleSource dir
 
                     IncludeExpander.linkEnvelope
                         pending

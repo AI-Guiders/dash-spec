@@ -15,7 +15,8 @@ module DashSpecCompiler =
 
     let compile (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let diagnostics = ResizeArray<DashSpecDiagnostic>()
-        let document = DocumentModuleParser.parseDocumentWithDiagnostics text specDirectory parseOptions diagnostics
+        // Runtime compile must match DashboardComposer.parse (tab dashspec merge + completeDocument).
+        let document = DashboardComposer.parse text specDirectory parseOptions
         { Document = document; Diagnostics = diagnostics :> IReadOnlyList<_> }
 
     let compileDefault (text: string) (specDirectory: string option) =

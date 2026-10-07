@@ -7,6 +7,7 @@ using DashSpec.Host.Services.Platform;
 using DashSpec.Abstractions.Viewer;
 using DashSpec.Surface.Blazor.Configuration;
 using DashSpec.Surface.Blazor.Services.Presentation;
+using SurfaceDashboardSpecLoader = DashSpec.Surface.Blazor.Services.Loading.IDashboardSpecLoader;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Core.Platform;
 using DashSpec.Core.Runtime;
@@ -25,7 +26,9 @@ public static class HostViewerServiceCollectionExtensions
         services.AddSingleton<IReportFieldOptionsCache, HostReportFieldOptionsCache>();
         services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
         services.AddSingleton<RuntimeConnectorResolver>();
-        services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
+        services.AddScoped<DashboardSpecLoader>();
+        services.AddScoped<IDashboardSpecLoader>(sp => sp.GetRequiredService<DashboardSpecLoader>());
+        services.AddScoped<SurfaceDashboardSpecLoader>(sp => sp.GetRequiredService<DashboardSpecLoader>());
         return services;
     }
 
