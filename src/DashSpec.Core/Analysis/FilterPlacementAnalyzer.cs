@@ -9,20 +9,29 @@ internal static class FilterPlacementAnalyzer
 {
     public static void Validate(DashboardDocument document)
     {
+        var errors = new List<string>();
+        CollectErrors(document, errors);
+        if (errors.Count > 0)
+        {
+            throw new DashSpecParseException(errors[0]);
+        }
+    }
+
+    internal static void CollectErrors(DashboardDocument document, List<string> errors)
+    {
         var registry = document.Filters.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
 
         foreach (var filterName in document.DashboardFilters)
         {
             if (!registry.ContainsKey(filterName))
             {
-                throw new DashSpecParseException(
-                    $"Dashboard filters block references unknown filter '{filterName}'.");
+                errors.Add($"Dashboard filters block references unknown filter '{filterName}'.");
+                continue;
             }
 
             if (registry[filterName].Kind is FilterKind.Top)
             {
-                throw new DashSpecParseException(
-                    $"Top filter '{filterName}' cannot be placed in toolbar; use card filters {{ }}.");
+                errors.Add($"Top filter '{filterName}' cannot be placed in toolbar; use card filters {{ }}.");
             }
         }
 
@@ -46,7 +55,7 @@ internal static class FilterPlacementAnalyzer
                     var onHosted = IsHostedOnCard(document, card, filterName);
                     if (!onDashboard && !onPageToolbar && !onCard && !onHosted)
                     {
-                        throw new DashSpecParseException(
+                        errors.Add(
                             $"Card '{card.Id}': bound filter '{filterName}' must be placed in toolbar {{ }}, page toolbar, this card's filters {{ }}, or filters host <card> {{ }}.");
                     }
                 }
@@ -56,19 +65,19 @@ internal static class FilterPlacementAnalyzer
             {
                 if (!registry.ContainsKey(filterName))
                 {
-                    throw new DashSpecParseException(
-                        $"Card '{card.Id}' filters block references unknown filter '{filterName}'.");
+                    errors.Add($"Card '{card.Id}' filters block references unknown filter '{filterName}'.");
+                    continue;
                 }
 
                 if (document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
                 {
-                    throw new DashSpecParseException(
+                    errors.Add(
                         $"Filter '{filterName}' cannot be placed on dashboard and card '{card.Id}' at the same time.");
                 }
 
                 if (hostedSet.Contains(filterName))
                 {
-                    throw new DashSpecParseException(
+                    errors.Add(
                         $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
@@ -84,7 +93,7 @@ internal static class FilterPlacementAnalyzer
                         hasUnresolvedPreset);
                     if (violation is not null)
                     {
-                        throw new DashSpecParseException(violation);
+                        errors.Add(violation);
                     }
                 }
             }
@@ -93,39 +102,39 @@ internal static class FilterPlacementAnalyzer
             {
                 if (!registry.ContainsKey(filterName))
                 {
-                    throw new DashSpecParseException(
-                        $"Card '{card.Id}' filters host block references unknown filter '{filterName}'.");
+                    errors.Add($"Card '{card.Id}' filters host block references unknown filter '{filterName}'.");
+                    continue;
                 }
 
                 if (document.DashboardFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
                 {
-                    throw new DashSpecParseException(
+                    errors.Add(
                         $"Filter '{filterName}' cannot be placed on dashboard and hosted on card '{card.Id}' at the same time.");
                 }
 
                 if (localSet.Contains(filterName))
                 {
-                    throw new DashSpecParseException(
+                    errors.Add(
                         $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
                 if (string.IsNullOrWhiteSpace(card.FilterHostCardId))
                 {
-                    throw new DashSpecParseException(
-                        $"Card '{card.Id}' declares hosted filters without filters host <card>.");
+                    errors.Add($"Card '{card.Id}' declares hosted filters without filters host <card>.");
+                    continue;
                 }
 
                 var host = document.Cards.FirstOrDefault(other =>
                     string.Equals(other.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
                 if (host is null)
                 {
-                    throw new DashSpecParseException(
-                        $"Card '{card.Id}' filters host '{card.FilterHostCardId}' was not found.");
+                    errors.Add($"Card '{card.Id}' filters host '{card.FilterHostCardId}' was not found.");
+                    continue;
                 }
 
                 if (!host.LocalFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
                 {
-                    throw new DashSpecParseException(
+                    errors.Add(
                         $"Card '{card.Id}' hosts filter '{filterName}' from '{host.Id}', but that card does not declare filters {{ {filterName} }}.");
                 }
             }
