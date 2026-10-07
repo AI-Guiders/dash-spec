@@ -208,6 +208,9 @@ module rec DashboardComposer =
                 Dashflow = dashflow
                 DashflowPath = dashflowPath }
 
-        let materialized = DocumentFlowMaterializer.materialize merged
+        let withGraph =
+            { merged with WiringGraph = DocumentWiringGraphBuilder.build merged }
+
+        let materialized = DocumentFlowMaterializer.materialize withGraph
         DashboardValidator.validate materialized
         materialized

@@ -172,12 +172,14 @@ Card interior legacy (`bind`, `input from`) remains in [ADR-0090](DASHSPEC-ADR-0
 
 ## Phasing (within ADR-0091 P3)
 
-| Step | Deliverable |
-|------|-------------|
-| **P3a** | Parse `report` / `page` `flow`; dashboard + card chrome route edges; lower `toolbar` / `filters { }` |
-| **P3b** | Host routes; lower `filters host` |
-| **P3c** | Derive as filter→filter edges |
-| **P3d** | Event edges; lower `on click` set/focus/goto |
+| Step | Deliverable | Code (develop) |
+|------|-------------|----------------|
+| **P3a** | Parse `report` / `page` `flow`; dashboard + card chrome route edges; lower `toolbar` / `filters { }` | `ReportScopeFlowParser`, `DocumentWiringGraphBuilder` |
+| **P3b** | Host routes; lower `filters host` | `ReportScopeFlowApplicator` (+ graph host edges from legacy) |
+| **P3c** | Derive as filter→filter edges | `DocumentWiringGraphBuilder.lowerPageDerive` |
+| **P3d** | Event edges; lower `on click` set/focus/goto | `DocumentWiringGraphBuilder.lowerCardClicks` (runtime still uses `on click`) |
+
+`DashboardDocument.WiringGraph` is populated on parse. Explicit scope links may set `FilterHostCardId` when targeting `host.chrome.card.<id>`. Studio export and runtime binders reading Graph IR remain follow-up.
 
 Depends on **P2** (`slot` / `ports`, Graph IR export) for lint across card boundaries.
 

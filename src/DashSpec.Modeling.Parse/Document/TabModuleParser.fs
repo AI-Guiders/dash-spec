@@ -99,7 +99,9 @@ module TabModuleParser =
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames (shell.Filters :> IReadOnlyList<_>) (shell.DashboardFilters :> IReadOnlyList<_>) shell.ToolbarBoard
 
-        let document =
+        ReportScopeFlowApplicator.apply shell
+
+        let documentWithoutGraph =
             { Id = tabId
               Title = title
               ConnectorId = None
@@ -133,7 +135,13 @@ module TabModuleParser =
                 else
                     Some(Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(shell.Includes.ExportRowTypes(), StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>)
               DashflowPath = None
-              Dashflow = None }
+              Dashflow = None
+              ReportScopeFlow = shell.ReportScopeFlow
+              WiringGraph = WiringGraph.empty }
+
+        let document =
+            { documentWithoutGraph with
+                WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
 
         DashboardValidator.validate document
         document
