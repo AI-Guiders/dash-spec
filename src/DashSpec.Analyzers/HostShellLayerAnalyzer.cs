@@ -113,6 +113,7 @@ public sealed class HostShellLayerAnalyzer : DiagnosticAnalyzer
     private static bool IsLabelFormatAllowed(string path) =>
         IsUnderRendering(path)
         || path.EndsWith($"{Path.DirectorySeparatorChar}Program.cs", StringComparison.OrdinalIgnoreCase)
+        || path.Contains($"{Path.DirectorySeparatorChar}Configuration{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
         || path.Contains($"{Path.DirectorySeparatorChar}Services{Path.DirectorySeparatorChar}Diagnostics{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
 
     private static string RelativeHostPath(string path)

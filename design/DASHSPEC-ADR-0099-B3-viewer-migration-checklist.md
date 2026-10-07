@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · in progress |
+| **Status** | Accepted · B3.1–B3.5 done; B3.6 Playwright soak WIP |
 | **Relates to** | [ADR-0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) B3 |
 
-## Current state (`develop` after B3.3 WIP)
+## Current state (`develop` after B3.4)
 
 - `DashSpec.Surface.Blazor` — **viewer surface** (dashboard `.razor`, `Commands/*`, session/presentation/rendering, `DashCatalog` partial + emit link).
 - **Host shell** — `App.razor`, `Routes.razor`, `Admin.razor`; planet bootstrap, adapters, endpoints.
@@ -32,10 +32,10 @@ A naive `git mv` of Components + Commands + Presentation into Surface breaks **`
 |------|-------------|--------|
 | **B3.1** | `ICardRenderer`, `IDashboardSession` in `DashSpec.Viz.Platform` (extend `IReportSession`); loader via `IReportSpecBootstrap` / `ReportBootstrapResult`; `CatalogBootstrap` / `CatalogSourceState` in `DashSpec.Core.Catalog`; `IHostPathResolver`, `IViewerRuntimeContext` in `DashSpec.Abstractions.Hosting` | **Done** (`develop`): Host aliases + `ViewerRuntimeContextAdapter`; build + Host.Tests + Arch + L3 |
 | **B3.2** | `DashSpec.Viewer` + `DashSpec.Viewer.Plugins` (registries, bootstrap, builtins); `IViewerPluginHost` in `Abstractions.Viewer`; Host keeps loaders + planet builtins (`Diagnostics`, `OnClickInteractionService`) | **Done** (`develop`): Arch `Viewer_must_not_reference_Host` + `Surface_Blazor_must_not_reference_Host`; Surface refs Viewer |
-| **B3.3** | `DashSpec.Surface.Blazor` → `Sdk.Razor`; move `Components/`, `Commands/`, `Services/Presentation`, `Services/Rendering`, `DashboardSessionService` | **WIP** (`develop` local): build + Host.Tests 111 + Arch 13 + L3 3; Host keeps `App`/`Routes`/`Admin` |
-| **B3.4** | Host `Program`: `AddDashSpecBlazorViewerShell` + `AddDashSpecBlazorViewerSession` + `AddDashSpecHostViewerPlatform` (adapters only) + deploy services | `Program` has no viewer logic blocks |
-| **B3.5** | Arch: `Host_must_not_reference_Presentation`; existing `Surface_Blazor_must_not_reference_Host` | `DashSpec.Architecture.Tests` green |
-| **B3.6** | Smoke: `DashSpec.Host.E2E` or one `WebApplicationFactory` open `/` | CI green |
+| **B3.3** | `DashSpec.Surface.Blazor` → `Sdk.Razor`; move `Components/`, `Commands/`, `Services/Presentation`, `Services/Rendering`, `DashboardSessionService` | **Done** (`develop`): Host keeps `App`/`Routes`/`Admin` |
+| **B3.4** | Host `Program`: `AddDashSpecBlazorViewerShell` + `AddDashSpecBlazorViewerSession` + `AddDashSpecHostViewerPlatform` (adapters only) + deploy services | **Done**: `AddDashSpecPlanetHostAsync` + `UseDashSpecPlanetHost` |
+| **B3.5** | Arch: `Host_must_not_reference_Presentation`; existing `Surface_Blazor_must_not_reference_Host` | **Done** (local): Host dropped `DashSpec.Presentation` ref; `FilterLargeListOptions` SSOT in Core |
+| **B3.6** | Smoke: `DashSpec.Host.E2E` or one `WebApplicationFactory` open `/` | **Partial**: `ViewerHostSmokeTests` (health + `/` shell) green; Playwright dashboard soak WIP |
 
 ## Non-goals
 

@@ -31,6 +31,7 @@ public static class BlazorViewerSessionServiceCollectionExtensions
         services.AddScoped<IDashboardCultureAmbient>(_ =>
             new DashboardCultureAmbient(uiCulture, displayTimeZone));
         services.AddScoped<DashboardLocalizer>();
+        services.AddScoped<IVizCardToolbarLocalizer, VizCardToolbarLocalizer>();
         services.AddScoped<DashboardSlashConstructorHost>();
         services.AddScoped<DashboardCommandSession>();
         services.AddScoped<DashboardRefreshCoordinator>();
