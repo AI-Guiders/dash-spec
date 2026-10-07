@@ -44,9 +44,9 @@ Immediately after `@tab` / `@dashboard` id and before `runtime` (strict order):
 
 namespace Lus.Stakeholder
 
-import stk = diagrams from Lus.Stakeholder.Diagrams
+import diagrams from Lus.Stakeholder.Diagrams as stk
 import layouts from Lus.Stakeholder.Layouts
-import report_flow = flows from Lus.Report
+import flows from Lus.Report as report_flow
 
 runtime { … }
 configuration { … }
@@ -60,20 +60,22 @@ report { … }
 
 ### `import` — by kind
 
+Reads **what → from where → optional short name** (declarative / SQL-like, not C# `using Alias = …`):
+
 ```text
-import [<alias> =] <kind> from <namespace>
+import <kind> from <namespace> [as <alias>]
 ```
 
 | Part | Meaning |
 |------|---------|
 | `<kind>` | Unit family to import (registry below). Enables **mixed units in one file**: consumer imports only `diagrams`, not layouts/types in the same namespace. |
 | `<namespace>` | Dotted logical name or stdlib root (`Std.Charts`). |
-| `<alias>` | Qualifier for references (`stk.activity_5min`). If omitted, default qualifier = **last segment** of `<namespace>` (e.g. `Diagrams.activity_5min`). |
+| `as <alias>` | Optional qualifier for references (`stk.activity_5min`). If omitted, default qualifier = **last segment** of `<namespace>` (e.g. `Diagrams.activity_5min`). |
 
 **Stdlib** (replaces `!include "<presentation/…>"`):
 
 ```text
-import pres = presentations from Std.Charts
+import presentations from Std.Charts as pres
 ```
 
 ### Kind registry (`<kind>`)
@@ -103,7 +105,7 @@ diagram ref stk.activity_5min
 Data flow (LHS = dashflow node; RHS = `card.<id>.<slot>` per [ADR-0094](DASHSPEC-ADR-0094-report-page-data-flow.md)):
 
 ```text
-import flow = flows from Lus.Report
+import flows from Lus.Report as flow
 
 data flow
   flow.Activity5min -> card.activity_5min.rows
@@ -117,8 +119,8 @@ Diagram `import` does **not** imply data nodes; need `flows` import for producer
 A single file may declare `namespace X` and contain several `@diagram`, `@layout`, `@types`, … blocks. Consumers choose what they need:
 
 ```text
-import d = diagrams from Lus.Stakeholder.Shared
-import t = types from Lus.Stakeholder.Shared
+import diagrams from Lus.Stakeholder.Shared as d
+import types from Lus.Stakeholder.Shared as t
 ```
 
 Only the requested kind enters that consumer’s symbol table.
@@ -147,7 +149,7 @@ Marker file (`dashspec.toml` / `dspec.json`): `root_namespace`, source roots. LS
 | From | To |
 |------|-----|
 | `!include "diagrams/foo/*.dashdiagram"` | `namespace` on units + `import … diagrams from …` |
-| `connect { flow "flows/x.dashflow" }` | `import f = flows from Lus.X` + `connect { use flow f }` (connect syntax follow-up) |
+| `connect { flow "flows/x.dashflow" }` | `import flows from Lus.X as f` + `connect { use flow f }` (connect syntax follow-up) |
 | Multiple extensions | Optional single extension; **not required** with namespaces |
 
 ## Non-goals (v1)
@@ -165,5 +167,5 @@ Marker file (`dashspec.toml` / `dspec.json`): `root_namespace`, source roots. LS
 ## Summary
 
 - **`namespace`** — logical name for units in a compilation unit.
-- **`import [alias =] <kind> from <Namespace>`** — kind-filtered link; **`use`** stays for in-block binds.
+- **`import <kind> from <Namespace> [as alias]`** — kind-filtered link; **`use`** stays for in-block binds.
 - **`!include` retired**; compiler front = **ResolveImports** → **DocumentCompilePipeline**.
