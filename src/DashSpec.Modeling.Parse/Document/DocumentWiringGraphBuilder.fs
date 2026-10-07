@@ -119,7 +119,7 @@ module DocumentWiringGraphBuilder =
                     { From = filterName
                       FromPort = None
                       To = chromeCard card.Id
-                      ToPort = Some "panel"
+                      ToPort = Some "toolbar"
                       Kind = WiringEdgeKind.Route
                       Scope = scope }
 
