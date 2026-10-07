@@ -19,6 +19,14 @@ internal static class CardInteriorSlotResolver
                 return CardInteriorSlots.Diagram;
             }
 
+            // Named slot literally "diagram" (diagram ref diagram): auto-interior still uses token "diagram".
+            if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
+                string.Equals(card.DiagramSlotRef, "diagram", StringComparison.OrdinalIgnoreCase) &&
+                slots.ContainsKey(card.DiagramSlotRef))
+            {
+                return card.DiagramSlotRef;
+            }
+
             if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
                 slots.ContainsKey(card.DiagramSlotRef))
             {
