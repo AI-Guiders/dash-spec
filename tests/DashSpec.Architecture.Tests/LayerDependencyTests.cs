@@ -6,7 +6,8 @@ namespace DashSpec.Architecture.Tests;
 
 public sealed class LayerDependencyTests
 {
-    private static readonly Assembly HostAssembly = typeof(DashSpec.Host.Services.Presentation.DashboardPageController).Assembly;
+    private static readonly Assembly HostAssembly = typeof(DashSpec.Host.Configuration.HostServiceCollectionExtensions).Assembly;
+    private static readonly Assembly PresentationAssembly = typeof(DashSpec.Presentation.Filters.FilterLargeListOptions).Assembly;
     private static readonly Assembly RuntimeAssembly = typeof(DashSpec.Execution.Runtime.LabelFormat).Assembly;
     private static readonly Assembly VizAssembly = typeof(DashSpec.Viz.CardRenderResult).Assembly;
     private static readonly Assembly FiltersAssembly = typeof(DashSpec.Filters.FilterWidgetRenderContext).Assembly;
@@ -14,6 +15,17 @@ public sealed class LayerDependencyTests
     private static readonly Assembly SurfaceBlazorAssembly = typeof(DashSpec.Surface.Blazor.Configuration.ViewerSurfaceServiceCollectionExtensions).Assembly;
     private static readonly Assembly ViewerAssembly = typeof(DashSpec.Viewer.ViewerPluginHost).Assembly;
     private static readonly Assembly CoreAssembly = typeof(DashSpec.Core.Platform.ReportLoadOptions).Assembly;
+
+    [Fact]
+    public void Host_must_not_reference_Presentation()
+    {
+        var result = Types.InAssembly(HostAssembly)
+            .ShouldNot()
+            .HaveDependencyOn("DashSpec.Presentation")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
+    }
 
     [Fact]
     public void Host_must_not_reference_Modeling_Parse()

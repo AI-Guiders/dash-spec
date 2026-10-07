@@ -1,7 +1,8 @@
-using DashSpec.Host.Services;
+using DashSpec.Surface.Blazor.Services;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Git;
+using DashSpec.Host.Services;
 using DashSpec.Host.Services.Settings;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

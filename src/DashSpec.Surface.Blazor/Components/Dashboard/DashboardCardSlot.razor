@@ -1,0 +1,51 @@
+@using DashSpec.Surface.Blazor.Commands
+@using DashSpec.Surface.Blazor.Services.Presentation
+
+<CommandTargetShell TargetId="@Card.Id" Kind="CommandTargetKind.Card">
+    <DashboardCardView @key="Card.Id"
+                       Card="Card"
+                       PlacementStyle="@PlacementStyle"
+                       GridColumns="@Page.Session.Document.Layout.Columns"
+                       DashboardBoundFilters="Page.DashboardBoundForCard(Card)"
+                       FilterIndex="Page.Session.FilterIndex"
+                       DateFrom="Page.DateFrom"
+                       DateTo="Page.DateTo"
+                       SelectedFields="Page.SelectedFields"
+                       TopLimits="Page.TopLimits"
+                       CardLocalDateFrom="Page.CardLocalDateFrom(Card.Id)"
+                       CardLocalDateTo="Page.CardLocalDateTo(Card.Id)"
+                       CardLocalSelectedFields="Page.CardLocalSelectedFields(Card.Id)"
+                       CardLocalTopLimits="Page.CardLocalTopLimits(Card.Id)"
+                       GetFieldOptions="Page.Session.GetFieldOptions"
+                       FieldOptionsRevision="Page.FieldOptionsRevision"
+                       AutoApply="AutoApply"
+                       ActiveViewId="@Page.GetCardActiveView(Card.Id)"
+                       OnApplyCard="Page.ApplyCardFiltersAsync"
+                       OnScheduleCardApply="Page.ScheduleCardApplyAsync"
+                       OnCardDayChanged="Page.OnCardDayChanged"
+                       OnCardFieldChanged="Page.OnCardFieldChanged"
+                       OnCellClickNavigate="Page.ApplyCardClickNavigationAsync"
+                       OnCardAction="Page.ExecuteCardActionAsync"
+                       BodyFolded="Page.IsCardBodyFolded(Card.Id)"
+                       OnToggleBodyFold="ToggleBodyFold" />
+</CommandTargetShell>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardRenderResult Card { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string PlacementStyle { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public DashboardPageController Page { get; set; } = default!;
+
+    [Parameter]
+    public bool AutoApply { get; set; }
+
+    private Task ToggleBodyFold()
+    {
+        Page.ToggleCardBodyFold(Card.Id);
+        return Task.CompletedTask;
+    }
+}

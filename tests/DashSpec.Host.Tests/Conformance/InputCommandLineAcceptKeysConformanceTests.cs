@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DashSpec.Host.Commands;
+using DashSpec.Surface.Blazor.Commands;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 

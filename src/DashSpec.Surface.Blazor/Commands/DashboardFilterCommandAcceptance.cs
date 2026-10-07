@@ -1,0 +1,64 @@
+#nullable enable
+
+using AIGuiders.Platform.Execution.CommandPlane;
+using DashSpec.Surface.Blazor.Commands.Constructors;
+
+namespace DashSpec.Surface.Blazor.Commands;
+
+internal static class DashboardFilterCommandAcceptance
+{
+    public static bool TryAcceptItem(
+        ArgCompletionItem item,
+        DashboardFilterCommandService commandService,
+        DashboardFilterContext context,
+        DashboardSlashConstructorHost constructorHost,
+        ref string line)
+    {
+        var catalog = commandService.BuildCatalog(context);
+
+        if (item.Kind == ArgCompletionItemKind.ConstructorEntry)
+        {
+            if (!DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, line, out var path))
+            {
+                return false;
+            }
+
+            if (DateConstructorCatalog.IsInstantEntry(item.PickValue!))
+            {
+                line = $"{path} today";
+                return true;
+            }
+
+            constructorHost.Session.Start(item.PickValue!, path);
+            return true;
+        }
+
+        if (item.Kind == ArgCompletionItemKind.ConstructorStep)
+        {
+            constructorHost.Session.TryAdvance(item.PickValue!);
+            if (constructorHost.Session.TryComplete(out var wire)
+                && DashboardFilterSlashCompletion.TryResolveCommandPath(catalog, line, out var path))
+            {
+                line = $"{path} {wire}";
+            }
+
+            return true;
+        }
+
+        line = DashboardFilterSlashCompletion.LineFromInsert(item.InsertText);
+        if (item.InsertText.EndsWith(' '))
+        {
+            line += " ";
+        }
+
+        return true;
+    }
+
+    public static void CancelConstructorIfActive(DashboardSlashConstructorHost constructorHost)
+    {
+        if (constructorHost.Session.IsActive)
+        {
+            constructorHost.Session.Cancel();
+        }
+    }
+}

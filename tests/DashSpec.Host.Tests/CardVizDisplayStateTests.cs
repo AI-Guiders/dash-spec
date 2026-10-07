@@ -1,4 +1,4 @@
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

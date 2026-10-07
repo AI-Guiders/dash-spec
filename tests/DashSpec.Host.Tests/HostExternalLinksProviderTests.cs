@@ -1,6 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Host.Configuration;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

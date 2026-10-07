@@ -1,0 +1,17 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+@using DashSpec.Core.Layout
+@using DashSpec.Core.Model
+
+<section class="cards" style="@PlacementGridCss.HostGridVariables(Layout)" aria-live="polite">
+    @foreach (var slot in Slots)
+    {
+        <HostTabBoardSlot Slot="slot" Page="Page" Layout="Layout" AutoApply="AutoApply" />
+    }
+</section>
+
+@code {
+    [Parameter] public IReadOnlyList<LayoutSlotDescriptor> Slots { get; set; } = [];
+    [Parameter, EditorRequired] public DashboardPageController Page { get; set; } = default!;
+    [Parameter, EditorRequired] public LayoutDefinition Layout { get; set; } = default!;
+    [Parameter] public bool AutoApply { get; set; }
+}

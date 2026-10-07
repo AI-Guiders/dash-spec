@@ -1,6 +1,6 @@
 using DashSpec.Host.Configuration;
 
-namespace DashSpec.Host.Services.Presentation;
+namespace DashSpec.Surface.Blazor.Services.Presentation;
 
 public sealed record HostExternalLink(string Label, string Url, string Target, bool Topbar, bool Settings);
 

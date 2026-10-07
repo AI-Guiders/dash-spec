@@ -1,9 +1,9 @@
-﻿#nullable enable
+#nullable enable
 
 using AIGuiders.Platform.Execution.CommandPlane;
 using DashSpec.Generated;
-using DashSpec.Host.Commands;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Commands;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using Xunit;
 
 namespace DashSpec.Host.Tests;
