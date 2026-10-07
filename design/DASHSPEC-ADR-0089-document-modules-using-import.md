@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| **Status** | Accepted (Phase 1 in code) |
-| **Date** | 2026-10-06 |
+| **Status** | Accepted (Phase 1 in code; Phase 2 project membership specified) |
+| **Date** | 2026-10-06 (amended 2026-10-07) |
 | **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) |
 
 ## Context
@@ -43,9 +43,11 @@ Guiders platform work targets a unified **`import`** with **logical paths** (wor
 
 ### Principle
 
-Treat each canonical `@-root` file as a **compilation unit** with a defined **export surface**. A dashboard/tab module declares **dependencies** with `using` / `import`; the compiler builds a **dependency DAG**, parses only the **transitive closure**, and resolves symbols through that graph.
+Treat each canonical `@-root` file as a **compilation unit** with a defined **export surface**. A **project** defines the **membership universe** (which files exist in the authoring package). An **entry module** (`@dashboard` / `@tab` referenced from catalog) declares **what it consumes** primarily through **use sites** (`report`, `connect`); the linker parses only units needed for that consumption, within the universe.
 
-**Preprocessor glob merge is deprecated** for module envelope (phased removal). Tooling may still offer “add all diagrams in folder to project” as a **codemod / IDE action**, not language semantics.
+Explicit envelope `using` / `import` edges remain for **attach** (types/flow/layout not inferable from the report, narrowing, and IDE/review), not as a second copy of project membership.
+
+**Preprocessor glob merge is deprecated** in the module envelope (phased removal). **Glob belongs in the project file** (or federation project graph), same semantics as today’s membership expand: deterministic path set, no merge order.
 
 ### Vocabulary
 
@@ -56,6 +58,9 @@ Treat each canonical `@-root` file as a **compilation unit** with a defined **ex
 | **Export** | Named symbols made visible to importers (see table below) |
 | **`using`** | Preferred keyword: bring exports from a unit into importers’ scope (or qualified) |
 | **`import`** | Accepted alias for `using` at document envelope; **canonical path form** `import "logical/or/relative/path"` |
+| **Project membership** | Set of compilation-unit paths (and optional globs) for one authoring package — slnx / `Compile Include` mental model |
+| **Universe** | Expanded membership: all paths after glob expand + `.dashinclude` expand; **exclude** subtracts paths |
+| **Consumption** | Symbols and unit paths an entry module actually needs — derived from use sites + `connect` + explicit attach edges |
 
 Fragment-level `include diagram` inside `.dashdiagram` remains **intra-fragment composition** until a follow-up unifies fragment includes with the same linker (Phase 3).
 
@@ -69,9 +74,73 @@ Fragment-level `include diagram` inside `.dashdiagram` remains **intra-fragment 
 | `@layout <id>` | `.dashlayout` | Layout board id = `<id>` |
 | `@presentation <id>` | `.dashpresentation` | Presentation preset id |
 | `@tooltip <id>` | `.dashtooltip` | Tooltip id |
-| `.dashinclude` bundle | `.dashinclude` | **Deprecated** — migrate to explicit `using` list or delete ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) follow-up) |
+| `.dashinclude` bundle | `.dashinclude` | **Deprecated** — migrate to `files` in `dashproject` or delete ([ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) follow-up) |
 
 Stdlib paths `import "<presentation/heatmap_tall>"` ([ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md)) resolve to built-in units with the same export rules.
+
+### Project membership (Phase 2)
+
+Membership is **inventory**, not report DSL. It does **not** mean “paste file contents into the dashboard”. Operations on the set:
+
+| Operation | Meaning |
+|-----------|---------|
+| **Path** | One compilation-unit file (extension optional; same rules as `SpecFragmentPaths`) |
+| **Glob** | Expand to paths under a directory; `*` one level; lex sort for deterministic CI diff |
+| **Exclude** | Remove paths from the current set (glob or explicit path); enables drafts in-tree without a second folder |
+
+**Canonical surface (v1):** sidecar `*.dashproject` next to catalog / entry spec, or equivalent **federation** `AuthoringProject` graph ([ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) `DashSpecProject`).
+
+```text
+dashproject demo_soak
+  root = "samples/demo"
+
+  files
+    diagrams/*.dashdiagram
+    demo-rows.dashtype
+    flows/demo-report.dashflow
+    exclude diagrams/_scratch/**
+  end files
+end dashproject
+```
+
+- **`files` / `end files`** — positive entries only (paths or globs), one per line; no `include` verb required.
+- **`exclude`** — optional; applied after all positive entries are expanded (MSBuild `Remove` style).
+- **`.dashinclude`** — legacy positive bundle; migrates to `files` lines or `.dashmod` re-export index (optional).
+
+Phase 1 may still list membership on the envelope (`!include` / `using "glob"`); Phase 2 lint **errors** on glob in envelope and points authors at `dashproject` / federation project.
+
+### How the consumer declares consumption
+
+The **consumer** is the entry `@dashboard` or `@tab` module (the `.dashspec` catalog points at). It does **not** re-declare the whole file list if project membership already defines the universe.
+
+| Channel | Declares | Linker behavior |
+|---------|----------|-----------------|
+| **`report` body** | Diagram preset ids (`diagram <id>`), row shapes (`rows <Type>` / `input rows from <node>.<port>` scan) | Resolve ids against exports from paths in **universe**; parse only **referenced** `.dashdiagram` units when `LinkOnlyReferencedDiagramUnits` (default) |
+| **`connect`** | `flow "…"`, `use palette …`, layout boards | Load linked `@flow` / layout / palette paths; flow unit may have its own internal edges |
+| **Explicit attach** | `using "demo-rows.dashtype"`, `using flow "…"`, `using diagram <id> from "…"` | Required when multiple type files exist and report does not disambiguate; optional for documentation; validates id ↔ path for selective diagram attach |
+| **Catalog / tab ref** | `tab … dashspec "other.dashspec"` | Child tab module has **its own** consumption closure; parent does not inherit child’s diagram registry ([open: shared project only]) |
+
+**Default rule:** consumption = **transitive closure of use sites** ∩ **project universe**. Unused files in membership are **not parsed** for that entry (broken draft in folder does not fail soak if excluded or unreferenced).
+
+Explicit per-diagram `using` lines are **not** required when membership + reference scan suffice (demo-soak target shape).
+
+### Namespaces and qualifiers
+
+**Author-facing symbol spaces are flat**, not hierarchical namespaces:
+
+- Export id = `@diagram <id>`, `type <Name>`, `@flow <id>`, etc. — **global within the entry module’s resolved closure**.
+- **No** `namespace foo { }` block in v1/v2 for DashSpec symbols.
+- **Project membership is not a namespace** — it only bounds which files may contribute exports.
+
+**Disambiguation when two units export the same id:** **Error** (`DS-USE003`) with both paths; fix by renaming an export or splitting projects. Optional **qualified use** at reference sites (v1.1+), not a separate namespace system:
+
+```text
+diagram ref heatmap stakeholder.peak_apps_heatmap
+```
+
+Qualifier prefix is an **import alias or module label** (e.g. tab id / bundle name), not a nested scope declaration. Defer `using stakeholder as s` syntax until a real clash forces it.
+
+**Guiders `LogicalPath`** resolves **physical / workspace location** for federation `import`; it is **not** a DashSpec author namespace. Do not conflate with `diagram` preset ids.
 
 ### Envelope syntax (target)
 
@@ -89,9 +158,7 @@ Stdlib paths `import "<presentation/heatmap_tall>"` ([ADR-0017](DASHSPEC-ADR-001
   end configuration
 
   using types "demo-rows.dashtype"
-  using diagram demo_activity_5min_line from "diagrams/activity-5min-line.dashdiagram"
-  using diagram demo_peak_apps_heatmap from "diagrams/peak-apps-heatmap.dashdiagram"
-  # … explicit per preset, or grouped bundle file (future: using diagrams "stakeholder/index.dashmod")
+  # diagrams: consumed via report references; membership in demo_soak.dashproject (Phase 2)
 
   connect
     use palette demo_apps
@@ -114,27 +181,29 @@ end dashboard
 2. **Selective import** — `using diagram <id> from "relative/path.dashdiagram"` (id must match `@diagram` in file; linker validates).
 3. **Qualified use (optional v1.1)** — `diagram ref heatmap stakeholder.peak_apps_heatmap` when multiple imports could clash; if omitted, unqualified id must be unique in the dependency closure.
 
-**Glob in envelope** — allowed as **project-style membership** (slnx / `Compile Include`): expand to a deterministic path set, then **link** (no semantic merge order). Lex sort is for CI diff only. `!include` / `import "…/*"` remain valid; `using "…"` is an alias. `LinkOnlyReferencedDiagramUnits` (default runtime) parses only report-referenced `.dashdiagram` files from that set; types/flow/layout units in the set are still loaded.
+**Glob in envelope (Phase 1 compat)** — same expand/link semantics as project `files`; **Phase 2:** move globs to `dashproject` / federation; envelope glob → `DS-USE001`. `LinkOnlyReferencedDiagramUnits` (default runtime) parses only report-referenced `.dashdiagram` files from the universe; types/flow/layout units required by `connect` / explicit `using` are still loaded.
 
 ### Name resolution
 
 | Use site | Rule |
 |----------|------|
-| `diagram ref … <id>` | `<id>` must be exported by a unit in the **dependency closure** of this module |
-| `rows <TypeName>` | `<TypeName>` exported from a `.dashtype` unit in closure |
-| `connect { flow "path" }` | Parses/links `@flow` unit at path; transitive `using` inside flow file applies to that unit |
+| `diagram … <id>` (in report) | `<id>` exported from a `.dashdiagram` in **universe**; defining unit parsed if referenced (or explicitly attached) |
+| `rows <TypeName>` / row scan | `<TypeName>` from a `.dashtype` in universe (attach types file if ambiguous) |
+| `connect { flow "path" }` | Links `@flow` at path (must be in universe or stdlib) |
 | Duplicate export id in closure | **Error** with both defining paths |
-| Missing export | **Error**: `DSxxxx: unknown diagram 'foo'; add using …` |
+| Missing export | **Error**: `DS-USE002: unknown diagram 'foo'` (fix report, membership, or attach) |
 
-Resolution is **lazy per closure**: units not reachable from `using` / `import` are not parsed for this module.
+Resolution is **lazy**: parse only units needed for **consumption** ∩ **universe**; membership alone does not parse every file.
 
 ### Compiler pipeline (target)
 
 Replace eager `IncludeExpander.expand` registry merge with:
 
 ```text
-ParseEnvelope(text) → EnvelopeAst (using edges + connect + report body)
-BuildDependencyGraph(envelope) → DAG of compilation units
+LoadProject(dashproject | federation) → Universe (paths ± exclude)
+ParseEnvelope(text) → EnvelopeAst (attach edges + connect + report body)
+ScanConsumption(report, connect) → referenced diagram ids, row types, flow paths
+SelectUnits(universe, consumption, attach) → unit paths to parse
 TopologicalParse(units) → per-unit ParseDocument (existing @-root parsers)
 LinkSymbols(module, units) → ResolvedModuleDiagrams, ResolvedRowTypes, …
 ParseReportBody(report, linked scope)
@@ -169,8 +238,9 @@ No change: `using` does **not** replace `connect` or flow edges.
 
 ### Phase 2 — Default new semantics
 
-- New files: lint **error** on `!include` and glob (fix: `using`).
-- `.dashinclude` registry bundles: deprecate; migrate to `using` list or single “index” module file (format TBD).
+- **`*.dashproject`** (or federation project): owns `files` / `exclude` membership; catalog references project + entry `.dashspec`.
+- Lint **error** on envelope `!include` / glob (`DS-USE001`); migrate to project `files`.
+- `.dashinclude` → `files` lines or optional `.dashmod` index.
 - Fragment `!include` inside `.dashdiagram` → `using presentation "…"` with same linker (subset).
 
 ### Phase 3 — Remove preprocessor
@@ -205,10 +275,10 @@ No change: `using` does **not** replace `connect` or flow edges.
 
 ## Open questions
 
-1. **Bundle file** — `.dashmod` / re-export list (`export diagram a, b from "./a.dashdiagram"`) vs pure explicit `using` lines only in v1?
-2. **Qualified names** — mandatory when closure has clashes, or always allow optional qualifier?
-3. **Tab modules** — same envelope rules as `@dashboard`; merged tab dashspec refs inherit parent closure or declare own `using`?
-4. **LogicalPath** — exact mapping to Guiders `import` (single resolver package shared with other DSLs).
+1. **`.dashmod` bundle** — optional re-export index inside universe vs only `files` + consumption scan?
+2. **Tab modules** — shared `dashproject` for catalog tree vs per-tab project; child tab closure independent (current decision) but shared universe default?
+3. **LogicalPath** — exact mapping to Guiders `import` (single resolver package shared with other DSLs); distinct from flat diagram/type ids.
+4. **Row-type attach** — auto-load sole `.dashtype` in universe vs always require `using types "…"` when multiple type files exist.
 
 ## Implementation notes (dash-spec repo)
 
