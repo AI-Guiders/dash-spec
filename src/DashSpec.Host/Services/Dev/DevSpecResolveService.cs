@@ -38,7 +38,7 @@ public sealed class DevSpecResolveService(
             var document = DashSpecParser.Parse(
                 text,
                 Path.GetDirectoryName(specFullPath),
-                parseOptionsProvider.CreateOptions());
+                CreateDevResolveParseOptions());
             var library = SpecLibraryComposer.Load(
                 specFullPath,
                 document.DiagramLibraryPath,
@@ -53,6 +53,24 @@ public sealed class DevSpecResolveService(
         {
             return DevSpecResolveResult.Fail(ex.Message);
         }
+    }
+
+    /// <summary>Dev inspector: validate the configured module file without merging tab dashspecs (see <see cref="DashSpecParseOptions.Editor"/>).</summary>
+    private DashSpecParseOptions CreateDevResolveParseOptions()
+    {
+        var runtime = parseOptionsProvider.CreateOptions();
+        return new DashSpecParseOptions
+        {
+            MergeReferencedTabModules = false,
+            TolerateIncompleteIncludes = true,
+            LinkOnlyReferencedDiagramUnits = false,
+            ModuleLinkMode = runtime.ModuleLinkMode,
+            ExtensionBlockKeywords = runtime.ExtensionBlockKeywords,
+            ExtensionBlockPluginIds = runtime.ExtensionBlockPluginIds,
+            PhraseTemplates = runtime.PhraseTemplates,
+            KnownActionHandlers = runtime.KnownActionHandlers,
+            KnownInteractionHandlers = runtime.KnownInteractionHandlers,
+        };
     }
 }
 
