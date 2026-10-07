@@ -1,14 +1,13 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Model;
 using DashSpec.Core.Platform;
-using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Host.Services.Models;
 
-namespace DashSpec.Host.Services.Abstractions;
+namespace DashSpec.Execution.Runtime.Platform;
 
-public interface IDashboardSpecLoader : IReportSpecBootstrap
+/// <summary>Load parsed document, library, filters, and connector from spec text (ADR-0099).</summary>
+public interface IReportSpecBootstrap
 {
-    new Task<LoadedDashboard> LoadFromTextAsync(
+    Task<ReportBootstrapResult> LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
@@ -18,6 +17,8 @@ public interface IDashboardSpecLoader : IReportSpecBootstrap
     Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
+        string runtimeConfigPath,
         CancellationToken cancellationToken = default,
         TimeSpan? timeout = null);
 }
+

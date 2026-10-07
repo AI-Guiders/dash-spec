@@ -26,6 +26,7 @@ using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Host.Services.Rendering;
 using DashSpec.Host.Services.Diagnostics;
+using DashSpec.Surface.Blazor.Configuration;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
@@ -184,8 +185,10 @@ ConnectorPluginLoader.RegisterPlugins(
     connectorManifest,
     NullLogger.Instance);
 
+builder.Services.AddDashSpecViewerPlatform();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
+
 builder.Services.AddSingleton<RuntimeConnectorResolver>();
 builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
 builder.Services.AddScoped<ICardCellDrillState, CardCellDrillState>();
@@ -266,3 +269,5 @@ app.MapRazorComponents<App>()
 app.MapDevEndpoints();
 
 app.Run();
+
+

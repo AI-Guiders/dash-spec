@@ -4,10 +4,10 @@ using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 
-namespace DashSpec.Host.Services.Models;
+namespace DashSpec.Execution.Runtime.Platform;
 
-/// <summary>Host bootstrap payload (same shape as <see cref="Execution.Runtime.Platform.ReportBootstrapResult"/>).</summary>
-public sealed record LoadedDashboard(
+/// <summary>Resolved spec + runtime connector after bootstrap (ADR-0099).</summary>
+public sealed record ReportBootstrapResult(
     DashboardDocument Document,
     SpecLibrary? Library,
     IDataSourceConnector Connector,
@@ -17,3 +17,5 @@ public sealed record LoadedDashboard(
     string SourceLabel,
     string? SpecDirectory,
     string RuntimeConfigPath);
+
+
