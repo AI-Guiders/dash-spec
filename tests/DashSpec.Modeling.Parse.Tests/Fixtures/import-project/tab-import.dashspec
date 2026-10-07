@@ -1,0 +1,25 @@
+@tab import_demo
+
+namespace Demo.ImportTab
+
+import diagrams from Demo.Charts.Diagrams as charts
+
+runtime
+end runtime
+
+connect
+  layout grid
+    columns = 12
+  end grid
+end connect
+
+report "Charts"
+  card activity as "Activity"
+    view
+      diagram ref demo_activity_5min_line line
+      end line
+    end view
+  end card
+end report
+
+end tab import_demo
