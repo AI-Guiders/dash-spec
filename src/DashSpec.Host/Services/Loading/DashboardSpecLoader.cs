@@ -1,41 +1,31 @@
 using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Core.Model;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Loading;
 
 public sealed class DashboardSpecLoader(
     IReportSpecBootstrap bootstrap,
-    DashSpecHostContext hostContext) : IDashboardSpecLoader
+    IViewerRuntimeContext runtimeContext) : IDashboardSpecLoader
 {
-    public async Task<LoadedDashboard> LoadFromTextAsync(
+    public Task<ReportBootstrapResult> LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken = default,
-        ReportLoadOptions? options = null)
-    {
-        var loaded = await bootstrap.LoadFromTextAsync(
-            text,
-            specFullPath,
-            sourceLabel,
-            cancellationToken,
-            options).ConfigureAwait(false);
-        return ToLoadedDashboard(loaded);
-    }
+        ReportLoadOptions? options = null) =>
+        bootstrap.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options);
 
-    async Task<ReportBootstrapResult> IReportSpecBootstrap.LoadFromTextAsync(
+    Task<ReportBootstrapResult> IReportSpecBootstrap.LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken,
         ReportLoadOptions? options) =>
-        await bootstrap.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options)
-            .ConfigureAwait(false);
+        bootstrap.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options);
 
     public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
         DashboardDocument document,
@@ -45,7 +35,7 @@ public sealed class DashboardSpecLoader(
         bootstrap.LoadFieldOptionsAsync(
             document,
             connector,
-            hostContext.StartupRuntimeConfigPath,
+            runtimeContext.StartupRuntimeConfigPath,
             cancellationToken,
             timeout);
 
@@ -56,16 +46,4 @@ public sealed class DashboardSpecLoader(
         CancellationToken cancellationToken,
         TimeSpan? timeout) =>
         bootstrap.LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout);
-
-    private static LoadedDashboard ToLoadedDashboard(ReportBootstrapResult loaded) =>
-        new(
-            loaded.Document,
-            loaded.Library,
-            loaded.Connector,
-            loaded.FilterIndex,
-            loaded.Filters,
-            loaded.FieldOptions,
-            loaded.SourceLabel,
-            loaded.SpecDirectory,
-            loaded.RuntimeConfigPath);
 }

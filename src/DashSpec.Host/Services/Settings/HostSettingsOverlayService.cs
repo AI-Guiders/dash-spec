@@ -2,6 +2,7 @@ using DashSpec.Core.Localization;
 using DashSpec.Core.Resolution;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Presentation.Filters;

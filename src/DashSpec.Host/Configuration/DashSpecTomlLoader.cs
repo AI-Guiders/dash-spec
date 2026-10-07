@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using Tomlyn;
 

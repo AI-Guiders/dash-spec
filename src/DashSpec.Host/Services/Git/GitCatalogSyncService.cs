@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Catalog;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Dev;

@@ -1,27 +1,31 @@
 using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Plugins;
+using DashSpec.Core.Catalog;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Platform;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Connectors;
+using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Viz;
 using DashSpec.Viz.Platform;
-using DashSpec.Core.Platform;
+using HostAbstractions = DashSpec.Host.Services.Abstractions;
+
+namespace DashSpec.Host.Services;
 
 public sealed class DashboardSessionService(
     IDashboardSpecLoader specLoader,
     RuntimeConnectorResolver runtimeConnectorResolver,
-    ICardRenderer cardRenderService,
+    HostAbstractions.ICardRenderer cardRenderService,
     ICardViewState cardViewState,
     CatalogSourceState catalogState,
     IWebHostEnvironment environment,
     IHostPathResolver pathResolver,
-    CardLocalFilterUiStore cardLocalFilters) : IDashboardSession
+    CardLocalFilterUiStore cardLocalFilters) : HostAbstractions.IDashboardSession
 {
     private DashboardDocument? _document;
     private IDataSourceConnector? _connector;

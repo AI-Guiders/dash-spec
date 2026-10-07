@@ -28,7 +28,7 @@ A naive `git mv` of Components + Commands + Presentation into Surface breaks **`
 
 | Step | Deliverable | Proof |
 |------|-------------|--------|
-| **B3.1** | `ICardRenderer`, `IDashboardSession` (and loader port) in `DashSpec.Abstractions.Viewer`; `CatalogBootstrap` / `CatalogSourceState` in `DashSpec.Core.Catalog`; `IHostPathResolver` in `DashSpec.Abstractions.Hosting` | Build; Host type-forwards or thin aliases |
+| **B3.1** | `ICardRenderer`, `IDashboardSession` in `DashSpec.Viz.Platform` (extend `IReportSession`); loader via `IReportSpecBootstrap` / `ReportBootstrapResult`; `CatalogBootstrap` / `CatalogSourceState` in `DashSpec.Core.Catalog`; `IHostPathResolver`, `IViewerRuntimeContext` in `DashSpec.Abstractions.Hosting` | **Done** (`develop`): Host aliases + `ViewerRuntimeContextAdapter`; build + Host.Tests + Arch + L3 |
 | **B3.2** | Viewer-facing plugin registry surface (`IViewerPluginHost` or move `DashSpec.Host.Plugins` to `DashSpec.Surface.Blazor.Plugins` / shared `DashSpec.Viewer.Plugins`) — **no** `Host.Plugins` from Surface | Arch: Surface ⊄ Host |
 | **B3.3** | `DashSpec.Surface.Blazor` → `Sdk.Razor`; move `Components/`, `Commands/`, `Services/Presentation`, `Services/Rendering`, `Viewer/DashboardSessionService` | Host has no `.razor` except optional `_Host` shim |
 | **B3.4** | Host `Program`: `AddDashSpecBlazorViewerShell` + `AddDashSpecBlazorViewerSession` + `AddDashSpecHostViewerPlatform` (adapters only) + deploy services | `Program` has no viewer logic blocks |

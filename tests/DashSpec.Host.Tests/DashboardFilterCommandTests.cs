@@ -1059,13 +1059,13 @@ public class DashboardFilterCommandTests
         public string? CurrentSpecReference => null;
         public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; }
 
-        public Task LoadAsync(string? specRelativePath = null, CancellationToken cancellationToken = default, Services.Loading.SpecLoadOptions? options = null) =>
+        public Task LoadAsync(string? specRelativePath = null, CancellationToken cancellationToken = default, Core.Platform.ReportLoadOptions? options = null) =>
             Task.CompletedTask;
 
-        public Task LoadCatalogEntryAsync(string entryId, CancellationToken cancellationToken = default, Services.Loading.SpecLoadOptions? options = null) =>
+        public Task LoadCatalogEntryAsync(string entryId, CancellationToken cancellationToken = default, Core.Platform.ReportLoadOptions? options = null) =>
             Task.CompletedTask;
 
-        public Task LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken = default, Services.Loading.SpecLoadOptions? options = null) =>
+        public Task LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken = default, Core.Platform.ReportLoadOptions? options = null) =>
             Task.CompletedTask;
 
         public Task RefreshFieldOptionsAsync(CancellationToken cancellationToken = default) =>
