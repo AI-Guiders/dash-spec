@@ -252,7 +252,7 @@ public sealed class DashboardPageController : IDisposable
         {
             _logger.LogError(ex, "Dashboard initialize failed");
             trace.Fail(ex.Message);
-            Error = ex.Message;
+            Error = BuildLoadErrorMessage(ex);
             Loaded = false;
             Notify();
         }
@@ -1465,6 +1465,29 @@ public sealed class DashboardPageController : IDisposable
 
     private IEnumerable<string> PlacedFilterNames() =>
         PlacedFilterCollector.Collect(_session.Document);
+
+    private string BuildLoadErrorMessage(Exception ex)
+    {
+        if (ex.Message.Contains('\n', StringComparison.Ordinal))
+        {
+            return ex.Message;
+        }
+
+        try
+        {
+            var collected = DashboardValidationCollector.Collect(_session.Document);
+            if (collected.Count > 0)
+            {
+                return string.Join('\n', collected);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // session not loaded
+        }
+
+        return ex.Message;
+    }
 
     private void Notify() => Changed?.Invoke();
 }
