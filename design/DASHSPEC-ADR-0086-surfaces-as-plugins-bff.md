@@ -41,7 +41,7 @@ DashSpec.Platform (Execution + Modeling + Abstractions)
 
 | Surface (examples) | Deploy shape | Consumer |
 |--------------------|--------------|----------|
-| **Surface.Blazor** | `DashSpec.Host` today — Blazor Server + RCL | Browser, SSR/circuit |
+| **Surface.Blazor** | `DashSpec.Surface.Blazor` + `DashSpec.Host` deploy entry | Browser, SSR/circuit |
 | **Surface.Bff** | ASP.NET (minimal API) or reverse-proxy + same session in-process | SPA (Angular, React, Vue), mobile shell |
 | **Surface.Studio** | Desktop host (WPF/WebView2 per [0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md)) | Authoring + preview |
 | **Surface.Partner** | Partner-owned BFF calling platform packages | QSense-like shells, Diasoft-style portals, iframe embed |
@@ -83,7 +83,7 @@ A SPA surface ships **its own viz** (e.g. ECharts, vendor widgets) as long as it
 ```text
 DashSpec.Abstractions          IReportSession, ISurfaceHost, wire DTOs (evolve)
 DashSpec.Execution.*         session, bind, render pipeline (framework-agnostic)
-DashSpec.Surface.Blazor      DashSpec.Host + Presentation RCL (reference)
+DashSpec.Surface.Blazor      viewer RCL + session UI (Host references Surface + Presentation)
 DashSpec.Surface.Bff         ASP.NET host template + OpenAPI (future package)
 DashSpec.Connectors.*        unchanged
 ```

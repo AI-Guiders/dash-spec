@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · partial (B1–B2 done; **B3 viewer** in `DashSpec.Surface.Blazor` — see [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); Host = planet entry; Playwright E2E soak pending green) |
+| **Status** | Accepted · **B1–B3 implemented** (viewer in `DashSpec.Surface.Blazor`; Host = planet deploy entry — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B4+ Bff/OpenAPI out of scope here) |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
