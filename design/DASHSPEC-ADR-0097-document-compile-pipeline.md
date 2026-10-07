@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md), [ADR-0096](DASHSPEC-ADR-0096-placement-flow.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) (`ResolveImports`) |
 

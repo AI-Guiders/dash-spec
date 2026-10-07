@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented |
 | **Date** | 2026-10-06 |
 | **Relates to** | [ADR-0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md) |
 

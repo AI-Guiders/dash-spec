@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · partial (layer tests; Platform no-AspNetCore B0 extended)|
 | **Date** | 2026-10-02 |
 | **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md), [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md) |
 
