@@ -103,7 +103,7 @@ module rec DocumentModuleParser =
                 (result.Shell.DashboardFilters :> IReadOnlyList<_>)
                 result.Shell.ToolbarBoard
 
-        DashboardShellWiringPipeline.apply result.Shell
+        DocumentCompilePipeline.finalizeShell result.Shell
 
         let cards = TabParser.assignTabs (result.Shell.Cards :> IReadOnlyList<_>) tabs
 
@@ -139,10 +139,7 @@ module rec DocumentModuleParser =
               ReportScopeFlow = result.Shell.ReportScopeFlow
               WiringGraph = WiringGraph.empty }
 
-        let document =
-            { documentWithoutGraph with
-                WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
-
+        let document = DocumentCompilePipeline.attachWiringGraph documentWithoutGraph
         DashboardValidator.validate document
         document
 
@@ -160,7 +157,7 @@ module rec DocumentModuleParser =
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
 
-        DashboardShellWiringPipeline.apply dashShell
+        DocumentCompilePipeline.finalizeShell dashShell
 
         let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
@@ -251,7 +248,7 @@ module rec DocumentModuleParser =
         if result.Shell.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
 
-        DashboardShellWiringPipeline.apply result.Shell
+        DocumentCompilePipeline.finalizeShell result.Shell
 
         let embeddedFilters =
             DashboardShellContext.mergeFilterScopes

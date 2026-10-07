@@ -131,11 +131,14 @@
     <Compile Include="Document\ReferenceScanSkip.fs" />
     <Compile Include="Document\ReportReferenceScanner.fs" />
     <Compile Include="Document\CardDataFlowTargets.fs" />
+    <Compile Include="Document\FilterPlacementTargets.fs" />
     <Compile Include="Document\ReportScopeFlowParser.fs" />
     <Compile Include="Document\ReportScopeFlowApplicator.fs" />
     <Compile Include="Document\ReportScopeDataFlowApplicator.fs" />
+    <Compile Include="Document\ReportScopePlacementApplicator.fs" />
     <Compile Include="Document\DashboardShellWiringPipeline.fs" />
     <Compile Include="Document\DocumentWiringGraphBuilder.fs" />
+    <Compile Include="Document\DocumentCompilePipeline.fs" />
     <Compile Include="Document\DashboardShellParser.fs" />
     <Compile Include="Document\DocumentModuleParser.fs" />
     <Compile Include="Document\DashboardParser.fs" />

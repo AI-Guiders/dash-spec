@@ -69,10 +69,10 @@ module ReportScopeFlowApplicator =
         if not (list |> Seq.exists (fun n -> String.Equals(n, name, StringComparison.OrdinalIgnoreCase))) then
             list.Add name
 
-    let private applyToolbarToDashboard (shell: DashboardShellContext) (filterName: string) =
+    let internal applyToolbarToDashboard (shell: DashboardShellContext) (filterName: string) =
         appendUnique shell.DashboardFilters filterName
 
-    let private applyToolbarToPage (pages: ResizeArray<ReportPageDefinition>) (pageId: string) (filterName: string) =
+    let internal applyToolbarToPage (pages: ResizeArray<ReportPageDefinition>) (pageId: string) (filterName: string) =
         let index =
             pages |> Seq.tryFindIndex (fun p -> String.Equals(p.Id, pageId, StringComparison.OrdinalIgnoreCase))
 
@@ -106,7 +106,7 @@ module ReportScopeFlowApplicator =
                 Some suffix
         | _ -> None
 
-    let private applyCardToolbarFilter (cards: ResizeArray<CardDefinition>) (cardId: string) (filterName: string) =
+    let internal applyCardToolbarFilter (cards: ResizeArray<CardDefinition>) (cardId: string) (filterName: string) =
         let index =
             cards |> Seq.tryFindIndex (fun c -> String.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase))
 

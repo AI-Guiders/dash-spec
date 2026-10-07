@@ -3,15 +3,14 @@ namespace DashSpec.Modeling.Parse.Document
 open DashSpec.Modeling.Core
 
 /// <summary>
-/// SSOT for post-parse report shell wiring (ADR-0095). Call once after report/cards/pages are parsed;
-/// order is defined here only — not in DocumentModuleParser / TabModuleParser.
+/// SSOT for post-parse report shell wiring (ADR-0095). Call via <see cref="DocumentCompilePipeline.finalizeShell"/>.
 /// </summary>
 module DashboardShellWiringPipeline =
 
-    /// <summary>Ordered wiring phases; extend the registry — do not add ad-hoc applicator calls elsewhere.</summary>
     [<RequireQualifiedAccess>]
     type WiringPhase =
         | ScopeDataFlow
+        | ScopePlacementFlow
         | ScopeRouteFlow
 
     type WiringPhaseDefinition =
@@ -24,6 +23,9 @@ module DashboardShellWiringPipeline =
             { Phase = WiringPhase.ScopeDataFlow
               Keyword = "data"
               Apply = ReportScopeDataFlowApplicator.apply }
+            { Phase = WiringPhase.ScopePlacementFlow
+              Keyword = "placement"
+              Apply = ReportScopePlacementApplicator.apply }
             { Phase = WiringPhase.ScopeRouteFlow
               Keyword = "route"
               Apply = ReportScopeFlowApplicator.apply }
