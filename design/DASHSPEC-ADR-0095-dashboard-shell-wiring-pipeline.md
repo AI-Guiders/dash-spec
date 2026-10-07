@@ -14,12 +14,13 @@ Qualified scope flows (`data` / `show` / `wire` / `action`) were applied by call
 
 ### SSOT module
 
-`DashboardShellWiringPipeline` is the **only** place that defines **post-parse wiring order** on `DashboardShellContext`:
+**`DocumentCompilePipeline.ShellWiring`** (alias `DashboardShellWiringPipeline`) is the **only** place that defines **post-parse wiring order** on `DashboardShellContext`:
 
 1. **`ScopeDataFlow`** — report/page `data flow` → `card.<id>.<slot>` (and validation that every slot is wired).
-2. **`ScopeRouteFlow`** — show / wire / action → chrome, host, events.
+2. **`ScopePlacementFlow`** — `placement flow` → report / page / card toolbars.
+3. **`ScopeRouteFlow`** — show / wire / action → chrome, host, events.
 
-Entry points call **`DashboardShellWiringPipeline.apply shell` once** after the report body (cards, pages, scope flow sections) is parsed — same lifecycle idea as `IncludeExpander.linkEnvelope` for includes (one orchestrator, not scattered calls).
+Entry points call **`DocumentCompilePipeline.finalizeShell`** once after the report body is parsed — same lifecycle idea as `IncludeExpander.linkEnvelope` for includes (one orchestrator, not scattered calls). See [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md).
 
 ### Parse vs wire
 
@@ -27,11 +28,11 @@ Entry points call **`DashboardShellWiringPipeline.apply shell` once** after the 
 |-------|----------------|
 | Token parse (`CardParser`, `parseReportBlock`, …) | Collect AST; card slots may use **deferred** data placeholders until wiring runs. |
 | `IncludeExpander` / `connect` | Register external units (diagram, dashflow, layout, …). |
-| **`DashboardShellWiringPipeline.apply`** | Resolve all scope **flow** sections onto cards. |
+| **`DocumentCompilePipeline.finalizeShell`** | Resolve all scope **flow** sections onto cards. |
 | `DocumentFlowMaterializer.materialize` | Resolve dashflow node → `DataSource` on cards (document level). |
 | `DocumentWiringGraphBuilder.build` | Export unified graph for Studio. |
 
-New applicators for scope flows **register a phase** in `DashboardShellWiringPipeline.definitions`; do not call them from parsers.
+New applicators for scope flows **register a phase** in `DocumentCompilePipeline.ShellWiring.definitions`; do not call them from parsers.
 
 ### Relation to `FlowGraphKindRegistry`
 

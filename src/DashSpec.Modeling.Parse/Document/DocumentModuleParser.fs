@@ -139,9 +139,7 @@ module rec DocumentModuleParser =
               ReportScopeFlow = result.Shell.ReportScopeFlow
               WiringGraph = WiringGraph.empty }
 
-        let document = DocumentCompilePipeline.attachWiringGraph documentWithoutGraph
-        DashboardValidator.validate document
-        document
+        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
 
     let private parseDashboard (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let dashboardId = reader.ReadIdent()
@@ -193,8 +191,7 @@ module rec DocumentModuleParser =
               ReportScopeFlow = dashShell.ReportScopeFlow
               WiringGraph = WiringGraph.empty }
 
-        { documentWithoutGraph with
-            WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
+        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -210,12 +207,10 @@ module rec DocumentModuleParser =
             let document = parseDashboard reader specDirectory parseOptions
 
             if document.Tabs |> Seq.forall (fun t -> String.IsNullOrWhiteSpace(Option.defaultValue "" t.DashspecPath)) then
-                DashboardValidator.validate document
                 document
             elif specDirectory.IsNone || String.IsNullOrWhiteSpace specDirectory.Value then
                 raise (DashSpecParseException("Tab dashspec references require specDirectory when parsing."))
             else
-                DashboardValidator.validate document
                 document
         else
             raise (DashSpecParseException("Block module must start with @dashboard or @tab."))
