@@ -186,23 +186,7 @@ ConnectorPluginLoader.RegisterPlugins(
 
 builder.Services.AddMemoryCache();
 builder.Services.AddDashSpecHostViewerPlatform();
-builder.Services.AddScoped<ICardCellDrillState, CardCellDrillState>();
-builder.Services.AddScoped<ICardFoldState, CardFoldState>();
-builder.Services.AddSingleton<ReportFormatDefaultsAmbient>();
-builder.Services.AddScoped<ICardRenderer, CardRenderService>();
-builder.Services.AddScoped<IDashboardSession, DashboardSessionService>();
-builder.Services.AddScoped<DashboardFilterUiState>();
-builder.Services.AddScoped<CardLocalFilterUiStore>();
-builder.Services.AddScoped<IDashboardCultureAmbient>(_ =>
-    new DashboardCultureAmbient(uiCulture, displayTimeZone));
-builder.Services.AddScoped<DashboardLocalizer>();
-builder.Services.AddScoped<DashboardSlashConstructorHost>();
-builder.Services.AddScoped<DashboardCommandSession>();
-builder.Services.AddScoped<DashboardRefreshCoordinator>();
-builder.Services.AddScoped<DashboardFilterCommandService>();
-builder.Services.AddScoped<DashboardCommandExecutor>();
-builder.Services.AddScoped<DashboardHostCommandCoordinator>();
-builder.Services.AddScoped<DashboardPageController>();
+builder.Services.AddDashSpecHostViewerSession(uiCulture, displayTimeZone);
 builder.Services.AddSingleton<DashSpec.Host.Services.Health.DashSpecCatalogHealthService>();
 builder.Services.AddSingleton<LoadTrace>();
 builder.Services.AddSingleton<DevSpecReloadNotifier>();
