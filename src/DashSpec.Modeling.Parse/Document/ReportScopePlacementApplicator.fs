@@ -19,7 +19,7 @@ module ReportScopePlacementApplicator =
 
         link.FromNode
 
-    let private applyLink (contextLabel: string) (shell: DashboardShellContext) (link: FlowLinkDef) =
+    let private applyLink (contextLabel: string) (shell: ReportCompileContext) (link: FlowLinkDef) =
         let name = filterName link
         let target = FilterPlacementTargets.expectPlacementTarget contextLabel link.ToNode
 
@@ -31,11 +31,11 @@ module ReportScopePlacementApplicator =
         | FlowPlacementAnchors.PlacementAnchor.Card cardId ->
             ReportScopeFlowApplicator.applyCardToolbarFilter shell.Cards cardId name
 
-    let private applySections (contextLabel: string) (shell: DashboardShellContext) (sections: FlowGraphSections) =
+    let private applySections (contextLabel: string) (shell: ReportCompileContext) (sections: FlowGraphSections) =
         for link in placementLinks sections do
             applyLink contextLabel shell link
 
-    let apply (shell: DashboardShellContext) =
+    let apply (shell: ReportCompileContext) =
         match shell.ReportScopeFlow with
         | Some flow -> applySections "Report" shell flow.Sections
         | None -> ()

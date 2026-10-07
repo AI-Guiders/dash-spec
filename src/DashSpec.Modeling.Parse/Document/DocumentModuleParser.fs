@@ -17,12 +17,12 @@ open DashSpec.Modeling.Parse.DataFlow
 
 module rec DocumentModuleParser =
 
-    let private resolveDashflowFields (shell: DashboardShellContext) =
+    let private resolveDashflowFields (shell: ReportCompileContext) =
         let dashflow, path = DashflowDocumentResolver.resolve shell
         path, dashflow
 
-    type private ModuleShellResult =
-        { Shell: DashboardShellContext
+    type private ReportCompileResult =
+        { Context: ReportCompileContext
           SqlDialect: SqlDialect
           PalettePath: string option
           DiagramLibraryPath: string option
@@ -80,34 +80,34 @@ module rec DocumentModuleParser =
 
     let private composeTabStandalone (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let tabId = reader.ReadIdent()
-        let result = parseTabModuleShell reader tabId DashboardShellMode.TabModuleStandalone specDirectory None ReportBodyMode.TabStandalone parseOptions
+        let result = parseTabReportCompile reader tabId ReportCompileMode.TabStandalone specDirectory None ReportBodyMode.TabStandalone parseOptions
 
-        if result.Shell.Cards.Count = 0 then
+        if result.Context.Cards.Count = 0 then
             raise (DashSpecParseException($"Standalone @tab '{tabId}' must declare at least one card."))
 
         let title =
             result.ReportTitle
-            |> Option.orElse result.Shell.TabModuleLabel
+            |> Option.orElse result.Context.TabModuleLabel
             |> Option.defaultValue tabId
 
         let tabs =
             [ { Id = tabId
                 Label = Some title
-                CardIds = result.Shell.Cards |> Seq.map (fun c -> c.Id) |> Seq.toList :> IReadOnlyList<_>
+                CardIds = result.Context.Cards |> Seq.map (fun c -> c.Id) |> Seq.toList :> IReadOnlyList<_>
                 DashspecPath = None
-                LayoutBoard = result.Shell.LayoutBoard } ]
+                LayoutBoard = result.Context.LayoutBoard } ]
 
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames
-                (result.Shell.Filters :> IReadOnlyList<_>)
-                (result.Shell.DashboardFilters :> IReadOnlyList<_>)
-                result.Shell.ToolbarBoard
+                (result.Context.Filters :> IReadOnlyList<_>)
+                (result.Context.DashboardFilters :> IReadOnlyList<_>)
+                result.Context.ToolbarBoard
 
-        DocumentCompilePipeline.finalizeShell result.Shell
+        DocumentCompilePipeline.compileScopeFlows result.Context
 
-        let cards = TabParser.assignTabs (result.Shell.Cards :> IReadOnlyList<_>) tabs
+        let cards = TabParser.assignTabs (result.Context.Cards :> IReadOnlyList<_>) tabs
 
-        let dashflowPath, dashflow = resolveDashflowFields result.Shell
+        let dashflowPath, dashflow = resolveDashflowFields result.Context
 
         let documentWithoutGraph =
             { Id = tabId
@@ -116,35 +116,35 @@ module rec DocumentModuleParser =
               SqlDialect = result.SqlDialect
               DiagramLibraryPath = result.DiagramLibraryPath
               PalettePath = result.PalettePath
-              ColorPalette = result.Shell.ColorPalette
-              Layout = result.Shell.Layout
-              FiltersChrome = result.Shell.FiltersChrome
-              CardsChrome = result.Shell.CardsChrome
-              Filters = result.Shell.Filters :> IReadOnlyList<_>
+              ColorPalette = result.Context.ColorPalette
+              Layout = result.Context.Layout
+              FiltersChrome = result.Context.FiltersChrome
+              CardsChrome = result.Context.CardsChrome
+              Filters = result.Context.Filters :> IReadOnlyList<_>
               DashboardFilters = dashboardFilters
               Tabs = tabs
               Cards = cards :> IReadOnlyList<_>
-              ToolbarBoard = result.Shell.ToolbarBoard
-              ModuleExtensions = Some result.Shell.ModuleExtensions
-              ModuleDiagrams = Some(exportModuleDiagrams result.Shell.Includes)
-              ModuleChartChromePresets = Some(result.Shell.Includes.ExportChartChromePresets())
-              ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
-              Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
-              CommandAliases = Some(result.Shell.CommandAliases :> IReadOnlyDictionary<_, _>)
-              FormatDefaults = result.Shell.FormatDefaults
-              TimePolicy = result.Shell.TimePolicy
-              RowTypes = Some(exportModuleRowTypes result.Shell.Includes)
+              ToolbarBoard = result.Context.ToolbarBoard
+              ModuleExtensions = Some result.Context.ModuleExtensions
+              ModuleDiagrams = Some(exportModuleDiagrams result.Context.Includes)
+              ModuleChartChromePresets = Some(result.Context.Includes.ExportChartChromePresets())
+              ModuleTooltips = Some(result.Context.Includes.ExportTooltips())
+              Pages = Some(result.Context.Pages :> IReadOnlyList<_>)
+              CommandAliases = Some(result.Context.CommandAliases :> IReadOnlyDictionary<_, _>)
+              FormatDefaults = result.Context.FormatDefaults
+              TimePolicy = result.Context.TimePolicy
+              RowTypes = Some(exportModuleRowTypes result.Context.Includes)
               DashflowPath = dashflowPath
               Dashflow = dashflow
-              ReportScopeFlow = result.Shell.ReportScopeFlow
+              ReportScopeFlow = result.Context.ReportScopeFlow
               WiringGraph = WiringGraph.empty }
 
         DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
 
     let private parseDashboard (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let dashboardId = reader.ReadIdent()
-        let (dashShell: DashboardShellContext), sqlDialect, palettePath, diagramLibraryPath, (reportTitle: string option) =
-            parseDashboardShell reader dashboardId specDirectory parseOptions
+        let (dashShell: ReportCompileContext), sqlDialect, palettePath, diagramLibraryPath, (reportTitle: string option) =
+            parseDashboardReport reader dashboardId specDirectory parseOptions
 
         if reportTitle.IsNone || String.IsNullOrWhiteSpace (reportTitle.Value) then
             raise (DashSpecParseException($"@dashboard '{dashboardId}' report requires a title string."))
@@ -155,7 +155,7 @@ module rec DocumentModuleParser =
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
 
-        DocumentCompilePipeline.finalizeShell dashShell
+        DocumentCompilePipeline.compileScopeFlows dashShell
 
         let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
@@ -238,31 +238,31 @@ module rec DocumentModuleParser =
             raise (DashSpecParseException($"Tab dashspec for '{expectedTabId}' must declare @tab '{expectedTabId}', found '{tabId}'."))
 
         let result =
-            parseTabModuleShell reader tabId DashboardShellMode.TabModuleEmbedded specDirectory parentFilters ReportBodyMode.TabEmbedded parseOptions
+            parseTabReportCompile reader tabId ReportCompileMode.TabEmbedded specDirectory parentFilters ReportBodyMode.TabEmbedded parseOptions
 
-        if result.Shell.Cards.Count = 0 then
+        if result.Context.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
 
-        DocumentCompilePipeline.finalizeShell result.Shell
+        DocumentCompilePipeline.compileScopeFlows result.Context
 
         let embeddedFilters =
-            DashboardShellContext.mergeFilterScopes
+            ReportCompileContext.mergeFilterScopes
                 None
-                (result.Shell.ShellFilters :> IReadOnlyList<_>)
-                [| result.Shell.Filters :> IReadOnlyList<_>; result.Shell.TabLocalFilters :> IReadOnlyList<_> |]
+                (result.Context.ReportScopeFilters :> IReadOnlyList<_>)
+                [| result.Context.Filters :> IReadOnlyList<_>; result.Context.TabLocalFilters :> IReadOnlyList<_> |]
 
         // ADR-0011 embed: parent shell owns connect/flow and shared row types; tab module contributes report body only.
         { TabId = tabId
-          Label = result.Shell.TabModuleLabel
+          Label = result.Context.TabModuleLabel
           Filters = embeddedFilters
-          Cards = result.Shell.Cards :> IReadOnlyList<_>
-          LayoutBoard = result.Shell.LayoutBoard
-          ModuleDiagrams = Some(exportModuleDiagrams result.Shell.Includes)
-          ModuleChartChromePresets = Some(result.Shell.Includes.ExportChartChromePresets())
-          ModuleTooltips = Some(result.Shell.Includes.ExportTooltips())
-          Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
-          FormatDefaults = result.Shell.FormatDefaults
-          TimePolicy = result.Shell.TimePolicy
+          Cards = result.Context.Cards :> IReadOnlyList<_>
+          LayoutBoard = result.Context.LayoutBoard
+          ModuleDiagrams = Some(exportModuleDiagrams result.Context.Includes)
+          ModuleChartChromePresets = Some(result.Context.Includes.ExportChartChromePresets())
+          ModuleTooltips = Some(result.Context.Includes.ExportTooltips())
+          Pages = Some(result.Context.Pages :> IReadOnlyList<_>)
+          FormatDefaults = result.Context.FormatDefaults
+          TimePolicy = result.Context.TimePolicy
           RowTypes = Some DashboardDocument.emptyRowTypes
           DashflowPath = None
           Dashflow = None }
@@ -344,7 +344,7 @@ module rec DocumentModuleParser =
 
             loop ()
 
-    let private parseDashboardShell (reader: TokenReader) (dashboardId: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) : DashboardShellContext * SqlDialect * string option * string option * string option =
+    let private parseDashboardReport (reader: TokenReader) (dashboardId: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) : ReportCompileContext * SqlDialect * string option * string option * string option =
         let includes = ModuleIncludeState()
         let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
@@ -356,7 +356,7 @@ module rec DocumentModuleParser =
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectPath = None
-        let mutable shell: DashboardShellContext option = None
+        let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
 
@@ -392,7 +392,7 @@ module rec DocumentModuleParser =
 
                 let created =
                     createShell
-                        DashboardShellMode.DashboardBody
+                        ReportCompileMode.Dashboard
                         specDirectory
                         None
                         None
@@ -423,10 +423,10 @@ module rec DocumentModuleParser =
         | None -> raise (DashSpecParseException("@dashboard module body is empty."))
         | Some s -> s, sqlDialect, palettePath, diagramLibraryPath, reportTitle
 
-    let private parseTabModuleShell
+    let private parseTabReportCompile
         (reader: TokenReader)
         (tabId: string)
-        (mode: DashboardShellMode)
+        (mode: ReportCompileMode)
         (specDirectory: string option)
         (parentFilters: IReadOnlyList<FilterDefinition> option)
         (reportMode: ReportBodyMode)
@@ -443,7 +443,7 @@ module rec DocumentModuleParser =
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectPath = None
-        let mutable shell: DashboardShellContext option = None
+        let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
 
@@ -513,7 +513,7 @@ module rec DocumentModuleParser =
         match shell with
         | None -> raise (DashSpecParseException($"@tab '{tabId}' module body is empty."))
         | Some s ->
-            { Shell = s
+            { Context = s
               SqlDialect = sqlDialect
               PalettePath = palettePath
               DiagramLibraryPath = diagramLibraryPath
@@ -682,11 +682,11 @@ module rec DocumentModuleParser =
         BlockSyntax.expectBlockEnd reader "connect" (None: string option)
         paletteUse, layout, layoutBoard, toolbarBoard, flowPath
 
-    let private parseReportDefaultsBlock (reader: TokenReader) (shell: DashboardShellContext) (blockKeyword: string) =
+    let private parseReportDefaultsBlock (reader: TokenReader) (shell: ReportCompileContext) (blockKeyword: string) =
         shell.FormatDefaults <-
             DefaultsBlockParser.parse reader blockKeyword shell.FormatDefaults shell.FilterDefaults
 
-    let private parseReportBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) (setModuleLabel: string -> unit) =
+    let private parseReportBlock (reader: TokenReader) (shell: ReportCompileContext) (mode: ReportBodyMode) (setModuleLabel: string -> unit) =
         let reportFlowBuilder = ReportScopeFlowParser.createBuilder ()
 
         BlockSyntax.beginBlock reader
@@ -737,20 +737,20 @@ module rec DocumentModuleParser =
                     String.Equals(next, "dashboard", StringComparison.OrdinalIgnoreCase)
                     || String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)
                     ->
-                    DashboardShellParser.parseFiltersChromePublic reader shell true
+                    ReportBodyParser.parseFiltersChromePublic reader shell true
                     reader.SkipNewlines()
                 | _ -> parseFiltersBlock reader shell mode
             elif reader.TryKeyword "toolbar" then
-                DashboardShellParser.parseFiltersChromePublic reader shell true
+                ReportBodyParser.parseFiltersChromePublic reader shell true
                 reader.SkipNewlines()
-            elif DashboardShellParser.tryParseStatement reader shell then ()
+            elif ReportBodyParser.tryParseStatement reader shell then ()
             else
                 raise (reader.Unexpected())
 
         shell.ReportScopeFlow <- ReportScopeFlowParser.toDefinition reportFlowBuilder
         BlockSyntax.expectBlockEnd reader "report" (None: string option)
 
-    let private parsePageBlock (reader: TokenReader) (shell: DashboardShellContext) (pageId: string) =
+    let private parsePageBlock (reader: TokenReader) (shell: ReportCompileContext) (pageId: string) =
         if shell.Pages |> Seq.exists (fun page -> String.Equals(page.Id, pageId, StringComparison.OrdinalIgnoreCase)) then
             raise (DashSpecParseException($"Report declares duplicate page id '{pageId}'."))
 
@@ -777,7 +777,7 @@ module rec DocumentModuleParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "toolbar" then
                 if reader.TryPeekIdent() |> Option.exists (fun next -> String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)) then
-                    DashboardShellParser.parseFiltersChromePublic reader shell false
+                    ReportBodyParser.parseFiltersChromePublic reader shell false
                 else
                     raise (
                         DashSpecParseException(
@@ -822,7 +822,7 @@ module rec DocumentModuleParser =
                         | Some specDirectory ->
                             pageLayout <- Some(LayoutModuleParser.load reference specDirectory)
                             reader.SkipNewlines()
-                    elif DashboardShellParser.tryParseStatement reader shell then ()
+                    elif ReportBodyParser.tryParseStatement reader shell then ()
                     else
                         raise (reader.Unexpected())
 
@@ -857,7 +857,7 @@ module rec DocumentModuleParser =
 
             LayoutModuleParser.parseLayoutFile (File.ReadAllText resolved)
 
-    let private parseStandaloneBlock (reader: TokenReader) (shell: DashboardShellContext) =
+    let private parseStandaloneBlock (reader: TokenReader) (shell: ReportCompileContext) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let standaloneFilterDefaults = FilterScopeDefaults.create ()
@@ -878,7 +878,7 @@ module rec DocumentModuleParser =
                 shell.Filters.Add(FilterParser.parse reader resolveFilterProperty)
                 reader.SkipNewlines()
             elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
-                DashboardShellParser.parseFiltersChromePublic reader shell true
+                ReportBodyParser.parseFiltersChromePublic reader shell true
                 reader.SkipNewlines()
             else
                 raise (reader.Unexpected())
@@ -919,7 +919,7 @@ module rec DocumentModuleParser =
 
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
 
-    let private parseFiltersBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) =
+    let private parseFiltersBlock (reader: TokenReader) (shell: ReportCompileContext) (mode: ReportBodyMode) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let blockFilterDefaults = FilterScopeDefaults.create ()
@@ -983,7 +983,7 @@ module rec DocumentModuleParser =
                 reader.Advance()
 
     let private createShell
-        (mode: DashboardShellMode)
+        (mode: ReportCompileMode)
         (specDirectory: string option)
         (tabModuleId: string option)
         (parentFilters: IReadOnlyList<FilterDefinition> option)
@@ -1003,7 +1003,7 @@ module rec DocumentModuleParser =
         if toolbarBoard.IsSome && includes.ToolbarBoard.IsSome then
             raise (DashSpecParseException("Dashboard module declares more than one toolbar layout board."))
 
-        let shell = DashboardShellContext(mode)
+        let shell = ReportCompileContext(mode)
         shell.SpecDirectory <- specDirectory
         shell.TabModuleId <- tabModuleId
         shell.ParentFilters <- parentFilters

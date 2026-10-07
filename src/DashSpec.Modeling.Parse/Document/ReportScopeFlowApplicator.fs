@@ -69,7 +69,7 @@ module ReportScopeFlowApplicator =
         if not (list |> Seq.exists (fun n -> String.Equals(n, name, StringComparison.OrdinalIgnoreCase))) then
             list.Add name
 
-    let internal applyToolbarToDashboard (shell: DashboardShellContext) (filterName: string) =
+    let internal applyToolbarToDashboard (shell: ReportCompileContext) (filterName: string) =
         appendUnique shell.DashboardFilters filterName
 
     let internal applyToolbarToPage (pages: ResizeArray<ReportPageDefinition>) (pageId: string) (filterName: string) =
@@ -161,7 +161,7 @@ module ReportScopeFlowApplicator =
                         FilterHostCardId = Some hostCardId
                         HostedFilters = Some(hosted :> IReadOnlyList<_>) }
 
-    let private applyRouteLink (shell: DashboardShellContext) (cards: ResizeArray<CardDefinition>) (link: FlowLinkDef) =
+    let private applyRouteLink (shell: ReportCompileContext) (cards: ResizeArray<CardDefinition>) (link: FlowLinkDef) =
         if tryHostConsumer link.ToNode |> Option.isSome then
             applyHostLink cards link
         elif portIs link "toolbar" then
@@ -207,12 +207,12 @@ module ReportScopeFlowApplicator =
                 applyCardToolbarFilter cards cardId filterName
             | _, _ -> ()
 
-    let private applyLinks (shell: DashboardShellContext) (links: IReadOnlyList<FlowLinkDef>) =
+    let private applyLinks (shell: ReportCompileContext) (links: IReadOnlyList<FlowLinkDef>) =
         let linksSnapshot = links |> Seq.toList
         for link in linksSnapshot do
             applyRouteLink shell shell.Cards link
 
-    let apply (shell: DashboardShellContext) =
+    let apply (shell: ReportCompileContext) =
         match shell.ReportScopeFlow with
         | Some flow -> applyLinks shell (routingLinks flow.Sections)
         | None -> ()
