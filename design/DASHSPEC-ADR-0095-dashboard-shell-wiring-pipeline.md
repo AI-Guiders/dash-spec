@@ -14,7 +14,7 @@ Qualified scope flows (`data` / `show` / `wire` / `action`) were applied by call
 
 ### SSOT module
 
-**`DocumentCompilePipeline.ShellWiring`** (alias `DashboardShellWiringPipeline`) is the **only** place that defines **post-parse wiring order** on `DashboardShellContext`:
+**`DocumentCompilePipeline.ScopeFlows`** (alias `DashboardShellWiringPipeline`) is the **only** place that defines **post-parse scope flow order** on `DashboardShellContext`:
 
 1. **`ScopeDataFlow`** — report/page `data flow` → `card.<id>.<slot>` (and validation that every slot is wired).
 2. **`ScopePlacementFlow`** — `placement flow` → report / page / card toolbars.
@@ -32,7 +32,7 @@ Entry points call **`DocumentCompilePipeline.finalizeShell`** once after the rep
 | `DocumentFlowMaterializer.materialize` | Resolve dashflow node → `DataSource` on cards (document level). |
 | `DocumentWiringGraphBuilder.build` | Export unified graph for Studio. |
 
-New applicators for scope flows **register a phase** in `DocumentCompilePipeline.ShellWiring.definitions`; do not call them from parsers.
+New applicators for scope flows **register a phase** in `DocumentCompilePipeline.ScopeFlows.definitions`; do not call them from parsers.
 
 ### Relation to `FlowGraphKindRegistry`
 
