@@ -4,7 +4,7 @@ using DashSpec.Core.Model;
 using DashSpec.Viz;
 using Microsoft.JSInterop;
 
-namespace DashSpec.Host.Plugins;
+namespace DashSpec.Viewer.Plugins;
 
 public sealed class DashSpecActionDispatcher
 {

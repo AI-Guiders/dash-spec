@@ -1,5 +1,5 @@
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DashSpec.Host.Endpoints;

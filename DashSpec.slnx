@@ -36,6 +36,8 @@
 
   <Project Path="src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
 
+  <Project Path="src\DashSpec.Viewer\DashSpec.Viewer.csproj" />
+
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
 
   <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />

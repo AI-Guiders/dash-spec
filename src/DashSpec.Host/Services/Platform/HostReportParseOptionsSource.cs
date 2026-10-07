@@ -1,6 +1,6 @@
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 
 namespace DashSpec.Host.Services.Platform;
 

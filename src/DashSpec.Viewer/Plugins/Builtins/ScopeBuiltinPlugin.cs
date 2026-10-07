@@ -2,7 +2,7 @@ using DashSpec.Abstractions.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DashSpec.Host.Plugins.Builtins;
+namespace DashSpec.Viewer.Plugins.Builtins;
 
 public sealed class ScopeBuiltinPlugin : IDashSpecPlugin
 {

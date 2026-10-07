@@ -3,7 +3,7 @@ using AIGuiders.Platform.Execution.CommandPlane;
 using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using AIGuiders.Platform.Execution.CommandPlane.Commands;
 using DashSpec.Host.Commands.Constructors;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Presentation;
