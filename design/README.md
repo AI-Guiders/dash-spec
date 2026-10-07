@@ -77,6 +77,21 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md) | Report time basis & work calendar | Accepted |
 | [0070](DASHSPEC-ADR-0070-table-column-formats-block.md) | Table `formats` block | Accepted |
 | [0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) | Block + member grammar | Accepted |
+| [0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md) | Unified layout slot plane (host grid = card grid) | Accepted |
+| [0073](DASHSPEC-ADR-0073-author-navigation-surface.md) | Author navigation surface — `report` → `section` → `page` → `card` → `view` → `diagram` | Accepted |
+| [0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) | Host as shell — composed view, no UI defaults | Accepted |
+| [0077](DASHSPEC-ADR-0077-host-ui-copy-ssot.md) | Host UI copy — SSOT and build-time freeze | Accepted |
+| [0078](DASHSPEC-ADR-0078-dashflow-data-plane.md) | Dashflow — data plane (sources, transformers, card inputs) | Accepted |
+| [0079](DASHSPEC-ADR-0079-dashflow-type-system.md) | Dashflow type system — strict static, value-only | Accepted |
+| [0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md) | Dataflow transforms as plugins | Accepted |
+| [0081](DASHSPEC-ADR-0081-type-plugins.md) | Semantic types as plugins | Accepted |
+| [0082](DASHSPEC-ADR-0082-dashspec-sdk.md) | DashSpec SDK (plugin author surface) | Accepted |
+| [0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md) | Dashflow — federation **DataFlow** (separate from Cockpit) | Accepted |
+| [0084](DASHSPEC-ADR-0084-matrix-axis-scroll-sticky.md) | Matrix heatmap — sticky axis scroll | Accepted |
+| [0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md) | Data Acquisition vs Data Flow — boundaries and DSPEC analyzers | Accepted |
+| [0087](DASHSPEC-ADR-0087-typed-row-batch-analyzers.md) | Typed row batch (`rows R`) — wire model and DSPEC031–034 | Accepted |
+| [0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) | Composable flows (BPMN-style subprocess) | Accepted |
+| [0089](DASHSPEC-ADR-0089-document-modules-using-import.md) | Document modules — `using` / `import` instead of preprocessor `!include` | Accepted |
 | [0076](DASHSPEC-ADR-0076-architecture-build-guards.md) | Architecture build guards | Accepted |
 | [0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md) | Surfaces as plugins + BFF | Accepted |
 | [0090](DASHSPEC-ADR-0090-report-culture-defaults.md) | Report `culture` as locale SSOT | Accepted |

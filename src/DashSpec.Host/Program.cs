@@ -153,8 +153,7 @@ builder.Services.AddSingleton(new DashSpecHostContext
     HostShell = hostShell,
 });
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddDashSpecBlazorViewerShell();
 
 builder.Services.AddScoped<IVizCardToolbarLocalizer, VizCardToolbarLocalizer>();
 
@@ -185,17 +184,8 @@ ConnectorPluginLoader.RegisterPlugins(
     connectorManifest,
     NullLogger.Instance);
 
-builder.Services.AddDashSpecViewerPlatform();
-builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportRuntimePaths, DashSpec.Host.Services.Platform.HostReportRuntimePaths>();
-builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportConnectorResolver, DashSpec.Host.Services.Platform.HostReportConnectorResolver>();
-builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportParseOptionsSource, DashSpec.Host.Services.Platform.HostReportParseOptionsSource>();
-builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportBootstrapEnvironment, DashSpec.Host.Services.Platform.HostReportBootstrapEnvironment>();
-builder.Services.AddSingleton<DashSpec.Core.Platform.IReportFieldOptionsCache, DashSpec.Host.Services.Platform.HostReportFieldOptionsCache>();
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
-
-builder.Services.AddSingleton<RuntimeConnectorResolver>();
-builder.Services.AddScoped<IDashboardSpecLoader, DashboardSpecLoader>();
+builder.Services.AddDashSpecHostViewerPlatform();
 builder.Services.AddScoped<ICardCellDrillState, CardCellDrillState>();
 builder.Services.AddScoped<ICardFoldState, CardFoldState>();
 builder.Services.AddSingleton<ReportFormatDefaultsAmbient>();
