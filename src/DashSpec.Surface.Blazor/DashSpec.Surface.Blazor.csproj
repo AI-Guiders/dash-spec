@@ -16,5 +16,6 @@
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Presentation\DashSpec.Presentation.csproj" />
     <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
+    <ProjectReference Include="..\DashSpec.Viewer\DashSpec.Viewer.csproj" />
   </ItemGroup>
 </Project>

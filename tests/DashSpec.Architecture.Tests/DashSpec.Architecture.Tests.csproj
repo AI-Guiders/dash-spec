@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Filters\DashSpec.Filters.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Viewer\DashSpec.Viewer.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
   </ItemGroup>

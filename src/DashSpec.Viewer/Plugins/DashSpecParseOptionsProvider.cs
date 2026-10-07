@@ -1,6 +1,6 @@
 using DashSpec.Core.Parsing;
 
-namespace DashSpec.Host.Plugins;
+namespace DashSpec.Viewer.Plugins;
 
 public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry registry)
 {

@@ -5,7 +5,7 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Viz;

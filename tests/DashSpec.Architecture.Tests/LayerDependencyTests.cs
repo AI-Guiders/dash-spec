@@ -12,6 +12,7 @@ public sealed class LayerDependencyTests
     private static readonly Assembly FiltersAssembly = typeof(DashSpec.Filters.FilterWidgetRenderContext).Assembly;
     private static readonly Assembly CompilationAssembly = typeof(DashSpec.Execution.Compilation.ReportCompiler).Assembly;
     private static readonly Assembly SurfaceBlazorAssembly = typeof(DashSpec.Surface.Blazor.Configuration.ViewerSurfaceServiceCollectionExtensions).Assembly;
+    private static readonly Assembly ViewerAssembly = typeof(DashSpec.Viewer.ViewerPluginHost).Assembly;
     private static readonly Assembly CoreAssembly = typeof(DashSpec.Core.Platform.ReportLoadOptions).Assembly;
 
     [Fact]
@@ -105,6 +106,17 @@ public sealed class LayerDependencyTests
     public void Surface_Blazor_must_not_reference_Host()
     {
         var result = Types.InAssembly(SurfaceBlazorAssembly)
+            .ShouldNot()
+            .HaveDependencyOn("DashSpec.Host")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
+    }
+
+    [Fact]
+    public void Viewer_must_not_reference_Host()
+    {
+        var result = Types.InAssembly(ViewerAssembly)
             .ShouldNot()
             .HaveDependencyOn("DashSpec.Host")
             .GetResult();

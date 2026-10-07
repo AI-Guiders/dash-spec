@@ -954,7 +954,7 @@ public class DashboardFilterCommandTests
         new(
             new StubDashboardSession(),
             new DashboardCommandExecutor(new DashSpecCommandPluginRegistry()),
-            DashSpec.Host.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
+            DashSpec.Viewer.Plugins.DashSpecBuiltinContributorRegistrar.RegisterBuiltins(),
             new DashSpecCommandPluginRegistry(),
             new DashboardSlashConstructorHost(TestCulture));
 

@@ -8,7 +8,7 @@ using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Core.Catalog;
 using DashSpec.Host.Configuration;
-using DashSpec.Host.Plugins;
+using DashSpec.Viewer.Plugins;
 using DashSpec.Host.Plugins.Builtins;
 using DashSpec.Host.Commands;
 using DashSpec.Abstractions.Hosting;
