@@ -253,8 +253,7 @@ module rec DocumentModuleParser =
 
         ReportScopeFlowApplicator.apply result.Shell
 
-        let dashflowPath, dashflow = resolveDashflowFields result.Shell
-
+        // ADR-0011 embed: parent shell owns connect/flow and shared row types; tab module contributes report body only.
         { TabId = tabId
           Label = result.Shell.TabModuleLabel
           Filters = result.Shell.ExportedTabLocalFilters
@@ -266,9 +265,9 @@ module rec DocumentModuleParser =
           Pages = Some(result.Shell.Pages :> IReadOnlyList<_>)
           FormatDefaults = result.Shell.FormatDefaults
           TimePolicy = result.Shell.TimePolicy
-          RowTypes = Some(exportModuleRowTypes result.Shell.Includes)
-          DashflowPath = dashflowPath
-          Dashflow = dashflow }
+          RowTypes = Some DashboardDocument.emptyRowTypes
+          DashflowPath = None
+          Dashflow = None }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None
