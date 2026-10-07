@@ -95,11 +95,12 @@ module TabModuleParser =
                  DashspecPath = None
                  LayoutBoard = shell.LayoutBoard } |]
 
-        let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames (shell.Filters :> IReadOnlyList<_>) (shell.DashboardFilters :> IReadOnlyList<_>) shell.ToolbarBoard
 
         ReportScopeFlowApplicator.apply shell
+
+        let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
 
         let documentWithoutGraph =
             { Id = tabId
