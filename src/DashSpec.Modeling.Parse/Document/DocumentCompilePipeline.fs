@@ -4,11 +4,11 @@ open DashSpec.Modeling.Core
 
 /// <summary>
 /// SSOT for document compile after token parse (ADR-0095 / ADR-0096 / ADR-0097).
-/// Parsers call <see cref="finalizeShell"/> then build <see cref="DashboardDocument"/>; entry points finish via <see cref="completeDocument"/>.
+/// Parsers call <see cref="compileScopeFlows"/> then build <see cref="DashboardDocument"/>; entry points finish via <see cref="completeDocument"/>.
 /// </summary>
 module DocumentCompilePipeline =
 
-    /// <summary>Report/page/card qualified <c>{kind} flow</c> blocks applied to <see cref="DashboardShellContext"/>.</summary>
+    /// <summary>Report/page/card qualified <c>{kind} flow</c> blocks applied to <see cref="ReportCompileContext"/>.</summary>
     module ScopeFlows =
 
         [<RequireQualifiedAccess>]
@@ -20,7 +20,7 @@ module DocumentCompilePipeline =
         type PhaseDefinition =
             { Phase: Phase
               Keyword: string
-              Apply: DashboardShellContext -> unit }
+              Apply: ReportCompileContext -> unit }
 
         let private phaseDefinitions: PhaseDefinition[] =
             [|
@@ -39,7 +39,7 @@ module DocumentCompilePipeline =
 
         let allPhases = phaseDefinitions |> Array.map (fun d -> d.Phase)
 
-        let apply (shell: DashboardShellContext) =
+        let apply (shell: ReportCompileContext) =
             if isNull (box shell) then
                 invalidArg "shell" "Dashboard shell is required."
 
@@ -88,7 +88,7 @@ module DocumentCompilePipeline =
             d.Phase = DocumentPhase.BuildWiringGraph || d.Phase = DocumentPhase.ValidateDocument)
 
     /// <summary>Post-parse: qualified flows → card/shell fields.</summary>
-    let finalizeShell (shell: DashboardShellContext) = ScopeFlows.apply shell
+    let compileScopeFlows (shell: ReportCompileContext) = ScopeFlows.apply shell
 
     let private phase (p: DocumentPhase) =
         documentPhaseDefinitions |> Array.find (fun d -> d.Phase = p)

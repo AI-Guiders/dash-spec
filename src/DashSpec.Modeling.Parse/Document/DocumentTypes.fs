@@ -23,10 +23,10 @@ type ReportBodyMode =
     | TabStandalone
     | TabEmbedded
 
-type DashboardShellMode =
-    | DashboardBody
-    | TabModuleStandalone
-    | TabModuleEmbedded
+type ReportCompileMode =
+    | Dashboard
+    | TabStandalone
+    | TabEmbedded
 
 type DocumentModuleKind =
     | Dashboard
@@ -193,13 +193,13 @@ type TabModuleContent =
       DashflowPath: string option
       Dashflow: DashflowModule option }
 
-type DashboardShellContext(mode: DashboardShellMode) =
+type ReportCompileContext(mode: ReportCompileMode) =
     member val Mode = mode with get, set
     member val SpecDirectory: string option = None with get, set
     member val TabModuleId: string option = None with get, set
     member val ParentFilters: IReadOnlyList<FilterDefinition> option = None with get, set
     member val Filters = ResizeArray<FilterDefinition>()
-    member val ShellFilters = ResizeArray<FilterDefinition>()
+    member val ReportScopeFilters = ResizeArray<FilterDefinition>()
     member val TabLocalFilters = ResizeArray<FilterDefinition>()
     member val DashboardFilters = ResizeArray<string>()
     member val Tabs = ResizeArray<TabDefinition>()
@@ -229,11 +229,11 @@ type DashboardShellContext(mode: DashboardShellMode) =
         FilterScopeDefaults.tryGet this.FilterDefaults filterName property
 
     member this.CardBindValidationFilters =
-        DashboardShellContext.mergeFilterScopes this.ParentFilters (this.ShellFilters :> IReadOnlyList<_>) [| this.TabLocalFilters :> IReadOnlyList<_>; this.Filters :> IReadOnlyList<_> |]
+        ReportCompileContext.mergeFilterScopes this.ParentFilters (this.ReportScopeFilters :> IReadOnlyList<_>) [| this.TabLocalFilters :> IReadOnlyList<_>; this.Filters :> IReadOnlyList<_> |]
 
     member this.ExportedTabLocalFilters =
         match this.Mode with
-        | DashboardShellMode.TabModuleEmbedded -> this.TabLocalFilters :> IReadOnlyList<_>
+        | ReportCompileMode.TabEmbedded -> this.TabLocalFilters :> IReadOnlyList<_>
         | _ -> [||]
 
     static member mergeFilterScopes (parent: IReadOnlyList<FilterDefinition> option) (shell: IReadOnlyList<FilterDefinition>) (additional: IReadOnlyList<FilterDefinition>[]) =

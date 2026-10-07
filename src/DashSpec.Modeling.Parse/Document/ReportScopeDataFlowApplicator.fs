@@ -154,7 +154,7 @@ module ReportScopeDataFlowApplicator =
                         )
                     )
 
-    let apply (shell: DashboardShellContext) =
+    let apply (shell: ReportCompileContext) =
         match shell.ReportScopeFlow with
         | Some flow -> applySections "Report" shell.Cards (shell.Filters :> IReadOnlyList<_>) flow.Sections
         | None -> ()
