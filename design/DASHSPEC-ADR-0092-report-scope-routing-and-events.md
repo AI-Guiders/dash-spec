@@ -57,7 +57,7 @@ Row-moving **flow** edges at report scope are rare (module graph stays in `.dash
 | Slot / diagram click source | `filter` id (`set` target) | **event** |
 | Slot / diagram click source | `phase` / `page` (`focus`, `goto`) | **event** |
 
-Port names on chrome: `[toolbar]`, `[panel]`, or filter id as `in` port when `chrome` declares `ports` (same pattern as slot ports in ADR-0091).
+Port names on chrome: `[toolbar]` on `chrome.dashboard`, `chrome.page.*`, or **`chrome.card.*`** (card-local filter toolbar); optional `[card.<filterId>]` on `chrome.card.*`; `[panel]` on card chrome is deprecated alias of `[toolbar]`.
 
 ### Authoring examples (target)
 
@@ -79,18 +79,18 @@ report
   end toolbar
 ```
 
-Card-local filter panel:
+Card toolbar (local filters):
 
 ```text
 card activity_5min as "Activity 5-min" {
   filter date activity_slot on …
 
   flow
-    activity_slot -> [panel] chrome card activity_5min
+    activity_slot -> [toolbar] chrome.card.activity_5min
   end flow
 
   filters
-    activity_slot
+    layout [ activity_slot ]
   end filters
   …
 }

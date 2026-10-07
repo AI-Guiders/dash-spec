@@ -86,12 +86,23 @@ module ReportScopeFlowApplicator =
                 { page with
                     ToolbarBoard = Some(ToolbarBoardFactory.fromFilterNames(names :> IReadOnlyList<_>)) }
 
-    let private applyPanelToCard (cards: ResizeArray<CardDefinition>) (cardId: string) (filterName: string) =
+    let private tryCardFilterInPort (link: FlowLinkDef) =
+        match link.ToPort with
+        | Some port when port.StartsWith("card.", StringComparison.OrdinalIgnoreCase) ->
+            let suffix = port.Substring("card.".Length)
+
+            if String.IsNullOrWhiteSpace suffix then
+                raise (DashSpecParseException("Card filter port '[card.<filterId>]' requires a filter id after 'card.'."))
+            else
+                Some suffix
+        | _ -> None
+
+    let private applyCardToolbarFilter (cards: ResizeArray<CardDefinition>) (cardId: string) (filterName: string) =
         let index =
             cards |> Seq.tryFindIndex (fun c -> String.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase))
 
         match index with
-        | None -> raise (DashSpecParseException($"Card panel route references unknown card '{cardId}'."))
+        | None -> raise (DashSpecParseException($"Card toolbar route references unknown card '{cardId}'."))
         | Some i ->
             let card = cards.[i]
             let names = ResizeArray(card.LocalFilters :> seq<_>)
@@ -153,20 +164,39 @@ module ReportScopeFlowApplicator =
                 match tryChromePage link.ToNode with
                 | Some pageId -> applyToolbarToPage shell.Pages pageId filterName
                 | None ->
-                    raise (
-                        DashSpecParseException(
-                            $"Toolbar route target '{link.ToNode}' must be chrome.dashboard or chrome.page.<pageId>."
+                    match tryChromeCard link.ToNode with
+                    | Some cardId -> applyCardToolbarFilter cards cardId filterName
+                    | None ->
+                        raise (
+                            DashSpecParseException(
+                                $"Toolbar route target '{link.ToNode}' must be chrome.dashboard, chrome.page.<pageId>, or chrome.card.<cardId>."
+                            )
                         )
-                    )
         elif portIs link "panel" then
             let _, filterName = filterNameFromLink link
 
             match tryChromeCard link.ToNode with
-            | Some cardId -> applyPanelToCard cards cardId filterName
+            | Some cardId -> applyCardToolbarFilter cards cardId filterName
             | None ->
-                raise (DashSpecParseException($"Panel route target '{link.ToNode}' must be chrome.card.<cardId>."))
+                raise (
+                    DashSpecParseException(
+                        $"Deprecated [panel] port: use [toolbar] chrome.card.<cardId> or [card.<filterId>] chrome.card.<cardId>."
+                    )
+                )
         else
-            ()
+            match tryChromeCard link.ToNode, tryCardFilterInPort link with
+            | Some cardId, Some portFilterId ->
+                let _, filterName = filterNameFromLink link
+
+                if not (String.Equals(portFilterId, filterName, StringComparison.OrdinalIgnoreCase)) then
+                    raise (
+                        DashSpecParseException(
+                            $"Card filter port '[card.{portFilterId}]' must match filter producer '{filterName}'."
+                        )
+                    )
+
+                applyCardToolbarFilter cards cardId filterName
+            | _, _ -> ()
 
     let private applyLinks (shell: DashboardShellContext) (links: IReadOnlyList<FlowLinkDef>) =
         let linksSnapshot = links |> Seq.toList

@@ -109,7 +109,7 @@ module CardParser =
             else
                 raise (
                     DashSpecParseException(
-                        $"Card '{cardId}': filter wiring belongs in flow (filter -> [panel] chrome.card.{cardId}); filters block is layout/apply only."
+                        $"Card '{cardId}': filter wiring belongs in flow (filter -> [toolbar] chrome.card.{cardId}); filters block is layout/apply only."
                     )
                 )
 
@@ -492,7 +492,7 @@ module CardParser =
                 else
                     raise (
                         DashSpecParseException(
-                            $"Card '{id}': inline filters list removed; use flow: filter -> [panel] chrome.card.{id}."
+                            $"Card '{id}': inline filters list removed; use flow: filter -> [toolbar] chrome.card.{id}."
                         )
                     )
 
