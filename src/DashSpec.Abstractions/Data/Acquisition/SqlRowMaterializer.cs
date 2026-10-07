@@ -10,13 +10,50 @@ public static class SqlRowMaterializer
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(schema);
 
+        var available = ReadColumnNames(reader);
         var ordinals = new int[schema.FieldCount];
         for (var i = 0; i < schema.FieldCount; i++)
         {
-            ordinals[i] = reader.GetOrdinal(schema.Fields[i].Name);
+            var fieldName = schema.Fields[i].Name;
+            try
+            {
+                ordinals[i] = reader.GetOrdinal(fieldName);
+            }
+            catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException)
+            {
+                throw new InvalidOperationException(
+                    FormatMissingColumn(schema.TypeName, fieldName, available),
+                    ex);
+            }
         }
 
         return ordinals;
+    }
+
+    private static string FormatMissingColumn(
+        string rowTypeName,
+        string fieldName,
+        IReadOnlyList<string> availableColumns)
+    {
+        var available =
+            availableColumns.Count == 0
+                ? "(no columns returned)"
+                : string.Join(", ", availableColumns);
+        return
+            $"SQL result is missing column '{fieldName}' required by row type '{rowTypeName}'. " +
+            $"Columns returned: {available}. " +
+            "Align the dashflow row type with the SQL view, or add the column to the view/query.";
+    }
+
+    private static List<string> ReadColumnNames(DbDataReader reader)
+    {
+        var names = new List<string>(reader.FieldCount);
+        for (var i = 0; i < reader.FieldCount; i++)
+        {
+            names.Add(reader.GetName(i));
+        }
+
+        return names;
     }
 
     public static DashValue[] ReadRow(DbDataReader reader, RowTypeSchema schema, int[] columnOrdinals)

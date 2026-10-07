@@ -346,10 +346,12 @@ public sealed class CardRenderService(
                 FlowInput = slot.FlowInput ?? card.FlowInput,
             };
 
+            var errorContext = slotCard;
             try
             {
                 var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
                 var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
+                errorContext = effective;
                 var drillOverlay = cellDrill.Get(card.Id);
                 var query = QueryCompiler.Compile(
                     effective,
@@ -426,7 +428,7 @@ public sealed class CardRenderService(
                     slot.Diagram.Kind,
                     DiagramDataFamily.Table,
                     string.Empty,
-                    Error: ex.Message);
+                    Error: RenderErrorFormatter.ForCard(ex, errorContext, slotRef));
             }
         }
 
