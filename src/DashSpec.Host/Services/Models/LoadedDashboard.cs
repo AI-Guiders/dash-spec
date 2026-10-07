@@ -6,6 +6,7 @@ using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Host.Services.Models;
 
+/// <summary>Host bootstrap payload (same shape as <see cref="Execution.Runtime.Platform.ReportBootstrapResult"/>).</summary>
 public sealed record LoadedDashboard(
     DashboardDocument Document,
     SpecLibrary? Library,

@@ -10,6 +10,8 @@ using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
+using DashSpec.Core.Platform;
+using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Loading;
@@ -20,16 +22,17 @@ public sealed class DashboardSpecLoader(
     IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider,
     IFieldOptionsCache fieldOptionsCache,
-    ILogger<DashboardSpecLoader> logger) : IDashboardSpecLoader
+    ILogger<DashboardSpecLoader> logger,
+    IReportCompiler reportCompiler) : IDashboardSpecLoader, IReportSpecBootstrap
 {
     public async Task<LoadedDashboard> LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken = default,
-        SpecLoadOptions? options = null)
+        ReportLoadOptions? options = null)
     {
-        options ??= new SpecLoadOptions();
+        options ??= new ReportLoadOptions();
         var entryRuntime = DashSpecParser.ReadRuntimePath(text);
         if (string.IsNullOrWhiteSpace(entryRuntime))
         {
@@ -42,10 +45,11 @@ public sealed class DashboardSpecLoader(
             text,
             hostContext.DefaultSpecDirectory);
 
-        var document = DashSpecParser.Parse(
+        var compile = reportCompiler.Compile(
             text,
             Path.GetDirectoryName(specFullPath),
             parseOptionsProvider.CreateOptions());
+        var document = compile.Document;
         var library = SpecLibraryComposer.Load(
             specFullPath,
             document.DiagramLibraryPath,
@@ -72,6 +76,34 @@ public sealed class DashboardSpecLoader(
             Path.GetDirectoryName(specFullPath),
             configPath);
     }
+
+    async Task<Execution.Runtime.Platform.ReportBootstrapResult> IReportSpecBootstrap.LoadFromTextAsync(
+        string text,
+        string specFullPath,
+        string sourceLabel,
+        CancellationToken cancellationToken,
+        ReportLoadOptions? options)
+    {
+        var loaded = await LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options).ConfigureAwait(false);
+        return new Execution.Runtime.Platform.ReportBootstrapResult(
+            loaded.Document,
+            loaded.Library,
+            loaded.Connector,
+            loaded.FilterIndex,
+            loaded.Filters,
+            loaded.FieldOptions,
+            loaded.SourceLabel,
+            loaded.SpecDirectory,
+            loaded.RuntimeConfigPath);
+    }
+
+    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> IReportSpecBootstrap.LoadFieldOptionsAsync(
+        DashboardDocument document,
+        IDataSourceConnector connector,
+        string runtimeConfigPath,
+        CancellationToken cancellationToken,
+        TimeSpan? timeout) =>
+        LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout);
 
     public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
         DashboardDocument document,
@@ -172,3 +204,7 @@ public sealed class DashboardSpecLoader(
         }
     }
 }
+
+
+
+

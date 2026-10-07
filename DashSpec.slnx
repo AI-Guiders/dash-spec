@@ -34,6 +34,8 @@
 
   <Project Path="src\DashSpec.Analyzers\DashSpec.Analyzers.csproj" />
 
+  <Project Path="src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
+
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
 
   <Project Path="src\DashSpec.DocGen\DashSpec.DocGen.csproj" />
@@ -58,6 +60,12 @@
 
   <Project Path="tests\DashSpec.Host.E2E\DashSpec.Host.E2E.csproj" />
 
+  <Project Path="tests\DashSpec.Execution.Compilation.Tests\DashSpec.Execution.Compilation.Tests.csproj" />
+
+  <Project Path="tests\DashSpec.Platform.Session.Tests\DashSpec.Platform.Session.Tests.csproj" />
+
 </Solution>
+
+
 
 

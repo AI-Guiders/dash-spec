@@ -1,18 +1,19 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Model;
-using DashSpec.Host.Services.Loading;
+using DashSpec.Core.Platform;
+using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Abstractions;
 
-public interface IDashboardSpecLoader
+public interface IDashboardSpecLoader : IReportSpecBootstrap
 {
-    Task<LoadedDashboard> LoadFromTextAsync(
+    new Task<LoadedDashboard> LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken = default,
-        SpecLoadOptions? options = null);
+        ReportLoadOptions? options = null);
 
     Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
         DashboardDocument document,

@@ -120,6 +120,26 @@ internal static class DocumentParseRegistration
             }
         };
 
+
+        DocumentParseBridge.Compile = (text, specDirectory, parseOptions) =>
+        {
+            try
+            {
+                var result = ParseDoc.DashSpecCompiler.compile(
+                    text,
+                    ToFsharpOption(specDirectory),
+                    ToFsharp(parseOptions));
+                var document = DocumentModelMapper.ToCore(result.Document);
+                var diagnostics = result.Diagnostics
+                    .Select(ToCoreDiagnostic)
+                    .ToList();
+                return new DashSpec.Core.Platform.ReportCompileResult(document, diagnostics);
+            }
+            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+            {
+                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+            }
+        };
         DocumentParseBridge.IsTabRootDocument = text =>
         {
             try
@@ -174,6 +194,28 @@ internal static class DocumentParseRegistration
             Optional = slot.Optional,
         };
 
+    private static DashSpec.Core.Validation.DashSpecDiagnostic ToCoreDiagnostic(
+        DashSpec.Modeling.Core.DashSpecDiagnostic diagnostic)
+    {
+        var span = diagnostic.Span;
+        var severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Error;
+        if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Warning))
+        {
+            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Warning;
+        }
+        else if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Information))
+        {
+            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Information;
+        }
+        return new DashSpec.Core.Validation.DashSpecDiagnostic(
+            span.Line,
+            span.Character,
+            span.EndLine,
+            span.EndCharacter,
+            diagnostic.Message,
+            severity);
+    }
+
     private static SqlDialect ToCore(ParseDoc.SqlDialect dialect)
     {
         if (dialect.Equals(ParseDoc.SqlDialect.TSql)) return SqlDialect.TSql;
@@ -182,3 +224,4 @@ internal static class DocumentParseRegistration
         throw new ArgumentOutOfRangeException(nameof(dialect), dialect, "Unknown SQL dialect.");
     }
 }
+

@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using DashSpec.Core.Platform;
 
 namespace DashSpec.Core.Parsing;
 
@@ -21,5 +22,8 @@ internal static class DocumentParseBridge
 
     internal static Func<string, bool>? IsBlockModuleFormat { get; set; }
 
+    internal static Func<string, string?, DashSpecParseOptions, ReportCompileResult>? Compile { get; set; }
+
     internal static Func<string, bool>? IsTabRootDocument { get; set; }
 }
+

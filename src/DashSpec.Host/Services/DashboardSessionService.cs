@@ -10,6 +10,8 @@ using DashSpec.Host.Services.Loading;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Presentation;
 using DashSpec.Viz;
+using DashSpec.Viz.Platform;
+using DashSpec.Core.Platform;
 
 public sealed class DashboardSessionService(
     IDashboardSpecLoader specLoader,
@@ -47,7 +49,7 @@ public sealed class DashboardSessionService(
     public async Task LoadAsync(
         string? specRelativePath = null,
         CancellationToken cancellationToken = default,
-        SpecLoadOptions? options = null)
+        ReportLoadOptions? options = null)
     {
         if (string.IsNullOrWhiteSpace(specRelativePath) &&
             string.IsNullOrWhiteSpace(_activeCatalogEntryId))
@@ -78,7 +80,7 @@ public sealed class DashboardSessionService(
     public async Task LoadCatalogEntryAsync(
         string entryId,
         CancellationToken cancellationToken = default,
-        SpecLoadOptions? options = null)
+        ReportLoadOptions? options = null)
     {
         var specFullPath = catalogState.Current.ResolveEntrySpecFullPath(entryId);
         _activeCatalogEntryId = entryId;
@@ -92,7 +94,7 @@ public sealed class DashboardSessionService(
         Stream stream,
         string fileName,
         CancellationToken cancellationToken = default,
-        SpecLoadOptions? options = null)
+        ReportLoadOptions? options = null)
     {
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
@@ -116,6 +118,12 @@ public sealed class DashboardSessionService(
         await LoadFromTextAsync(text, savedPath, safeName, cancellationToken, options).ConfigureAwait(false);
     }
 
+
+    Task IReportSession.LoadCatalogEntryAsync(string entryId, CancellationToken cancellationToken, DashSpec.Core.Platform.ReportLoadOptions? options) =>
+        LoadCatalogEntryAsync(entryId, cancellationToken, options as SpecLoadOptions);
+
+    Task IReportSession.LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken, DashSpec.Core.Platform.ReportLoadOptions? options) =>
+        LoadFromUploadAsync(stream, fileName, cancellationToken, options as SpecLoadOptions);
     public async Task RefreshFieldOptionsAsync(CancellationToken cancellationToken = default)
     {
         if (_document is null || _connector is null)
@@ -193,7 +201,7 @@ public sealed class DashboardSessionService(
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken,
-        SpecLoadOptions? options = null)
+        ReportLoadOptions? options = null)
     {
         var loaded = await specLoader
             .LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options)
