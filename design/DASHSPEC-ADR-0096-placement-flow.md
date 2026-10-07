@@ -24,4 +24,4 @@ end placement flow
 
 ## Pipeline
 
-`DocumentCompilePipeline.ShellWiring`: **data → placement → route (show/wire/action)**; document phases in [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md).
+`DocumentCompilePipeline.ScopeFlows`: **data → placement → route (show/wire/action)**; document phases in [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md).

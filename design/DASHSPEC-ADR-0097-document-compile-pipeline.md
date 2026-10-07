@@ -12,14 +12,14 @@
 
 | Registry | Phases | Target |
 |----------|--------|--------|
-| **`ShellWiring`** | data → placement → route | `DashboardShellContext` |
+| **`ScopeFlows`** | data → placement → route | `DashboardShellContext` |
 | **Document** | materialize → wiring_graph → validate | `DashboardDocument` |
 
 Applicators (`ReportScopeDataFlowApplicator`, …), `DocumentFlowMaterializer`, `DocumentWiringGraphBuilder`, and `DashboardValidator` stay **separate modules**; new behavior **registers a phase**, parsers do not call applicators directly.
 
 ### Public API
 
-- `finalizeShell` — after report body parsed; runs `ShellWiring` registry.
+- `finalizeShell` — after report body parsed; runs `ScopeFlows` registry.
 - `attachWiringGraphAndValidate` — document built from shell, dashflow not materialized yet.
 - `completeDocument` — full document registry (used by `DashboardComposer` and standalone `@tab`).
 

@@ -8,8 +8,8 @@ open DashSpec.Modeling.Core
 /// </summary>
 module DocumentCompilePipeline =
 
-    /// <summary>Post-parse scope flow order on <see cref="DashboardShellContext"/> (nested registry).</summary>
-    module ShellWiring =
+    /// <summary>Report/page/card qualified <c>{kind} flow</c> blocks applied to <see cref="DashboardShellContext"/>.</summary>
+    module ScopeFlows =
 
         [<RequireQualifiedAccess>]
         type Phase =
@@ -88,7 +88,7 @@ module DocumentCompilePipeline =
             d.Phase = DocumentPhase.BuildWiringGraph || d.Phase = DocumentPhase.ValidateDocument)
 
     /// <summary>Post-parse: qualified flows → card/shell fields.</summary>
-    let finalizeShell (shell: DashboardShellContext) = ShellWiring.apply shell
+    let finalizeShell (shell: DashboardShellContext) = ScopeFlows.apply shell
 
     let private phase (p: DocumentPhase) =
         documentPhaseDefinitions |> Array.find (fun d -> d.Phase = p)
