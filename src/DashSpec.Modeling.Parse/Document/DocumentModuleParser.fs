@@ -97,8 +97,6 @@ module rec DocumentModuleParser =
                 DashspecPath = None
                 LayoutBoard = result.Shell.LayoutBoard } ]
 
-        let cards = TabParser.assignTabs (result.Shell.Cards :> IReadOnlyList<_>) tabs
-
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames
                 (result.Shell.Filters :> IReadOnlyList<_>)
@@ -106,6 +104,8 @@ module rec DocumentModuleParser =
                 result.Shell.ToolbarBoard
 
         ReportScopeFlowApplicator.apply result.Shell
+
+        let cards = TabParser.assignTabs (result.Shell.Cards :> IReadOnlyList<_>) tabs
 
         let dashflowPath, dashflow = resolveDashflowFields result.Shell
 
@@ -154,8 +154,6 @@ module rec DocumentModuleParser =
         if reportTitle.IsNone || String.IsNullOrWhiteSpace (reportTitle.Value) then
             raise (DashSpecParseException($"@dashboard '{dashboardId}' report requires a title string."))
 
-        let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
-
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames
                 (dashShell.Filters :> IReadOnlyList<_>)
@@ -163,6 +161,8 @@ module rec DocumentModuleParser =
                 dashShell.ToolbarBoard
 
         ReportScopeFlowApplicator.apply dashShell
+
+        let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
         let dashflowPath, dashflow = resolveDashflowFields dashShell
 
