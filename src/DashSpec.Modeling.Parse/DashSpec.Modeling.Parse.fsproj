@@ -127,6 +127,9 @@
     <Compile Include="Document\DefaultsBlockParser.fs" />
     <Compile Include="Document\ReferenceScanSkip.fs" />
     <Compile Include="Document\ReportReferenceScanner.fs" />
+    <Compile Include="Document\ReportScopeFlowParser.fs" />
+    <Compile Include="Document\ReportScopeFlowApplicator.fs" />
+    <Compile Include="Document\DocumentWiringGraphBuilder.fs" />
     <Compile Include="Document\DashboardShellParser.fs" />
     <Compile Include="Document\DocumentModuleParser.fs" />
     <Compile Include="Document\DashboardParser.fs" />

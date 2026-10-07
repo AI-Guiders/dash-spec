@@ -153,9 +153,9 @@ module internal ReferenceScanSkip =
             elif reader.TryKeyword "card" then
                 skipCardBlock reader diagramIds rowTypes
             elif reader.TryKeyword "derive" then
-                skipBalancedBlock reader "derive" None
+                consumeLine reader
             elif reader.TryKeyword "bind" then
-                skipBalancedBlock reader "display" None
+                skipBindBlock reader
             elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
                 skipFiltersToolbarTail reader
             elif reader.TryKeyword "defaults" then
@@ -166,13 +166,31 @@ module internal ReferenceScanSkip =
                 consumeLine reader
             elif reader.TryModuleInclude().IsSome then
                 reader.SkipNewlines()
+            elif reader.TryKeyword "phase" then
+                skipPhase reader diagramIds rowTypes
             else
                 consumeLine reader
 
         BlockSyntax.expectBlockEnd reader "page" (Some pageId)
 
+    and skipLayoutBlock (reader: TokenReader) =
+        BlockSyntax.beginBlock reader
+        reader.SkipNewlines()
+
+        while not (BlockSyntax.isBlockEnd reader "layout" None) && not reader.IsEof do
+            reader.SkipNewlines()
+
+            if BlockSyntax.isBlockEnd reader "layout" None then ()
+            elif reader.TryKeyword "place" then
+                skipBalancedBlock reader "place" None
+            else
+                consumeLine reader
+
+        BlockSyntax.expectBlockEnd reader "layout" None
+
     and skipCardBlock (reader: TokenReader) (diagramIds: HashSet<string>) (rowTypes: HashSet<string>) =
         let cardId = reader.ReadIdent()
+        ParserUtilities.tryReadLayoutRef reader |> ignore
         reader.SkipNewlines()
 
         if reader.CurrentKind = TokenKind.String then
@@ -199,7 +217,7 @@ module internal ReferenceScanSkip =
             elif reader.TryKeyword "flow" then
                 skipBalancedBlock reader "flow" None
             elif reader.TryKeyword "layout" then
-                skipBalancedBlock reader "layout" None
+                skipLayoutBlock reader
             elif reader.TryKeyword "filters" then
                 if reader.TryKeywordSameLine "host" then
                     reader.ReadIdent() |> ignore
@@ -226,10 +244,37 @@ module internal ReferenceScanSkip =
                 skipBalancedBlock reader "override" None
             elif reader.TryKeyword "overrides" then
                 skipBalancedBlock reader "overrides" None
+            elif reader.TryKeyword "when" then
+                if reader.IsOnNewline() then
+                    let whenTarget = reader.ReadIdent()
+                    skipBalancedBlock reader "when" (Some whenTarget)
+                else
+                    consumeLine reader
+            elif reader.TryKeyword "chrome" then
+                skipBalancedBlock reader "chrome" None
+            elif reader.TryKeyword "limits" then
+                skipBalancedBlock reader "limits" None
+            elif reader.TryKeyword "views" then
+                skipBalancedBlock reader "views" None
+            elif reader.TryKeyword "diagram" then
+                skipDiagramLine reader diagramIds
             else
                 consumeLine reader
 
         BlockSyntax.expectBlockEnd reader "card" (Some cardId)
+
+    and skipDiagramLine (reader: TokenReader) (diagramIds: HashSet<string>) =
+        if reader.TryKeyword "ref" then
+            reader.ReadIdent() |> ignore
+
+        match reader.TryPeekIdent() with
+        | Some name ->
+            reader.ReadIdent() |> ignore
+            if not (DiagramKindRegistry.tryResolve name |> fst) then
+                diagramIds.Add name |> ignore
+        | None -> ()
+
+        consumeLine reader
 
     and skipDataBlock (reader: TokenReader) (diagramIds: HashSet<string>) (rowTypes: HashSet<string>) =
         BlockSyntax.beginBlock reader
@@ -243,6 +288,8 @@ module internal ReferenceScanSkip =
             elif tryCollectDiagramPreset reader diagramIds then ()
             elif reader.TryKeyword "datasource" then
                 skipBalancedBlock reader "datasource" None
+            elif reader.TryKeyword "bind" then
+                skipBindBlock reader
             else
                 consumeLine reader
 
@@ -256,7 +303,14 @@ module internal ReferenceScanSkip =
             reader.SkipNewlines()
 
             if BlockSyntax.isBlockEnd reader "view" None then ()
-            elif tryCollectDiagramPreset reader diagramIds then ()
+            elif reader.TryKeyword "diagram" then
+                skipDiagramLine reader diagramIds
+            elif reader.TryKeyword "legend" then
+                skipBalancedBlock reader "legend" None
+            elif reader.TryKeyword "presentation" then
+                skipBalancedBlock reader "presentation" None
+            elif reader.TryKeyword "series" then
+                skipBalancedBlock reader "series" None
             else
                 consumeLine reader
 

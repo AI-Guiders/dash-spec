@@ -105,9 +105,11 @@ module rec DocumentModuleParser =
                 (result.Shell.DashboardFilters :> IReadOnlyList<_>)
                 result.Shell.ToolbarBoard
 
+        ReportScopeFlowApplicator.apply result.Shell
+
         let dashflowPath, dashflow = resolveDashflowFields result.Shell
 
-        let document =
+        let documentWithoutGraph =
             { Id = tabId
               Title = title
               ConnectorId = None
@@ -133,7 +135,13 @@ module rec DocumentModuleParser =
               TimePolicy = result.Shell.TimePolicy
               RowTypes = Some(exportModuleRowTypes result.Shell.Includes)
               DashflowPath = dashflowPath
-              Dashflow = dashflow }
+              Dashflow = dashflow
+              ReportScopeFlow = result.Shell.ReportScopeFlow
+              WiringGraph = WiringGraph.empty }
+
+        let document =
+            { documentWithoutGraph with
+                WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
 
         DashboardValidator.validate document
         document
@@ -154,34 +162,42 @@ module rec DocumentModuleParser =
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
 
+        ReportScopeFlowApplicator.apply dashShell
+
         let dashflowPath, dashflow = resolveDashflowFields dashShell
 
-        { Id = dashboardId
-          Title = reportTitle.Value
-          ConnectorId = None
-          SqlDialect = sqlDialect
-          DiagramLibraryPath = diagramLibraryPath
-          PalettePath = palettePath
-          ColorPalette = dashShell.ColorPalette
-          Layout = dashShell.Layout
-          FiltersChrome = dashShell.FiltersChrome
-          CardsChrome = dashShell.CardsChrome
-          Filters = dashShell.Filters :> IReadOnlyList<_>
-          DashboardFilters = dashboardFilters
-          Tabs = dashShell.Tabs :> IReadOnlyList<_>
-          Cards = cards :> IReadOnlyList<_>
-          ToolbarBoard = dashShell.ToolbarBoard
-          ModuleExtensions = Some dashShell.ModuleExtensions
-          ModuleDiagrams = Some(exportModuleDiagrams dashShell.Includes)
-          ModuleChartChromePresets = Some(dashShell.Includes.ExportChartChromePresets())
-          ModuleTooltips = Some(dashShell.Includes.ExportTooltips())
-          Pages = Some(dashShell.Pages :> IReadOnlyList<_>)
-          CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
-          FormatDefaults = dashShell.FormatDefaults
-          TimePolicy = dashShell.TimePolicy
-          RowTypes = Some(exportModuleRowTypes dashShell.Includes)
-          DashflowPath = dashflowPath
-          Dashflow = dashflow }
+        let documentWithoutGraph =
+            { Id = dashboardId
+              Title = reportTitle.Value
+              ConnectorId = None
+              SqlDialect = sqlDialect
+              DiagramLibraryPath = diagramLibraryPath
+              PalettePath = palettePath
+              ColorPalette = dashShell.ColorPalette
+              Layout = dashShell.Layout
+              FiltersChrome = dashShell.FiltersChrome
+              CardsChrome = dashShell.CardsChrome
+              Filters = dashShell.Filters :> IReadOnlyList<_>
+              DashboardFilters = dashboardFilters
+              Tabs = dashShell.Tabs :> IReadOnlyList<_>
+              Cards = cards :> IReadOnlyList<_>
+              ToolbarBoard = dashShell.ToolbarBoard
+              ModuleExtensions = Some dashShell.ModuleExtensions
+              ModuleDiagrams = Some(exportModuleDiagrams dashShell.Includes)
+              ModuleChartChromePresets = Some(dashShell.Includes.ExportChartChromePresets())
+              ModuleTooltips = Some(dashShell.Includes.ExportTooltips())
+              Pages = Some(dashShell.Pages :> IReadOnlyList<_>)
+              CommandAliases = Some(dashShell.CommandAliases :> IReadOnlyDictionary<_, _>)
+              FormatDefaults = dashShell.FormatDefaults
+              TimePolicy = dashShell.TimePolicy
+              RowTypes = Some(exportModuleRowTypes dashShell.Includes)
+              DashflowPath = dashflowPath
+              Dashflow = dashflow
+              ReportScopeFlow = dashShell.ReportScopeFlow
+              WiringGraph = WiringGraph.empty }
+
+        { documentWithoutGraph with
+            WiringGraph = DocumentWiringGraphBuilder.build documentWithoutGraph }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         if String.IsNullOrWhiteSpace text then
@@ -234,6 +250,8 @@ module rec DocumentModuleParser =
 
         if result.Shell.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
+
+        ReportScopeFlowApplicator.apply result.Shell
 
         let dashflowPath, dashflow = resolveDashflowFields result.Shell
 
@@ -701,6 +719,12 @@ module rec DocumentModuleParser =
                 for pair in CommandAliasesParser.parse reader do
                     shell.CommandAliases.[pair.Key] <- pair.Value
                 reader.SkipNewlines()
+            elif reader.TryKeyword "flow" then
+                if shell.ReportScopeFlow.IsSome then
+                    raise (DashSpecParseException("Report declares more than one flow block."))
+
+                shell.ReportScopeFlow <- Some(ReportScopeFlowParser.parseReportFlowBlock reader)
+                reader.SkipNewlines()
             elif reader.TryKeyword "defaults" then
                 parseReportDefaultsBlock reader shell "defaults"
             elif reader.TryKeyword "default" then
@@ -737,6 +761,7 @@ module rec DocumentModuleParser =
         let mutable pageToolbar = None
         let mutable usageDateDerive = None
         let mutable pageDisplayBindings: IReadOnlyDictionary<string, string> option = None
+        let mutable pageScopeFlow: ScopeFlowDefinition option = None
         let pageFilterDefaults = FilterScopeDefaults.create ()
 
         BlockSyntax.beginBlock reader
@@ -760,6 +785,12 @@ module rec DocumentModuleParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "derive" then
                 usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
+            elif reader.TryKeyword "flow" then
+                if pageScopeFlow.IsSome then
+                    raise (DashSpecParseException($"Page '{pageId}' declares more than one flow block."))
+
+                pageScopeFlow <- Some(ReportScopeFlowParser.parsePageFlowBlock reader pageId)
+                reader.SkipNewlines()
             elif reader.TryKeyword "bind" then
                 if not (reader.TryKeyword "display") then
                     raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
@@ -805,7 +836,8 @@ module rec DocumentModuleParser =
               ToolbarBoard = pageToolbar
               UsageDateDerive = usageDateDerive
               FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults
-              DisplayBindings = pageDisplayBindings }
+              DisplayBindings = pageDisplayBindings
+              ScopeFlow = pageScopeFlow }
 
         reader.SkipNewlines()
 

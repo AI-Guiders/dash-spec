@@ -42,7 +42,7 @@ module FlowLinkBlockParser =
                 ensureNotForbidden reader options
 
                 let saved = reader.SavePosition()
-                let fromNode = reader.ReadIdent()
+                let fromNode = FlowLinkParser.readEndpointSameLine reader
 
                 if String.IsNullOrWhiteSpace fromNode then
                     raise (reader.Unexpected "link line in flow block")

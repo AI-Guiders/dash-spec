@@ -41,6 +41,10 @@ type TabDefinition =
       LayoutBoard: LayoutBoardDefinition option }
 
 [<CLIMutable>]
+type ScopeFlowDefinition =
+    { Links: IReadOnlyList<FlowLinkDef> }
+
+[<CLIMutable>]
 type ReportPageDefinition =
     { Id: string
       Title: string option
@@ -49,7 +53,8 @@ type ReportPageDefinition =
       ToolbarBoard: LayoutBoardDefinition option
       UsageDateDerive: FilterDeriveDefinition option
       FilterDefaults: IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> option
-      DisplayBindings: IReadOnlyDictionary<string, string> option }
+      DisplayBindings: IReadOnlyDictionary<string, string> option
+      ScopeFlow: ScopeFlowDefinition option }
 
 [<CLIMutable>]
 type ModuleDiagramDefinition =
@@ -129,7 +134,9 @@ type DashboardDocument =
       TimePolicy: ReportTimePolicy option
       RowTypes: IReadOnlyDictionary<string, RowTypeDef> option
       DashflowPath: string option
-      Dashflow: DashflowModule option }
+      Dashflow: DashflowModule option
+      ReportScopeFlow: ScopeFlowDefinition option
+      WiringGraph: WiringGraph }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -211,6 +218,7 @@ type DashboardShellContext(mode: DashboardShellMode) =
     member val CurrentPhaseId: string option = None with get, set
     member val CurrentPageId: string option = None with get, set
     member val Pages = ResizeArray<ReportPageDefinition>()
+    member val ReportScopeFlow: ScopeFlowDefinition option = None with get, set
     member val ModuleExtensions = { EnabledPluginIds = []; Imports = [] } with get, set
     member val CommandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     member val FormatDefaults = ReportFormatDefaults.empty with get, set
