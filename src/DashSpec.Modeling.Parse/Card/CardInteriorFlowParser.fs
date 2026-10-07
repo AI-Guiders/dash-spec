@@ -1,17 +1,22 @@
 namespace DashSpec.Modeling.Parse.Card
 
-open System.Collections.Generic
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Lexing
 
 module CardInteriorFlowParser =
 
-    [<CLIMutable>]
-    type CardInteriorFlowDefinition = { Links: IReadOnlyList<FlowLinkDef> }
+    let createBuilder () = FlowGraphSections.Builder()
 
-    let parseFlowBlock (reader: TokenReader) (cardId: string) =
-        let options =
-            FlowLinkBlockParser.defaultOptions $"Card '{cardId}'"
+    let tryAddQualifiedBlock (reader: TokenReader) (builder: FlowGraphSections.Builder) (cardId: string) =
+        QualifiedFlowBlockParser.tryParseAndAdd
+            reader
+            builder
+            FlowGraphKindRegistry.FlowGraphScope.CardInterior
+            $"Card '{cardId}'"
 
-        let links = FlowLinkBlockParser.parseFlowBlock reader options
-        { Links = links }
+    let rejectLegacyFlow (reader: TokenReader) (cardId: string) =
+        QualifiedFlowBlockParser.tryRejectLegacyFlow reader $"Card '{cardId}'"
+
+    let toDefinition (builder: FlowGraphSections.Builder) : CardInteriorFlowDefinition option =
+        builder.ToSections() |> Option.map (fun sections -> { Sections = sections })

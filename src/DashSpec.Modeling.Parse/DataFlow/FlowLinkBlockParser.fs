@@ -6,7 +6,7 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 
-/// <summary>Shared <c>flow … end flow</c> link lines (card, report, page).</summary>
+/// <summary>Shared flow link lines inside balanced blocks (ADR-0093 qualified end labels).</summary>
 module FlowLinkBlockParser =
 
     type ParseOptions =
@@ -28,15 +28,15 @@ module FlowLinkBlockParser =
             raise (DashSpecParseException($"{options.ContextLabel}: '{peek}' is not valid in a flow block."))
         | _ -> ()
 
-    let parseFlowBlock (reader: TokenReader) (options: ParseOptions) =
+    let parseFlowBlock (reader: TokenReader) (options: ParseOptions) (endKind: string) (endId: string option) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let links = ResizeArray<FlowLinkDef>()
 
-        while not (BlockSyntax.isBlockEnd reader "flow" None) && not reader.IsEof do
+        while not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
             reader.SkipNewlines()
 
-            if BlockSyntax.isBlockEnd reader "flow" None then
+            if BlockSyntax.isBlockEnd reader endKind endId then
                 ()
             else
                 ensureNotForbidden reader options
@@ -55,5 +55,5 @@ module FlowLinkBlockParser =
                     reader.RestorePosition saved
                     raise (reader.Unexpected "link line in flow block")
 
-        BlockSyntax.expectBlockEnd reader "flow" None
+        BlockSyntax.expectBlockEnd reader endKind endId
         links :> IReadOnlyList<_>

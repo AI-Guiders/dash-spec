@@ -143,7 +143,7 @@ module CardInteriorFlowResolver =
 
         match interior with
         | Some flow ->
-            for link in flow.Links do
+            for link in FlowGraphSections.linksFor flow.Sections FlowGraphKind.Data do
                 applyLink builder cardId filterNames cardInputs link
         | None -> ()
 

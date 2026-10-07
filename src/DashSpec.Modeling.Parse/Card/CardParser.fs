@@ -397,7 +397,7 @@ module CardParser =
         let tooltip = ref None
         let flowInput = ref None
         let cardInputs = Dictionary<string, CardFlowInput>(StringComparer.OrdinalIgnoreCase)
-        let interiorFlow = ref None
+        let interiorFlowBuilder = CardInteriorFlowParser.createBuilder ()
         let inlineTooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
 
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
@@ -447,6 +447,10 @@ module CardParser =
             elif reader.TryKeyword "use" then
                 useCardPreset <- Some(reader.ReadIdent())
                 reader.SkipNewlines()
+            elif CardInteriorFlowParser.tryAddQualifiedBlock reader interiorFlowBuilder id then
+                reader.SkipNewlines()
+            elif reader.TryKeyword "flow" then
+                CardInteriorFlowParser.rejectLegacyFlow reader id
             elif reader.TryKeyword "data" then
                 if reader.TryKeyword "for" then
                     let slotName = reader.ReadIdent()
@@ -519,12 +523,6 @@ module CardParser =
                 let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
                 if placement.Value.IsNone then placement.Value <- parsedPlacement
                 if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
-                reader.SkipNewlines()
-            elif reader.TryKeyword "flow" then
-                if interiorFlow.Value.IsSome then
-                    raise (DashSpecParseException($"Card '{id}': duplicate flow block."))
-                let parsed = CardInteriorFlowParser.parseFlowBlock reader id
-                interiorFlow.Value <- Some { Links = parsed.Links }
                 reader.SkipNewlines()
             elif reader.TryKeyword "input" then
                 let parsed = CardFlowInputParser.parse reader id
@@ -654,12 +652,14 @@ module CardParser =
             if scratch.DataSource.IsNone && dataSource.Value.IsSome then
                 scratch.DataSource <- dataSource.Value
 
-        if cardInputs.Count > 0 || interiorFlow.Value.IsSome then
+        let interiorFlow = CardInteriorFlowParser.toDefinition interiorFlowBuilder
+
+        if cardInputs.Count > 0 || interiorFlow.IsSome then
             CardInteriorFlowResolver.applyToBuilder
                 slotBuilder
                 id
                 filters
-                interiorFlow.Value
+                interiorFlow
                 (cardInputs :> IReadOnlyDictionary<_, _>)
 
         let diagramSlotsFinal =
@@ -762,4 +762,4 @@ module CardParser =
           Tooltip = tooltip.Value
           FlowInput = resolvedCardFlowInput
           CardInputs = cardInputs :> IReadOnlyDictionary<_, _>
-          InteriorFlow = interiorFlow.Value }
+          InteriorFlow = interiorFlow }

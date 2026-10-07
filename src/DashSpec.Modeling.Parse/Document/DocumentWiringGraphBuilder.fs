@@ -160,7 +160,7 @@ module DocumentWiringGraphBuilder =
             let scope = Some $"card:{card.Id}"
             let filterNames = HashSet<string>(filters |> Seq.map (fun f -> f.Name), StringComparer.OrdinalIgnoreCase)
 
-            for link in interior.Links do
+            for link in FlowGraphSections.linksFor interior.Sections FlowGraphKind.Data do
                 let kind =
                     if filterNames.Contains link.FromNode then
                         WiringEdgeKind.Route
@@ -247,6 +247,15 @@ module DocumentWiringGraphBuilder =
                               Scope = scope }
                 | _ -> ()
 
+    let private scopeRoutingLinks (sections: FlowGraphSections) =
+        let merged = ResizeArray<FlowLinkDef>()
+
+        for kind in [| FlowGraphKind.Show; FlowGraphKind.Wire; FlowGraphKind.Action |] do
+            for link in FlowGraphSections.linksFor sections kind do
+                merged.Add link
+
+        merged :> IReadOnlyList<_>
+
     let private addScopeFlowLinks (edges: ResizeArray<WiringEdge>) (links: IReadOnlyList<FlowLinkDef>) (scope: string option) =
         for link in links do
             let kind = classifyScopeLink link
@@ -310,11 +319,11 @@ module DocumentWiringGraphBuilder =
                 lowerPageDerive nodes edges page
 
                 match page.ScopeFlow with
-                | Some flow -> addScopeFlowLinks edges flow.Links (Some $"page:{page.Id}")
+                | Some flow -> addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) (Some $"page:{page.Id}")
                 | None -> ()
 
         match document.ReportScopeFlow with
-        | Some flow -> addScopeFlowLinks edges flow.Links (Some "report")
+        | Some flow -> addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) (Some "report")
         | None -> ()
 
         WiringGraph.create nodes.Values edges

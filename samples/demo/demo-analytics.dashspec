@@ -15,10 +15,10 @@
     report
         title = "Analytics"
         card period_peak_by_app as "Peak by app (period)"
-            flow
+            show flow
                 period_grain -> [panel] chrome.card.period_peak_by_app
                 period_start -> [panel] chrome.card.period_peak_by_app
-            end flow
+            end show flow
             input rows from period_peak_tz.rows
             diagram demo_period_peak_by_app_bar
                 bind
@@ -39,9 +39,9 @@
                 end card
 
                 card idle_table as "Idle minutes (user × app)"
-                    flow
+                    show flow
                         idle_top -> [panel] chrome.card.idle_table
-                    end flow
+                    end show flow
                     input rows from idle_tz.rows
                     diagram demo_idle_table
                         bind
@@ -74,10 +74,10 @@
                                 end card
 
                                 card peak_by_app_treemap as "Peak by app (treemap)"
-                                    flow
+                                    show flow
                                         period_grain -> [panel] chrome.card.peak_by_app_treemap
                                         period_start -> [panel] chrome.card.peak_by_app_treemap
-                                    end flow
+                                    end show flow
                                     input rows from period_peak_tz.rows
                                     diagram demo_peak_by_app_treemap
                                         bind
@@ -94,10 +94,10 @@
                                         end card
 
                                         card peak_by_app_windrose as "Peak by app (wind rose)"
-                                            flow
+                                            show flow
                                                 period_grain -> [panel] chrome.card.peak_by_app_windrose
                                                 period_start -> [panel] chrome.card.peak_by_app_windrose
-                                            end flow
+                                            end show flow
                                             input rows from period_peak_tz.rows
                                             diagram demo_peak_by_app_windrose
                                                 bind

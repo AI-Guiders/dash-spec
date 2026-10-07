@@ -3,6 +3,8 @@ namespace DashSpec.Modeling.Parse.Tests
 open System
 open System.IO
 open Xunit
+open DashSpec.Modeling.Core
+open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Document
 
 module CardInteriorFlowParseTests =
@@ -59,14 +61,14 @@ report "Interior"
   diagram ref drill table
     columns = UserSam
   end table
-  flow
+  data flow
     utilization [utilization] -> [rows] heatmap
     drill_src [rows] -> [rows] drill
     usage_date -> [usage_date] heatmap
     app_name -> [app_name] heatmap
     usage_date -> [usage_date] drill
     app_name -> [app_name] drill
-  end flow
+  end data flow
   view
     diagram ref heatmap table
       columns = UserSam
@@ -86,7 +88,7 @@ end tab card_interior_flow
             let document = DocumentModuleParser.parseDocumentDefault specText (Some dir)
             let card = document.Cards.[0]
             Assert.True(card.InteriorFlow.IsSome)
-            Assert.Equal(6, card.InteriorFlow.Value.Links.Count)
+            Assert.Equal(6, FlowGraphSections.linksFor card.InteriorFlow.Value.Sections FlowGraphKind.Data |> Seq.length)
             let heatmap = card.DiagramSlots.["heatmap"]
             let drill = card.DiagramSlots.["drill"]
             Assert.Equal("utilization", heatmap.FlowInput.Value.NodeId)

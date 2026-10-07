@@ -9,6 +9,7 @@ open DashSpec.Modeling.Parse.Filter
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
 open DashSpec.Modeling.Parse.Card
+open DashSpec.Modeling.Parse.DataFlow
 
 /// Token-accurate skip/collect for module reference scanning (no regex).
 module internal ReferenceScanSkip =
@@ -214,6 +215,11 @@ module internal ReferenceScanSkip =
             elif tryCollectRowsType reader rowTypes then ()
             elif reader.TryKeyword "view" then
                 skipViewBlock reader diagramIds
+            elif QualifiedFlowBlockParser.tryPeekQualifiedStart reader |> Option.isSome then
+                let kind = QualifiedFlowBlockParser.consumeQualifiedStart reader
+                let endKind = FlowGraphKindRegistry.keyword kind
+                let endId = FlowGraphKindRegistry.blockEndId kind
+                skipBalancedBlock reader endKind (Some endId)
             elif reader.TryKeyword "flow" then
                 skipBalancedBlock reader "flow" None
             elif reader.TryKeyword "layout" then
