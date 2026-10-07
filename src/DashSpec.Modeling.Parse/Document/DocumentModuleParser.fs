@@ -611,13 +611,16 @@ module rec DocumentModuleParser =
                     pending.Clear()
                 | ModuleLinkMode.MembershipUnion ->
                     let reportDiagramIds, reportRowTypes =
-                        try
-                            let diagramIds, rowTypes = ReportReferenceScanner.scanModuleText reader.ModuleSource
-                            Some diagramIds, Some rowTypes
-                        with :? DashSpecParseException ->
-                            None, None
+                        ReportReferenceScanner.scanModuleText reader.ModuleSource
 
-                    IncludeExpander.linkEnvelope pending dir moduleKind includes parseOptions reportDiagramIds reportRowTypes
+                    IncludeExpander.linkEnvelope
+                        pending
+                        dir
+                        moduleKind
+                        includes
+                        parseOptions
+                        (Some reportDiagramIds)
+                        (Some reportRowTypes)
                     pending.Clear()
                 | _ ->
                     raise (DashSpecParseException("Unknown module link mode."))
