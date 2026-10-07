@@ -2,17 +2,16 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · B3.1–B3.5 done; B3.6 Playwright soak WIP |
+| **Status** | Accepted · **B3.1–B3.6 done** (`develop`) |
 | **Relates to** | [ADR-0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) B3 |
 
-## Current state (`develop` after B3.4)
+## Current state (`develop` after B3.6)
 
-- `DashSpec.Surface.Blazor` — **viewer surface** (dashboard `.razor`, `Commands/*`, session/presentation/rendering, `DashCatalog` partial + emit link).
-- **Host shell** — `App.razor`, `Routes.razor`, `Admin.razor`; planet bootstrap, adapters, endpoints.
+- `DashSpec.Surface.Blazor` — **viewer surface** (dashboard `.razor`, `Commands/*`, session/presentation/rendering, `MainLayout` + interactive pages).
+- **Host shell** — `App.razor`, `Routes.razor`, `Admin.razor`; `AddDashSpecPlanetHostAsync` / `UseDashSpecPlanetHost`; planet bootstrap, adapters, endpoints.
 - **UI RCL** — `DashSpec.Presentation` (filter chrome); viewer UI root is Surface, not Host.
-- **Viewer plugins** — `DashSpec.Viewer` (`Plugins/*`, `IViewerPluginHost`); Host loaders + diagnostics/on-click host adapters.
-- **Session / render / command palette** — `DashSpec.Host` (`DashboardSessionService`, `CardRenderService`, `Commands/*`, `Services/Presentation/*`).
-- **Planet** — bootstrap, `DashSpecHostContext`, connectors, git/catalog, EF, endpoints — `DashSpec.Host`.
+- **Viewer plugins** — `DashSpec.Viewer`; Host loaders + planet builtins only.
+- **Planet** — bootstrap, DB, git/catalog, connectors, EF — `DashSpec.Host` (no Presentation ref).
 
 Goal **B3 canon**: viewer surface testable and packaged without treating Host as the UI root.
 
@@ -35,7 +34,7 @@ A naive `git mv` of Components + Commands + Presentation into Surface breaks **`
 | **B3.3** | `DashSpec.Surface.Blazor` → `Sdk.Razor`; move `Components/`, `Commands/`, `Services/Presentation`, `Services/Rendering`, `DashboardSessionService` | **Done** (`develop`): Host keeps `App`/`Routes`/`Admin` |
 | **B3.4** | Host `Program`: `AddDashSpecBlazorViewerShell` + `AddDashSpecBlazorViewerSession` + `AddDashSpecHostViewerPlatform` (adapters only) + deploy services | **Done**: `AddDashSpecPlanetHostAsync` + `UseDashSpecPlanetHost` |
 | **B3.5** | Arch: `Host_must_not_reference_Presentation`; existing `Surface_Blazor_must_not_reference_Host` | **Done** (local): Host dropped `DashSpec.Presentation` ref; `FilterLargeListOptions` SSOT in Core |
-| **B3.6** | Smoke: `DashSpec.Host.E2E` or one `WebApplicationFactory` open `/` | **Partial**: `ViewerHostSmokeTests` (health + `/` shell) green; Playwright dashboard soak WIP |
+| **B3.6** | Smoke: `DashSpec.Host.E2E` (Playwright `/` + demo soak) | **Done**: 5/5 E2E; `ViewerHostSmokeTests` + `JavaScriptSmokeTests` green |
 
 ## Non-goals
 
