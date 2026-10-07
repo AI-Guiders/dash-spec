@@ -29,6 +29,7 @@
     <Compile Include="ReportScopePlacementTests.fs" />
     <Compile Include="ModuleLinkTests.fs" />
     <Compile Include="ModuleHeaderParserTests.fs" />
+    <Compile Include="ModuleImportProjectTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />

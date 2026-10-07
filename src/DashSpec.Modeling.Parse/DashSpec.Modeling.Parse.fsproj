@@ -99,6 +99,7 @@
     <Compile Include="ParseOptions.fs" />
     <Compile Include="Phrase\PhraseLineReader.fs" />
     <Compile Include="Phrase\PhraseTemplateMatcher.fs" />
+    <Compile Include="Document\ModuleImportGuard.fs" />
     <Compile Include="Card\CardTypes.fs" />
     <Compile Include="Card\CardFlowInputParser.fs" />
     <Compile Include="Card\CardInteriorFlowParser.fs" />
@@ -120,13 +121,15 @@
     <Compile Include="Document\ModuleHeaderTypes.fs" />
     <Compile Include="Document\ModuleHeaderParser.fs" />
     <Compile Include="Document\DocumentTypes.fs" />
-    <Compile Include="Document\ModuleImportResolver.fs" />
+    <Compile Include="Project\DashSpecProjectConfig.fs" />
+    <Compile Include="Project\DashSpecProjectIndex.fs" />
     <Compile Include="Document\ReportTimePolicyParser.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
     <Compile Include="Document\DashboardValidationBridge.fs" />
     <Compile Include="Document\DashboardValidator.fs" />
     <Compile Include="Document\IncludeExpander.fs" />
+    <Compile Include="Document\ModuleImportResolver.fs" />
     <Compile Include="Document\DashflowDocumentResolver.fs" />
     <Compile Include="Document\DocumentFlowMaterializer.fs" />
     <Compile Include="Document\TabParser.fs" />
@@ -146,6 +149,7 @@
     <Compile Include="Document\DocumentModuleParser.fs" />
     <Compile Include="Document\DashboardParser.fs" />
     <Compile Include="Document\DashboardComposer.fs" />
+    <Compile Include="Document\DashSpecCompiler.fs" />
     <Compile Include="Document\TabModuleParser.fs" />
   </ItemGroup>
 </Project>

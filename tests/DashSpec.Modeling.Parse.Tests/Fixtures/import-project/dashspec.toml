@@ -1,0 +1,7 @@
+root_namespace = "Demo"
+disable_legacy_includes = true
+
+[[index]]
+namespace = "Demo.Charts.Diagrams"
+kind = "diagrams"
+glob = "units/*.dashdiagram"

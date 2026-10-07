@@ -14,6 +14,7 @@ open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Filter
 open DashSpec.Modeling.Parse.Transform
+open DashSpec.Modeling.Parse.Document
 
 module CardParser =
 
@@ -397,6 +398,7 @@ module CardParser =
 
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
             reader.SkipNewlines()
+            ModuleImportGuard.rejectModuleImportInBody reader $"Card '{id}'"
             if BlockSyntax.isBlockEnd reader "card" (Some id) then ()
             elif reader.TryKeyword "title" then
                 reader.Expect TokenKind.Eq
