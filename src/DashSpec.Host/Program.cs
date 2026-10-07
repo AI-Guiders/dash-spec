@@ -186,6 +186,11 @@ ConnectorPluginLoader.RegisterPlugins(
     NullLogger.Instance);
 
 builder.Services.AddDashSpecViewerPlatform();
+builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportRuntimePaths, DashSpec.Host.Services.Platform.HostReportRuntimePaths>();
+builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportConnectorResolver, DashSpec.Host.Services.Platform.HostReportConnectorResolver>();
+builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportParseOptionsSource, DashSpec.Host.Services.Platform.HostReportParseOptionsSource>();
+builder.Services.AddSingleton<DashSpec.Execution.Runtime.Platform.IReportBootstrapEnvironment, DashSpec.Host.Services.Platform.HostReportBootstrapEnvironment>();
+builder.Services.AddSingleton<DashSpec.Core.Platform.IReportFieldOptionsCache, DashSpec.Host.Services.Platform.HostReportFieldOptionsCache>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IFieldOptionsCache, FieldOptionsCache>();
 
