@@ -259,6 +259,38 @@ module DocumentWiringGraphBuilder =
     let private scopeDataLinks (sections: FlowGraphSections) =
         FlowGraphSections.linksFor sections FlowGraphKind.Data
 
+    let private scopePlacementLinks (sections: FlowGraphSections) =
+        FlowGraphSections.linksFor sections FlowGraphKind.Placement
+
+    let private chromeNodeForPlacement (toNode: string) =
+        match FlowPlacementAnchors.tryPlacementAnchor toNode with
+        | Some FlowPlacementAnchors.PlacementAnchor.Report -> Some chromeDashboard
+        | Some (FlowPlacementAnchors.PlacementAnchor.Page pageId) -> Some($"chrome.page.{pageId}")
+        | Some (FlowPlacementAnchors.PlacementAnchor.Card cardId) -> Some(chromeCard cardId)
+        | None -> None
+
+    let private addScopePlacementFlowLinks
+        (nodes: Dictionary<string, WiringNode>)
+        (edges: ResizeArray<WiringEdge>)
+        (links: IReadOnlyList<FlowLinkDef>)
+        (scope: string option)
+        =
+        for link in links do
+            match chromeNodeForPlacement link.ToNode with
+            | None -> ()
+            | Some chromeNode ->
+                addNode nodes link.FromNode WiringNodeKind.Filter scope
+                addNode nodes chromeNode WiringNodeKind.Chrome scope
+
+                addEdge
+                    edges
+                    { From = link.FromNode
+                      FromPort = link.FromPort
+                      To = chromeNode
+                      ToPort = Some "toolbar"
+                      Kind = WiringEdgeKind.Route
+                      Scope = scope }
+
     let private addScopeDataFlowLinks
         (nodes: Dictionary<string, WiringNode>)
         (edges: ResizeArray<WiringEdge>)
@@ -357,6 +389,7 @@ module DocumentWiringGraphBuilder =
                 match page.ScopeFlow with
                 | Some flow ->
                     let pageScope = Some $"page:{page.Id}"
+                    addScopePlacementFlowLinks nodes edges (scopePlacementLinks flow.Sections) pageScope
                     addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) pageScope
                     addScopeDataFlowLinks nodes edges document.Filters (scopeDataLinks flow.Sections) pageScope
                 | None -> ()
@@ -364,8 +397,16 @@ module DocumentWiringGraphBuilder =
         match document.ReportScopeFlow with
         | Some flow ->
             let reportScope = Some "report"
+            addScopePlacementFlowLinks nodes edges (scopePlacementLinks flow.Sections) reportScope
             addScopeFlowLinks edges (scopeRoutingLinks flow.Sections) reportScope
             addScopeDataFlowLinks nodes edges document.Filters (scopeDataLinks flow.Sections) reportScope
         | None -> ()
+
+        for card in document.Cards do
+            match card.InteriorFlow with
+            | Some interior ->
+                let scope = Some $"card:{card.Id}"
+                addScopePlacementFlowLinks nodes edges (scopePlacementLinks interior.Sections) scope
+            | None -> ()
 
         WiringGraph.create nodes.Values edges

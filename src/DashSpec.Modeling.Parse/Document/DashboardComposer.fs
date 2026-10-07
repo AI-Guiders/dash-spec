@@ -64,7 +64,7 @@ module rec DashboardComposer =
             else
                 document
 
-        DocumentFlowMaterializer.materialize merged
+        DocumentCompilePipeline.completeDocument merged
 
     let parseDefault (text: string) (specDirectory: string option) =
         parse text specDirectory DashSpecParseOptions.defaultOptions
@@ -208,9 +208,4 @@ module rec DashboardComposer =
                 Dashflow = dashflow
                 DashflowPath = dashflowPath }
 
-        let withGraph =
-            { merged with WiringGraph = DocumentWiringGraphBuilder.build merged }
-
-        let materialized = DocumentFlowMaterializer.materialize withGraph
-        DashboardValidator.validate materialized
-        materialized
+        DocumentCompilePipeline.completeDocument merged

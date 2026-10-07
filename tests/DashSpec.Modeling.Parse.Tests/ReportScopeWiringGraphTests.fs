@@ -32,10 +32,10 @@ report "Scope"
   filter date usage_date on usage_date as "Date"
   filter field app_name on dbo.t.app as "App"
 
-  show flow
-    usage_date -> [toolbar] chrome.dashboard
-    app_name -> [toolbar] chrome.dashboard
-  end show flow
+  placement flow
+    usage_date -> report
+    app_name -> report
+  end placement flow
 
   card peak as "Peak"
   diagram ref drill table

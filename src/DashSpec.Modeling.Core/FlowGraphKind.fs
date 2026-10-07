@@ -6,6 +6,7 @@ open System
 [<RequireQualifiedAccess>]
 type FlowGraphKind =
     | Data
+    | Placement
     | Show
     | Wire
     | Action
@@ -21,6 +22,7 @@ module FlowGraphKindRegistry =
     let private definitions: FlowGraphKindDefinition[] =
         [|
             { Kind = FlowGraphKind.Data; Keyword = "data"; BlockEndId = "flow" }
+            { Kind = FlowGraphKind.Placement; Keyword = "placement"; BlockEndId = "flow" }
             { Kind = FlowGraphKind.Show; Keyword = "show"; BlockEndId = "flow" }
             { Kind = FlowGraphKind.Wire; Keyword = "wire"; BlockEndId = "flow" }
             { Kind = FlowGraphKind.Action; Keyword = "action"; BlockEndId = "flow" }
