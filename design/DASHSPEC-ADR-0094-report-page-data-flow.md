@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md) |
 

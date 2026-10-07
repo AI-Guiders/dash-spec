@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · partial (S0–S1 in repo; BFF S2 not started)|
 | **Date** | 2026-10-02 |
 | **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md) |
 

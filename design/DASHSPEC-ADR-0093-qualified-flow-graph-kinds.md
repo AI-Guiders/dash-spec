@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md), [ADR-0092](DASHSPEC-ADR-0092-report-scope-routing-and-events.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md) |
 

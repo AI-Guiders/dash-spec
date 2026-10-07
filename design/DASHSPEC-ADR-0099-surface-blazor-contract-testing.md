@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · partial (B1–B4 shipped; B3 Program split + L3 fakes pending)|
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
