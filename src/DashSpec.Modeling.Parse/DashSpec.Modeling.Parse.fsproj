@@ -134,6 +134,7 @@
     <Compile Include="Document\ReportScopeFlowParser.fs" />
     <Compile Include="Document\ReportScopeFlowApplicator.fs" />
     <Compile Include="Document\ReportScopeDataFlowApplicator.fs" />
+    <Compile Include="Document\DashboardShellWiringPipeline.fs" />
     <Compile Include="Document\DocumentWiringGraphBuilder.fs" />
     <Compile Include="Document\DashboardShellParser.fs" />
     <Compile Include="Document\DocumentModuleParser.fs" />

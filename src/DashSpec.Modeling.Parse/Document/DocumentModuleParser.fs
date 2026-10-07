@@ -103,8 +103,7 @@ module rec DocumentModuleParser =
                 (result.Shell.DashboardFilters :> IReadOnlyList<_>)
                 result.Shell.ToolbarBoard
 
-        ReportScopeFlowApplicator.apply result.Shell
-        ReportScopeDataFlowApplicator.apply result.Shell
+        DashboardShellWiringPipeline.apply result.Shell
 
         let cards = TabParser.assignTabs (result.Shell.Cards :> IReadOnlyList<_>) tabs
 
@@ -161,8 +160,7 @@ module rec DocumentModuleParser =
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
 
-        ReportScopeFlowApplicator.apply dashShell
-        ReportScopeDataFlowApplicator.apply dashShell
+        DashboardShellWiringPipeline.apply dashShell
 
         let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
@@ -253,8 +251,7 @@ module rec DocumentModuleParser =
         if result.Shell.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
 
-        ReportScopeFlowApplicator.apply result.Shell
-        ReportScopeDataFlowApplicator.apply result.Shell
+        DashboardShellWiringPipeline.apply result.Shell
 
         let embeddedFilters =
             DashboardShellContext.mergeFilterScopes
