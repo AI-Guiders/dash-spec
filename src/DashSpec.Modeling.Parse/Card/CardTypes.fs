@@ -107,7 +107,7 @@ type CardFlowInput =
 
 [<CLIMutable>]
 type CardInteriorFlowDefinition =
-    { Links: IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.FlowLinkDef> }
+    { Sections: DashSpec.Modeling.Parse.DataFlow.FlowGraphSections }
 
 [<CLIMutable>]
 type CardDiagramSlot =
