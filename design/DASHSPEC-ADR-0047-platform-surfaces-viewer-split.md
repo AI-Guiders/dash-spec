@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · partial (Platform bootstrap + HeadlessReportSession; Blazor viewer shell DI; Host deploy entry remains) |
+| **Status** | Accepted · **viewer in `DashSpec.Surface.Blazor`** ([ADR-0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) B3); `DashSpec.Host` = planet deploy entry only |
 | **Date** | 2026-09-01 |
 | **Relates to** | [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md) · [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md) · [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) · [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md) · [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md) · [ADR-0043](DASHSPEC-ADR-0043-filter-command-palette.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) · [GUIDERS-ADR-0053](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0053-planet-responsibilities.md) · [GUIDERS-ADR-0055](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0055-surface-wpf-guild-deck-authoring.md) · demo [ADR 2026-07-07](https://github.com/AI-Guiders/ursa-license-usage/blob/main/docs/adr/ADR_2026-07-07_DashSpec_Product_Boundaries_RU.md) · [dash-spec-studio KB](https://github.com/AI-Guiders/kb/blob/main/knowledge/work/projects/aiguiders-open/dash-spec-studio/README.md) |
 
