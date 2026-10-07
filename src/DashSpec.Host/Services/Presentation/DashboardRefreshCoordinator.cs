@@ -195,9 +195,10 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                     return Task.CompletedTask;
                 }
 
+                var formatted = RenderErrorFormatter.ForCard(ex, cardDef);
                 var errorSlots = prior.ToDictionary(
                     static pair => pair.Key,
-                    pair => pair.Value with { Error = ex.Message },
+                    pair => pair.Value with { Error = formatted },
                     StringComparer.OrdinalIgnoreCase);
                 Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = errorSlots });
                 NotifyStateChanged();
@@ -305,7 +306,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                         _session.SpecLibrary,
                         _vizPlugins,
                         dashboardFilters,
-                        ex.Message,
+                        RenderErrorFormatter.ForCard(ex, card),
                         _session.Document)));
                 }
             })).ConfigureAwait(false);
