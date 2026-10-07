@@ -253,10 +253,16 @@ module rec DocumentModuleParser =
 
         ReportScopeFlowApplicator.apply result.Shell
 
+        let embeddedFilters =
+            DashboardShellContext.mergeFilterScopes
+                None
+                (result.Shell.ShellFilters :> IReadOnlyList<_>)
+                [| result.Shell.Filters :> IReadOnlyList<_>; result.Shell.TabLocalFilters :> IReadOnlyList<_> |]
+
         // ADR-0011 embed: parent shell owns connect/flow and shared row types; tab module contributes report body only.
         { TabId = tabId
           Label = result.Shell.TabModuleLabel
-          Filters = result.Shell.ExportedTabLocalFilters
+          Filters = embeddedFilters
           Cards = result.Shell.Cards :> IReadOnlyList<_>
           LayoutBoard = result.Shell.LayoutBoard
           ModuleDiagrams = Some(exportModuleDiagrams result.Shell.Includes)
