@@ -16,10 +16,12 @@
         title = "Analytics"
         card period_peak_by_app as "Peak by app (period)"
             show flow
-                period_grain -> [panel] chrome.card.period_peak_by_app
-                period_start -> [panel] chrome.card.period_peak_by_app
+                period_grain -> [toolbar] chrome.card.period_peak_by_app
+                period_start -> [toolbar] chrome.card.period_peak_by_app
             end show flow
-            input rows from period_peak_tz.rows
+            data flow
+                period_peak_tz [rows] -> [rows] __diagram__
+            end data flow
             diagram demo_period_peak_by_app_bar
                 bind
                     period_grain, period_start, app_name
@@ -27,7 +29,9 @@
             end card
 
             card peak_apps_heatmap as "**Peak apps** per user"
-                input rows from peak_apps_tz.rows
+                data flow
+                    peak_apps_tz [rows] -> [rows] __diagram__
+                end data flow
                 diagram demo_peak_apps_heatmap
                     bind
                         usage_date, user_name
@@ -40,9 +44,11 @@
 
                 card idle_table as "Idle minutes (user × app)"
                     show flow
-                        idle_top -> [panel] chrome.card.idle_table
+                        idle_top -> [toolbar] chrome.card.idle_table
                     end show flow
-                    input rows from idle_tz.rows
+                    data flow
+                        idle_tz [rows] -> [rows] __diagram__
+                    end data flow
                     diagram demo_idle_table
                         bind
                             usage_date, user_name, app_name
@@ -50,7 +56,9 @@
                     end card
 
                     card idle_histogram as "Idle minutes (histogram)"
-                        input rows from idle_tz.rows
+                        data flow
+                            idle_tz [rows] -> [rows] __diagram__
+                        end data flow
                         diagram demo_idle_histogram
                             bind
                                 usage_date, user_name, app_name
@@ -58,7 +66,9 @@
                         end card
 
                         card idle_vs_peak_scatter as "Idle vs peak apps"
-                            input rows from idle_scatter_tz.rows
+                            data flow
+                                idle_scatter_tz [rows] -> [rows] __diagram__
+                            end data flow
                             diagram demo_idle_vs_peak_scatter
                                 bind
                                     usage_date, user_name, app_name
@@ -66,7 +76,9 @@
                             end card
 
                             card idle_by_app_box as "Idle minutes by app (box)"
-                                input rows from idle_tz.rows
+                                data flow
+                                    idle_tz [rows] -> [rows] __diagram__
+                                end data flow
                                 diagram demo_idle_by_app_box
                                     bind
                                         usage_date, user_name, app_name
@@ -75,10 +87,12 @@
 
                                 card peak_by_app_treemap as "Peak by app (treemap)"
                                     show flow
-                                        period_grain -> [panel] chrome.card.peak_by_app_treemap
-                                        period_start -> [panel] chrome.card.peak_by_app_treemap
+                                        period_grain -> [toolbar] chrome.card.peak_by_app_treemap
+                                        period_start -> [toolbar] chrome.card.peak_by_app_treemap
                                     end show flow
-                                    input rows from period_peak_tz.rows
+                                    data flow
+                                        period_peak_tz [rows] -> [rows] __diagram__
+                                    end data flow
                                     diagram demo_peak_by_app_treemap
                                         bind
                                             period_grain, period_start, app_name
@@ -86,7 +100,9 @@
                                     end card
 
                                     card peak_gauge as "Peak concurrent (gauge)"
-                                        input rows from daily_peak_tz.rows
+                                        data flow
+                                            daily_peak_tz [rows] -> [rows] __diagram__
+                                        end data flow
                                         diagram demo_peak_gauge
                                             bind
                                                 usage_date, user_name, app_name
@@ -95,10 +111,12 @@
 
                                         card peak_by_app_windrose as "Peak by app (wind rose)"
                                             show flow
-                                                period_grain -> [panel] chrome.card.peak_by_app_windrose
-                                                period_start -> [panel] chrome.card.peak_by_app_windrose
+                                                period_grain -> [toolbar] chrome.card.peak_by_app_windrose
+                                                period_start -> [toolbar] chrome.card.peak_by_app_windrose
                                             end show flow
-                                            input rows from period_peak_tz.rows
+                                            data flow
+                                                period_peak_tz [rows] -> [rows] __diagram__
+                                            end data flow
                                             diagram demo_peak_by_app_windrose
                                                 bind
                                                     period_grain, period_start, app_name

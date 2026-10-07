@@ -53,7 +53,7 @@ module FlowGraphKindRegistry =
 
     let allowedKinds (scope: FlowGraphScope) =
         match scope with
-        | FlowGraphScope.ReportOrPage -> [| FlowGraphKind.Show; FlowGraphKind.Wire; FlowGraphKind.Action |]
+        | FlowGraphScope.ReportOrPage -> allKinds
         | FlowGraphScope.CardInterior -> allKinds
 
     let isAllowed (scope: FlowGraphScope) (kind: FlowGraphKind) =

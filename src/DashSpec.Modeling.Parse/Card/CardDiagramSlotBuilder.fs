@@ -158,8 +158,16 @@ module CardDiagramSlotBuilder =
                           FlowInput = slotFlowInput }
                 | None, _ ->
                     raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a diagram."))
-                | _, None ->
-                    raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a data block, flow input, or datasource."))
+                | Some diagram, None ->
+                    built.[slotRef] <-
+                        { SlotRef = slotRef
+                          Diagram = diagram
+                          DataSource = unboundFlowDataSource
+                          BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
+                          Legend = scratch.Legend
+                          Presentation = scratch.Presentation
+                          SeriesTransform = scratch.SeriesTransform
+                          FlowInput = slotFlowInput }
 
             Some(built :> IReadOnlyDictionary<_, _>)
 
