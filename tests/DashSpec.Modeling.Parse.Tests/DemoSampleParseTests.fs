@@ -25,3 +25,34 @@ module DemoSampleParseTests =
         Assert.True(document.Dashflow.IsSome)
         Assert.Equal(8, document.Dashflow.Value.Sources.Length)
         Assert.True(document.Cards |> Seq.forall (fun c -> c.FlowInput.IsSome))
+
+    [<Fact>]
+    let ``demo soak reference scan collects diagram presets`` () =
+        let path = Path.Combine(samplesDemoDir, "demo-soak.dashspec")
+        let text = File.ReadAllText path
+        let diagramIds, _ = ReportReferenceScanner.scanModuleText text
+
+        Assert.True(diagramIds.Contains "demo_peak_kpi")
+        Assert.True(diagramIds.Contains "demo_events_detail_table")
+        Assert.Equal(9, diagramIds.Count)
+
+    [<Fact>]
+    let ``demo soak glob ignores unreferenced broken diagram file`` () =
+        let diagramsDir = Path.Combine(samplesDemoDir, "diagrams")
+        let junkName = "_link-test-broken-" + Guid.NewGuid().ToString("N") + ".dashdiagram"
+        let junkPath = Path.Combine(diagramsDir, junkName)
+
+        File.WriteAllText(junkPath, "@diagram link_test_broken\nTHIS IS NOT VALID\n")
+
+        try
+            let path = Path.Combine(samplesDemoDir, "demo-soak.dashspec")
+            let text = File.ReadAllText path
+            let document =
+                DashboardComposer.parse text (Some samplesDemoDir) DashSpecParseOptions.defaultOptions
+
+            Assert.Equal(18, document.Cards.Count)
+        finally
+            try
+                File.Delete junkPath
+            with _ ->
+                ()
