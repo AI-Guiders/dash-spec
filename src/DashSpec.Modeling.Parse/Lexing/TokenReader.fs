@@ -359,6 +359,12 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
 
     member internal _.SetTokenIndex value = index <- value
 
+    /// Independent cursor over the same token stream (for lookahead scans).
+    member this.Fork() =
+        let sibling = TokenReader(tokens, ?sourceText = sourceText)
+        sibling.SetTokenIndex index
+        sibling
+
     member internal _.EndOffset(tokenIndex: int) =
         let token = tokens.[tokenIndex]
         token.Start + token.Length
