@@ -1,5 +1,5 @@
 using DashSpec.Core.Analysis;
-using DashSpec.Host.Configuration;
+using DashSpec.Core.Catalog;
 using DashSpec.Host.Plugins;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 

@@ -1,3 +1,5 @@
+using DashSpec.Core.Catalog;
+
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Runtime-контекст Host, зафиксированный при старте (connectors/plugins из @runtime).</summary>

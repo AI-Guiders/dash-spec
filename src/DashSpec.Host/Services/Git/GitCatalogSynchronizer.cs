@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using DashSpec.Host.Configuration;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 
 namespace DashSpec.Host.Services.Git;

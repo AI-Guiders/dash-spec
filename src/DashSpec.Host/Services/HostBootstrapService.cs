@@ -1,6 +1,8 @@
 using DashSpec.Core.Localization;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
+using DashSpec.Core.Catalog;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;

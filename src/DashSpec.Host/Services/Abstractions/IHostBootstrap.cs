@@ -1,3 +1,4 @@
+using DashSpec.Core.Catalog;
 using DashSpec.Host.Configuration;
 
 namespace DashSpec.Host.Services.Abstractions;

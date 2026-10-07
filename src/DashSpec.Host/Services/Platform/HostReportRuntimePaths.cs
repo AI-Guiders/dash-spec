@@ -1,4 +1,5 @@
 using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 
 namespace DashSpec.Host.Services.Platform;

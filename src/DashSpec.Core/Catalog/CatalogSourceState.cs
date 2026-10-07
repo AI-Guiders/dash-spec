@@ -1,6 +1,6 @@
-namespace DashSpec.Host.Configuration;
+namespace DashSpec.Core.Catalog;
 
-/// <summary>Текущий catalog bootstrap — обновляется при git pull.</summary>
+/// <summary>Current catalog bootstrap — updated on git pull.</summary>
 public sealed class CatalogSourceState
 {
     private CatalogBootstrap _bootstrap;

@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,6 @@
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;

@@ -1,3 +1,4 @@
+using DashSpec.Core.Catalog;
 using DashSpec.Core.Localization;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
@@ -15,6 +16,7 @@ using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Security;
 using DashSpec.Host.Services;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Settings;
 using DashSpec.Host.Services.Connectors;

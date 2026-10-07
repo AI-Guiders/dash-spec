@@ -6,6 +6,7 @@ using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Host.Commands;
 using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Services;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
