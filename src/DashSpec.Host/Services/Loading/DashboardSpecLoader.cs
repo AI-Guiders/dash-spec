@@ -1,29 +1,16 @@
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Execution.Compilation;
 using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Execution.Resolution;
-using DashSpec.Core.Runtime;
-using DashSpec.Execution.Runtime;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
-using DashSpec.Host.Configuration;
-using DashSpec.Host.Plugins;
-using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Connectors;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Host.Configuration;
+using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Loading;
 
 public sealed class DashboardSpecLoader(
-    RuntimeConnectorResolver runtimeConnectorResolver,
-    DashSpecHostContext hostContext,
-    IHostPathResolver pathResolver,
-    DashSpecParseOptionsProvider parseOptionsProvider,
-    IFieldOptionsCache fieldOptionsCache,
-    ILogger<DashboardSpecLoader> logger,
-    IReportCompiler reportCompiler) : IDashboardSpecLoader, IReportSpecBootstrap
+    IReportSpecBootstrap bootstrap,
+    DashSpecHostContext hostContext) : IDashboardSpecLoader
 {
     public async Task<LoadedDashboard> LoadFromTextAsync(
         string text,
@@ -32,60 +19,46 @@ public sealed class DashboardSpecLoader(
         CancellationToken cancellationToken = default,
         ReportLoadOptions? options = null)
     {
-        options ??= new ReportLoadOptions();
-        var entryRuntime = DashSpecParser.ReadRuntimePath(text);
-        if (string.IsNullOrWhiteSpace(entryRuntime))
-        {
-            throw new InvalidOperationException(
-                "В .dashspec нет @runtime — укажите runtime { manifest = \"...\" } в блоке @dashboard/@tab.");
-        }
-
-        var configPath = pathResolver.ResolveRuntimeConfigPath(
-            specFullPath,
+        var loaded = await bootstrap.LoadFromTextAsync(
             text,
-            hostContext.DefaultSpecDirectory);
-
-        var compile = reportCompiler.Compile(
-            text,
-            Path.GetDirectoryName(specFullPath),
-            parseOptionsProvider.CreateOptions());
-        var document = compile.Document;
-        var library = SpecLibraryComposer.Load(
             specFullPath,
-            document.DiagramLibraryPath,
-            document.PalettePath,
-            hostContext.DefaultSpecDirectory,
-            document);
-        _ = SpecResolver.Resolve(document, library);
-        var connector = runtimeConnectorResolver.Resolve(configPath, document.ConnectorId);
-        var filterIndex = DashboardBootstrap.IndexFilters(document);
-        var filters = DashboardBootstrap.CreateInitialFilters(document, DateOnly.FromDateTime(DateTime.UtcNow));
-        var fieldOptions = options.LoadFieldOptions
-            ? await LoadFieldOptionsAsync(document, connector, configPath, cancellationToken, options.FieldOptionsTimeout)
-                .ConfigureAwait(false)
-            : new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-
-        return new LoadedDashboard(
-            document,
-            library,
-            connector,
-            filterIndex,
-            filters,
-            fieldOptions,
             sourceLabel,
-            Path.GetDirectoryName(specFullPath),
-            configPath);
+            cancellationToken,
+            options).ConfigureAwait(false);
+        return ToLoadedDashboard(loaded);
     }
 
-    async Task<Execution.Runtime.Platform.ReportBootstrapResult> IReportSpecBootstrap.LoadFromTextAsync(
+    async Task<ReportBootstrapResult> IReportSpecBootstrap.LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
         CancellationToken cancellationToken,
-        ReportLoadOptions? options)
-    {
-        var loaded = await LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options).ConfigureAwait(false);
-        return new Execution.Runtime.Platform.ReportBootstrapResult(
+        ReportLoadOptions? options) =>
+        await bootstrap.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options)
+            .ConfigureAwait(false);
+
+    public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
+        DashboardDocument document,
+        IDataSourceConnector connector,
+        CancellationToken cancellationToken = default,
+        TimeSpan? timeout = null) =>
+        bootstrap.LoadFieldOptionsAsync(
+            document,
+            connector,
+            hostContext.StartupRuntimeConfigPath,
+            cancellationToken,
+            timeout);
+
+    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> IReportSpecBootstrap.LoadFieldOptionsAsync(
+        DashboardDocument document,
+        IDataSourceConnector connector,
+        string runtimeConfigPath,
+        CancellationToken cancellationToken,
+        TimeSpan? timeout) =>
+        bootstrap.LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout);
+
+    private static LoadedDashboard ToLoadedDashboard(ReportBootstrapResult loaded) =>
+        new(
             loaded.Document,
             loaded.Library,
             loaded.Connector,
@@ -95,116 +68,4 @@ public sealed class DashboardSpecLoader(
             loaded.SourceLabel,
             loaded.SpecDirectory,
             loaded.RuntimeConfigPath);
-    }
-
-    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> IReportSpecBootstrap.LoadFieldOptionsAsync(
-        DashboardDocument document,
-        IDataSourceConnector connector,
-        string runtimeConfigPath,
-        CancellationToken cancellationToken,
-        TimeSpan? timeout) =>
-        LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout);
-
-    public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
-        DashboardDocument document,
-        IDataSourceConnector connector,
-        CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null) =>
-        LoadFieldOptionsCoreAsync(
-            document,
-            connector,
-            runtimeKey: hostContext.StartupRuntimeConfigPath,
-            cancellationToken,
-            timeout ?? TimeSpan.FromSeconds(20));
-
-    private Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
-        DashboardDocument document,
-        IDataSourceConnector connector,
-        string runtimeConfigPath,
-        CancellationToken cancellationToken,
-        TimeSpan? timeout) =>
-        LoadFieldOptionsCoreAsync(
-            document,
-            connector,
-            runtimeConfigPath,
-            cancellationToken,
-            timeout ?? TimeSpan.FromSeconds(20));
-
-    private async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsCoreAsync(
-        DashboardDocument document,
-        IDataSourceConnector connector,
-        string runtimeKey,
-        CancellationToken cancellationToken,
-        TimeSpan timeout)
-    {
-        var fieldFilters = document.Filters.Where(x => x.Kind is FilterKind.Field).ToList();
-        if (fieldFilters.Count == 0)
-        {
-            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        var tasks = fieldFilters.Select(filter =>
-            LoadOneFieldOptionsAsync(filter, connector, runtimeKey, timeout, cancellationToken));
-        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-        return results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase);
-    }
-
-    private async Task<(string Name, IReadOnlyList<string> Values)> LoadOneFieldOptionsAsync(
-        FilterDefinition filter,
-        IDataSourceConnector connector,
-        string runtimeKey,
-        TimeSpan timeout,
-        CancellationToken cancellationToken)
-    {
-        if (!QueryCompiler.CanLoadDistinctFieldOptions(filter))
-        {
-            logger.LogDebug(
-                "Skipping distinct field options for {FilterName} (column '{Column}' is not table-qualified).",
-                filter.Name,
-                filter.ColumnReference ?? "");
-            return (filter.Name, []);
-        }
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var sql = QueryCompiler.BuildDistinctFieldSql(filter);
-        var cacheKey = $"{runtimeKey}:{connector.Id}:{sql}";
-
-        try
-        {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(timeout);
-            var values = await fieldOptionsCache
-                .GetOrLoadAsync(
-                    cacheKey,
-                    token => connector.QueryDistinctStringsAsync(sql, token),
-                    cts.Token)
-                .ConfigureAwait(false);
-            sw.Stop();
-            logger.LogInformation(
-                "Loaded {Count} field options for filter {FilterName} in {ElapsedMs}ms",
-                values.Count,
-                filter.Name,
-                sw.ElapsedMilliseconds);
-            return (filter.Name, values);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            sw.Stop();
-            logger.LogWarning(
-                "Timed out loading field options for filter {FilterName} after {TimeoutSeconds}s",
-                filter.Name,
-                timeout.TotalSeconds);
-            return (filter.Name, []);
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            logger.LogWarning(ex, "Failed to load field options for filter {FilterName}", filter.Name);
-            return (filter.Name, []);
-        }
-    }
 }
-
-
-
-
