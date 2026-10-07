@@ -1,6 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Viz;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Presentation;
 
 namespace DashSpec.Host.Plugins.Builtins;
 

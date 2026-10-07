@@ -20,7 +20,6 @@ public sealed class HostUiCopyBaselineTests
         var config = JsonSerializer.Deserialize<HostUiCyrillicBaselineConfig>(json, JsonSerializerOptions.Web)
             ?? throw new InvalidOperationException("Invalid host-ui-cyrillic-baseline.json");
 
-        var hostRoot = Path.Combine(repoRoot, "src", "DashSpec.Host");
         var observed = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var scanRoot in config.ScanRoots)
@@ -33,7 +32,7 @@ public sealed class HostUiCopyBaselineTests
 
             foreach (var file in Directory.EnumerateFiles(absoluteDir, "*.razor", SearchOption.AllDirectories))
             {
-                var relativeFile = Path.GetRelativePath(hostRoot, file).Replace('\\', '/');
+                var relativeFile = Path.GetRelativePath(repoRoot, file).Replace('\\', '/');
                 var lineCount = CountCyrillicLines(File.ReadAllLines(file));
                 if (lineCount > 0)
                 {

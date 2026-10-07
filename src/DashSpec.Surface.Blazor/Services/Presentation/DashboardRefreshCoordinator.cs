@@ -1,0 +1,497 @@
+using DashSpec.Core.Layout;
+using DashSpec.Core.Model;
+using DashSpec.Core.Resolution;
+using DashSpec.Execution.Runtime;
+using DashSpec.Viewer.Plugins;
+using DashSpec.Abstractions.Hosting;
+using DashSpec.Viz.Platform;
+using DashSpec.Viz;
+using DashSpec.Surface.Blazor.Services.Rendering;
+
+namespace DashSpec.Surface.Blazor.Services.Presentation;
+
+/// <summary>Centralized card refresh pipeline: debounce, cancellation, partial updates.</summary>
+public sealed class DashboardRefreshCoordinator : IDisposable
+{
+    private readonly IDashboardSession _session;
+    private readonly VizPluginRegistry _vizPlugins;
+    private readonly DashboardFilterUiState _filters;
+    private CancellationTokenSource? _dashboardApplyCts;
+    private CancellationTokenSource? _cardApplyCts;
+    private CancellationTokenSource? _refreshCts;
+    private long _refreshGeneration;
+    private CancellationTokenSource? _interiorRefreshCts;
+    private long _interiorRefreshGeneration;
+
+    public DashboardRefreshCoordinator(
+        IDashboardSession session,
+        VizPluginRegistry vizPlugins,
+        DashboardFilterUiState filters)
+    {
+        _session = session;
+        _vizPlugins = vizPlugins;
+        _filters = filters;
+    }
+
+    public event Action? StateChanged;
+
+    public Func<Func<Task>, Task>? UiDispatcher { get; set; }
+
+    public bool Busy { get; private set; }
+
+    public string ActivePhaseId { get; set; } = "browse";
+
+    public List<CardRenderResult> Cards { get; } = [];
+
+    public ResolutionContext? DisplayContext { get; set; }
+
+    public IReadOnlyDictionary<string, string>? PageDisplayBindings { get; set; }
+
+    public Func<FilterDisplayContext>? FilterDisplayFactory { get; set; }
+
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+    public void SeedAllCardSkeletons()
+    {
+        var dashboardFilters = _session.Document.DashboardFilters;
+        Cards.Clear();
+        Cards.AddRange(_session.Document.Cards.Select(card => EnrichCard(
+            card,
+            CardRenderSkeletonFactory.CreateLoading(
+                card,
+                _session.SpecLibrary,
+                _vizPlugins,
+                dashboardFilters,
+                _session.Document))));
+    }
+
+    public void ScheduleDashboardApply()
+    {
+        if (!_session.Document.FiltersChrome.IsAutoApply)
+        {
+            return;
+        }
+
+        _dashboardApplyCts?.Cancel();
+        _dashboardApplyCts?.Dispose();
+        _dashboardApplyCts = new CancellationTokenSource();
+        var token = _dashboardApplyCts.Token;
+        _ = DebouncedDashboardApplyAsync(token);
+    }
+
+    public void ScheduleCardApply(string cardId)
+    {
+        if (!_session.Document.FiltersChrome.IsAutoApply)
+        {
+            return;
+        }
+
+        _cardApplyCts?.Cancel();
+        _cardApplyCts?.Dispose();
+        _cardApplyCts = new CancellationTokenSource();
+        var token = _cardApplyCts.Token;
+        _ = DebouncedCardApplyAsync(cardId, token);
+    }
+
+    public Task RefreshAllAsync(CancellationToken cancellationToken = default) =>
+        RefreshCardsAsync(cardIds: null, cancellationToken);
+
+    public Task RefreshDashboardAsync(CancellationToken cancellationToken = default)
+    {
+        var cardIds = ResolveCardsForDashboardRefresh();
+        return RefreshCardsAsync(cardIds, cancellationToken);
+    }
+
+    public Task RefreshCardLocalAsync(string cardId, CancellationToken cancellationToken = default) =>
+        RefreshCardsAsync(CollectCardsForLocalFilterApply(cardId), cancellationToken);
+
+    public Task RefreshSingleCardAsync(string cardId, CancellationToken cancellationToken = default) =>
+        RefreshCardsAsync([cardId], cancellationToken);
+
+    /// <summary>ADR-0066 CardInteriorSlots — drill table only; no Card.Loading / Busy.</summary>
+    public Task RefreshCardInteriorSlotsAsync(string cardId, CancellationToken cancellationToken = default) =>
+        RefreshInteriorSlotsAsync(cardId, cancellationToken);
+
+    public void CancelPendingApplies()
+    {
+        _dashboardApplyCts?.Cancel();
+        _cardApplyCts?.Cancel();
+    }
+
+    public void Dispose()
+    {
+        _dashboardApplyCts?.Cancel();
+        _dashboardApplyCts?.Dispose();
+        _cardApplyCts?.Cancel();
+        _cardApplyCts?.Dispose();
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _interiorRefreshCts?.Cancel();
+        _interiorRefreshCts?.Dispose();
+    }
+
+    private async Task RefreshInteriorSlotsAsync(string cardId, CancellationToken cancellationToken)
+    {
+        _interiorRefreshCts?.Cancel();
+        _interiorRefreshCts?.Dispose();
+        _interiorRefreshCts = new CancellationTokenSource();
+        _interiorRefreshGeneration++;
+        var generation = _interiorRefreshGeneration;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            _interiorRefreshCts.Token);
+        var token = linked.Token;
+        var cardDef = _session.Document.Cards.Single(card =>
+            string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+
+        try
+        {
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
+            var slots = await _session.RenderInteriorSlotsAsync(cardDef, token).ConfigureAwait(false);
+            if (!IsCurrentInteriorRefresh(generation))
+            {
+                return;
+            }
+
+            await DispatchUiAsync(() =>
+            {
+                var index = Cards.FindIndex(card =>
+                    string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = slots });
+                NotifyStateChanged();
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!IsCurrentInteriorRefresh(generation))
+        {
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (!IsCurrentInteriorRefresh(generation))
+            {
+                return;
+            }
+
+            await DispatchUiAsync(() =>
+            {
+                var index = Cards.FindIndex(card =>
+                    string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (index < 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var prior = Cards[index].InteriorSlotRenders;
+                if (prior is null || prior.Count == 0)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var formatted = RenderErrorFormatter.ForCard(ex, cardDef);
+                var errorSlots = prior.ToDictionary(
+                    static pair => pair.Key,
+                    pair => pair.Value with { Error = formatted },
+                    StringComparer.OrdinalIgnoreCase);
+                Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = errorSlots });
+                NotifyStateChanged();
+                return Task.CompletedTask;
+            }).ConfigureAwait(false);
+        }
+    }
+
+    private bool IsCurrentInteriorRefresh(long generation) => generation == _interiorRefreshGeneration;
+
+    private async Task DebouncedDashboardApplyAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(_session.Document.FiltersChrome.DebounceMs, cancellationToken).ConfigureAwait(false);
+            await RefreshDashboardAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task DebouncedCardApplyAsync(string cardId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(_session.Document.FiltersChrome.DebounceMs, cancellationToken).ConfigureAwait(false);
+            await RefreshCardLocalAsync(cardId, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task RefreshCardsAsync(
+        IReadOnlyList<string>? cardIds,
+        CancellationToken cancellationToken)
+    {
+        _refreshCts?.Cancel();
+        _refreshCts?.Dispose();
+        _refreshCts = new CancellationTokenSource();
+        _refreshGeneration++;
+        var generation = _refreshGeneration;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            _refreshCts.Token);
+        var token = linked.Token;
+
+        try
+        {
+            _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
+            var targetIds = ResolveTargetCardIds(cardIds);
+            await SetCardsLoadingAsync(targetIds).ConfigureAwait(false);
+
+            var dashboardFilters = _session.Document.DashboardFilters;
+            var cardDefs = _session.Document.Cards
+                .Where(card => targetIds.Contains(card.Id))
+                .ToList();
+
+            var rendered = await Task.WhenAll(cardDefs.Select(async card =>
+            {
+                token.ThrowIfCancellationRequested();
+                var visibility = CardVisibilityEvaluator.Evaluate(
+                    card,
+                    _filters.SelectedFields,
+                    ActivePhaseId);
+                if (visibility is CardVisibilityOutcome.Hidden)
+                {
+                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreateLoading(
+                        card,
+                        _session.SpecLibrary,
+                        _vizPlugins,
+                        dashboardFilters,
+                        _session.Document) with { Loading = false }));
+                }
+
+                if (visibility is CardVisibilityOutcome.Placeholder)
+                {
+                    var gateMessage = DisplayResolution.ResolveGateMessage(card.Visibility);
+                    if (!string.IsNullOrWhiteSpace(gateMessage))
+                    {
+                        return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreatePlaceholder(
+                            card,
+                            _session.SpecLibrary,
+                            _vizPlugins,
+                            dashboardFilters,
+                            gateMessage,
+                            _session.Document)));
+                    }
+                }
+
+                try
+                {
+                    var result = await _session.RenderCardAsync(card, token).ConfigureAwait(false);
+                    return (card.Id, EnrichCard(card, result));
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreateError(
+                        card,
+                        _session.SpecLibrary,
+                        _vizPlugins,
+                        dashboardFilters,
+                        RenderErrorFormatter.ForCard(ex, card),
+                        _session.Document)));
+                }
+            })).ConfigureAwait(false);
+
+            if (!IsCurrentRefresh(generation))
+            {
+                return;
+            }
+
+            await MergeCardResultsAsync(rendered, generation).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!IsCurrentRefresh(generation))
+        {
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            if (IsCurrentRefresh(generation))
+            {
+                await SetBusyFalseAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    private async Task SetCardsLoadingAsync(IReadOnlySet<string> cardIds)
+    {
+        var dashboardFilters = _session.Document.DashboardFilters;
+        await DispatchUiAsync(() =>
+        {
+            Busy = true;
+            if (Cards.Count != _session.Document.Cards.Count)
+            {
+                SeedAllCardSkeletons();
+            }
+            else
+            {
+                for (var index = 0; index < Cards.Count; index++)
+                {
+                    if (!cardIds.Contains(Cards[index].Id))
+                    {
+                        continue;
+                    }
+
+                    var card = _session.Document.Cards[index];
+                    Cards[index] = EnrichCard(
+                        card,
+                        CardRenderSkeletonFactory.CreateLoading(
+                            card,
+                            _session.SpecLibrary,
+                            _vizPlugins,
+                            dashboardFilters,
+                            _session.Document));
+                }
+            }
+
+            NotifyStateChanged();
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
+    }
+
+    private async Task MergeCardResultsAsync(
+        (string Id, CardRenderResult Result)[] rendered,
+        long generation)
+    {
+        if (!IsCurrentRefresh(generation))
+        {
+            return;
+        }
+
+        await DispatchUiAsync(() =>
+        {
+            foreach (var (id, result) in rendered)
+            {
+                var index = Cards.FindIndex(card =>
+                    string.Equals(card.Id, id, StringComparison.OrdinalIgnoreCase));
+                if (index >= 0)
+                {
+                    Cards[index] = result;
+                }
+            }
+
+            Busy = false;
+            NotifyStateChanged();
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
+    }
+
+    private async Task SetBusyFalseAsync()
+    {
+        await DispatchUiAsync(() =>
+        {
+            Busy = false;
+            NotifyStateChanged();
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
+    }
+
+    private bool IsCurrentRefresh(long generation) => generation == _refreshGeneration;
+
+    private CardRenderResult EnrichCard(CardDefinition card, CardRenderResult render)
+    {
+        if (DisplayContext is null)
+        {
+            return render;
+        }
+
+        var filterDisplay = FilterDisplayFactory?.Invoke();
+        var enriched = DisplayResolutionHost.ApplyCardChrome(
+            DisplayContext,
+            card,
+            render,
+            filterDisplay,
+            PageDisplayBindings);
+        return enriched with { FoldMode = card.Chrome?.Fold ?? CardFoldMode.None };
+    }
+
+    private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)
+    {
+        if (cardIds is { Count: > 0 })
+        {
+            return cardIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        return _session.Document.Cards
+            .Select(card => card.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private IReadOnlyList<string> ResolveCardsForDashboardRefresh()
+    {
+        var cardIds = FiltersToCards.Keys
+            .SelectMany(filterName => FiltersToCards[filterName])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return cardIds.Count > 0
+            ? cardIds
+            : _session.Document.Cards.Select(card => card.Id).ToList();
+    }
+
+    private IReadOnlyList<string> CollectCardsForLocalFilterApply(string cardId)
+    {
+        var cardIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { cardId };
+        var card = _session.Document.Cards.Single(c =>
+            string.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase));
+
+        foreach (var filterName in card.LocalFilters)
+        {
+            foreach (var boundCard in _session.Document.Cards)
+            {
+                if (boundCard.BoundFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
+                {
+                    cardIds.Add(boundCard.Id);
+                }
+            }
+        }
+
+        foreach (var dependent in _session.Document.Cards)
+        {
+            if (string.Equals(dependent.FilterHostCardId, cardId, StringComparison.OrdinalIgnoreCase))
+            {
+                cardIds.Add(dependent.Id);
+            }
+        }
+
+        return cardIds.ToList();
+    }
+
+    private IEnumerable<string> PlacedFilterNames() =>
+        PlacedFilterCollector.Collect(_session.Document);
+
+    private async Task DispatchUiAsync(Func<Task> action)
+    {
+        if (UiDispatcher is not null)
+        {
+            await UiDispatcher(action).ConfigureAwait(false);
+        }
+        else
+        {
+            await action().ConfigureAwait(false);
+        }
+    }
+
+    private void NotifyStateChanged() => StateChanged?.Invoke();
+}

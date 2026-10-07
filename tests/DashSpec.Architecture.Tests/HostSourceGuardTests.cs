@@ -32,9 +32,7 @@ public sealed class HostSourceGuardTests
                 {
                     foreach (var file in Directory.EnumerateFiles(absoluteDir, $"*{extension}", SearchOption.AllDirectories))
                     {
-                        var relativeFile = Path.GetRelativePath(
-                            Path.Combine(repoRoot, "src", "DashSpec.Host"),
-                            file).Replace('\\', '/');
+                        var relativeFile = Path.GetRelativePath(repoRoot, file).Replace('\\', '/');
 
                         var text = File.ReadAllText(file);
                         foreach (var rule in scope.Forbidden)

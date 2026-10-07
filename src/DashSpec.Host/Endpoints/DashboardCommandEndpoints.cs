@@ -1,9 +1,9 @@
 #nullable enable
 using AIGuiders.Platform.Execution.CommandPlane;
-using DashSpec.Host.Commands;
+using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DashSpec.Host.Endpoints;

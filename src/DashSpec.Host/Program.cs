@@ -3,20 +3,21 @@ using DashSpec.Core.Localization;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
-using DashSpec.Host.Commands;
-using DashSpec.Host.Commands.Constructors;
 using DashSpec.Host.Components;
+using DashSpec.Surface.Blazor.Commands;
+using DashSpec.Surface.Blazor.Commands.Constructors;
+using DashSpec.Surface.Blazor.Components;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Endpoints;
 using DashSpec.Host.Middleware;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Host.Plugins;
 using DashSpec.Viewer.Plugins;
-using DashSpec.Host.Services.Localization;
+using DashSpec.Surface.Blazor.Services.Localization;
 using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Host.Security;
-using DashSpec.Host.Services;
+using DashSpec.Surface.Blazor.Services;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Settings;
@@ -26,9 +27,11 @@ using DashSpec.Host.Services.Git;
 using DashSpec.Host.Data;
 using Microsoft.EntityFrameworkCore;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Host.Services.Presentation;
-using DashSpec.Host.Services.Rendering;
+using DashSpec.Surface.Blazor.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Rendering;
 using DashSpec.Host.Services.Diagnostics;
+using DashSpec.Abstractions.Viewer;
+using DashSpec.Surface.Blazor;
 using DashSpec.Surface.Blazor.Configuration;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
@@ -140,6 +143,10 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddSingleton(bootstrap);
 builder.Services.AddSingleton(hostShell);
 builder.Services.AddSingleton<HostPresentationSignals>();
+builder.Services.AddSingleton<ICatalogUsageClient, CatalogUsageClientAdapter>();
+builder.Services.AddSingleton<IViewerExternalLinksProvider, ViewerExternalLinksProviderAdapter>();
+builder.Services.AddSingleton<IViewerShellChrome, ViewerShellChromeAdapter>();
+builder.Services.AddSingleton<IViewerPresentationOptions, ViewerPresentationOptionsAdapter>();
 builder.Services.AddSingleton<ILayoutSlotRendererRegistry, LayoutSlotRendererRegistry>();
 builder.Services.AddSingleton(catalogState);
 builder.Services.AddSingleton(accessOptions);
@@ -192,7 +199,6 @@ builder.Services.AddMemoryCache();
 builder.Services.AddDashSpecHostViewerPlatform();
 builder.Services.AddDashSpecHostViewerSession(uiCulture, displayTimeZone);
 builder.Services.AddSingleton<DashSpec.Host.Services.Health.DashSpecCatalogHealthService>();
-builder.Services.AddSingleton<LoadTrace>();
 builder.Services.AddSingleton<DevSpecReloadNotifier>();
 builder.Services.AddHttpClient();
 
@@ -201,6 +207,11 @@ if (builder.Environment.IsDevelopment())
     builder.Services.AddSingleton<DevSpecResolveService>();
     builder.Services.AddHostedService<DevSpecFileWatcherService>();
 }
+
+builder.Services.AddSingleton<IDevSpecReloadSignal>(sp =>
+    builder.Environment.IsDevelopment()
+        ? new DevSpecReloadSignalAdapter(sp.GetRequiredService<DevSpecReloadNotifier>())
+        : new NullDevSpecReloadSignal());
 
 builder.Services.AddSingleton<GitCatalogSyncService>();
 builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();
@@ -241,6 +252,7 @@ app.MapPluginEndpoints();
 app.MapDashboardCommandEndpoints();
 
 app.MapDashSpecBlazorViewer<App>(
+    typeof(SurfaceAssemblyMarker).Assembly,
     typeof(VizBuiltinsPluginCatalog).Assembly,
     typeof(FilterBuiltinsPluginCatalog).Assembly);
 

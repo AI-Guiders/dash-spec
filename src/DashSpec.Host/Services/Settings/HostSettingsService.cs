@@ -3,8 +3,8 @@ using System.Text;
 using DashSpec.Core.Localization;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
-using DashSpec.Host.Services.Presentation;
-using DashSpec.Presentation.Filters;
+using DashSpec.Surface.Blazor.Services.Presentation;
+using DashSpec.Core.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace DashSpec.Host.Services.Settings;

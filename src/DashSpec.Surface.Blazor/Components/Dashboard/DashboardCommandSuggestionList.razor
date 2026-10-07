@@ -1,0 +1,44 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+@using AIGuiders.Platform.Execution.CommandPlane
+@using DashSpec.Surface.Blazor.Commands
+
+@if (Items.Count > 0)
+{
+    <div class="dash-command-suggest-table" @onmousedown:preventDefault="true">
+        <div class="dash-command-suggest-head" aria-hidden="true">
+            <span class="col-name">id</span>
+            <span class="col-human">Название</span>
+            <span class="col-help">Подсказка</span>
+        </div>
+        <ul id="@Id"
+            class="@CssClass"
+            role="listbox"
+            aria-label="@AriaLabel">
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                var item = Items[i];
+                var index = i;
+                var parts = DashboardFilterCommandDisplay.FormatSuggestionParts(item, CommandContext, TypedLine);
+                <li role="option"
+                    aria-selected="@(index == SelectedIndex)"
+                    class="dash-command-suggest-row @(index == SelectedIndex ? "active" : null)"
+                    @onclick="() => OnSelect.InvokeAsync(item)">
+                    <span class="col-name">@(parts.Secondary ?? "")</span>
+                    <span class="col-human">@parts.Primary</span>
+                    <span class="col-help">@DashboardFilterCommandDisplay.FormatSuggestionHelp(item, CommandContext, TypedLine)</span>
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string CssClass { get; set; } = "";
+    [Parameter] public string AriaLabel { get; set; } = "Commands";
+    [Parameter] public IReadOnlyList<ArgCompletionItem> Items { get; set; } = [];
+    [Parameter] public DashboardFilterContext CommandContext { get; set; } = default!;
+    [Parameter] public string TypedLine { get; set; } = "";
+    [Parameter] public int SelectedIndex { get; set; }
+    [Parameter] public EventCallback<ArgCompletionItem> OnSelect { get; set; }
+}

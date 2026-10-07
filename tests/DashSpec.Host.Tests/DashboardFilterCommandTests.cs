@@ -5,9 +5,9 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Generated;
-using DashSpec.Host.Commands;
-using DashSpec.Host.Commands.Constructors;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Commands;
+using DashSpec.Surface.Blazor.Commands.Constructors;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

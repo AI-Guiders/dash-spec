@@ -1,5 +1,5 @@
 using DashSpec.Core.Model;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Host.Configuration;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

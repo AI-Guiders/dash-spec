@@ -1,10 +1,13 @@
 {
   "$schema": "./host-source-guards.schema.json",
-  "comment": "ADR-0076: regex guards on Host sources; shrink allowlist as composer/view lands.",
+  "comment": "ADR-0076: regex guards on viewer UI sources (Surface.Blazor + Host admin shell); shrink allowlist as composer/view lands.",
   "scopes": [
     {
       "id": "report-nav-heuristic",
-      "paths": ["src/DashSpec.Host/Components", "src/DashSpec.Host/Services/Presentation"],
+      "paths": [
+        "src/DashSpec.Surface.Blazor/Components",
+        "src/DashSpec.Surface.Blazor/Services/Presentation"
+      ],
       "extensions": [".cs", ".razor"],
       "forbidden": [
         {
@@ -24,14 +27,26 @@
         }
       ],
       "allowlist": [
-        { "file": "Components/Pages/Home.razor", "rule": "ARCH-0074-TABS-COUNT" },
-        { "file": "Services/Presentation/DashboardPageController.cs", "rule": "ARCH-0074-PAGES-COUNT" },
-        { "file": "Services/Presentation/DashboardPageController.cs", "rule": "ARCH-0074-ACTIVE-PAGES-COUNT" }
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Pages/Home.razor",
+          "rule": "ARCH-0074-TABS-COUNT"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Services/Presentation/DashboardPageController.cs",
+          "rule": "ARCH-0074-PAGES-COUNT"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Services/Presentation/DashboardPageController.cs",
+          "rule": "ARCH-0074-ACTIVE-PAGES-COUNT"
+        }
       ]
     },
     {
       "id": "ui-no-payload-types",
-      "paths": ["src/DashSpec.Host/Components", "src/DashSpec.Host/Services/Presentation"],
+      "paths": [
+        "src/DashSpec.Surface.Blazor/Components",
+        "src/DashSpec.Surface.Blazor/Services/Presentation"
+      ],
       "extensions": [".cs", ".razor"],
       "forbidden": [
         {
@@ -53,30 +68,72 @@
       "allowlist": []
     },
     {
-      "id": "host-ui-inline-copy",
-      "paths": ["src/DashSpec.Host/Components"],
+      "id": "viewer-ui-inline-copy",
+      "paths": [
+        "src/DashSpec.Surface.Blazor/Components",
+        "src/DashSpec.Host/Components"
+      ],
       "extensions": [".razor"],
       "forbidden": [
         {
           "id": "ARCH-0077-CYRILLIC-INLINE",
           "pattern": "[\\u0400-\\u04FF]",
-          "message": "Inline Cyrillic in Host UI razor is forbidden for new files; legacy files are frozen by host-ui-cyrillic-baseline.json (ADR-0077). Use DashboardLocalizer.T(\"English key\") or escalate to operator."
+          "message": "Inline Cyrillic in viewer UI razor is forbidden for new files; legacy files are frozen by host-ui-cyrillic-baseline.json (ADR-0077). Use DashboardLocalizer.T(\"English key\") or escalate to operator."
         }
       ],
       "allowlist": [
-        { "file": "Components/Dashboard/CardExtensionChrome.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/CardSelectionDetail.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardCatalogPicker.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardCommandPalette.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardCommandSuggestionList.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardFilterCommandBar.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardFiltersSection.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardPagePicker.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardTabBar.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Dashboard/DashboardToolbar.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Pages/Admin.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Pages/Help.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" },
-        { "file": "Components/Pages/Spec.razor", "rule": "ARCH-0077-CYRILLIC-INLINE" }
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/CardExtensionChrome.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/CardSelectionDetail.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCatalogPicker.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCommandPalette.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCommandSuggestionList.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardFilterCommandBar.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardFiltersSection.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardPagePicker.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardTabBar.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardToolbar.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Host/Components/Pages/Admin.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Pages/Help.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        },
+        {
+          "file": "src/DashSpec.Surface.Blazor/Components/Pages/Spec.razor",
+          "rule": "ARCH-0077-CYRILLIC-INLINE"
+        }
       ]
     }
   ]

@@ -1,0 +1,25 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+
+<section class="dash-toolbar">
+    @if (ShowUpload)
+    {
+    <label class="dash-upload-btn secondary @(Busy ? "dash-upload-btn-busy" : null)">
+        @if (Busy)
+        {
+            <span class="spinner spinner-inline" aria-hidden="true"></span>
+            <span>Загрузка…</span>
+        }
+        else
+        {
+            <span>Загрузить .dashspec</span>
+        }
+        <InputFile OnChange="OnUpload" accept=".dashspec" disabled="@Busy" />
+    </label>
+    }
+</section>
+
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool ShowUpload { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnUpload { get; set; }
+}

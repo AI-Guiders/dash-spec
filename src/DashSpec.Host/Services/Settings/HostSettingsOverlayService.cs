@@ -4,8 +4,8 @@ using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Host.Services.Presentation;
-using DashSpec.Presentation.Filters;
+using DashSpec.Surface.Blazor.Services.Presentation;
+using DashSpec.Core.Filters;
 using Microsoft.EntityFrameworkCore;
 using OutWit.Database.EntityFramework.Extensions;
 

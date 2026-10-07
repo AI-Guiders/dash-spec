@@ -13,6 +13,7 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Core.Resolution;
+using DashSpec.Surface.Blazor.Services.Diagnostics;
 
 namespace DashSpec.Host.Services.Diagnostics;
 

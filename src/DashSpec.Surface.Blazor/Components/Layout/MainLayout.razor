@@ -1,0 +1,42 @@
+@inherits LayoutComponentBase
+@using DashSpec.Abstractions.Viewer
+@using DashSpec.Presentation.Filters
+@using DashSpec.Surface.Blazor.Services.Presentation
+@inject IViewerPresentationOptions Bootstrap
+@inject IViewerShellChrome HostShell
+@inject HostPresentationSignals PresentationSignals
+@implements IDisposable
+
+@code {
+    private string Scheme => Bootstrap.ColorScheme is "light" or "contrast"
+        ? "scheme-" + Bootstrap.ColorScheme
+        : string.Empty;
+
+    private string LargeFilterLayoutClass =>
+        FilterLargeListOptions.IsExpand(Bootstrap.LargeFieldFilterLayout)
+            ? "filter-large-expand"
+            : string.Empty;
+
+    protected override void OnInitialized() =>
+        PresentationSignals.Changed += OnPresentationChanged;
+
+    private void OnPresentationChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => PresentationSignals.Changed -= OnPresentationChanged;
+}
+
+<div class="page @Scheme @LargeFilterLayoutClass">
+    <header class="topbar">
+        <div>
+            <strong>@HostShell.ProductTitle</strong>
+        </div>
+        <TopbarNav />
+    </header>
+    @if (HostShell.ShowsSurface("command_bar"))
+    {
+        <HostCommandBar />
+    }
+    <main class="content">
+        @Body
+    </main>
+</div>

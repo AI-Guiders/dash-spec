@@ -4,4 +4,6 @@ namespace DashSpec.Abstractions.Hosting;
 public interface IViewerRuntimeContext
 {
     string StartupRuntimeConfigPath { get; }
+
+    IReadOnlyDictionary<string, string> ReportTimeSettings { get; }
 }
