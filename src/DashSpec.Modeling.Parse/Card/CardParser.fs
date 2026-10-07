@@ -107,16 +107,22 @@ module CardParser =
                     applySplitIndex <- Some namesBeforeApply
                 reader.SkipNewlines()
             else
-                names.Add(reader.ReadIdent())
-                if applySplitIndex.IsNone then
-                    namesBeforeApply <- namesBeforeApply + 1
-                reader.SkipNewlines()
-                if reader.CurrentKind = TokenKind.Comma then reader.Advance()
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': filter wiring belongs in flow (filter -> [panel] chrome.card.{cardId}); filters block is layout/apply only."
+                    )
+                )
 
         reader.SkipNewlines()
         BlockSyntax.expectBlockEnd reader "filters" None
-        if names.Count = 0 then
-            raise (DashSpecParseException($"Card '{cardId}': filters block requires at least one filter name."))
+
+        if chromeBoard.Value.IsNone && not manualApply then
+            raise (
+                DashSpecParseException(
+                    $"Card '{cardId}': filters block is for layout/apply chrome only; wire filters in flow."
+                )
+            )
+
         names :> IReadOnlyList<_>, manualApply, applySplitIndex, chromeBoard.Value
 
     let private parseDataBlock
@@ -470,11 +476,11 @@ module CardParser =
                 reader.SkipNewlines()
             elif reader.TryKeyword "filters" then
                 if reader.TryKeywordSameLine "host" then
-                    let hostCardId = reader.ReadIdent()
-                    if filterHostCardId.IsSome then
-                        raise (DashSpecParseException($"Card '{id}' declares more than one filters host block."))
-                    filterHostCardId <- Some hostCardId
-                    hostedFilters.AddRange(parseFilterPlacementList reader "filters" "filters host")
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{id}': filters host removed; use page/report flow: hostCard.filter -> host.chrome.card.<consumer>."
+                        )
+                    )
                 elif reader.IsOnNewline()
                      || (reader.TryPeekIdent().IsSome
                          && String.Equals(reader.TryPeekIdent().Value, "apply", StringComparison.OrdinalIgnoreCase)) then
@@ -484,7 +490,12 @@ module CardParser =
                     localFiltersApplySplitIndex <- applySplit
                     localFiltersChromeBoard <- chromeBoard
                 else
-                    localFilters.AddRange(reader.ReadCommaListInline())
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{id}': inline filters list removed; use flow: filter -> [panel] chrome.card.{id}."
+                        )
+                    )
+
                 reader.SkipNewlines()
             elif reader.TryKeyword "diagram" then
                 let slotRef =

@@ -102,6 +102,10 @@ module CardInteriorFlowResolver =
         else
             ModuleFlow
 
+    let private isScopeChromeRoute (link: FlowLinkDef) =
+        link.ToNode.StartsWith("chrome.", StringComparison.OrdinalIgnoreCase)
+        || link.ToNode.StartsWith("host.", StringComparison.OrdinalIgnoreCase)
+
     let private applyLink
         (builder: CardDiagramSlotBuilder.Builder)
         (cardId: string)
@@ -109,10 +113,13 @@ module CardInteriorFlowResolver =
         (cardInputs: IReadOnlyDictionary<string, CardFlowInput>)
         (link: FlowLinkDef)
         =
-        match classifyLink filterNames cardInputs link with
-        | InputAlias -> applyCardInputLink builder cardId cardInputs link
-        | Route -> applyRouteLink builder cardId filterNames link
-        | ModuleFlow -> applyModuleFlowLink builder cardId link
+        if isScopeChromeRoute link then
+            ()
+        else
+            match classifyLink filterNames cardInputs link with
+            | InputAlias -> applyCardInputLink builder cardId cardInputs link
+            | Route -> applyRouteLink builder cardId filterNames link
+            | ModuleFlow -> applyModuleFlowLink builder cardId link
 
     let private autoWireMatchingInputs
         (builder: CardDiagramSlotBuilder.Builder)
