@@ -1,6 +1,6 @@
-<Router AppAssembly="typeof(Program).Assembly">
+<Router AppAssembly="@typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(DashSpec.Surface.Blazor.SurfaceAssemblyMarker).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <RouteView RouteData="routeData" DefaultLayout="typeof(DashSpec.Surface.Blazor.Components.Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>

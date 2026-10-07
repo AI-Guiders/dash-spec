@@ -1,19 +1,13 @@
 using System.Globalization;
-using DashSpec.Abstractions.Viz;
-using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
-using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Host.Commands;
-using DashSpec.Host.Commands.Constructors;
-using DashSpec.Host.Services;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Host.Services.Localization;
 using DashSpec.Host.Services.Platform;
-using DashSpec.Host.Services.Presentation;
-using DashSpec.Host.Services.Rendering;
+using DashSpec.Surface.Blazor.Configuration;
+using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Core.Platform;
+using DashSpec.Core.Runtime;
 
 namespace DashSpec.Host.Configuration;
 
@@ -36,25 +30,6 @@ public static class HostViewerServiceCollectionExtensions
     public static IServiceCollection AddDashSpecHostViewerSession(
         this IServiceCollection services,
         CultureInfo uiCulture,
-        TimeZoneInfo displayTimeZone)
-    {
-        services.AddScoped<ICardCellDrillState, CardCellDrillState>();
-        services.AddScoped<ICardFoldState, CardFoldState>();
-        services.AddSingleton<ReportFormatDefaultsAmbient>();
-        services.AddScoped<ICardRenderer, CardRenderService>();
-        services.AddScoped<IDashboardSession, DashboardSessionService>();
-        services.AddScoped<DashboardFilterUiState>();
-        services.AddScoped<CardLocalFilterUiStore>();
-        services.AddScoped<IDashboardCultureAmbient>(_ =>
-            new DashboardCultureAmbient(uiCulture, displayTimeZone));
-        services.AddScoped<DashboardLocalizer>();
-        services.AddScoped<DashboardSlashConstructorHost>();
-        services.AddScoped<DashboardCommandSession>();
-        services.AddScoped<DashboardRefreshCoordinator>();
-        services.AddScoped<DashboardFilterCommandService>();
-        services.AddScoped<DashboardCommandExecutor>();
-        services.AddScoped<DashboardHostCommandCoordinator>();
-        services.AddScoped<DashboardPageController>();
-        return services;
-    }
+        TimeZoneInfo displayTimeZone) =>
+        services.AddDashSpecBlazorViewerSession(uiCulture, displayTimeZone);
 }

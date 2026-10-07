@@ -1,7 +1,7 @@
 #nullable enable
 
 using DashSpec.Generated;
-using DashSpec.Host.Commands;
+using DashSpec.Surface.Blazor.Commands;
 using Xunit;
 
 namespace DashSpec.Host.Tests;

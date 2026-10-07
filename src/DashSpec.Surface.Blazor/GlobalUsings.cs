@@ -1,0 +1,13 @@
+global using DashCatalog = DashSpec.Generated.DashCatalog;
+global using CatalogParser = DashSpec.Core.Parsing.CatalogParser;
+global using InvocationLinePhase = AIGuiders.Platform.Modeling.Notations.Command.InvocationLinePhase;
+global using AIGuiders.Platform.IntermediateRepresentation.Command;
+global using AIGuiders.Platform.IntermediateRepresentation.Invocation;
+global using Microsoft.Extensions.Hosting;
+global using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
+global using ArgConstructorBinding = AIGuiders.Platform.Modeling.Gdl.Command.ArgConstructorBinding;
+global using CommandPickerChoice = AIGuiders.Platform.Modeling.Gdl.Command.CommandPickerChoice;
+global using CommandArgTailKind = AIGuiders.Platform.Modeling.Gdl.Command.CommandArgTailKind;
+global using Microsoft.AspNetCore.Hosting;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.Extensions.Logging;

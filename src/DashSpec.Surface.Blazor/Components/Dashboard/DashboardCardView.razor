@@ -1,0 +1,565 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+@using DashSpec.Core.Layout
+@using DashSpec.Abstractions.Plugins
+@using DashSpec.Core.Model
+@using DashSpec.Filters
+@using DashSpec.Viz
+@using DashSpec.Viewer.Plugins
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using DashSpec.Surface.Blazor.Services.Localization
+@using DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Presentation.Components
+@inject DashboardLocalizer Loc
+@implements IDisposable
+
+<article class="@CardCssClass" style="@PlacementStyle">
+    <div class="card-head">
+        @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
+        {
+            <div class="card-head-title">
+                @if (CanFoldBody)
+                {
+                    <button type="button"
+                            class="secondary card-icon-btn card-fold-btn"
+                            title="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
+                            aria-expanded="@(!BodyFolded)"
+                            aria-label="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
+                            @onclick="ToggleBodyFoldAsync"
+                            @onclick:stopPropagation="true">
+                        <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+                }
+                @if (Card.ShowChromeTitle)
+                {
+                    <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
+                }
+                @if (!string.IsNullOrWhiteSpace(Card.FilterLinkHint))
+                {
+                    <p class="card-link-hint muted">@Card.FilterLinkHint</p>
+                }
+            </div>
+        }
+        @if (HasHeadToolbar && !BodyFolded)
+        {
+            <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
+            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+            {
+                <CardLocalFilterChrome Card="Card"
+                                       GridColumns="GridColumns"
+                                       FieldOptionsRevision="FieldOptionsRevision"
+                                       ApplyLabel="@Loc.T("Apply")"
+                                       FilterIndex="FilterIndex"
+                                       DateFrom="CardLocalDateFrom"
+                                       DateTo="CardLocalDateTo"
+                                       SelectedFields="CardLocalSelectedFields"
+                                       TopLimits="CardLocalTopLimits"
+                                       GetFieldOptions="GetFieldOptions"
+                                       AutoApply="AutoApply"
+                                       OnApplyCard="OnApplyCard"
+                                       OnScheduleCardApply="OnScheduleCardApply"
+                                       OnCardDayChanged="OnCardDayChanged"
+                                       OnCardFieldChanged="OnCardFieldChanged" />
+            }
+            @if (_vizToolbarType is not null)
+            {
+                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
+            }
+            @if (CanExport)
+            {
+                <button type="button"
+                        class="secondary card-icon-btn card-export-btn card-export-csv"
+                        title="@Loc.T("Export CSV")"
+                        aria-label="@Loc.T("Export CSV")"
+                        disabled="@Card.Loading"
+                        @onclick="ExportCsvAsync">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <path d="M8 13h8" />
+                        <path d="M8 17h5" />
+                        <path d="M8 9h2" />
+                    </svg>
+                </button>
+                <button type="button"
+                        class="secondary card-icon-btn card-export-btn card-export-xlsx"
+                        title="@Loc.T("Export XLSX")"
+                        aria-label="@Loc.T("Export XLSX")"
+                        disabled="@Card.Loading"
+                        @onclick="ExportXlsxAsync">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
+                        <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M8 11h2v2H8zM11 11h2v2h-2zM14 11h2v2h-2zM8 14h2v2H8zM11 14h2v2h-2zM14 14h2v2h-2z" fill="currentColor" stroke="none" />
+                    </svg>
+                </button>
+            }
+            @if (CanFullscreen)
+            {
+                <button type="button"
+                        class="secondary card-icon-btn card-fullscreen-btn"
+                        title="@Loc.T("Expand diagram")"
+                        disabled="@Card.Loading"
+                        aria-pressed="@_fullscreen"
+                        aria-label="@Loc.T("Expand diagram")"
+                        @onclick="ToggleFullscreen">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                </button>
+            }
+            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
+                                   Card="Card"
+                                   ActiveViewId="@ActiveViewId"
+                                   OnAction="OnCardAction" />
+            @if (Card.Loading)
+            {
+                <span class="card-status muted">@Loc.T("Loading…")</span>
+            }
+            else if (!string.IsNullOrEmpty(Card.Error))
+            {
+                <span class="card-status card-status-error">@Loc.T("Error")</span>
+            }
+            </div>
+        }
+        @if (HasHeadMeta && !BodyFolded)
+        {
+            <div class="card-head-meta">
+                @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+                {
+                    <CardLocalFilterChrome Card="Card"
+                                           GridColumns="GridColumns"
+                                           FieldOptionsRevision="FieldOptionsRevision"
+                                           HeadMetaLayout="true"
+                                           ApplyLabel="@Loc.T("Apply")"
+                                           FilterIndex="FilterIndex"
+                                           DateFrom="CardLocalDateFrom"
+                                           DateTo="CardLocalDateTo"
+                                           SelectedFields="CardLocalSelectedFields"
+                                           TopLimits="CardLocalTopLimits"
+                                           GetFieldOptions="GetFieldOptions"
+                                           AutoApply="AutoApply"
+                                           OnApplyCard="OnApplyCard"
+                                           OnScheduleCardApply="OnScheduleCardApply"
+                                           OnCardDayChanged="OnCardDayChanged"
+                                           OnCardFieldChanged="OnCardFieldChanged" />
+                }
+                @if (DashboardBoundFilters.Count > 0)
+                {
+                    <div class="card-filters">
+                        @foreach (var filterName in DashboardBoundFilters)
+                        {
+                            <span class="scope-chip">@FilterUiHelpers.FormatActiveChip(filterName, FilterIndex, DateFrom, DateTo, SelectedFields)</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    @if (Card.IsVisibilityPlaceholder)
+    {
+        <div class="card-placeholder muted">
+            <p>@Card.VisibilityMessage</p>
+        </div>
+    }
+    else if (!BodyFolded)
+    {
+        <CascadingValue Value="this" IsFixed="true">
+            <CardInteriorGrid GridColumns="GridColumns">
+                @foreach (var slot in Card.PlanInteriorSlots())
+                {
+                    <PlacementSlot Placement="slot.Placement"
+                                   GridColumns="GridColumns"
+                                   CssClass="@InteriorSlotClass(slot.ContentKind)">
+                        <CardInteriorSlotContent Slot="slot" />
+                    </PlacementSlot>
+                }
+            </CardInteriorGrid>
+        </CascadingValue>
+    }
+</article>
+
+@if (_fullscreen && CanFullscreen)
+{
+    <div class="card-fullscreen-backdrop" @onclick="CloseFullscreen">
+        <div class="card-fullscreen-panel"
+             role="dialog"
+             aria-modal="true"
+             aria-label="@Card.Title"
+             tabindex="-1"
+             @ref="_fullscreenPanel"
+             @onclick:stopPropagation="true"
+             @onkeydown="OnFullscreenKeyDown">
+            <header class="card-fullscreen-head">
+                <h2><RichTextView Text="@Card.Title" /></h2>
+                <button type="button"
+                        class="secondary card-icon-btn card-fullscreen-close"
+                        title="@Loc.T("Collapse")"
+                        aria-label="@Loc.T("Collapse")"
+                        @onclick="CloseFullscreen">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+                        <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+                        <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+                        <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+                    </svg>
+                </button>
+            </header>
+            <div class="card-fullscreen-body">
+                <CardVizHost Card="Card"
+                             DetailView="true"
+                             MatrixMin="@DetailMatrixMin"
+                             MatrixMax="@DetailMatrixMax"
+                             OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+    [Parameter] public string PlacementStyle { get; set; } = string.Empty;
+    [Parameter] public int GridColumns { get; set; } = 12;
+    [Parameter] public IReadOnlyList<string> DashboardBoundFilters { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
+        new Dictionary<string, FilterDefinition>();
+    [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> CardLocalDateFrom { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, DateOnly> CardLocalDateTo { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, HashSet<string>> CardLocalSelectedFields { get; set; } = default!;
+    [Parameter, EditorRequired] public Dictionary<string, int> CardLocalTopLimits { get; set; } = default!;
+    [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
+    [Parameter] public int FieldOptionsRevision { get; set; }
+    [Parameter] public bool AutoApply { get; set; }
+    [Parameter] public string? ActiveViewId { get; set; }
+    [Parameter] public EventCallback<string> OnApplyCard { get; set; }
+    [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
+    [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
+    [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
+    [Parameter] public EventCallback<(CardRenderResult Card, HeatmapCellContext Context)> OnCellClickNavigate { get; set; }
+    [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
+    [Parameter] public bool BodyFolded { get; set; }
+    [Parameter] public EventCallback OnToggleBodyFold { get; set; }
+
+    private bool CanFoldBody =>
+        Card.FoldMode is not CardFoldMode.None && !Card.IsVisibilityPlaceholder;
+
+    private Task ToggleBodyFoldAsync() =>
+        OnToggleBodyFold.HasDelegate ? OnToggleBodyFold.InvokeAsync() : Task.CompletedTask;
+
+    private HeatmapCellContext? _selection;
+    private RenderSnapshot _renderSnapshot;
+    private bool _fullscreen;
+    private ElementReference _fullscreenPanel;
+
+    private bool HasHeadToolbar =>
+        _vizToolbarType is not null ||
+        CanExport ||
+        CanFullscreen ||
+        Card.ExtensionBlocks is { Count: > 0 } ||
+        (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
+        Card.Loading ||
+        !string.IsNullOrEmpty(Card.Error);
+
+    private bool HasHeadMeta =>
+        (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
+        DashboardBoundFilters.Count > 0;
+
+    private bool CanExport =>
+        !Card.IsVisibilityPlaceholder &&
+        !Card.Loading &&
+        string.IsNullOrEmpty(Card.Error) &&
+        Card.DataFamily is not DiagramDataFamily.Scalar &&
+        (Card.Table is { Columns.Count: > 0 } ||
+         Card.Matrix is not null ||
+         Card.Chart is { Labels.Count: > 0 });
+
+    private bool CanFullscreen =>
+        !Card.IsVisibilityPlaceholder &&
+        Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table or DiagramDataFamily.Gantt;
+
+    [Inject] private VizCardToolbarRegistry VizToolbars { get; set; } = default!;
+
+    [Inject] private ICardVizDisplayState VizDisplayState { get; set; } = default!;
+
+    private Type? _vizToolbarType;
+    private Dictionary<string, object?> _vizToolbarParameters = new();
+
+    private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
+
+    private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
+
+    private Task ExportCsvAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "csv_export", new Dictionary<string, string>()));
+
+    private Task ExportXlsxAsync() =>
+        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "xlsx_export", new Dictionary<string, string>()));
+
+    private void ToggleFullscreen()
+    {
+        _fullscreen = !_fullscreen;
+        if (_fullscreen)
+        {
+            _ = FocusFullscreenAsync();
+        }
+    }
+
+    private void CloseFullscreen() => _fullscreen = false;
+
+    private async Task FocusFullscreenAsync()
+    {
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await _fullscreenPanel.FocusAsync();
+        }
+        catch
+        {
+            // Focus is best-effort for keyboard dismiss.
+        }
+    }
+
+    private void OnFullscreenKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.OrdinalIgnoreCase))
+        {
+            CloseFullscreen();
+        }
+    }
+
+    private int LocalFieldOptionsToken()
+    {
+        if (Card.LocalFilters is not { Count: > 0 })
+        {
+            return 0;
+        }
+
+        var token = 0;
+        foreach (var name in Card.LocalFilters)
+        {
+            token = HashCode.Combine(token, GetFieldOptions(name).Count);
+        }
+
+        return token;
+    }
+
+    protected override bool ShouldRender()
+    {
+        var snapshot = new RenderSnapshot(
+            Card,
+            ActiveViewId,
+            Card.Loading,
+            Card.DataFamily,
+            Card.Matrix is not null,
+            Card.Title,
+            Card.FilterLinkCssClass,
+            _selection?.Xi,
+            _selection?.Yi,
+            _fullscreen,
+            BodyFolded,
+            LocalFieldOptionsToken(),
+            FieldOptionsRevision,
+            VizDisplayState.GetValueLabelsOverride(Card.Id),
+            VizDisplayState.GetAxisLabelsXOverride(Card.Id),
+            VizDisplayState.GetAxisLabelsYOverride(Card.Id));
+        if (_renderSnapshot.Equals(snapshot))
+        {
+            return false;
+        }
+
+        _renderSnapshot = snapshot;
+        return true;
+    }
+
+    readonly record struct RenderSnapshot(
+        CardRenderResult Card,
+        string? ActiveViewId,
+        bool Loading,
+        DiagramDataFamily DataFamily,
+        bool HasMatrix,
+        string Title,
+        string? FilterLinkCssClass,
+        int? SelectionXi,
+        int? SelectionYi,
+        bool Fullscreen,
+        bool BodyFolded,
+        int LocalFieldOptionsToken,
+        int FieldOptionsRevision,
+        bool? MatrixValueLabelsOverride,
+        bool? MatrixAxisLabelsXOverride,
+        bool? MatrixAxisLabelsYOverride);
+
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Card.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Card.Loading)
+        {
+            _selection = null;
+        }
+
+        _vizToolbarType = Card.IsVisibilityPlaceholder ||
+                          Card.Loading ||
+                          !string.IsNullOrEmpty(Card.Error)
+            ? null
+            : VizToolbars.TryGet(Card.RenderPluginId);
+        _vizToolbarParameters = _vizToolbarType is null
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>
+            {
+                ["Context"] = new VizCardToolbarContext
+                {
+                    Card = Card,
+                    OnCardAction = OnCardAction,
+                },
+            };
+    }
+
+    private bool UsesInteriorLayout => Card.InteriorPlacements is { Count: > 0 };
+
+    private string CardCssClass
+    {
+        get
+        {
+            var parts = new List<string> { "card" };
+            if (Card.DataFamily is DiagramDataFamily.Scalar)
+            {
+                parts.Add("card-kpi");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Card.FilterLinkCssClass))
+            {
+                parts.Add(Card.FilterLinkCssClass);
+            }
+
+            if (BodyFolded)
+            {
+                parts.Add("card--folded");
+            }
+
+            return string.Join(' ', parts);
+        }
+    }
+
+    [Inject] private IOnClickInteractionService Interactions { get; set; } = default!;
+
+    private ShowSelectionEffect? ShowSelection =>
+        Interactions.ResolveShowEffect(Card.ClickBehaviour);
+
+    private ShowSelectionEffect? EffectiveShowSelection =>
+        ShowSelection ?? (Card.Matrix is not null && !HasInlineDrillTableSlot()
+            ? MatrixDefaultShowSelection
+            : null);
+
+    private bool HasInlineDrillTableSlot() =>
+        Card.InteriorSlotRenders?.Values.Any(static slot => slot.DataFamily is DiagramDataFamily.Table) == true;
+
+    private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
+        new(ShowPlacement.Below, ShowFormat.Kv, ShowSource.Cell, CopyFriendly: true);
+
+    internal async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
+    {
+        if (EffectiveShowSelection is not null)
+        {
+            _selection = context;
+        }
+
+        if (Card.ClickBehaviour is not null &&
+            Interactions.HasNavigationEffects(Card.ClickBehaviour) &&
+            OnCellClickNavigate.HasDelegate)
+        {
+            await OnCellClickNavigate.InvokeAsync((Card, context));
+        }
+
+        if (EffectiveShowSelection is not null)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    internal RenderFragment RenderSelectionDetail() => __builder =>
+    {
+        if (EffectiveShowSelection is null || _selection is null)
+        {
+            return;
+        }
+
+        <CardSelectionDetail Effect="EffectiveShowSelection"
+                             Context="_selection"
+                             Presentation="Card.MatrixPresentation" />;
+    };
+
+    private static string InteriorSlotClass(LayoutSlotContentKind kind) =>
+        kind is LayoutSlotContentKind.Filter
+            ? "card-interior-slot card-filter-slot"
+            : "card-interior-slot card-diagram-slot";
+
+    internal string InteriorSlotStyle(string slotKey) =>
+        Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
+            ? PlacementGridCss.SlotStyle(placement!, GridColumns)
+            : string.Empty;
+
+    private bool LocalFiltersAutoApply =>
+        AutoApply && !Card.LocalFiltersManualApply;
+
+    private Task OnLocalTopChanged(FilterDefinition filter, int value)
+    {
+        if (filter.Kind is not FilterKind.Top)
+        {
+            return Task.CompletedTask;
+        }
+
+        CardLocalTopLimits[filter.Name] = value;
+        return LocalFiltersAutoApply
+            ? OnScheduleCardApply.InvokeAsync(Card.Id)
+            : Task.CompletedTask;
+    }
+
+    internal RenderFragment RenderLocalFilter(string filterName, string? placementStyle) => __builder =>
+    {
+        var filter = FilterIndex[filterName];
+        <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
+                          Filter="filter"
+                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields)"
+                          Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
+                          PlacementStyle="@placementStyle"
+                          Disabled="@Card.Loading"
+                          Options="GetFieldOptions(filter.Name)"
+                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields)"
+                          SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
+                          DateFrom="CardLocalDateFrom"
+                          DateTo="CardLocalDateTo"
+                          FilterIndex="FilterIndex"
+                          SelectedFields="CardLocalSelectedFields"
+                          OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
+                          OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
+                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits)"
+                          TopValueChanged="value => OnLocalTopChanged(filter, value)" />
+    };
+}

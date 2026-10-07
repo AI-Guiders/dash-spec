@@ -1,19 +1,17 @@
 namespace DashSpec.Presentation.Filters;
 
-/// <summary>Remark 7: long field filters (e.g. app whitelist &gt;80 products).</summary>
+/// <inheritdoc cref="DashSpec.Core.Filters.FilterLargeListOptions"/>
 public static class FilterLargeListOptions
 {
-    public const int Threshold = 80;
+    public const int Threshold = Core.Filters.FilterLargeListOptions.Threshold;
 
-    public const string Scroll = "scroll";
+    public const string Scroll = Core.Filters.FilterLargeListOptions.Scroll;
 
-    public const string Expand = "expand";
+    public const string Expand = Core.Filters.FilterLargeListOptions.Expand;
 
-    public static string Normalize(string? raw) =>
-        string.Equals(raw?.Trim(), Expand, StringComparison.OrdinalIgnoreCase) ? Expand : Scroll;
+    public static string Normalize(string? raw) => Core.Filters.FilterLargeListOptions.Normalize(raw);
 
-    public static bool IsExpand(string? layout) =>
-        string.Equals(Normalize(layout), Expand, StringComparison.OrdinalIgnoreCase);
+    public static bool IsExpand(string? layout) => Core.Filters.FilterLargeListOptions.IsExpand(layout);
 
-    public static bool IsLargeList(int optionCount) => optionCount > Threshold;
+    public static bool IsLargeList(int optionCount) => Core.Filters.FilterLargeListOptions.IsLargeList(optionCount);
 }

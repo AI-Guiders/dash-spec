@@ -1,7 +1,7 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Services.Presentation;
+using DashSpec.Surface.Blazor.Services.Presentation;
 using DashSpec.Viz;
 using Xunit;
 

@@ -1,5 +1,6 @@
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Host.Services.Diagnostics;
+using DashSpec.Surface.Blazor.Services.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

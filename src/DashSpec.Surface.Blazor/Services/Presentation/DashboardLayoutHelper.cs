@@ -1,0 +1,52 @@
+using DashSpec.Core.Layout;
+using DashSpec.Core.Model;
+using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
+using DashSpec.Viz;
+
+namespace DashSpec.Surface.Blazor.Services.Presentation;
+
+internal static class DashboardLayoutHelper
+{
+    public static string CardsGridStyle(LayoutDefinition layout) =>
+        PlacementGridCss.HostGridVariables(layout);
+
+    public static string CardPlacementStyle(
+        CardRenderResult card,
+        LayoutDefinition layout,
+        IReadOnlyDictionary<string, PlacementDefinition> tabPlacements) =>
+        PlacementGridStyle(ResolvePlacement(card, layout.Columns, tabPlacements), layout.Columns);
+
+    public static string PlacementGridStyle(PlacementDefinition placement, int layoutColumns) =>
+        PlacementGridCss.SlotStyle(placement, layoutColumns);
+
+    public static string GroupOuterStyle(int outerRow) =>
+        PlacementGridCss.GroupOuterStyle(outerRow);
+
+    public static PlacementDefinition ResolvePlacement(
+        CardRenderResult card,
+        int layoutColumns,
+        IReadOnlyDictionary<string, PlacementDefinition> tabPlacements)
+    {
+        if (tabPlacements.TryGetValue(card.Id, out var compact))
+        {
+            return compact;
+        }
+
+        return card.Placement ?? PlacementDefaults.ForFamily(card.DataFamily, layoutColumns);
+    }
+
+    public static bool UsesInteriorLayout(CardRenderResult card) =>
+        card.InteriorPlacements is { Count: > 0 };
+
+    public static string CardInteriorGridStyle(LayoutDefinition layout) =>
+        PlacementGridCss.InteriorGridVariables(layout.Columns);
+
+    public static string CardInteriorSlotStyle(PlacementDefinition placement, int columns) =>
+        PlacementGridCss.SlotStyle(placement, columns);
+
+    public static IReadOnlyDictionary<string, PlacementDefinition> ResolveInteriorPlacements(
+        CardDefinition card,
+        DashboardDocument document) =>
+        CardInteriorLayoutCompactor.Compact(card, document.Filters, document.Layout.Columns);
+}

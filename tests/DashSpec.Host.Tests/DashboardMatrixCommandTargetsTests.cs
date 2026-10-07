@@ -27,7 +27,7 @@ public sealed class DashboardMatrixCommandTargetsTests
                 LocalFilters: []),
         };
 
-        var targets = DashSpec.Host.Commands.DashboardCardCommandTargetsBuilder.BuildVizToolbar(cards);
+        var targets = DashSpec.Surface.Blazor.Commands.DashboardCardCommandTargetsBuilder.BuildVizToolbar(cards);
 
         Assert.Single(targets);
         Assert.Equal("heat_card", targets[0].CardId);
