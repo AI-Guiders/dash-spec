@@ -32,23 +32,23 @@ report "Scope"
   filter date usage_date on usage_date as "Date"
   filter field app_name on dbo.t.app as "App"
 
-  flow
+  show flow
     usage_date -> [toolbar] chrome.dashboard
     app_name -> [toolbar] chrome.dashboard
-  end flow
+  end show flow
 
   card peak as "Peak"
   diagram ref drill table
     columns = UserSam
   end table
-  flow
+  data flow
     utilization [utilization] -> [rows] heatmap
     drill_src [rows] -> [rows] drill
     usage_date -> [usage_date] heatmap
     app_name -> [app_name] heatmap
     usage_date -> [usage_date] drill
     app_name -> [app_name] drill
-  end flow
+  end data flow
   view
     diagram ref heatmap table
       columns = UserSam

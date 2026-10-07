@@ -44,11 +44,11 @@
             debounce_ms = 400
         end chrome
 
-        flow
+        show flow
             usage_date -> [toolbar] chrome.dashboard
             user_name -> [toolbar] chrome.dashboard
             app_name -> [toolbar] chrome.dashboard
-        end flow
+        end show flow
 
         tab overview as "Overview"
             cards
@@ -103,9 +103,9 @@
                             end card
 
                             card activity_5min as "Activity 5-min"
-                                flow
+                                show flow
                                     activity_slot -> [panel] chrome.card.activity_5min
-                                end flow
+                                end show flow
                                 input rows from activity_tz.rows
                                 diagram demo_activity_5min_line
                                     bind
@@ -138,9 +138,9 @@
                                             end card
 
                                             card events_detail as "Events detail"
-                                                flow
+                                                show flow
                                                     events_top -> [panel] chrome.card.events_detail
-                                                end flow
+                                                end show flow
                                                 input rows from events_tz.rows
                                                 diagram demo_events_detail_table
                                                     bind

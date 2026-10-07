@@ -695,6 +695,8 @@ module rec DocumentModuleParser =
             DefaultsBlockParser.parse reader blockKeyword shell.FormatDefaults shell.FilterDefaults
 
     let private parseReportBlock (reader: TokenReader) (shell: DashboardShellContext) (mode: ReportBodyMode) (setModuleLabel: string -> unit) =
+        let reportFlowBuilder = ReportScopeFlowParser.createBuilder ()
+
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
 
@@ -724,12 +726,10 @@ module rec DocumentModuleParser =
                 for pair in CommandAliasesParser.parse reader do
                     shell.CommandAliases.[pair.Key] <- pair.Value
                 reader.SkipNewlines()
-            elif reader.TryKeyword "flow" then
-                if shell.ReportScopeFlow.IsSome then
-                    raise (DashSpecParseException("Report declares more than one flow block."))
-
-                shell.ReportScopeFlow <- Some(ReportScopeFlowParser.parseReportFlowBlock reader)
+            elif ReportScopeFlowParser.tryAddQualifiedBlock reader reportFlowBuilder "Report" then
                 reader.SkipNewlines()
+            elif reader.TryKeyword "flow" then
+                ReportScopeFlowParser.rejectLegacyFlow reader "Report"
             elif reader.TryKeyword "defaults" then
                 parseReportDefaultsBlock reader shell "defaults"
             elif reader.TryKeyword "default" then
@@ -755,6 +755,7 @@ module rec DocumentModuleParser =
             else
                 raise (reader.Unexpected())
 
+        shell.ReportScopeFlow <- ReportScopeFlowParser.toDefinition reportFlowBuilder
         BlockSyntax.expectBlockEnd reader "report" (None: string option)
 
     let private parsePageBlock (reader: TokenReader) (shell: DashboardShellContext) (pageId: string) =
@@ -766,7 +767,7 @@ module rec DocumentModuleParser =
         let mutable pageToolbar = None
         let mutable usageDateDerive = None
         let mutable pageDisplayBindings: IReadOnlyDictionary<string, string> option = None
-        let mutable pageScopeFlow: ScopeFlowDefinition option = None
+        let pageFlowBuilder = ReportScopeFlowParser.createBuilder ()
         let pageFilterDefaults = FilterScopeDefaults.create ()
 
         BlockSyntax.beginBlock reader
@@ -788,19 +789,17 @@ module rec DocumentModuleParser =
                 else
                     raise (
                         DashSpecParseException(
-                            $"Page '{pageId}': inline toolbar filter lists removed; use page flow: filter -> [toolbar] chrome.page.{pageId}."
+                            $"Page '{pageId}': inline toolbar filter lists removed; use page show flow: filter -> [toolbar] chrome.page.{pageId}."
                         )
                     )
 
                 reader.SkipNewlines()
             elif reader.TryKeyword "derive" then
                 usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
-            elif reader.TryKeyword "flow" then
-                if pageScopeFlow.IsSome then
-                    raise (DashSpecParseException($"Page '{pageId}' declares more than one flow block."))
-
-                pageScopeFlow <- Some(ReportScopeFlowParser.parsePageFlowBlock reader pageId)
+            elif ReportScopeFlowParser.tryAddQualifiedBlock reader pageFlowBuilder $"Page '{pageId}'" then
                 reader.SkipNewlines()
+            elif reader.TryKeyword "flow" then
+                ReportScopeFlowParser.rejectLegacyFlow reader $"Page '{pageId}'"
             elif reader.TryKeyword "bind" then
                 if not (reader.TryKeyword "display") then
                     raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
@@ -847,7 +846,7 @@ module rec DocumentModuleParser =
               UsageDateDerive = usageDateDerive
               FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults
               DisplayBindings = pageDisplayBindings
-              ScopeFlow = pageScopeFlow }
+              ScopeFlow = ReportScopeFlowParser.toDefinition pageFlowBuilder }
 
         reader.SkipNewlines()
 

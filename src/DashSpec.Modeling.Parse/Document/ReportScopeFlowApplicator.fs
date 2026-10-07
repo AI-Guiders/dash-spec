@@ -7,8 +7,17 @@ open DashSpec.Modeling.Parse.Card
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Layout
 
-/// <summary>Materialize report/page <c>flow</c> route links into runtime fields (ADR-0092).</summary>
+/// <summary>Materialize show/wire qualified flow into runtime fields (ADR-0092 / ADR-0093).</summary>
 module ReportScopeFlowApplicator =
+
+    let private routingLinks (sections: FlowGraphSections) =
+        let merged = ResizeArray<FlowLinkDef>()
+
+        for kind in [| FlowGraphKind.Show; FlowGraphKind.Wire; FlowGraphKind.Action |] do
+            for link in FlowGraphSections.linksFor sections kind do
+                merged.Add link
+
+        merged :> IReadOnlyList<_>
 
     let private filterNameFromLink (link: FlowLinkDef) =
         match link.FromPort with
@@ -205,19 +214,21 @@ module ReportScopeFlowApplicator =
 
     let apply (shell: DashboardShellContext) =
         match shell.ReportScopeFlow with
-        | Some flow -> applyLinks shell flow.Links
+        | Some flow -> applyLinks shell (routingLinks flow.Sections)
         | None -> ()
 
         // Snapshot: applyToolbarToPage mutates shell.Pages while wiring toolbar routes.
         for page in shell.Pages |> Seq.toList do
             match page.ScopeFlow with
-            | Some flow -> applyLinks shell flow.Links
+            | Some flow -> applyLinks shell (routingLinks flow.Sections)
             | None -> ()
 
         let interiorLinkBatches =
             shell.Cards
             |> Seq.toList
-            |> Seq.choose (fun c -> c.InteriorFlow |> Option.map (fun interior -> interior.Links))
+            |> Seq.choose (fun c ->
+                c.InteriorFlow
+                |> Option.map (fun interior -> routingLinks interior.Sections))
             |> Seq.toList
 
         for links in interiorLinkBatches do

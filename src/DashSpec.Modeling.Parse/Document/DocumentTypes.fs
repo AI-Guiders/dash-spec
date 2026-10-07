@@ -42,7 +42,7 @@ type TabDefinition =
 
 [<CLIMutable>]
 type ScopeFlowDefinition =
-    { Links: IReadOnlyList<FlowLinkDef> }
+    { Sections: FlowGraphSections }
 
 [<CLIMutable>]
 type ReportPageDefinition =

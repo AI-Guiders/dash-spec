@@ -155,7 +155,7 @@ Unchanged as **blocks only** (not link lines):
 | Legacy | Link form (report/page `flow`) |
 |--------|--------------------------------|
 | `toolbar` names only | `f -> [toolbar] chrome dashboard` per filter |
-| `filters { f }` on card | `f -> [panel] chrome card <id>` |
+| `filters { f }` on card | `f -> [toolbar] chrome.card.<id>` |
 | `filters host H` | host routes from card `H` to consumer card |
 | `derive A from B …` | `B -> A` (+ attrs) |
 | `on click set A from slot` | `slot [click…] -> [value] A` |
