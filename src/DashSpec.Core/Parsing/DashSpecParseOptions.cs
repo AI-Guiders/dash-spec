@@ -26,6 +26,9 @@ public sealed class DashSpecParseOptions
     /// <summary>Parse only report-referenced .dashdiagram units from glob membership (runtime default).</summary>
     public bool LinkOnlyReferencedDiagramUnits { get; init; } = true;
 
+    /// <summary>When false (and project <c>dashspec.toml</c> disables legacy), <c>!include</c> paths are rejected (ADR-0098).</summary>
+    public bool AllowLegacyIncludes { get; init; } = true;
+
     public IReadOnlySet<string> ExtensionBlockKeywords { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

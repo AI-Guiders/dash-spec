@@ -37,6 +37,15 @@ module DemoSampleParseTests =
         Assert.Equal(9, diagramIds.Count)
 
     [<Fact>]
+    let ``demo soak link envelope scan includes tab dashspec diagram refs`` () =
+        let path = Path.Combine(samplesDemoDir, "demo-soak.dashspec")
+        let text = File.ReadAllText path
+        let diagramIds, _ = ReportReferenceScanner.scanModuleLinkEnvelope text samplesDemoDir
+
+        Assert.True(diagramIds.Contains "demo_period_peak_by_app_bar")
+        Assert.True(diagramIds.Count > 9)
+
+    [<Fact>]
     let ``demo soak glob ignores unreferenced broken diagram file`` () =
         let diagramsDir = Path.Combine(samplesDemoDir, "diagrams")
         let junkName = "_link-test-broken-" + Guid.NewGuid().ToString("N") + ".dashdiagram"
