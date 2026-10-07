@@ -169,7 +169,8 @@ module ReportScopeFlowApplicator =
             ()
 
     let private applyLinks (shell: DashboardShellContext) (links: IReadOnlyList<FlowLinkDef>) =
-        for link in links do
+        let linksSnapshot = links |> Seq.toList
+        for link in linksSnapshot do
             applyRouteLink shell shell.Cards link
 
     let apply (shell: DashboardShellContext) =
@@ -177,13 +178,15 @@ module ReportScopeFlowApplicator =
         | Some flow -> applyLinks shell flow.Links
         | None -> ()
 
-        for page in shell.Pages do
+        // Snapshot: applyToolbarToPage mutates shell.Pages while wiring toolbar routes.
+        for page in shell.Pages |> Seq.toList do
             match page.ScopeFlow with
             | Some flow -> applyLinks shell flow.Links
             | None -> ()
 
         let interiorLinkBatches =
             shell.Cards
+            |> Seq.toList
             |> Seq.choose (fun c -> c.InteriorFlow |> Option.map (fun interior -> interior.Links))
             |> Seq.toList
 
