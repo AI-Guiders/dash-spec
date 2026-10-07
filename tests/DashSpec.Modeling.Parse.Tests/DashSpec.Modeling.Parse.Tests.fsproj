@@ -23,6 +23,7 @@
     <Compile Include="DashflowModuleParserTests.fs" />
     <Compile Include="DemoSampleParseTests.fs" />
     <Compile Include="MultiSlotFlowInputParseTests.fs" />
+    <Compile Include="TabEmbeddedDashboardMergeTests.fs" />
     <Compile Include="CardInteriorFlowParseTests.fs" />
     <Compile Include="ReportScopeWiringGraphTests.fs" />
     <Compile Include="ReportScopeDataFlowTests.fs" />
