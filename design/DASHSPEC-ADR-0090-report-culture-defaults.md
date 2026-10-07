@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented|
 | **Date** | 2026-10-06 |
 | **Relates to** | [ADR-0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md) |
 

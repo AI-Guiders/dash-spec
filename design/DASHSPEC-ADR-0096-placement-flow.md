@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · Implemented |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md), [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md) |
 

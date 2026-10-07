@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0072**.
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0100**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -54,7 +54,7 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0044](DASHSPEC-ADR-0044-date-filter-value-constructor.md) | Date filter value constructor (CCL) | Accepted |
 | [0045](DASHSPEC-ADR-0045-date-filter-grain-constructors.md) | Date filter grain constructors | Accepted |
 | [0046](DASHSPEC-ADR-0046-ccl-locale-typed-value-input.md) | CCL locale typed value input | Accepted |
-| [0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) | DashSpec Platform vs surfaces | Proposed |
+| [0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) | DashSpec Platform vs surfaces | Accepted |
 | [0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) | Modeling vs Execution — planet DSL split (F# parse) | Accepted |
 | [0049](DASHSPEC-ADR-0049-git-catalog.md) | Git catalog source | Accepted |
 | [0050](DASHSPEC-ADR-0050-category-chart-color-column.md) | Category chart color — column binding | Accepted |
@@ -77,6 +77,15 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md) | Report time basis & work calendar | Accepted |
 | [0070](DASHSPEC-ADR-0070-table-column-formats-block.md) | Table `formats` block | Accepted |
 | [0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) | Block + member grammar | Accepted |
+| [0076](DASHSPEC-ADR-0076-architecture-build-guards.md) | Architecture build guards | Accepted |
+| [0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md) | Surfaces as plugins + BFF | Accepted |
 | [0090](DASHSPEC-ADR-0090-report-culture-defaults.md) | Report `culture` as locale SSOT | Accepted |
+| [0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md) | Unified graph flow and routing | Accepted |
+| [0092](DASHSPEC-ADR-0092-report-scope-routing-and-events.md) | Report scope routing and events | Accepted |
+| [0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md) | Qualified flow graph kinds | Accepted |
+| [0094](DASHSPEC-ADR-0094-report-page-data-flow.md) | Report page data flow | Accepted |
+| [0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md) | Dashboard shell wiring pipeline | Accepted |
+| [0096](DASHSPEC-ADR-0096-placement-flow.md) | Placement flow | Accepted |
+| [0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) | Document compile pipeline | Accepted |
 | [0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) | Compiler `namespace` + `import` by kind | Accepted |
 | [0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) | Surface.Blazor full split + contract tests | Accepted |
