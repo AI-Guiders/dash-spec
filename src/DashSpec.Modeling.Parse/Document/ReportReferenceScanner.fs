@@ -12,7 +12,4 @@ module ReportReferenceScanner =
         if System.String.IsNullOrWhiteSpace reader.ModuleSource then
             scanModuleText ""
         else
-            try
-                ReferenceScanSkip.scanReportAtReader reader
-            with :? DashSpec.Modeling.Core.DashSpecParseException ->
-                ReferenceScanSkip.scanModuleText reader.ModuleSource
+            ReferenceScanSkip.scanReportAtReader reader

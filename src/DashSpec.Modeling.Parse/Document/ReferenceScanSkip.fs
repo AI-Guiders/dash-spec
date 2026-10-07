@@ -32,6 +32,17 @@ module internal ReferenceScanSkip =
 
         BlockSyntax.expectBlockEnd reader endKind endId
 
+    let private skipBindBlock (reader: TokenReader) =
+        if reader.IsOnNewline() then
+            skipBalancedBlock reader "bind" None
+        else
+            reader.ReadCommaListInline() |> ignore
+            reader.SkipNewlines()
+
+    let private skipInputLine (reader: TokenReader) =
+        CardFlowInputParser.parse reader "reference-scan" |> ignore
+        reader.SkipNewlines()
+
     let private tryCollectDiagramPreset (reader: TokenReader) (diagramIds: HashSet<string>) =
         if not (reader.TryKeyword "diagram") then false
         else
@@ -205,7 +216,9 @@ module internal ReferenceScanSkip =
 
                 skipDataBlock reader diagramIds rowTypes
             elif reader.TryKeyword "input" then
-                skipBalancedBlock reader "input" None
+                skipInputLine reader
+            elif reader.TryKeyword "bind" then
+                skipBindBlock reader
             elif reader.TryKeyword "on" then
                 reader.ReadIdent() |> ignore
                 skipBalancedBlock reader "click" None
