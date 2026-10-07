@@ -139,12 +139,16 @@ internal static class FilterPlacementAnalyzer
                 }
             }
 
-            if (card.InteriorBoard is not null)
+            try
             {
                 _ = CardInteriorLayoutCompactor.Compact(
                     card,
                     document.Filters,
                     document.Layout.Columns);
+            }
+            catch (DashSpecParseException ex)
+            {
+                errors.Add(ex.Message);
             }
         }
     }

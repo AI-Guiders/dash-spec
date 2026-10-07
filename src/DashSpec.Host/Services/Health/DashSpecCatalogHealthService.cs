@@ -37,11 +37,25 @@ public sealed class DashSpecCatalogHealthService(
             }
             catch (Exception ex)
             {
-                errors.Add($"[{entry.Id}] {ex.Message}");
+                AppendEntryErrors(errors, entry.Id, ex.Message);
             }
         }
 
         return new DashSpecHealthReport(errors.Count == 0, errors);
+    }
+
+    private static void AppendEntryErrors(List<string> errors, string entryId, string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            errors.Add($"[{entryId}] Unknown error.");
+            return;
+        }
+
+        foreach (var line in message.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            errors.Add($"[{entryId}] {line}");
+        }
     }
 }
 

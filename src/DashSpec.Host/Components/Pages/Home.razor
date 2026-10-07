@@ -20,7 +20,22 @@
 {
     <div class="alert" role="alert">
         <strong>@Loc.T("Failed to load dashboard")</strong>
-        <p>@Page.Error</p>
+        @{
+            var errorLines = Page.Error.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+        @if (errorLines.Length <= 1)
+        {
+            <p>@Page.Error</p>
+        }
+        else
+        {
+            <ul class="dash-load-errors">
+                @foreach (var line in errorLines)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+        }
     </div>
 }
 else if (!Page.Loaded)

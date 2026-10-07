@@ -93,6 +93,11 @@
   margin: 0.35rem 0 0;
 }
 
+.alert ul.dash-load-errors {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
 code {
   background: var(--bg);
   padding: 0.1rem 0.35rem;
