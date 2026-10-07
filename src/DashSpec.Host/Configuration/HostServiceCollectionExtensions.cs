@@ -1,4 +1,5 @@
 using DashSpec.Host.Services;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Git;
 using DashSpec.Host.Services.Settings;
@@ -16,6 +17,7 @@ public static class HostServiceCollectionExtensions
         services.TryAddSingleton<IGitCatalogSynchronizer, GitCatalogSynchronizer>();
         services.TryAddSingleton<IHostDatabaseInitializer, HostDatabaseInitializer>();
         services.TryAddSingleton<IHostBootstrap, HostBootstrapService>();
+        services.TryAddSingleton<IViewerRuntimeContext, ViewerRuntimeContextAdapter>();
         return services;
     }
 }

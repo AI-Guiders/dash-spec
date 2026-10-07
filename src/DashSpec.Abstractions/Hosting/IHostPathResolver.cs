@@ -1,4 +1,4 @@
-namespace DashSpec.Host.Services.Abstractions;
+namespace DashSpec.Abstractions.Hosting;
 
 public interface IHostPathResolver
 {

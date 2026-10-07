@@ -2,13 +2,13 @@ using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Model;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Host.Services.Models;
 
 namespace DashSpec.Host.Services.Abstractions;
 
+/// <summary>Viewer loader returning <see cref="ReportBootstrapResult"/> (Host adapter over platform bootstrap).</summary>
 public interface IDashboardSpecLoader : IReportSpecBootstrap
 {
-    new Task<LoadedDashboard> LoadFromTextAsync(
+    new Task<ReportBootstrapResult> LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,

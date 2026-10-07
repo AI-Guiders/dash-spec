@@ -1,5 +1,5 @@
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Core.Parsing;
-using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Configuration;

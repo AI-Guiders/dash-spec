@@ -1,7 +1,7 @@
-﻿#nullable enable
+#nullable enable
 using DashSpec.Core.Model;
 using DashSpec.Host.Commands;
-using DashSpec.Host.Configuration;
+using DashSpec.Core.Catalog;
 using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Host.Services.Presentation;

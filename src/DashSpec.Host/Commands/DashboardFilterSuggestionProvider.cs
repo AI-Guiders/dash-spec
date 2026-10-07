@@ -2,6 +2,7 @@
 using AIGuiders.Platform.Execution.CommandPlane;
 using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
 using DashSpec.Core.Model;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 
 using AIGuiders.Platform.IntermediateRepresentation.Command;

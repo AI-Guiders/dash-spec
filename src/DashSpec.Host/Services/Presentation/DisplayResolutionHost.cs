@@ -1,7 +1,8 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
-using DashSpec.Host.Configuration;
+using DashSpec.Core.Catalog;
+using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Viz;
 
