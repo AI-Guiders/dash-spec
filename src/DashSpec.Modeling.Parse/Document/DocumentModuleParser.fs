@@ -781,7 +781,12 @@ module rec DocumentModuleParser =
                 if reader.TryPeekIdent() |> Option.exists (fun next -> String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)) then
                     DashboardShellParser.parseFiltersChromePublic reader shell false
                 else
-                    pageToolbar <- Some(Card.ToolbarBoardFactory.fromFilterNames(reader.ReadCommaListInline()))
+                    raise (
+                        DashSpecParseException(
+                            $"Page '{pageId}': inline toolbar filter lists removed; use page flow: filter -> [toolbar] chrome.page.{pageId}."
+                        )
+                    )
+
                 reader.SkipNewlines()
             elif reader.TryKeyword "derive" then
                 usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
