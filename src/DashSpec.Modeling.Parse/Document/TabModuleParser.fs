@@ -99,6 +99,7 @@ module TabModuleParser =
             ToolbarPlacementResolver.resolveFilterNames (shell.Filters :> IReadOnlyList<_>) (shell.DashboardFilters :> IReadOnlyList<_>) shell.ToolbarBoard
 
         ReportScopeFlowApplicator.apply shell
+        ReportScopeDataFlowApplicator.apply shell
 
         let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
 

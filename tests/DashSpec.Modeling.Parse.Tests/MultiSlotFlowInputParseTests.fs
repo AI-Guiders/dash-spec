@@ -33,7 +33,7 @@ end flow
 """
 
     [<Fact>]
-    let ``input for slot binds flow per diagram slot`` () =
+    let ``report data flow binds module outputs per diagram slot`` () =
         let dir = Path.Combine(Path.GetTempPath(), "multi-slot-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
@@ -54,18 +54,18 @@ report "Multi"
     filter.usage_date.range = -7d..today
   end defaults
   filter date usage_date on usage_date as "Date"
+
+  data flow
+    utilization [utilization] -> [rows] card.peak.heatmap
+    drill_src [rows] -> [rows] card.peak.drill
+    usage_date -> [usage_date] card.peak.heatmap
+    usage_date -> [usage_date] card.peak.drill
+  end data flow
+
   card peak as "Peak"
   diagram ref drill table
     columns = UserSam
   end table
-  input for heatmap rows from utilization.utilization
-  input for drill rows from drill_src.rows
-  data for heatmap
-    bind usage_date
-  end data
-  data for drill
-    bind usage_date
-  end data
   view
     diagram ref heatmap table
       columns = UserSam

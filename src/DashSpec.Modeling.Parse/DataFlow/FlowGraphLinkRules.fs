@@ -26,7 +26,9 @@ module FlowGraphLinkRules =
     let inferRole (link: FlowLinkDef) : InferredLinkRole =
         let toLower = link.ToNode.ToLowerInvariant()
 
-        if toLower.StartsWith("host.") then
+        if toLower.StartsWith("card.") then
+            InferredLinkRole.Data
+        elif toLower.StartsWith("host.") then
             InferredLinkRole.Wire
         elif portEquals link "toolbar" || portEquals link "panel" || portEquals link "filters" then
             InferredLinkRole.Show
