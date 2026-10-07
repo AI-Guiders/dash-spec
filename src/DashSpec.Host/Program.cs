@@ -51,6 +51,7 @@ if (args is ["validate", var validatePath, ..])
         }
         else
         {
+            DashSpecParser.EnsureModuleParsersRegistered();
             var registry = DashSpecBuiltinContributorRegistrar.RegisterBuiltins();
             var parseOptions = new DashSpecParseOptionsProvider(registry).CreateOptions();
             var specDirectory = Path.GetDirectoryName(fullPath)!;
@@ -229,21 +230,16 @@ if (urlsEnv.Contains("https://", StringComparison.OrdinalIgnoreCase))
 
 app.UseMiddleware<DashSpecAccessMiddleware>();
 app.UseMiddleware<DashSpecClientIdMiddleware>();
-app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
-app.UseAntiforgery();
-app.UseStaticFiles();
-app.MapStaticAssets();
+app.UseDashSpecBlazorViewerFoundation();
 
 app.MapAccessEndpoints();
 app.MapCatalogSyncEndpoints();
 app.MapPluginEndpoints();
 app.MapDashboardCommandEndpoints();
 
-app.MapRazorComponents<App>()
-    .AddAdditionalAssemblies(
-        typeof(VizBuiltinsPluginCatalog).Assembly,
-        typeof(FilterBuiltinsPluginCatalog).Assembly)
-    .AddInteractiveServerRenderMode();
+app.MapDashSpecBlazorViewer<App>(
+    typeof(VizBuiltinsPluginCatalog).Assembly,
+    typeof(FilterBuiltinsPluginCatalog).Assembly);
 
 app.MapDevEndpoints();
 
