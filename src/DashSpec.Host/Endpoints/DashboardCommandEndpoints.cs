@@ -20,9 +20,9 @@ public static class DashboardCommandEndpoints
 
     static IResult Complete(
         HttpContext context,
-        DashboardFilterCommandService commands,
-        IDashboardSession session,
-        DashboardFilterUiState uiState)
+        [FromServices] DashboardFilterCommandService commands,
+        [FromServices] IDashboardSession session,
+        [FromServices] DashboardFilterUiState uiState)
     {
         var line = context.Request.Query["line"].ToString();
         var commandContext = BuildApiContext(session, ResolveToolbarFilters(context, session), uiState);
@@ -52,9 +52,9 @@ public static class DashboardCommandEndpoints
     }
 
     static IResult Capabilities(
-        DashboardFilterCommandService commands,
-        IDashboardSession session,
-        DashboardFilterUiState uiState,
+        [FromServices] DashboardFilterCommandService commands,
+        [FromServices] IDashboardSession session,
+        [FromServices] DashboardFilterUiState uiState,
         HttpContext context)
     {
         var commandContext = BuildApiContext(session, ResolveToolbarFilters(context, session), uiState);
@@ -76,9 +76,9 @@ public static class DashboardCommandEndpoints
 
     static IResult Execute(
         [FromBody] DashboardCommandExecuteRequest request,
-        DashboardFilterCommandService commands,
-        DashboardFilterUiState uiState,
-        IDashboardSession session)
+        [FromServices] DashboardFilterCommandService commands,
+        [FromServices] DashboardFilterUiState uiState,
+        [FromServices] IDashboardSession session)
     {
         if (string.IsNullOrWhiteSpace(request.Line))
         {
