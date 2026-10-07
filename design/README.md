@@ -78,3 +78,5 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0070](DASHSPEC-ADR-0070-table-column-formats-block.md) | Table `formats` block | Accepted |
 | [0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) | Block + member grammar | Accepted |
 | [0090](DASHSPEC-ADR-0090-report-culture-defaults.md) | Report `culture` as locale SSOT | Accepted |
+| [0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) | Compiler `namespace` + `import` by kind | Accepted |
+| [0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) | Surface.Blazor full split + contract tests | Accepted |
