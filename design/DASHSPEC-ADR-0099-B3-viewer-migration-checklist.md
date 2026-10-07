@@ -9,6 +9,7 @@
 
 - `DashSpec.Surface.Blazor` — **composition only** (`AddDashSpecBlazorViewerShell`, HTTP foundation, `AddDashSpecViewerPlatform`).
 - **UI** — `DashSpec.Host/Components`, `DashSpec.Presentation` RCL.
+- **Viewer plugins** — `DashSpec.Viewer` (`Plugins/*`, `IViewerPluginHost`); Host loaders + diagnostics/on-click host adapters.
 - **Session / render / command palette** — `DashSpec.Host` (`DashboardSessionService`, `CardRenderService`, `Commands/*`, `Services/Presentation/*`).
 - **Planet** — bootstrap, `DashSpecHostContext`, connectors, git/catalog, EF, endpoints — `DashSpec.Host`.
 
