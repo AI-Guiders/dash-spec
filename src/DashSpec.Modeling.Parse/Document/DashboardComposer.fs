@@ -208,4 +208,4 @@ module rec DashboardComposer =
                 Dashflow = dashflow
                 DashflowPath = dashflowPath }
 
-        DocumentCompilePipeline.completeDocument merged
+        merged
