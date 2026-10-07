@@ -7,7 +7,7 @@ open DashSpec.Modeling.Parse.Document
 
 module CardInteriorFlowParseTests =
 
-    let private flowText =
+    let internal flowTextForReuse =
         """
 @flow peak
 
@@ -36,7 +36,7 @@ end flow
     let ``card flow links module ports and filters to slots`` () =
         let dir = Path.Combine(Path.GetTempPath(), "card-interior-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowTextForReuse)
 
         let specText =
             """

@@ -20,11 +20,18 @@ module FlowLinkParser =
                 reader.Advance()
 
                 if reader.IsOnNewline() then
-                    raise (DashSpecParseException("flow link port requires an identifier after '.'."))
+                    raise (DashSpecParseException("flow link endpoint requires an identifier after '.'."))
 
                 extend $"{left}.{reader.ReadIdentSameLine()}"
 
         extend root
+
+    /// Reads a link endpoint (e.g. <c>host.chrome.card.events_detail</c>) on the current line.
+    let readEndpointSameLine (reader: TokenReader) =
+        if reader.IsOnNewline() then
+            raise (DashSpecParseException("flow link endpoint is required."))
+
+        readDottedSameLine reader
 
     /// Optional <c>[port]</c> on the same line (output side before arrow, input side after arrow).
     let tryReadBracketPortSameLine (reader: TokenReader) =
@@ -51,23 +58,10 @@ module FlowLinkParser =
         else
             reader.Advance()
             let toPortFromBracket = tryReadBracketPortSameLine reader
-            let firstTarget = reader.ReadIdent()
+            let toNode = readEndpointSameLine reader
 
-            if String.IsNullOrWhiteSpace firstTarget then
+            if String.IsNullOrWhiteSpace toNode then
                 raise (DashSpecParseException("flow link requires a target node after ->."))
-
-            let toNode =
-                if reader.IsOnNewline() then
-                    firstTarget
-                else
-                    match reader.TryPeekIdent() with
-                    | Some second when
-                        String.Equals(firstTarget, "chrome", StringComparison.OrdinalIgnoreCase)
-                        || String.Equals(firstTarget, "host", StringComparison.OrdinalIgnoreCase)
-                        ->
-                        reader.ReadIdent() |> ignore
-                        $"{firstTarget}.{second}"
-                    | _ -> firstTarget
 
             Some
                 { FromNode = fromNode
