@@ -6,17 +6,17 @@ open Xunit
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Document
 
-module ReportScopeWiringGraphTests =
+module ReportScopePlacementTests =
 
     [<Fact>]
-    let ``parse exposes wiring graph with report scope flow and card interior links`` () =
-        let dir = Path.Combine(Path.GetTempPath(), "report-scope-flow-" + Guid.NewGuid().ToString("N"))
+    let ``placement flow wires filters to report and card`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "placement-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "peak.dashflow"), CardInteriorFlowParseTests.flowTextForReuse)
 
         let specText =
             """
-@tab report_scope_flow
+@tab placement_flow
 
 connect
   flow "peak.dashflow"
@@ -34,21 +34,18 @@ report "Scope"
 
   placement flow
     usage_date -> report
-    app_name -> report
+    app_name -> card.peak
   end placement flow
+
+  data flow
+    utilization [utilization] -> [rows] card.peak.heatmap
+    drill_src [rows] -> [rows] card.peak.drill
+  end data flow
 
   card peak as "Peak"
   diagram ref drill table
     columns = UserSam
   end table
-  data flow
-    utilization [utilization] -> [rows] heatmap
-    drill_src [rows] -> [rows] drill
-    usage_date -> [usage_date] heatmap
-    app_name -> [app_name] heatmap
-    usage_date -> [usage_date] drill
-    app_name -> [app_name] drill
-  end data flow
   view
     diagram ref heatmap table
       columns = UserSam
@@ -61,25 +58,14 @@ report "Scope"
   end card
 end report
 
-end tab report_scope_flow
+end tab placement_flow
 """
 
         try
             let document = DocumentModuleParser.parseDocumentDefault specText (Some dir)
-            Assert.True(document.WiringGraph.Edges.Length > 0)
-
-            Assert.True(
-                document.WiringGraph.Edges
-                |> Array.exists (fun e ->
-                    e.Kind = WiringEdgeKind.Route
-                    && e.From = "usage_date"
-                    && e.To = "chrome.dashboard")
-            )
-
-            Assert.True(
-                document.WiringGraph.Edges
-                |> Array.exists (fun e -> e.Kind = WiringEdgeKind.Flow && e.To = "heatmap")
-            )
+            Assert.Contains("usage_date", document.DashboardFilters)
+            let card = document.Cards.[0]
+            Assert.Contains("app_name", card.LocalFilters)
         finally
             try
                 Directory.Delete(dir, true)

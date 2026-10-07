@@ -26,6 +26,7 @@
     <Compile Include="CardInteriorFlowParseTests.fs" />
     <Compile Include="ReportScopeWiringGraphTests.fs" />
     <Compile Include="ReportScopeDataFlowTests.fs" />
+    <Compile Include="ReportScopePlacementTests.fs" />
     <Compile Include="ModuleLinkTests.fs" />
   </ItemGroup>
   <ItemGroup>
