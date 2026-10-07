@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Security;
+using DashSpec.Host.Services.Health;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DashSpec.Host.Endpoints;
@@ -10,7 +11,17 @@ internal static class AccessEndpoints
 {
     public static void MapAccessEndpoints(this WebApplication app)
     {
-        app.MapGet("/health", () => Results.Json(new { status = "ok", service = "dashspec-host" }));
+        app.MapGet("/health", (DashSpecCatalogHealthService health) =>
+        {
+            var report = health.Evaluate();
+            return Results.Json(new
+            {
+                status = report.DashboardLoadable ? "ok" : "degraded",
+                service = "dashspec-host",
+                dashboardLoadable = report.DashboardLoadable,
+                dashboardErrors = report.DashboardErrors,
+            });
+        });
 
         app.MapGet("/access", (HttpContext ctx, [FromQuery] string? returnUrl, [FromQuery] string? error) =>
         {
