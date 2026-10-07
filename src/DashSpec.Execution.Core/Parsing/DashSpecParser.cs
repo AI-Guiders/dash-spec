@@ -1,5 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Platform;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -42,6 +43,15 @@ public static class DashSpecParser
         DashSpecParseOptions parseOptions) =>
         RequireBridge(DocumentParseBridge.Parse, "Parse")(text, specDirectory, parseOptions);
 
+
+    public static ReportCompileResult Compile(string text, string? specDirectory = null) =>
+        Compile(text, specDirectory, DashSpecParseOptions.Default);
+
+    public static ReportCompileResult Compile(
+        string text,
+        string? specDirectory,
+        DashSpecParseOptions parseOptions) =>
+        RequireBridge(DocumentParseBridge.Compile, "Compile")(text, specDirectory, parseOptions);
     private static Func<TArg, TResult> RequireBridge<TArg, TResult>(
         Func<TArg, TResult>? bridge,
         string operation) =>
@@ -54,3 +64,4 @@ public static class DashSpecParser
         bridge ?? throw new InvalidOperationException(
             $"Document parse bridge not registered for {operation}. Reference DashSpec.Execution.Core.");
 }
+

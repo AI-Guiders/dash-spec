@@ -61,6 +61,7 @@
     <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Builtins\DashSpec.Plugin.Viz.Builtins.csproj" />
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
+    <ProjectReference Include="..\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
     <ProjectReference Include="..\DashSpec.Presentation\DashSpec.Presentation.csproj" />
     <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
@@ -111,3 +112,4 @@
   </ItemGroup>
 
 </Project>
+
