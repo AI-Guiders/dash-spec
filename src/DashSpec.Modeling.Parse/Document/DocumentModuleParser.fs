@@ -21,6 +21,12 @@ module rec DocumentModuleParser =
         let dashflow, path = DashflowDocumentResolver.resolve shell
         path, dashflow
 
+    let private applyModuleHeader (shell: ReportCompileContext) (header: ModuleHeader) =
+        shell.ModuleNamespace <- header.Namespace
+
+        for directive in header.Imports do
+            shell.ModuleImports.Add directive
+
     type private ReportCompileResult =
         { Context: ReportCompileContext
           SqlDialect: SqlDialect
@@ -103,7 +109,7 @@ module rec DocumentModuleParser =
                 (result.Context.DashboardFilters :> IReadOnlyList<_>)
                 result.Context.ToolbarBoard
 
-        DocumentCompilePipeline.compileScopeFlows result.Context
+        DocumentCompilePipeline.compileReportModule result.Context
 
         let cards = TabParser.assignTabs (result.Context.Cards :> IReadOnlyList<_>) tabs
 
@@ -155,7 +161,7 @@ module rec DocumentModuleParser =
                 (dashShell.DashboardFilters :> IReadOnlyList<_>)
                 dashShell.ToolbarBoard
 
-        DocumentCompilePipeline.compileScopeFlows dashShell
+        DocumentCompilePipeline.compileReportModule dashShell
 
         let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
@@ -243,7 +249,7 @@ module rec DocumentModuleParser =
         if result.Context.Cards.Count = 0 then
             raise (DashSpecParseException($"Tab module '{tabId}' must declare at least one card."))
 
-        DocumentCompilePipeline.compileScopeFlows result.Context
+        DocumentCompilePipeline.compileReportModule result.Context
 
         let embeddedFilters =
             ReportCompileContext.mergeFilterScopes
@@ -362,6 +368,7 @@ module rec DocumentModuleParser =
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
+        let moduleHeader = ModuleHeaderParser.parse reader
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "dashboard" (Some dashboardId)) do
             reader.SkipNewlines()
@@ -406,6 +413,7 @@ module rec DocumentModuleParser =
                         moduleExtensions
                         timePolicyAcc
 
+                applyModuleHeader created moduleHeader
                 shell <- Some created
                 let mutable moduleLabel = None
                 parseReportBlock reader created ReportBodyMode.DashboardRoot (fun label -> moduleLabel <- Some label)
@@ -449,6 +457,7 @@ module rec DocumentModuleParser =
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
+        let moduleHeader = ModuleHeaderParser.parse reader
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "tab" (Some tabId)) do
             reader.SkipNewlines()
@@ -493,6 +502,7 @@ module rec DocumentModuleParser =
                         moduleExtensions
                         timePolicyAcc
 
+                applyModuleHeader created moduleHeader
                 shell <- Some created
                 let mutable moduleLabel = None
                 parseReportBlock reader created reportMode (fun label -> moduleLabel <- Some label)

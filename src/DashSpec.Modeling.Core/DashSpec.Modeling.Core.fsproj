@@ -14,6 +14,7 @@
     <Compile Include="TypeInvariantLaws.fs" />
     <Compile Include="TypeCatalog.fs" />
     <Compile Include="FlowGraphKind.fs" />
+    <Compile Include="ImportKind.fs" />
     <Compile Include="FlowPlacementAnchors.fs" />
     <Compile Include="DataFlowGraph.fs" />
     <Compile Include="WiringGraph.fs" />

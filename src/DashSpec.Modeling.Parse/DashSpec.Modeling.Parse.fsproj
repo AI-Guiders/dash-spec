@@ -117,7 +117,10 @@
     <Compile Include="Toolbar\CommandAliasesParser.fs" />
     <Compile Include="Toolbar\ToolbarPlacementParser.fs" />
     <Compile Include="Document\FilterScopeDefaults.fs" />
+    <Compile Include="Document\ModuleHeaderTypes.fs" />
+    <Compile Include="Document\ModuleHeaderParser.fs" />
     <Compile Include="Document\DocumentTypes.fs" />
+    <Compile Include="Document\ModuleImportResolver.fs" />
     <Compile Include="Document\ReportTimePolicyParser.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
