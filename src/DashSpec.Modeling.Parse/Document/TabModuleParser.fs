@@ -98,7 +98,7 @@ module TabModuleParser =
         let dashboardFilters =
             ToolbarPlacementResolver.resolveFilterNames (shell.Filters :> IReadOnlyList<_>) (shell.DashboardFilters :> IReadOnlyList<_>) shell.ToolbarBoard
 
-        DocumentCompilePipeline.compileScopeFlows shell
+        DocumentCompilePipeline.compileReportModule shell
 
         let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
 

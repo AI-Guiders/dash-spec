@@ -87,8 +87,16 @@ module DocumentCompilePipeline =
         |> Array.filter (fun d ->
             d.Phase = DocumentPhase.BuildWiringGraph || d.Phase = DocumentPhase.ValidateDocument)
 
-    /// <summary>Post-parse: qualified flows → card/shell fields.</summary>
+    /// <summary>Qualified scope flows only — prefer <see cref="compileReportModule"/> after module parse.</summary>
     let compileScopeFlows (shell: ReportCompileContext) = ScopeFlows.apply shell
+
+    /// <summary>Bind phase: module header imports (ADR-0098). v1 validates only; linking replaces <c>!include</c> later.</summary>
+    let resolveImports (shell: ReportCompileContext) = ModuleImportResolver.resolve shell
+
+    /// <summary>Post-parse: imports (stub) → qualified flows → card/shell fields.</summary>
+    let compileReportModule (shell: ReportCompileContext) =
+        resolveImports shell
+        compileScopeFlows shell
 
     let private phase (p: DocumentPhase) =
         documentPhaseDefinitions |> Array.find (fun d -> d.Phase = p)

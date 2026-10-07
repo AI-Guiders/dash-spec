@@ -22,7 +22,7 @@ module DashSpecKeywords =
     let isControlKeyword (value: string) =
         match value.ToLowerInvariant() with
         | "tab" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
-        | "include" | "import" | "on" | "goto" | "page" | "phase" | "group"
+        | "include" | "import" | "from" | "namespace" | "on" | "goto" | "page" | "phase" | "group"
         | "connector" | "provider" | "palette" | "manifest" | "sqldialect" | "datasource" | "link" | "catalog"
         | "diagram" | "end" -> true
         | _ -> isBlockKeyword value
