@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · partial (F# compiler + IReportCompiler; demo/LUS migration ongoing)|
+| **Status** | Accepted · **implemented** (`IReportCompiler`, `dashspec.toml` index, `import`; `samples/demo` + `tests/Fixtures/import-project`; legacy `!include` in module headers rejected when `disable_legacy_includes`; planet LUS — ADR-0099 B5) |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) |
 

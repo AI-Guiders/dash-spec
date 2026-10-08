@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · **B1–B3 implemented** (viewer in `DashSpec.Surface.Blazor`; Host = planet deploy entry — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B4+ Bff/OpenAPI out of scope here) |
+| **Status** | Accepted · **B1–B4 implemented** (viewer in `DashSpec.Surface.Blazor`; Host bootstrap via `IReportCompiler` + project index — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B5 planet LUS + Surface.Bff/OpenAPI out of scope here) |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
@@ -11,7 +11,7 @@
 [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md) phases **S0–S3** describe surfaces as plugins. Today **`DashSpec.Host`** still owns:
 
 - Report **session** (`DashboardSessionService`, `IDashboardSession`)
-- Spec **load/compile** (`DashboardSpecLoader` → `DashSpecParser` / `SpecLibraryComposer`)
+- Spec **load/compile** (`DashboardSpecLoader` → `IReportSpecBootstrap` / `IReportCompiler` + `SpecLibraryComposer`)
 - **Render** orchestration (`CardRenderService`)
 - Blazor **UI** (`DashSpec.Presentation`, pages, circuit)
 
@@ -99,7 +99,7 @@ Test layers **do not** require Blazor, browser, or planet SQL:
 Contract tests may use:
 
 - `tests/Fixtures/import-project/` (Demo.*, ADR-0098)
-- `samples/demo/` (legacy `!include` until demo migrates separately)
+- `samples/demo/` (`import` + `dashspec.toml` index; `disable_legacy_includes`)
 
 Planet specs (**Lus.*** in URSA) are **out of dash-spec** CI; planets run their own contract suite against published Platform packages.
 
@@ -111,7 +111,7 @@ Planet specs (**Lus.*** in URSA) are **out of dash-spec** CI; planets run their 
 | **B1** | `IReportSession` + types in `Abstractions`; Host implements via type forward / adapter | Host tests green |
 | **B2** | `ReportSession` + `ReportSpecBootstrap` in `Execution.Runtime`; Host deletes duplicate logic | L3 session tests |
 | **B3** | `DashSpec.Surface.Blazor` project; Host references it or rename | Same E2E |
-| **B4** | `IReportCompiler` wraps F# `DashSpecCompiler`; loader uses index | L2 compile tests |
+| **B4** | `IReportCompiler` wraps F# `DashSpecCompiler`; loader uses index | **Done** — L2 `Execution.Compilation.Tests` (`samples/demo`, `Fixtures/import-project`) |
 | **B5** | Planet LUS: `dashspec.toml` + `import` (URSA repo only) | LUS soak parse in planet CI |
 
 **Order vs 0098:** B4 can overlap B2; **planet migration (B5) after B2** so LUS does not depend on Host internals.
