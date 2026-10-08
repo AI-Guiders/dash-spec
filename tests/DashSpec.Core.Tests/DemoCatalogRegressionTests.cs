@@ -57,7 +57,9 @@ public sealed class DemoCatalogRegressionTests
         }
 
         // Catalog specs must be B2 on disk (infer + rows R); no test-time datasource rewrite.
-        var doc = DashSpecParser.Parse(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions);
+        var doc = DashSpecParser
+            .Compile(File.ReadAllText(path), Path.GetDirectoryName(path)!, DemoParseOptions)
+            .Document;
         Assert.NotEmpty(doc.Filters);
         Assert.NotEmpty(doc.Cards);
 
