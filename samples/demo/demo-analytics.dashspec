@@ -1,4 +1,5 @@
 @tab analytics
+    namespace Demo.Analytics
     runtime
         manifest = "demo.toml"
     end runtime

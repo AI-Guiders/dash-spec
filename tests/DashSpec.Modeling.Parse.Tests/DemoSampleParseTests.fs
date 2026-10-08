@@ -3,6 +3,7 @@ namespace DashSpec.Modeling.Parse.Tests
 open System
 open System.IO
 open Xunit
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Document
 
@@ -46,7 +47,7 @@ module DemoSampleParseTests =
         Assert.True(diagramIds.Count > 9)
 
     [<Fact>]
-    let ``demo soak glob ignores unreferenced broken diagram file`` () =
+    let ``demo soak import index fails when glob contains invalid diagram`` () =
         let diagramsDir = Path.Combine(samplesDemoDir, "diagrams")
         let junkName = "_link-test-broken-" + Guid.NewGuid().ToString("N") + ".dashdiagram"
         let junkPath = Path.Combine(diagramsDir, junkName)
@@ -56,10 +57,11 @@ module DemoSampleParseTests =
         try
             let path = Path.Combine(samplesDemoDir, "demo-soak.dashspec")
             let text = File.ReadAllText path
-            let document =
-                DashboardComposer.parse text (Some samplesDemoDir) DashSpecParseOptions.defaultOptions
 
-            Assert.Equal(18, document.Cards.Count)
+            Assert.Throws<DashSpecParseException>(fun () ->
+                DashboardComposer.parse text (Some samplesDemoDir) DashSpecParseOptions.defaultOptions
+                |> ignore)
+            |> ignore
         finally
             try
                 File.Delete junkPath

@@ -1,0 +1,12 @@
+root_namespace = "Demo"
+disable_legacy_includes = true
+
+[[index]]
+namespace = "Demo.Diagrams"
+kind = "diagrams"
+glob = "diagrams/*.dashdiagram"
+
+[[index]]
+namespace = "Demo.Types"
+kind = "types"
+glob = "demo-rows.dashtype"
