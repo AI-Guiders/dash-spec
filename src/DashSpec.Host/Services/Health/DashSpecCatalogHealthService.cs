@@ -1,13 +1,14 @@
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Catalog;
+using DashSpec.Core.Platform;
 using DashSpec.Viewer.Plugins;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Services.Health;
 
 public sealed class DashSpecCatalogHealthService(
     CatalogSourceState catalogState,
-    DashSpecParseOptionsProvider parseOptionsProvider)
+    DashSpecParseOptionsProvider parseOptionsProvider,
+    IReportCompiler reportCompiler)
 {
     public DashSpecHealthReport Evaluate()
     {
@@ -26,10 +27,10 @@ public sealed class DashSpecCatalogHealthService(
                 }
 
                 var text = File.ReadAllText(specPath);
-                var document = DashSpecParser.Parse(
+                var document = reportCompiler.Compile(
                     text,
                     Path.GetDirectoryName(specPath),
-                    parseOptionsProvider.CreateOptions());
+                    parseOptionsProvider.CreateOptions()).Document;
                 foreach (var message in DashboardValidationCollector.Collect(document))
                 {
                     errors.Add($"[{entry.Id}] {message}");

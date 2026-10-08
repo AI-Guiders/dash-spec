@@ -1,4 +1,7 @@
 @dashboard demo_soak
+    namespace Demo.Soak
+    import diagrams from Demo.Diagrams
+    import types from Demo.Types
     runtime
         manifest = "demo.toml"
     end runtime
@@ -8,8 +11,6 @@
         palette = "palettes/demo-apps.dashpalette"
     end configuration
 
-    !include "diagrams/*.dashdiagram"
-    !include "demo-rows.dashtype"
     connect
         use palette demo_apps
         flow "flows/demo-report.dashflow"

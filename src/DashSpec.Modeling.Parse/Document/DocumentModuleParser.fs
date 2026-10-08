@@ -323,6 +323,8 @@ module rec DocumentModuleParser =
             let moduleKind = if isDashboard then "dashboard" else "tab"
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
+            ModuleHeaderParser.parse reader |> ignore
+            reader.SkipNewlines()
 
             let rec loop () =
                 if reader.IsEof || BlockSyntax.isBlockEnd reader moduleKind (Some moduleId) then None
@@ -358,6 +360,8 @@ module rec DocumentModuleParser =
             let moduleId = reader.ReadIdent()
             let moduleKind = if isDashboard then "dashboard" else "tab"
             BlockSyntax.beginBlock reader
+            reader.SkipNewlines()
+            ModuleHeaderParser.parse reader |> ignore
             reader.SkipNewlines()
 
             let rec loop () =

@@ -2,10 +2,10 @@ using System.Diagnostics;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Platform;
 using DashSpec.Execution.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Host.Configuration;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
@@ -22,6 +22,7 @@ public sealed class LoadDiagnosticsService(
     IWebHostEnvironment environment,
     IHostPathResolver pathResolver,
     DashSpecParseOptionsProvider parseOptionsProvider,
+    IReportCompiler reportCompiler,
     RuntimeConnectorResolver runtimeConnectorResolver,
     IDashboardSpecLoader specLoader,
     DashSpecTomlRoot bootstrap)
@@ -79,13 +80,13 @@ public sealed class LoadDiagnosticsService(
             steps.Add(new LoadStepReport("read_file", true, readSw.ElapsedMilliseconds, $"{text.Length} chars"));
 
             var parseSw = Stopwatch.StartNew();
-            var document = DashSpecParser.Parse(
+            var document = reportCompiler.Compile(
                 text,
                 Path.GetDirectoryName(specFullPath),
-                parseOptionsProvider.CreateOptions());
+                parseOptionsProvider.CreateOptions()).Document;
             parseSw.Stop();
             steps.Add(new LoadStepReport(
-                "parse_spec",
+                "compile_spec",
                 true,
                 parseSw.ElapsedMilliseconds,
                 $"{document.Cards.Count} cards, {document.Filters.Count} filters"));

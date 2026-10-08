@@ -384,6 +384,8 @@ module internal ReferenceScanSkip =
 
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
+            ModuleHeaderParser.parse reader |> ignore
+            reader.SkipNewlines()
 
             while not (BlockSyntax.isBlockEnd reader moduleKind (Some moduleId)) && not reader.IsEof do
                 reader.SkipNewlines()

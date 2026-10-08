@@ -46,7 +46,7 @@ public sealed class ReportPreviewSession : IReportPreviewSession
             ?? throw new InvalidOperationException($"Cannot resolve directory for spec path '{fullPath}'.");
 
         var text = await File.ReadAllTextAsync(fullPath, cancellationToken).ConfigureAwait(false);
-        var document = DashSpecParser.Parse(text, specDirectory);
+        var document = DashSpecParser.Compile(text, specDirectory).Document;
         var library = SpecLibraryComposer.Load(
             fullPath,
             document.DiagramLibraryPath,

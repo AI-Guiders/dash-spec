@@ -1,6 +1,6 @@
 using DashSpec.Core.Parsing;
+using DashSpec.Core.Platform;
 using DashSpec.Execution.Resolution;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Host.Configuration;
 using DashSpec.Abstractions.Hosting;
@@ -12,7 +12,8 @@ public sealed class DevSpecResolveService(
     DashSpecHostContext hostContext,
     IWebHostEnvironment environment,
     IHostPathResolver pathResolver,
-    DashSpecParseOptionsProvider parseOptionsProvider)
+    DashSpecParseOptionsProvider parseOptionsProvider,
+    IReportCompiler reportCompiler)
 {
     public DevSpecResolveResult ResolveConfiguredSpec()
     {
@@ -36,10 +37,10 @@ public sealed class DevSpecResolveService(
             }
 
             var text = File.ReadAllText(specFullPath);
-            var document = DashSpecParser.Parse(
+            var document = reportCompiler.Compile(
                 text,
                 Path.GetDirectoryName(specFullPath),
-                CreateDevResolveParseOptions());
+                CreateDevResolveParseOptions()).Document;
             var library = SpecLibraryComposer.Load(
                 specFullPath,
                 document.DiagramLibraryPath,
