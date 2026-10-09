@@ -82,7 +82,7 @@ module DashSpecBlockKeyword =
         | "bind" -> Some DashSpecBlockKeyword.Bind
         | "import" -> Some DashSpecBlockKeyword.Import
         | "include" -> Some DashSpecBlockKeyword.Include
-        | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge" | "kpi"
+        | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge"
         | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
