@@ -44,10 +44,12 @@ module TypeCatalogTests =
             FlowGraph.ofNodes
                 [ { Id = "s"
                     Kind = FlowNodeKind.Source
+                    InnerFlowId = None
                     Inputs = Array.empty
                     Outputs = [| { Name = "out"; Type = DashPortType.Rows "A" } |] }
                   { Id = "t"
                     Kind = FlowNodeKind.Transformer
+                    InnerFlowId = None
                     Inputs = [| { Name = "in"; Type = DashPortType.Rows "B" } |]
                     Outputs = Array.empty } ]
                 [ { From = { NodeId = "s"; PortName = "out" }
