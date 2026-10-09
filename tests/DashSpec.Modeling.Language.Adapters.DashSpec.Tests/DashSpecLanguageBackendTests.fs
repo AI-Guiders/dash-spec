@@ -26,7 +26,8 @@ module DashSpecLanguageBackendTests =
           Line = line
           Column = column
           SourceText = sampleText
-          SolutionOrProjectPath = "" }
+          SolutionOrProjectPath = ""
+          SessionDefaultLanguageId = "" }
 
     let private backend () = DashSpecLanguageBackend() :> ILanguageBackend
 
