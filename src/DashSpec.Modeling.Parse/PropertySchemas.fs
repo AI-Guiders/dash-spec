@@ -78,7 +78,8 @@ module PropertySchemas =
           spec "single" Scalar ]
 
     let filterShow =
-        [ spec "label" String
+        [ spec "apply" Scalar
+          spec "label" String
           spec "widget" Scalar
           spec "ref" Scalar
           spec "bind_scope" Scalar ]

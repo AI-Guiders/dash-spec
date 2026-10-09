@@ -360,6 +360,14 @@ module FilterParser =
                         raise (DashSpecParseException($"Filter '{name}': show bind_scope must be 'tooltip', 'inline', or 'hidden'."))
                 | false, _ -> Some "tooltip"
 
+            let applyMode =
+                match showProps.TryGetValue "apply" with
+                | true, value ->
+                    match value.Trim().ToLowerInvariant() with
+                    | "manual" | "auto" -> value.Trim().ToLowerInvariant()
+                    | _ -> raise (DashSpecParseException($"Filter '{name}': show apply must be 'manual' or 'auto'."))
+                | false, _ -> "auto"
+
             let label = resolveStructuredLabel name resolvedKind showProps
             let singleSelect = resolveSingleSelect widget bindProps
             let defaultExpression, minValue, maxValue =
@@ -377,6 +385,7 @@ module FilterParser =
               SingleSelect = singleSelect
               LayoutRef = layoutRef
               BindScopeHint = bindScope
+              ApplyMode = applyMode
               GrainLabels = grainLabels
               Placement = placement }
 
@@ -565,6 +574,7 @@ module FilterParser =
           SingleSelect = singleSelect
           LayoutRef = layoutRef
           BindScopeHint = None
+          ApplyMode = "auto"
           GrainLabels = grainLabels
           Placement = placement }
 
