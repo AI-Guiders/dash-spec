@@ -40,7 +40,7 @@ public class DocumentModuleParserTests
                   end standalone
                   card c as "C"
                   diagram x
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   bind
                     app
                   end bind

@@ -17,7 +17,7 @@ public sealed class EndSyntaxTests
               diagram bar
               category = x value = y
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end page
               end report
@@ -41,7 +41,7 @@ public sealed class EndSyntaxTests
                 diagram bar
                   category = x value = y
                 end bar
-                datasource infer view dbo.t rows FixtureRow
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
             end report
             """);
@@ -73,7 +73,7 @@ public sealed class EndSyntaxTests
               diagram bar
               category = x value = y
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               bind
                 usage_date
               end bind

@@ -31,7 +31,7 @@ public class CardInteriorLayoutTests
               diagram ref D table
               columns = a, b
               end table
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               bind
                 usage_date
               end bind
@@ -71,7 +71,7 @@ public class CardInteriorLayoutTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               layout
               [ app_name ]
               end layout
@@ -99,7 +99,7 @@ public class CardInteriorLayoutTests
               diagram ref D number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               layout
               [ A A ]
               end layout
@@ -136,11 +136,11 @@ public class CardInteriorLayoutTests
               columns = h, u
               end table
               data
-                datasource infer view dbo.heat rows FixtureRow
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
                 bind usage_date
               end data
               data for drill
-                datasource infer view dbo.drill rows FixtureRow
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
                 bind usage_date
               end data
               layout
@@ -181,7 +181,7 @@ public class CardInteriorLayoutTests
               card events_detail as "Detail"
               filters rows_top
               data
-                datasource infer view dbo.t rows FixtureRow
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
                 bind usage_date
               end data
               view
@@ -224,7 +224,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               bind usage_date, app_name
               end card
               end report
@@ -264,7 +264,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               bind usage_date, app_name
               end card
               end report
@@ -299,7 +299,7 @@ public class CardInteriorLayoutTests
               end filters
               diagram ref H heatmap
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               bind usage_date, app_name
               end card
               end report

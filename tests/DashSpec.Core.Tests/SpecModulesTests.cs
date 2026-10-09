@@ -246,7 +246,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -272,7 +272,7 @@ public class SpecModulesTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -528,7 +528,7 @@ public class SpecModulesTests
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -585,7 +585,7 @@ public class SpecModulesTests
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -623,7 +623,7 @@ public class SpecModulesTests
               y = b
               value = c
               end diagram
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -644,7 +644,7 @@ public class SpecModulesTests
               title = "T"
               card a as "A"
               diagram missing_preset
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -667,7 +667,7 @@ public class SpecModulesTests
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -706,7 +706,7 @@ public class SpecModulesTests
               title = "T"
               card c as "C"
               diagram demo_peak_line
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard

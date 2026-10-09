@@ -134,7 +134,7 @@ public sealed class DemoCatalogRegressionTests
                 title = "Детализация событий"
                 filters events_top
                 data
-                  datasource infer view demo.v_events_detail rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   bind usage_date
                 end data
                 view

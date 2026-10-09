@@ -80,7 +80,7 @@ public class StructuredSyntaxTests
                 card peak
                   title = "Peak"
                   data
-                    datasource infer view demo.v_peak rows FixtureRow
+                    data flow { fixture_src [rows] -> [rows] __diagram__ }
                     bind usage_date
                   end data
                   view

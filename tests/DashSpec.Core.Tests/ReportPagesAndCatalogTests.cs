@@ -19,7 +19,7 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end page
               page detail
@@ -27,7 +27,7 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end page
               end report
@@ -56,7 +56,7 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab
@@ -85,7 +85,7 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab
@@ -112,7 +112,7 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab
@@ -165,7 +165,7 @@ public sealed class ReportPagesAndCatalogTests
                   diagram bar
                   x = a y = b
                   end bar
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end tab
@@ -180,7 +180,7 @@ public sealed class ReportPagesAndCatalogTests
                   diagram bar
                   x = a y = b
                   end bar
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end page
                   end report
@@ -234,13 +234,13 @@ public sealed class ReportPagesAndCatalogTests
                   diagram bar
                   x = a y = b
                   end bar
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   card b as "B"
                   diagram bar
                   x = a y = b
                   end bar
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end page
                   end report
@@ -268,14 +268,14 @@ public sealed class ReportPagesAndCatalogTests
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end page
               card orphan as "Orphan"
               diagram bar
               x = a y = b
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab

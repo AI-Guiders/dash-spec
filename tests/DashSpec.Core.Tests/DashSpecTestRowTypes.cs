@@ -70,7 +70,8 @@ internal static class DashSpecTestRowTypes
 
     internal static string EnsureFixtureRowCatalog(string dashspecText)
     {
-        if (!dashspecText.Contains("FixtureRow", StringComparison.Ordinal))
+        if (!dashspecText.Contains("FixtureRow", StringComparison.Ordinal)
+            && !dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal))
         {
             return dashspecText;
         }
@@ -85,6 +86,7 @@ internal static class DashSpecTestRowTypes
         var lines = normalized.Split('\n');
         var sb = new StringBuilder();
         var injected = false;
+        var needsFlow = dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal);
 
         foreach (var line in lines)
         {
@@ -106,6 +108,17 @@ internal static class DashSpecTestRowTypes
             var indent = line.Length - trimmed.Length + 2;
             sb.Append(new string(' ', indent));
             sb.AppendLine(ModuleTypesIncludeLine);
+
+            if (needsFlow)
+            {
+                sb.Append(new string(' ', indent));
+                sb.AppendLine("connect");
+                sb.Append(new string(' ', indent + 2));
+                sb.AppendLine("flow \"fixture.dashflow\"");
+                sb.Append(new string(' ', indent));
+                sb.AppendLine("end connect");
+            }
+
             injected = true;
         }
 
