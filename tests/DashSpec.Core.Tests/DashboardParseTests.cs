@@ -113,7 +113,14 @@ public class DashboardParseTests
                   !include "query-row-types.dashtype"
               report
               title = "T"
-              filter field app_name on app_name as "App"
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               filters dashboard
               app_name
               end dashboard
@@ -145,20 +152,39 @@ public class DashboardParseTests
                 filter.usage_date.range = -7d..today
                 filter.activity_day.range = today
               end defaults
-              filter date usage_date on usage_date as "Usage"
-              filter date activity_day
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Usage"
+                end show
+              end filter
+              filter activity_day
+                bind date
+                end bind
+                show
+                end show
+              end filter
               column = bucket_start_utc as "Day"
               widget = day
               end filter
-              filter field app_name on app_name as "App"
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               filters dashboard
               usage_date
               app_name
               end dashboard
               card activity as "Activity"
-              filters
-              activity_day
-              end filters
+              show flow
+              activity_day -> [toolbar] chrome.card.activity
+              end show flow
               bind
                 activity_day, app_name
               end bind
@@ -188,7 +214,14 @@ public class DashboardParseTests
                   defaults
                     filter.usage_date.range = -7d..today
                   end defaults
-                  filter date usage_date on usage_date as "Usage"
+                  filter usage_date
+                    bind date
+                      column = usage_date
+                    end bind
+                    show
+                      label = "Usage"
+                    end show
+                  end filter
                   card a as "A"
                   bind
                     usage_date
@@ -216,7 +249,14 @@ public class DashboardParseTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Usage"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Usage"
+                end show
+              end filter
               filters chrome
               layout = bar
               sticky = true
@@ -872,7 +912,14 @@ public class DashboardParseTests
                   defaults
                     filter.usage_date.range = -7d..today
                   end defaults
-                  filter date usage_date on usage_date as "Дата"
+                  filter usage_date
+                    bind date
+                      column = usage_date
+                    end bind
+                    show
+                      label = "Дата"
+                    end show
+                  end filter
                   card a as "A"
                   bind
                     usage_date

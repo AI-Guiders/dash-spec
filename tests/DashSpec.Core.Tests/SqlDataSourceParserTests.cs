@@ -22,7 +22,14 @@ public class SqlDataSourceParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
@@ -61,7 +68,14 @@ public class SqlDataSourceParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
@@ -94,7 +108,14 @@ public class SqlDataSourceParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard

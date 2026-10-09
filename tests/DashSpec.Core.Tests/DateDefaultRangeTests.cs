@@ -42,7 +42,14 @@ public class DateDefaultRangeTests
                   defaults
                     filter.usage_date.range = last_7_days
                   end defaults
-                  filter date usage_date on usage_date as "Usage"
+                  filter usage_date
+                    bind date
+                      column = usage_date
+                    end bind
+                    show
+                      label = "Usage"
+                    end show
+                  end filter
                   end report
                 end dashboard
 """));

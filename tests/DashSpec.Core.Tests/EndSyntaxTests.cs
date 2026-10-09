@@ -62,12 +62,29 @@ public sealed class EndSyntaxTests
                 filter.usage_date.range = -7d..today
                 filter.period_start.range = today..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
-              filter date period_start on period_start as "Период"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
+              filter period_start
+                bind date
+                  column = period_start
+                end bind
+                show
+                  label = "Период"
+                end show
+              end filter
               toolbar usage_date, period_start
               end standalone
               page p
-              toolbar usage_date, period_start
+              show flow
+              usage_date -> [toolbar] chrome.page.p
+              period_start -> [toolbar] chrome.page.p
+              end show flow
               derive usage_date from period_start
               card c as "C"
               diagram bar

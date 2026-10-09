@@ -20,10 +20,26 @@ public class ToolbarFilterVisibilityTests
                 filter.usage_date.range = -7d..today
                 filter.chart_top.limit = 200
               end defaults
-              filter date usage_date on usage_date as "Report date"
-              filter top chart_top as "Rows (TOP)"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Report date"
+                end show
+              end filter
+              filter chart_top
+                bind top
+                end bind
+                show
+                  label = "Rows (TOP)"
+                end show
+              end filter
               page peak_util
-                toolbar usage_date, chart_top
+                show flow
+                  usage_date -> [toolbar] chrome.page.peak_util
+                  chart_top -> [toolbar] chrome.page.peak_util
+                end show flow
                 card peak_by_app as "Peak by app"
                   diagram bar
                   category = app_name
@@ -34,7 +50,10 @@ public class ToolbarFilterVisibilityTests
                 end card
               end page
               page executive_summary
-                toolbar usage_date, chart_top
+                show flow
+                  usage_date -> [toolbar] chrome.page.executive_summary
+                  chart_top -> [toolbar] chrome.page.executive_summary
+                end show flow
                 card exec_top_chart as "Top chart"
                   diagram bar
                   category = app_name

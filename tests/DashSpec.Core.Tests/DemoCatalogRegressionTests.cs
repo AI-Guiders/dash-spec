@@ -132,11 +132,13 @@ public sealed class DemoCatalogRegressionTests
               end standalone
               card events_detail ref events_detail
                 title = "Детализация событий"
-                filters events_top
-                data
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  bind usage_date
-                end data
+                show flow
+                events_top -> [toolbar] chrome.card.events_detail
+                end show flow
+                data flow
+                fixture_src [rows] -> [rows] events_table
+                usage_date -> [usage_date] events_table
+                end data flow
                 view
                   diagram ref events_table demo_events_detail_table
                 end view

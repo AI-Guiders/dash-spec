@@ -31,12 +31,18 @@ public class TabModuleTests
                   defaults
                     filter.n.limit = 5
                   end defaults
-                  filter top n as "Top"
+                  filter n
+                    bind top
+                    end bind
+                    show
+                      label = "Top"
+                    end show
+                  end filter
                   card x as "X"
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x rows ExtraRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end tab
@@ -47,7 +53,14 @@ public class TabModuleTests
                   !include "query-row-types.dashtype"
                   report
                   title = "T"
-                  filter field app_name on dbo.apps.name as "Apps"
+                  filter app_name
+                    bind field
+                      column = dbo.apps.name
+                    end bind
+                    show
+                      label = "Apps"
+                    end show
+                  end filter
                   tab overview as "Overview"
                   cards
                   a
@@ -85,11 +98,19 @@ public class TabModuleTests
               defaults
                 filter.period_start.range = today
               end defaults
-              filter date period_start on p as "Period" widget day
+              filter period_start
+                bind date
+                  column = p
+                end bind
+                show
+                  label = "Period"
+                  widget = day
+                end show
+              end filter
               card host as "Host"
-              filters
-              period_start
-              end filters
+              show flow
+              period_start -> [toolbar] chrome.card.host
+              end show flow
               bind
                 period_start
               end bind
@@ -99,9 +120,9 @@ public class TabModuleTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               card guest as "Guest"
-              filters host host
-              period_start
-              end filters
+              wire flow
+              host.period_start -> host.chrome.card.guest
+              end wire flow
               bind
                 period_start
               end bind
@@ -129,11 +150,19 @@ public class TabModuleTests
               defaults
                 filter.period_start.range = today
               end defaults
-              filter date period_start on p as "Period" widget day
+              filter period_start
+                bind date
+                  column = p
+                end bind
+                show
+                  label = "Period"
+                  widget = day
+                end show
+              end filter
               card host as "Host"
-              filters
-              period_start
-              end filters
+              show flow
+              period_start -> [toolbar] chrome.card.host
+              end show flow
               bind
                 period_start
               end bind
@@ -179,7 +208,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.x rows ExtraRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end tab
@@ -254,7 +283,14 @@ public class TabModuleTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               toolbar usage_date
               end standalone
               card a as "A"
