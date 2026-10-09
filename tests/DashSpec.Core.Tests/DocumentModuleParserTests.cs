@@ -35,7 +35,14 @@ public class DocumentModuleParserTests
                   report
                   title = "Tab title"
                   standalone
-                  filter field app on dbo.apps.name as "App"
+                  filter app
+                    bind field
+                      column = dbo.apps.name
+                    end bind
+                    show
+                      label = "App"
+                    end show
+                  end filter
                   toolbar app
                   end standalone
                   card c as "C"

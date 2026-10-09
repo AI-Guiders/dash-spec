@@ -22,8 +22,22 @@ public class QueryCompilerTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Usage"
-              filter field app_name on demo.v_daily_active_users.app_name as "App"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Usage"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = demo.v_daily_active_users.app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               filters dashboard
               usage_date
               app_name
@@ -71,8 +85,22 @@ public class QueryCompilerTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Usage"
-              filter field app_name on demo.v.app_name as "App"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Usage"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = demo.v.app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               filters dashboard
               usage_date
               app_name
@@ -124,7 +152,14 @@ public class QueryCompilerTests
               end configuration
               report
               title = "T"
-              filter field bucket on bucket_start_utc as "Bucket"
+              filter bucket
+                bind field
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "Bucket"
+                end show
+              end filter
               filters dashboard
               bucket
               end dashboard
@@ -171,7 +206,14 @@ public class QueryCompilerTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
@@ -217,7 +259,14 @@ public class QueryCompilerTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
@@ -315,7 +364,13 @@ public class QueryCompilerTests
               defaults
                 filter.row_limit.limit = 250
               end defaults
-              filter top row_limit as "Limit"
+              filter row_limit
+                bind top
+                end bind
+                show
+                  label = "Limit"
+                end show
+              end filter
               card events as "Events"
               filters
               row_limit
@@ -393,8 +448,21 @@ public class QueryCompilerTests
                 filter.usage_date.range = -7d..today
                 filter.row_limit.limit = 100
               end defaults
-              filter date usage_date on usage_date as "Дата"
-              filter top row_limit as "Limit"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата"
+                end show
+              end filter
+              filter row_limit
+                bind top
+                end bind
+                show
+                  label = "Limit"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
