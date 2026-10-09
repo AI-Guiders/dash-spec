@@ -83,6 +83,7 @@ public class CardInteriorLayoutTests
                 end bind
                 show
                   label = "App"
+                  apply = manual
                 end show
               end filter
               card detail as "Detail"
@@ -118,6 +119,7 @@ public class CardInteriorLayoutTests
                 end bind
                 show
                   label = "App"
+                  apply = manual
                   ref = A
                 end show
               end filter
@@ -278,6 +280,7 @@ public class CardInteriorLayoutTests
                 end bind
                 show
                   label = "App"
+                  apply = manual
                 end show
               end filter
               card peak as "Peak"
@@ -331,6 +334,7 @@ public class CardInteriorLayoutTests
                 end bind
                 show
                   label = "App"
+                  apply = manual
                   widget = combobox
                 end show
               end filter
@@ -386,6 +390,7 @@ public class CardInteriorLayoutTests
                 end bind
                 show
                   label = "App"
+                  apply = manual
                 end show
               end filter
               card peak as "Peak"

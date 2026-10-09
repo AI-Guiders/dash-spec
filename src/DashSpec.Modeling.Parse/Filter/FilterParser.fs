@@ -582,7 +582,9 @@ module FilterParser =
         match reader.TryPeekIdent() with
         | None -> raise (reader.Unexpected "filter id or kind (date, field, top)")
         | Some first when isFilterKind first ->
-            parseLegacyKindFirst reader (parseFilterKindFromIdent (reader.ReadIdent())) resolveProperty
+            raise (
+                DashSpecParseException(
+                    $"Filter '{first}': kind-first declarations removed — use filter <id> ... end filter with bind/show blocks."))
         | Some name ->
             reader.ReadIdent() |> ignore
             parseStructuredIdFirst reader name resolveProperty
@@ -611,12 +613,9 @@ module FilterParser =
         match reader.TryPeekIdent() with
         | None -> raise (reader.Unexpected "filter id or kind (date, field, top)")
         | Some first when isFilterKind first ->
-            reader.ReadIdent() |> ignore
-            reader.ReadIdent() |> ignore
-            skipLine ()
-
-            if not reader.IsEof && looksLikeFilterPropertyContinuation reader then
-                skipBody ()
+            raise (
+                DashSpecParseException(
+                    $"Filter '{first}': kind-first declarations removed — use filter <id> ... end filter with bind/show blocks."))
         | Some _ ->
             reader.ReadIdent() |> ignore
             skipBody ()
