@@ -55,8 +55,22 @@ report "Interior"
   defaults
     filter.usage_date.range = -7d..today
   end defaults
-  filter date usage_date on usage_date as "Date"
-  filter field app_name on dbo.t.app as "App"
+  filter usage_date
+    bind date
+      column = usage_date
+    end bind
+    show
+      label = "Date"
+    end show
+  end filter
+  filter app_name
+    bind field
+      column = dbo.t.app
+    end bind
+    show
+      label = "App"
+    end show
+  end filter
   card peak as "Peak"
   diagram ref drill table
     columns = UserSam
