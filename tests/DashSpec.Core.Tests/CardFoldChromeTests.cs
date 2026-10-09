@@ -21,7 +21,7 @@ public class CardFoldChromeTests
               x = a y
               value = c
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab

@@ -29,7 +29,7 @@ public class ToolbarFilterVisibilityTests
                   category = app_name
                   value = peak_concurrent_proxy
                   end bar
-                  datasource infer view demo.v_peak_by_app rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   bind usage_date, chart_top
                 end card
               end page
@@ -40,7 +40,7 @@ public class ToolbarFilterVisibilityTests
                   category = app_name
                   value = peak_concurrent_proxy
                   end bar
-                  datasource infer view demo.v_exec_top rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   bind usage_date, chart_top
                 end card
               end page

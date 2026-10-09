@@ -31,7 +31,7 @@ public class CommandAliasesParserTests
               diagram number
               value = total
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard

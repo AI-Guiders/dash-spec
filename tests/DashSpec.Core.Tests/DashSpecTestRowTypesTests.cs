@@ -16,7 +16,7 @@ public sealed class DashSpecTestRowTypesTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.events rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard

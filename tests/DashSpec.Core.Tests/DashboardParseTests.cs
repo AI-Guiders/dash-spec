@@ -29,7 +29,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -94,7 +94,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -124,7 +124,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -165,7 +165,7 @@ public class DashboardParseTests
               diagram line
               x = bucket_start_utc y
               end line
-              datasource infer view dbo.activity rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -196,7 +196,7 @@ public class DashboardParseTests
                   diagram number
                   value = x
                   end number
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -238,7 +238,7 @@ public class DashboardParseTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -382,7 +382,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               height = 360
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -426,7 +426,7 @@ public class DashboardParseTests
               label = "Состав в пике"
               as list
               end inspect
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -463,7 +463,7 @@ public class DashboardParseTests
               value = peak_concurrent_apps
               tooltip = peak_apps
               end heatmap
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -495,7 +495,7 @@ public class DashboardParseTests
               tooltip peak_apps
               source = peak_apps
               end tooltip
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -542,7 +542,7 @@ public class DashboardParseTests
               value = peak_concurrent_proxy
               reference = purchased_seats as "Куплено"
               end bar
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -571,7 +571,7 @@ public class DashboardParseTests
                   max = "макс. {max}"
                 
                 end legend
-                datasource infer view dbo.t rows FixtureRow
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
               
               end card
             
@@ -880,7 +880,7 @@ public class DashboardParseTests
                   diagram line
                   x = usage_date y
                   end line
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   where [[usage_date]]
                   end card
                   end report
@@ -913,7 +913,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource infer view dbo.a rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               card b as "B"
               place
@@ -924,7 +924,7 @@ public class DashboardParseTests
               diagram bar
               x = a y
               end bar
-              datasource infer view dbo.b rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               card c as "C"
               place
@@ -935,7 +935,7 @@ public class DashboardParseTests
               diagram table
               columns = a, b
               end table
-              datasource infer view dbo.c rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard

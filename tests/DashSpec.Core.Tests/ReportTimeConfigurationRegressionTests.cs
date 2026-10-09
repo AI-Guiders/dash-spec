@@ -26,7 +26,7 @@ public sealed class ReportTimeConfigurationRegressionTests
           diagram number
           value = kpi
           end number
-          datasource infer view demo.v rows FixtureRow
+          data flow { fixture_src [rows] -> [rows] __diagram__ }
           end card
           end report
         end tab
