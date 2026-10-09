@@ -76,7 +76,14 @@ public class StructuredSyntaxTests
                   filter.usage_date.range = -7d..today
                 end defaults
                 toolbar usage_date
-                filter date usage_date on usage_date as "Дата"
+                filter usage_date
+                  bind date
+                    column = usage_date
+                  end bind
+                  show
+                    label = "Дата"
+                  end show
+                end filter
                 card peak
                   title = "Peak"
                   data

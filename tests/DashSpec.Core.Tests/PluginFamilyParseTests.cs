@@ -21,7 +21,14 @@ public sealed class PluginFamilyParseTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               toolbar usage_date
               card peak as "Peak"
               bind
@@ -59,7 +66,14 @@ public sealed class PluginFamilyParseTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               toolbar usage_date
               card peak as "Peak"
               buttons
@@ -106,7 +120,14 @@ public sealed class PluginFamilyParseTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               toolbar usage_date
               card peak as "Peak"
               views

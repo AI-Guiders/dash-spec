@@ -331,9 +331,35 @@ end tab
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date" ref D
-              filter field app_name on dbo.t.app as "App" ref A widget combobox
-              filter field user_name on dbo.t.user as "User" ref U widget combobox
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                  ref = D
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                  ref = A
+                  widget = combobox
+                end show
+              end filter
+              filter user_name
+                bind field
+                  column = dbo.t.user
+                end bind
+                show
+                  label = "User"
+                  ref = U
+                  widget = combobox
+                end show
+              end filter
               toolbar
               [ D A ]
               [ U ]
@@ -371,9 +397,35 @@ end tab
               defaults
                 filter.d1.range = -7d..today
               end defaults
-              filter date d1 on c1 as "D1" ref D
-              filter field f1 on c2 as "F1" ref A widget combobox
-              filter field f2 on c3 as "F2" ref U widget combobox
+              filter d1
+                bind date
+                  column = c1
+                end bind
+                show
+                  label = "D1"
+                  ref = D
+                end show
+              end filter
+              filter f1
+                bind field
+                  column = c2
+                end bind
+                show
+                  label = "F1"
+                  ref = A
+                  widget = combobox
+                end show
+              end filter
+              filter f2
+                bind field
+                  column = c3
+                end bind
+                show
+                  label = "F2"
+                  ref = U
+                  widget = combobox
+                end show
+              end filter
               toolbar
               [ D A ]
               [ U ]
@@ -412,8 +464,25 @@ end tab
               defaults
                 filter.d1.range = -7d..today
               end defaults
-              filter date d1 on c1 as "D1" ref D
-              filter field f1 on c2 as "F1" ref P widget combobox
+              filter d1
+                bind date
+                  column = c1
+                end bind
+                show
+                  label = "D1"
+                  ref = D
+                end show
+              end filter
+              filter f1
+                bind field
+                  column = c2
+                end bind
+                show
+                  label = "F1"
+                  ref = P
+                  widget = combobox
+                end show
+              end filter
               toolbar
               [ D:1 P:3 ]
               end toolbar
@@ -451,9 +520,26 @@ end tab
               defaults
                 filter.d1.range = -7d..today
               end defaults
-              filter date d1 on c1 as "D1" ref D
+              filter d1
+                bind date
+                  column = c1
+                end bind
+                show
+                  label = "D1"
+                  ref = D
+                end show
+              end filter
               place { row = 2 col = 1 span = 6 }
-              filter field f1 on c2 as "F1" ref P widget combobox
+              filter f1
+                bind field
+                  column = c2
+                end bind
+                show
+                  label = "F1"
+                  ref = P
+                  widget = combobox
+                end show
+              end filter
               toolbar
               [ D P ]
               end toolbar
@@ -501,9 +587,35 @@ end tab
                   defaults
                     filter.d1.range = -7d..today
                   end defaults
-                  filter date d1 on c1 as "D1" ref D
-                  filter field f1 on c2 as "F1" ref A widget combobox
-                  filter field f2 on c3 as "F2" ref U widget combobox
+                  filter d1
+                    bind date
+                      column = c1
+                    end bind
+                    show
+                      label = "D1"
+                      ref = D
+                    end show
+                  end filter
+                  filter f1
+                    bind field
+                      column = c2
+                    end bind
+                    show
+                      label = "F1"
+                      ref = A
+                      widget = combobox
+                    end show
+                  end filter
+                  filter f2
+                    bind field
+                      column = c3
+                    end bind
+                    show
+                      label = "F2"
+                      ref = U
+                      widget = combobox
+                    end show
+                  end filter
                   card c as "C"
                   bind
                     d1
@@ -539,7 +651,15 @@ end tab
               defaults
                 filter.d1.range = -7d..today
               end defaults
-              filter date d1 on c1 as "D1" ref D
+              filter d1
+                bind date
+                  column = c1
+                end bind
+                show
+                  label = "D1"
+                  ref = D
+                end show
+              end filter
               toolbar d1
               toolbar
               [ D ]
@@ -632,7 +752,15 @@ end tab
                   defaults
                     filter.d1.range = -7d..today
                   end defaults
-                  filter date d1 on c1 as "D1" ref Q
+                  filter d1
+                    bind date
+                      column = c1
+                    end bind
+                    show
+                      label = "D1"
+                      ref = Q
+                    end show
+                  end filter
                   card c as "C"
                   bind
                     d1

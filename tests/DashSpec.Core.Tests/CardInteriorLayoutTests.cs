@@ -19,19 +19,33 @@ public class CardInteriorLayoutTests
                 filter.rows_top.limit = 100
                 filter.usage_date.range = -7d..today
               end defaults
-              filter top rows_top as "Top" ref T
-              filter date usage_date on usage_date as "Date"
+              filter rows_top
+                bind top
+                end bind
+                show
+                  label = "Top"
+                  ref = T
+                end show
+              end filter
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
               card detail as "Detail"
-              filters
-              rows_top
-              end filters
+              show flow
+              rows_top -> [toolbar] chrome.card.detail
+              end show flow
               diagram ref D table
               columns = a, b
               end table
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              data flow { fixture_src [rows] -> [rows] D }
               bind
                 usage_date
               end bind
@@ -63,11 +77,18 @@ public class CardInteriorLayoutTests
                   !include "query-row-types.dashtype"
               report
               title = "T"
-              filter field app_name on dbo.t.app as "App"
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card detail as "Detail"
-              filters
-              app_name
-              end filters
+              show flow
+              app_name -> [toolbar] chrome.card.detail
+              end show flow
               diagram number
               value = n
               end number
@@ -91,15 +112,23 @@ public class CardInteriorLayoutTests
                   !include "query-row-types.dashtype"
               report
               title = "T"
-              filter field app_name on dbo.t.app as "App" ref A
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                  ref = A
+                end show
+              end filter
               card c as "C"
-              filters
-              app_name
-              end filters
+              show flow
+              app_name -> [toolbar] chrome.card.c
+              end show flow
               diagram ref D number
               value = x
               end number
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              data flow { fixture_src [rows] -> [rows] D }
               layout
               [ A A ]
               end layout
@@ -122,7 +151,14 @@ public class CardInteriorLayoutTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
@@ -135,14 +171,12 @@ public class CardInteriorLayoutTests
               diagram ref drill table
               columns = h, u
               end table
-              data
-                data flow { fixture_src [rows] -> [rows] __diagram__ }
-                bind usage_date
-              end data
-              data for drill
-                data flow { fixture_src [rows] -> [rows] __diagram__ }
-                bind usage_date
-              end data
+              data flow
+              fixture_src [rows] -> [rows] main
+              usage_date -> [usage_date] main
+              fixture_src2 [rows] -> [rows] drill
+              usage_date -> [usage_date] drill
+              end data flow
               layout
                 [ main ]
                 [ drill ]
@@ -173,17 +207,33 @@ public class CardInteriorLayoutTests
                 filter.rows_top.limit = 100
                 filter.usage_date.range = -7d..today
               end defaults
-              filter top rows_top as "Top" ref T
-              filter date usage_date on usage_date as "Date"
+              filter rows_top
+                bind top
+                end bind
+                show
+                  label = "Top"
+                  ref = T
+                end show
+              end filter
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
               filters dashboard
               usage_date
               end dashboard
               card events_detail as "Detail"
-              filters rows_top
-              data
-                data flow { fixture_src [rows] -> [rows] __diagram__ }
-                bind usage_date
-              end data
+              show flow
+              rows_top -> [toolbar] chrome.card.events_detail
+              end show flow
+              data flow
+              fixture_src [rows] -> [rows] events_table
+              usage_date -> [usage_date] events_table
+              end data flow
               view
                 diagram ref events_table table
                 columns = a
@@ -214,17 +264,33 @@ public class CardInteriorLayoutTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
-              filter field app_name on dbo.t.app as "App"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card peak as "Peak"
+              show flow
+                usage_date -> [toolbar] chrome.card.peak
+                app_name -> [toolbar] chrome.card.peak
+              end show flow
               filters
-                usage_date
                 apply = manual
-                app_name
               end filters
               diagram ref H heatmap
               end heatmap
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name
               end card
               end report
@@ -251,20 +317,37 @@ public class CardInteriorLayoutTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
-              filter field app_name on dbo.t.app as "App" widget combobox
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                  widget = combobox
+                end show
+              end filter
               card peak as "Peak"
+              show flow
+                usage_date -> [toolbar] chrome.card.peak
+                app_name -> [toolbar] chrome.card.peak
+              end show flow
               filters
-                usage_date
                 apply = manual
-                app_name
                 layout
                   [ usage_date:2 apply:1 app_name:1 ]
                 end layout
               end filters
               diagram ref H heatmap
               end heatmap
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name
               end card
               end report
@@ -289,17 +372,33 @@ public class CardInteriorLayoutTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Date"
-              filter field app_name on dbo.t.app as "App"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = dbo.t.app
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card peak as "Peak"
+              show flow
+                usage_date -> [toolbar] chrome.card.peak
+                app_name -> [toolbar] chrome.card.peak
+              end show flow
               filters
-                usage_date
                 apply = manual
-                app_name
               end filters
               diagram ref H heatmap
               end heatmap
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name
               end card
               end report

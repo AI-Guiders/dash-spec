@@ -30,9 +30,14 @@ public class FilterParserTests
               defaults
                 filter.activity_slot.range = today
               end defaults
-              filter date activity_slot
-              column = bucket_start_utc as "Day"
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "Day"
               widget = day
+                              end show
               end filter
               end report
             end dashboard
@@ -54,10 +59,22 @@ public class FilterParserTests
                 filter.usage_date.range = -7d..today
                 filter.activity_slot.range = today
               end defaults
-              filter date usage_date on usage_date as "Дата отчёта"
-              filter date activity_slot
-              column = bucket_start_utc as "День"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата отчёта"
+                end show
+              end filter
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "День"
               widget = day
+                              end show
               end filter
               end report
             end dashboard
@@ -78,7 +95,13 @@ public class FilterParserTests
               defaults
                 filter.events_top.limit = 200
               end defaults
-              filter top events_top as "Строк (TOP)"
+              filter events_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -98,8 +121,21 @@ public class FilterParserTests
               defaults
                 filter.events_top.limit = 200
               end defaults
-              filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
-              filter top events_top as "Строк (TOP)"
+              filter period_grain
+                bind field
+                  column = demo.v_peak_concurrent_by_period.period_grain
+                end bind
+                show
+                  label = "Масштаб: день / месяц / год"
+                end show
+              end filter
+              filter events_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -120,15 +156,57 @@ public class FilterParserTests
                 filter.activity_slot.range = today
                 filter.period_start.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата отчёта"
-              filter date activity_slot
-              column = bucket_start_utc as "День"
-              widget = day
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата отчёта"
+                end show
               end filter
-              filter date period_start on period_start as "Начало периода"
-              filter field app_name on demo.v_daily_active_users.app_name as "Продукты" widget combobox
-              filter field user_name on demo.v_events_detail.user_sam as "Пользователь" widget combobox
-              filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "День"
+              widget = day
+                              end show
+              end filter
+              filter period_start
+                bind date
+                  column = period_start
+                end bind
+                show
+                  label = "Начало периода"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = demo.v_daily_active_users.app_name
+                end bind
+                show
+                  label = "Продукты"
+                  widget = combobox
+                end show
+              end filter
+              filter user_name
+                bind field
+                  column = demo.v_events_detail.user_sam
+                end bind
+                show
+                  label = "Пользователь"
+                  widget = combobox
+                end show
+              end filter
+              filter period_grain
+                bind field
+                  column = demo.v_peak_concurrent_by_period.period_grain
+                end bind
+                show
+                  label = "Масштаб: день / месяц / год"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -151,17 +229,71 @@ public class FilterParserTests
                 filter.events_top.limit = 200
                 filter.idle_top.limit = 100
               end defaults
-              filter date usage_date on usage_date as "Дата отчёта"
-              filter date activity_slot
-              column = bucket_start_utc as "День"
-              widget = day
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата отчёта"
+                end show
               end filter
-              filter date period_start on period_start as "Начало периода"
-              filter field app_name on demo.v_daily_active_users.app_name as "Продукты" widget combobox
-              filter field user_name on demo.v_events_detail.user_sam as "Пользователь" widget combobox
-              filter field period_grain on demo.v_peak_concurrent_by_period.period_grain as "Масштаб: день / месяц / год"
-              filter top events_top as "Строк (TOP)"
-              filter top idle_top as "Строк (TOP)"
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "День"
+              widget = day
+                              end show
+              end filter
+              filter period_start
+                bind date
+                  column = period_start
+                end bind
+                show
+                  label = "Начало периода"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = demo.v_daily_active_users.app_name
+                end bind
+                show
+                  label = "Продукты"
+                  widget = combobox
+                end show
+              end filter
+              filter user_name
+                bind field
+                  column = demo.v_events_detail.user_sam
+                end bind
+                show
+                  label = "Пользователь"
+                  widget = combobox
+                end show
+              end filter
+              filter period_grain
+                bind field
+                  column = demo.v_peak_concurrent_by_period.period_grain
+                end bind
+                show
+                  label = "Масштаб: день / месяц / год"
+                end show
+              end filter
+              filter events_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
+              filter idle_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -176,7 +308,13 @@ public class FilterParserTests
                   !include "query-row-types.dashtype"
               report
               title = "T"
-              filter top events_top as "Строк (TOP)"
+              filter events_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
               default = 200
               end filter
               end report
@@ -197,7 +335,14 @@ public class FilterParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Дата отчёта"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Дата отчёта"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -218,8 +363,13 @@ public class FilterParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date
-              column = usage_date as "Daily"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Daily"
+                              end show
               end filter
               end report
             end dashboard
@@ -242,7 +392,14 @@ public class FilterParserTests
               defaults
                 filter.activity_range.range = -1d..today
               end defaults
-              filter date activity_range on bucket_start_utc as "Activity 5-min"
+              filter activity_range
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "Activity 5-min"
+                end show
+              end filter
               end report
             end dashboard
 """);
@@ -264,8 +421,25 @@ public class FilterParserTests
                 filter.period_start.range = today
                 filter.activity_slot.range = today
               end defaults
-              filter date period_start on period_start as "Период" widget day grain_filter period_grain
-              filter date activity_slot on bucket_start_utc as "День" widget day
+              filter period_start
+                bind date
+                  column = period_start
+                  grain_filter = period_grain
+                end bind
+                show
+                  label = "Период"
+                  widget = day
+                end show
+              end filter
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "День"
+                  widget = day
+                end show
+              end filter
               card c as "C"
               diagram table
               columns = a
@@ -299,8 +473,24 @@ public class FilterParserTests
                 filter.activity_slot.range = today..today
                 filter.period_start.range = today
               end defaults
-              filter date activity_slot on bucket_start_utc as "День"
-              filter date period_start on period_start as "Период" widget day grain_filter period_grain
+              filter activity_slot
+                bind date
+                  column = bucket_start_utc
+                end bind
+                show
+                  label = "День"
+                end show
+              end filter
+              filter period_start
+                bind date
+                  column = period_start
+                  grain_filter = period_grain
+                end bind
+                show
+                  label = "Период"
+                  widget = day
+                end show
+              end filter
               card c as "C"
               diagram table
               columns = a
@@ -327,7 +517,16 @@ public class FilterParserTests
               defaults
                 filter.period_grain.scale = day
               end defaults
-              filter field period_grain on demo.v_peak.period_grain as "Grain" widget combobox single
+              filter period_grain
+                bind field
+                  column = demo.v_peak.period_grain
+                  single = true
+                end bind
+                show
+                  label = "Grain"
+                  widget = combobox
+                end show
+              end filter
               card c as "C"
               diagram table
               columns = a
@@ -356,8 +555,21 @@ public class FilterParserTests
               defaults
                 filter.events_top.limit = 200
               end defaults
-              filter field period_grain on demo.v_peak.period_grain as "Grain"
-              filter top events_top as "Строк (TOP)"
+              filter period_grain
+                bind field
+                  column = demo.v_peak.period_grain
+                end bind
+                show
+                  label = "Grain"
+                end show
+              end filter
+              filter events_top
+                bind top
+                end bind
+                show
+                  label = "Строк (TOP)"
+                end show
+              end filter
               end report
             end dashboard
 """);

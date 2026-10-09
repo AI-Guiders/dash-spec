@@ -20,8 +20,22 @@ public class CommandAliasesParserTests
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
-              filter date usage_date on usage_date as "Usage"
-              filter field app_name on app_name as "App"
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Usage"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               filters dashboard
               usage_date
               app_name
