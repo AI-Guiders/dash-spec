@@ -104,3 +104,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) | Document compile pipeline | Accepted |
 | [0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) | Compiler `namespace` + `import` by kind | Accepted |
 | [0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) | Surface.Blazor full split + contract tests | Accepted |
+| [0100](DASHSPEC-ADR-0100-diagram-kind-catalog.md) | Diagram kind — vertical plugin capability + catalog (SSOT) | Accepted |
