@@ -58,7 +58,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.a rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -96,7 +96,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               card guest as "Guest"
               filters host host
@@ -108,7 +108,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -140,7 +140,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               card guest as "Guest"
               bind
@@ -149,7 +149,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -200,7 +200,7 @@ public class TabModuleTests
                   diagram number
                   value = n
                   end number
-                  datasource infer view dbo.a rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -230,7 +230,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.a rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -264,7 +264,7 @@ public class TabModuleTests
               diagram number
               value = n
               end number
-              datasource infer view dbo.a rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab
@@ -292,7 +292,7 @@ public class TabModuleTests
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab

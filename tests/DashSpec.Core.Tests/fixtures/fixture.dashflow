@@ -1,0 +1,30 @@
+@flow fixture
+
+source fixture_src {
+  use provider sqlserver
+  from view dbo.t
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source fixture_src2 {
+  use provider sqlserver
+  from view dbo.t
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source fixture_src3 {
+  use provider sqlserver
+  from view dbo.t
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+end flow

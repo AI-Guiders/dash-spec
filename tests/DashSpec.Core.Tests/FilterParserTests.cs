@@ -270,7 +270,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -305,7 +305,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -332,7 +332,7 @@ public class FilterParserTests
               diagram table
               columns = a
               end table
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard

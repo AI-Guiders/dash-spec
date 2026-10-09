@@ -31,7 +31,7 @@ public sealed class DashSpecProjectTests
                   title = "T"
                   card c as "C"
                   diagram util
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
@@ -77,7 +77,7 @@ public sealed class DashSpecProjectTests
                   title = "T"
                   card c as "C"
                   diagram activity
-                  datasource infer view dbo.t rows FixtureRow
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
                 end dashboard
