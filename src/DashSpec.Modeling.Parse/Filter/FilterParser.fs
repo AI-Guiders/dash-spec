@@ -576,3 +576,37 @@ module FilterParser =
         | Some name ->
             reader.ReadIdent() |> ignore
             parseStructuredIdFirst reader name resolveProperty
+
+    /// <summary>Syntax-only skip of one filter declaration for reference scanning:
+    /// same dispatch as <c>parse</c> (ADR-0010 kind-first / ADR-0037 id-first), no semantics.</summary>
+    let skipDeclaration (reader: TokenReader) =
+        let skipLine () =
+            while not (reader.IsOnNewline()) && not reader.IsEof do
+                reader.Advance()
+
+            reader.SkipNewlines()
+
+        let skipBody () =
+            BlockSyntax.beginBlock reader
+            reader.SkipNewlines()
+
+            while not (BlockSyntax.isBlockEnd reader "filter" None) && not reader.IsEof do
+                reader.SkipNewlines()
+
+                if not (BlockSyntax.isBlockEnd reader "filter" None) then
+                    skipLine ()
+
+            BlockSyntax.expectBlockEnd reader "filter" None
+
+        match reader.TryPeekIdent() with
+        | None -> raise (reader.Unexpected "filter id or kind (date, field, top)")
+        | Some first when isFilterKind first ->
+            reader.ReadIdent() |> ignore
+            reader.ReadIdent() |> ignore
+            skipLine ()
+
+            if not reader.IsEof && looksLikeFilterPropertyContinuation reader then
+                skipBody ()
+        | Some _ ->
+            reader.ReadIdent() |> ignore
+            skipBody ()

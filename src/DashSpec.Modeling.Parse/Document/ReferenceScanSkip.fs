@@ -29,7 +29,12 @@ module internal ReferenceScanSkip =
 
             if BlockSyntax.isBlockEnd reader endKind endId then ()
             else
-                consumeLine reader
+                while not (reader.IsOnNewline())
+                      && not (BlockSyntax.isBlockEnd reader endKind endId)
+                      && not reader.IsEof do
+                    reader.Advance()
+
+                reader.SkipNewlines()
 
         BlockSyntax.expectBlockEnd reader endKind endId
 
@@ -331,8 +336,8 @@ module internal ReferenceScanSkip =
 
             if BlockSyntax.isBlockEnd reader "standalone" None then ()
             elif reader.TryKeyword "filter" then
-                let filterId = reader.ReadIdent()
-                skipBalancedBlock reader "filter" (Some filterId)
+                FilterParser.skipDeclaration reader
+                reader.SkipNewlines()
             elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
                 skipFiltersToolbarTail reader
             elif reader.TryKeyword "defaults" then
