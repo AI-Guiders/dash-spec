@@ -23,6 +23,7 @@ type FilterDefinition =
       LayoutRef: string option
       BindScopeHint: string option
       GrainLabels: IReadOnlyDictionary<string, string> option
+      ApplyMode: string
       Placement: PlacementDefinition option }
 
 [<CLIMutable>]
