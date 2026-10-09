@@ -233,3 +233,24 @@ module ReportScopeFlowApplicator =
 
         for links in interiorLinkBatches do
             applyLinks shell links
+
+        // Apply-mode derivation (show apply = manual|auto at declaration): a card is manual
+        // when its level flag is set or any local filter is manual; the split index marks
+        // where the manual half starts when auto filters come first (legacy semantics).
+        let isManual (name: string) =
+            shell.Filters
+            |> Seq.tryFind (fun f -> String.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase))
+            |> Option.map (fun f -> String.Equals(f.ApplyMode, "manual", StringComparison.OrdinalIgnoreCase))
+            |> Option.defaultValue false
+
+        for i in 0 .. shell.Cards.Count - 1 do
+            let card = shell.Cards.[i]
+
+            if card.LocalFilters.Count > 0 then
+                let flags = card.LocalFilters |> Seq.map isManual |> Seq.toList
+
+                if flags |> List.exists id then
+                    shell.Cards.[i] <-
+                        { card with
+                            LocalFiltersManualApply = true
+                            LocalFiltersApplySplitIndex = Some(flags |> List.takeWhile not |> List.length) }
