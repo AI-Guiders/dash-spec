@@ -42,6 +42,14 @@ module DefaultsBlockParser =
         =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
+
+        if reader.IsAt TokenKind.Eq then
+            raise (
+                DashSpecParseException(
+                    "Filter value must be declared in defaults block: filter.<id>.<property> = … (e.g. range, scale, limit)."
+                )
+            )
+
         let mutable formats = formatDefaults
 
         while not (BlockSyntax.isBlockEnd reader blockKeyword None) && not reader.IsEof do
