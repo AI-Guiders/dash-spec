@@ -16,7 +16,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               runtime
               manifest = "demo.toml"
               end runtime
@@ -44,7 +44,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               runtime
               manifest = "legacy.toml"
               end runtime
@@ -68,7 +68,7 @@ public class DirectiveParserTests
     {
         const string text = """
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               runtime
               manifest = "cfg.toml"
               end runtime

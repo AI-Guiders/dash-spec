@@ -8,7 +8,7 @@ internal static class ExecutionTestRowTypes
 {
     private static readonly string FixtureDir = Path.Combine(AppContext.BaseDirectory, "fixtures");
 
-    private const string ModuleTypesIncludeLine = "!include \"query-row-types.dashtype\"";
+    private const string ModuleTypesIncludeLine = "import types from Fixtures.QueryRowTypes";
 
     internal static string EnsureFixtureRowCatalog(string dashspecText)
     {
@@ -17,7 +17,7 @@ internal static class ExecutionTestRowTypes
             return dashspecText;
         }
 
-        if (dashspecText.Contains("query-row-types", StringComparison.OrdinalIgnoreCase)
+        if (dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
             || dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase))
         {
             return dashspecText;
@@ -56,7 +56,7 @@ internal static class ExecutionTestRowTypes
 
     internal static void EnsureFixtureTypesOnDisk(string directory, string text)
     {
-        if (!text.Contains("query-row-types", StringComparison.OrdinalIgnoreCase))
+        if (!text.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -70,6 +70,11 @@ internal static class ExecutionTestRowTypes
         var source = Path.Combine(FixtureDir, "query-row-types.dashtype");
         Directory.CreateDirectory(directory);
         File.Copy(source, typesPath, overwrite: true);
+        var toml = Path.Combine(FixtureDir, "dashspec.toml");
+        if (File.Exists(toml))
+        {
+            File.Copy(toml, Path.Combine(directory, "dashspec.toml"), overwrite: true);
+        }
     }
 
     internal static DashboardDocument Parse(string dashspecText, string? specDirectory = null)

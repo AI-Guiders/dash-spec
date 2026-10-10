@@ -23,7 +23,7 @@ public class DashSpecTestRowTypesTests
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard(
             """
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               connect
               flow "broken.dashflow"
               end connect

@@ -14,7 +14,7 @@ public class XlsxOpenRowSetTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -52,7 +52,7 @@ public class XlsxOpenRowSetTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect

@@ -25,7 +25,7 @@ public sealed class DashSpecProjectTests
 
             File.WriteAllText(Path.Combine(workspace, "main.dashspec"), """
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   import "diagrams/util.dashdiagram"
                   report
                   title = "T"
@@ -71,7 +71,7 @@ public sealed class DashSpecProjectTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   import "diagrams/activity.dashdiagram"
                   report
                   title = "T"

@@ -11,7 +11,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
                 title = "T"
                 filters
@@ -44,7 +44,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
                 title = "T"
                 filters
@@ -69,7 +69,7 @@ public class StructuredSyntaxTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
                 title = "T"
                 defaults

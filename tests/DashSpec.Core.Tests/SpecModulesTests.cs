@@ -214,7 +214,7 @@ public class SpecModulesTests
 
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               palette demo_apps
@@ -238,7 +238,7 @@ public class SpecModulesTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               palette = "demo_apps"
@@ -261,7 +261,7 @@ public class SpecModulesTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               configuration
               palette = "palettes/brand.dashpalette"
               end configuration
@@ -522,7 +522,7 @@ public class SpecModulesTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   !include "diagrams/activity.dashdiagram"
                   report
                   title = "T"
@@ -578,7 +578,7 @@ public class SpecModulesTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   !include "presentations/bar-tall.dashpresentation"
                   !include "diagrams/util.dashdiagram"
                   report
@@ -614,7 +614,7 @@ public class SpecModulesTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card a as "A"
@@ -639,7 +639,7 @@ public class SpecModulesTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card a as "A"
@@ -662,7 +662,7 @@ public class SpecModulesTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"
@@ -701,7 +701,7 @@ public class SpecModulesTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"

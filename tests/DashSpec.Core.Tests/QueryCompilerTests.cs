@@ -16,7 +16,7 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -82,7 +82,7 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -152,7 +152,7 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -206,7 +206,7 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -262,7 +262,7 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -316,7 +316,7 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -343,7 +343,7 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -379,7 +379,7 @@ public class QueryCompilerTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -465,7 +465,7 @@ public class QueryCompilerTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
@@ -713,7 +713,7 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   connect
                     flow "fixture.dashflow"
                   end connect
