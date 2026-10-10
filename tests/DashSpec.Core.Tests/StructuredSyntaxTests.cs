@@ -86,10 +86,8 @@ public class StructuredSyntaxTests
                 end filter
                 card peak
                   title = "Peak"
-                  data
-                    data flow { fixture_src [rows] -> [rows] __diagram__ }
-                    bind usage_date
-                  end data
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
+                  bind usage_date
                   view
                     diagram demo_peak_bar
                   end view
@@ -111,7 +109,7 @@ public class StructuredSyntaxTests
         var card = doc.Cards.Single();
         Assert.Equal("demo_peak_bar", card.Diagram.UsePreset);
         Assert.Equal(12, card.SeriesTransform?.Max);
-        Assert.Equal("demo.v_peak", card.DataSource.Value);
+        Assert.Equal("dbo.t", card.DataSource.Value);
         Assert.Single(card.BoundFilters);
         Assert.Equal(1, card.Placement?.Row);
     }
