@@ -140,7 +140,15 @@ module internal ReferenceScanSkip =
                     CardsChromeParser.parse reader |> ignore
 
                 reader.SkipNewlines()
-            elif reader.TryKeyword "filters" || reader.TryKeyword "toolbar" then
+            elif reader.TryKeyword "filters" then
+                match reader.TryPeekIdent() with
+                | Some next when
+                    String.Equals(next, "dashboard", StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)
+                    ->
+                    skipFiltersToolbarTail reader
+                | _ -> skipBalancedBlock reader "filters" None
+            elif reader.TryKeyword "toolbar" then
                 skipFiltersToolbarTail reader
             elif reader.TryKeyword "tab" then
                 TabParser.parse reader |> ignore
