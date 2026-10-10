@@ -528,8 +528,8 @@ end tab
                   label = "D1"
                   ref = D
                 end show
-              end filter
-              place { row = 2 col = 1 span = 6 }
+                  place { row = 2 col = 1 span = 6 }
+                end filter
               filter f1
                 bind field
                   column = c2
