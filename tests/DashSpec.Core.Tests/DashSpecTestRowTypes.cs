@@ -86,7 +86,8 @@ internal static class DashSpecTestRowTypes
         var lines = normalized.Split('\n');
         var sb = new StringBuilder();
         var injected = false;
-        var needsFlow = dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal);
+        var needsFlow = dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+            && !dashspecText.Contains("connect", StringComparison.Ordinal);
 
         foreach (var line in lines)
         {
@@ -133,9 +134,10 @@ internal static class DashSpecTestRowTypes
         var directory = specDirectory ?? FixtureDir;
         var text = EnsureFixtureRowCatalog(dashspecText);
         EnsureFixtureTypesOnDisk(directory, text);
-        return parseOptions is null
+        var document = parseOptions is null
             ? DashSpecParser.Parse(text, directory)
             : DashSpecParser.Parse(text, directory, parseOptions);
+        return DashSpec.Execution.Runtime.DocumentFlowBinder.MaterializeFlowCards(document);
     }
 
     /// <summary>Report fragment with explicit inline <c>FixtureRow</c> (for short snippets).</summary>

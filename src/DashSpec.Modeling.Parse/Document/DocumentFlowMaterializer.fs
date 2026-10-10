@@ -60,6 +60,14 @@ module DocumentFlowMaterializer =
               RowsType = rowsType
               ProviderInfer = providerInfer
               ProviderId = providerId }
+        | SourceFromKind.Xlsx ->
+            { Kind = DataSourceKind.Xlsx
+              Value = source.From.Value
+              SqlCarrier = None
+              Sheet = source.From.Sheet
+              RowsType = rowsType
+              ProviderInfer = providerInfer
+              ProviderId = providerId }
 
     let private toInputRef (input: CardFlowInput) : DashflowPathResolver.CardInputRef =
         { Alias = input.Alias

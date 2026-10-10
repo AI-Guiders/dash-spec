@@ -1,34 +1,45 @@
+using DashSpec.Core.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
 
-public sealed class DashSpecTestRowTypesTests
+public class DashSpecTestRowTypesTests
 {
     [Fact]
-    public void ParseDashboard_requires_explicit_rows_on_datasource()
+    public void Parse_source_requires_explicit_ports()
     {
-        var doc = DashSpecTestRowTypes.ParseDashboard("""
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-src-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
+            @flow broken
+            source s {
+              use provider infer
+              from view dbo.t
+            }
+            end flow
+            """);
+
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard(
+            """
             @dashboard t
                   !include "query-row-types.dashtype"
+              connect
+              flow "broken.dashflow"
+              end connect
               report
               title = "T"
-              card c as "C"
-              diagram number
-              value = x
-              end number
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              card x as "X"
+              diagram bar
+              x = a y
+              end bar
+              data flow { s [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
-            """);
+            """,
+            dir));
 
-        Assert.Equal("FixtureRow", doc.Cards[0].DataSource.RowsType);
+        Assert.Contains("ports", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
-
-    [Fact]
-    public void Catalog_lazy_initializes()
-    {
-        _ = DashSpecTestRowTypes.Catalog;
-    }
-
 }

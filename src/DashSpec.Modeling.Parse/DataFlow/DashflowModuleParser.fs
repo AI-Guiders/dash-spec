@@ -63,7 +63,7 @@ module DashflowModuleParser =
             elif reader.TryKeyword "from" then
                 if reader.TryKeyword "view" then
                     let viewName = AccessorGrammar.readDotted reader
-                    from <- Some { Kind = SourceFromKind.View; Value = viewName }
+                    from <- Some { Kind = SourceFromKind.View; Value = viewName; Sheet = None }
                 elif reader.TryKeyword "sql" then
                     if reader.TryKeyword "query" then
                         let body =
@@ -72,14 +72,23 @@ module DashflowModuleParser =
                             | TokenKind.Raw -> reader.ReadRawBlock()
                             | _ -> raise (reader.Unexpected "sql query string")
 
-                        from <- Some { Kind = SourceFromKind.SqlQuery; Value = body }
+                        from <- Some { Kind = SourceFromKind.SqlQuery; Value = body; Sheet = None }
                     elif reader.TryKeyword "file" then
                         let path = reader.ReadString()
-                        from <- Some { Kind = SourceFromKind.SqlFile; Value = path }
+                        from <- Some { Kind = SourceFromKind.SqlFile; Value = path; Sheet = None }
                     else
                         raise (DashSpecParseException("from sql requires query or file."))
+                elif reader.TryKeyword "xlsx" then
+                    if not (reader.TryKeyword "file") then
+                        raise (DashSpecParseException("from xlsx requires file."))
+
+                    let path = reader.ReadString()
+                    let sheet =
+                        if reader.TryKeyword "sheet" then Some(reader.ReadString()) else None
+
+                    from <- Some { Kind = SourceFromKind.Xlsx; Value = path; Sheet = sheet }
                 else
-                    raise (DashSpecParseException("source from requires view or sql."))
+                    raise (DashSpecParseException("source from requires view, sql, or xlsx."))
             else
                 raise (reader.Unexpected "from or ports")
 

@@ -15,6 +15,9 @@ public class XlsxOpenRowSetTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
               sqldialect = tsql
               end configuration
@@ -24,7 +27,7 @@ public class XlsxOpenRowSetTests
               diagram table
               columns = app_name, seats
               end table
-              datasource infer xlsx file "reports/book.xlsx" sheet "Лист1" rows FixtureRow
+              data flow { x_sheet [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -50,13 +53,16 @@ public class XlsxOpenRowSetTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               card sheet as "Sheet"
               diagram table
               columns = app_name
               end table
-              datasource infer xlsx file "reports/book.xlsx" rows FixtureRow
+              data flow { x_nosheet [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
