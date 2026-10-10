@@ -189,7 +189,7 @@ public sealed class ReportPagesAndCatalogTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard soak
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "Soak"
                   tab overview dashspec "overview.dashspec"

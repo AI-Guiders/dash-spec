@@ -19,7 +19,7 @@ public class DashboardParseTests
     {
         const string text = """
             @dashboard soak_id
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -78,7 +78,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               layout grid
@@ -110,7 +110,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               filter app_name
@@ -145,7 +145,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -208,7 +208,7 @@ public class DashboardParseTests
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
                   defaults
@@ -243,7 +243,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -300,7 +300,7 @@ public class DashboardParseTests
     {
         var line = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               filters chrome
@@ -313,7 +313,7 @@ public class DashboardParseTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               filters chrome
@@ -326,7 +326,7 @@ public class DashboardParseTests
 
         var none = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               filters chrome
@@ -344,7 +344,7 @@ public class DashboardParseTests
     {
         var block = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               filters chrome
@@ -362,7 +362,7 @@ public class DashboardParseTests
 
         var sugar = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               toolbar chrome
@@ -380,7 +380,7 @@ public class DashboardParseTests
     {
         var labeled = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               toolbar chrome
@@ -394,7 +394,7 @@ public class DashboardParseTests
 
         var inline = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               toolbar chrome
@@ -412,7 +412,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card h as "H"
@@ -449,7 +449,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card h as "H"
@@ -493,7 +493,7 @@ public class DashboardParseTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card h as "H"
@@ -517,7 +517,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card h as "H"
@@ -573,7 +573,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card peak as "Peak"
@@ -598,7 +598,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
                 title = "T"
               card h as "H"
@@ -833,7 +833,7 @@ public class DashboardParseTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard($$"""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
                 title = "T"
                 {{blockKeyword}}
@@ -906,7 +906,7 @@ public class DashboardParseTests
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
                   defaults
@@ -941,7 +941,7 @@ public class DashboardParseTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               tab s as "S"

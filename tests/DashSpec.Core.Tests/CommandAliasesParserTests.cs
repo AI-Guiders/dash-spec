@@ -10,7 +10,7 @@ public class CommandAliasesParserTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard demo
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "Demo"
               commands

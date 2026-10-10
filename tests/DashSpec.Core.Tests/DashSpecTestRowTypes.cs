@@ -16,7 +16,7 @@ internal static class DashSpecTestRowTypes
 
     internal static readonly string FixtureDir = Path.Combine(AppContext.BaseDirectory, "fixtures");
 
-    internal const string ModuleTypesIncludeLine = "!include \"query-row-types.dashtype\"";
+    internal const string ModuleTypesIncludeLine = "import types from Fixtures.QueryRowTypes";
 
     internal const string InlineFixtureTypeBlock = """
         type FixtureRow
@@ -58,7 +58,7 @@ internal static class DashSpecTestRowTypes
             DashSpecParser.Parse(
                 """
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
                   end report
@@ -76,7 +76,7 @@ internal static class DashSpecTestRowTypes
             return dashspecText;
         }
 
-        if (dashspecText.Contains("query-row-types", StringComparison.OrdinalIgnoreCase)
+        if (dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
             || dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase))
         {
             return dashspecText;
@@ -167,11 +167,16 @@ internal static class DashSpecTestRowTypes
 
         Directory.CreateDirectory(specDirectory);
         File.Copy(source, Path.Combine(specDirectory, "query-row-types.dashtype"), overwrite: true);
+        var toml = Path.Combine(FixtureDir, "dashspec.toml");
+        if (File.Exists(toml))
+        {
+            File.Copy(toml, Path.Combine(specDirectory, "dashspec.toml"), overwrite: true);
+        }
     }
 
     private static void EnsureFixtureTypesOnDisk(string directory, string text)
     {
-        if (!text.Contains("query-row-types", StringComparison.OrdinalIgnoreCase))
+        if (!text.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
