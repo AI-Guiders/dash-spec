@@ -16,6 +16,7 @@ type ModuleIncludeState() =
     let tooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
     let rowTypes = Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase)
     let mutable dashflowModule: DashflowModule option = None
+    let flowImportQualifiers = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
@@ -73,6 +74,12 @@ type ModuleIncludeState() =
             raise (DashSpecParseException("Module includes declare more than one .dashflow graph."))
 
         dashflowModule <- Some module'
+
+    member _.FlowImportQualifiers = flowImportQualifiers
+
+    member _.RegisterFlowImportQualifier(qualifier: string) =
+        if not (String.IsNullOrWhiteSpace qualifier) then
+            flowImportQualifiers.Add qualifier |> ignore
 
     member _.ExportChartChromePresets() = chartChromePresets :> IReadOnlyDictionary<_, _>
     member _.ExportTooltips() = tooltips :> IReadOnlyDictionary<_, _>

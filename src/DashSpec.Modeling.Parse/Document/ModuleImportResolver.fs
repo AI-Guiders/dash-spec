@@ -65,6 +65,19 @@ module ModuleImportResolver =
                             moduleKind
                             includes
                             parseOptions.TolerateIncompleteIncludes
+
+                    if directive.Kind = ImportKind.Flows then
+                        let namespaceName = directive.Namespace
+                        includes.RegisterFlowImportQualifier namespaceName
+
+                        let lastSegment =
+                            namespaceName.Split('.') |> Array.last
+
+                        includes.RegisterFlowImportQualifier lastSegment
+
+                        match directive.Alias with
+                        | Some alias -> includes.RegisterFlowImportQualifier alias
+                        | None -> ()
             | _ ->
                 raise (
                     DashSpecParseException(

@@ -206,6 +206,7 @@ type ReportCompileContext(mode: ReportCompileMode) =
     member val Cards = ResizeArray<CardDefinition>()
     member val ConnectorId: string option = None with get, set
     member val FlowConnectPath: string option = None with get, set
+    member val FlowConnectSymbol: string option = None with get, set
     member val ColorPalette: string option = None with get, set
     member val Layout = LayoutDefinition.Default with get, set
     member val FiltersChrome = FiltersChromeDefinition.Default with get, set
