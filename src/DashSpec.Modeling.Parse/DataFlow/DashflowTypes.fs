@@ -6,10 +6,12 @@ type SourceFromKind =
     | View
     | SqlQuery
     | SqlFile
+    | Xlsx
 
 type SourceFrom =
     { Kind: SourceFromKind
-      Value: string }
+      Value: string
+      Sheet: string option }
 
 /// <summary>Manifest data plugin selection on a <c>source</c> node.</summary>
 type DashflowProviderBinding =

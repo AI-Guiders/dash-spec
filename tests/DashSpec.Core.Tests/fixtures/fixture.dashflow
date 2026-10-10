@@ -27,4 +27,103 @@ source fixture_src3 {
   end ports
 }
 
+source s_wrap {
+  use provider infer
+  from sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_kw {
+  use provider infer
+  from sql query "SELECT title FROM t WHERE title = 'DELETE is ok'"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_delete {
+  use provider infer
+  from sql query "DELETE FROM t"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_drop {
+  use provider infer
+  from sql query "SELECT 1; DROP TABLE t"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_insert {
+  use provider infer
+  from sql query "INSERT INTO t SELECT 1"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_into {
+  use provider infer
+  from sql query "SELECT * INTO hack FROM t"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_comment {
+  use provider infer
+  from sql query "SELECT 1 -- evil"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_file {
+  use provider infer
+  from sql file "queries/top.sql"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source s_raw {
+  use provider infer
+  from sql query [[SELECT kpi FROM demo.v_kpi WHERE kpi > 0]]
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source x_sheet {
+  use provider infer
+  from xlsx file "reports/book.xlsx" sheet "Лист1"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
+source x_nosheet {
+  use provider infer
+  from xlsx file "reports/book.xlsx"
+  ports
+    default output rows
+    output stream rows: FixtureRow
+  end ports
+}
+
 end flow
