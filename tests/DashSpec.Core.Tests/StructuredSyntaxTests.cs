@@ -86,7 +86,7 @@ public class StructuredSyntaxTests
                 end filter
                 card peak
                   title = "Peak"
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
+                  data flow { fixture_src [rows] -> [rows] demo_peak_bar }
                   bind usage_date
                   view
                     diagram demo_peak_bar
