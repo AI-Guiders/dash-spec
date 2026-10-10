@@ -17,6 +17,9 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               defaults
@@ -51,7 +54,7 @@ public class QueryCompilerTests
               y = peak_concurrent_proxy
               series = app_name
               end line
-              datasource infer view demo.v_daily_peak_concurrent_proxy rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -80,6 +83,9 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               defaults
@@ -112,7 +118,7 @@ public class QueryCompilerTests
               diagram table
               columns = host_name, user_sam
               end table
-              datasource infer view demo.v_drill rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -147,6 +153,9 @@ public class QueryCompilerTests
 
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
               sqldialect = tsql
               end configuration
@@ -170,7 +179,7 @@ public class QueryCompilerTests
               diagram table
               columns = user_sam
               end table
-              datasource infer view demo.v_five_minute_activity_at_bucket rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -198,6 +207,9 @@ public class QueryCompilerTests
 
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
               sqldialect = tsql
               end configuration
@@ -224,7 +236,7 @@ public class QueryCompilerTests
               diagram bar
               x = user_sam y
               end bar
-              datasource infer sql query "SELECT user_sam, MAX(n) AS peak_concurrent_apps FROM t GROUP BY user_sam" rows FixtureRow
+              data flow { s_wrap [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -251,6 +263,9 @@ public class QueryCompilerTests
 
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
               sqldialect = postgres
               end configuration
@@ -277,7 +292,7 @@ public class QueryCompilerTests
               diagram line
               x = usage_date y
               end line
-              datasource infer view public.metrics rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -302,6 +317,9 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               card events as "Events"
@@ -309,7 +327,7 @@ public class QueryCompilerTests
               columns = id, name
               limit = 100
               end table
-              datasource infer view dbo.events rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -326,6 +344,9 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
               sqldialect = postgres
               end configuration
@@ -336,7 +357,7 @@ public class QueryCompilerTests
               columns = id, name
               limit = 100
               end table
-              datasource infer view public.events rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -359,6 +380,9 @@ public class QueryCompilerTests
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               defaults
@@ -372,16 +396,16 @@ public class QueryCompilerTests
                 end show
               end filter
               card events as "Events"
-              filters
-              row_limit
-              end filters
+              show flow
+              row_limit -> [toolbar] chrome.card.events
+              end show flow
               bind
                 row_limit
               end bind
               diagram table
               columns = id, name
               end table
-              datasource infer view dbo.events rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -442,6 +466,9 @@ public class QueryCompilerTests
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               report
               title = "T"
               defaults
@@ -467,16 +494,16 @@ public class QueryCompilerTests
               usage_date
               end dashboard
               card events as "Events"
-              filters
-              row_limit
-              end filters
+              show flow
+              row_limit -> [toolbar] chrome.card.events
+              end show flow
               bind
                 usage_date, row_limit
               end bind
               diagram table
               columns = id, name
               end table
-              datasource infer view dbo.events rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -687,6 +714,9 @@ public class QueryCompilerTests
         var document = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
                   !include "query-row-types.dashtype"
+                  connect
+                    flow "fixture.dashflow"
+                  end connect
               configuration
                 time_basis = working
                 work_time_column = bucket_start_utc
@@ -697,7 +727,7 @@ public class QueryCompilerTests
               diagram number
               value = kpi
               end number
-              datasource infer view demo.v rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -724,7 +754,7 @@ public class QueryCompilerTests
               diagram number
               value = kpi
               end number
-              datasource infer view demo.v rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end tab

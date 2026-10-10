@@ -71,7 +71,8 @@ module PropertySchemas =
 
     let filterBindDate =
         [ spec "column" ColumnBinding
-          spec "grain_filter" Scalar ]
+          spec "grain_filter" Scalar
+          spec "single" Scalar ]
 
     let filterBindField =
         [ spec "column" ColumnBinding

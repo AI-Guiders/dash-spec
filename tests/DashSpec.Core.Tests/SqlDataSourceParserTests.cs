@@ -1,219 +1,159 @@
 using DashSpec.Abstractions.Query;
-using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
+using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
 
+/// <summary>
+/// Flow source contract (from sql query/file) — source shape is validated at parse,
+/// the read-only guard (SqlReadOnlyValidator, "datasource sql" messages) runs at compile.
+/// </summary>
 public class SqlDataSourceParserTests
 {
+    private static string Spec(string moduleName, string sourceId) =>
+        $$"""
+        @dashboard t
+              !include "query-row-types.dashtype"
+          connect
+          flow "{{moduleName}}"
+          end connect
+          report
+          title = "T"
+          defaults
+            filter.usage_date.range = -7d..today
+          end defaults
+          filter usage_date
+            bind date
+              column = usage_date
+            end bind
+            show
+              label = "Дата"
+            end show
+          end filter
+          filters dashboard
+          usage_date
+          end dashboard
+          card a as "A"
+          bind
+            usage_date
+          end bind
+          diagram bar
+          x = a y
+          end bar
+          data flow { {{sourceId}} [rows] -> [rows] __diagram__ }
+          end card
+          end report
+        end dashboard
+        """;
+
     [Fact]
     public void Parse_sql_datasource_reads_inline_select()
     {
-        var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
-                  !include "query-row-types.dashtype"
-              report
-              title = "T"
-              defaults
-                filter.usage_date.range = -7d..today
-              end defaults
-              filter usage_date
-                bind date
-                  column = usage_date
-                end bind
-                show
-                  label = "Дата"
-                end show
-              end filter
-              filters dashboard
-              usage_date
-              end dashboard
-              card a as "A"
-              bind
-                usage_date
-              end bind
-              diagram bar
-              x = user_sam y
-              end bar
-              datasource infer sql query "SELECT user_sam, peak FROM demo.v_x GROUP BY user_sam" rows FixtureRow
-              end card
-              end report
-            end dashboard
-""");
-
-        var card = doc.Cards[0];
+        var card = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", "s_wrap")).Cards[0];
         Assert.Equal(DataSourceKind.Sql, card.DataSource.Kind);
         Assert.Equal(DataSourceSqlCarrier.Query, card.DataSource.SqlCarrier);
         Assert.Contains("GROUP BY", card.DataSource.Value);
     }
 
     [Theory]
-    [InlineData("DELETE FROM t")]
-    [InlineData("SELECT 1; DROP TABLE t")]
-    [InlineData("INSERT INTO t SELECT 1")]
-    [InlineData("SELECT * INTO hack FROM t")]
-    [InlineData("SELECT 1 -- evil")]
-    public void Parse_sql_datasource_rejects_non_readonly(string sqlBody)
+    [InlineData("s_delete")]
+    [InlineData("s_drop")]
+    [InlineData("s_insert")]
+    [InlineData("s_into")]
+    [InlineData("s_comment")]
+    public void Compile_sql_datasource_rejects_non_readonly(string sourceId)
     {
-        var spec = $$"""
-            @dashboard t
-                  !include "query-row-types.dashtype"
-              report
-              title = "T"
-              defaults
-                filter.usage_date.range = -7d..today
-              end defaults
-              filter usage_date
-                bind date
-                  column = usage_date
-                end bind
-                show
-                  label = "Дата"
-                end show
-              end filter
-              filters dashboard
-              usage_date
-              end dashboard
-              card a as "A"
-              bind
-                usage_date
-              end bind
-              diagram bar
-              x = a
-              y = b
-              end bar
-              datasource infer sql query "{{sqlBody.Replace("\"", "\\\"")}}" rows FixtureRow
-              end card
-              end report
-            end dashboard
-            """;
-
-        var ex = Assert.ThrowsAny<Exception>(() => DashSpecTestRowTypes.ParseDashboard(spec));
+        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", sourceId));
+        var card = document.Cards[0];
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), document));
         Assert.Contains("datasource sql", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Parse_sql_datasource_allows_keyword_inside_string_literal()
+    public void Compile_sql_datasource_allows_keyword_inside_string_literal()
     {
-        var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
-                  !include "query-row-types.dashtype"
-              report
-              title = "T"
-              defaults
-                filter.usage_date.range = -7d..today
-              end defaults
-              filter usage_date
-                bind date
-                  column = usage_date
-                end bind
-                show
-                  label = "Дата"
-                end show
-              end filter
-              filters dashboard
-              usage_date
-              end dashboard
-              card a as "A"
-              bind
-                usage_date
-              end bind
-              diagram bar
-              x = title y
-              end bar
-              datasource infer sql query "SELECT title FROM t WHERE title = 'DELETE is ok'" rows FixtureRow
-              end card
-              end report
-            end dashboard
-""");
+        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", "s_kw"));
+        var card = document.Cards[0];
+        Assert.Contains("DELETE is ok", card.DataSource.Value);
 
-        Assert.Equal(DataSourceKind.Sql, doc.Cards[0].DataSource.Kind);
-        Assert.Equal(DataSourceSqlCarrier.Query, doc.Cards[0].DataSource.SqlCarrier);
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), document);
+        Assert.Contains("DELETE is ok", query.Sql);
     }
 
     [Fact]
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
-                  !include "query-row-types.dashtype"
-              report
-              title = "T"
-              card a as "A"
-              diagram bar
-              x = a y
-              end bar
-              datasource infer sql "SELECT 1"
-              end card
-              end report
-            end dashboard
-"""));
+        var dir = NewSpecDir();
+        File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
+            @flow broken
+            source s {
+              use provider infer
+              from sql "SELECT 1"
+              ports
+                default output rows
+                output stream rows: FixtureRow
+              end ports
+            }
+            end flow
+            """);
 
-        Assert.Contains("query' or 'file'", ex.Message, StringComparison.OrdinalIgnoreCase);
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DashSpecTestRowTypes.ParseDashboard(Spec("broken.dashflow", "s"), dir));
+        Assert.Contains("query or file", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void Parse_sql_datasource_file_and_block_query()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "dashspec-sql-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
+        var dir = NewSpecDir();
         var sqlPath = Path.Combine(dir, "queries", "top.sql");
         Directory.CreateDirectory(Path.GetDirectoryName(sqlPath)!);
         File.WriteAllText(sqlPath, "SELECT user_sam, MAX(n) AS peak FROM t GROUP BY user_sam");
+        File.WriteAllText(Path.Combine(dir, "src.dashflow"), """
+            @flow src
+            source s_file {
+              use provider infer
+              from sql file "queries/top.sql"
+              ports
+                default output rows
+                output stream rows: FixtureRow
+              end ports
+            }
 
-        try
-        {
-            var fileDoc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
-                  !include "query-row-types.dashtype"
-                  report
-                  title = "T"
-                  card a as "A"
-                  diagram bar
-                  x = user_sam y
-                  end bar
-                  datasource infer sql file "queries/top.sql" rows FixtureRow
-                  end card
-                  end report
-                end dashboard
-""", dir);
+            source s_block {
+              use provider infer
+              from sql query [[
+              SELECT user_sam, COUNT(*) AS peak
+              FROM t
+              GROUP BY user_sam
+              ]]
+              ports
+                default output rows
+                output stream rows: FixtureRow
+              end ports
+            }
+            end flow
+            """);
 
-            var fileCard = fileDoc.Cards[0];
-            Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
-            Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
+        var fileCard = DashSpecTestRowTypes.ParseDashboard(Spec("src.dashflow", "s_file"), dir).Cards[0];
+        Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
+        Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
 
-            var blockDoc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
-                  !include "query-row-types.dashtype"
-                  report
-                  title = "T"
-                  card b as "B"
-                  diagram bar
-                  x = user_sam y
-                  end bar
-                  datasource infer sql query [[
-                  SELECT user_sam, COUNT(*) AS peak
-                  FROM t
-                  GROUP BY user_sam
-                  ]] rows FixtureRow
-                  end card
-                  end report
-                end dashboard
-""", dir);
-
-            var blockCard = blockDoc.Cards[0];
-            Assert.Equal(DataSourceSqlCarrier.Query, blockCard.DataSource.SqlCarrier);
-            Assert.Contains("COUNT(*)", blockCard.DataSource.Value);
-        }
-        finally
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        var blockCard = DashSpecTestRowTypes.ParseDashboard(Spec("src.dashflow", "s_block"), dir).Cards[0];
+        Assert.Equal(DataSourceSqlCarrier.Query, blockCard.DataSource.SqlCarrier);
+        Assert.Contains("COUNT(*)", blockCard.DataSource.Value);
     }
 
+    private static string NewSpecDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-sql-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
+        return dir;
+    }
 }

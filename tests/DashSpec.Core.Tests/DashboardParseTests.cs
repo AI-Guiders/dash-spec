@@ -162,12 +162,12 @@ public class DashboardParseTests
               end filter
               filter activity_day
                 bind date
+                  column = bucket_start_utc
                 end bind
                 show
+                  label = "Day"
+                  widget = day
                 end show
-              end filter
-              column = bucket_start_utc as "Day"
-              widget = day
               end filter
               filter app_name
                 bind field
