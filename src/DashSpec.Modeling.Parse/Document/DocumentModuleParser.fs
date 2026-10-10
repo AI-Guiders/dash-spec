@@ -289,16 +289,11 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.compileReportModule result.Context
 
-        let embeddedFilters =
-            ReportCompileContext.mergeFilterScopes
-                None
-                (result.Context.ReportScopeFilters :> IReadOnlyList<_>)
-                [| result.Context.Filters :> IReadOnlyList<_>; result.Context.TabLocalFilters :> IReadOnlyList<_> |]
-
         // ADR-0011 embed: parent shell owns connect/flow and shared row types; tab module contributes report body only.
+        // Module shell filters (report-scope declarations) are ignored when embedded — only explicitly local filter blocks travel.
         { TabId = tabId
           Label = result.Context.TabModuleLabel
-          Filters = embeddedFilters
+          Filters = result.Context.ExportedTabLocalFilters
           Cards = result.Context.Cards :> IReadOnlyList<_>
           LayoutBoard = result.Context.LayoutBoard
           ModuleDiagrams = Some(exportModuleDiagrams result.Context.Includes)
@@ -410,6 +405,7 @@ module rec DocumentModuleParser =
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectPath = None
+        let mutable flowConnectSymbol = None
         let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -446,6 +442,7 @@ module rec DocumentModuleParser =
                     (fun lb -> connectLayoutBoard <- Some lb)
                     (fun tb -> connectToolbarBoard <- Some tb)
                     (fun v -> flowConnectPath <- v)
+                    (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -465,6 +462,7 @@ module rec DocumentModuleParser =
                         connectLayoutBoard
                         connectToolbarBoard
                         flowConnectPath
+                        flowConnectSymbol
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -508,6 +506,7 @@ module rec DocumentModuleParser =
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectPath = None
+        let mutable flowConnectSymbol = None
         let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
         let mutable timePolicyAcc: ReportTimePolicy option = None
@@ -544,6 +543,7 @@ module rec DocumentModuleParser =
                     (fun lb -> connectLayoutBoard <- Some lb)
                     (fun tb -> connectToolbarBoard <- Some tb)
                     (fun v -> flowConnectPath <- v)
+                    (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
             then
                 ()
@@ -563,6 +563,7 @@ module rec DocumentModuleParser =
                         connectLayoutBoard
                         connectToolbarBoard
                         flowConnectPath
+                        flowConnectSymbol
                         parseOptions
                         moduleExtensions
                         timePolicyAcc
@@ -610,6 +611,7 @@ module rec DocumentModuleParser =
         (setLayoutBoard: LayoutBoardDefinition -> unit)
         (setToolbarBoard: LayoutBoardDefinition -> unit)
         (setFlowConnectPath: string option -> unit)
+        (setFlowConnectSymbol: string option -> unit)
         (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
         =
         if reader.TryKeyword "runtime" then
@@ -673,12 +675,13 @@ module rec DocumentModuleParser =
                 elif reader.TryKeyword "wiring" then
                     raise (DashSpecParseException("Module section 'wiring' was removed; use 'connect' (palette, flow, layout)."))
                 elif reader.TryKeyword "connect" then
-                    let wiredPalette, layout, layoutBoard, toolbarBoard, flowPath = parseConnectBlock reader
+                    let wiredPalette, layout, layoutBoard, toolbarBoard, flowPath, flowSymbol = parseConnectBlock reader
                     setLayout layout
                     if layoutBoard.IsSome then setLayoutBoard layoutBoard.Value
                     if toolbarBoard.IsSome then setToolbarBoard toolbarBoard.Value
                     setPaletteUse wiredPalette
                     setFlowConnectPath flowPath
+                    setFlowConnectSymbol flowSymbol
                     reader.SkipNewlines()
                     true
                 else false
@@ -722,12 +725,13 @@ module rec DocumentModuleParser =
                 | _ ->
                     raise (DashSpecParseException("Unknown module link mode."))
 
-    let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
+    let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option * string option =
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
         let mutable layoutBoard = None
         let mutable toolbarBoard = None
         let mutable flowPath = None
+        let mutable flowConnectSymbol = None
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -738,16 +742,17 @@ module rec DocumentModuleParser =
             if BlockSyntax.isBlockEnd reader "connect" None then ()
             elif reader.TryKeyword "use" then
                 let useKind = reader.ReadIdent()
-                let useId = reader.ReadIdent()
 
                 if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
                     raise (DashSpecParseException("use connector was removed; declare 'use provider <id>' on dashflow source nodes."))
                 elif String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
                     raise (DashSpecParseException("use provider belongs on dashflow source nodes, not in connect { }."))
                 elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
-                    paletteUse <- Some useId
+                    paletteUse <- Some(reader.ReadIdent())
+                elif String.Equals(useKind, "flow", StringComparison.OrdinalIgnoreCase) then
+                    flowConnectSymbol <- Some(AccessorGrammar.readQualifiedName reader)
                 else
-                    raise (DashSpecParseException($"connect use must be palette, got '{useKind}'."))
+                    raise (DashSpecParseException($"connect use must be palette or flow, got '{useKind}'."))
             elif reader.TryKeyword "flow" then
                 flowPath <- Some(reader.ReadString())
             elif reader.TryKeyword "layout" then
@@ -762,7 +767,7 @@ module rec DocumentModuleParser =
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "connect" (None: string option)
-        paletteUse, layout, layoutBoard, toolbarBoard, flowPath
+        paletteUse, layout, layoutBoard, toolbarBoard, flowPath, flowConnectSymbol
 
     let private parseReportDefaultsBlock (reader: TokenReader) (shell: ReportCompileContext) (blockKeyword: string) =
         shell.FormatDefaults <-
@@ -1077,6 +1082,7 @@ module rec DocumentModuleParser =
         (layoutBoard: LayoutBoardDefinition option)
         (toolbarBoard: LayoutBoardDefinition option)
         (flowConnectPath: string option)
+        (flowConnectSymbol: string option)
         (parseOptions: DashSpecParseOptions)
         (moduleExtensions: ModuleExtensionsDefinition)
         (timePolicy: ReportTimePolicy option)
@@ -1092,6 +1098,7 @@ module rec DocumentModuleParser =
         shell.TabModuleId <- tabModuleId
         shell.ParentFilters <- parentFilters
         shell.FlowConnectPath <- flowConnectPath
+        shell.FlowConnectSymbol <- flowConnectSymbol
         shell.ColorPalette <- paletteUse
         shell.Layout <- layout
         shell.LayoutBoard <- layoutBoard |> Option.orElse includes.LayoutBoard

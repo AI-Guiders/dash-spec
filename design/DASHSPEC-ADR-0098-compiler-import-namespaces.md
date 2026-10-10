@@ -161,7 +161,7 @@ Marker file (`dashspec.toml` / `dspec.json`): `root_namespace`, source roots. LS
 
 ## Open questions
 
-1. `connect { use flow f }` exact syntax vs `flow f` keyword.
+1. **Resolved 2026-10-10** — `connect { use flow <symbol> }`: binds an imported flow into the module shell; joins the `use <kind> <symbol>` family (`use provider <id>`, `use palette <id>`, `use <preset>`). Requires `as <alias>` or a full namespace name — no implicit single-flow binding. Legacy `connect { flow "path" }` is removed together with `!include`.
 2. Rename `.dashspec` → `.dspec` when `dspec build` exists.
 
 ## Summary
