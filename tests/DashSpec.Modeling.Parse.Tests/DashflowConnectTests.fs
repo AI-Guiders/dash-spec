@@ -169,3 +169,139 @@ end tab x
         Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () ->
             DocumentModuleParser.parseDocumentDefault specText None |> ignore)
         |> ignore
+
+    let private flowUseToml =
+        """
+root_namespace = "Test"
+
+[[index]]
+namespace = "Test.Types"
+kind = "types"
+glob = "types.dashtype"
+
+[[index]]
+namespace = "Test.Flow"
+kind = "flows"
+glob = "peak.dashflow"
+"""
+
+    let private flowUseReport =
+        """
+  report "Flow test"
+    card c as "C" {
+      input rows from utilization.utilization
+      diagram table {
+        columns UserSam
+      }
+    }
+  end report
+"""
+
+    [<Fact>]
+    let ``use flow binds imported flow`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "dashflow-use-" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory dir |> ignore
+        File.WriteAllText(Path.Combine(dir, "types.dashtype"), typesText)
+        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "dashspec.toml"), flowUseToml)
+
+        let specText =
+            $"""
+@tab flow_use_import
+
+namespace Test
+
+import types from Test.Types
+import flows from Test.Flow as f
+
+connect
+  use flow f
+end connect
+{flowUseReport}
+
+end tab flow_use_import
+"""
+
+        try
+            let document = DocumentModuleParser.parseDocumentDefault specText (Some dir)
+
+            match document.Dashflow with
+            | None -> Assert.Fail("Expected resolved dashflow")
+            | Some module' -> Assert.Equal("peak", module'.FlowId)
+        finally
+            try
+                Directory.Delete(dir, true)
+            with _ ->
+                ()
+
+    [<Fact>]
+    let ``use flow without import is rejected`` () =
+        let specText =
+            """
+@tab x
+
+connect
+  use flow f
+end connect
+report "T"
+  card c as "C" { diagram table { columns x } }
+end report
+end tab x
+"""
+        Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () ->
+            DocumentModuleParser.parseDocumentDefault specText None |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``use flow together with connect flow is rejected`` () =
+        let specText =
+            """
+@tab x
+
+connect
+  flow "peak.dashflow"
+  use flow f
+end connect
+report "T"
+  card c as "C" { diagram table { columns x } }
+end report
+end tab x
+"""
+        Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () ->
+            DocumentModuleParser.parseDocumentDefault specText None |> ignore)
+        |> ignore
+
+    [<Fact>]
+    let ``use flow unknown symbol is rejected`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "dashflow-use-bad-" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory dir |> ignore
+        File.WriteAllText(Path.Combine(dir, "types.dashtype"), typesText)
+        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "dashspec.toml"), flowUseToml)
+
+        let specText =
+            $"""
+@tab flow_use_bad
+
+namespace Test
+
+import types from Test.Types
+import flows from Test.Flow as f
+
+connect
+  use flow other
+end connect
+{flowUseReport}
+
+end tab flow_use_bad
+"""
+
+        try
+            Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(fun () ->
+                DocumentModuleParser.parseDocumentDefault specText (Some dir) |> ignore)
+            |> ignore
+        finally
+            try
+                Directory.Delete(dir, true)
+            with _ ->
+                ()
