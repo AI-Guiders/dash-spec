@@ -325,7 +325,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -388,7 +388,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               layout grid
@@ -455,7 +455,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               layout grid
@@ -511,7 +511,7 @@ end tab
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               layout grid
@@ -580,7 +580,7 @@ end tab
                 """);
             File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   !include "layouts/tb.dashlayout"
                   report
                   title = "T"
@@ -645,7 +645,7 @@ end tab
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -745,7 +745,7 @@ end tab
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   !include "layouts/grid.dashlayout"
                   report
                   title = "T"

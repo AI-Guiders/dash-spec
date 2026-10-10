@@ -17,7 +17,7 @@ public class ChartRuntimeTests
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -68,7 +68,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"
@@ -118,7 +118,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"
@@ -177,7 +177,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"
@@ -293,7 +293,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"
@@ -352,7 +352,7 @@ public class ChartRuntimeTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card peak as "Peak"
@@ -397,7 +397,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card utilization_bar as "Utilization"
@@ -434,7 +434,7 @@ public class ChartRuntimeTests
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -484,7 +484,7 @@ public class ChartRuntimeTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
               end configuration
@@ -534,7 +534,7 @@ public class ChartRuntimeTests
         var card = DashSpecTestRowTypes.ParseDashboard("""
 
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               card c as "C"

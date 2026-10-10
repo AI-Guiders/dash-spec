@@ -50,7 +50,7 @@ public class TabModuleTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
                   filter app_name
@@ -92,7 +92,7 @@ public class TabModuleTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -144,7 +144,7 @@ public class TabModuleTests
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               defaults
@@ -216,7 +216,7 @@ public class TabModuleTests
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
                   tab overview as "Overview"
@@ -251,7 +251,7 @@ public class TabModuleTests
     {
         var text = DashSpecTestRowTypes.EnsureFixtureRowCatalog("""
             @dashboard t
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "T"
               tab x dashspec "x.dashspec"

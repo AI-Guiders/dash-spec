@@ -13,7 +13,7 @@ public class ToolbarFilterVisibilityTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
             @tab customer_reports
-                  !include "query-row-types.dashtype"
+                  import types from Fixtures.QueryRowTypes
               report
               title = "Customer"
               defaults

@@ -17,7 +17,7 @@ public class SqlDataSourceParserTests
     private static string Spec(string moduleName, string sourceId) =>
         $$"""
         @dashboard t
-              !include "query-row-types.dashtype"
+              import types from Fixtures.QueryRowTypes
           connect
           flow "{{moduleName}}"
           end connect
