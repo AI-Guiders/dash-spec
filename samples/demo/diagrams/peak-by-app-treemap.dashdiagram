@@ -1,4 +1,4 @@
-@diagram demo_peak_by_app_treemap
+module diagram demo_peak_by_app_treemap
 
     chrome
         use treemap_360

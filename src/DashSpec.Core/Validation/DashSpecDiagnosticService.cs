@@ -49,6 +49,10 @@ public static class DashSpecDiagnosticService
         {
             return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
         }
+        catch (DirectoryNotFoundException ex)
+        {
+            return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
+        }
         catch (Exception ex) when (ex.Message.StartsWith("!include not found:", StringComparison.Ordinal))
         {
             return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
@@ -72,7 +76,21 @@ public static class DashSpecDiagnosticService
             ? IncludeReferenceHeuristics.TryFindIncludeOffset(text, missingPath, specDirectory)
             : null;
 
-        return [TextPositions.ToDiagnostic(text, ex.Message, offset)];
+        if (offset is null && !string.IsNullOrWhiteSpace(missingPath))
+        {
+            var name = Path.GetFileName(missingPath.TrimEnd('"', '\''));
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var idx = text.IndexOf(name, StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    offset = idx;
+                }
+            }
+        }
+
+        var normalizedMessage = $"!include not found: '{missingPath}'.";
+        return [TextPositions.ToDiagnostic(text, normalizedMessage, offset)];
     }
 
     private static string? ExtractIncludePathFromMessage(string message)

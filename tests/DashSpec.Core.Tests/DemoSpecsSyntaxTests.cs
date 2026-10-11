@@ -49,7 +49,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_columns_only()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = a, b
             end table
@@ -73,7 +73,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_order_by_inline()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = a, b
               order_by = occurred_at_utc
@@ -98,7 +98,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_order_by_without_desc()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = a, b
               order_by = occurred_at_utc
@@ -113,7 +113,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_with_order_by()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = occurred_at_utc, app_name
               order_by = occurred_at_utc DESC
@@ -129,7 +129,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_formats_block_serializes_column_formats()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = host_name, bucket_start_utc
               formats
@@ -146,7 +146,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_rejects_inline_column_formats()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = a, b
               column_formats = a:date.short
@@ -162,7 +162,7 @@ public class DemoSpecsSyntaxTests
     public void Parse_table_diagram_order_by_with_comma()
     {
         var text = """
-            @diagram t
+            module diagram t
             table
               columns = host_name, user_sam
               order_by = host_name ASC, user_sam ASC

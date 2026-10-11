@@ -9,7 +9,7 @@ public class CommandAliasesParserTests
     public void Parse_commands_block_maps_aliases_to_filter_ids()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard demo
+            module dashboard demo
                   import types from Fixtures.QueryRowTypes
               report
               title = "Demo"

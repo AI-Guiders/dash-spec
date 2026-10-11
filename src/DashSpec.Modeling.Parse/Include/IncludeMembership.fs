@@ -74,9 +74,7 @@ module IncludeMembership =
         let reader = ParserUtilities.createReader (File.ReadAllText path)
         reader.SkipNewlines()
 
-        if reader.IsAt TokenKind.At then
-            reader.Advance()
-
+        if reader.TryKeyword "module" then
             if reader.TryKeyword "include" then
                 reader.ReadIdent() |> ignore
                 reader.SkipNewlines()

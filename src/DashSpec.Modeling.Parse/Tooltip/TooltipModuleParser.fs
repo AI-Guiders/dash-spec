@@ -64,7 +64,7 @@ module TooltipModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Tooltip text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "tooltip"
         let id = reader.ReadIdent()
         if String.IsNullOrWhiteSpace id then

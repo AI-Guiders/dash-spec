@@ -10,7 +10,7 @@ internal static class BlockSpecTestHelper
         string? runtimeManifest = null,
         string? connectExtra = null)
     {
-        var lines = new List<string> { $"@dashboard {id}" };
+        var lines = new List<string> { $"module dashboard {id}" };
 
         if (runtimeManifest is not null)
         {
@@ -42,7 +42,7 @@ internal static class BlockSpecTestHelper
         string? title = null,
         string? connectExtra = null)
     {
-        var lines = new List<string> { $"@tab {id}" };
+        var lines = new List<string> { $"module tab {id}" };
         if (connectExtra is not null)
         {
             lines.Add("  connect");

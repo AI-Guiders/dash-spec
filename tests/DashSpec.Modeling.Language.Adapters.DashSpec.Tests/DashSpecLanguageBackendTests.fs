@@ -9,7 +9,7 @@ module DashSpecLanguageBackendTests =
     let private samplePath = "/tmp/demo-analytics.dashspec"
 
     let private sampleText =
-        """@tab analytics
+        """module tab analytics
   filter period_grain on toolbar
   report
     card period_peak_by_app as "Peak by app"

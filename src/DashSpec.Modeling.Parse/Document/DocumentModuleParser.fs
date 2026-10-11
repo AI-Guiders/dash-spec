@@ -78,19 +78,16 @@ module rec DocumentModuleParser =
         reader.SkipFileDirectives()
         reader.SkipNewlines()
 
-        if not (reader.IsAt TokenKind.At) then false
+        if not (reader.TryKeyword "module") then false
+        elif not (reader.TryKeyword "dashboard") && not (reader.TryKeyword "tab") then false
         else
-            reader.Advance()
+            reader.ReadIdent() |> ignore
+            reader.SkipNewlines()
 
-            if not (reader.TryKeyword "dashboard") && not (reader.TryKeyword "tab") then false
+            if reader.IsAt TokenKind.LBrace then
+                raise (DashSpecParseException("Brace module format removed; use module dashboard id or module tab id with end-block body."))
             else
-                reader.ReadIdent() |> ignore
-                reader.SkipNewlines()
-
-                if reader.IsAt TokenKind.LBrace then
-                    raise (DashSpecParseException("Brace module format removed; use @dashboard id or @tab id with end-block body."))
-                else
-                    not reader.IsEof
+                not reader.IsEof
 
     let private composeTabStandalone
         (reader: TokenReader)
@@ -232,7 +229,7 @@ module rec DocumentModuleParser =
 
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
 
         if reader.TryKeyword "tab" then
             composeTabStandalone reader specDirectory parseOptions diagnostics
@@ -266,7 +263,7 @@ module rec DocumentModuleParser =
 
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "tab"
         let tabId = reader.ReadIdent()
 
@@ -311,7 +308,7 @@ module rec DocumentModuleParser =
         else
             let reader = ParserUtilities.createReader text
             reader.SkipNewlines()
-            reader.Expect TokenKind.At
+            reader.ExpectKeyword "module"
             let isDashboard = reader.TryKeyword "dashboard"
             if not isDashboard then reader.TryKeyword "tab" |> ignore
             let moduleId = reader.ReadIdent()
@@ -349,7 +346,7 @@ module rec DocumentModuleParser =
         else
             let reader = ParserUtilities.createReader text
             reader.SkipNewlines()
-            reader.Expect TokenKind.At
+            reader.ExpectKeyword "module"
             let isDashboard = reader.TryKeyword "dashboard"
             if not isDashboard then reader.TryKeyword "tab" |> ignore
             let moduleId = reader.ReadIdent()
@@ -422,6 +419,8 @@ module rec DocumentModuleParser =
             parseOptions
             diagnostics
 
+        let seenCode = ref false
+
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "dashboard" (Some dashboardId)) do
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader "dashboard" (Some dashboardId) then ()
@@ -444,6 +443,7 @@ module rec DocumentModuleParser =
                     (fun v -> flowConnectPath <- v)
                     (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
+                    seenCode
             then
                 ()
             elif reader.TryKeyword "report" then
@@ -523,6 +523,8 @@ module rec DocumentModuleParser =
             parseOptions
             diagnostics
 
+        let seenCode = ref false
+
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "tab" (Some tabId)) do
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader "tab" (Some tabId) then ()
@@ -545,6 +547,7 @@ module rec DocumentModuleParser =
                     (fun v -> flowConnectPath <- v)
                     (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
+                    seenCode
             then
                 ()
             elif reader.TryKeyword "report" then
@@ -613,10 +616,12 @@ module rec DocumentModuleParser =
         (setFlowConnectPath: string option -> unit)
         (setFlowConnectSymbol: string option -> unit)
         (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
+        (seenCode: bool ref)
         =
         if reader.TryKeyword "runtime" then
             let props = PropertyBlockParser.parse reader PropertySchemas.runtime "runtime" false false
             props.TryGetValue "manifest" |> ignore
+            seenCode.Value <- true
             reader.SkipNewlines()
             true
         elif reader.TryKeyword "configuration" then
@@ -635,11 +640,23 @@ module rec DocumentModuleParser =
             | false, _ -> ()
 
             mergeTimeConfiguration props
+            seenCode.Value <- true
             reader.SkipNewlines()
             true
         else
+            let savedForOffset = reader.SavePosition()
+            reader.SkipNewlines()
+            let directiveOffset = reader.CurrentOffset
+            reader.RestorePosition savedForOffset
+
             match reader.TryEnvelopeLinkDirective() with
             | Some directive ->
+                if seenCode.Value then
+                    raise (
+                        DashSpecParseException(
+                            "imports/includes belong at the top of the module header, before runtime/configuration (ADR-0101).",
+                            directiveOffset))
+
                 if not (DashSpecProjectLocator.legacyIncludesAllowed parseOptions specDirectory) then
                     raise (
                         DashSpecParseException(
@@ -651,7 +668,31 @@ module rec DocumentModuleParser =
                 | ModuleLinkMode.LegacySequential, Some dir ->
                     match directive with
                     | ModuleLinkDirective.PathReference reference ->
-                        IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
+                        match DashSpecProjectLocator.tryFindConfig specDirectory with
+                        | Some cfg when cfg.Files.Count > 0 ->
+                            if reference.Contains('*') then
+                                raise (
+                                    DashSpecParseException(
+                                        "Glob includes belong in the project membership (.dsproj files block), not in the module envelope (ADR-0089 Phase 2).",
+                                        directiveOffset))
+
+                            if reference.EndsWith(".dashinclude", StringComparison.OrdinalIgnoreCase) then
+                                raise (
+                                    DashSpecParseException(
+                                        "'.dashinclude' bundles are deprecated; declare members in the project file (.dsproj files block) (ADR-0089 Phase 2).",
+                                        directiveOffset))
+
+                            let resolved = IncludeMembership.resolveExistingIncludePath reference dir
+
+                            if not (DashSpecProjectMembership.isDeclared cfg resolved) then
+                                raise (
+                                    DashSpecParseException(
+                                        $"'{reference}' is not declared in project membership (.dsproj files block) (ADR-0089 Phase 2).",
+                                        directiveOffset))
+
+                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
+                        | _ ->
+                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
                     | ModuleLinkDirective.DiagramFrom _ ->
                         IncludeExpander.linkEnvelope [ directive ] dir moduleKind includes parseOptions None None
 
@@ -682,6 +723,7 @@ module rec DocumentModuleParser =
                     setPaletteUse wiredPalette
                     setFlowConnectPath flowPath
                     setFlowConnectSymbol flowSymbol
+                    seenCode.Value <- true
                     reader.SkipNewlines()
                     true
                 else false

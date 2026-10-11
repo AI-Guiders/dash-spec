@@ -10,7 +10,7 @@ public class CardFoldChromeTests
     public void Parse_card_chrome_fold_independent()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card c as "C"

@@ -1,4 +1,4 @@
-@catalog demo
+module catalog demo
 
     default demo_soak
 

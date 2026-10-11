@@ -124,7 +124,7 @@ public sealed class HeadlessReportSessionContractTests
     public async Task IReportSession_headless_load_filter_and_render_with_fake_renderer()
     {
         const string text = """
-            @dashboard demo
+            module dashboard demo
                 runtime
                     manifest = "demo.toml"
                 end runtime

@@ -1,4 +1,4 @@
-@types query_fixture
+module types query_fixture
 
 type FixtureRow
   optional date usage_date

@@ -1,4 +1,4 @@
-@diagram demo_peak_sparkline
+module diagram demo_peak_sparkline
 
     chrome
         use sparkline_64

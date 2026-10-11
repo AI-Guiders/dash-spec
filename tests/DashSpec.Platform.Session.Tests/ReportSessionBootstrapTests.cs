@@ -88,7 +88,7 @@ public sealed class ReportSessionBootstrapTests
     public async Task ReportSession_loads_via_bootstrap_and_mutates_date_filter()
     {
         const string text = """
-            @dashboard demo
+            module dashboard demo
                 runtime
                     manifest = "demo.toml"
                 end runtime

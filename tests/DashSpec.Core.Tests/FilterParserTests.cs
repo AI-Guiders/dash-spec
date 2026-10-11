@@ -23,7 +23,7 @@ public class FilterParserTests
     public void Parse_filter_date_block_with_underscore_name()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -51,7 +51,7 @@ public class FilterParserTests
     public void Parse_on_syntax_filter_followed_by_block_filter()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -88,7 +88,7 @@ public class FilterParserTests
     public void Parse_top_filter_defaults_block()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -114,7 +114,7 @@ public class FilterParserTests
     public void Parse_period_grain_then_top_filter()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -147,7 +147,7 @@ public class FilterParserTests
     public void Parse_soak_filters_up_to_period_grain()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -218,7 +218,7 @@ public class FilterParserTests
     public void Parse_soak_filters_section()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -304,7 +304,7 @@ public class FilterParserTests
     public void Parse_filter_top_as_on_declaration()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -314,21 +314,20 @@ public class FilterParserTests
                 show
                   label = "Строк (TOP)"
                 end show
-              end filter
-              default = 200
+                default = 200
               end filter
               end report
             end dashboard
 """));
 
-        Assert.Contains("defaults block", ex.Message);
+        Assert.Contains("bind, show, or place", ex.Message);
     }
 
     [Fact]
     public void Parse_filter_column_as_label()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -356,7 +355,7 @@ public class FilterParserTests
     public void Parse_filter_default_in_defaults_block_preserves_label()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -385,7 +384,7 @@ public class FilterParserTests
     public void Parse_filter_block_multiline()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -413,7 +412,7 @@ public class FilterParserTests
     public void Parse_date_filter_inline_widget_day_and_grain_filter()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -465,7 +464,7 @@ public class FilterParserTests
     public void Parse_date_filter_inline_range_without_widget_does_not_bleed_into_next_line()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -510,7 +509,7 @@ public class FilterParserTests
     public void Parse_field_filter_single_select_combobox()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -548,7 +547,7 @@ public class FilterParserTests
     public void Parse_filter_ref_does_not_consume_next_line_filter()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"

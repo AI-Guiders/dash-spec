@@ -52,7 +52,7 @@ module ModuleImportProjectTests =
     let ``legacy include rejected when toml disables it`` () =
         let text =
             """
-@tab x
+module tab x
 !include "units/*.dashdiagram"
 runtime
 end runtime
@@ -76,7 +76,7 @@ end tab x
     let ``import in report body is rejected`` () =
         let text =
             """
-@tab x
+module tab x
 runtime
 end runtime
 report

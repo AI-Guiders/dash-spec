@@ -9,7 +9,7 @@ public sealed class PluginFamilyParseTests
     public void Parse_module_extensions_use()
     {
         var text = """
-            @tab soak
+            module tab soak
               runtime
               manifest = "demo.toml"
               end runtime
@@ -57,7 +57,7 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            @tab soak
+            module tab soak
               runtime
               manifest = "demo.toml"
               end runtime
@@ -111,7 +111,7 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            @tab soak
+            module tab soak
               runtime
               manifest = "demo.toml"
               end runtime

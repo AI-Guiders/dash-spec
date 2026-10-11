@@ -4,3 +4,8 @@ root_namespace = "Fixtures"
 namespace = "Fixtures.QueryRowTypes"
 kind = "types"
 glob = "query-row-types.dashtype"
+
+[[index]]
+namespace = "Fixtures.Flow"
+kind = "flows"
+glob = "fixture.dashflow"

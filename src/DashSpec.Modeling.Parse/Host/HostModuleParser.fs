@@ -108,7 +108,7 @@ module HostModuleParser =
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "host"
         let hostId = reader.ReadIdent()
         if String.IsNullOrWhiteSpace hostId then

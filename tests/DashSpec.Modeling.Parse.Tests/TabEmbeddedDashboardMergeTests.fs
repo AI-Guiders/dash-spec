@@ -10,7 +10,7 @@ module TabEmbeddedDashboardMergeTests =
 
     let private flowText =
         """
-@flow embed_flow
+module flow embed_flow
 
 source mod {
   use provider sqlserver
@@ -32,7 +32,7 @@ end flow
 
         let tabText =
             """
-@tab versions
+module tab versions
 
 connect
   flow "embed.dashflow"
@@ -73,7 +73,7 @@ end tab versions
 
         let dashboardText =
             """
-@dashboard soak
+module dashboard soak
 
 connect
   flow "embed.dashflow"
@@ -122,7 +122,7 @@ end report
 
         let tabText =
             """
-@tab versions
+module tab versions
 
 connect
   flow "embed.dashflow"
@@ -165,7 +165,7 @@ end tab versions
 
         let dashboardText =
             """
-@dashboard soak
+module dashboard soak
 
 connect
   flow "embed.dashflow"

@@ -17,7 +17,7 @@ end type
 
     let private flowText =
         """
-@flow peak
+module flow peak
 
 source utilization {
   use provider sqlserver
@@ -56,7 +56,7 @@ end flow
 
         let specText =
             $"""
-@tab flow_connect_test
+module tab flow_connect_test
 
 connect
   flow "peak.dashflow"
@@ -99,7 +99,7 @@ end tab flow_connect_test
 
         let specText =
             $"""
-@tab flow_include_test
+module tab flow_include_test
 
 !include "types.dashtype"
 !include "peak.dashflow"
@@ -128,7 +128,7 @@ end tab flow_include_test
 
         let specText =
             $"""
-@tab flow_dup_test
+module tab flow_dup_test
 
 !include "peak.dashflow"
 connect
@@ -153,7 +153,7 @@ end tab flow_dup_test
     let ``wiring keyword is rejected`` () =
         let specText =
             """
-@tab x
+module tab x
 wiring
 end wiring
 report "T"
@@ -207,7 +207,7 @@ glob = "peak.dashflow"
 
         let specText =
             $"""
-@tab flow_use_import
+module tab flow_use_import
 
 namespace Test
 
@@ -238,7 +238,7 @@ end tab flow_use_import
     let ``use flow without import is rejected`` () =
         let specText =
             """
-@tab x
+module tab x
 
 connect
   use flow f
@@ -256,7 +256,7 @@ end tab x
     let ``use flow together with connect flow is rejected`` () =
         let specText =
             """
-@tab x
+module tab x
 
 connect
   flow "peak.dashflow"
@@ -281,7 +281,7 @@ end tab x
 
         let specText =
             $"""
-@tab flow_use_bad
+module tab flow_use_bad
 
 namespace Test
 

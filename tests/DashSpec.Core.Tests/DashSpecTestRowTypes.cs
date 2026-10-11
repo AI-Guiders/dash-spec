@@ -17,6 +17,7 @@ internal static class DashSpecTestRowTypes
     internal static readonly string FixtureDir = Path.Combine(AppContext.BaseDirectory, "fixtures");
 
     internal const string ModuleTypesIncludeLine = "import types from Fixtures.QueryRowTypes";
+    internal const string ModuleFlowImportLine = "import flows from Fixtures.Flow as fixture_flow";
 
     internal const string InlineFixtureTypeBlock = """
         type FixtureRow
@@ -57,7 +58,7 @@ internal static class DashSpecTestRowTypes
         RowTypeCatalog.FromDocument(
             DashSpecParser.Parse(
                 """
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
@@ -71,13 +72,22 @@ internal static class DashSpecTestRowTypes
     internal static string EnsureFixtureRowCatalog(string dashspecText)
     {
         if (!dashspecText.Contains("FixtureRow", StringComparison.Ordinal)
-            && !dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal))
+            && !dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+            && !dashspecText.Contains("fixture_flow", StringComparison.Ordinal))
         {
             return dashspecText;
         }
 
-        if (dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
-            || dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase))
+        var needsTypes = !dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
+            && !dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase);
+        var needsFlow = (dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+                || dashspecText.Contains("fixture_flow", StringComparison.Ordinal)
+                || dashspecText.Contains("fixture_src", StringComparison.Ordinal))
+            && !dashspecText.Contains("Fixtures.Flow", StringComparison.Ordinal);
+        var hasTypesImport = dashspecText.Contains("import types from Fixtures.QueryRowTypes", StringComparison.OrdinalIgnoreCase);
+        var hasConnect = dashspecText.Contains("connect", StringComparison.Ordinal);
+
+        if (!needsTypes && !needsFlow)
         {
             return dashspecText;
         }
@@ -86,8 +96,6 @@ internal static class DashSpecTestRowTypes
         var lines = normalized.Split('\n');
         var sb = new StringBuilder();
         var injected = false;
-        var needsFlow = dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
-            && !dashspecText.Contains("connect", StringComparison.Ordinal);
 
         foreach (var line in lines)
         {
@@ -100,27 +108,44 @@ internal static class DashSpecTestRowTypes
             }
 
             var trimmed = line.TrimStart();
-            if (!trimmed.StartsWith("@dashboard", StringComparison.Ordinal)
-                && !trimmed.StartsWith("@tab", StringComparison.Ordinal))
+            var indent = line.Length - trimmed.Length + 2;
+            var atTypes = hasTypesImport
+                && trimmed.StartsWith("import types from Fixtures.QueryRowTypes", StringComparison.OrdinalIgnoreCase);
+            var atModule = trimmed.StartsWith("module dashboard", StringComparison.Ordinal)
+                || trimmed.StartsWith("module tab", StringComparison.Ordinal);
+
+            if (needsFlow && atTypes)
             {
-                continue;
+                sb.Append(new string(' ', indent));
+                sb.AppendLine(ModuleFlowImportLine);
+                injected = true;
+            }
+            else if (atModule && (needsTypes || (needsFlow && !hasTypesImport)))
+            {
+                if (needsTypes)
+                {
+                    sb.Append(new string(' ', indent));
+                    sb.AppendLine(ModuleTypesIncludeLine);
+                }
+
+                if (needsFlow && !hasTypesImport)
+                {
+                    sb.Append(new string(' ', indent));
+                    sb.AppendLine(ModuleFlowImportLine);
+                }
+
+                injected = true;
             }
 
-            var indent = line.Length - trimmed.Length + 2;
-            sb.Append(new string(' ', indent));
-            sb.AppendLine(ModuleTypesIncludeLine);
-
-            if (needsFlow)
+            if (injected && needsFlow && !hasConnect)
             {
                 sb.Append(new string(' ', indent));
                 sb.AppendLine("connect");
                 sb.Append(new string(' ', indent + 2));
-                sb.AppendLine("flow \"fixture.dashflow\"");
+                sb.AppendLine("use flow fixture_flow");
                 sb.Append(new string(' ', indent));
                 sb.AppendLine("end connect");
             }
-
-            injected = true;
         }
 
         return sb.ToString();
@@ -144,7 +169,7 @@ internal static class DashSpecTestRowTypes
     internal static DashboardDocument ParseReport(string innerReportBody)
     {
         var text = $"""
-            @dashboard t
+            module dashboard t
               report
               title = "T"
               {InlineFixtureTypeBlock}

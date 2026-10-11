@@ -9,7 +9,7 @@ module MultiSlotFlowInputParseTests =
 
     let private flowText =
         """
-@flow peak
+module flow peak
 
 source utilization {
   use provider sqlserver
@@ -40,7 +40,7 @@ end flow
 
         let specText =
             """
-@tab multi_slot_flow
+module tab multi_slot_flow
 
 connect
   flow "peak.dashflow"

@@ -36,7 +36,7 @@ module TransformModuleParser =
 
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "transform"
         reader.ReadIdent() |> ignore
         reader.SkipNewlines()

@@ -10,7 +10,7 @@ public sealed class DashSpecParserFacadeTests
     public void Parse_dashboard_via_execution_facade_matches_core_entry()
     {
         const string text = """
-            @dashboard t
+            module dashboard t
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -38,7 +38,7 @@ public sealed class DashSpecParserFacadeTests
     public void ReadSqlDialect_via_execution_facade()
     {
         const string text = """
-            @dashboard t
+            module dashboard t
               runtime
               manifest = "cfg.toml"
               end runtime

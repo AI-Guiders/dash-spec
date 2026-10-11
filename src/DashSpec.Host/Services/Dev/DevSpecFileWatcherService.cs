@@ -51,7 +51,8 @@ public sealed class DevSpecFileWatcherService(
         }
 
         var ext = Path.GetExtension(fullPath);
-        if (!ext.Equals(".dashspec", StringComparison.OrdinalIgnoreCase) &&
+        if (!ext.Equals(".ds", StringComparison.OrdinalIgnoreCase) &&
+            !ext.Equals(".dashspec", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".toml", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".dashdiagram", StringComparison.OrdinalIgnoreCase) &&
             !ext.Equals(".dashpresentation", StringComparison.OrdinalIgnoreCase) &&

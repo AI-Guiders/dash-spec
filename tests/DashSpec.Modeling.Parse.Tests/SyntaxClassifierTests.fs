@@ -17,7 +17,7 @@ module SyntaxClassifierTests =
 
     [<Fact>]
     let ``comments are classified`` () =
-        let text = "// comment\n@dashboard demo\nend dashboard\n"
+        let text = "// comment\nmodule dashboard demo\nend dashboard\n"
         let kinds = DashSpecSyntaxClassifier.classify text |> Seq.map (fun s -> s.Kind) |> Seq.toList
         Assert.True(List.contains DashSpecSyntaxKind.Comment kinds)
         Assert.True(List.contains DashSpecSyntaxKind.ModuleHeader kinds)

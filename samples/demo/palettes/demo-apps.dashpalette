@@ -1,4 +1,4 @@
-@palette demo_apps
+module palette demo_apps
 
     const default = "#94a3b8"
     const blue = "blue"

@@ -98,7 +98,7 @@ public sealed class DemoCatalogRegressionTests
         }
 
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab detail
+            module tab detail
             configuration
               sqldialect = tsql
             end configuration

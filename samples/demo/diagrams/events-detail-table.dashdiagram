@@ -1,4 +1,4 @@
-@diagram demo_events_detail_table
+module diagram demo_events_detail_table
 
     table
     columns = occurred_at_utc, app_name, user_name, product_version, window_title

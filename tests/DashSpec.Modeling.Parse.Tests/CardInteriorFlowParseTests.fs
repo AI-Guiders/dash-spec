@@ -11,7 +11,7 @@ module CardInteriorFlowParseTests =
 
     let internal flowTextForReuse =
         """
-@flow peak
+module flow peak
 
 source utilization {
   use provider sqlserver
@@ -42,7 +42,7 @@ end flow
 
         let specText =
             """
-@tab card_interior_flow
+module tab card_interior_flow
 
 connect
   flow "peak.dashflow"

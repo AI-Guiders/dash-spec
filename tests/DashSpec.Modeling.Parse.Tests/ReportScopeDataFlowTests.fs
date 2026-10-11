@@ -15,7 +15,7 @@ module ReportScopeDataFlowTests =
 
         let specText =
             """
-@tab report_data_flow
+module tab report_data_flow
 
 connect
   flow "peak.dashflow"

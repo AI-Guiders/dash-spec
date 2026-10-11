@@ -1,4 +1,4 @@
-@presentation line_right_360
+module presentation line_right_360
 
     legend = right
     height = 360

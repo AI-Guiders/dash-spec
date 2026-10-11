@@ -1,4 +1,4 @@
-@layout demo_host_topbar
+module layout demo_host_topbar
 scope host
 
 [ catalog ]

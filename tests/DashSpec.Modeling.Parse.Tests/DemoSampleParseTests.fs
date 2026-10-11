@@ -52,7 +52,7 @@ module DemoSampleParseTests =
         let junkName = "_link-test-broken-" + Guid.NewGuid().ToString("N") + ".dashdiagram"
         let junkPath = Path.Combine(diagramsDir, junkName)
 
-        File.WriteAllText(junkPath, "@diagram link_test_broken\nTHIS IS NOT VALID\n")
+        File.WriteAllText(junkPath, "module diagram link_test_broken\nTHIS IS NOT VALID\n")
 
         try
             let path = Path.Combine(samplesDemoDir, "demo-soak.dashspec")

@@ -14,12 +14,15 @@ namespace DashSpec.Core.Tests;
 /// </summary>
 public class SqlDataSourceParserTests
 {
+    private static string BindLine(string moduleName) =>
+        moduleName == "fixture.dashflow" ? "use flow fixture_flow" : $"flow \"{moduleName}\"";
+
     private static string Spec(string moduleName, string sourceId) =>
         $$"""
-        @dashboard t
+        module dashboard t
               import types from Fixtures.QueryRowTypes
           connect
-          flow "{{moduleName}}"
+          {{BindLine(moduleName)}}
           end connect
           report
           title = "T"
@@ -90,7 +93,7 @@ public class SqlDataSourceParserTests
     {
         var dir = NewSpecDir();
         File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
-            @flow broken
+            module flow broken
             source s {
               use provider infer
               from sql "SELECT 1"
@@ -115,7 +118,7 @@ public class SqlDataSourceParserTests
         Directory.CreateDirectory(Path.GetDirectoryName(sqlPath)!);
         File.WriteAllText(sqlPath, "SELECT user_sam, MAX(n) AS peak FROM t GROUP BY user_sam");
         File.WriteAllText(Path.Combine(dir, "src.dashflow"), """
-            @flow src
+            module flow src
             source s_file {
               use provider infer
               from sql file "queries/top.sql"

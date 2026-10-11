@@ -12,11 +12,11 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
 {
     private static readonly string[] Keywords =
     [
-        "@dashboard",
-        "@tab",
-        "@diagram",
-        "@presentation",
-        "@palette",
+        "module dashboard",
+        "module tab",
+        "module diagram",
+        "module presentation",
+        "module palette",
         "card",
         "diagram",
         "filter",

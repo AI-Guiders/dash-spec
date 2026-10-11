@@ -44,7 +44,7 @@ module BlockSurfaceLineClassifier =
             | { Kind = TokenKind.RBrace } :: _ -> BraceClose
             | { Kind = TokenKind.Ident; Value = "end" } :: { Kind = TokenKind.Ident; Value = kind } :: rest ->
                 End(kind, tryReadOptionalId rest)
-            | { Kind = TokenKind.At } :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
+            | { Kind = TokenKind.Ident; Value = "module" } :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 ModuleHeader(kind, id)
             | { Kind = TokenKind.Ident; Value = "layout" } :: { Kind = TokenKind.Ident; Value = "grid" } :: _ ->
                 BlockOpener("grid", None)

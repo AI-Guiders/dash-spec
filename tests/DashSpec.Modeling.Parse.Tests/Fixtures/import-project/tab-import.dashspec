@@ -1,4 +1,4 @@
-@tab import_demo
+module tab import_demo
 
 namespace Demo.ImportTab
 

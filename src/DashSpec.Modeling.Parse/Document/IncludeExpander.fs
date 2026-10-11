@@ -57,9 +57,58 @@ module IncludeExpander =
     let private peekDiagramModuleId (text: string) =
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "diagram"
         reader.ReadIdent()
+
+    /// <summary>Unit kind of a compilation unit — content (`@`-root) first, extension as legacy fallback (single .ds file type).</summary>
+    type UnitKind =
+        | Layout
+        | Diagram
+        | Presentation
+        | Tooltip
+        | Types
+        | Flow
+        | IncludeBundle
+        | Transform
+        | Unsupported of string
+
+    module UnitFileClassifier =
+
+        let private peekRootKeyword (text: string) =
+            try
+                let reader = ParserUtilities.createReader text
+                reader.SkipNewlines()
+                if reader.TryKeyword "module" then
+                    match reader.TryPeekIdent() with
+                    | Some keyword ->
+                        reader.ReadIdent() |> ignore
+                        Some(keyword.ToLowerInvariant())
+                    | None -> None
+                else None
+            with _ ->
+                None
+
+        let classify (path: string) (text: string) : UnitKind =
+            match peekRootKeyword text with
+            | Some "layout" -> Layout
+            | Some "diagram" -> Diagram
+            | Some "presentation" -> Presentation
+            | Some "tooltip" -> Tooltip
+            | Some "types" -> Types
+            | Some "flow" -> Flow
+            | Some _ -> Unsupported(Path.GetExtension(path))
+            | None ->
+                match Path.GetExtension(path).ToLowerInvariant() with
+                | ".dashlayout" -> Layout
+                | ".dashdiagram" -> Diagram
+                | ".dashpresentation" -> Presentation
+                | ".dashtooltip" -> Tooltip
+                | ".dashtype" -> Types
+                | ".dashflow" -> Flow
+                | ".dashinclude" -> IncludeBundle
+                | ".dashtransform" -> Transform
+                | extension -> Unsupported extension
 
     let registerUnitFile
         (path: string)
@@ -71,19 +120,21 @@ module IncludeExpander =
         if not (File.Exists path) then
             raise (FileNotFoundException($"!include not found: '{path}'.", path))
 
-        match Path.GetExtension(path).ToLowerInvariant() with
-        | ".dashlayout" ->
-            assignLayoutBoard (LayoutModuleParser.parseLayoutFile (File.ReadAllText path)) moduleKind state
-        | ".dashdiagram" -> registerDiagramFile path specDirectory state
-        | ".dashinclude" ->
+        let text = File.ReadAllText path
+
+        match UnitFileClassifier.classify path text with
+        | Layout ->
+            assignLayoutBoard (LayoutModuleParser.parseLayoutFile text) moduleKind state
+        | Diagram -> registerDiagramFile path specDirectory state
+        | Presentation -> registerPresentationFile path specDirectory state
+        | Tooltip -> registerTooltipFile path state
+        | Types -> registerTypesFile path state
+        | Flow -> registerDashflowFile path state
+        | IncludeBundle ->
             raise (DashSpecParseException($"Internal error: .dashinclude '{path}' must be expanded before registration."))
-        | ".dashpresentation" -> registerPresentationFile path specDirectory state
-        | ".dashtooltip" -> registerTooltipFile path state
-        | ".dashtype" -> registerTypesFile path state
-        | ".dashflow" -> registerDashflowFile path state
-        | ".dashtransform" ->
+        | Transform ->
             raise (DashSpecParseException($"!include '{path}': register transform via .dashdiagram or card block, not module include."))
-        | extension ->
+        | Unsupported extension ->
             raise (DashSpecParseException($"!include '{path}': unsupported extension '{extension}'."))
 
     let linkEnvelope
@@ -110,20 +161,20 @@ module IncludeExpander =
             let requireReferenced = parseOptions.LinkOnlyReferencedDiagramUnits
 
             for path in paths do
-                let ext = Path.GetExtension(path).ToLowerInvariant()
+                let unitText = File.ReadAllText path
 
                 let shouldRegister =
                     if not requireReferenced then true
-                    elif ext = ".dashdiagram" then
-                        let diagramId = peekDiagramModuleId (File.ReadAllText path)
+                    else
+                        match UnitFileClassifier.classify path unitText with
+                        | Diagram ->
+                            let diagramId = peekDiagramModuleId unitText
 
-                        selective.ContainsKey diagramId
-                        || (match reportDiagramIds with
-                            | None -> true
-                            | Some ids -> ids.Contains diagramId)
-                    elif ext = ".dashtype" || ext = ".dashflow" || ext = ".dashlayout" || ext = ".dashpresentation" || ext = ".dashtooltip" then
-                        true
-                    else true
+                            selective.ContainsKey diagramId
+                            || (match reportDiagramIds with
+                                | None -> true
+                                | Some ids -> ids.Contains diagramId)
+                        | _ -> true
 
                 if shouldRegister then
                     registerUnitFile path specDirectory moduleKind state parseOptions.TolerateIncompleteIncludes

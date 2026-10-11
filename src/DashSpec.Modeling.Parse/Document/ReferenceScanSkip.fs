@@ -386,7 +386,7 @@ module internal ReferenceScanSkip =
             let rowTypes = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
             reader.SkipNewlines()
-            reader.Expect TokenKind.At
+            reader.ExpectKeyword "module"
             let isDashboard = reader.TryKeyword "dashboard"
 
             if not isDashboard then

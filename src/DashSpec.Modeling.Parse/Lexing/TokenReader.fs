@@ -129,6 +129,11 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         this.SkipNewlines()
         tokens.[index].Kind
 
+    /// <summary>Char offset of the current token (post-newline skip) — for positioned diagnostics.</summary>
+    member this.CurrentOffset =
+        this.SkipNewlines()
+        tokens.[index].Start
+
     member this.ReadPropertyKey(?allowQuoted: bool) =
         let allowQuoted = defaultArg allowQuoted false
         this.SkipNewlines()

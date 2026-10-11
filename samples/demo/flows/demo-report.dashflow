@@ -1,4 +1,4 @@
-@flow demo_report
+module flow demo_report
 
 source daily_peak_raw {
   use provider infer

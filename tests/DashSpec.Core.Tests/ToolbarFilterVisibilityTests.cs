@@ -12,7 +12,7 @@ public class ToolbarFilterVisibilityTests
     public void Page_toolbar_chart_top_visible_not_on_card_local_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab customer_reports
+            module tab customer_reports
                   import types from Fixtures.QueryRowTypes
               report
               title = "Customer"

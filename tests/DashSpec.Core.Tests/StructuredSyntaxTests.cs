@@ -10,7 +10,7 @@ public class StructuredSyntaxTests
     public void Parse_filter_id_first_bind_show()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
                 title = "T"
@@ -43,7 +43,7 @@ public class StructuredSyntaxTests
     public void Parse_filter_field_qualified_column()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
                 title = "T"
@@ -68,7 +68,7 @@ public class StructuredSyntaxTests
     public void Parse_structured_card_with_override_for()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
                 title = "T"
@@ -86,7 +86,7 @@ public class StructuredSyntaxTests
                 end filter
                 card peak
                   title = "Peak"
-                  data flow { fixture_src [rows] -> [rows] demo_peak_bar }
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
                   bind usage_date
                   view
                     diagram demo_peak_bar

@@ -679,7 +679,7 @@ module DashflowModuleParser =
         if reader.TryKeyword "flow" then
             raise (DashSpecParseException("dashflow modules start with '@flow <id>', not a bare 'flow' keyword."))
 
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "flow"
         let flowId = reader.ReadIdent()
 

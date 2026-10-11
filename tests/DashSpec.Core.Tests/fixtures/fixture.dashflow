@@ -1,4 +1,4 @@
-@flow fixture
+module flow fixture
 
 source fixture_src {
   use provider sqlserver

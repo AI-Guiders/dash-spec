@@ -10,7 +10,7 @@ type LayoutModuleParserTests() =
     member _.``Parse_layout_module_requires_scope`` () =
         let text =
             """
-                @layout g
+                module layout g
                 
                 [ Q ]
                 """
@@ -22,7 +22,7 @@ type LayoutModuleParserTests() =
     member _.``Parse_toolbar_layout_module_with_board_rows`` () =
         let text =
             """
-                @layout tb
+                module layout tb
                 scope toolbar
                 
                 [ D A ]
@@ -41,7 +41,7 @@ type LayoutModuleParserTests() =
     member _.``Parse_tab_layout_module_rejects_invalid_scope`` () =
         let text =
             """
-                @layout g
+                module layout g
                 scope galaxy
                 [ Q ]
                 """
@@ -53,7 +53,7 @@ type LayoutModuleParserTests() =
     member _.``Parse_tab_layout_module_with_card_group`` () =
         let text =
             """
-                @layout g
+                module layout g
                 scope tab
                 
                 group distribution {
@@ -81,7 +81,7 @@ type LayoutModuleParserTests() =
     member _.``Parse_tab_layout_module_with_nest`` () =
         let text =
             """
-                @layout n
+                module layout n
                 scope tab
 
                 nest panel {

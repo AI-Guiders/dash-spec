@@ -10,7 +10,7 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_DiagramModule_ReturnsEmptyOnValid()
     {
         const string text = """
-            @diagram sample
+            module diagram sample
             heatmap
               x = month
               y = product
@@ -29,7 +29,7 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_DiagramModule_ReturnsErrorWithPosition()
     {
         const string text = """
-            @diagram sample
+            module diagram sample
             heatmap
               x = month
             """;
@@ -73,7 +73,7 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_IncompleteInclude_EditorMode_NoIncludeNotFoundDiagnostic()
     {
         const string text = """
-            @tab sample
+            module tab sample
 
             !include "layouts/"
             """;
@@ -103,13 +103,13 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_MissingInclude_PointsToIncludeLine()
     {
         const string text = """
-            @tab sample
+            module tab sample
+
+            !include "layouts/missing.dashlayout"
 
             runtime
               manifest = "x.toml"
             end runtime
-
-            !include "layouts/missing.dashlayout"
             """;
 
         var specDirectory = Path.Combine(Path.GetTempPath(), "dashspec-missing-" + Guid.NewGuid().ToString("N"));
@@ -124,8 +124,8 @@ public sealed class DashSpecDiagnosticServiceTests
                 DashSpecParseOptions.Editor);
 
             Assert.Single(diagnostics);
-            Assert.Equal(6, diagnostics[0].Line);
             Assert.Contains("!include not found", diagnostics[0].Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(2, diagnostics[0].Line);
         }
         finally
         {

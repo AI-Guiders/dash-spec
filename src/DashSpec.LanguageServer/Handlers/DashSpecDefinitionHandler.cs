@@ -85,7 +85,7 @@ internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
             return combined;
         }
 
-        foreach (var ext in new[] { ".dashdiagram", ".dashpresentation", ".dashspec", ".dashinclude" })
+        foreach (var ext in new[] { ".ds", ".dashdiagram", ".dashpresentation", ".ds", ".dashspec", ".dashinclude" })
         {
             var withExt = combined.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? combined : combined + ext;
             if (File.Exists(withExt))

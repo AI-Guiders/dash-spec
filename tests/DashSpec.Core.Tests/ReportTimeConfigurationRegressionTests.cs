@@ -12,9 +12,9 @@ public sealed class ReportTimeConfigurationRegressionTests
     private const string DocsOverview =
         @"samples/demo\demo-overview.dashspec";
 
-    /// <summary>Minimal @tab reproduction when demo docs path is absent (CI).</summary>
+    /// <summary>Minimal module tab reproduction when demo docs path is absent (CI).</summary>
     private const string EmbeddedOverviewConfigurationTab = """
-        @tab overview
+        module tab overview
           configuration
             sqldialect = tsql
             palette = "palettes/demo-apps.dashpalette"

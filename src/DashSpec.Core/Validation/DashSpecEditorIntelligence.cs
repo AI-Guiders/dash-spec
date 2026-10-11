@@ -7,7 +7,7 @@ public static class DashSpecEditorIntelligence
 {
     static readonly string[] Keywords =
     [
-        "@dashboard", "@tab", "@diagram", "@presentation", "@palette",
+        "module dashboard", "module tab", "module diagram", "module presentation", "module palette",
         "card", "diagram", "filter", "chrome", "use", "include", "!include",
         "end", "heatmap", "gantt", "bar", "line", "table", "toolbar", "filters",
         "datasource", "phase", "page", "catalog", "report", "bind", "layout",

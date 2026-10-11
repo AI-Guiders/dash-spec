@@ -18,8 +18,8 @@ module ModuleLinkTests =
         let dir = Path.Combine(Path.GetTempPath(), "dashspec-link-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
 
-        write dir "good.dashdiagram" "@diagram used_heatmap\nheatmap { }\n"
-        write dir "bad.dashdiagram" "@diagram broken\nTHIS IS NOT VALID\n"
+        write dir "good.dashdiagram" "module diagram used_heatmap\nheatmap { }\n"
+        write dir "bad.dashdiagram" "module diagram broken\nTHIS IS NOT VALID\n"
 
         let state = ModuleIncludeState()
         let refs = HashSet<string>([ "used_heatmap" ], StringComparer.OrdinalIgnoreCase) :> ISet<_>
@@ -50,8 +50,8 @@ module ModuleLinkTests =
         let dir = Path.Combine(Path.GetTempPath(), "dashspec-link-legacy-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
 
-        write dir "a.dashdiagram" "@diagram a\nheatmap { }\n"
-        write dir "b.dashdiagram" "@diagram b\nheatmap { }\n"
+        write dir "a.dashdiagram" "module diagram a\nheatmap { }\n"
+        write dir "b.dashdiagram" "module diagram b\nheatmap { }\n"
 
         let state = ModuleIncludeState()
 

@@ -55,7 +55,7 @@ module rec DashboardParser =
     let private readBlockDashboardHeader (text: string) =
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
 
         if reader.TryKeyword "tab" then
             let id = reader.ReadIdent()

@@ -49,7 +49,7 @@ module rec DashboardComposer =
             invalidArg "text" "Text is required."
 
         if not (DocumentModuleParser.isBlockModuleFormat text) then
-            raise (DashSpecParseException("DashSpec requires block module format: @dashboard id { … }, @tab id { … }, or @tab id with end-block body. See ADR-0024 and ADR-0036."))
+            raise (DashSpecParseException("DashSpec requires block module format: module dashboard id … end dashboard, or module tab id … end tab. See ADR-0024, ADR-0036, ADR-0101."))
 
         let document = DocumentModuleParser.parseDocument text specDirectory parseOptions
 

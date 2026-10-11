@@ -98,7 +98,7 @@ public sealed class ReportPreviewSessionTests
             """));
 
         return $"""
-            @dashboard preview_tab
+            module dashboard preview_tab
               runtime
               manifest = "cfg.toml"
               end runtime
