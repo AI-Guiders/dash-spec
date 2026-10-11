@@ -29,6 +29,7 @@ module DashSpecSurfaceSyntax =
         | EndBlock
         | Line
         | BlankLine
+        | ImportDeclaration
 
     type private MutableNode =
         { Kind: DashSpecAstNodeKind
@@ -39,6 +40,10 @@ module DashSpecSurfaceSyntax =
           EndKeyword: DashSpecBlockKeyword option
           EndId: string option
           CardId: string option
+          ImportKeyword: string option
+          ImportKind: string option
+          ImportTarget: string option
+          ImportAlias: string option
           Tokens: SyntaxToken[]
           Children: ResizeArray<MutableNode> }
 
@@ -115,6 +120,15 @@ module DashSpecSurfaceSyntax =
                   EndKeyword = node.EndKeyword.Value
                   EndId = node.EndId
                   Tokens = node.Tokens }
+        | ImportDeclaration ->
+            DashSpecAstNode.ImportDeclaration
+                { Id = node.Id
+                  Span = span
+                  Keyword = node.ImportKeyword |> Option.defaultValue "import"
+                  Kind = node.ImportKind
+                  Target = node.ImportTarget |> Option.defaultValue ""
+                  Alias = node.ImportAlias
+                  Tokens = node.Tokens }
         | Line -> DashSpecAstNode.Line { Id = node.Id; Span = span; Tokens = node.Tokens }
         | BlankLine -> DashSpecAstNode.BlankLine { Id = node.Id; Span = span }
 
@@ -127,7 +141,7 @@ module DashSpecSurfaceSyntax =
               Opener = None
               EndKeyword = None
               EndId = None
-              CardId = None
+              CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
               Tokens = Array.empty
               Children = ResizeArray() }
 
@@ -140,7 +154,7 @@ module DashSpecSurfaceSyntax =
               Opener = None
               EndKeyword = None
               EndId = None
-              CardId = None
+              CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
               Tokens = lineSyntaxTokens text allTokens line
               Children = ResizeArray() }
 
@@ -165,7 +179,7 @@ module DashSpecSurfaceSyntax =
               Opener = None
               EndKeyword = Some endKeyword
               EndId = endId
-              CardId = None
+              CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
               Tokens = lineSyntaxTokens text allTokens line
               Children = ResizeArray() }
 
@@ -178,16 +192,90 @@ module DashSpecSurfaceSyntax =
               Opener = None
               EndKeyword = None
               EndId = None
-              CardId = Some cardId
+              CardId = Some cardId; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
               Tokens = lineSyntaxTokens text allTokens line
               Children = ResizeArray() }
+
+    let private appendImport
+        (parent: MutableNode)
+        (id: int ref)
+        (text: string)
+        (allTokens: Token[])
+        (line: TokenReaderPhysicalLines.PhysicalLine)
+        (keyword: string)
+        (kind: string option)
+        (target: string)
+        (aliasName: string option)
+        =
+        parent.Children.Add
+            { Kind = DashSpecAstNodeKind.ImportDeclaration
+              Id = nextId id
+              Span = line.Span
+              Directive = None
+              Opener = None
+              EndKeyword = None
+              EndId = None
+              CardId = None
+              ImportKeyword = Some keyword
+              ImportKind = kind
+              ImportTarget = Some target
+              ImportAlias = aliasName
+              Tokens = lineSyntaxTokens text allTokens line
+              Children = ResizeArray() }
+
+    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;target&gt; [as &lt;alias&gt;]` or legacy `!include "…"` / `using …`.</summary>
+    let private tryParseImportLine (tokens: Token list) =
+        let keyword, rest =
+            match tokens with
+            | { Kind = TokenKind.Ident; Value = "import" } :: tail -> Some "import", tail
+            | { Kind = TokenKind.Bang } :: { Kind = TokenKind.Ident; Value = "include" } :: tail -> Some "include", tail
+            | { Kind = TokenKind.Ident; Value = "using" } :: tail -> Some "using", tail
+            | _ -> None, []
+
+        match keyword with
+        | None -> None
+        | Some kw ->
+            let kindOpt =
+                match rest with
+                | { Kind = TokenKind.Ident; Value = k } :: _
+                    when not (String.Equals(k, "from", StringComparison.OrdinalIgnoreCase)) ->
+                    Some k
+                | _ -> None
+
+            let afterFrom =
+                match rest |> List.tryFindIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "from", StringComparison.OrdinalIgnoreCase)) with
+                | Some i -> rest |> List.skip (i + 1)
+                | None -> rest
+
+            let targetTokens, aliasTokens =
+                match afterFrom |> List.tryFindIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase)) with
+                | Some i -> afterFrom |> List.splitAt i
+                | None -> afterFrom, []
+
+            let target =
+                targetTokens
+                |> List.filter (fun t -> t.Kind = TokenKind.String || t.Kind = TokenKind.Ident || t.Kind = TokenKind.Dot)
+                |> List.map (fun t -> t.Value)
+                |> String.concat ""
+
+            let aliasName =
+                aliasTokens
+                |> List.tryPick (fun t ->
+                    if t.Kind = TokenKind.Ident && not (String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase)) then
+                        Some t.Value
+                    else
+                        None)
+
+            Some(kw, kindOpt, target, aliasName)
 
     let private appendModule (parent: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) (kind: string) (moduleId: string) =
         let directive =
             if String.Equals(kind, "tab", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Tab moduleId
-            else
+            elif String.Equals(kind, "dashboard", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Dashboard moduleId
+            else
+                DashSpecModuleDirective.Unit(kind, moduleId)
 
         { Kind = DashSpecAstNodeKind.ModuleDeclaration
           Id = nextId id
@@ -196,7 +284,7 @@ module DashSpecSurfaceSyntax =
           Opener = None
           EndKeyword = None
           EndId = None
-          CardId = None
+          CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
           Tokens = lineSyntaxTokens text allTokens line
           Children = ResizeArray() }
 
@@ -215,7 +303,7 @@ module DashSpecSurfaceSyntax =
           Opener = Some opener
           EndKeyword = None
           EndId = None
-          CardId = None
+          CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
           Tokens = lineSyntaxTokens text allTokens line
           Children = ResizeArray() }
 
@@ -268,7 +356,11 @@ module DashSpecSurfaceSyntax =
                         | BlockSurfaceLineClassifier.BraceOpen
                         | BlockSurfaceLineClassifier.BraceClose
                         | BlockSurfaceLineClassifier.Content ->
-                            appendLine container id text allTokens line
+                            match tryParseImportLine line.Tokens with
+                            | Some(keyword, kindOpt, target, aliasName) ->
+                                appendImport container id text allTokens line keyword kindOpt target aliasName
+                            | None ->
+                                appendLine container id text allTokens line
 
     let parse (text: string) : ParseTree =
         let allTokens = DashSpecLexer.tokenize text |> Array.ofSeq
@@ -283,7 +375,7 @@ module DashSpecSurfaceSyntax =
               Opener = None
               EndKeyword = None
               EndId = None
-              CardId = None
+              CardId = None; ImportKeyword = None; ImportKind = None; ImportTarget = None; ImportAlias = None
               Tokens = Array.empty
               Children = ResizeArray() }
 

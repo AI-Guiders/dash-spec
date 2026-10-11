@@ -14,6 +14,7 @@ module DashSpecAst =
         | DashSpecAstNode.EndBlock n -> n.Id
         | DashSpecAstNode.Line n -> n.Id
         | DashSpecAstNode.BlankLine n -> n.Id
+        | DashSpecAstNode.ImportDeclaration n -> n.Id
 
     let span (node: DashSpecAstNode) =
         match node with
@@ -24,6 +25,7 @@ module DashSpecAst =
         | DashSpecAstNode.EndBlock n -> n.Span
         | DashSpecAstNode.Line n -> n.Span
         | DashSpecAstNode.BlankLine n -> n.Span
+        | DashSpecAstNode.ImportDeclaration n -> n.Span
 
     let members (node: DashSpecAstNode) =
         match node with
@@ -57,6 +59,7 @@ module DashSpecAst =
         | DashSpecAstNode.EndBlock _ -> DashSpecAstNodeKind.EndBlock
         | DashSpecAstNode.Line _ -> DashSpecAstNodeKind.Line
         | DashSpecAstNode.BlankLine _ -> DashSpecAstNodeKind.BlankLine
+        | DashSpecAstNode.ImportDeclaration _ -> DashSpecAstNodeKind.ImportDeclaration
 
     let isEndBlock (node: DashSpecAstNode) =
         match node with
@@ -67,8 +70,9 @@ module DashSpecAst =
         match node with
         | DashSpecAstNode.ModuleDeclaration n ->
             match n.Directive with
-            | DashSpecModuleDirective.Dashboard id -> $"@dashboard {id}"
-            | DashSpecModuleDirective.Tab id -> $"@tab {id}"
+            | DashSpecModuleDirective.Dashboard id -> $"module dashboard {id}"
+            | DashSpecModuleDirective.Tab id -> $"module tab {id}"
+            | DashSpecModuleDirective.Unit(keyword, id) -> $"module {keyword} {id}"
         | DashSpecAstNode.BlockDeclaration n ->
             match n.Opener with
             | DashSpecBlockOpener.Named(keyword, identifier) ->
