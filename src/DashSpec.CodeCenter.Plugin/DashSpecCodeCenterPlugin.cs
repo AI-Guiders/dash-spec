@@ -36,7 +36,7 @@ public sealed class DashSpecCodeCenterPlugin : ICodeCenterPlugin
         registry.RegisterBrush("DashSpec.Tab", 0x56, 0x9C, 0xD6);
         registry.RegisterBrush("DashSpec.End", 0x56, 0x9C, 0xD6);
         registry.RegisterClassificationBrush("ModuleHeader", "DashSpec.Dashboard");
-        registry.RegisterClassificationBrush("@dashboard", "DashSpec.Dashboard");
+        registry.RegisterClassificationBrush("module dashboard", "DashSpec.Dashboard");
         registry.RegisterClassificationBrush("tab", "DashSpec.Tab");
         registry.RegisterClassificationBrush("end", "DashSpec.End");
     }
