@@ -23,6 +23,10 @@ module DashSpecRuleEngine =
             { Keyword = DashSpecBlockKeyword.Tab
               Identifier = Some id
               Span = span }
+        | DashSpecModuleDirective.Unit(keyword, id) ->
+            { Keyword = DashSpecBlockKeyword.Other keyword
+              Identifier = Some id
+              Span = span }
 
     let private blockFrame (opener: DashSpecBlockOpener) (span: TextSpan) =
         match opener with
@@ -119,7 +123,16 @@ module DashSpecRuleEngine =
             | DashSpecAstNode.ModuleDeclaration n ->
                 blockStack.Push(moduleFrame n.Directive n.Span)
 
+                let mutable seenCode = false
+
                 for child in DashSpecAst.members node do
+                    match child with
+                    | DashSpecAstNode.ImportDeclaration import when seenCode ->
+                        signal (DashSpecRuleViolation.ImportAfterCode(import.Keyword, import.Span))
+                    | DashSpecAstNode.ImportDeclaration _
+                    | DashSpecAstNode.BlankLine _ -> ()
+                    | _ -> seenCode <- true
+
                     walk child
 
             | DashSpecAstNode.BlockDeclaration n ->

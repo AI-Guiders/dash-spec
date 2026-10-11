@@ -15,6 +15,8 @@ type DashSpecConceptKind =
     | CompilationUnit
     | DashboardModule of identifier: string
     | TabModule of identifier: string
+    | UnitModule of keyword: string * identifier: string
+    | ImportDeclaration of keyword: string * target: string
     | Block of keyword: DashSpecBlockKeyword * identifier: string option
     | CardReference of cardId: string
 
@@ -54,6 +56,8 @@ module DashSpecConceptOntology =
     let projectionRole (kind: DashSpecConceptKind) =
         match kind with
         | DashSpecConceptKind.CompilationUnit -> DashSpecProjectionRole.Outline
+        | DashSpecConceptKind.UnitModule _
+        | DashSpecConceptKind.ImportDeclaration _ -> DashSpecProjectionRole.Outline
         | DashSpecConceptKind.DashboardModule _
         | DashSpecConceptKind.TabModule _
         | DashSpecConceptKind.CardReference _ -> DashSpecProjectionRole.Diagram
@@ -72,6 +76,9 @@ module DashSpecConceptOntology =
             match n.Directive with
             | DashSpecModuleDirective.Dashboard id -> DashSpecConceptKind.DashboardModule id
             | DashSpecModuleDirective.Tab id -> DashSpecConceptKind.TabModule id
+            | DashSpecModuleDirective.Unit(keyword, id) -> DashSpecConceptKind.UnitModule(keyword, id)
+        | DashSpecAstNode.ImportDeclaration n ->
+            DashSpecConceptKind.ImportDeclaration(n.Keyword, n.Target)
         | DashSpecAstNode.BlockDeclaration n ->
             match n.Opener with
             | DashSpecBlockOpener.Named(keyword, identifier) -> DashSpecConceptKind.Block(keyword, Some identifier)
@@ -82,8 +89,10 @@ module DashSpecConceptOntology =
     let outlineCaption (kind: DashSpecConceptKind) =
         match kind with
         | DashSpecConceptKind.CompilationUnit -> "unit"
-        | DashSpecConceptKind.DashboardModule id -> $"@dashboard {id}"
-        | DashSpecConceptKind.TabModule id -> $"@tab {id}"
+        | DashSpecConceptKind.DashboardModule id -> $"module dashboard {id}"
+        | DashSpecConceptKind.TabModule id -> $"module tab {id}"
+        | DashSpecConceptKind.UnitModule(keyword, id) -> $"module {keyword} {id}"
+        | DashSpecConceptKind.ImportDeclaration(keyword, target) -> $"{keyword} {target}"
         | DashSpecConceptKind.Block(keyword, Some identifier) ->
             $"{DashSpecBlockKeyword.toEndName keyword} {identifier}"
         | DashSpecConceptKind.Block(keyword, None) -> DashSpecBlockKeyword.toEndName keyword

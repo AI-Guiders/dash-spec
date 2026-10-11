@@ -13,6 +13,7 @@ type DashSpecRuleKind =
     | EmptyOutlineSpan
     | CardReferenceOutsideCards
     | RoundTripOutlineChanged
+    | ImportAfterCode
 
 /// Typed rule signals before message rendering (ADR-0067 InvariantLaws / conformance).
 [<RequireQualifiedAccess>]
@@ -26,6 +27,7 @@ type DashSpecRuleViolation =
     | UnclosedBlock of keyword: DashSpecBlockKeyword * span: TextSpan
     | EmptyOutlineSpan of label: string * span: TextSpan
     | CardReferenceOutsideCards of cardId: string * span: TextSpan
+    | ImportAfterCode of keyword: string * span: TextSpan
 
 /// Ordered rule catalog — append only; DS codes derive from list position.
 module DashSpecRuleRegistry =
@@ -37,7 +39,8 @@ module DashSpecRuleRegistry =
           DashSpecRuleKind.UnclosedBlock
           DashSpecRuleKind.EmptyOutlineSpan
           DashSpecRuleKind.CardReferenceOutsideCards
-          DashSpecRuleKind.RoundTripOutlineChanged ]
+          DashSpecRuleKind.RoundTripOutlineChanged
+          DashSpecRuleKind.ImportAfterCode ]
 
     let allKinds = orderedKinds
 
@@ -57,6 +60,7 @@ module DashSpecRuleRegistry =
         | DashSpecRuleViolation.UnclosedBlock _ -> DashSpecRuleKind.UnclosedBlock
         | DashSpecRuleViolation.EmptyOutlineSpan _ -> DashSpecRuleKind.EmptyOutlineSpan
         | DashSpecRuleViolation.CardReferenceOutsideCards _ -> DashSpecRuleKind.CardReferenceOutsideCards
+        | DashSpecRuleViolation.ImportAfterCode _ -> DashSpecRuleKind.ImportAfterCode
 
     let severity (kind: DashSpecRuleKind) =
         match kind with
@@ -71,10 +75,13 @@ module DashSpecRuleRegistry =
         | DashSpecRuleViolation.UnclosedBlock(_, span) -> span
         | DashSpecRuleViolation.EmptyOutlineSpan(_, span) -> span
         | DashSpecRuleViolation.CardReferenceOutsideCards(_, span) -> span
+        | DashSpecRuleViolation.ImportAfterCode(_, span) -> span
 
     let message (violation: DashSpecRuleViolation) =
         match violation with
         | DashSpecRuleViolation.ExtraEndBlock _ -> "unexpected end block"
+        | DashSpecRuleViolation.ImportAfterCode(keyword, _) ->
+            $"'{keyword}' belongs in the module header, before code sections (ADR-0089 Phase 2 / ADR-0101)."
         | DashSpecRuleViolation.MismatchedEndKeyword(expected, actual, _) ->
             $"end {DashSpecBlockKeyword.toEndName actual} does not match opener {DashSpecBlockKeyword.toEndName expected}"
         | DashSpecRuleViolation.MismatchedEndIdentifier(openerId, endId, _) ->
