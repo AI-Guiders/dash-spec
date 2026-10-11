@@ -18,7 +18,7 @@ public class DashboardParseTests
     public void ReadDashboardHeader_reads_id_and_title()
     {
         const string text = """
-            @dashboard soak_id
+            module dashboard soak_id
                   import types from Fixtures.QueryRowTypes
               runtime
               manifest = "cfg.toml"
@@ -77,7 +77,7 @@ public class DashboardParseTests
     public void Parse_layout_and_place()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -109,7 +109,7 @@ public class DashboardParseTests
     public void Parse_bind_block_syntax()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -144,7 +144,7 @@ public class DashboardParseTests
     public void Parse_card_local_filters_placement()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -207,7 +207,7 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
@@ -242,7 +242,7 @@ public class DashboardParseTests
     public void Parse_filters_chrome_and_tabs()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -299,7 +299,7 @@ public class DashboardParseTests
     public void Parse_filters_chrome_sticky_modes()
     {
         var line = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -312,7 +312,7 @@ public class DashboardParseTests
         Assert.True(line.FiltersChrome.IsStickyLine);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -325,7 +325,7 @@ public class DashboardParseTests
         Assert.True(card.FiltersChrome.IsStickyCard);
 
         var none = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -343,7 +343,7 @@ public class DashboardParseTests
     public void Parse_filters_chrome_apply_block_and_sugar()
     {
         var block = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -361,7 +361,7 @@ public class DashboardParseTests
         Assert.Equal(FiltersChromeDefinition.ApplyControlButton, block.FiltersChrome.ApplyControl);
 
         var sugar = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -379,7 +379,7 @@ public class DashboardParseTests
     public void Parse_toolbar_chrome_cells_labeled_and_inline()
     {
         var labeled = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -393,7 +393,7 @@ public class DashboardParseTests
         Assert.True(labeled.FiltersChrome.IsToolbarLabeledCells);
 
         var inline = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -411,7 +411,7 @@ public class DashboardParseTests
     public void Parse_heatmap_diagram_kind()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -448,7 +448,7 @@ public class DashboardParseTests
     public void Parse_heatmap_inspect_and_tooltip_entity()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -492,7 +492,7 @@ public class DashboardParseTests
     public void Parse_heatmap_rejects_legacy_tooltip_properties()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -516,7 +516,7 @@ public class DashboardParseTests
     public void Parse_heatmap_allows_extension_presentation_properties()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -572,7 +572,7 @@ public class DashboardParseTests
     public void Parse_bar_reference_column_as_label()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -597,7 +597,7 @@ public class DashboardParseTests
     public void Parse_card_legend_block()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
                 title = "T"
@@ -832,7 +832,7 @@ public class DashboardParseTests
     public void Parse_report_format_defaults_block_sets_format_defaults(string blockKeyword, string endKeyword)
     {
         var document = DashSpecTestRowTypes.ParseDashboard($$"""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
                 title = "T"
@@ -905,7 +905,7 @@ public class DashboardParseTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
@@ -940,7 +940,7 @@ public class DashboardParseTests
     public void TabLayoutCompactor_bumps_full_width_table_below_same_row_charts()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"

@@ -11,7 +11,7 @@ public class CardInteriorLayoutTests
     public void Parse_card_interior_layout_with_diagram_and_filter_refs()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -73,7 +73,7 @@ public class CardInteriorLayoutTests
     public void Parse_rejects_interior_board_missing_diagram_slot()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -109,7 +109,7 @@ public class CardInteriorLayoutTests
     public void Parse_rejects_duplicate_slot_in_interior_board()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -146,7 +146,7 @@ public class CardInteriorLayoutTests
     public void Parse_card_with_two_diagram_slots_and_data_for()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -201,7 +201,7 @@ public class CardInteriorLayoutTests
     public void Parse_events_detail_diagram_ref_in_interior_layout()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -259,7 +259,7 @@ public class CardInteriorLayoutTests
     public void Parse_card_filters_apply_splits_local_filter_chrome_order()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -310,7 +310,7 @@ public class CardInteriorLayoutTests
     public void Card_local_filters_layout_board_assigns_weighted_chrome_spans()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -369,7 +369,7 @@ public class CardInteriorLayoutTests
     public void Synthesized_interior_layout_places_diagram_only_not_head_local_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"

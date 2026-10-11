@@ -10,7 +10,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_show_list_from_tooltip_copy()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab demo
+            module tab demo
               report
               title = "demo"
               standalone
@@ -66,7 +66,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_goto_and_set_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               standalone
@@ -120,7 +120,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_drill_table_from_cell_binds_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card peak as "Peak"
@@ -147,7 +147,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_rejects_unknown_show_format()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @tab demo
+            module tab demo
               report
               title = "demo"
               card c as "C"
@@ -171,7 +171,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_show_accepts_split_on_tooltip_source()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab demo
+            module tab demo
               report
               title = "demo"
               card c as "C"

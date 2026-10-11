@@ -124,7 +124,7 @@ module DiagramModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Diagram text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "diagram"
         let id = reader.ReadIdent()
         if String.IsNullOrWhiteSpace id then

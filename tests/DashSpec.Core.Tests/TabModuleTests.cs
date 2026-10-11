@@ -22,7 +22,7 @@ public class TabModuleTests
             File.WriteAllText(
                 Path.Combine(dir, "extra.dashspec"),
                 """
-                @tab extra
+                module tab extra
                   report
                   title = "Extra"
                   type ExtraRow
@@ -49,7 +49,7 @@ public class TabModuleTests
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
@@ -91,7 +91,7 @@ public class TabModuleTests
     public void Validate_allows_binding_filter_hosted_on_another_card()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -143,7 +143,7 @@ public class TabModuleTests
     public void Validate_rejects_binding_filter_without_explicit_host()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -198,7 +198,7 @@ public class TabModuleTests
             File.WriteAllText(
                 Path.Combine(dir, "extra.dashspec"),
                 """
-                @tab extra
+                module tab extra
                   report
                   title = "Extra"
                   type ExtraRow
@@ -215,7 +215,7 @@ public class TabModuleTests
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "T"
@@ -250,7 +250,7 @@ public class TabModuleTests
     public void Parse_tab_dashspec_requires_spec_directory()
     {
         var text = DashSpecTestRowTypes.EnsureFixtureRowCatalog("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -274,7 +274,7 @@ public class TabModuleTests
     public void Parse_tab_root_standalone_document()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab soak
+            module tab soak
               connect
               end connect
               report
@@ -317,7 +317,7 @@ public class TabModuleTests
     public void ReadDashboardHeader_reads_tab_root_id()
     {
         const string text = """
-            @tab analytics_tab
+            module tab analytics_tab
               runtime
               manifest = "cfg.toml"
               end runtime

@@ -13,10 +13,10 @@ public class XlsxOpenRowSetTests
     public void Compile_xlsx_datasource_emits_openrowset()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
               sqldialect = tsql
@@ -51,10 +51,10 @@ public class XlsxOpenRowSetTests
     public void Compile_xlsx_datasource_rejects_non_tsql()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"

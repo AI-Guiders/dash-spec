@@ -10,7 +10,7 @@ open DashSpec.Modeling.Parse.Lexing
 module TabModuleParser =
 
     let private readTabDirective (reader: TokenReader) =
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "tab"
         reader.ReadIdent()
 

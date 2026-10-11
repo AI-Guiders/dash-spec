@@ -15,7 +15,7 @@ public class DirectiveParserTests
     public void ReadRuntimePath_returns_relative_toml_path()
     {
         const string text = """
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               runtime
               manifest = "demo.toml"
@@ -43,7 +43,7 @@ public class DirectiveParserTests
     public void ReadRuntimePath_reads_manifest_from_runtime_block()
     {
         const string text = """
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               runtime
               manifest = "legacy.toml"
@@ -67,7 +67,7 @@ public class DirectiveParserTests
     public void ReadSqlDialect_parses_file_directive()
     {
         const string text = """
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               runtime
               manifest = "cfg.toml"

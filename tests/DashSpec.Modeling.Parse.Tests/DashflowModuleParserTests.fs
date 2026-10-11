@@ -42,7 +42,7 @@ end type
 
         let flowText =
             """
-@flow infer_default
+module flow infer_default
 
 source utilization {
   use provider infer
@@ -72,7 +72,7 @@ end type
 
         let flowText =
             """
-@flow demo_peak_report
+module flow demo_peak_report
 
 source utilization {
   use provider sqlserver
@@ -129,7 +129,7 @@ end type
 
         let flowText =
             """
-@flow demo_peak_report
+module flow demo_peak_report
 
 source utilization {
   use provider sqlserver
@@ -184,7 +184,7 @@ end type
 
         let flowText =
             """
-@flow multi_in
+module flow multi_in
 
 source utilization {
   use provider sqlserver
@@ -231,7 +231,7 @@ end type
 
         let flowText =
             """
-@flow pipeline
+module flow pipeline
 
 source ingestion {
   use provider infer
@@ -303,7 +303,7 @@ end type
 
         let flowText =
             """
-@flow parent
+module flow parent
 
 flow joinBox
   transformer alpha {
@@ -361,7 +361,7 @@ end type
 
         let flowText =
             """
-@flow parent
+module flow parent
 
 flow joinBox
   transformer alpha {
@@ -446,7 +446,7 @@ end type
 
             let flowText =
                 """
-@flow iana_zone
+module flow iana_zone
 
 source utilization {
   use provider infer
@@ -492,7 +492,7 @@ end type
 
         let flowText =
             """
-@flow bad_to_zone
+module flow bad_to_zone
 
 source utilization {
   use provider infer
@@ -534,7 +534,7 @@ end type
 
         let flowText =
             """
-@flow bad_zone
+module flow bad_zone
 
 source utilization {
   use provider infer
@@ -580,7 +580,7 @@ end type
 
             let flowText =
                 """
-@flow reverse_zone
+module flow reverse_zone
 
 source utilization {
   use provider infer
@@ -627,7 +627,7 @@ end type
 
         let flowText =
             """
-@flow minutes_only
+module flow minutes_only
 
 source utilization {
   use provider infer

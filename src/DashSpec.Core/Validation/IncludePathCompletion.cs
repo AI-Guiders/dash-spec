@@ -5,9 +5,9 @@ public static class IncludePathCompletion
 {
     private static readonly string[] Extensions =
     [
-        ".dashdiagram",
+        ".ds", ".dashdiagram",
         ".dashpresentation",
-        ".dashspec",
+        ".ds", ".dashspec",
         ".dashinclude",
         ".dashlayout",
         ".dashpalette",

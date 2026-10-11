@@ -11,7 +11,7 @@ public sealed class PhraseTemplateTests
     public void Parse_on_click_invoke_with_call_args()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card c as "C"
@@ -55,7 +55,7 @@ public sealed class PhraseTemplateTests
         };
 
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card c as "C"

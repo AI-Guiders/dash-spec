@@ -10,7 +10,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_report_page_assigns_page_id_to_cards()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               page overview
@@ -45,7 +45,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_page_and_entry()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card nav as "Nav"
@@ -74,7 +74,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_entry_preserving_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card nav as "Nav"
@@ -102,7 +102,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_entry_preserving_matching_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card nav as "Nav"
@@ -128,7 +128,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_catalog_group_assigns_group_id()
     {
         var catalog = CatalogParser.Parse("""
-            @catalog demo
+            module catalog demo
             
             default soak
             
@@ -158,7 +158,7 @@ public sealed class ReportPagesAndCatalogTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "overview.dashspec"), """
-                @tab overview
+                module tab overview
                   report
                   title = "Overview"
                   card plain as "Plain"
@@ -172,7 +172,7 @@ public sealed class ReportPagesAndCatalogTests
                 """);
 
             File.WriteAllText(Path.Combine(dir, "paged.dashspec"), """
-                @tab paged_reports
+                module tab paged_reports
                   report
                   title = "Paged reports"
                   page p1
@@ -188,7 +188,7 @@ public sealed class ReportPagesAndCatalogTests
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard soak
+                module dashboard soak
                   import types from Fixtures.QueryRowTypes
                   report
                   title = "Soak"
@@ -219,13 +219,13 @@ public sealed class ReportPagesAndCatalogTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "page-grid.dashlayout"), """
-                @layout page_grid
+                module layout page_grid
                 scope page
                 [ a b ]
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @tab t
+                module tab t
                   report
                   title = "T"
                   page overview
@@ -260,7 +260,7 @@ public sealed class ReportPagesAndCatalogTests
     public void ValidateSpec_rejects_card_outside_page_when_pages_declared()
     {
         Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               page overview

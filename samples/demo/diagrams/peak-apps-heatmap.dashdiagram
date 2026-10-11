@@ -1,4 +1,4 @@
-@diagram demo_peak_apps_heatmap
+module diagram demo_peak_apps_heatmap
 
     include tooltip "../tooltips/peak-apps.dashtooltip"
 

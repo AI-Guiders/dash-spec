@@ -1,4 +1,4 @@
-@diagram demo_peak_stacked_bar
+module diagram demo_peak_stacked_bar
 
     chrome
         use bar_stacked_360

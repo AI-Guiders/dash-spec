@@ -26,7 +26,7 @@ public sealed class ReportCompilerCompileTests
     {
         var specDir = Path.GetDirectoryName(DemoSoakPath)!;
         const string text = """
-            @dashboard legacy_probe
+            module dashboard legacy_probe
                 namespace Demo.Soak
                 !include "diagrams/*.dashdiagram"
                 runtime
@@ -65,7 +65,7 @@ public sealed class ReportCompilerCompileTests
     public void Compile_import_project_rejects_legacy_include_when_index_disables_it()
     {
         const string text = """
-            @tab x
+            module tab x
             !include "units/*.dashdiagram"
             runtime
             end runtime

@@ -50,9 +50,9 @@ public sealed class DrillDownPhraseTests
         };
 
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               connect
-              flow "fixture.dashflow"
+              use flow fixture_flow
               end connect
               report
               title = "T"

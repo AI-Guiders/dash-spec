@@ -16,7 +16,7 @@ public sealed class DashSpecProjectTests
         try
         {
             File.WriteAllText(Path.Combine(workspace, "diagrams", "util.dashdiagram"), """
-                @diagram util
+                module diagram util
                 bar
                   category = app_name
                   value = utilization_pct
@@ -24,7 +24,7 @@ public sealed class DashSpecProjectTests
                 """);
 
             File.WriteAllText(Path.Combine(workspace, "main.dashspec"), """
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   import "diagrams/util.dashdiagram"
                   report
@@ -62,7 +62,7 @@ public sealed class DashSpecProjectTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
-                @diagram activity
+                module diagram activity
                 bar
                   category = app_name
                   value = utilization_pct
@@ -70,7 +70,7 @@ public sealed class DashSpecProjectTests
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   import "diagrams/activity.dashdiagram"
                   report

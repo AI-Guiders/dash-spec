@@ -1,4 +1,4 @@
-@diagram demo_idle_histogram
+module diagram demo_idle_histogram
 
     chrome
         use histogram_320

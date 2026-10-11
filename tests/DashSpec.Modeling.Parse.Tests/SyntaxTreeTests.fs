@@ -47,7 +47,7 @@ module SyntaxTreeTests =
 
     [<Fact>]
     let ``classified spans match classifier projection`` () =
-        let text = "// comment\n@dashboard demo\nend dashboard\n"
+        let text = "// comment\nmodule dashboard demo\nend dashboard\n"
         let fromTree = text |> SyntaxTree.parse |> SyntaxTree.classifiedSpans
         let fromClassifier = DashSpecSyntaxClassifier.classify text
         Assert.Equal<string>(fromClassifier |> Seq.map (fun s -> $"{s.Start}:{s.Length}:{s.Kind}"), fromTree |> Seq.map (fun s -> $"{s.Start}:{s.Length}:{s.Kind}"))

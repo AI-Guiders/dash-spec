@@ -55,7 +55,7 @@ module PresentationModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Presentation text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "presentation"
         let id = reader.ReadIdent()
         if String.IsNullOrWhiteSpace id then

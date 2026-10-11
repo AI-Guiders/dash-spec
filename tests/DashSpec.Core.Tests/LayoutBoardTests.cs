@@ -15,7 +15,7 @@ public class LayoutBoardTests
     public void Parse_card_ref_and_tab_layout_board()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   connect
   layout board
   [ Q E ]
@@ -64,7 +64,7 @@ end tab
     public void TabLayoutBoardResolver_places_2x2_grid()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   connect
   layout board
   [ Q E ]
@@ -113,7 +113,7 @@ end tab
     public void TabLayoutBoardResolver_single_cell_row_is_full_width()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   connect
   layout board
   [ Q W ]
@@ -157,7 +157,7 @@ end tab
     public void TabLayoutBoardResolver_uneven_rows_distribute_per_row()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   connect
   layout board
   [ Q E ]
@@ -228,7 +228,7 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
-                @layout g
+                module layout g
                 scope tab
                 
                 [ Q E ]
@@ -236,7 +236,7 @@ end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   report
   title = "demo"
   include layout "layouts/grid.dashlayout"
@@ -287,13 +287,13 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
-                @layout g
+                module layout g
                 scope tab
                 [ Q ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-                @tab demo
+                module tab demo
                   !include "layouts/grid.dashlayout"
                   connect
                   layout board
@@ -324,7 +324,7 @@ end tab
     public void Parse_filter_ref_and_toolbar_layout_board()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -387,7 +387,7 @@ end tab
     public void ToolbarLayoutCompactor_places_board_on_grid()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -454,7 +454,7 @@ end tab
     public void ToolbarLayoutCompactor_applies_weighted_board_row()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -510,7 +510,7 @@ end tab
     public void ToolbarLayoutCompactor_filter_place_overrides_board()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -572,14 +572,14 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
-                @layout tb
+                module layout tb
                 scope toolbar
                 
                 [ D A ]
                 [ U ]
                 """);
             File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   !include "layouts/tb.dashlayout"
                   report
@@ -644,7 +644,7 @@ end tab
     public void Parse_toolbar_board_rejects_flat_list_combo()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -685,7 +685,7 @@ end tab
     {
         var ex = Assert.Throws<DashSpecParseException>(() =>
             LayoutModuleParser.ParseLayoutFile("""
-                @layout g
+                module layout g
                 
                 [ Q ]
                 """));
@@ -701,13 +701,13 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
-                @layout tb
+                module layout tb
                 scope toolbar
                 [ D ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-                @tab demo
+                module tab demo
                   !include "layouts/tb.dashlayout"
                   report
                   title = "demo"
@@ -738,13 +738,13 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
-                @layout g
+                module layout g
                 scope tab
                 [ Q ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   !include "layouts/grid.dashlayout"
                   report
@@ -791,7 +791,7 @@ end tab
         try
         {
             File.WriteAllText(Path.Combine(dir, "layouts", "grouped.dashlayout"), """
-                @layout grouped
+                module layout grouped
                 scope tab
 
                 group distribution {
@@ -802,7 +802,7 @@ end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @tab demo
+                module tab demo
                   !include "layouts/grouped.dashlayout"
                   report
                   title = "demo"
@@ -851,7 +851,7 @@ end tab
     public void TabLayoutPlanner_places_nest_in_bracket_cell_with_inner_rows()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-@tab demo
+module tab demo
   connect
   layout board
   nest strip {

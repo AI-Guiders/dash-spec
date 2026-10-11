@@ -16,7 +16,7 @@ public sealed class HostModuleParserTests
     public void Parse_host_with_catalog_presentation_and_links()
     {
         const string text = """
-            @host demo
+            module host demo
 
             catalog "catalogs/demo.dashcatalog"
 
@@ -67,13 +67,13 @@ public sealed class HostModuleParserTests
         File.WriteAllText(
             Path.Combine(layoutsDir, "host-topbar.dashlayout"),
             """
-            @layout tb
+            module layout tb
             scope host
             [ catalog nav ]
             """);
 
         const string text = """
-            @host demo
+            module host demo
             catalog "catalogs/demo.dashcatalog"
             !include "layouts/host-topbar.dashlayout"
             end host
@@ -96,7 +96,7 @@ public sealed class HostModuleParserTests
     public void Parse_host_rejects_missing_catalog()
     {
         const string text = """
-            @host empty
+            module host empty
             end host
             """;
 

@@ -1,4 +1,4 @@
-@host demo
+module host demo
 
 catalog "demo-catalog.dashcatalog"
 

@@ -83,7 +83,7 @@ public sealed class ReportSpecBootstrapTests
     public async Task Bootstrap_uses_compiler_and_connector_resolver()
     {
         const string text = """
-            @dashboard demo
+            module dashboard demo
                 runtime
                     manifest = "demo.toml"
                 end runtime

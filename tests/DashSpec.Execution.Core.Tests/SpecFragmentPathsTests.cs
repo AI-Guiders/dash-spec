@@ -32,7 +32,7 @@ public sealed class SpecFragmentPathsTests
         try
         {
             File.WriteAllText(Path.Combine(workspace, "diagrams", "util.dashdiagram"), """
-                @diagram util
+                module diagram util
                 bar
                   category = app_name
                   value = utilization_pct
@@ -40,7 +40,7 @@ public sealed class SpecFragmentPathsTests
                 """);
 
             File.WriteAllText(Path.Combine(workspace, "main.dashspec"), """
-                @dashboard t
+                module dashboard t
                   import "diagrams/util.dashdiagram"
                   report
                   title = "T"

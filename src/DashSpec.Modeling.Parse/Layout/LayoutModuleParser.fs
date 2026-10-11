@@ -35,7 +35,7 @@ module LayoutModuleParser =
 
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "layout"
 
         let id = reader.ReadIdent()

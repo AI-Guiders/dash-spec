@@ -16,7 +16,7 @@ module ReportScopePlacementTests =
 
         let specText =
             """
-@tab placement_flow
+module tab placement_flow
 
 connect
   flow "peak.dashflow"

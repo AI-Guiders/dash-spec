@@ -36,7 +36,7 @@ public class DateDefaultRangeTests
     {
         var ex = Assert.ThrowsAny<Exception>(() =>
             DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   report
                   title = "T"
                   defaults

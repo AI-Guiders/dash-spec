@@ -1,4 +1,4 @@
-@diagram demo_idle_by_app_box
+module diagram demo_idle_by_app_box
 
     chrome
         use box_360

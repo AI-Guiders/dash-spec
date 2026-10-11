@@ -29,7 +29,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_limits_and_when_oversize_on_matrix_card()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card heat as "H"
@@ -62,7 +62,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_when_empty_and_message_block()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               card browse as "Browse"
@@ -95,7 +95,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_phase_and_focus()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               phase browse
@@ -131,7 +131,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_browse_bar_click_set_and_focus()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @tab t
+            module tab t
               report
               title = "T"
               phase browse

@@ -17,7 +17,7 @@ public sealed class DashSpecBootstrapDashhostTests
         var dashspecDir = Path.Combine(root, "dashspec");
         Directory.CreateDirectory(dashspecDir);
         var dashhostPath = Path.Combine(dashspecDir, "demo.dashhost");
-        File.WriteAllText(dashhostPath, "@host x\ncatalog \"c.dashcatalog\"\nend host\n");
+        File.WriteAllText(dashhostPath, "module host x\ncatalog \"c.dashcatalog\"\nend host\n");
 
         try
         {
@@ -73,7 +73,7 @@ public sealed class DashSpecBootstrapDashhostTests
         Directory.CreateDirectory(dashspecDir);
         File.WriteAllText(
             Path.Combine(dashspecDir, "demo.dashhost"),
-            "@host x\ncatalog \"c.dashcatalog\"\nend host\n");
+            "module host x\ncatalog \"c.dashcatalog\"\nend host\n");
         File.WriteAllText(
             Path.Combine(root, "dash-spec.toml"),
             """
@@ -107,7 +107,7 @@ public sealed class DashSpecBootstrapDashhostTests
         Directory.CreateDirectory(dashspecDir);
         File.WriteAllText(
             Path.Combine(dashspecDir, "demo.dashhost"),
-            "@host x\ncatalog \"c.dashcatalog\"\nend host\n");
+            "module host x\ncatalog \"c.dashcatalog\"\nend host\n");
         File.WriteAllText(
             Path.Combine(root, "dash-spec.toml"),
             """
@@ -146,14 +146,14 @@ public sealed class DashSpecBootstrapDashhostTests
         File.WriteAllText(
             Path.Combine(catalogsDir, "demo.dashcatalog"),
             """
-            @catalog demo
+            module catalog demo
             entry overview dashspec "overview.dashspec"
             """);
 
         File.WriteAllText(
             Path.Combine(dashspecDir, "demo.dashhost"),
             """
-            @host demo
+            module host demo
             catalog "catalogs/demo.dashcatalog"
             end host
             """);

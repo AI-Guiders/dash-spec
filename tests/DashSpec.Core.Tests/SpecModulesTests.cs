@@ -213,7 +213,7 @@ public class SpecModulesTests
         ]);
 
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -237,7 +237,7 @@ public class SpecModulesTests
     public void Parse_dashboard_palette_directive()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -260,7 +260,7 @@ public class SpecModulesTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               configuration
               palette = "palettes/brand.dashpalette"
@@ -286,7 +286,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_loads_quoted_series_keys()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette demo_apps
+            module palette demo_apps
             
             palette
               colors = "#111111,#222222"
@@ -307,7 +307,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_resolves_const_refs_css_names_and_color_list()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette brand
+            module palette brand
             
             const default = "#999999"
             const tekla = "#e11d48"
@@ -332,7 +332,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_keeps_legacy_colors_string()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette legacy
+            module palette legacy
             palette
               colors = "#111111,#222222"
               default = "#999999"
@@ -346,7 +346,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_parses_bare_hex_in_colors_list()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette brand
+            module palette brand
             
             palette
               default = "#999999"
@@ -362,7 +362,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_accepts_color_call_syntax()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette brand
+            module palette brand
             
             const tekla = "#e11d48"
             
@@ -382,7 +382,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_treats_line_start_slash_slash_as_comment()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette brand
+            module palette brand
             
             // not a color — line comment
             palette
@@ -398,7 +398,7 @@ public class SpecModulesTests
     public void PaletteModuleParser_line_start_hash_hex_is_color_not_comment()
     {
         var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
-            @palette brand
+            module palette brand
             palette
               accent = #e11d48
               colors = [#2563eb]
@@ -415,10 +415,10 @@ public class SpecModulesTests
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var specPath = Path.Combine(dir, "t.dashspec");
-        File.WriteAllText(specPath, "@dashboard t\n  report\n  title = \"T\"\n  end report\nend dashboard");
+        File.WriteAllText(specPath, "module dashboard t\n  report\n  title = \"T\"\n  end report\nend dashboard");
         File.WriteAllText(Path.Combine(dir, "lib.toml"), "[diagram.d1]\nkind = \"line\"\n");
         File.WriteAllText(Path.Combine(dir, "brand.dashpalette"), """
-            @palette brand
+            module palette brand
             palette
               default = "#999999"
             end palette
@@ -459,7 +459,7 @@ public class SpecModulesTests
         }
         catch (DashSpecParseException ex) when (ex.Message.Contains("ADR-0029", StringComparison.OrdinalIgnoreCase))
         {
-            // demo specs not migrated to @tooltip + inspect yet (parent task).
+            // demo specs not migrated to module tooltip + inspect yet (parent task).
         }
     }
 
@@ -499,13 +499,13 @@ public class SpecModulesTests
         try
         {
             File.WriteAllText(Path.Combine(stdlib, "heatmap_tall.dashpresentation"), """
-                @presentation heatmap_tall
+                module presentation heatmap_tall
                 
                 height = 420
                 """);
 
             File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
-                @diagram activity
+                module diagram activity
                 
                 include presentation "<presentation/heatmap_tall>"
                 
@@ -521,7 +521,7 @@ public class SpecModulesTests
             SpecIncludeResolver.SetStdlibRootForTests(Path.Combine(dir, "stdlib"));
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   !include "diagrams/activity.dashdiagram"
                   report
@@ -555,7 +555,7 @@ public class SpecModulesTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "presentations", "bar-tall.dashpresentation"), """
-                @presentation bar_tall
+                module presentation bar_tall
 
                 legend = bottom
                 height = 320
@@ -563,7 +563,7 @@ public class SpecModulesTests
                 """);
 
             File.WriteAllText(Path.Combine(dir, "diagrams", "util.dashdiagram"), """
-                @diagram util
+                module diagram util
 
                 chrome
                   use bar_tall
@@ -577,7 +577,7 @@ public class SpecModulesTests
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                @dashboard t
+                module dashboard t
                   import types from Fixtures.QueryRowTypes
                   !include "presentations/bar-tall.dashpresentation"
                   !include "diagrams/util.dashdiagram"
@@ -613,7 +613,7 @@ public class SpecModulesTests
     public void Parse_treats_unknown_diagram_ident_as_library_preset()
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -638,7 +638,7 @@ public class SpecModulesTests
     public void CardDiagramResolver_throws_when_preset_missing()
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -661,7 +661,7 @@ public class SpecModulesTests
     public void Parse_diagram_library_preset_reference()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -700,7 +700,7 @@ public class SpecModulesTests
         ]);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"

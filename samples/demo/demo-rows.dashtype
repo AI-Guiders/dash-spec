@@ -1,4 +1,4 @@
-@types demo_rows
+module types demo_rows
 
 type FixtureRow
   optional date usage_date

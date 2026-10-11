@@ -90,9 +90,7 @@ module TypeModuleParser =
         reader.SkipFileDirectives()
         reader.SkipNewlines()
 
-        if reader.IsAt TokenKind.At then
-            reader.Advance()
-
+        if reader.TryKeyword "module" then
             if reader.TryKeyword "types" then
                 reader.ReadIdent() |> ignore
                 reader.SkipNewlines()

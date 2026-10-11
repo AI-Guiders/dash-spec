@@ -9,7 +9,7 @@ public sealed class CatalogParserTests
     public void Parse_catalog_with_default_and_entries()
     {
         const string text = """
-            @catalog demo
+            module catalog demo
             
             default soak
             
@@ -33,7 +33,7 @@ public sealed class CatalogParserTests
     public void Parse_inline_entry_line()
     {
         const string text = """
-            @catalog demo
+            module catalog demo
             entry overview as "Overview" dashspec "demo-soak.dashspec"
             """;
 
@@ -47,7 +47,7 @@ public sealed class CatalogParserTests
     public void Parse_catalog_entry_initial_tab()
     {
         const string text = """
-            @catalog demo
+            module catalog demo
             entry versions as "Версии ПО"
               dashspec "demo-soak.dashspec"
               tab versions
@@ -62,7 +62,7 @@ public sealed class CatalogParserTests
     public void Parse_rejects_duplicate_entry_id()
     {
         const string text = """
-            @catalog x
+            module catalog x
             entry a dashspec "a.dashspec"
             entry a dashspec "b.dashspec"
             """;

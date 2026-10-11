@@ -16,7 +16,7 @@ module ReportScopeWiringGraphTests =
 
         let specText =
             """
-@tab report_scope_flow
+module tab report_scope_flow
 
 connect
   flow "peak.dashflow"

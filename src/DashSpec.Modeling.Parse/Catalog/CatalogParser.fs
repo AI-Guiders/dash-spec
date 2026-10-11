@@ -61,7 +61,7 @@ module CatalogParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Catalog text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "catalog"
         let catalogId = reader.ReadIdent()
         if String.IsNullOrWhiteSpace catalogId then

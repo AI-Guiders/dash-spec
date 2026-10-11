@@ -18,6 +18,8 @@ type DashSpecProjectConfig =
       RootNamespace: string option
       SourceRoots: IReadOnlyList<string>
       DisableLegacyIncludes: bool
+      Files: IReadOnlyList<string>
+      Exclude: IReadOnlyList<string>
       Index: IReadOnlyList<DashSpecProjectIndexEntry> }
 
 module DashSpecProjectConfig =
@@ -54,6 +56,8 @@ module DashSpecProjectConfig =
         let mutable rootNamespace: string option = None
         let mutable sourceRoots = [ "." ]
         let mutable disableLegacy = false
+        let files = ResizeArray<string>()
+        let exclude = ResizeArray<string>()
         let index = ResizeArray<DashSpecProjectIndexEntry>()
         let mutable current: DashSpecProjectIndexEntry option = None
 
@@ -85,6 +89,8 @@ module DashSpecProjectConfig =
                 | "root_namespace" -> rootNamespace <- Some value
                 | "source_roots" -> sourceRoots <- parseStringList parts.[1]
                 | "disable_legacy_includes" -> disableLegacy <- parseBool value
+                | "files" -> files.AddRange(parseStringList parts.[1])
+                | "exclude" -> exclude.AddRange(parseStringList parts.[1])
                 | "namespace" ->
                     match current with
                     | None -> ()
@@ -106,23 +112,77 @@ module DashSpecProjectConfig =
           RootNamespace = rootNamespace
           SourceRoots = sourceRoots :> IReadOnlyList<_>
           DisableLegacyIncludes = disableLegacy
+          Files = files :> IReadOnlyList<_>
+          Exclude = exclude :> IReadOnlyList<_>
           Index = index :> IReadOnlyList<_> }
 
 module DashSpecProjectLocator =
+
+    /// <summary>Project file = `*.dsproj` (canonical — ADR-0089 Phase 2 / ADR-0101); `dashspec.toml` remains a compat marker.</summary>
+    let private findProjectFile (full: string) =
+        let dsproj =
+            Directory.EnumerateFiles(full, "*.dsproj")
+            |> Seq.sort
+            |> Seq.tryHead
+
+        match dsproj with
+        | Some path -> Some path
+        | None ->
+            let legacy = Path.Combine(full, "dashspec.toml")
+            if File.Exists legacy then Some legacy else None
 
     let tryFindConfig (specDirectory: string option) =
         match specDirectory with
         | None | Some "" -> None
         | Some dir ->
             let full = Path.GetFullPath dir
-            let candidate = Path.Combine(full, "dashspec.toml")
-
-            if File.Exists candidate then
-                Some(DashSpecProjectConfig.load candidate)
-            else
-                None
+            findProjectFile full |> Option.map DashSpecProjectConfig.load
 
     let legacyIncludesAllowed (parseOptions: DashSpecParseOptions) (specDirectory: string option) =
         match tryFindConfig specDirectory with
         | Some cfg when cfg.DisableLegacyIncludes -> false
         | _ -> parseOptions.AllowLegacyIncludes
+
+/// <summary>Phase 2 project membership (ADR-0089): `files` positives minus `exclude` — the linkable universe, lex-sorted and deterministic.</summary>
+module DashSpecProjectMembership =
+
+    let private isGlob (entry: string) = entry.Contains('*') || entry.Contains('?')
+
+    let private expandEntry (root: string) (entry: string) =
+        let normalized = entry.Replace('\\', '/')
+
+        if not (isGlob normalized) then
+            [ Path.GetFullPath(Path.Combine(root, entry)) ]
+        else
+            let dirPart = Path.GetDirectoryName(normalized)
+            let pattern = Path.GetFileName(normalized)
+
+            let dir =
+                Path.GetFullPath(Path.Combine(root, if String.IsNullOrEmpty dirPart then "." else dirPart))
+
+            if Directory.Exists dir then
+                Directory.EnumerateFiles(dir, pattern)
+                |> Seq.map Path.GetFullPath
+                |> Seq.sort
+                |> Seq.toList
+            else
+                []
+
+    let expand (cfg: DashSpecProjectConfig) =
+        let positives =
+            cfg.Files
+            |> Seq.collect (expandEntry cfg.ProjectRoot)
+            |> Seq.distinct
+            |> Seq.sort
+
+        let excluded =
+            cfg.Exclude
+            |> Seq.collect (expandEntry cfg.ProjectRoot)
+            |> Set.ofSeq
+
+        positives |> Seq.filter (fun p -> not (excluded.Contains p)) |> Seq.toList :> IReadOnlyList<string>
+
+    /// <summary>True when membership is not declared (unconstrained) or the path is a declared member.</summary>
+    let isDeclared (cfg: DashSpecProjectConfig) (path: string) =
+        cfg.Files.Count = 0
+        || (expand cfg |> Seq.contains (Path.GetFullPath path))

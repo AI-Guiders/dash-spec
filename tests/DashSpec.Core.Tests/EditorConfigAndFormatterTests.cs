@@ -35,7 +35,7 @@ public sealed class EditorConfigResolverTests
             """);
 
         var target = Path.Combine(nested, "report.dashspec");
-        File.WriteAllText(target, "@dashboard x\nend dashboard\n");
+        File.WriteAllText(target, "module dashboard x\nend dashboard\n");
 
         var options = EditorConfigResolver.ResolveForFile(target, root);
         Assert.Equal(3, options.IndentSize);
@@ -66,7 +66,7 @@ public sealed class DashSpecBlockFormatterTests
     public void Format_reindents_basic_like_blocks()
     {
         const string input = """
-            @dashboard demo
+            module dashboard demo
             report
             card a as "A"
             bind
@@ -80,7 +80,7 @@ public sealed class DashSpecBlockFormatterTests
         var formatted = DashSpecBlockFormatter.format(input, Options);
         var lines = formatted.Split('\n');
 
-        Assert.Equal("@dashboard demo", lines[0]);
+        Assert.Equal("module dashboard demo", lines[0]);
         Assert.Equal("    report", lines[1]);
         Assert.Equal("        card a as \"A\"", lines[2]);
         Assert.Equal("            bind", lines[3]);
@@ -95,7 +95,7 @@ public sealed class DashSpecBlockFormatterTests
     public void Format_indents_block_bodies_one_level_deeper_than_opener()
     {
         const string input = """
-            @dashboard demo_soak
+            module dashboard demo_soak
             runtime
             manifest = "demo.toml"
             end runtime
@@ -108,7 +108,7 @@ public sealed class DashSpecBlockFormatterTests
         var formatted = DashSpecBlockFormatter.format(input, Options);
         var lines = formatted.Split('\n');
 
-        Assert.Equal("@dashboard demo_soak", lines[0]);
+        Assert.Equal("module dashboard demo_soak", lines[0]);
         Assert.Equal("    runtime", lines[1]);
         Assert.Equal("        manifest = \"demo.toml\"", lines[2]);
         Assert.Equal("    end runtime", lines[3]);
@@ -123,7 +123,7 @@ public sealed class DashSpecBlockFormatterTests
     public void Format_inserts_blank_line_between_sibling_blocks_after_end()
     {
         const string input = """
-            @dashboard demo_soak
+            module dashboard demo_soak
             runtime
             manifest = "demo.toml"
             end runtime

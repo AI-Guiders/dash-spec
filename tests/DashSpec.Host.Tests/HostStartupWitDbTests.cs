@@ -88,14 +88,14 @@ public sealed class HostStartupWitDbTests
         File.WriteAllText(
             Path.Combine(catalogsDir, "demo.dashcatalog"),
             """
-            @catalog demo
+            module catalog demo
             entry overview dashspec "overview.dashspec"
             """);
 
         File.WriteAllText(
             Path.Combine(dashspecDir, "demo.dashhost"),
             """
-            @host demo
+            module host demo
             catalog "catalogs/demo.dashcatalog"
             end host
             """);

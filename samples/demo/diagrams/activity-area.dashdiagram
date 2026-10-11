@@ -1,4 +1,4 @@
-@diagram demo_activity_area
+module diagram demo_activity_area
 
     chrome
         use area_bottom_320

@@ -16,7 +16,7 @@ public class ChartRuntimeTests
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
@@ -67,7 +67,7 @@ public class ChartRuntimeTests
         ]);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -117,7 +117,7 @@ public class ChartRuntimeTests
         Assert.True(fromDiagram.IsHorizontal);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -176,7 +176,7 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Integer, presentation.ValueAxisScale);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -292,7 +292,7 @@ public class ChartRuntimeTests
         Assert.Equal(ChartAxisScale.Decimal, decimalDefault.ValueAxisScale);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -351,7 +351,7 @@ public class ChartRuntimeTests
     public void ResolveChartPresentation_reads_category_value_axis_labels_from_bar_diagram()
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -396,7 +396,7 @@ public class ChartRuntimeTests
         ]);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
@@ -433,7 +433,7 @@ public class ChartRuntimeTests
         ]);
 
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
@@ -483,7 +483,7 @@ public class ChartRuntimeTests
     public void CategoryChartPayloadBuilder_uses_color_column_when_bound()
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               configuration
               diagramlibrary = "lib.toml"
@@ -533,7 +533,7 @@ public class ChartRuntimeTests
     {
         var card = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"

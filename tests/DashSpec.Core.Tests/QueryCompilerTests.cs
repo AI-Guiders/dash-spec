@@ -15,10 +15,10 @@ public class QueryCompilerTests
     public void Compile_applies_optional_date_and_field_filters()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"
@@ -81,10 +81,10 @@ public class QueryCompilerTests
     public void Compile_cell_drill_overlay_overrides_session_filters_for_bound_names()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"
@@ -151,10 +151,10 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
               sqldialect = tsql
@@ -205,10 +205,10 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
               sqldialect = tsql
@@ -261,10 +261,10 @@ public class QueryCompilerTests
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
 
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
               sqldialect = postgres
@@ -315,10 +315,10 @@ public class QueryCompilerTests
     public void Compile_table_uses_top_limit()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"
@@ -342,10 +342,10 @@ public class QueryCompilerTests
     public void Compile_postgres_table_uses_trailing_limit()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
               sqldialect = postgres
@@ -378,10 +378,10 @@ public class QueryCompilerTests
     public void Compile_table_uses_bound_top_filter()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"
@@ -464,10 +464,10 @@ public class QueryCompilerTests
     public void Compile_bound_top_filter_does_not_add_where_clause()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               report
               title = "T"
@@ -712,10 +712,10 @@ public class QueryCompilerTests
     public void Parse_configuration_reads_time_basis_and_work_column()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
                   connect
-                    flow "fixture.dashflow"
+                    use flow fixture_flow
                   end connect
               configuration
                 time_basis = working
@@ -742,7 +742,7 @@ public class QueryCompilerTests
     public void Parse_tab_configuration_accepts_work_time_column()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            @tab overview
+            module tab overview
               configuration
                 sqldialect = tsql
                 palette = "palettes/demo-apps.dashpalette"

@@ -1,4 +1,4 @@
-@dashboard demo_soak
+module dashboard demo_soak
     namespace Demo.Soak
     import diagrams from Demo.Diagrams
     import types from Demo.Types

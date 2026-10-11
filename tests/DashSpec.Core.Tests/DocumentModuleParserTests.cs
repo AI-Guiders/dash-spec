@@ -13,7 +13,7 @@ public class DocumentModuleParserTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "diagrams", "x.dashdiagram"), """
-                @diagram x
+                module diagram x
                 
                 number
                   value = n
@@ -21,14 +21,14 @@ public class DocumentModuleParserTests
                 """);
 
             const string text = """
-                @tab t
+                module tab t
+                  !include "diagrams/x.dashdiagram"
                   runtime
                   manifest = "cfg.toml"
                   end runtime
                   configuration
                   sqldialect = tsql
                   end configuration
-                  !include "diagrams/x.dashdiagram"
                   connect
                   use palette demo_apps
                   end connect

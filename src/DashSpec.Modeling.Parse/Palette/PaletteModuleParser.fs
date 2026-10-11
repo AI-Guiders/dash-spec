@@ -101,7 +101,7 @@ module PaletteModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Palette text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
-        reader.Expect TokenKind.At
+        reader.ExpectKeyword "module"
         reader.ExpectKeyword "palette"
         let id = reader.ReadIdent()
         if String.IsNullOrWhiteSpace id then raise (DashSpecParseException("Palette module requires @palette <id>."))

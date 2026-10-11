@@ -12,7 +12,7 @@ public class DashSpecTestRowTypesTests
         Directory.CreateDirectory(dir);
         DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
-            @flow broken
+            module flow broken
             source s {
               use provider infer
               from view dbo.t
@@ -22,7 +22,7 @@ public class DashSpecTestRowTypesTests
 
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard(
             """
-            @dashboard t
+            module dashboard t
                   import types from Fixtures.QueryRowTypes
               connect
               flow "broken.dashflow"
