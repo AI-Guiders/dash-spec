@@ -1,4 +1,5 @@
 using System.Text;
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
@@ -35,10 +36,11 @@ public static class QueryCompiler
             filters,
             filterDefinitions,
             RowTypeCatalog.FromDocument(document),
-            sqlDialect,
+            SqlDialectResolver.Resolve(sqlDialect),
             specDirectory,
             cellDrillOverlay,
-            reportTimePolicy);
+            reportTimePolicy,
+            ResolveFilterDerives(document));
 
     public static CompiledQuery Compile(
         CardDefinition card,
@@ -48,7 +50,8 @@ public static class QueryCompiler
         ISqlDialectBackend dialect,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
-        ReportTimePolicy? reportTimePolicy = null)
+        ReportTimePolicy? reportTimePolicy = null,
+        IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -69,7 +72,7 @@ public static class QueryCompiler
 
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
-        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay);
+        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay, rowSchema, filterDerives);
         AppendWorkWindowClip(whereBuilder, reportTimePolicy, dialect);
 
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
@@ -469,7 +472,9 @@ public static class QueryCompiler
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         List<QueryParameter> parameters,
         ISqlDialectBackend dialect,
-        CardCellDrillOverlay? cellDrillOverlay)
+        CardCellDrillOverlay? cellDrillOverlay,
+        RowTypeSchema rowSchema,
+        IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives)
     {
         foreach (var filterName in card.BoundFilters)
         {
@@ -479,7 +484,35 @@ public static class QueryCompiler
                 continue;
             }
 
-            var clause = BuildClause(definition, filters, parameters, dialect, cellDrillOverlay);
+            // ADR-0036 derive (usage_date from period_start): derived target filter is a
+            // UI-level alias — when the source row schema lacks the target column, push the
+            // clause on the derive SOURCE column with the target's values.
+            var sqlDefinition = definition;
+            var derived = false;
+            if (!SchemaContainsColumn(rowSchema, ResolveColumnName(definition.ColumnReference, definition.Name)) &&
+                filterDerives is not null &&
+                filterDerives.TryGetValue(filterName, out var derive) &&
+                !string.IsNullOrWhiteSpace(derive.SourceFilter))
+            {
+                FilterDefinition? sourceDefinition = null;
+                var sourceColumnKnown = filterDefinitions.TryGetValue(derive.SourceFilter, out sourceDefinition)
+                    ? SchemaContainsColumn(rowSchema, ResolveColumnName(sourceDefinition.ColumnReference, sourceDefinition.Name))
+                    : SchemaContainsColumn(rowSchema, derive.SourceFilter);
+                if (sourceColumnKnown)
+                {
+                    sqlDefinition = sourceDefinition ?? new FilterDefinition(
+                        FilterKind.Date,
+                        definition.Name,
+                        DefaultExpression: null,
+                        ColumnReference: derive.SourceFilter,
+                        GrainFilterName: derive.GrainFilterName);
+                    derived = true;
+                }
+            }
+
+            var clause = derived
+                ? BuildDerivedClause(definition, sqlDefinition, filters, parameters, dialect, cellDrillOverlay)
+                : BuildClause(definition, filters, parameters, dialect, cellDrillOverlay);
             if (clause is null)
             {
                 continue;
@@ -487,6 +520,65 @@ public static class QueryCompiler
 
             whereBuilder.Append(" AND ").Append(clause);
         }
+    }
+
+    private static string? BuildDerivedClause(
+        FilterDefinition target,
+        FilterDefinition source,
+        FilterState filters,
+        List<QueryParameter> parameters,
+        ISqlDialectBackend dialect,
+        CardCellDrillOverlay? cellDrillOverlay)
+    {
+        return target.Kind switch
+        {
+            FilterKind.Date when cellDrillOverlay?.TryGetDate(target.Name, out var drillDate) == true =>
+                BuildDateClause(drillDate, source, filters, parameters, dialect),
+            FilterKind.Field when cellDrillOverlay?.TryGetField(target.Name, out var drillField) == true =>
+                BuildFieldClause(new FieldFilterValue(drillField.ToList()), source, parameters),
+            FilterKind.Date => BuildDateClause(filters.GetDate(target.Name), source, filters, parameters, dialect),
+            FilterKind.Field => BuildFieldClause(filters.GetField(target.Name), source, parameters),
+            _ => null,
+        };
+    }
+
+    private static bool SchemaContainsColumn(RowTypeSchema schema, string column)
+    {
+        foreach (var field in schema.Fields)
+        {
+            if (string.Equals(field.Name, column, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var dot = column.LastIndexOf('.');
+            if (dot >= 0 && string.Equals(field.Name, column[(dot + 1)..], StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyDictionary<string, FilterDeriveDefinition> ResolveFilterDerives(DashboardDocument document)
+    {
+        var map = new Dictionary<string, FilterDeriveDefinition>(StringComparer.OrdinalIgnoreCase);
+        if (document.Pages is null)
+        {
+            return map;
+        }
+
+        foreach (var page in document.Pages)
+        {
+            var derive = page.UsageDateDerive;
+            if (derive is not null && !map.ContainsKey(derive.TargetFilter))
+            {
+                map[derive.TargetFilter] = derive;
+            }
+        }
+
+        return map;
     }
 
     private static string? BuildClause(
