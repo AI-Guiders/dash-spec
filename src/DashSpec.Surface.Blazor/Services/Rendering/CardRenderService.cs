@@ -466,6 +466,11 @@ public sealed class CardRenderService(
         return value switch
         {
             DateOnly => LabelFormat.FormatObject(value, LabelFormat.ResolveDateFormat(null)),
+            DashSpec.Abstractions.Data.DashDisplayDateTime display => LabelFormat.FormatObject(
+                display,
+                display.Civil.TimeOfDay == TimeSpan.Zero
+                    ? LabelFormat.ResolveDateFormat(null)
+                    : LabelFormat.ResolveDateTimeFormat(null)),
             DateTime dt => LabelFormat.FormatObject(
                 value,
                 dt.TimeOfDay == TimeSpan.Zero
