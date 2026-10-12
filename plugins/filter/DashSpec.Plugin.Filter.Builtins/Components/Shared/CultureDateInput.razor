@@ -1,0 +1,69 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+@using System.Globalization
+@using DashSpec.Execution.Runtime
+
+<span class="culture-date">
+    <input type="text"
+           class="@TextClass"
+           aria-label="@AriaLabel"
+           disabled="@Disabled"
+           value="@DisplayValue"
+           placeholder="@Placeholder"
+           @onchange="OnTextChanged" />
+    <input type="date"
+           class="culture-date-native"
+           aria-label="@AriaLabel"
+           disabled="@Disabled"
+           value="@WireValue"
+           @onchange="OnNativeChanged" />
+</span>
+
+<style>
+    .culture-date { position: relative; display: inline-flex; align-items: center; }
+    .culture-date-text { padding-right: 2em; }
+    .culture-date-native {
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: 2em;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public DateOnly Value { get; set; }
+
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = string.Empty;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<string> OnChanged { get; set; }
+
+    private static CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    private static string ShortPattern => Culture.DateTimeFormat.ShortDatePattern;
+
+    private string TextClass => string.IsNullOrWhiteSpace(InputClass)
+        ? "culture-date-text"
+        : $"culture-date-text {InputClass}";
+
+    private string DisplayValue => Value.ToString(ShortPattern, Culture);
+
+    private string WireValue => Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private string Placeholder => Culture.Name.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
+        ? "дд.мм.гггг"
+        : ShortPattern.ToLowerInvariant();
+
+    private async Task OnTextChanged(ChangeEventArgs args) =>
+        await OnChanged.InvokeAsync(args.Value?.ToString());
+
+    private async Task OnNativeChanged(ChangeEventArgs args) =>
+        await OnChanged.InvokeAsync(args.Value?.ToString());
+}
