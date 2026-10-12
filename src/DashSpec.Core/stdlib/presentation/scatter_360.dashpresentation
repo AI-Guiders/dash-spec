@@ -1,4 +1,4 @@
-@presentation scatter_360
+module presentation scatter_360
 
 legend = bottom
 height = 360
