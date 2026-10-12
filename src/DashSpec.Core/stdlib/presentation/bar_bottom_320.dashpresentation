@@ -1,4 +1,4 @@
-@presentation bar_bottom_320
+module presentation bar_bottom_320
 
   legend = bottom
   height = 320
