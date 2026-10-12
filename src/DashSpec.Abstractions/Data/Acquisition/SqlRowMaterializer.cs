@@ -21,6 +21,12 @@ public static class SqlRowMaterializer
             }
             catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException)
             {
+                if (schema.Fields[i].IsOptional)
+                {
+                    ordinals[i] = -1;
+                    continue;
+                }
+
                 throw new InvalidOperationException(
                     FormatMissingColumn(schema.TypeName, fieldName, available),
                     ex);
@@ -72,7 +78,7 @@ public static class SqlRowMaterializer
         {
             var field = schema.Fields[i];
             var ordinal = columnOrdinals[i];
-            if (reader.IsDBNull(ordinal))
+            if (ordinal < 0 || reader.IsDBNull(ordinal))
             {
                 cells[i] = DashValue.NullOf(field.Kind);
                 continue;
