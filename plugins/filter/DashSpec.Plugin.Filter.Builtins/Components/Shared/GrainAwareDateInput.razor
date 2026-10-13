@@ -1,10 +1,10 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
 
+@using System.Globalization
 @using DashSpec.Core.Model
 @using DashSpec.Core.Runtime
 @using DashSpec.Execution.Runtime
 @using DashSpec.Presentation.Filters
-@using System.Globalization
 
 @if (Filter.IsDayWidget)
 {
@@ -19,41 +19,41 @@
             @switch (Grain)
             {
                 case "month":
-                    <input type="month"
-                           class="date-input-grain filter-grain-input"
-                           aria-label="@Label"
-                           disabled="@Disabled"
-                           value="@MonthValue"
-                           @onchange="OnMonthChanged" />
+                    <CultureAwareDateInput Mode="month"
+                                           Value="@MonthValue"
+                                           ValueChanged="OnMonthWireChanged"
+                                           InputClass="date-input-grain filter-grain-input"
+                                           AriaLabel="@Label"
+                                           Disabled="@Disabled" />
                     break;
 
                 case "year":
-                    <input type="number"
-                           class="date-input-grain date-input-year filter-grain-input"
-                           aria-label="@Label"
-                           disabled="@Disabled"
-                           min="1970"
-                           max="2100"
-                           step="1"
-                           value="@YearValue"
-                           @onchange="OnYearChanged" />
+                    <CultureAwareDateInput Mode="year"
+                                           Value="@YearValue"
+                                           ValueChanged="OnYearWireChanged"
+                                           InputClass="date-input-grain date-input-year filter-grain-input"
+                                           AriaLabel="@Label"
+                                           Disabled="@Disabled" />
                     break;
 
                 default:
-                    <CultureDateInput Value="DateFrom[Filter.Name]"
-                                      AriaLabel="@Label"
-                                      Disabled="@Disabled"
-                                      InputClass="filter-grain-input"
-                                      OnChanged="OnDayInputChanged" />
+                    <CultureAwareDateInput Mode="day"
+                                           Value="@DayValue"
+                                           ValueChanged="OnDayWireChanged"
+                                           InputClass="filter-grain-input"
+                                           AriaLabel="@Label"
+                                           Disabled="@Disabled" />
                     break;
             }
         }
         else
         {
-            <CultureDateInput Value="DateFrom[Filter.Name]"
-                              AriaLabel="@Label"
-                              Disabled="@Disabled"
-                              OnChanged="OnDayInputChanged" />
+            <CultureAwareDateInput Mode="day"
+                                   Value="@DayValue"
+                                   ValueChanged="OnDayWireChanged"
+                                   InputClass="filter-grain-input"
+                                   AriaLabel="@Label"
+                                   Disabled="@Disabled" />
         }
     </div>
 }
@@ -65,15 +65,19 @@ else
     }
 
     <div class="date-range">
-        <CultureDateInput Value="DateFrom[Filter.Name]"
-                          AriaLabel="@($"{Filter.Name} from")"
-                          Disabled="@Disabled"
-                          OnChanged="OnRangeFromChanged" />
+        <CultureAwareDateInput Mode="day"
+                               Value="@DayValue"
+                               ValueChanged="OnRangeFromWireChanged"
+                               InputClass="filter-grain-input"
+                               AriaLabel="@($"{Filter.Name} from")"
+                               Disabled="@Disabled" />
         <span class="date-sep">—</span>
-        <CultureDateInput Value="DateTo[Filter.Name]"
-                          AriaLabel="@($"{Filter.Name} to")"
-                          Disabled="@Disabled"
-                          OnChanged="OnRangeToChanged" />
+        <CultureAwareDateInput Mode="day"
+                               Value="@RangeToValue"
+                               ValueChanged="OnRangeToWireChanged"
+                               InputClass="filter-grain-input"
+                               AriaLabel="@($"{Filter.Name} to")"
+                               Disabled="@Disabled" />
     </div>
 }
 
@@ -106,13 +110,18 @@ else
         ? GrainFilterPresentation.ResolveGrain(Filter, FilterIndex, SelectedFields)
         : null;
 
+    private string DayValue => DateValueCodec.FormatWireDay(DateFrom[Filter.Name]);
+
+    private string RangeToValue => DateValueCodec.FormatWireDay(DateTo[Filter.Name]);
+
     private string MonthValue => $"{DateFrom[Filter.Name]:yyyy-MM}";
 
-    private int YearValue => DateFrom[Filter.Name].Year;
+    private string YearValue => DateFrom[Filter.Name].Year.ToString(CultureInfo.InvariantCulture);
 
-    private async Task OnDayInputChanged(string? raw)
+    private async Task OnDayWireChanged(string wire)
     {
-        if (!TryParseDay(raw, out var parsed))
+        if (!DateValueCodec.TryParseWireDay(wire, out var parsed) ||
+            !SqlDateTimeRange.IsQueryable(parsed))
         {
             return;
         }
@@ -129,9 +138,10 @@ else
         await NotifyChangedAsync();
     }
 
-    private async Task OnRangeFromChanged(string? raw)
+    private async Task OnRangeFromWireChanged(string wire)
     {
-        if (TryParseDay(raw, out var parsed))
+        if (DateValueCodec.TryParseWireDay(wire, out var parsed) &&
+            SqlDateTimeRange.IsQueryable(parsed))
         {
             DateFrom[Filter.Name] = parsed;
         }
@@ -139,9 +149,10 @@ else
         await OnRangeChangedAsync();
     }
 
-    private async Task OnRangeToChanged(string? raw)
+    private async Task OnRangeToWireChanged(string wire)
     {
-        if (TryParseDay(raw, out var parsed))
+        if (DateValueCodec.TryParseWireDay(wire, out var parsed) &&
+            SqlDateTimeRange.IsQueryable(parsed))
         {
             DateTo[Filter.Name] = parsed;
         }
@@ -157,10 +168,9 @@ else
         }
     }
 
-    private async Task OnMonthChanged(ChangeEventArgs args)
+    private async Task OnMonthWireChanged(string wire)
     {
-        var raw = args.Value?.ToString();
-        if (DateValueCodec.TryParseWireMonthAnchor(raw, out var parsed) &&
+        if (DateValueCodec.TryParseWireMonthAnchor(wire, out var parsed) &&
             SqlDateTimeRange.IsQueryable(parsed))
         {
             ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "month"));
@@ -169,9 +179,10 @@ else
         await NotifyChangedAsync();
     }
 
-    private async Task OnYearChanged(ChangeEventArgs args)
+    private async Task OnYearWireChanged(string wire)
     {
-        if (int.TryParse(args.Value?.ToString(), out var year) && year is >= 1970 and <= 2100)
+        if (int.TryParse(wire, NumberStyles.None, CultureInfo.InvariantCulture, out var year) &&
+            year is >= 1970 and <= 2100)
         {
             var parsed = new DateOnly(year, 1, 1);
             if (SqlDateTimeRange.IsQueryable(parsed))
@@ -205,28 +216,5 @@ else
         {
             await OnRangeChanged.InvokeAsync();
         }
-    }
-
-    /// <summary>
-    /// Accepts the report-culture date text (ru-RU: dd.MM.yyyy) and the ISO wire day
-    /// (yyyy-MM-dd from the native picker) — display and parsing follow the report culture.
-    /// </summary>
-    private static bool TryParseDay(string? raw, out DateOnly day)
-    {
-        day = default;
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return false;
-        }
-
-        var text = raw.Trim();
-        var culture = LabelFormat.ResolveReportCulture();
-        var ok = text.Contains('-')
-            ? DateValueCodec.TryParseWireDay(text, out day) ||
-              DateOnly.TryParse(text, culture, DateTimeStyles.None, out day)
-            : DateOnly.TryParse(text, culture, DateTimeStyles.None, out day) ||
-              DateValueCodec.TryParseWireDay(text, out day);
-
-        return ok && SqlDateTimeRange.IsQueryable(day);
     }
 }
