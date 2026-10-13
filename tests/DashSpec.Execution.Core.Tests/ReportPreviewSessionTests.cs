@@ -61,6 +61,22 @@ public sealed class ReportPreviewSessionTests
         Directory.CreateDirectory(workspace);
         try
         {
+            var flowPath = Path.Combine(workspace, "fixture.dashflow");
+            await File.WriteAllTextAsync(flowPath, """
+                module flow fixture
+
+                source fixture_src {
+                  use provider sqlserver
+                  from view dbo.t
+                  ports
+                    default output rows
+                    output stream rows: FixtureRow
+                  end ports
+                }
+
+                end flow
+                """);
+
             var oneCardPath = Path.Combine(workspace, "one-card.dashspec");
             var twoCardPath = Path.Combine(workspace, "two-card.dashspec");
 
@@ -88,17 +104,20 @@ public sealed class ReportPreviewSessionTests
     {
         var cards = string.Join(
             Environment.NewLine,
-            Enumerable.Range(1, cardCount).Select(index => $"""
-              card c{index} as "C{index}"
+            Enumerable.Range(1, cardCount).Select(index => $$"""
+              card c{{index}} as "C{{index}}"
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
             """));
 
         return $"""
             module dashboard preview_tab
+              connect
+                flow "fixture.dashflow"
+              end connect
               runtime
               manifest = "cfg.toml"
               end runtime

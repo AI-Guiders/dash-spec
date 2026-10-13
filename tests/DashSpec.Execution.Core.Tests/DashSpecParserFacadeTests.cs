@@ -11,16 +11,21 @@ public sealed class DashSpecParserFacadeTests
     {
         const string text = """
             module dashboard t
+              import types from Fixtures.QueryRowTypes
+              import flows from Fixtures.Flow as fixture_flow
               runtime
               manifest = "cfg.toml"
               end runtime
+              connect
+                use flow fixture_flow
+              end connect
               report
               title = "T"
               card a as "A"
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
@@ -39,19 +44,24 @@ public sealed class DashSpecParserFacadeTests
     {
         const string text = """
             module dashboard t
+              import types from Fixtures.QueryRowTypes
+              import flows from Fixtures.Flow as fixture_flow
               runtime
               manifest = "cfg.toml"
               end runtime
               configuration
               sqldialect = postgres
               end configuration
+              connect
+                use flow fixture_flow
+              end connect
               report
               title = "T"
               card a as "A"
               diagram number
               value = x
               end number
-              datasource infer view dbo.t rows FixtureRow
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
             end dashboard
