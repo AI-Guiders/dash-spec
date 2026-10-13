@@ -1,0 +1,290 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+@using System.Globalization
+@using DashSpec.Core.Runtime
+@using DashSpec.Execution.Runtime
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+
+@if (Mode == "weekday")
+{
+    <select class="@InputClass"
+            aria-label="@AriaLabel"
+            disabled="@Disabled"
+            value="@Value"
+            @onchange="OnWeekdayChanged">
+        @if (!string.IsNullOrEmpty(Placeholder))
+        {
+            <option value="">@Placeholder</option>
+        }
+        @foreach (var day in WeekdayOptions)
+        {
+            <option value="@day.wire">@day.label</option>
+        }
+    </select>
+}
+else if (Mode == "year")
+{
+    <input type="number"
+           class="@InputClass"
+           aria-label="@AriaLabel"
+           disabled="@Disabled"
+           min="@MinYear"
+           max="@MaxYear"
+           step="1"
+           value="@Value"
+           @onchange="OnYearChanged" />
+}
+else
+{
+    <input type="text"
+           @ref="_element"
+           class="@InputClass"
+           aria-label="@AriaLabel"
+           disabled="@Disabled"
+           autocomplete="off" />
+}
+
+@code {
+    /// <summary>day | month | year | time | datetime | weekday.</summary>
+    [Parameter] public string Mode { get; set; } = "day";
+
+    /// <summary>Wire value: yyyy-MM-dd | yyyy-MM | yyyy | HH:mm | yyyy-MM-dd HH:mm | mon..sun.</summary>
+    [Parameter] public string Value { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
+
+    [Parameter] public int MinYear { get; set; } = 1970;
+
+    [Parameter] public int MaxYear { get; set; } = 2100;
+
+    private ElementReference _element;
+    private DotNetObjectReference<CultureAwareDateInput>? _selfRef;
+    private bool _pickerReady;
+    private string _renderedValue = string.Empty;
+
+    private CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    private IEnumerable<(string wire, string label)> WeekdayOptions
+    {
+        get
+        {
+            var culture = Culture;
+            var start = (int)culture.DateTimeFormat.FirstDayOfWeek;
+            for (var i = 0; i < 7; i++)
+            {
+                var day = (DayOfWeek)((start + i) % 7);
+                yield return (WireFor(day), culture.DateTimeFormat.GetDayName(day));
+            }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Mode is "day" or "month" or "time" or "datetime")
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await Js.InvokeVoidAsync(
+                "dashspecDatepicker.init",
+                _element,
+                _selfRef,
+                BuildOptions());
+            _pickerReady = true;
+            _renderedValue = Value;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_pickerReady && !string.Equals(_renderedValue, Value, StringComparison.Ordinal))
+        {
+            _renderedValue = Value;
+            await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+        }
+    }
+
+    private object BuildOptions()
+    {
+        var culture = Culture;
+        return Mode switch
+        {
+            "month" => new
+            {
+                mode = "month",
+                wireFormat = "Y-m",
+                altFormat = CultureInputFormat.MonthPattern(culture),
+                locale = CultureInputFormat.Locale(culture),
+                weekStart = CultureInputFormat.WeekStart(culture),
+                wire = Value,
+            },
+            "time" => new
+            {
+                mode = "time",
+                wireFormat = "H:i",
+                dateFormat = CultureInputFormat.TimePattern(culture),
+                locale = CultureInputFormat.Locale(culture),
+                wire = Value,
+            },
+            "datetime" => new
+            {
+                mode = "datetime",
+                wireFormat = "Y-m-d H:i",
+                dateFormat = $"{CultureInputFormat.DayPattern(culture)} {CultureInputFormat.TimePattern(culture)}",
+                locale = CultureInputFormat.Locale(culture),
+                weekStart = CultureInputFormat.WeekStart(culture),
+                wire = Value,
+            },
+            _ => new
+            {
+                mode = "day",
+                wireFormat = "Y-m-d",
+                dateFormat = CultureInputFormat.DayPattern(culture),
+                locale = CultureInputFormat.Locale(culture),
+                weekStart = CultureInputFormat.WeekStart(culture),
+                wire = Value,
+            },
+        };
+    }
+
+    /// <summary>Called by the picker with a canonical wire value.</summary>
+    [JSInvokable]
+    public Task OnPicked(string wire) => EmitAsync(wire);
+
+    /// <summary>Typed text the picker could not match — parse tolerantly with the standard parsers.</summary>
+    [JSInvokable]
+    public async Task OnRawInput(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            await EmitAsync(string.Empty);
+            return;
+        }
+
+        var text = raw.Trim();
+        var culture = Culture;
+
+        switch (Mode)
+        {
+            case "month":
+                if (DateValueCodec.TryParseWireMonthAnchor(text, out var monthAnchor))
+                {
+                    await EmitAsync(monthAnchor.ToString("yyyy-MM", CultureInfo.InvariantCulture));
+                }
+                else if (DateTime.TryParse(text, culture, DateTimeStyles.None, out var monthParsed))
+                {
+                    await EmitAsync(new DateOnly(monthParsed.Year, monthParsed.Month, 1)
+                        .ToString("yyyy-MM", CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    await ResyncAsync();
+                }
+
+                break;
+
+            case "time":
+                if (TimeOnly.TryParse(text, culture, DateTimeStyles.None, out var time))
+                {
+                    await EmitAsync(time.ToString("HH:mm", CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    await ResyncAsync();
+                }
+
+                break;
+
+            case "datetime":
+                if (DateTime.TryParse(text, culture, DateTimeStyles.None, out var stamp))
+                {
+                    await EmitAsync(stamp.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
+                }
+                else
+                {
+                    await ResyncAsync();
+                }
+
+                break;
+
+            default:
+                if (DateValueCodec.TryParseWireDay(text, out var day) ||
+                    DateOnly.TryParse(text, culture, DateTimeStyles.None, out day))
+                {
+                    await EmitAsync(DateValueCodec.FormatWireDay(day));
+                }
+                else
+                {
+                    await ResyncAsync();
+                }
+
+                break;
+        }
+    }
+
+    private async Task EmitAsync(string wire)
+    {
+        _renderedValue = wire;
+        if (ValueChanged.HasDelegate)
+        {
+            await ValueChanged.InvokeAsync(wire);
+        }
+    }
+
+    /// <summary>Unparsable text — push the current wire value back to the picker display.</summary>
+    private async Task ResyncAsync()
+    {
+        if (_pickerReady)
+        {
+            await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+        }
+    }
+
+    private async Task OnYearChanged(ChangeEventArgs args)
+    {
+        var wire = args.Value?.ToString() ?? string.Empty;
+        await EmitAsync(wire);
+    }
+
+    private async Task OnWeekdayChanged(ChangeEventArgs args)
+    {
+        var wire = args.Value?.ToString() ?? string.Empty;
+        await EmitAsync(wire);
+    }
+
+    private static string WireFor(DayOfWeek day) => day switch
+    {
+        DayOfWeek.Monday => "mon",
+        DayOfWeek.Tuesday => "tue",
+        DayOfWeek.Wednesday => "wed",
+        DayOfWeek.Thursday => "thu",
+        DayOfWeek.Friday => "fri",
+        DayOfWeek.Saturday => "sat",
+        _ => "sun",
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pickerReady)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.dispose", _element);
+            }
+            catch (Exception)
+            {
+                // circuit already gone — nothing to dispose
+            }
+        }
+
+        _selfRef?.Dispose();
+    }
+}

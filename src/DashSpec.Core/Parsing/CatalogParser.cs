@@ -40,14 +40,15 @@ public static class CatalogParser
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var path = SpecIncludeResolver.ResolvePath(dashspecReference, dir);
-            if (!path.EndsWith(".dashspec", StringComparison.OrdinalIgnoreCase))
-            {
-                path += ".dashspec";
-            }
-
             if (File.Exists(path))
             {
                 return path;
+            }
+
+            var withDs = path.EndsWith(".ds", StringComparison.OrdinalIgnoreCase) ? path : path + ".ds";
+            if (File.Exists(withDs))
+            {
+                return withDs;
             }
         }
 
