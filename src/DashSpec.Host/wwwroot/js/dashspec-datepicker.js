@@ -40,17 +40,17 @@
       cfg.dateFormat = opts.dateFormat || "Y-m-d H:i";
     }
 
-    cfg.onChange = function (dates) {
-      if (dates && dates.length) {
-        dotNetRef.invokeMethodAsync("OnPicked", window.flatpickr.formatDate(dates[0], wireFormat));
-      }
-    };
+    // Commit once — on close (calendar pick done, blur, or Enter), never per
+    // keystroke: each OnPicked triggers a full data reload downstream.
     cfg.onClose = function (dates, dateStr, instance) {
       if (!instance.input.value) {
         dotNetRef.invokeMethodAsync("OnPicked", "");
         return;
       }
-      if (dates && dates.length) return;
+      if (dates && dates.length) {
+        dotNetRef.invokeMethodAsync("OnPicked", window.flatpickr.formatDate(dates[0], wireFormat));
+        return;
+      }
       // Untyped-but-not-matched text: let C# parse tolerantly (DateValueCodec).
       dotNetRef.invokeMethodAsync("OnRawInput", instance.input.value);
     };
@@ -60,6 +60,13 @@
       var parsed = window.flatpickr.parseDate(opts.wire, wireFormat);
       if (parsed) fp.setDate(parsed, false);
     }
+    // Enter closes the calendar/input -> onClose commits exactly once.
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        fp.close();
+      }
+    });
     instances.set(el, { fp: fp, wireFormat: wireFormat });
   }
 
