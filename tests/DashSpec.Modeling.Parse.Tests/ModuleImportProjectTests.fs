@@ -29,7 +29,7 @@ module ModuleImportProjectTests =
         let text = File.ReadAllText(Path.Combine(fixtureDir, "tab-import.dashspec"))
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
-        reader.Expect Lexing.TokenKind.At |> ignore
+        reader.ExpectKeyword "module" |> ignore
         reader.ExpectKeyword "tab" |> ignore
         reader.ReadIdent() |> ignore
         BlockSyntax.beginBlock reader
