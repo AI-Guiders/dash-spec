@@ -126,16 +126,14 @@ else
             return;
         }
 
-        if (HasGrainFilter)
-        {
-            ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, Grain));
-        }
-        else
-        {
-            ApplyDay(parsed);
-        }
+        var changed = HasGrainFilter
+            ? ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, Grain))
+            : ApplyDay(parsed);
 
-        await NotifyChangedAsync();
+        if (changed)
+        {
+            await NotifyChangedAsync();
+        }
     }
 
     private async Task OnRangeFromWireChanged(string wire)
@@ -170,44 +168,70 @@ else
 
     private async Task OnMonthWireChanged(string wire)
     {
+        var changed = false;
         if (DateValueCodec.TryParseWireMonthAnchor(wire, out var parsed) &&
             SqlDateTimeRange.IsQueryable(parsed))
         {
-            ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "month"));
+            changed = ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "month"));
         }
 
-        await NotifyChangedAsync();
+        if (changed)
+        {
+            await NotifyChangedAsync();
+        }
     }
 
     private async Task OnYearWireChanged(string wire)
     {
+        var changed = false;
         if (int.TryParse(wire, NumberStyles.None, CultureInfo.InvariantCulture, out var year) &&
             year is >= 1970 and <= 2100)
         {
             var parsed = new DateOnly(year, 1, 1);
             if (SqlDateTimeRange.IsQueryable(parsed))
             {
-                ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "year"));
+                changed = ApplyAnchor(GrainFilterPresentation.NormalizeAnchor(parsed, "year"));
             }
         }
 
-        await NotifyChangedAsync();
+        if (changed)
+        {
+            await NotifyChangedAsync();
+        }
     }
 
-    private void ApplyDay(DateOnly day)
+    private bool ApplyDay(DateOnly day)
     {
+        if (DateFrom.TryGetValue(Filter.Name, out var from) && from == day &&
+            DateTo.TryGetValue(Filter.Name, out var to) && to == day)
+        {
+            return false;
+        }
+
         DateFrom[Filter.Name] = day;
         DateTo[Filter.Name] = day;
+        return true;
     }
 
-    private void ApplyAnchor(DateOnly anchor)
-    {
-        DateFrom[Filter.Name] = anchor;
-        DateTo[Filter.Name] = anchor;
-    }
+    private bool ApplyAnchor(DateOnly anchor) => ApplyDay(anchor);
+
+    private DateOnly? _lastNotifiedFrom;
+    private DateOnly? _lastNotifiedTo;
 
     private async Task NotifyChangedAsync()
     {
+        // Same day/anchor re-picked (picker echo, re-render) must not re-trigger
+        // the filter apply pipeline — that is a full reload per commit.
+        DateFrom.TryGetValue(Filter.Name, out var from);
+        DateTo.TryGetValue(Filter.Name, out var to);
+        if (_lastNotifiedFrom == from && _lastNotifiedTo == to)
+        {
+            return;
+        }
+
+        _lastNotifiedFrom = from;
+        _lastNotifiedTo = to;
+
         if (OnDayChanged.HasDelegate)
         {
             await OnDayChanged.InvokeAsync(Filter.Name);

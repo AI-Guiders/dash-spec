@@ -233,6 +233,11 @@ else
     private async Task EmitAsync(string wire)
     {
         _renderedValue = wire;
+        if (string.Equals(wire, Value, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         if (ValueChanged.HasDelegate)
         {
             await ValueChanged.InvokeAsync(wire);
