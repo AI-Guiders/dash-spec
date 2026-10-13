@@ -62,13 +62,16 @@ public static class GrainFilterPresentation
     public static DateOnly NormalizeAnchor(DateOnly selected, string? grain) =>
         PeriodAnchorResolver.ResolveAnchor(selected, grain);
 
-    public static string FormatChipValue(DateOnly from, DateOnly to, string? grain) =>
-        grain?.Trim().ToLowerInvariant() switch
+    public static string FormatChipValue(DateOnly from, DateOnly to, string? grain)
+    {
+        var culture = LabelFormat.ResolveReportCulture();
+        return grain?.Trim().ToLowerInvariant() switch
         {
-            "month" => from.ToString("yyyy-MM"),
-            "year" => from.Year.ToString(),
+            "month" => from.ToString(culture.DateTimeFormat.YearMonthPattern, culture),
+            "year" => from.Year.ToString(culture),
             _ => FormatDayChipValue(from, to),
         };
+    }
 
     private static string FormatDayChipValue(DateOnly from, DateOnly to)
     {
