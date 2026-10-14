@@ -166,7 +166,7 @@ public sealed class LoadDiagnosticsService(
                         text,
                         specFullPath,
                         Path.GetFileName(specFullPath),
-                        options: new SpecLoadOptions { LoadFieldOptions = includeFieldOptions })
+                        options: new DashSpec.Surface.Blazor.Services.Loading.SpecLoadOptions { LoadFieldOptions = includeFieldOptions })
                     .GetAwaiter()
                     .GetResult();
 
