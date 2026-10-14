@@ -8,6 +8,8 @@
 
     <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
 
+    <FSharpCoreImplicitPackageVersion>10.1.401</FSharpCoreImplicitPackageVersion>
+
   </PropertyGroup>
 
 </Project>
