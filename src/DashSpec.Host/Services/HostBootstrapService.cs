@@ -30,7 +30,7 @@ public sealed class HostBootstrapService(
             : new DashSpecTomlRoot();
         if (File.Exists(bootstrapPath))
         {
-            HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(bootstrap, bootstrapPath);
+            HostBootstrapTomlGuard.RejectLegacyToml(bootstrap, bootstrapPath);
         }
 
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
@@ -152,13 +152,13 @@ public sealed class HostBootstrapService(
         }
 
         var overlay = tomlLoader.LoadFile(path);
-        HostBootstrapPlanetTomlGuard.RejectLegacyPlanetToml(overlay, path);
+        HostBootstrapTomlGuard.RejectLegacyToml(overlay, path);
         return tomlLoader.Merge(root, overlay);
     }
 
     private static void ValidateRuntimeConfig(DashSpecTomlRoot root, string configPath)
     {
-        HostBootstrapPlanetTomlGuard.RejectLegacyRuntimeLinks(root, configPath);
+        HostBootstrapTomlGuard.RejectLegacyRuntimeLinks(root, configPath);
 
         if (root.Plugins.Load.Count == 0)
         {

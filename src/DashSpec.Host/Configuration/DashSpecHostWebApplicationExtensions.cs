@@ -8,9 +8,9 @@ using DashSpec.Surface.Blazor.Configuration;
 
 namespace DashSpec.Host.Configuration;
 
-public static class HostPlanetWebApplicationExtensions
+public static class DashSpecHostWebApplicationExtensions
 {
-    public static WebApplication UseDashSpecPlanetHost(this WebApplication app)
+    public static WebApplication UseDashSpecHost(this WebApplication app)
     {
         if (!app.Environment.IsDevelopment())
         {

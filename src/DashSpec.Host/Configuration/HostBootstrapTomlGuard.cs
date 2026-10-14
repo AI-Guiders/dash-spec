@@ -1,8 +1,8 @@
 namespace DashSpec.Host.Configuration;
 
-internal static class HostBootstrapPlanetTomlGuard
+internal static class HostBootstrapTomlGuard
 {
-    internal static void RejectLegacyPlanetToml(DashSpecTomlRoot bootstrap, string? configPath = null)
+    internal static void RejectLegacyToml(DashSpecTomlRoot bootstrap, string? configPath = null)
     {
         var where = FormatConfigPath(configPath);
 

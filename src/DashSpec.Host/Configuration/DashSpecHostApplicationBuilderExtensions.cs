@@ -33,15 +33,15 @@ using OutWit.Database.EntityFramework.Extensions;
 
 namespace DashSpec.Host.Configuration;
 
-/// <summary>Planet deploy entry: bootstrap, DB, git, connectors, viewer wiring (ADR-0099 B3.4).</summary>
-public static class HostPlanetApplicationBuilderExtensions
+/// <summary>DashSpec host deploy entry: bootstrap, DB, git, connectors, viewer wiring (ADR-0099 B3.4).</summary>
+public static class DashSpecHostApplicationBuilderExtensions
 {
-    public static async Task<DashSpecPlanetStartup> AddDashSpecPlanetHostAsync(
+    public static async Task<DashSpecHostStartup> AddDashSpecHostAsync(
         this WebApplicationBuilder builder)
     {
         if (OperatingSystem.IsWindows())
         {
-            builder.Host.UseWindowsService(options => options.ServiceName = "AcmeProductDashSpec");
+            builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
         }
 
         var bootstrapServices = new ServiceCollection();
@@ -171,7 +171,7 @@ public static class HostPlanetApplicationBuilderExtensions
         builder.Services.AddScoped<CatalogUsageService>();
         builder.Services.AddHttpContextAccessor();
 
-        return new DashSpecPlanetStartup
+        return new DashSpecHostStartup
         {
             Bootstrap = bootstrap,
             HostShell = hostShell,
