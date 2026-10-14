@@ -45,8 +45,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Blazor _framework/*.js then 404/500 (see aspnetcore#65468). Publish is fine; local prod smoke needs this.
 builder.WebHost.UseStaticWebAssets();
 
-_ = await builder.AddDashSpecPlanetHostAsync();
+_ = await builder.AddDashSpecHostAsync();
 
 var app = builder.Build();
-app.UseDashSpecPlanetHost();
+app.UseDashSpecHost();
 app.Run();

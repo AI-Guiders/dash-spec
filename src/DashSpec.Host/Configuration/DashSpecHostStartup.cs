@@ -6,7 +6,7 @@ using DashSpec.Host.Security;
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Cold-start planet context shared across Host DI (ADR-0099 B3.4).</summary>
-public sealed class DashSpecPlanetStartup
+public sealed class DashSpecHostStartup
 {
     public required DashSpecTomlRoot Bootstrap { get; init; }
 
