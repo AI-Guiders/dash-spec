@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · **B1–B4 implemented** (viewer in `DashSpec.Surface.Blazor`; Host bootstrap via `IReportCompiler` + project index — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B5 planet product + Surface.Bff/OpenAPI out of scope here) |
+| **Status** | Accepted · **B1–B4 implemented** (viewer in `DashSpec.Surface.Blazor`; Host bootstrap via `IReportCompiler` + project index — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B5 product migration + Surface.Bff/OpenAPI out of scope here) |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
 
@@ -19,7 +19,7 @@ Contracts (`IDashboardSession`, `IDashboardSpecLoader`) live under `DashSpec.Hos
 
 - Testing **platform behavior** without ASP.NET / Blazor / EF
 - Swapping **Surface.Bff** or **Studio** without copying Host internals
-- Planet repos (e.g. product) depending on a **stable compile + session API**, not on Host layout
+- Planet repos (products on DashSpec) depending on a **stable compile + session API**, not on Host layout
 
 [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) adds a **compiler front** (`DashSpecCompiler`, `dashspec.toml` index). That belongs to **Platform**, not to a Blazor deployable.
 
@@ -101,7 +101,7 @@ Contract tests may use:
 - `tests/Fixtures/import-project/` (Demo.*, ADR-0098)
 - `samples/demo/` (`import` + `dashspec.toml` index; `disable_legacy_includes`)
 
-Planet specs (**Demo.*** in acme) are **out of dash-spec** CI; planets run their own contract suite against published Platform packages.
+Planet specs (**product namespaces** in their own repos) are **out of dash-spec** CI; planets run their own contract suite against published Platform packages.
 
 ### 5. Phased delivery (this ADR)
 
@@ -112,9 +112,9 @@ Planet specs (**Demo.*** in acme) are **out of dash-spec** CI; planets run their
 | **B2** | `ReportSession` + `ReportSpecBootstrap` in `Execution.Runtime`; Host deletes duplicate logic | L3 session tests |
 | **B3** | `DashSpec.Surface.Blazor` project; Host references it or rename | Same E2E |
 | **B4** | `IReportCompiler` wraps F# `DashSpecCompiler`; loader uses index | **Done** — L2 `Execution.Compilation.Tests` (`samples/demo`, `Fixtures/import-project`) |
-| **B5** | Planet product: `dashspec.toml` + `import` (acme repo only) | product soak parse in planet CI |
+| **B5** | Product migration: `dashspec.toml` + `import` (product repo only) | product soak parse in planet CI |
 
-**Order vs 0098:** B4 can overlap B2; **planet migration (B5) after B2** so product does not depend on Host internals.
+**Order vs 0098:** B4 can overlap B2; **planet migration (B5) after B2** so a product does not depend on Host internals.
 
 ### 6. What stays on Surface.Blazor only
 
@@ -133,11 +133,11 @@ Planet specs (**Demo.*** in acme) are **out of dash-spec** CI; planets run their
 ## Consequences
 
 - **Product language:** «Platform + Surface.Blazor deploy»; compile/import docs point to Platform API.
-- **product / planets:** integrate via **NuGet/platform refs** + own `dashspec.toml`; no external-specific examples in `dash-spec` samples (Demo.* only).
+- **Products / planets:** integrate via **NuGet/platform refs** + own `dashspec.toml`; no external-specific examples in `dash-spec` samples (Demo.* only).
 - **Regression safety:** L3 contract suite runs on every PR without browser.
 
 ## Summary
 
 - **Fully separate** Platform (compile + session) from **Surface.Blazor** (ASP.NET viewer).
 - **Test Platform by contracts** (L1–L3) without Host or Blazor.
-- **product `import` migration** follows Platform extraction (B5), not the other way around.
+- **Product `import` migration** follows Platform extraction (B5), not the other way around.
