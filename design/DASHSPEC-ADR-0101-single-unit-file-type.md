@@ -41,7 +41,7 @@ end diagram
 
 ### 3. Project file: `.dsproj`
 
-The project file is the **source of truth** for a package: `root_namespace`, `source_roots`, legacy switches, and the `[[index]]` namespace/kind/glob membership ("where the modules are"). Imports and path resolution read the project — no text heuristics, no implicit roots.
+The project file is the **source of truth** for a package: `root_namespace`, `source_roots`, legacy switches, and the `files` / `exclude` membership (modules are found by their `namespace` header) ("where the modules are"). Imports and path resolution read the project — no text heuristics, no implicit roots.
 
 - Canonical name: **`*.dsproj`** (one per package directory; `dashspec.toml` remains a compat marker and is discovered when no `.dsproj` is present).
 - Membership globs live here (per ADR-0089 Phase 2); `exclude` follows in the membership extension.
@@ -50,7 +50,7 @@ The project file is the **source of truth** for a package: `root_namespace`, `so
 ## Consequences
 
 - One extension to discover, glob, watch, and associate with editors: `*.ds`.
-- `dashspec.toml` indexes keep `[[index]] namespace/kind/glob`; globs now match `*.ds` (legacy globs keep working); `kind` stays a filter/verification, not a filename convention.
+- `dashspec.toml` has no index tables; modules are found by their `namespace` header under the source roots. `kind` filters the import, not a filename convention.
 - Path references (`include layout "…"` etc.) accept extension-less paths resolved against `.ds` and legacy suffixes.
 - Mechanical migration: root rewrite (`@x` → `module x`) + file rename; no grammar change inside bodies.
 - Follow-ups: file-directive sigil removal; LSP classification/coloring update; deprecation removal of legacy extensions.
