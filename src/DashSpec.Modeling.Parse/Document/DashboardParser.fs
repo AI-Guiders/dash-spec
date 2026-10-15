@@ -35,7 +35,6 @@ module rec DashboardParser =
     let private skipEnvelopeSection (reader: TokenReader) =
         if reader.TryKeyword "runtime" || reader.TryKeyword "configuration" || reader.TryKeyword "connect" then
             skipBlock reader
-        elif reader.TryModuleInclude().IsSome then ()
         else
             raise (reader.Unexpected())
 

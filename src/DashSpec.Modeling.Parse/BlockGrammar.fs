@@ -78,6 +78,7 @@ module BlockGrammar =
         (values: Dictionary<string, string>)
         (endId: string option)
         =
+        let hasSchema = members |> List.exists (function SchemaProperties _ -> true | _ -> false)
         let schema, allowExtension, allowQuotedKeys =
             match members |> List.tryPick (function SchemaProperties(s, a, q) -> Some(s, a, q) | _ -> None) with
             | Some(s, a, q) -> s, a, q
@@ -100,6 +101,7 @@ module BlockGrammar =
                             if not innerHandled && tryParseMember reader memberDef values then
                                 innerHandled <- true
                         if not innerHandled then
+                            if not hasSchema then raise (reader.Unexpected())
                             MemberGrammar.readPropertyEntry
                                 reader
                                 specs

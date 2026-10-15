@@ -166,10 +166,6 @@ internal static class DocumentParseRegistration
         new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,
-            TolerateIncompleteIncludes = options.TolerateIncompleteIncludes,
-            ModuleLinkMode = (DashSpec.Modeling.Parse.Include.ModuleLinkMode)(int)options.ModuleLinkMode,
-            LinkOnlyReferencedDiagramUnits = options.LinkOnlyReferencedDiagramUnits,
-            AllowLegacyIncludes = options.AllowLegacyIncludes,
             ExtensionBlockKeywords = options.ExtensionBlockKeywords,
             ExtensionBlockPluginIds = options.ExtensionBlockPluginIds,
             PhraseTemplates = options.PhraseTemplates.Select(ToFsharpPhraseTemplate).ToList(),

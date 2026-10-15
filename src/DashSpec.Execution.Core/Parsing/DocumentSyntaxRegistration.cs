@@ -1,3 +1,4 @@
+using DashSpecSyntaxKind = DashSpec.Modeling.Parse.Syntax.DashSpecSyntaxKind;
 using DashSpec.Core.Authoring;
 using FsharpSyntax = DashSpec.Modeling.Parse.Syntax;
 

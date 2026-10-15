@@ -20,8 +20,5 @@ module ReportScopeFlowParser =
             FlowGraphKindRegistry.FlowGraphScope.ReportOrPage
             contextLabel
 
-    let rejectLegacyFlow (reader: TokenReader) (contextLabel: string) =
-        QualifiedFlowBlockParser.tryRejectLegacyFlow reader contextLabel
-
     let toDefinition (builder: FlowGraphSections.Builder) : ScopeFlowDefinition option =
         builder.ToSections() |> Option.map (fun sections -> { Sections = sections })

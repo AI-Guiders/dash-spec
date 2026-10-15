@@ -6,21 +6,13 @@ open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 
-/// <summary>One row in <c>dashspec.toml</c> <c>[[index]]</c> — maps logical namespace + kind to a glob under the project root.</summary>
-type DashSpecProjectIndexEntry =
-    { Namespace: string
-      Kind: ImportKind
-      Glob: string }
-
 /// <summary>Project marker (<c>dashspec.toml</c>) shared by LSP and compile (ADR-0098).</summary>
 type DashSpecProjectConfig =
     { ProjectRoot: string
       RootNamespace: string option
       SourceRoots: IReadOnlyList<string>
-      DisableLegacyIncludes: bool
       Files: IReadOnlyList<string>
-      Exclude: IReadOnlyList<string>
-      Index: IReadOnlyList<DashSpecProjectIndexEntry> }
+      Exclude: IReadOnlyList<string> }
 
 module DashSpecProjectConfig =
 
@@ -46,7 +38,7 @@ module DashSpecProjectConfig =
         |> Array.map (fun part -> trimQuotes (part.Trim()))
         |> Array.toList
 
-    /// <summary>Minimal TOML reader for <c>root_namespace</c>, <c>source_roots</c>, <c>disable_legacy_includes</c>, and <c>[[index]]</c> tables.</summary>
+    /// <summary>Minimal TOML reader for <c>root_namespace</c>, <c>source_roots</c>, <c>disable_legacy_includes</c>, <c>files</c> and <c>exclude</c>.</summary>
     let load (path: string) =
         if String.IsNullOrWhiteSpace path then invalidArg "path" "Path is required."
         if not (File.Exists path) then raise (FileNotFoundException($"dashspec.toml not found: '{path}'.", path))
@@ -55,31 +47,12 @@ module DashSpecProjectConfig =
 
         let mutable rootNamespace: string option = None
         let mutable sourceRoots = [ "." ]
-        let mutable disableLegacy = false
         let files = ResizeArray<string>()
         let exclude = ResizeArray<string>()
-        let index = ResizeArray<DashSpecProjectIndexEntry>()
-        let mutable current: DashSpecProjectIndexEntry option = None
-
-        let flushIndex () =
-            match current with
-            | None -> ()
-            | Some entry ->
-                if String.IsNullOrWhiteSpace entry.Namespace then
-                    raise (DashSpecParseException("dashspec.toml [[index]] requires namespace."))
-                elif String.IsNullOrWhiteSpace entry.Glob then
-                    raise (DashSpecParseException($"dashspec.toml index for '{entry.Namespace}' requires glob."))
-                else
-                    index.Add entry
-                    current <- None
-
         for line in File.ReadAllLines path do
             let trimmed = line.Trim()
 
             if trimmed.StartsWith("#") || trimmed.Length = 0 then ()
-            elif trimmed = "[[index]]" then
-                flushIndex ()
-                current <- Some { Namespace = ""; Kind = ImportKind.Diagrams; Glob = "" }
             elif trimmed.Contains('=') then
                 let parts = trimmed.Split('=', 2)
                 let key = parts.[0].Trim().ToLowerInvariant()
@@ -88,33 +61,15 @@ module DashSpecProjectConfig =
                 match key with
                 | "root_namespace" -> rootNamespace <- Some value
                 | "source_roots" -> sourceRoots <- parseStringList parts.[1]
-                | "disable_legacy_includes" -> disableLegacy <- parseBool value
                 | "files" -> files.AddRange(parseStringList parts.[1])
                 | "exclude" -> exclude.AddRange(parseStringList parts.[1])
-                | "namespace" ->
-                    match current with
-                    | None -> ()
-                    | Some entry -> current <- Some { entry with Namespace = value }
-                | "kind" ->
-                    match current, ImportKindRegistry.tryFindByKeyword value with
-                    | None, _ -> ()
-                    | Some _, None -> raise (DashSpecParseException($"Unknown import kind '{value}' in dashspec.toml."))
-                    | Some entry, Some kind -> current <- Some { entry with Kind = kind }
-                | "glob" ->
-                    match current with
-                    | None -> ()
-                    | Some entry -> current <- Some { entry with Glob = value }
                 | _ -> ()
-
-        flushIndex ()
 
         { ProjectRoot = projectRoot
           RootNamespace = rootNamespace
           SourceRoots = sourceRoots :> IReadOnlyList<_>
-          DisableLegacyIncludes = disableLegacy
           Files = files :> IReadOnlyList<_>
-          Exclude = exclude :> IReadOnlyList<_>
-          Index = index :> IReadOnlyList<_> }
+          Exclude = exclude :> IReadOnlyList<_> }
 
 module DashSpecProjectLocator =
 
@@ -137,11 +92,6 @@ module DashSpecProjectLocator =
         | Some dir ->
             let full = Path.GetFullPath dir
             findProjectFile full |> Option.map DashSpecProjectConfig.load
-
-    let legacyIncludesAllowed (parseOptions: DashSpecParseOptions) (specDirectory: string option) =
-        match tryFindConfig specDirectory with
-        | Some cfg when cfg.DisableLegacyIncludes -> false
-        | _ -> parseOptions.AllowLegacyIncludes
 
 /// <summary>Phase 2 project membership (ADR-0089): `files` positives minus `exclude` — the linkable universe, lex-sorted and deterministic.</summary>
 module DashSpecProjectMembership =

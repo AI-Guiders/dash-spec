@@ -6,9 +6,6 @@ open DashSpec.Modeling.Parse.Lexing
 /// <summary>Parse <c>{kind} flow … end {kind} flow</c> blocks (ADR-0093).</summary>
 module QualifiedFlowBlockParser =
 
-    let private legacyFlowMessage (contextLabel: string) =
-        $"{contextLabel}: use qualified flow blocks (data flow, show flow, wire flow, action flow); bare 'flow' was removed."
-
     /// <summary>Peek whether the next tokens start a qualified flow header (<c>show flow</c>, …).</summary>
     let tryPeekQualifiedStart (reader: TokenReader) =
         match reader.TryPeekIdent() with
@@ -29,12 +26,6 @@ module QualifiedFlowBlockParser =
             reader.ExpectKeyword "flow"
             kind
         | None -> raise (reader.Unexpected "qualified flow block (data flow, show flow, wire flow, action flow)")
-
-    let tryRejectLegacyFlow (reader: TokenReader) (contextLabel: string) =
-        if reader.TryKeyword "flow" then
-            raise (DashSpecParseException(legacyFlowMessage contextLabel))
-
-        ()
 
     let parseBlock
         (reader: TokenReader)

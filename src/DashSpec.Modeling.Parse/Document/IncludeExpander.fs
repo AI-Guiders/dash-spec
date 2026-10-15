@@ -19,9 +19,9 @@ module IncludeExpander =
     let private assignLayoutBoard (board: LayoutBoardDefinition) (moduleKind: DocumentModuleKind) (state: ModuleIncludeState) =
         match moduleKind with
         | DocumentModuleKind.Dashboard ->
-            state.AssignToolbarBoard(board, "!include layout (dashboard toolbar)")
+            state.AssignToolbarBoard(board, "layout (dashboard toolbar)")
         | DocumentModuleKind.Tab ->
-            state.AssignLayoutBoard(board, "!include layout (tab board)")
+            state.AssignLayoutBoard(board, "layout (tab board)")
 
     let private registerDiagramFile (path: string) (specDirectory: string) (state: ModuleIncludeState) =
         let baseDirectory =
@@ -69,8 +69,7 @@ module IncludeExpander =
         | Tooltip
         | Types
         | Flow
-        | IncludeBundle
-        | Transform
+            | Transform
         | Unsupported of string
 
     module UnitFileClassifier =
@@ -106,7 +105,7 @@ module IncludeExpander =
                 | ".dashtooltip" -> Tooltip
                 | ".dashtype" -> Types
                 | ".dashflow" -> Flow
-                | ".dashinclude" -> IncludeBundle
+
                 | ".dashtransform" -> Transform
                 | extension -> Unsupported extension
 
@@ -115,10 +114,10 @@ module IncludeExpander =
         (specDirectory: string)
         (moduleKind: DocumentModuleKind)
         (state: ModuleIncludeState)
-        (tolerateIncompleteIncludes: bool)
+        (importKind: ImportKind option)
         =
         if not (File.Exists path) then
-            raise (FileNotFoundException($"!include not found: '{path}'.", path))
+            raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
         let text = File.ReadAllText path
 
@@ -130,90 +129,17 @@ module IncludeExpander =
         | Tooltip -> registerTooltipFile path state
         | Types -> registerTypesFile path state
         | Flow -> registerDashflowFile path state
-        | IncludeBundle ->
-            raise (DashSpecParseException($"Internal error: .dashinclude '{path}' must be expanded before registration."))
         | Transform ->
-            raise (DashSpecParseException($"!include '{path}': register transform via .dashdiagram or card block, not module include."))
+            raise (DashSpecParseException($"'{path}': register transform via .dashdiagram or card block, not module import."))
         | Unsupported extension ->
-            raise (DashSpecParseException($"!include '{path}': unsupported extension '{extension}'."))
-
-    let linkEnvelope
-        (directives: IReadOnlyList<ModuleLinkDirective>)
-        (specDirectory: string)
-        (moduleKind: DocumentModuleKind)
-        (state: ModuleIncludeState)
-        (parseOptions: DashSpecParseOptions)
-        (reportDiagramIds: ISet<string> option)
-        (reportRowTypes: ISet<string> option)
-        =
-        if directives.Count = 0 then ()
-        else
-            let selective =
-                directives
-                |> Seq.choose (function
-                    | ModuleLinkDirective.DiagramFrom(id, path) -> Some(id, path)
-                    | _ -> None)
-                |> dict
-
-            let paths =
-                IncludeMembership.collectUnitPaths directives specDirectory parseOptions.TolerateIncompleteIncludes
-
-            let requireReferenced = parseOptions.LinkOnlyReferencedDiagramUnits
-
-            for path in paths do
-                let unitText = File.ReadAllText path
-
-                let shouldRegister =
-                    if not requireReferenced then true
-                    else
-                        match UnitFileClassifier.classify path unitText with
-                        | Diagram ->
-                            let diagramId = peekDiagramModuleId unitText
-
-                            selective.ContainsKey diagramId
-                            || (match reportDiagramIds with
-                                | None -> true
-                                | Some ids -> ids.Contains diagramId)
-                        | _ -> true
-
-                if shouldRegister then
-                    registerUnitFile path specDirectory moduleKind state parseOptions.TolerateIncompleteIncludes
-
-            for KeyValue(expectedId, path) in selective do
-                let resolved = IncludeMembership.resolveExistingIncludePath path specDirectory
-
-                if not (File.Exists resolved) then
-                    raise (FileNotFoundException($"using diagram '{expectedId}' from '{path}' was not found.", resolved))
-
-                let baseDirectory =
-                    Path.GetDirectoryName resolved |> Option.ofObj |> Option.defaultValue specDirectory
-
-                let actualId, _ =
-                    SpecIncludeFragmentResolver.foldDiagramModuleWithId (File.ReadAllText resolved) baseDirectory
-
-                if not (String.Equals(actualId, expectedId, StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"using diagram '{expectedId}' from '{path}' exports '@diagram {actualId}', id mismatch."))
-
-    let expand
-        (reference: string)
-        (specDirectory: string)
-        (moduleKind: DocumentModuleKind)
-        (state: ModuleIncludeState)
-        (tolerateIncompleteIncludes: bool)
-        =
-        if String.IsNullOrWhiteSpace reference then
-            invalidArg "reference" "Include reference is required."
-
-        if String.IsNullOrWhiteSpace specDirectory then
-            invalidArg "specDirectory" "Spec directory is required."
-
-        if tolerateIncompleteIncludes && IncludeMembership.isIncomplete reference then
-            ()
-        else
-            let directives = ResizeArray([ ModuleLinkDirective.PathReference reference ])
-
-            linkEnvelope directives specDirectory moduleKind state
-                { DashSpecParseOptions.defaultOptions with
-                    TolerateIncompleteIncludes = tolerateIncompleteIncludes }
-                None
-                None
+            // Mixed module (module <name> without kind) — dispatch by import kind
+            match importKind with
+            | Some ImportKind.Types -> registerTypesFile path state
+            | Some ImportKind.Flows ->
+                // Wrap content in flow syntax for parser compatibility
+                let wrapped = "module flow __imported__\n" + text + "\nend flow"
+                let catalog = TypeCatalog.ofDefinitions (state.ExportRowTypes().Values)
+                let module' = DashflowModuleParser.parseModule wrapped catalog
+                state.RegisterDashflow module'
+            | _ ->
+                raise (DashSpecParseException($"'{path}': unsupported extension '{extension}'."))

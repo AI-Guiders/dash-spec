@@ -130,7 +130,7 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.compileReportModule result.Context
 
-        let cards = TabParser.assignTabs (result.Context.Cards :> IReadOnlyList<_>) tabs
+        let cards = TabParser.assignTabs (fun n -> result.Context.Includes.ResolveName n) (result.Context.Cards :> IReadOnlyList<_>) tabs
 
         let dashflowPath, dashflow = resolveDashflowFields result.Context
 
@@ -182,7 +182,7 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.compileReportModule dashShell
 
-        let cards = TabParser.assignTabs (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
+        let cards = TabParser.assignTabs (fun n -> dashShell.Includes.ResolveName n) (dashShell.Cards :> IReadOnlyList<_>) (dashShell.Tabs :> IReadOnlyList<_>)
 
         let dashflowPath, dashflow = resolveDashflowFields dashShell
 
@@ -333,9 +333,6 @@ module rec DocumentModuleParser =
                     elif reader.TryKeyword "extensions" then
                         skipTopLevelSection reader "extensions"
                         loop ()
-                    elif reader.TryModuleInclude().IsSome then
-                        reader.SkipNewlines()
-                        loop ()
                     else
                         raise (reader.Unexpected())
 
@@ -376,9 +373,6 @@ module rec DocumentModuleParser =
                     elif reader.TryKeyword "extensions" then
                         skipTopLevelSection reader "extensions"
                         loop ()
-                    elif reader.TryModuleInclude().IsSome then
-                        reader.SkipNewlines()
-                        loop ()
                     else
                         raise (reader.Unexpected())
 
@@ -392,7 +386,6 @@ module rec DocumentModuleParser =
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         : ReportCompileContext * SqlDialect * string option * string option * string option =
         let includes = ModuleIncludeState()
-        let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -430,7 +423,6 @@ module rec DocumentModuleParser =
                     DocumentModuleKind.Dashboard
                     specDirectory
                     includes
-                    pendingModuleLinks
                     parseOptions
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
@@ -448,7 +440,6 @@ module rec DocumentModuleParser =
                 ()
             elif reader.TryKeyword "report" then
                 reportTitle <- readOptionalReportTitle reader
-                flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Dashboard specDirectory parseOptions reader
 
                 let created =
                     createShell
@@ -475,8 +466,6 @@ module rec DocumentModuleParser =
             else
                 raise (reader.Unexpected())
 
-        if pendingModuleLinks.Count > 0 then
-            flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Dashboard specDirectory parseOptions reader
 
         if not reader.IsEof then
             BlockSyntax.expectBlockEnd reader "dashboard" (Some dashboardId)
@@ -496,7 +485,6 @@ module rec DocumentModuleParser =
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         =
         let includes = ModuleIncludeState()
-        let pendingModuleLinks = ResizeArray<ModuleLinkDirective>()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -534,7 +522,6 @@ module rec DocumentModuleParser =
                     DocumentModuleKind.Tab
                     specDirectory
                     includes
-                    pendingModuleLinks
                     parseOptions
                     (fun v -> sqlDialect <- v)
                     (fun v -> palettePath <- v)
@@ -552,7 +539,6 @@ module rec DocumentModuleParser =
                 ()
             elif reader.TryKeyword "report" then
                 reportTitle <- readOptionalReportTitle reader
-                flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Tab specDirectory parseOptions reader
 
                 let created =
                     createShell
@@ -583,8 +569,6 @@ module rec DocumentModuleParser =
             else
                 raise (reader.Unexpected())
 
-        if pendingModuleLinks.Count > 0 then
-            flushEnvelopeModuleLinks pendingModuleLinks includes DocumentModuleKind.Tab specDirectory parseOptions reader
 
         if not reader.IsEof then
             BlockSyntax.expectBlockEnd reader "tab" (Some tabId)
@@ -603,7 +587,6 @@ module rec DocumentModuleParser =
         (moduleKind: DocumentModuleKind)
         (specDirectory: string option)
         (includes: ModuleIncludeState)
-        (pendingModuleLinks: ResizeArray<ModuleLinkDirective>)
         (parseOptions: DashSpecParseOptions)
         (setSqlDialect: SqlDialect -> unit)
         (setPalettePath: string option -> unit)
@@ -644,72 +627,12 @@ module rec DocumentModuleParser =
             reader.SkipNewlines()
             true
         else
-            let savedForOffset = reader.SavePosition()
-            reader.SkipNewlines()
-            let directiveOffset = reader.CurrentOffset
-            reader.RestorePosition savedForOffset
-
-            match reader.TryEnvelopeLinkDirective() with
-            | Some directive ->
-                if seenCode.Value then
-                    raise (
-                        DashSpecParseException(
-                            "imports/includes belong at the top of the module header, before runtime/configuration (ADR-0101).",
-                            directiveOffset))
-
-                if not (DashSpecProjectLocator.legacyIncludesAllowed parseOptions specDirectory) then
-                    raise (
-                        DashSpecParseException(
-                            "Legacy !include/import paths are disabled; declare 'namespace' and 'import <kind> from <Namespace>' in the module header (ADR-0098)."
-                        )
-                    )
-
-                match parseOptions.ModuleLinkMode, specDirectory with
-                | ModuleLinkMode.LegacySequential, Some dir ->
-                    match directive with
-                    | ModuleLinkDirective.PathReference reference ->
-                        match DashSpecProjectLocator.tryFindConfig specDirectory with
-                        | Some cfg when cfg.Files.Count > 0 ->
-                            if reference.Contains('*') then
-                                raise (
-                                    DashSpecParseException(
-                                        "Glob includes belong in the project membership (.dsproj files block), not in the module envelope (ADR-0089 Phase 2).",
-                                        directiveOffset))
-
-                            if reference.EndsWith(".dashinclude", StringComparison.OrdinalIgnoreCase) then
-                                raise (
-                                    DashSpecParseException(
-                                        "'.dashinclude' bundles are deprecated; declare members in the project file (.dsproj files block) (ADR-0089 Phase 2).",
-                                        directiveOffset))
-
-                            let resolved = IncludeMembership.resolveExistingIncludePath reference dir
-
-                            if not (DashSpecProjectMembership.isDeclared cfg resolved) then
-                                raise (
-                                    DashSpecParseException(
-                                        $"'{reference}' is not declared in project membership (.dsproj files block) (ADR-0089 Phase 2).",
-                                        directiveOffset))
-
-                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
-                        | _ ->
-                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
-                    | ModuleLinkDirective.DiagramFrom _ ->
-                        IncludeExpander.linkEnvelope [ directive ] dir moduleKind includes parseOptions None None
-
+                if reader.TryKeyword "aliases" then
+                    includes.RegisterAliases(DashSpec.Modeling.Parse.Alias.AliasBlockParser.parse reader)
                     reader.SkipNewlines()
+                    seenCode.Value <- true
                     true
-                | ModuleLinkMode.LegacySequential, None ->
-                    raise (DashSpecParseException("!include requires specDirectory when parsing."))
-                | ModuleLinkMode.MembershipUnion, None ->
-                    raise (DashSpecParseException("Module links require specDirectory when parsing."))
-                | ModuleLinkMode.MembershipUnion, Some _ ->
-                    pendingModuleLinks.Add directive
-                    reader.SkipNewlines()
-                    true
-                | _ ->
-                    raise (DashSpecParseException("Unknown module link mode."))
-            | None ->
-                if reader.TryKeyword "extensions" then
+                elif reader.TryKeyword "extensions" then
                     setModuleExtensions (Card.ModuleExtensionsParser.parse reader)
                     reader.SkipNewlines()
                     true
@@ -727,45 +650,6 @@ module rec DocumentModuleParser =
                     reader.SkipNewlines()
                     true
                 else false
-
-    let private flushEnvelopeModuleLinks
-        (pending: ResizeArray<ModuleLinkDirective>)
-        (includes: ModuleIncludeState)
-        (moduleKind: DocumentModuleKind)
-        (specDirectory: string option)
-        (parseOptions: DashSpecParseOptions)
-        (reader: TokenReader)
-        =
-        if pending.Count = 0 then ()
-        else
-            match specDirectory with
-            | None -> raise (DashSpecParseException("Module links require specDirectory when parsing."))
-            | Some dir ->
-                match parseOptions.ModuleLinkMode with
-                | ModuleLinkMode.LegacySequential ->
-                    for directive in pending do
-                        match directive with
-                        | ModuleLinkDirective.PathReference reference ->
-                            IncludeExpander.expand reference dir moduleKind includes parseOptions.TolerateIncompleteIncludes
-                        | ModuleLinkDirective.DiagramFrom _ ->
-                            IncludeExpander.linkEnvelope [ directive ] dir moduleKind includes parseOptions None None
-
-                    pending.Clear()
-                | ModuleLinkMode.MembershipUnion ->
-                    let reportDiagramIds, reportRowTypes =
-                        ReportReferenceScanner.scanModuleLinkEnvelope reader.ModuleSource dir
-
-                    IncludeExpander.linkEnvelope
-                        pending
-                        dir
-                        moduleKind
-                        includes
-                        parseOptions
-                        (Some reportDiagramIds)
-                        (Some reportRowTypes)
-                    pending.Clear()
-                | _ ->
-                    raise (DashSpecParseException("Unknown module link mode."))
 
     let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option * string option =
         let mutable paletteUse = None
@@ -850,8 +734,6 @@ module rec DocumentModuleParser =
                 reader.SkipNewlines()
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader reportFlowBuilder "Report" then
                 reader.SkipNewlines()
-            elif reader.TryKeyword "flow" then
-                ReportScopeFlowParser.rejectLegacyFlow reader "Report"
             elif reader.TryKeyword "defaults" then
                 parseReportDefaultsBlock reader shell "defaults"
             elif reader.TryKeyword "default" then
@@ -921,8 +803,6 @@ module rec DocumentModuleParser =
                 usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader pageFlowBuilder $"Page '{pageId}'" then
                 reader.SkipNewlines()
-            elif reader.TryKeyword "flow" then
-                ReportScopeFlowParser.rejectLegacyFlow reader $"Page '{pageId}'"
             elif reader.TryKeyword "bind" then
                 if not (reader.TryKeyword "display") then
                     raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
@@ -936,11 +816,6 @@ module rec DocumentModuleParser =
             elif reader.TryKeyword "default" then
                 DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty pageFilterDefaults |> ignore
             else
-                match reader.TryModuleInclude() with
-                | Some includeReference ->
-                    pageLayout <- Some(loadPageLayoutInclude includeReference shell.SpecDirectory)
-                    reader.SkipNewlines()
-                | None ->
                     if reader.TryKeyword "include" then
                         let kind, reference = DiagramModuleParser.readIncludeReference reader
 
@@ -973,20 +848,6 @@ module rec DocumentModuleParser =
 
         reader.SkipNewlines()
 
-    let private loadPageLayoutInclude (reference: string) (specDirectory: string option) =
-        match specDirectory with
-        | None ->
-            raise (DashSpecParseException("!include layout requires spec directory when parsing (path to the .dashspec folder)."))
-        | Some dir ->
-            let path = DashSpec.Modeling.Parse.SpecIncludeResolver.resolvePath reference dir
-            let resolved =
-                if path.EndsWith(".dashlayout", StringComparison.OrdinalIgnoreCase) then path
-                else Path.ChangeExtension(path, ".dashlayout")
-
-            if not (File.Exists resolved) then
-                raise (FileNotFoundException($"!include not found: '{reference}'.", resolved))
-
-            LayoutModuleParser.parseLayoutFile (File.ReadAllText resolved)
 
     let private parseStandaloneBlock (reader: TokenReader) (shell: ReportCompileContext) =
         BlockSyntax.beginBlock reader

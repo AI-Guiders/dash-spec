@@ -16,7 +16,6 @@
     <Compile Include="Lexing\TokenKind.fs" />
     <Compile Include="Lexing\Token.fs" />
     <Compile Include="Lexing\DashSpecKeywords.fs" />
-    <Compile Include="Include\ModuleLinkTypes.fs" />
     <Compile Include="Lexing\BlockCloseStyle.fs" />
     <Compile Include="Lexing\DashSpecLexer.fs" />
     <Compile Include="Lexing\TokenReader.fs" />
@@ -27,6 +26,8 @@
     <Compile Include="Syntax\DashSpecBlockKeyword.fs" />
     <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
+    <Compile Include="Table\TableLiteral.fs" />
+    <Compile Include="Alias\AliasBlockParser.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />
     <Compile Include="Formatting\BlockSurfaceLineClassifier.fs" />
     <Compile Include="Formatting\BlockFormatterRules.fs" />
@@ -90,7 +91,6 @@
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
     <Compile Include="SpecIncludeResolver.fs" />
-    <Compile Include="Include\IncludeMembership.fs" />
     <Compile Include="DataFlow\DashflowResolver.fs" />
     <Compile Include="DataFlow\DashflowPathResolver.fs" />
     <Compile Include="Include\SpecIncludeTypes.fs" />
@@ -122,7 +122,6 @@
     <Compile Include="Document\ModuleHeaderParser.fs" />
     <Compile Include="Document\DocumentTypes.fs" />
     <Compile Include="Project\DashSpecProjectConfig.fs" />
-    <Compile Include="Project\DashSpecProjectIndex.fs" />
     <Compile Include="Document\ReportTimePolicyParser.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />

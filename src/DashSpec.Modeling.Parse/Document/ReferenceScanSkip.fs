@@ -178,8 +178,6 @@ module internal ReferenceScanSkip =
                 skipBalancedBlock reader "default" None
             elif reader.TryKeyword "include" then
                 consumeLine reader
-            elif reader.TryModuleInclude().IsSome then
-                reader.SkipNewlines()
             elif reader.TryKeyword "phase" then
                 skipPhase reader diagramIds rowTypes
             else
@@ -421,8 +419,6 @@ module internal ReferenceScanSkip =
                     skipEnvelopeSection reader "connect"
                 elif reader.TryKeyword "extensions" then
                     skipEnvelopeSection reader "extensions"
-                elif reader.TryEnvelopeLinkDirective().IsSome then
-                    reader.SkipNewlines()
                 else
                     consumeLine reader
 

@@ -16,6 +16,7 @@ type TokenKind =
     | IanaZone
     | Comma
     | Colon
+    | TableRow
     | FlowArrow
     | LBracket
     | RBracket

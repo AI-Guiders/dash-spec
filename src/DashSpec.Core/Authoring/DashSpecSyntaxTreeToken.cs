@@ -1,3 +1,4 @@
+using DashSpecSyntaxKind = DashSpec.Modeling.Parse.Syntax.DashSpecSyntaxKind;
 namespace DashSpec.Core.Authoring;
 
 /// <summary>Leaf token attached to a syntax tree node.</summary>

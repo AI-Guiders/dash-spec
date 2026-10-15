@@ -55,6 +55,7 @@ module SyntaxTokenClassifier =
         | TokenKind.HexColor | TokenKind.RelativeDay | TokenKind.TimeShift -> DashSpecSyntaxKind.Number
         | TokenKind.At | TokenKind.Bang -> DashSpecSyntaxKind.Keyword
         | TokenKind.Eq -> DashSpecSyntaxKind.Operator
+        | TokenKind.TableRow -> DashSpecSyntaxKind.Table
         | TokenKind.Ident -> classifyIdent tokens index
         | TokenKind.LBrace | TokenKind.RBrace | TokenKind.Comma | TokenKind.Colon | TokenKind.FlowArrow | TokenKind.DotDot | TokenKind.Dot | TokenKind.Slash
         | TokenKind.LBracket | TokenKind.RBracket | TokenKind.LParen | TokenKind.RParen -> DashSpecSyntaxKind.Punctuation
