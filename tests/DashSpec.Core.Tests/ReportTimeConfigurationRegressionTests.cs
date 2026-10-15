@@ -17,7 +17,6 @@ public sealed class ReportTimeConfigurationRegressionTests
         module tab overview
           configuration
             sqldialect = tsql
-            palette = "palettes/demo-apps.ds"
             work_time_column = bucket_start_utc
           end configuration
           report
@@ -37,7 +36,7 @@ public sealed class ReportTimeConfigurationRegressionTests
         MergeReferencedTabModules = false,
     };
 
-    [Fact(Skip = "ADR-0102: legacy configuration palette removed; migrate to import palettes")]
+    [Fact]
     public void Document_parser_maps_work_time_column_from_configuration()
     {
         var document = DashSpecTestRowTypes.ParseDashboard(EmbeddedOverviewConfigurationTab, specDirectory: null, TabParseOptions);

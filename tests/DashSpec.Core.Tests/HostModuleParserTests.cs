@@ -58,16 +58,17 @@ public sealed class HostModuleParserTests
         Assert.Contains("settings", host.Surfaces);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_host_with_bang_include_layout()
+    [Fact]
+    public void Parse_host_with_imported_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashhost-include-" + Guid.NewGuid().ToString("N"));
         var layoutsDir = Path.Combine(dir, "layouts");
         Directory.CreateDirectory(layoutsDir);
         File.WriteAllText(
-            Path.Combine(layoutsDir, "host-topbar.dashlayout"),
+            Path.Combine(layoutsDir, "host-topbar.ds"),
             """
             module layout tb
+            namespace Demo.HostTopbar
             scope host
             [ catalog nav ]
             """);
@@ -75,7 +76,7 @@ public sealed class HostModuleParserTests
         const string text = """
             module host demo
             catalog "catalogs/demo.dashcatalog"
-            !include "layouts/host-topbar.dashlayout"
+            import layouts from Demo.HostTopbar
             end host
             """;
 

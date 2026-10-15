@@ -150,50 +150,53 @@ public sealed class ReportPagesAndCatalogTests
         Assert.Null(catalog.Entries[1].GroupId);
     }
 
-    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
+    [Fact]
     public void Parse_merged_paged_tab_module_allows_non_paged_sibling_tab()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-pages-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
         {
-            File.WriteAllText(Path.Combine(dir, "overview.dashspec"), """
+            File.WriteAllText(Path.Combine(dir, "overview.ds"), """
                 module tab overview
-                  report
-                  title = "Overview"
-                  card plain as "Plain"
-                  diagram bar
-                  x = a y = b
-                  end bar
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  end report
+                namespace Paged.Tabs
+                report
+                title = "Overview"
+                card plain as "Plain"
+                diagram bar
+                x = a y = b
+                end bar
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
+                end card
+                end report
                 end tab
                 """);
 
-            File.WriteAllText(Path.Combine(dir, "paged.dashspec"), """
+            File.WriteAllText(Path.Combine(dir, "paged.ds"), """
                 module tab paged_reports
-                  report
-                  title = "Paged reports"
-                  page p1
-                  card paged as "Paged"
-                  diagram bar
-                  x = a y = b
-                  end bar
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  end page
-                  end report
+                namespace Paged.Tabs
+                report
+                title = "Paged reports"
+                page p1
+                card paged as "Paged"
+                diagram bar
+                x = a y = b
+                end bar
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
+                end card
+                end page
+                end report
                 end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard soak
                   import types from Fixtures.QueryRowTypes
+                  import tabs from Paged.Tabs
                   report
                   title = "Soak"
-                  tab overview dashspec "overview.dashspec"
-                  tab paged_reports dashspec "paged.dashspec"
+                  tab overview as "Overview"
+                  tab paged_reports as "Paged reports"
                   end report
                 end dashboard
                 """, dir);
@@ -211,49 +214,17 @@ public sealed class ReportPagesAndCatalogTests
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
+    [Fact]
     public void Parse_layout_module_accepts_scope_page()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "dashspec-page-scope-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(Path.Combine(dir, "layouts"));
-        try
-        {
-            File.WriteAllText(Path.Combine(dir, "layouts", "page-grid.dashlayout"), """
-                module layout page_grid
-                scope page
-                [ a b ]
-                """);
+        var board = LayoutModuleParser.ParseLayoutFile("""
+            module layout page_grid
+            scope page
+            [ a b ]
+            """);
 
-            var doc = DashSpecTestRowTypes.ParseDashboard("""
-                module tab t
-                  report
-                  title = "T"
-                  page overview
-                  include layout "layouts/page-grid"
-                  card a as "A"
-                  diagram bar
-                  x = a y = b
-                  end bar
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  card b as "B"
-                  diagram bar
-                  x = a y = b
-                  end bar
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  end page
-                  end report
-                end tab
-                """, dir);
-
-            Assert.NotNull(doc.Pages);
-            Assert.Equal(LayoutScope.Page, doc.Pages[0].LayoutBoard!.ModuleScope);
-        }
-        finally
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        Assert.Equal(LayoutScope.Page, board.ModuleScope);
+        Assert.Equal(["a", "b"], board.Rows[0]);
     }
 
     [Fact]

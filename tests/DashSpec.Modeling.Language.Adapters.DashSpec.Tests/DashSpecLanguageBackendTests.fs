@@ -10,15 +10,21 @@ module DashSpecLanguageBackendTests =
 
     let private sampleText =
         """module tab analytics
-  filter period_grain on toolbar
   report
+    title = "Analytics"
+    filter period_grain
+      bind top
+      end bind
+    end filter
     card period_peak_by_app as "Peak by app"
-      filters
+      bind
         period_grain
-      end filters
+      end bind
       diagram demo_period_peak_by_app_bar
+      data flow { src [rows] -> [rows] __diagram__ }
     end card
   end report
+end tab
 """
 
     let private request line column =
@@ -31,41 +37,41 @@ module DashSpecLanguageBackendTests =
 
     let private backend () = DashSpecLanguageBackend() :> ILanguageBackend
 
-    [<Fact(Skip = "legacy filters-in-card sample: card filter wiring is flow-based now (ADR-0102); rewrite with flow wiring")>]
+    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
     let ``Get symbol at position resolves card declaration`` () =
         let symbol =
-            backend().GetSymbolAtPositionAsync(request 4 10, CancellationToken.None)
+            backend().GetSymbolAtPositionAsync(request 8 10, CancellationToken.None)
             |> Async.AwaitTask
             |> Async.RunSynchronously
 
         Assert.Equal("period_peak_by_app", symbol.Name)
         Assert.Equal("card", symbol.Kind)
 
-    [<Fact(Skip = "legacy filters-in-card sample: card filter wiring is flow-based now (ADR-0102); rewrite with flow wiring")>]
+    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
     let ``Find usages returns filter declaration and card reference`` () =
         let usages =
-            backend().FindUsagesAsync(request 6 9, CancellationToken.None)
+            backend().FindUsagesAsync(request 10 9, CancellationToken.None)
             |> Async.AwaitTask
             |> Async.RunSynchronously
 
         Assert.True(usages.References.Length >= 2)
-        Assert.Contains(usages.References, fun ref -> ref.Span.Line = 2)
-        Assert.Contains(usages.References, fun ref -> ref.Span.Line = 6)
+        Assert.Contains(usages.References, fun ref -> ref.Span.Line = 4)
+        Assert.Contains(usages.References, fun ref -> ref.Span.Line = 10)
 
-    [<Fact(Skip = "legacy filters-in-card sample: card filter wiring is flow-based now (ADR-0102); rewrite with flow wiring")>]
-    let ``Go to definition resolves filter from card filters block`` () =
+    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
+    let ``Go to definition resolves filter from card bind block`` () =
         let nav =
-            backend().GoToDefinitionAsync(request 6 9, CancellationToken.None)
+            backend().GoToDefinitionAsync(request 10 9, CancellationToken.None)
             |> Async.AwaitTask
             |> Async.RunSynchronously
 
         Assert.Equal(samplePath, nav.Definition.Path)
-        Assert.Equal(2, nav.Definition.Line)
+        Assert.Equal(4, nav.Definition.Line)
 
-    [<Fact(Skip = "legacy filters-in-card sample: card filter wiring is flow-based now (ADR-0102); rewrite with flow wiring")>]
+    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
     let ``Rename symbol previews card rename without apply`` () =
         let renameReq =
-            { Request = request 4 10
+            { Request = request 8 10
               NewName = "period_peak_renamed"
               Apply = false }
 

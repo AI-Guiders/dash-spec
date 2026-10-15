@@ -54,7 +54,7 @@ public sealed class ReportPreviewSessionTests
         Assert.Equal(before, after);
     }
 
-    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
+    [Fact]
     public async Task GetPayloadFingerprintAsync_changes_when_card_count_differs()
     {
         var workspace = Path.Combine(Path.GetTempPath(), "dashspec-preview-" + Guid.NewGuid().ToString("N"));
@@ -64,6 +64,7 @@ public sealed class ReportPreviewSessionTests
             var flowPath = Path.Combine(workspace, "fixture.ds");
             await File.WriteAllTextAsync(flowPath, """
                 module flow fixture
+                namespace PreviewFlow
 
                 source fixture_src {
                   use provider sqlserver
@@ -115,8 +116,9 @@ public sealed class ReportPreviewSessionTests
 
         return $"""
             module dashboard preview_tab
+              import flows from PreviewFlow as preview_flow
               connect
-                flow "fixture.ds"
+                use flow preview_flow
               end connect
               runtime
               manifest = "cfg.toml"

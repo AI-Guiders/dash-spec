@@ -54,15 +54,17 @@ public sealed class DashSpecProjectTests
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_accepts_import_keyword_alias_for_include()
+    [Fact]
+    public void Parse_accepts_namespace_import_of_diagram_unit()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-import-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "diagrams"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
+            File.WriteAllText(Path.Combine(dir, "diagrams", "activity.ds"), """
                 module diagram activity
+                namespace Diagrams
+
                 bar
                   category = app_name
                   value = utilization_pct
@@ -72,7 +74,7 @@ public sealed class DashSpecProjectTests
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  import "diagrams/activity.dashdiagram"
+                  import diagrams from Diagrams
                   report
                   title = "T"
                   card c as "C"

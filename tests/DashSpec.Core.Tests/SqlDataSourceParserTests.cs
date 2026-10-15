@@ -18,11 +18,18 @@ public class SqlDataSourceParserTests
         moduleName == "fixture.ds" ? "use flow fixture_flow" : $"flow \"{moduleName}\"";
 
     private static string Spec(string moduleName, string sourceId) =>
+        Spec(BindLine(moduleName), sourceId, flowImportLine: null);
+
+    private static string ImportedFlowSpec(string flowNamespace, string flowAlias, string sourceId) =>
+        Spec($"use flow {flowAlias}", sourceId, $"import flows from {flowNamespace} as {flowAlias}");
+
+    private static string Spec(string flowBinding, string sourceId, string? flowImportLine) =>
         $$"""
         module dashboard t
               import types from Fixtures.QueryRowTypes
+        {{(flowImportLine is null ? "" : $"      {flowImportLine}")}}
           connect
-          {{BindLine(moduleName)}}
+          {{flowBinding}}
           end connect
           report
           title = "T"
@@ -88,12 +95,14 @@ public class SqlDataSourceParserTests
         Assert.Contains("DELETE is ok", query.Sql);
     }
 
-    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
+    [Fact]
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
         var dir = NewSpecDir();
-        File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
+        File.WriteAllText(Path.Combine(dir, "broken.ds"), """
             module flow broken
+            namespace BrokenRows
+
             source s {
               use provider infer
               from sql "SELECT 1"
@@ -106,19 +115,21 @@ public class SqlDataSourceParserTests
             """);
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DashSpecTestRowTypes.ParseDashboard(Spec("broken.dashflow", "s"), dir));
+            DashSpecTestRowTypes.ParseDashboard(ImportedFlowSpec("BrokenRows", "broken_flow", "s"), dir));
         Assert.Contains("query or file", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
+    [Fact]
     public void Parse_sql_datasource_file_and_block_query()
     {
         var dir = NewSpecDir();
         var sqlPath = Path.Combine(dir, "queries", "top.sql");
         Directory.CreateDirectory(Path.GetDirectoryName(sqlPath)!);
         File.WriteAllText(sqlPath, "SELECT user_sam, MAX(n) AS peak FROM t GROUP BY user_sam");
-        File.WriteAllText(Path.Combine(dir, "src.dashflow"), """
+        File.WriteAllText(Path.Combine(dir, "src.ds"), """
             module flow src
+            namespace SrcFlow
+
             source s_file {
               use provider infer
               from sql file "queries/top.sql"
@@ -143,11 +154,11 @@ public class SqlDataSourceParserTests
             end flow
             """);
 
-        var fileCard = DashSpecTestRowTypes.ParseDashboard(Spec("src.dashflow", "s_file"), dir).Cards[0];
+        var fileCard = DashSpecTestRowTypes.ParseDashboard(ImportedFlowSpec("SrcFlow", "src_flow", "s_file"), dir).Cards[0];
         Assert.Equal(DataSourceSqlCarrier.File, fileCard.DataSource.SqlCarrier);
         Assert.Equal("queries/top.sql", fileCard.DataSource.Value);
 
-        var blockCard = DashSpecTestRowTypes.ParseDashboard(Spec("src.dashflow", "s_block"), dir).Cards[0];
+        var blockCard = DashSpecTestRowTypes.ParseDashboard(ImportedFlowSpec("SrcFlow", "src_flow", "s_block"), dir).Cards[0];
         Assert.Equal(DataSourceSqlCarrier.Query, blockCard.DataSource.SqlCarrier);
         Assert.Contains("COUNT(*)", blockCard.DataSource.Value);
     }

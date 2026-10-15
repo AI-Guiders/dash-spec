@@ -490,30 +490,6 @@ public class DashboardParseTests
         Assert.Equal("list", card.Inspect.Format);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_heatmap_rejects_legacy_tooltip_properties()
-    {
-        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            module dashboard t
-                  import types from Fixtures.QueryRowTypes
-              report
-              title = "T"
-              card h as "H"
-              diagram heatmap
-              x = usage_date
-              y = user_name
-              value = peak_concurrent_apps
-              tooltip = peak_apps
-              end heatmap
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
-              end card
-              end report
-            end dashboard
-"""));
-
-        Assert.Contains("ADR-0029", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
     [Fact]
     public void Parse_heatmap_allows_extension_presentation_properties()
     {
