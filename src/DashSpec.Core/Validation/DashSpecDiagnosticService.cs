@@ -1,6 +1,7 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
+using FsharpDocument = DashSpec.Modeling.Parse.Document;
 
 namespace DashSpec.Core.Validation;
 
@@ -39,7 +40,7 @@ public static class DashSpecDiagnosticService
 
         try
         {
-            return ValidateByExtension(text, filePath, specDirectory, parseOptions);
+            return ValidateByFileKind(text, filePath, specDirectory, parseOptions);
         }
         catch (DashSpecParseException ex)
         {
@@ -83,30 +84,47 @@ public static class DashSpecDiagnosticService
         return TextPositions.ToDiagnostic(text, ex.Message, offset);
     }
 
-    private static IReadOnlyList<DashSpecDiagnostic> ValidateByExtension(
+    /// <summary>
+    /// A `.ds` file is routed by the kind in its module header (ADR-0101); anything else is treated as a document.
+    /// </summary>
+    private static IReadOnlyList<DashSpecDiagnostic> ValidateByFileKind(
         string text,
         string filePath,
         string specDirectory,
         DashSpecParseOptions parseOptions)
     {
-        switch (Path.GetExtension(filePath).ToLowerInvariant())
+        if (!Path.GetExtension(filePath).Equals(".ds", StringComparison.OrdinalIgnoreCase))
         {
-            case ".dashcatalog":
-                return LintCatalog(text, filePath, specDirectory, parseOptions);
-            case ".dashdiagram":
+            var document = DashSpecParser.Parse(text, specDirectory, parseOptions);
+            return ToDiagnostics(ResolutionLint.Analyze(document));
+        }
+
+        var (unitKind, _) = FsharpDocument.UnitSource.tryKindAndId(text);
+
+        switch (unitKind.ToLowerInvariant())
+        {
+            case "diagram":
                 DiagramModuleParser.ParseDiagramFile(text, specDirectory);
                 return [];
-            case ".dashpresentation":
+            case "presentation":
                 PresentationModuleParser.ParsePresentationFile(text, specDirectory);
                 return [];
-            case ".dashpalette":
+            case "palette":
                 PaletteModuleParser.ParsePaletteFile(text);
                 return [];
-            case ".dashtransform":
+            case "transform":
                 TransformModuleParser.ParseTransformFile(text);
                 return [];
-            case ".dashlayout":
+            case "layout":
                 LayoutModuleParser.ParseLayoutFile(text);
+                return [];
+            case "tooltip":
+                TooltipModuleParser.ParseTooltipFile(text);
+                return [];
+            case "catalog":
+                return LintCatalog(text, filePath, specDirectory, parseOptions);
+            case "host":
+                HostModuleParser.Parse(text, specDirectory);
                 return [];
             default:
                 var document = DashSpecParser.Parse(text, specDirectory, parseOptions);

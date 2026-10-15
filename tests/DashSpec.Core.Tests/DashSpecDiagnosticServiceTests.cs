@@ -25,7 +25,7 @@ public sealed class DashSpecDiagnosticServiceTests
 
         var diagnostics = DashSpecDiagnosticService.ValidateText(
             text,
-            "sample.dashdiagram",
+            "sample.ds",
             Environment.CurrentDirectory);
 
         Assert.Empty(diagnostics);
@@ -42,7 +42,7 @@ public sealed class DashSpecDiagnosticServiceTests
 
         var diagnostics = DashSpecDiagnosticService.ValidateText(
             text,
-            "sample.dashdiagram",
+            "sample.ds",
             Environment.CurrentDirectory);
 
         Assert.Single(diagnostics);
@@ -68,16 +68,13 @@ public sealed class DashSpecDiagnosticServiceTests
                 StringComparison.Ordinal));
     }
 
-    [Fact(Skip = "ADR-0101 units are .ds; the validator dispatches on legacy unit extensions - editor parity epic")]
+    [Fact]
     public void ValidateFile_DetailTableUnit_NoFalsePositiveOnValidFile()
     {
         var path = Path.Combine(SamplesDemo, "diagrams", "events-detail-table.ds");
 
-        // ValidateByExtension dispatches on the legacy unit extensions (.dashdiagram, .dashpalette, …), so a
-        // current `.ds` unit (ADR-0101) falls through to the document parser and comes back as
-        // "DashSpec requires block module format: module dashboard id … / module tab id …". Part of the
-        // deferred editor/authoring epic (dispatch by module kind, not by extension).
         var diagnostics = DashSpecDiagnosticService.ValidateFile(path);
+
         Assert.Empty(diagnostics);
     }
 
