@@ -12,6 +12,7 @@ module CardInteriorFlowParseTests =
     let internal flowTextForReuse =
         """
 module flow peak
+    namespace Test.Flows
 
 source utilization {
   use provider sqlserver
@@ -34,18 +35,19 @@ source drill_src {
 end flow
 """
 
-    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
+    [<Fact>]
     let ``card flow links module ports and filters to slots`` () =
         let dir = Path.Combine(Path.GetTempPath(), "card-interior-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), flowTextForReuse)
+        File.WriteAllText(Path.Combine(dir, "peak.ds"), flowTextForReuse)
 
         let specText =
             """
 module tab card_interior_flow
+  import flows from Test.Flows as peak_flow
 
 connect
-  flow "peak.dashflow"
+  use flow peak_flow
 end connect
 
 report "Interior"

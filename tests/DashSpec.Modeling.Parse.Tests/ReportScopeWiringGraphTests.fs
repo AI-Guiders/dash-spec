@@ -8,18 +8,19 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopeWiringGraphTests =
 
-    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
+    [<Fact>]
     let ``parse exposes wiring graph with report scope flow and card interior links`` () =
         let dir = Path.Combine(Path.GetTempPath(), "report-scope-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), CardInteriorFlowParseTests.flowTextForReuse)
+        File.WriteAllText(Path.Combine(dir, "peak.ds"), CardInteriorFlowParseTests.flowTextForReuse)
 
         let specText =
             """
 module tab report_scope_flow
+  import flows from Test.Flows as peak_flow
 
 connect
-  flow "peak.dashflow"
+  use flow peak_flow
 end connect
 
 report "Scope"
