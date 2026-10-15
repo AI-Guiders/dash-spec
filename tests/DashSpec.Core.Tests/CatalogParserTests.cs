@@ -14,10 +14,10 @@ public sealed class CatalogParserTests
             default soak
             
             entry soak as "Dev Soak"
-              dashspec "demo-soak.dashspec"
+              dashspec "demo-soak.ds"
             
             entry analytics as "Analytics"
-              dashspec "demo-analytics.dashspec"
+              dashspec "demo-analytics.ds"
             """;
 
         var catalog = CatalogParser.Parse(text);
@@ -26,7 +26,7 @@ public sealed class CatalogParserTests
         Assert.Equal("soak", catalog.DefaultEntryId);
         Assert.Equal(2, catalog.Entries.Count);
         Assert.Equal("Dev Soak", catalog.Entries[0].Title);
-        Assert.Equal("demo-soak.dashspec", catalog.Entries[0].DashspecPath);
+        Assert.Equal("demo-soak.ds", catalog.Entries[0].DashspecPath);
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public sealed class CatalogParserTests
     {
         const string text = """
             module catalog demo
-            entry overview as "Overview" dashspec "demo-soak.dashspec"
+            entry overview as "Overview" dashspec "demo-soak.ds"
             """;
 
         var catalog = CatalogParser.Parse(text);
@@ -49,7 +49,7 @@ public sealed class CatalogParserTests
         const string text = """
             module catalog demo
             entry versions as "Версии ПО"
-              dashspec "demo-soak.dashspec"
+              dashspec "demo-soak.ds"
               tab versions
             """;
 

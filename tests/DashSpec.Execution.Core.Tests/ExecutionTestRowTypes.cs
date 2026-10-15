@@ -14,7 +14,7 @@ internal static class ExecutionTestRowTypes
     internal static string EnsureFixtureRowCatalog(string dashspecText)
     {
         if (!dashspecText.Contains("FixtureRow", StringComparison.Ordinal)
-            && !dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+            && !dashspecText.Contains("fixture.ds", StringComparison.Ordinal)
             && !dashspecText.Contains("fixture_flow", StringComparison.Ordinal))
         {
             return dashspecText;
@@ -22,7 +22,7 @@ internal static class ExecutionTestRowTypes
 
         var needsTypes = !dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
             && !dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase);
-        var needsFlow = (dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+        var needsFlow = (dashspecText.Contains("fixture.ds", StringComparison.Ordinal)
                 || dashspecText.Contains("fixture_flow", StringComparison.Ordinal))
             && !dashspecText.Contains("Fixtures.Flow", StringComparison.Ordinal);
         var hasTypesImport = dashspecText.Contains("import types from Fixtures.QueryRowTypes", StringComparison.OrdinalIgnoreCase);
@@ -99,13 +99,13 @@ internal static class ExecutionTestRowTypes
             return;
         }
 
-        var typesPath = Path.Combine(directory, "query-row-types.dashtype");
+        var typesPath = Path.Combine(directory, "query-row-types.ds");
         if (File.Exists(typesPath))
         {
             return;
         }
 
-        var source = Path.Combine(FixtureDir, "query-row-types.dashtype");
+        var source = Path.Combine(FixtureDir, "query-row-types.ds");
         Directory.CreateDirectory(directory);
         File.Copy(source, typesPath, overwrite: true);
         var toml = Path.Combine(FixtureDir, "dashspec.toml");

@@ -72,7 +72,7 @@ internal static class DashSpecTestRowTypes
     internal static string EnsureFixtureRowCatalog(string dashspecText)
     {
         if (!dashspecText.Contains("FixtureRow", StringComparison.Ordinal)
-            && !dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+            && !dashspecText.Contains("fixture.ds", StringComparison.Ordinal)
             && !dashspecText.Contains("fixture_flow", StringComparison.Ordinal))
         {
             return dashspecText;
@@ -80,7 +80,7 @@ internal static class DashSpecTestRowTypes
 
         var needsTypes = !dashspecText.Contains("QueryRowTypes", StringComparison.OrdinalIgnoreCase)
             && !dashspecText.Contains("type FixtureRow", StringComparison.OrdinalIgnoreCase);
-        var needsFlow = (dashspecText.Contains("fixture.dashflow", StringComparison.Ordinal)
+        var needsFlow = (dashspecText.Contains("fixture.ds", StringComparison.Ordinal)
                 || dashspecText.Contains("fixture_flow", StringComparison.Ordinal)
                 || dashspecText.Contains("fixture_src", StringComparison.Ordinal))
             && !dashspecText.Contains("Fixtures.Flow", StringComparison.Ordinal);
@@ -184,14 +184,14 @@ internal static class DashSpecTestRowTypes
 
     internal static void SeedFixtureTypesDirectory(string specDirectory)
     {
-        var source = Path.Combine(FixtureDir, "query-row-types.dashtype");
+        var source = Path.Combine(FixtureDir, "query-row-types.ds");
         if (!File.Exists(source))
         {
             throw new FileNotFoundException($"Test fixture row types not found at '{source}'.");
         }
 
         Directory.CreateDirectory(specDirectory);
-        File.Copy(source, Path.Combine(specDirectory, "query-row-types.dashtype"), overwrite: true);
+        File.Copy(source, Path.Combine(specDirectory, "query-row-types.ds"), overwrite: true);
         var toml = Path.Combine(FixtureDir, "dashspec.toml");
         if (File.Exists(toml))
         {
@@ -206,7 +206,7 @@ internal static class DashSpecTestRowTypes
             return;
         }
 
-        var typesPath = Path.Combine(directory, "query-row-types.dashtype");
+        var typesPath = Path.Combine(directory, "query-row-types.ds");
         if (!File.Exists(typesPath))
         {
             SeedFixtureTypesDirectory(directory);

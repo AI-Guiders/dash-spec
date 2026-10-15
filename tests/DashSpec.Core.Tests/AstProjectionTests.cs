@@ -41,7 +41,7 @@ public class AstProjectionTests
         return string.Join("|", parts);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_emits_module_unit_and_import_nodes()
     {
         var tree = DashSpecSurfaceSyntax.parse(Sample);

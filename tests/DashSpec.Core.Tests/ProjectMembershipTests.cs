@@ -24,7 +24,6 @@ public class ProjectMembershipTests
             root,
             null,
             new[] { "." },
-            true,
             files ?? new[] { "diagrams/*.dashdiagram", "rows.dashtype" },
             exclude ?? new[] { "diagrams/_scratch/*" });
 

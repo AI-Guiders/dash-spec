@@ -6,7 +6,7 @@ open DashSpec.Modeling.Parse.Syntax
 module SyntaxTreeTests =
 
     let private nestedTabText =
-        "        tab analytics as \"Analytics\" dashspec \"demo-analytics.dashspec\"\n            tab detail as \"Detail\"\n                cards\n                    events_detail\n"
+        "        tab analytics as \"Analytics\" dashspec \"demo-analytics.ds\"\n            tab detail as \"Detail\"\n                cards\n                    events_detail\n"
 
     [<Fact>]
     let ``parse builds nested block nodes`` () =

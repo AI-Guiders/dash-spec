@@ -58,7 +58,7 @@ public sealed class HostModuleParserTests
         Assert.Contains("settings", host.Surfaces);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_host_with_bang_include_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashhost-include-" + Guid.NewGuid().ToString("N"));

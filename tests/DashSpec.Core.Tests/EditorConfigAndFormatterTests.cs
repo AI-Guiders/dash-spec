@@ -129,7 +129,7 @@ public sealed class DashSpecBlockFormatterTests
             end runtime
             configuration
             sqldialect = tsql
-            palette = "palettes/demo-apps.dashpalette"
+            palette = "palettes/demo-apps.ds"
             end configuration
             !include "diagrams/*.dashdiagram"
             connect
@@ -159,7 +159,7 @@ public sealed class DashSpecBlockFormatterTests
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
             "samples", "demo",
-            "demo-soak.dashspec"));
+            "demo-soak.ds"));
 
         var text = File.ReadAllText(path);
         var formatted = DashSpecDocumentPipeline.Format(text, path, Path.GetDirectoryName(path));

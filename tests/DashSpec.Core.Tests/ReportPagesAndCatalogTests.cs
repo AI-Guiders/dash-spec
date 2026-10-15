@@ -211,7 +211,7 @@ public sealed class ReportPagesAndCatalogTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_layout_module_accepts_scope_page()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-page-scope-" + Guid.NewGuid().ToString("N"));
