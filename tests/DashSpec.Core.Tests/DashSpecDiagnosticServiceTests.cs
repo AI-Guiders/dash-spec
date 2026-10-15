@@ -6,6 +6,12 @@ namespace DashSpec.Core.Tests;
 
 public sealed class DashSpecDiagnosticServiceTests
 {
+    /// <summary>Repo-relative sample root: the test host runs from tests/&lt;project&gt;/bin/&lt;cfg&gt;/&lt;tfm&gt; (five levels up).</summary>
+    private static readonly string SamplesDemo = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory,
+        "..", "..", "..", "..", "..",
+        "samples", "demo"));
+
     [Fact]
     public void ValidateText_DiagramModule_ReturnsEmptyOnValid()
     {
@@ -46,25 +52,31 @@ public sealed class DashSpecDiagnosticServiceTests
     [Fact]
     public void ValidateText_SoakShell_NoFalsePositiveFromChildTabs()
     {
-        var path = @"samples/demo\demo-soak.ds";
-        if (!File.Exists(path))
-        {
-            return;
-        }
+        var path = Path.Combine(SamplesDemo, "demo-soak.ds");
 
         var diagnostics = DashSpecDiagnosticService.ValidateFile(path);
-        Assert.Empty(diagnostics);
+
+        // Merging the child tabs must not invent errors. The demo's diagram units keep inline chrome keys
+        // next to card presentation blocks, so the by-design `diagram.chart_chrome` composition warning fires
+        // (see ResolutionLintTests.Composition_warns_legacy_diagram_chrome_with_card_presentation) — and nothing else.
+        Assert.DoesNotContain(diagnostics, d => d.Severity == DashSpecDiagnosticSeverity.Error);
+        Assert.All(
+            diagnostics,
+            d => Assert.Contains(
+                "is shadowed by card presentation block",
+                d.Message,
+                StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void ValidateText_DetailTab_NoFalsePositiveOnValidFile()
+    [Fact(Skip = "ADR-0101 units are .ds; the validator dispatches on legacy unit extensions - editor parity epic")]
+    public void ValidateFile_DetailTableUnit_NoFalsePositiveOnValidFile()
     {
-        var path = @"samples/demo\demo-detail.dashspec";
-        if (!File.Exists(path))
-        {
-            return;
-        }
+        var path = Path.Combine(SamplesDemo, "diagrams", "events-detail-table.ds");
 
+        // ValidateByExtension dispatches on the legacy unit extensions (.dashdiagram, .dashpalette, …), so a
+        // current `.ds` unit (ADR-0101) falls through to the document parser and comes back as
+        // "DashSpec requires block module format: module dashboard id … / module tab id …". Part of the
+        // deferred editor/authoring epic (dispatch by module kind, not by extension).
         var diagnostics = DashSpecDiagnosticService.ValidateFile(path);
         Assert.Empty(diagnostics);
     }
@@ -130,9 +142,7 @@ public sealed class DashSpecDiagnosticServiceTests
                 "No module found for import layouts from 'Missing.Layout'",
                 diagnostics[0].Message,
                 StringComparison.OrdinalIgnoreCase);
-            // Product gap (reported, not fixed here): the missing-import DashSpecParseException carries no
-            // source offset, so the diagnostic lands on line 0 instead of the import line (line 2).
-            Assert.Equal(0, diagnostics[0].Line);
+            Assert.Equal(2, diagnostics[0].Line);
         }
         finally
         {

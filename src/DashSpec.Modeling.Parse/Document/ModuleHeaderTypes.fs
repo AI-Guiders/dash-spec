@@ -8,7 +8,9 @@ open DashSpec.Modeling.Core
 type ModuleImportDirective =
     { Kind: ImportKind
       Namespace: string
-      Alias: string option }
+      Alias: string option
+      /// <summary>Character offset of the import line, for diagnostics.</summary>
+      SourceOffset: int }
 
 module ModuleImportDirective =
 

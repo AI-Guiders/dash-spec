@@ -47,15 +47,11 @@ public static class DashSpecDiagnosticService
         }
         catch (FileNotFoundException ex)
         {
-            return MapIncludeNotFoundDiagnostic(text, ex);
+            return [MissingFileDiagnostic(text, ex)];
         }
         catch (DirectoryNotFoundException ex)
         {
-            return MapIncludeNotFoundDiagnostic(text, ex);
-        }
-        catch (Exception ex) when (ex.Message.StartsWith("!include not found:", StringComparison.Ordinal))
-        {
-            return MapIncludeNotFoundDiagnostic(text, ex);
+            return [MissingFileDiagnostic(text, ex)];
         }
         catch (Exception ex)
         {
@@ -63,13 +59,12 @@ public static class DashSpecDiagnosticService
         }
     }
 
-    private static IReadOnlyList<DashSpecDiagnostic> MapIncludeNotFoundDiagnostic(
-        string text,
-        Exception ex)
+    /// <summary>Missing asset: keep the loader's own message and point at the file name when the text mentions it.</summary>
+    private static DashSpecDiagnostic MissingFileDiagnostic(string text, Exception ex)
     {
         var missingPath = ex is FileNotFoundException fnf && !string.IsNullOrWhiteSpace(fnf.FileName)
             ? fnf.FileName
-            : ExtractIncludePathFromMessage(ex.Message);
+            : null;
 
         int? offset = null;
         if (!string.IsNullOrWhiteSpace(missingPath))
@@ -85,20 +80,7 @@ public static class DashSpecDiagnosticService
             }
         }
 
-        var normalizedMessage = $"!include not found: '{missingPath}'.";
-        return [TextPositions.ToDiagnostic(text, normalizedMessage, offset)];
-    }
-
-    private static string? ExtractIncludePathFromMessage(string message)
-    {
-        var start = message.IndexOf('\'');
-        if (start < 0)
-        {
-            return null;
-        }
-
-        var end = message.IndexOf('\'', start + 1);
-        return end > start ? message[(start + 1)..end] : null;
+        return TextPositions.ToDiagnostic(text, ex.Message, offset);
     }
 
     private static IReadOnlyList<DashSpecDiagnostic> ValidateByExtension(
