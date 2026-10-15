@@ -1,0 +1,17 @@
+module diagram demo_period_peak_by_app_bar
+namespace Demo.Diagrams
+
+    chrome
+        use bar_horizontal_360
+
+    end chrome
+
+    bar
+    render = "chartjs"
+    orientation = horizontal
+    category = app_name
+    value = peak_concurrent_proxy
+    scale_value = integer
+    order_by = "peak_concurrent_proxy DESC, app_name"
+
+    end bar

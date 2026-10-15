@@ -1,0 +1,7 @@
+module diagram demo_idle_table
+namespace Demo.Diagrams
+
+    table
+    columns = usage_date
+
+    end table

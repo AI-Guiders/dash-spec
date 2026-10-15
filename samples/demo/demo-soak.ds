@@ -1,19 +1,21 @@
 module dashboard demo_soak
+    import tooltips from Demo.Tooltips
     namespace Demo.Soak
     import diagrams from Demo.Diagrams
     import types from Demo.Types
+    import flows from Demo.Flows as demo_report_flow
     runtime
         manifest = "demo.toml"
     end runtime
 
     configuration
         sqldialect = tsql
-        palette = "palettes/demo-apps.dashpalette"
+        palette = "palettes/demo-apps.ds"
     end configuration
 
     connect
         use palette demo_apps
-        flow "flows/demo-report.dashflow"
+        use flow demo_report_flow
         layout grid
             columns = 12
             gap = 16
@@ -125,7 +127,7 @@ module dashboard demo_soak
             end cards
         end tab
 
-        tab analytics as "Analytics" dashspec "demo-analytics.dashspec"
+        tab analytics as "Analytics" dashspec "demo-analytics.ds"
             tab detail as "Detail"
                 cards
                     events_detail

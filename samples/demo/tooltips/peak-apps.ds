@@ -1,0 +1,4 @@
+module tooltip peak_apps
+namespace Demo.Tooltips
+
+source = peak_apps

@@ -1,0 +1,14 @@
+module diagram demo_idle_by_app_box
+namespace Demo.Diagrams
+
+    chrome
+        use box_360
+
+    end chrome
+
+    box
+    render = "chartjs"
+    x = app_name as "App"
+    value = idle_minutes as "Idle minutes"
+
+    end box

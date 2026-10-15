@@ -1,0 +1,15 @@
+module diagram demo_idle_histogram
+namespace Demo.Diagrams
+
+    chrome
+        use histogram_320
+
+    end chrome
+
+    histogram
+    render = "chartjs"
+    value = idle_minutes as "Idle minutes"
+    bins = 10
+    scale_value = integer
+
+    end histogram
