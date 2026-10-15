@@ -65,9 +65,16 @@ module UnitSource =
 
     /// Kind and id of a unit header in a C#-friendly shape: empty strings when the file declares neither.
     let tryKindAndId (text: string) : string * string =
-        match moduleKindOf text, moduleIdOf text with
-        | Some kind, Some id -> kind, id
-        | _ -> "", ""
+        let lines = text.Split('\n')
+
+        match moduleIndex lines with
+        | None -> "", ""
+        | Some start ->
+            let parts = lines.[start].Trim().Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+
+            // Raw module keyword: `host`, `catalog`, `dashboard` and `tab` are module roots too,
+            // so dispatch by kind must not be limited to the importable kinds.
+            if parts.Length >= 3 then parts.[1].ToLowerInvariant(), parts.[2] else "", ""
 
     /// Namespace declared in the header of a unit file, if any.
     let namespaceOf (text: string) : string option =
