@@ -1,5 +1,7 @@
 namespace DashSpec.Modeling.Parse.Syntax
 
+open DashSpec.Modeling.Parse.Lexing
+
 /// Typed block / section keyword in DashSpec surface syntax.
 [<RequireQualifiedAccess>]
 type DashSpecBlockKeyword =
@@ -45,7 +47,9 @@ type DashSpecBlockKeyword =
 module DashSpecBlockKeyword =
 
     let tryOfName (name: string) =
-        match name.ToLowerInvariant() with
+        let keyword = name.ToLowerInvariant()
+
+        match keyword with
         | "grid" -> Some DashSpecBlockKeyword.Grid
         | "chrome" -> Some DashSpecBlockKeyword.Chrome
         | "click" -> Some DashSpecBlockKeyword.Click
@@ -80,8 +84,7 @@ module DashSpecBlockKeyword =
         | "diagramlibrary" -> Some DashSpecBlockKeyword.DiagramLibrary
         | "bind" -> Some DashSpecBlockKeyword.Bind
         | "import" -> Some DashSpecBlockKeyword.Import
-        | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge"
-        | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" ->
+        | _ when DashSpecKeywords.diagramKinds |> List.contains keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
 

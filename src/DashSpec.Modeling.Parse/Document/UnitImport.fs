@@ -49,7 +49,7 @@ module UnitImport =
         | Some id -> id
         | None -> raise (DashSpecParseException($"'{path}': {kind} module requires 'module {kind} <id>'."))
 
-    /// <summary>Unit kind of a compilation unit — content (`@`-root) first, extension as legacy fallback (single .ds file type).</summary>
+    /// <summary>Compilation unit kind, taken from the <c>module &lt;kind&gt; &lt;id&gt;</c> header (ADR-0101).</summary>
     type UnitKind =
         | Layout
         | Diagram
@@ -59,7 +59,6 @@ module UnitImport =
         | Flow
         | Palette
         | Tab
-        | Transform
         | Unsupported of string
 
     module UnitFileClassifier =
@@ -78,19 +77,25 @@ module UnitImport =
             with _ ->
                 None
 
+        let private unitKindOfImportKind (kind: ImportKind) =
+            match kind with
+            | ImportKind.Layouts -> Layout
+            | ImportKind.Diagrams -> Diagram
+            | ImportKind.Presentations -> Presentation
+            | ImportKind.Tooltips -> Tooltip
+            | ImportKind.Types -> Types
+            | ImportKind.Flows -> Flow
+            | ImportKind.Palettes -> Palette
+            | ImportKind.Tabs -> Tab
+
+        /// Unit kind from the `module <kind> <id>` keyword, resolved through the import-kind registry.
         let classify (path: string) (text: string) : UnitKind =
             match peekRootKeyword text with
-            | Some "layout" -> Layout
-            | Some "diagram" -> Diagram
-            | Some "presentation" -> Presentation
-            | Some "tooltip" -> Tooltip
-            | Some "types" -> Types
-            | Some "flow" -> Flow
-            | Some "palette" -> Palette
-            | Some "tab" -> Tab
-            | Some _ -> Unsupported(Path.GetExtension(path))
-            | None ->
-                Unsupported(Path.GetExtension(path))
+            | Some keyword ->
+                match ImportKindRegistry.tryFindByModuleKeyword keyword with
+                | Some kind -> unitKindOfImportKind kind
+                | None -> Unsupported(Path.GetExtension path)
+            | None -> Unsupported(Path.GetExtension path)
 
     let private importKindOf (unitKind: UnitKind) =
         match unitKind with
@@ -102,7 +107,6 @@ module UnitImport =
         | Flow -> Some ImportKind.Flows
         | Palette -> Some ImportKind.Palettes
         | Tab -> Some ImportKind.Tabs
-        | Transform
         | Unsupported _ -> None
 
     let registerUnitFile
@@ -134,8 +138,6 @@ module UnitImport =
                 let palette = Palette.PaletteModuleParser.parsePaletteFile text
                 state.RegisterPalette(palette.Id, palette)
             | Tab -> state.RegisterTabModule(unitIdOf "tab" path text, path)
-            | Transform ->
-                raise (DashSpecParseException($"'{path}': register transform via .dashdiagram or card block, not module import."))
             | Unsupported _ ->
                 // Mixed module (module <name> without kind) — dispatch by import kind
                 match importKind with

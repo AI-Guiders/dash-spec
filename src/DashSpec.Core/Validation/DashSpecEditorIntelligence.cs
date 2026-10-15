@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using FsharpDocument = DashSpec.Modeling.Parse.Document;
 
 namespace DashSpec.Core.Validation;
 
@@ -126,9 +127,23 @@ public static class DashSpecEditorIntelligence
             yield break;
         }
 
-        foreach (var file in Directory.EnumerateFiles(directory, "*.dashpalette", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(directory, "*.ds", SearchOption.AllDirectories))
         {
-            yield return Path.GetFileNameWithoutExtension(file);
+            string text;
+            try
+            {
+                text = File.ReadAllText(file);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var (kind, id) = FsharpDocument.UnitSource.tryKindAndId(text);
+            if (!string.IsNullOrWhiteSpace(id) && kind.Equals("palette", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return id;
+            }
         }
     }
 
