@@ -158,6 +158,22 @@ module DashSpecSurfaceSyntax =
               Tokens = lineSyntaxTokens text allTokens line
               Children = ResizeArray() }
 
+    /// Comment-only lines are trivia: kept as Line nodes with their comment tokens, never as blank lines (blank lines drop the comment text).
+    let private appendTriviaOrBlank
+        (parent: MutableNode)
+        (id: int ref)
+        (text: string)
+        (allTokens: Token[])
+        (line: TokenReaderPhysicalLines.PhysicalLine)
+        =
+        let isComment (token: Token) =
+            token.Kind = TokenKind.LineComment || token.Kind = TokenKind.BlockComment
+
+        if line.Tokens |> List.exists isComment then
+            appendLine parent id text allTokens line
+        else
+            appendBlank parent id line
+
     let private appendEndBlock
         (parent: MutableNode)
         (id: int ref)
@@ -317,14 +333,14 @@ module DashSpecSurfaceSyntax =
         =
         let mutable continueParsing = true
 
-        while continueParsing && not reader.IsEof do
+        while continueParsing && not reader.IsEofKeepingTrivia do
             match TokenReaderPhysicalLines.readNext reader with
             | None -> continueParsing <- false
             | Some line ->
                 let lineKind = BlockSurfaceLineClassifier.classifyLineTokens line.Tokens
 
                 match lineKind with
-                | BlockSurfaceLineClassifier.Blank -> appendBlank container id line
+                | BlockSurfaceLineClassifier.Blank -> appendTriviaOrBlank container id text allTokens line
                 | _ ->
                     let cardRef =
                         if isCardsParent container then

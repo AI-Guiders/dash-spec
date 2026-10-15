@@ -11,7 +11,7 @@ module TokenReaderPhysicalLines =
           Tokens: Token list }
 
     let readNext (reader: TokenReader) : PhysicalLine option =
-        if reader.IsEof then
+        if reader.IsEofKeepingTrivia then
             None
         else
             let tokens = reader.Tokens
