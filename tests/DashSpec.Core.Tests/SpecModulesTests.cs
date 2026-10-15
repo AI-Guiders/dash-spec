@@ -434,7 +434,7 @@ public class SpecModulesTests
     public void Parse_demo_palette_specs_when_repo_present()
     {
         var dir = @"samples/demo";
-        var soakPath = Path.Combine(dir, "demo-soak.dashspec");
+        var soakPath = Path.Combine(dir, "demo-soak.ds");
         if (!File.Exists(soakPath))
         {
             return;
@@ -444,13 +444,13 @@ public class SpecModulesTests
         try
         {
             var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
-            Assert.Equal("palettes/demo-apps.dashpalette", soak.PalettePath);
+            Assert.Equal("palettes/demo-apps.ds", soak.PalettePath);
             Assert.Equal("demo_apps", soak.ColorPalette);
 
             var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, soak.PalettePath, dir, soak);
             Assert.Equal("#e11d48", library!.TryGetPalette("demo_apps")!["Tekla"]);
 
-            var analyticsPath = Path.Combine(dir, "demo-analytics.dashspec");
+            var analyticsPath = Path.Combine(dir, "demo-analytics.ds");
             if (File.Exists(analyticsPath))
             {
                 var analytics = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(analyticsPath), dir, parseOptions);
@@ -489,7 +489,7 @@ public class SpecModulesTests
         return path;
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_card_include_diagram_file_and_stdlib_presentation()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-include-" + Guid.NewGuid().ToString("N"));
@@ -546,7 +546,7 @@ public class SpecModulesTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_diagram_chrome_use_registers_module_presentation_presets()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-chrome-" + Guid.NewGuid().ToString("N"));

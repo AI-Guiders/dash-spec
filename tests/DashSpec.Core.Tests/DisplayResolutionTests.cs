@@ -172,7 +172,7 @@ public sealed class DisplayResolutionTests
             new TabDefinition("detail", "Детализация", []),
         ];
         var soakDoc = SampleCatalogDoc with { Tabs = soakTabs };
-        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.dashspec");
+        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds");
         var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
         Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));
     }

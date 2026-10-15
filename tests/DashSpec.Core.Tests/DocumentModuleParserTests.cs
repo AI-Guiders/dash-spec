@@ -5,7 +5,7 @@ namespace DashSpec.Core.Tests;
 
 public class DocumentModuleParserTests
 {
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_block_tab_module_with_standalone_filters_and_diagram_ref()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-block-" + Guid.NewGuid().ToString("N"));

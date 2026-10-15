@@ -36,4 +36,5 @@ module DiagnosticInterop =
               EndLine = diagnostic.EndLine
               EndCharacter = diagnostic.EndCharacter }
           Message = diagnostic.Message
-          Severity = fromLegacySeverity diagnostic.Severity }
+          Severity = fromLegacySeverity diagnostic.Severity
+          Code = None }

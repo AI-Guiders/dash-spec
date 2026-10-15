@@ -17,8 +17,8 @@ public sealed class DemoCatalogRegressionTests
 
     private static readonly string[] CatalogFileNames =
     [
-        "demo-soak.dashspec",
-        "demo-analytics.dashspec",
+        "demo-soak.ds",
+        "demo-analytics.ds",
     ];
 
     private static DashSpecParseOptions DemoParseOptions { get; } = new()

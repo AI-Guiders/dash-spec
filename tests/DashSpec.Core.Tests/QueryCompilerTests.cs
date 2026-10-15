@@ -745,7 +745,7 @@ public class QueryCompilerTests
             module tab overview
               configuration
                 sqldialect = tsql
-                palette = "palettes/demo-apps.dashpalette"
+                palette = "palettes/demo-apps.ds"
                 work_time_column = bucket_start_utc
               end configuration
               report

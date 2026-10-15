@@ -9,7 +9,7 @@ public sealed class ReportPreviewSessionTests
         AppContext.BaseDirectory,
         "..", "..", "..", "..", "..",
         "samples", "demo",
-        "demo-soak.dashspec"));
+        "demo-soak.ds"));
 
     [Fact]
     public async Task LoadSpecAsync_parses_demo_soak_spec()
@@ -61,7 +61,7 @@ public sealed class ReportPreviewSessionTests
         Directory.CreateDirectory(workspace);
         try
         {
-            var flowPath = Path.Combine(workspace, "fixture.dashflow");
+            var flowPath = Path.Combine(workspace, "fixture.ds");
             await File.WriteAllTextAsync(flowPath, """
                 module flow fixture
 
@@ -116,7 +116,7 @@ public sealed class ReportPreviewSessionTests
         return $"""
             module dashboard preview_tab
               connect
-                flow "fixture.dashflow"
+                flow "fixture.ds"
               end connect
               runtime
               manifest = "cfg.toml"

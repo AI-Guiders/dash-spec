@@ -8,7 +8,7 @@ module SyntaxClassifierTests =
     [<Fact>]
     let ``tab dashspec module keeps nested tab and cards as keywords`` () =
         let text =
-            "        tab analytics as \"Analytics\" dashspec \"demo-analytics.dashspec\"\n            tab detail as \"Detail\"\n                cards\n                    events_detail\n"
+            "        tab analytics as \"Analytics\" dashspec \"demo-analytics.ds\"\n            tab detail as \"Detail\"\n                cards\n                    events_detail\n"
 
         let kinds = DashSpecSyntaxClassifier.classify text |> Seq.map (fun s -> s.Kind) |> Seq.toList
         let keywordCount = kinds |> List.filter ((=) DashSpecSyntaxKind.Keyword) |> List.length

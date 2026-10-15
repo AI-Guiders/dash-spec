@@ -10,7 +10,7 @@ open DashSpec.Modeling.Parse.DataFlow
 module DashflowModuleParserTests =
 
     [<Fact>]
-    let ``stdlib time dashtype defines DateTime shape`` () =
+    let ``stdlib time unit defines DateTime shape`` () =
         let stdlibPath =
             Path.GetFullPath(
                 Path.Combine(
@@ -21,9 +21,9 @@ module DashflowModuleParserTests =
                     "DashSpec.Core",
                     "stdlib",
                     "types",
-                    "time.dashtype"))
+                    "time.ds"))
 
-        let text = File.ReadAllText stdlibPath
+        let text = DashSpec.Modeling.Parse.Document.UnitSource.readUnit stdlibPath
         let defs = TypeModuleParser.parseTypesModule text
         let catalog = TypeCatalog.ofDefinitions defs
 

@@ -18,7 +18,7 @@ public class FilterBindingTests
             AppContext.BaseDirectory,
             "..", "..", "..", "..", "..",
             "samples", "demo",
-            "demo-soak.dashspec"));
+            "demo-soak.ds"));
         var specDir = Path.GetDirectoryName(soakPath)!;
 
         var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), specDir);

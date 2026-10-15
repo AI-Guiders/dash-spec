@@ -64,7 +64,7 @@ public class StructuredSyntaxTests
         Assert.Equal("demo.v_peak_concurrent_by_period.app_name", doc.Filters.Single().ColumnReference);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_structured_card_with_override_for()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""

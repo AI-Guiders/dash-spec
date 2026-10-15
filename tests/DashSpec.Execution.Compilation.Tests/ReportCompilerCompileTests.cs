@@ -17,7 +17,7 @@ public sealed class ReportCompilerCompileTests
     private static readonly string DemoSoakPath = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory,
         "..", "..", "..", "..", "..",
-        "samples", "demo", "demo-soak.dashspec"));
+        "samples", "demo", "demo-soak.ds"));
 
     public ReportCompilerCompileTests() => ExecutionDashSpecParser.EnsureModuleParsersRegistered();
 

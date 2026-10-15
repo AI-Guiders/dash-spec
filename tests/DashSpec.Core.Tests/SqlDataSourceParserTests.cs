@@ -15,7 +15,7 @@ namespace DashSpec.Core.Tests;
 public class SqlDataSourceParserTests
 {
     private static string BindLine(string moduleName) =>
-        moduleName == "fixture.dashflow" ? "use flow fixture_flow" : $"flow \"{moduleName}\"";
+        moduleName == "fixture.ds" ? "use flow fixture_flow" : $"flow \"{moduleName}\"";
 
     private static string Spec(string moduleName, string sourceId) =>
         $$"""
@@ -56,7 +56,7 @@ public class SqlDataSourceParserTests
     [Fact]
     public void Parse_sql_datasource_reads_inline_select()
     {
-        var card = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", "s_wrap")).Cards[0];
+        var card = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.ds", "s_wrap")).Cards[0];
         Assert.Equal(DataSourceKind.Sql, card.DataSource.Kind);
         Assert.Equal(DataSourceSqlCarrier.Query, card.DataSource.SqlCarrier);
         Assert.Contains("GROUP BY", card.DataSource.Value);
@@ -70,7 +70,7 @@ public class SqlDataSourceParserTests
     [InlineData("s_comment")]
     public void Compile_sql_datasource_rejects_non_readonly(string sourceId)
     {
-        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", sourceId));
+        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.ds", sourceId));
         var card = document.Cards[0];
         var ex = Assert.ThrowsAny<Exception>(() =>
             QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), document));
@@ -80,7 +80,7 @@ public class SqlDataSourceParserTests
     [Fact]
     public void Compile_sql_datasource_allows_keyword_inside_string_literal()
     {
-        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.dashflow", "s_kw"));
+        var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.ds", "s_kw"));
         var card = document.Cards[0];
         Assert.Contains("DELETE is ok", card.DataSource.Value);
 

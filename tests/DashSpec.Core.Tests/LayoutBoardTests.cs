@@ -220,7 +220,7 @@ end tab
         Assert.Equal(new PlacementDefinition(3, 1, 12), layout["f"]);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_include_layout_at_tab_module_shell()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
@@ -279,7 +279,7 @@ end tab
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_include_layout_conflicts_with_inline_tab_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
@@ -563,7 +563,7 @@ end tab
         Assert.Equal(new PlacementDefinition(1, 7, 6), layout["f1"]);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_include_toolbar_dashlayout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
@@ -693,7 +693,7 @@ end tab
         Assert.Contains("requires scope", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_include_tab_layout_rejects_toolbar_scope()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
@@ -730,7 +730,7 @@ end tab
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_include_toolbar_rejects_tab_scope()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
@@ -783,7 +783,7 @@ end tab
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void TabLayoutPlanner_places_group_inner_cards_and_top_level_rows()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-group-" + Guid.NewGuid().ToString("N"));

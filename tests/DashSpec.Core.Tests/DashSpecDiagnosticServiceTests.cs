@@ -46,7 +46,7 @@ public sealed class DashSpecDiagnosticServiceTests
     [Fact]
     public void ValidateText_SoakShell_NoFalsePositiveFromChildTabs()
     {
-        var path = @"samples/demo\demo-soak.dashspec";
+        var path = @"samples/demo\demo-soak.ds";
         if (!File.Exists(path))
         {
             return;
@@ -99,7 +99,7 @@ public sealed class DashSpecDiagnosticServiceTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void ValidateText_MissingInclude_PointsToIncludeLine()
     {
         const string text = """

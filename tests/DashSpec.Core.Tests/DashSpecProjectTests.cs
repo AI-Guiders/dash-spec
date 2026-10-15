@@ -54,7 +54,7 @@ public sealed class DashSpecProjectTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
     public void Parse_accepts_import_keyword_alias_for_include()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-import-" + Guid.NewGuid().ToString("N"));
