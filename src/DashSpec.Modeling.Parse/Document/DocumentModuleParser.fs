@@ -842,27 +842,13 @@ module rec DocumentModuleParser =
         let onDefault () =
             DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty pageFilterDefaults |> ignore
 
-        let onInclude () =
-            let kind, reference = DiagramModuleParser.readIncludeReference reader
-
-            if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
-                raise (DashSpecParseException($"Page '{pageId}' allows include layout only, got include {kind}."))
-
-            match shell.SpecDirectory with
-            | None ->
-                raise (DashSpecParseException("include layout requires spec directory when parsing (path to the .dashspec folder)."))
-            | Some specDirectory ->
-                pageLayout.Value <- Some(LayoutModuleParser.load reference specDirectory)
-                reader.SkipNewlines()
-
         let members: BlockGrammar.ContainerMember list =
             [ BlockGrammar.ChildKeyword("title", fun _ -> onTitle ())
               BlockGrammar.ChildKeyword("toolbar", fun _ -> onToolbar ())
               BlockGrammar.ChildKeyword("derive", fun _ -> onDerive ())
               BlockGrammar.ChildKeyword("bind", fun _ -> onBind ())
               BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
-              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
-              BlockGrammar.ChildKeyword("include", fun _ -> onInclude ()) ]
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ()) ]
 
         while not (BlockSyntax.isBlockEnd reader "page" (Some pageId)) && not reader.IsEof do
             reader.SkipNewlines()

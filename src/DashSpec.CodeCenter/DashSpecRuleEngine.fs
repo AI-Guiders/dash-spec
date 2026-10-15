@@ -1,179 +1,39 @@
 namespace DashSpec.CodeCenter
 
-open System
-open System.Collections.Generic
-open AIGuiders.Platform.Modeling.Core.Identity
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Syntax
 
-/// Single-pass rule engine over concept graph (AST walk + graph predicates).
+/// <summary>CodeCenter rule evaluation: language rules come from DashSpec; graph-only rules stay here.</summary>
 module DashSpecRuleEngine =
 
-    type private BlockFrame =
-        { Keyword: DashSpecBlockKeyword
-          Identifier: string option
-          Span: TextSpan }
+    let rec private outlineNodes (node: DashSpecAstNode) : DashSpecAstNode list =
+        [ if DashSpecAst.isOutlineNode node then
+              yield node
 
-    let private moduleFrame (directive: DashSpecModuleDirective) (span: TextSpan) =
-        match directive with
-        | DashSpecModuleDirective.Dashboard id ->
-            { Keyword = DashSpecBlockKeyword.Other "dashboard"
-              Identifier = Some id
-              Span = span }
-        | DashSpecModuleDirective.Tab id ->
-            { Keyword = DashSpecBlockKeyword.Tab
-              Identifier = Some id
-              Span = span }
-        | DashSpecModuleDirective.Unit(keyword, id) ->
-            { Keyword = DashSpecBlockKeyword.Other keyword
-              Identifier = Some id
-              Span = span }
-
-    let private blockFrame (opener: DashSpecBlockOpener) (span: TextSpan) =
-        match opener with
-        | DashSpecBlockOpener.Named(keyword, identifier) ->
-            { Keyword = keyword
-              Identifier = Some identifier
-              Span = span }
-        | DashSpecBlockOpener.Anonymous keyword ->
-            { Keyword = keyword
-              Identifier = None
-              Span = span }
-
-    /// Tab blocks without a matching `end tab` in the subtree are registry headers, not balance frames.
-    let private participatesInBlockBalance (node: DashSpecAstNode) =
-        match node with
-        | DashSpecAstNode.BlockDeclaration n ->
-            match n.Opener with
-            | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, id) ->
-                DashSpecAst.hasClosingEndBlock node DashSpecBlockKeyword.Tab (Some id)
-            | _ -> true
-        | _ -> true
-
-    let private parentIndex (edges: DashSpecConceptEdge list) =
-        let ancestors = Dictionary<NodeId, NodeId list>()
-
-        for edge in edges do
-            match ancestors.TryGetValue edge.ChildId with
-            | true, existing -> ancestors.[edge.ChildId] <- edge.ParentId :: existing
-            | false, _ -> ancestors.[edge.ChildId] <- [ edge.ParentId ]
-
-        ancestors
-
-    let private hasCardsAncestor (graph: DashSpecConceptGraph) (ancestors: Dictionary<NodeId, NodeId list>) (nodeId: NodeId) =
-        let rec walk (currentId: NodeId) (visited: Set<NodeId>) =
-            if Set.contains currentId visited then
-                false
-            else
-                match ancestors.TryGetValue currentId with
-                | false, _ -> false
-                | true, parents ->
-                    parents
-                    |> List.exists (fun parentId ->
-                        match Map.tryFind parentId graph.Tiers with
-                        | Some node ->
-                            match node.Kind with
-                            | DashSpecConceptKind.Block(DashSpecBlockKeyword.Cards, _) -> true
-                            | _ -> walk parentId (Set.add currentId visited)
-                        | None -> false)
-
-        walk nodeId Set.empty
+          for child in DashSpecAst.members node do
+              yield! outlineNodes child ]
 
     /// Predicate: concept outline span is empty in the built graph.
-    let private whenEmptyOutlineSpan (graph: DashSpecConceptGraph) (nodeId: NodeId) =
-        match Map.tryFind nodeId graph.Tiers with
-        | Some concept when concept.Span.End <= concept.Span.Start ->
-            Some(DashSpecRuleViolation.EmptyOutlineSpan(DashSpecConceptOntology.outlineCaption concept.Kind, concept.Span))
-        | _ -> None
+    let private emptyOutlineFindings (graph: DashSpecConceptGraph) : DashSpecRuleFinding list =
+        outlineNodes graph.Tree.Root
+        |> List.choose (fun node ->
+            match Map.tryFind (DashSpecAst.id node) graph.Tiers with
+            | Some concept when concept.Span.End <= concept.Span.Start ->
+                let finding: DashSpecRuleFinding =
+                    { Rule = DashSpecRule.EmptyOutlineSpan
+                      Message = $"outline node '{DashSpecConceptOntology.outlineCaption concept.Kind}' has empty span"
+                      Span = concept.Span }
 
-    /// Predicate: card reference concept is not nested under a `cards` block.
-    let private whenCardOutsideCards
-        (graph: DashSpecConceptGraph)
-        (ancestors: Dictionary<NodeId, NodeId list>)
-        (nodeId: NodeId)
-        =
-        match Map.tryFind nodeId graph.Tiers with
-        | Some tier ->
-            match tier.Kind with
-            | DashSpecConceptKind.CardReference cardId when not (hasCardsAncestor graph ancestors nodeId) ->
-                Some(DashSpecRuleViolation.CardReferenceOutsideCards(cardId, tier.Span))
-            | _ -> None
-        | None -> None
+                Some finding
+            | _ -> None)
 
-    /// One document-order pass: block-balance stack machine + concept graph predicates.
-    let evaluateViolations (graph: DashSpecConceptGraph) : DashSpecRuleViolation list =
-        let violations = ResizeArray<DashSpecRuleViolation>()
-        let blockStack = Stack<BlockFrame>()
-        let ancestors = parentIndex graph.Edges
-
-        let signal violation = violations.Add(violation)
-
-        let rec walk (node: DashSpecAstNode) =
-            if DashSpecAst.isOutlineNode node then
-                let nodeId = DashSpecAst.id node
-
-                match whenEmptyOutlineSpan graph nodeId with
-                | Some violation -> signal violation
-                | None -> ()
-
-                match whenCardOutsideCards graph ancestors nodeId with
-                | Some violation -> signal violation
-                | None -> ()
-
-            match node with
-            | DashSpecAstNode.ModuleDeclaration n ->
-                blockStack.Push(moduleFrame n.Directive n.Span)
-
-                let mutable seenCode = false
-
-                for child in DashSpecAst.members node do
-                    match child with
-                    | DashSpecAstNode.ImportDeclaration import when seenCode ->
-                        signal (DashSpecRuleViolation.ImportAfterCode(import.Keyword, import.Span))
-                    | DashSpecAstNode.ImportDeclaration _
-                    | DashSpecAstNode.BlankLine _ -> ()
-                    | _ -> seenCode <- true
-
-                    walk child
-
-            | DashSpecAstNode.BlockDeclaration n ->
-                if participatesInBlockBalance node then
-                    blockStack.Push(blockFrame n.Opener n.Span)
-
-                for child in DashSpecAst.members node do
-                    walk child
-
-            | DashSpecAstNode.EndBlock n ->
-                if blockStack.Count = 0 then
-                    signal (DashSpecRuleViolation.ExtraEndBlock n.Span)
-                else
-                    let frame = blockStack.Pop()
-
-                    if frame.Keyword <> n.EndKeyword then
-                        signal (
-                            DashSpecRuleViolation.MismatchedEndKeyword(frame.Keyword, n.EndKeyword, n.Span)
-                        )
-
-                    match frame.Identifier, n.EndId with
-                    | Some openerId, Some endId when not (String.Equals(openerId, endId, StringComparison.Ordinal)) ->
-                        signal (DashSpecRuleViolation.MismatchedEndIdentifier(openerId, endId, n.Span))
-                    | _ -> ()
-
-            | _ ->
-                for child in DashSpecAst.members node do
-                    walk child
-
-        walk graph.Tree.Root
-
-        if blockStack.Count > 0 then
-            let frame = blockStack.Peek()
-            signal (DashSpecRuleViolation.UnclosedBlock(frame.Keyword, frame.Span))
-
-        violations |> Seq.toList
+    let evaluateFindings (graph: DashSpecConceptGraph) : DashSpecRuleFinding list =
+        DashSpecRuleChecks.findings graph.Tree.Root @ emptyOutlineFindings graph
 
     let evaluate (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
-        evaluateViolations graph |> List.map DashSpecDiagnosticCatalog.toDiagnostic
+        evaluateFindings graph |> List.map DashSpecDiagnosticCatalog.ofFinding
 
-    let evaluateBlockBalance (graph: DashSpecConceptGraph) =
-        evaluateViolations graph
-        |> List.filter DashSpecRuleRegistry.isBlockBalance
-        |> List.map DashSpecDiagnosticCatalog.toDiagnostic
+    let evaluateBlockBalance (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
+        evaluateFindings graph
+        |> List.filter (fun finding -> DashSpecRules.isBlockBalance finding.Rule)
+        |> List.map DashSpecDiagnosticCatalog.ofFinding

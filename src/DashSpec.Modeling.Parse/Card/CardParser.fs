@@ -397,16 +397,6 @@ module CardParser =
             clickBehaviour.Value <- Some(CardClickParser.parseClickBlock reader id parseOptions)
             reader.SkipNewlines()
 
-        let onInclude () =
-            match specDirectory with
-            | None | Some (null | "") ->
-                raise (DashSpecParseException($"Card '{id}': include requires spec directory when parsing (path to the .dashspec folder)."))
-            | Some dir ->
-                let kind, reference = DiagramModuleParser.readIncludeReference reader
-                includeFragment.Value <-
-                    SpecIncludeFragmentResolver.merge includeFragment.Value (SpecIncludeFragmentResolver.load kind reference dir)
-            reader.SkipNewlines()
-
         let onUse () =
             useCardPreset.Value <- Some(reader.ReadIdent())
             reader.SkipNewlines()
@@ -520,7 +510,6 @@ module CardParser =
               BlockGrammar.ChildKeyword("when", fun _ -> onWhen ())
               BlockGrammar.ChildKeyword("limits", fun _ -> onLimits ())
               BlockGrammar.ChildKeyword("on", fun _ -> onOn ())
-              BlockGrammar.ChildKeyword("include", fun _ -> onInclude ())
               BlockGrammar.ChildKeyword("use", fun _ -> onUse ())
               BlockGrammar.ChildKeyword("view", fun _ -> onView ())
               BlockGrammar.ChildKeyword("override", fun _ -> onOverride ())

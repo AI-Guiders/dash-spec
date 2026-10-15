@@ -1,0 +1,6 @@
+module presentation area_bottom_320
+namespace DashSpec.Std
+
+legend = bottom
+height = 320
+fill = area

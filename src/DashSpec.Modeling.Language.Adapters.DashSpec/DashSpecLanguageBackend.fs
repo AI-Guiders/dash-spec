@@ -109,7 +109,7 @@ type DashSpecLanguageBackend() =
 
                 if diags.Count > 0 then
                     Task.FromResult { Root = fileRoot path }
-                elif String.Equals(Path.GetExtension path, ".dashspec", StringComparison.OrdinalIgnoreCase) then
+                elif String.Equals(Path.GetExtension path, ".ds", StringComparison.OrdinalIgnoreCase) then
                     try
                         let doc =
                             DashSpec.Modeling.Parse.Document.DashboardComposer.parse

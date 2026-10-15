@@ -73,18 +73,11 @@ module DashSpecProjectConfig =
 
 module DashSpecProjectLocator =
 
-    /// <summary>Project file = `*.dsproj` (canonical — ADR-0089 Phase 2 / ADR-0101); `dashspec.toml` remains a compat marker.</summary>
+    /// <summary>Project file = `*.dsproj` (ADR-0101). One per package directory; no legacy fallback.</summary>
     let private findProjectFile (full: string) =
-        let dsproj =
-            Directory.EnumerateFiles(full, "*.dsproj")
-            |> Seq.sort
-            |> Seq.tryHead
-
-        match dsproj with
-        | Some path -> Some path
-        | None ->
-            let legacy = Path.Combine(full, "dashspec.toml")
-            if File.Exists legacy then Some legacy else None
+        Directory.EnumerateFiles(full, "*.dsproj")
+        |> Seq.sort
+        |> Seq.tryHead
 
     let tryFindConfig (specDirectory: string option) =
         match specDirectory with

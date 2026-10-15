@@ -228,7 +228,6 @@ module DashSpecSurfaceSyntax =
         let keyword, rest =
             match tokens with
             | { Kind = TokenKind.Ident; Value = "import" } :: tail -> Some "import", tail
-            | { Kind = TokenKind.Bang } :: { Kind = TokenKind.Ident; Value = "include" } :: tail -> Some "include", tail
             | { Kind = TokenKind.Ident; Value = "using" } :: tail -> Some "using", tail
             | _ -> None, []
 

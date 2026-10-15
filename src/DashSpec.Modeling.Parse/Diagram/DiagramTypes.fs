@@ -18,11 +18,7 @@ type InspectPresentation =
       Format: string
       Split: string }
 
-[<CLIMutable>]
-type DiagramInclude = { Kind: string; Reference: string }
-
 type DiagramFragmentStatement =
-    | IncludeStatement of DiagramInclude
     | DiagramStatement of DiagramDefinition
     | PresentationStatement of PresentationBlock
     | SeriesTransformStatement of SeriesTransformBlock

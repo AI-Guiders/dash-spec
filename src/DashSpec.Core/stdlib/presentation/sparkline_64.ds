@@ -1,0 +1,5 @@
+module presentation sparkline_64
+namespace DashSpec.Std
+
+legend = hidden
+height = 64

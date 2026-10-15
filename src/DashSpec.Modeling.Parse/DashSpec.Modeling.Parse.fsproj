@@ -34,6 +34,7 @@
     <Compile Include="Formatting\DashSpecBlockFormatter.fs" />
     <Compile Include="Syntax\DashSpecAstNodes.fs" />
     <Compile Include="Syntax\DashSpecAst.fs" />
+    <Compile Include="Syntax\DashSpecRuleChecks.fs" />
     <Compile Include="Syntax\DashSpecSurfaceSyntax.fs" />
     <Compile Include="Syntax\SyntaxTreeParser.fs" />
     <Compile Include="Syntax\SyntaxTree.fs" />
@@ -50,6 +51,7 @@
     <Compile Include="Layout\LayoutBracketRowParser.fs" />
     <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
+    <Compile Include="Document\UnitSource.fs" />
     <Compile Include="Layout\LayoutModuleScopeValidator.fs" />
     <Compile Include="Tooltip\TooltipTypes.fs" />
     <Compile Include="Tooltip\TooltipModuleParser.fs" />
@@ -127,7 +129,7 @@
     <Compile Include="Document\ToolbarPlacementResolver.fs" />
     <Compile Include="Document\DashboardValidationBridge.fs" />
     <Compile Include="Document\DashboardValidator.fs" />
-    <Compile Include="Document\IncludeExpander.fs" />
+    <Compile Include="Document\UnitImport.fs" />
     <Compile Include="Document\ModuleImportResolver.fs" />
     <Compile Include="Document\DashflowDocumentResolver.fs" />
     <Compile Include="Document\DocumentFlowMaterializer.fs" />

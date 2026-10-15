@@ -14,7 +14,7 @@ open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Types
 open DashSpec.Modeling.Parse.DataFlow
 
-module IncludeExpander =
+module UnitImport =
 
     let private assignLayoutBoard (board: LayoutBoardDefinition) (moduleKind: DocumentModuleKind) (state: ModuleIncludeState) =
         match moduleKind with
@@ -28,7 +28,7 @@ module IncludeExpander =
             Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue specDirectory
 
         let id, fragment =
-            SpecIncludeFragmentResolver.foldDiagramModuleWithId (File.ReadAllText path) baseDirectory
+            SpecIncludeFragmentResolver.foldDiagramModuleWithId (UnitSource.readUnit path) baseDirectory
 
         state.RegisterDiagram(id, fragment)
 
@@ -36,22 +36,22 @@ module IncludeExpander =
         let baseDirectory =
             Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue specDirectory
 
-        let text = File.ReadAllText path
+        let text = UnitSource.readUnit path
         let id, _ = PresentationModuleParser.parsePresentationModuleWithId text
         let block = SpecIncludeFragmentResolver.parsePresentationBlockFromFile text baseDirectory
         state.RegisterChartChromePreset(id, block)
 
     let private registerTooltipFile (path: string) (state: ModuleIncludeState) =
-        let id, definition = TooltipModuleParser.parseTooltipFileWithId (File.ReadAllText path)
+        let id, definition = TooltipModuleParser.parseTooltipFileWithId (UnitSource.readUnit path)
         state.RegisterTooltip(id, definition)
 
     let private registerTypesFile (path: string) (state: ModuleIncludeState) =
-        for def in TypeModuleParser.parseTypesModule (File.ReadAllText path) do
+        for def in TypeModuleParser.parseTypesModule (UnitSource.readUnit path) do
             state.RegisterRowType def
 
     let private registerDashflowFile (path: string) (state: ModuleIncludeState) =
         let catalog = TypeCatalog.ofDefinitions (state.ExportRowTypes().Values)
-        let module' = DashflowResolver.parseFile path catalog
+        let module' = DashflowModuleParser.parseModule (UnitSource.readUnit path) catalog
         state.RegisterDashflow module'
 
     let private peekDiagramModuleId (text: string) =
@@ -98,16 +98,7 @@ module IncludeExpander =
             | Some "flow" -> Flow
             | Some _ -> Unsupported(Path.GetExtension(path))
             | None ->
-                match Path.GetExtension(path).ToLowerInvariant() with
-                | ".dashlayout" -> Layout
-                | ".dashdiagram" -> Diagram
-                | ".dashpresentation" -> Presentation
-                | ".dashtooltip" -> Tooltip
-                | ".dashtype" -> Types
-                | ".dashflow" -> Flow
-
-                | ".dashtransform" -> Transform
-                | extension -> Unsupported extension
+                Unsupported(Path.GetExtension(path))
 
     let registerUnitFile
         (path: string)
@@ -119,7 +110,7 @@ module IncludeExpander =
         if not (File.Exists path) then
             raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
-        let text = File.ReadAllText path
+        let text = UnitSource.readUnit path
 
         match UnitFileClassifier.classify path text with
         | Layout ->
@@ -131,7 +122,7 @@ module IncludeExpander =
         | Flow -> registerDashflowFile path state
         | Transform ->
             raise (DashSpecParseException($"'{path}': register transform via .dashdiagram or card block, not module import."))
-        | Unsupported extension ->
+        | Unsupported _ ->
             // Mixed module (module <name> without kind) — dispatch by import kind
             match importKind with
             | Some ImportKind.Types -> registerTypesFile path state
@@ -142,4 +133,4 @@ module IncludeExpander =
                 let module' = DashflowModuleParser.parseModule wrapped catalog
                 state.RegisterDashflow module'
             | _ ->
-                raise (DashSpecParseException($"'{path}': unsupported extension '{extension}'."))
+                raise (DashSpecParseException($"'{path}': module kind not recognized; expected 'module <kind> <id>'."))

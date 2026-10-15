@@ -1,0 +1,5 @@
+module presentation donut_right_360
+namespace DashSpec.Std
+
+legend = right
+height = 360

@@ -36,33 +36,6 @@ module ModuleImportResolver =
                 DashSpecDiagnosticSeverity.Warning
         )
 
-    /// <summary>Scan spec directory for a module whose header declares the given namespace.
-    /// Returns file paths of matching modules, or empty if none found.</summary>
-    let private findModulesByNamespace (specDirectory: string) (namespaceName: string) : string list =
-        let results = ResizeArray<string>()
-        let patterns = [|"*.ds"; "*.dashspec"; "*.dashflow"; "*.dashdiagram"; "*.dashtype"; "*.dashlayout"; "*.dashpresentation"; "*.dashpalette"|]
-
-        for pattern in patterns do
-            for filePath in Directory.EnumerateFiles(specDirectory, pattern, SearchOption.AllDirectories) do
-                try
-                    let text = File.ReadAllText filePath
-                    // Quick check: file must contain "module" and the namespace name
-                    if text.Contains("module", StringComparison.Ordinal)
-                        && text.Contains(namespaceName, StringComparison.OrdinalIgnoreCase) then
-                        // Parse the module header to confirm namespace declaration
-                        let tokens = DashSpecLexer.tokenize text
-                        let reader = TokenReader(tokens, ?sourceText = Some text)
-                        let header = ModuleHeaderParser.parse reader
-
-                        match header.Namespace with
-                        | Some ns when String.Equals(ns, namespaceName, StringComparison.OrdinalIgnoreCase) ->
-                            results.Add filePath
-                        | _ -> ()
-                with _ ->
-                    ()
-
-        results |> Seq.toList
-
     /// <summary>Register imported units before report body parse (replaces envelope <c>!include</c> when indexed).</summary>
     let applyHeaderImports
         (header: ModuleHeader)
@@ -79,7 +52,7 @@ module ModuleImportResolver =
             match specDirectory with
             | Some dir ->
                 for directive in header.Imports do
-                    let paths = findModulesByNamespace dir directive.Namespace |> Seq.ofList
+                    let paths = UnitSource.findByNamespace dir directive.Namespace |> Seq.ofList
 
                     if Seq.isEmpty paths then
                         raise (
@@ -89,7 +62,7 @@ module ModuleImportResolver =
                         )
 
                     for path in paths do
-                        IncludeExpander.registerUnitFile
+                        UnitImport.registerUnitFile
                             path
                             dir
                             moduleKind

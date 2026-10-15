@@ -14,7 +14,7 @@ module SpecFragmentPaths =
     let private isStdlibReference (reference: string) =
         reference.Length >= 2 && reference.[0] = '<' && reference.[reference.Length - 1] = '>'
 
-    let private getStdlibRoot () =
+    let getStdlibRoot () =
         match stdlibRootOverride with
         | Some path when not (String.IsNullOrWhiteSpace path) -> path
         | _ ->
@@ -61,7 +61,7 @@ module SpecFragmentPaths =
         if File.Exists path then path
         else
             let extensions =
-                [| ".dashlayout"; ".dashdiagram"; ".dashinclude"; ".dashpresentation"; ".dashtooltip" |]
+                [| ".ds" |]
             let mutable resolved = path
             for ext in extensions do
                 let withExt =

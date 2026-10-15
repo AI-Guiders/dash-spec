@@ -198,16 +198,6 @@ internal static class ModuleParseRegistration
             return baseDirectory;
         }
 
-        var doc = DashSpec.Modeling.Parse.Diagram.DiagramModuleParser.parseDiagramModule(text);
-        foreach (var statement in doc.Statements)
-        {
-            if (statement is FsharpDiagramStmt.IncludeStatement)
-            {
-                throw new DashSpecParseException(
-                    "Diagram include requires a base directory (parse from file path).");
-            }
-        }
-
         return ".";
     }
 

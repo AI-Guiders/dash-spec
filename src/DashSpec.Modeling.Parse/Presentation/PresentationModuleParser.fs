@@ -68,12 +68,6 @@ module PresentationModuleParser =
             reader.SkipNewlines()
             if reader.IsEof then
                 continueIncludes <- false
-            elif reader.TryKeyword "include" then
-                let kind, reference = readIncludeReference reader
-                if not (isChartChromeIncludeKind kind) then
-                    raise (DashSpecParseException($"@presentation module only supports include presentation/chrome, got '{kind}'."))
-                includes.Add({ Kind = kind; Reference = reference })
-                reader.SkipNewlines()
             else
                 continueIncludes <- false
 
