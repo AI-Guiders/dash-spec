@@ -652,48 +652,55 @@ module rec DocumentModuleParser =
                 else false
 
     let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option * string option =
-        let mutable paletteUse = None
-        let mutable layout = LayoutDefinition.Default
-        let mutable layoutBoard = None
-        let mutable toolbarBoard = None
-        let mutable flowPath = None
-        let mutable flowConnectSymbol = None
+        let paletteUse = ref (None: string option)
+        let layout = ref LayoutDefinition.Default
+        let layoutBoard = ref (None: LayoutBoardDefinition option)
+        let toolbarBoard = ref (None: LayoutBoardDefinition option)
+        let flowPath = ref (None: string option)
+        let flowConnectSymbol = ref (None: string option)
 
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
+
+        let onUse () =
+            let useKind = reader.ReadIdent()
+
+            if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
+                raise (DashSpecParseException("use connector was removed; declare 'use provider <id>' on dashflow source nodes."))
+            elif String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
+                raise (DashSpecParseException("use provider belongs on dashflow source nodes, not in connect { }."))
+            elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
+                paletteUse.Value <- Some(reader.ReadIdent())
+            elif String.Equals(useKind, "flow", StringComparison.OrdinalIgnoreCase) then
+                flowConnectSymbol.Value <- Some(AccessorGrammar.readQualifiedName reader)
+            else
+                raise (DashSpecParseException($"connect use must be palette or flow, got '{useKind}'."))
+
+        let onFlow () = flowPath.Value <- Some(reader.ReadString())
+
+        let onLayout () =
+            match reader.TryPeekIdent() with
+            | Some kind when String.Equals(kind, "grid", StringComparison.OrdinalIgnoreCase) ->
+                layout.Value <- LayoutParser.parseGrid reader
+            | Some kind when String.Equals(kind, "board", StringComparison.OrdinalIgnoreCase) ->
+                reader.ReadIdent() |> ignore
+                layoutBoard.Value <- Some(LayoutParser.parseBoard reader)
+            | _ -> raise (reader.Unexpected("layout grid or layout board"))
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("use", fun _ -> onUse ())
+              BlockGrammar.ChildKeyword("flow", fun _ -> onFlow ())
+              BlockGrammar.ChildKeyword("layout", fun _ -> onLayout ()) ]
 
         while not (BlockSyntax.isBlockEnd reader "connect" None) && not reader.IsEof do
             reader.SkipNewlines()
 
             if BlockSyntax.isBlockEnd reader "connect" None then ()
-            elif reader.TryKeyword "use" then
-                let useKind = reader.ReadIdent()
-
-                if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
-                    raise (DashSpecParseException("use connector was removed; declare 'use provider <id>' on dashflow source nodes."))
-                elif String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
-                    raise (DashSpecParseException("use provider belongs on dashflow source nodes, not in connect { }."))
-                elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
-                    paletteUse <- Some(reader.ReadIdent())
-                elif String.Equals(useKind, "flow", StringComparison.OrdinalIgnoreCase) then
-                    flowConnectSymbol <- Some(AccessorGrammar.readQualifiedName reader)
-                else
-                    raise (DashSpecParseException($"connect use must be palette or flow, got '{useKind}'."))
-            elif reader.TryKeyword "flow" then
-                flowPath <- Some(reader.ReadString())
-            elif reader.TryKeyword "layout" then
-                match reader.TryPeekIdent() with
-                | Some kind when String.Equals(kind, "grid", StringComparison.OrdinalIgnoreCase) ->
-                    layout <- LayoutParser.parseGrid reader
-                | Some kind when String.Equals(kind, "board", StringComparison.OrdinalIgnoreCase) ->
-                    reader.ReadIdent() |> ignore
-                    layoutBoard <- Some(LayoutParser.parseBoard reader)
-                | _ -> raise (reader.Unexpected("layout grid or layout board"))
-            else
+            elif not (BlockGrammar.tryDispatchChild reader members) then
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "connect" (None: string option)
-        paletteUse, layout, layoutBoard, toolbarBoard, flowPath, flowConnectSymbol
+        paletteUse.Value, layout.Value, layoutBoard.Value, toolbarBoard.Value, flowPath.Value, flowConnectSymbol.Value
 
     let private parseReportDefaultsBlock (reader: TokenReader) (shell: ReportCompileContext) (blockKeyword: string) =
         shell.FormatDefaults <-
@@ -705,55 +712,76 @@ module rec DocumentModuleParser =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
 
+        let onTitle () =
+            reader.Expect TokenKind.Eq
+            setModuleLabel (reader.ReadString())
+            reader.SkipNewlines()
+
+        let onType () =
+            let rowType = TypeModuleParser.parseTypeBlockAfterKeyword reader
+            shell.Includes.RegisterRowType rowType
+            reader.SkipNewlines()
+
+        let onStandalone () =
+            if mode = ReportBodyMode.TabEmbedded then
+                skipStandaloneBlock reader
+            else
+                parseStandaloneBlock reader shell
+
+        let onPage () =
+            let pageId = reader.ReadIdent()
+            if String.IsNullOrWhiteSpace pageId then
+                raise (DashSpecParseException("page requires id."))
+            parsePageBlock reader shell pageId
+
+        let onCommands () =
+            for pair in CommandAliasesParser.parse reader do
+                shell.CommandAliases.[pair.Key] <- pair.Value
+            reader.SkipNewlines()
+
+        let onDefaults () = parseReportDefaultsBlock reader shell "defaults"
+
+        let onDefault () = parseReportDefaultsBlock reader shell "default"
+
+        let onCards () =
+            if not (reader.TryKeyword "chrome") then
+                raise (DashSpecParseException("cards requires chrome block (cards chrome … end chrome)."))
+            shell.CardsChrome <- Some(Card.CardsChromeParser.parse reader)
+            reader.SkipNewlines()
+
+        let onFilters () =
+            match reader.TryPeekIdent() with
+            | Some next when
+                String.Equals(next, "dashboard", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)
+                ->
+                ReportBodyParser.parseFiltersChromePublic reader shell true
+                reader.SkipNewlines()
+            | _ -> parseFiltersBlock reader shell mode
+
+        let onToolbar () =
+            ReportBodyParser.parseFiltersChromePublic reader shell true
+            reader.SkipNewlines()
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("title", fun _ -> onTitle ())
+              BlockGrammar.ChildKeyword("type", fun _ -> onType ())
+              BlockGrammar.ChildKeyword("standalone", fun _ -> onStandalone ())
+              BlockGrammar.ChildKeyword("page", fun _ -> onPage ())
+              BlockGrammar.ChildKeyword("commands", fun _ -> onCommands ())
+              BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("cards", fun _ -> onCards ())
+              BlockGrammar.ChildKeyword("filters", fun _ -> onFilters ())
+              BlockGrammar.ChildKeyword("toolbar", fun _ -> onToolbar ()) ]
+
         while not (BlockSyntax.isBlockEnd reader "report" None) && not reader.IsEof do
             reader.SkipNewlines()
             ModuleImportGuard.rejectModuleImportInBody reader "Report"
 
             if BlockSyntax.isBlockEnd reader "report" None then ()
-            elif reader.TryKeyword "title" then
-                reader.Expect TokenKind.Eq
-                setModuleLabel (reader.ReadString())
-                reader.SkipNewlines()
-            elif reader.TryKeyword "type" then
-                let rowType = TypeModuleParser.parseTypeBlockAfterKeyword reader
-                shell.Includes.RegisterRowType rowType
-                reader.SkipNewlines()
-            elif reader.TryKeyword "standalone" then
-                if mode = ReportBodyMode.TabEmbedded then
-                    skipStandaloneBlock reader
-                else
-                    parseStandaloneBlock reader shell
-            elif reader.TryKeyword "page" then
-                let pageId = reader.ReadIdent()
-                if String.IsNullOrWhiteSpace pageId then
-                    raise (DashSpecParseException("page requires id."))
-                parsePageBlock reader shell pageId
-            elif reader.TryKeyword "commands" then
-                for pair in CommandAliasesParser.parse reader do
-                    shell.CommandAliases.[pair.Key] <- pair.Value
-                reader.SkipNewlines()
+            elif BlockGrammar.tryDispatchChild reader members then ()
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader reportFlowBuilder "Report" then
-                reader.SkipNewlines()
-            elif reader.TryKeyword "defaults" then
-                parseReportDefaultsBlock reader shell "defaults"
-            elif reader.TryKeyword "default" then
-                parseReportDefaultsBlock reader shell "default"
-            elif reader.TryKeyword "cards" then
-                if not (reader.TryKeyword "chrome") then
-                    raise (DashSpecParseException("cards requires chrome block (cards chrome … end chrome)."))
-                shell.CardsChrome <- Some(Card.CardsChromeParser.parse reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "filters" then
-                match reader.TryPeekIdent() with
-                | Some next when
-                    String.Equals(next, "dashboard", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)
-                    ->
-                    ReportBodyParser.parseFiltersChromePublic reader shell true
-                    reader.SkipNewlines()
-                | _ -> parseFiltersBlock reader shell mode
-            elif reader.TryKeyword "toolbar" then
-                ReportBodyParser.parseFiltersChromePublic reader shell true
                 reader.SkipNewlines()
             elif ReportBodyParser.tryParseStatement reader shell then ()
             else
@@ -766,11 +794,11 @@ module rec DocumentModuleParser =
         if shell.Pages |> Seq.exists (fun page -> String.Equals(page.Id, pageId, StringComparison.OrdinalIgnoreCase)) then
             raise (DashSpecParseException($"Report declares duplicate page id '{pageId}'."))
 
-        let mutable pageTitle = None
-        let mutable pageLayout = None
-        let mutable pageToolbar = None
-        let mutable usageDateDerive = None
-        let mutable pageDisplayBindings: IReadOnlyDictionary<string, string> option = None
+        let pageTitle = ref None
+        let pageLayout = ref None
+        let pageToolbar = ref None
+        let usageDateDerive = ref None
+        let pageDisplayBindings: IReadOnlyDictionary<string, string> option ref = ref None
         let pageFlowBuilder = ReportScopeFlowParser.createBuilder ()
         let pageFilterDefaults = FilterScopeDefaults.create ()
 
@@ -779,58 +807,80 @@ module rec DocumentModuleParser =
         let previousPageId = shell.CurrentPageId
         shell.CurrentPageId <- Some pageId
 
+        let onTitle () =
+            reader.Expect TokenKind.Eq
+            pageTitle.Value <- Some(reader.ReadString())
+            reader.SkipNewlines()
+
+        let onToolbar () =
+            if reader.TryPeekIdent() |> Option.exists (fun next -> String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)) then
+                ReportBodyParser.parseFiltersChromePublic reader shell false
+            else
+                raise (
+                    DashSpecParseException(
+                        $"Page '{pageId}': inline toolbar filter lists removed; use page show flow: filter -> [toolbar] chrome.page.{pageId}."
+                    )
+                )
+
+            reader.SkipNewlines()
+
+        let onDerive () =
+            usageDateDerive.Value <- Some(Card.FilterDeriveParser.parse reader pageId)
+
+        let onBind () =
+            if not (reader.TryKeyword "display") then
+                raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
+
+            if pageDisplayBindings.Value.IsSome then
+                raise (DashSpecParseException($"Page '{pageId}': duplicate bind display block."))
+
+            pageDisplayBindings.Value <- Some(Display.DisplayBindingParser.parse reader pageId)
+
+        let onDefaults () =
+            DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty pageFilterDefaults |> ignore
+
+        let onDefault () =
+            DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty pageFilterDefaults |> ignore
+
+        let onInclude () =
+            let kind, reference = DiagramModuleParser.readIncludeReference reader
+
+            if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
+                raise (DashSpecParseException($"Page '{pageId}' allows include layout only, got include {kind}."))
+
+            match shell.SpecDirectory with
+            | None ->
+                raise (DashSpecParseException("include layout requires spec directory when parsing (path to the .dashspec folder)."))
+            | Some specDirectory ->
+                pageLayout.Value <- Some(LayoutModuleParser.load reference specDirectory)
+                reader.SkipNewlines()
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("title", fun _ -> onTitle ())
+              BlockGrammar.ChildKeyword("toolbar", fun _ -> onToolbar ())
+              BlockGrammar.ChildKeyword("derive", fun _ -> onDerive ())
+              BlockGrammar.ChildKeyword("bind", fun _ -> onBind ())
+              BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("include", fun _ -> onInclude ()) ]
+
         while not (BlockSyntax.isBlockEnd reader "page" (Some pageId)) && not reader.IsEof do
             reader.SkipNewlines()
             ModuleImportGuard.rejectModuleImportInBody reader $"Page '{pageId}'"
 
             if BlockSyntax.isBlockEnd reader "page" (Some pageId) then ()
-            elif reader.TryKeyword "title" then
-                reader.Expect TokenKind.Eq
-                pageTitle <- Some(reader.ReadString())
-                reader.SkipNewlines()
-            elif reader.TryKeyword "toolbar" then
-                if reader.TryPeekIdent() |> Option.exists (fun next -> String.Equals(next, "chrome", StringComparison.OrdinalIgnoreCase)) then
-                    ReportBodyParser.parseFiltersChromePublic reader shell false
-                else
-                    raise (
-                        DashSpecParseException(
-                            $"Page '{pageId}': inline toolbar filter lists removed; use page show flow: filter -> [toolbar] chrome.page.{pageId}."
-                        )
-                    )
-
-                reader.SkipNewlines()
-            elif reader.TryKeyword "derive" then
-                usageDateDerive <- Some(Card.FilterDeriveParser.parse reader pageId)
+            elif BlockGrammar.tryDispatchChild reader members then ()
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader pageFlowBuilder $"Page '{pageId}'" then
                 reader.SkipNewlines()
-            elif reader.TryKeyword "bind" then
-                if not (reader.TryKeyword "display") then
-                    raise (DashSpecParseException($"Page '{pageId}': only bind display is supported on pages."))
-
-                if pageDisplayBindings.IsSome then
-                    raise (DashSpecParseException($"Page '{pageId}': duplicate bind display block."))
-
-                pageDisplayBindings <- Some(Display.DisplayBindingParser.parse reader pageId)
-            elif reader.TryKeyword "defaults" then
-                DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty pageFilterDefaults |> ignore
-            elif reader.TryKeyword "default" then
-                DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty pageFilterDefaults |> ignore
+            elif ReportBodyParser.tryParseStatement reader shell then ()
             else
-                    if reader.TryKeyword "include" then
-                        let kind, reference = DiagramModuleParser.readIncludeReference reader
+                raise (reader.Unexpected())
 
-                        if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
-                            raise (DashSpecParseException($"Page '{pageId}' allows include layout only, got include {kind}."))
-
-                        match shell.SpecDirectory with
-                        | None ->
-                            raise (DashSpecParseException("include layout requires spec directory when parsing (path to the .dashspec folder)."))
-                        | Some specDirectory ->
-                            pageLayout <- Some(LayoutModuleParser.load reference specDirectory)
-                            reader.SkipNewlines()
-                    elif ReportBodyParser.tryParseStatement reader shell then ()
-                    else
-                        raise (reader.Unexpected())
+        let pageTitle = pageTitle.Value
+        let pageLayout = pageLayout.Value
+        let pageToolbar = pageToolbar.Value
+        let usageDateDerive = usageDateDerive.Value
+        let pageDisplayBindings = pageDisplayBindings.Value
 
         BlockSyntax.expectBlockEnd reader "page" (Some pageId)
         shell.CurrentPageId <- previousPageId
@@ -858,21 +908,32 @@ module rec DocumentModuleParser =
         let resolveFilterProperty (filterName: string) (property: string) =
             FilterScopeDefaults.resolveProperty [ standaloneFilterDefaults; shell.FilterDefaults ] filterName property
 
+        let onDefaults () =
+            DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
+
+        let onDefault () =
+            DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
+
+        let onFilter () =
+            shell.Filters.Add(FilterParser.parse reader resolveFilterProperty)
+            reader.SkipNewlines()
+
+        let onToolbar () =
+            ReportBodyParser.parseFiltersChromePublic reader shell true
+            reader.SkipNewlines()
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ())
+              BlockGrammar.ChildKeyword("toolbar", fun _ -> onToolbar ())
+              BlockGrammar.ChildKeyword("filters", fun _ -> onToolbar ()) ]
+
         while not (BlockSyntax.isBlockEnd reader "standalone" None) && not reader.IsEof do
             reader.SkipNewlines()
 
             if BlockSyntax.isBlockEnd reader "standalone" None then ()
-            elif reader.TryKeyword "defaults" then
-                DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
-            elif reader.TryKeyword "default" then
-                DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
-            elif reader.TryKeyword "filter" then
-                shell.Filters.Add(FilterParser.parse reader resolveFilterProperty)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
-                ReportBodyParser.parseFiltersChromePublic reader shell true
-                reader.SkipNewlines()
-            else
+            elif not (BlockGrammar.tryDispatchChild reader members) then
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
@@ -885,28 +946,39 @@ module rec DocumentModuleParser =
         let resolveFilterProperty (filterName: string) (property: string) =
             FilterScopeDefaults.tryGet standaloneFilterDefaults filterName property
 
+        let onDefaults () =
+            DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
+            reader.SkipNewlines()
+
+        let onDefault () =
+            DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
+            reader.SkipNewlines()
+
+        let onFilter () =
+            FilterParser.parse reader resolveFilterProperty |> ignore
+            reader.SkipNewlines()
+
+        let onToolbar () =
+            if reader.TryKeyword "dashboard" then
+                ToolbarPlacementParser.discard reader "filters dashboard"
+            elif reader.TryKeyword "chrome" then
+                FiltersChromeParser.parse reader |> ignore
+            else
+                ToolbarPlacementParser.discard reader "toolbar"
+            reader.SkipNewlines()
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ())
+              BlockGrammar.ChildKeyword("toolbar", fun _ -> onToolbar ())
+              BlockGrammar.ChildKeyword("filters", fun _ -> onToolbar ()) ]
+
         while not (BlockSyntax.isBlockEnd reader "standalone" None) && not reader.IsEof do
             reader.SkipNewlines()
 
             if BlockSyntax.isBlockEnd reader "standalone" None then ()
-            elif reader.TryKeyword "defaults" then
-                DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
-                reader.SkipNewlines()
-            elif reader.TryKeyword "default" then
-                DefaultsBlockParser.parse reader "default" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
-                reader.SkipNewlines()
-            elif reader.TryKeyword "filter" then
-                FilterParser.parse reader resolveFilterProperty |> ignore
-                reader.SkipNewlines()
-            elif reader.TryKeyword "toolbar" || reader.TryKeyword "filters" then
-                if reader.TryKeyword "dashboard" then
-                    ToolbarPlacementParser.discard reader "filters dashboard"
-                elif reader.TryKeyword "chrome" then
-                    FiltersChromeParser.parse reader |> ignore
-                else
-                    ToolbarPlacementParser.discard reader "toolbar"
-                reader.SkipNewlines()
-            else
+            elif not (BlockGrammar.tryDispatchChild reader members) then
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
