@@ -8,18 +8,19 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopePlacementTests =
 
-    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
+    [<Fact>]
     let ``placement flow wires filters to report and card`` () =
         let dir = Path.Combine(Path.GetTempPath(), "placement-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "peak.dashflow"), CardInteriorFlowParseTests.flowTextForReuse)
+        File.WriteAllText(Path.Combine(dir, "peak.ds"), CardInteriorFlowParseTests.flowTextForReuse)
 
         let specText =
             """
 module tab placement_flow
+  import flows from Test.Flows as peak_flow
 
 connect
-  flow "peak.dashflow"
+  use flow peak_flow
 end connect
 
 report "Scope"
