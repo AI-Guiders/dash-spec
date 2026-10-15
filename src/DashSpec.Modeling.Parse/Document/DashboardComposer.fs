@@ -190,7 +190,11 @@ module rec DashboardComposer =
                         CardIds = tabModule.Cards |> Seq.map (fun c -> c.Id) |> Seq.toList :> IReadOnlyList<_>
                         LayoutBoard = tabModule.LayoutBoard }
 
-        let assignedCards = TabParser.assignTabs (cards :> IReadOnlyList<_>) (mergedTabs :> IReadOnlyList<_>)
+        let assignedCards =
+            TabParser.assignTabs
+                id
+                (cards :> IReadOnlyList<_>)
+                (mergedTabs :> IReadOnlyList<_>)
 
         let merged =
             { document with

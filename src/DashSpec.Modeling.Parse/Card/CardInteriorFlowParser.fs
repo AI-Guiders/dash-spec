@@ -15,8 +15,5 @@ module CardInteriorFlowParser =
             FlowGraphKindRegistry.FlowGraphScope.CardInterior
             $"Card '{cardId}'"
 
-    let rejectLegacyFlow (reader: TokenReader) (cardId: string) =
-        QualifiedFlowBlockParser.tryRejectLegacyFlow reader $"Card '{cardId}'"
-
     let toDefinition (builder: FlowGraphSections.Builder) : CardInteriorFlowDefinition option =
         builder.ToSections() |> Option.map (fun sections -> { Sections = sections })

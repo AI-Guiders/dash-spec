@@ -11,16 +11,10 @@ module DiagramParser =
     let private bannedTooltipPropertyKeys =
         set [ "tooltip"; "tooltip_time"; "tooltip_format"; "tooltip_split"; "tooltip_as" ]
 
-    let private rejectLegacyTooltipProperties (properties: IReadOnlyDictionary<string, string>) context =
-        for key in properties.Keys do
-            if bannedTooltipPropertyKeys.Contains key then
-                raise (DashSpecParseException($"Diagram '{context}': property '{key}' was removed (ADR-0029). Use @tooltip entity and inspect block instead."))
-
     let parseAfterKindIdent (reader: TokenReader) (name: string) =
         match DiagramKindRegistry.tryResolve name with
         | true, spec when name.Equals("table", StringComparison.OrdinalIgnoreCase) ->
             let properties = TableDiagramParser.parse reader
-            rejectLegacyTooltipProperties properties name
             { Kind = name; Properties = properties :> IReadOnlyDictionary<_, _>; UsePreset = None }
         | true, spec ->
             let properties =
@@ -30,7 +24,6 @@ module DiagramParser =
                     $"diagram {name}"
                     spec.AllowExtensionProperties
                     false
-            rejectLegacyTooltipProperties properties name
             { Kind = name; Properties = properties :> IReadOnlyDictionary<_, _>; UsePreset = None }
         | false, _ ->
             let overrides =
@@ -43,7 +36,6 @@ module DiagramParser =
                         $"diagram {name}"
                         true
                         false
-            rejectLegacyTooltipProperties overrides name
             { Kind = ""; Properties = overrides; UsePreset = Some name }
 
     let parse (reader: TokenReader) =

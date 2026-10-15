@@ -10,6 +10,7 @@ type DashSpecSyntaxKind =
     | Operator = 6
     | Identifier = 7
     | Punctuation = 8
+    | Table = 9
 
 [<CLIMutable>]
 type DashSpecSyntaxSpan =

@@ -157,15 +157,6 @@ module HostModuleParser =
             elif reader.TryKeyword "surfaces" then
                 parseSurfacesBlock reader surfaces
             else
-                match reader.TryModuleInclude() with
-                | Some reference ->
-                    match specDirectory with
-                    | None | Some "" ->
-                        raise (DashSpecParseException("!include requires host file directory when parsing."))
-                    | Some dir ->
-                        assignTopbarLayout dir "!include" &topbarLayout reference
-                        reader.SkipNewlines()
-                | None ->
                     if reader.TryKeyword "include" then
                         let kind, reference = readIncludeReference reader
                         if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then

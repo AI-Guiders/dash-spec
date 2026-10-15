@@ -64,9 +64,7 @@ public sealed class DevSpecResolveService(
         return new DashSpecParseOptions
         {
             MergeReferencedTabModules = false,
-            TolerateIncompleteIncludes = true,
             LinkOnlyReferencedDiagramUnits = false,
-            ModuleLinkMode = runtime.ModuleLinkMode,
             ExtensionBlockKeywords = runtime.ExtensionBlockKeywords,
             ExtensionBlockPluginIds = runtime.ExtensionBlockPluginIds,
             PhraseTemplates = runtime.PhraseTemplates,

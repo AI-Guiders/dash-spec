@@ -1,3 +1,4 @@
+using DashSpecSyntaxKind = DashSpec.Modeling.Parse.Syntax.DashSpecSyntaxKind;
 namespace DashSpec.Core.Authoring;
 
 /// <summary>Classified syntax span from <see cref="DashSpecSyntaxPipeline"/>.</summary>

@@ -134,6 +134,10 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         this.SkipNewlines()
         tokens.[index].Start
 
+    member this.CurrentTableRow() =
+        this.SkipNewlines()
+        tokens.[index].Value
+
     member this.ReadPropertyKey(?allowQuoted: bool) =
         let allowQuoted = defaultArg allowQuoted false
         this.SkipNewlines()
@@ -284,35 +288,6 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
                 index <- index + 1
             | _ -> continueReading <- false
         this.FormatRestOfLine(parts)
-
-    member this.TryModuleInclude() =
-        this.SkipNewlines()
-        if this.TryKeyword "import" then
-            Some(this.ReadString())
-        elif not (this.IsAt TokenKind.Bang) then
-            None
-        else
-            this.Advance()
-            if not (this.TryKeyword "include") then
-                raise (DashSpecParseException("Expected 'include' after '!'."))
-            Some(this.ReadString())
-
-    member this.TryModuleLinkDirective() =
-        this.SkipNewlines()
-        if not (this.TryKeyword "using") then None
-        elif this.IsAt TokenKind.String then
-            Some(DashSpec.Modeling.Parse.Include.ModuleLinkDirective.PathReference(this.ReadString()))
-        elif this.TryKeyword "diagram" then
-            let diagramId = this.ReadIdent()
-            this.ExpectKeyword "from"
-            Some(DashSpec.Modeling.Parse.Include.ModuleLinkDirective.DiagramFrom(diagramId, this.ReadString()))
-        else
-            raise (this.Unexpected("string path or diagram <id> from \"path\""))
-
-    member this.TryEnvelopeLinkDirective() =
-        match this.TryModuleLinkDirective() with
-        | Some directive -> Some directive
-        | None -> this.TryModuleInclude() |> Option.map DashSpec.Modeling.Parse.Include.ModuleLinkDirective.PathReference
 
     member this.SkipFileDirectives() =
         this.SkipNewlines()

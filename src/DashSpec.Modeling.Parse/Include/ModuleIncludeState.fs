@@ -20,9 +20,23 @@ type ModuleIncludeState() =
 
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
+    let aliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     member _.LayoutBoard = layoutBoard
     member _.ToolbarBoard = toolbarBoard
+
+    member _.Aliases = aliases :> IReadOnlyDictionary<string, string>
+
+    member _.RegisterAliases(entries: Map<string, string>) =
+        for kv in entries do
+            if aliases.ContainsKey kv.Key then
+                raise (DashSpecParseException($"alias '{kv.Key}' is already declared in this module."))
+            aliases.[kv.Key] <- kv.Value
+
+    member _.ResolveName(name: string) =
+        match aliases.TryGetValue name with
+        | true, target -> target
+        | false, _ -> name
 
     member _.TryGetDiagram(id: string, fragment: outref<SpecIncludeFragment>) =
         match diagrams.TryGetValue id with

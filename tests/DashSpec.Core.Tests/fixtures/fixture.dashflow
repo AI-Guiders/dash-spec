@@ -1,5 +1,7 @@
 module flow fixture
 
+namespace Fixtures.Flow
+
 source fixture_src {
   use provider sqlserver
   from view dbo.t

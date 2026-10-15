@@ -88,14 +88,14 @@ module TabParser =
             BlockSyntax.expectBlockEnd reader "tab" (Some expectedTabId)
             label, filters :> IReadOnlyList<_>, layoutBoard
 
-    let assignTabs (cards: IReadOnlyList<CardDefinition>) (tabs: IReadOnlyList<TabDefinition>) =
+    let assignTabs (resolveName: string -> string) (cards: IReadOnlyList<CardDefinition>) (tabs: IReadOnlyList<TabDefinition>) =
         if tabs.Count = 0 then
             cards |> Seq.toList
         else
             let idToTab = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             for tab in tabs do
                 for token in tab.CardIds do
-                    let cardId = CardLayoutRefResolver.resolve token cards $"Tab '{tab.Id}' cards"
+                    let cardId = CardLayoutRefResolver.resolve (resolveName token) cards $"Tab '{tab.Id}' cards"
                     idToTab.[cardId] <- tab.Id
 
             cards

@@ -275,6 +275,12 @@ module DashSpecLexer =
 
                     tokens.Add({ Kind = kind; Value = value; Start = start; Length = i - start })
                     atLineStart <- false
+                | '|' ->
+                    let start = i
+                    while i < text.Length && text.[i] <> '\n' && text.[i] <> '\r' do
+                        i <- i + 1
+                    tokens.Add({ Kind = TokenKind.TableRow; Value = text.[start..i - 1].Trim(); Start = start; Length = i - start })
+                    atLineStart <- false
                 | c -> raise (DashSpecParseException($"Unexpected character '{c}' at position {i}.", i))
         tokens.Add({ Kind = TokenKind.Eof; Value = ""; Start = text.Length; Length = 0 })
         tokens :> IReadOnlyList<Token>

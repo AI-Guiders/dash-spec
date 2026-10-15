@@ -100,7 +100,7 @@ module TabModuleParser =
 
         DocumentCompilePipeline.compileReportModule shell
 
-        let cards = TabParser.assignTabs (shell.Cards :> IReadOnlyList<_>) tabs
+        let cards = TabParser.assignTabs (fun n -> shell.Includes.ResolveName n) (shell.Cards :> IReadOnlyList<_>) tabs
 
         let documentWithoutGraph =
             { Id = tabId

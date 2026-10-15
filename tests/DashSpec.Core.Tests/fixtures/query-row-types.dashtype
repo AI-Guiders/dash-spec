@@ -1,5 +1,7 @@
 module types query_fixture
 
+namespace Fixtures.QueryRowTypes
+
 type FixtureRow
   optional date usage_date
   optional string app_name
