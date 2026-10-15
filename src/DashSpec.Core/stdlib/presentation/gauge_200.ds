@@ -1,0 +1,5 @@
+module presentation gauge_200
+namespace DashSpec.Std
+
+legend = hidden
+height = 200

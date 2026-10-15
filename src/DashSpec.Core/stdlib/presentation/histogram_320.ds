@@ -1,0 +1,5 @@
+module presentation histogram_320
+namespace DashSpec.Std
+
+legend = hidden
+height = 320

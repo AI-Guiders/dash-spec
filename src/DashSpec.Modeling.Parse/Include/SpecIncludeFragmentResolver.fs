@@ -87,10 +87,10 @@ module SpecIncludeFragmentResolver =
         else
             let extensions =
                 match includeKind.ToLowerInvariant() with
-                | "diagram" -> [| ".dashdiagram" |]
-                | "presentation" | "chrome" -> [| ".dashpresentation" |]
-                | "transform" -> [| ".dashtransform" |]
-                | "tooltip" -> [| ".dashtooltip" |]
+                | "diagram" -> [| ".ds" |]
+                | "presentation" | "chrome" -> [| ".ds" |]
+                | "transform" -> [| ".ds" |]
+                | "tooltip" -> [| ".ds" |]
                 | _ -> Array.empty
             let mutable resolved = path
             for ext in extensions do
@@ -116,7 +116,7 @@ module SpecIncludeFragmentResolver =
         if not (File.Exists resolved) then
             raise (FileNotFoundException($"Include {includeKind} not found: '{reference}' (resolved: {resolved}).", resolved))
 
-        let text = File.ReadAllText resolved
+        let text = DashSpec.Modeling.Parse.Document.UnitSource.readUnit resolved
         let baseDirectory = Path.GetDirectoryName resolved |> Option.ofObj |> Option.defaultValue specDirectory
 
         match includeKind.ToLowerInvariant() with
@@ -151,8 +151,6 @@ module SpecIncludeFragmentResolver =
 
         for statement in statements do
             match statement with
-            | IncludeStatement includeRef ->
-                fragment <- merge fragment (load includeRef.Kind includeRef.Reference baseDirectory)
             | DiagramStatement diagram ->
                 hasDiagram <- true
                 fragment <- merge fragment { emptyFragment with Diagram = Some diagram }

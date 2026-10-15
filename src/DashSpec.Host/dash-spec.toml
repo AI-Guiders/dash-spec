@@ -1,7 +1,7 @@
 # Host bootstrap — [host] dashhost → planet-content shell (ADR-0054).
 
 [host]
-dashhost = "../../samples/demo/demo.dashhost"
+dashhost = "../../samples/demo/demo.ds"
 
 [presentation]
 language = "ru-RU"

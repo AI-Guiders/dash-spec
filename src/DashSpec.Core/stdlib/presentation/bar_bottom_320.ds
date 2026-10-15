@@ -1,4 +1,5 @@
 module presentation bar_bottom_320
+namespace DashSpec.Std
 
   legend = bottom
   height = 320

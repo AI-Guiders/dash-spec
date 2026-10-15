@@ -2,6 +2,7 @@ namespace DashSpec.CodeCenter
 
 open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Parse.Formatting
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Syntax
 
 /// Text serialization policy for DashSpec block surface (ADR-0067 SerializeRules).
@@ -26,7 +27,7 @@ module DashSpecSerializeRules =
         let graph, laws = parseAndBuild text
 
         if not (List.isEmpty laws) then
-            Error laws
+            Result.Error laws
         else
             let reparsed = parseAndBuild (serializePreserve graph)
 
@@ -41,7 +42,7 @@ module DashSpecSerializeRules =
             if outlineSignature graph = outlineSignature (fst reparsed) then
                 Ok graph
             else
-                Error
-                    [ DashSpecRuleRegistry.diagnostic
-                          DashSpecRuleKind.RoundTripOutlineChanged
-                          (TextSpan.Create 0 1) ]
+                Result.Error
+                    [ DashSpecDiagnosticCatalog.ofRule
+                          DashSpecRule.RoundTripOutlineChanged
+                          (TextSpan.Create 0 1) "outline signature changed after preserve serialize round-trip" ]

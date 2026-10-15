@@ -35,36 +35,6 @@ module ReportBodyParser =
     let parseFiltersChromePublic (reader: TokenReader) (ctx: ReportCompileContext) (assign: bool) =
         parseFiltersChrome reader ctx assign
 
-    let private tryParseIncludeToolbar (reader: TokenReader) (ctx: ReportCompileContext) =
-        if not (reader.TryKeyword "include") then false
-        else
-            let kind, reference = DiagramModuleParser.readIncludeReference reader
-            if not (String.Equals(kind, "toolbar", StringComparison.OrdinalIgnoreCase)) then
-                raise (DashSpecParseException($"Dashboard shell allows include toolbar only, got include {kind}."))
-            match ctx.SpecDirectory with
-            | None | Some "" ->
-                raise (DashSpecParseException("include toolbar requires spec directory when parsing (path to the .dashspec folder)."))
-            | Some specDirectory ->
-                ctx.AssignToolbarBoard(LayoutModuleParser.load reference specDirectory, "include toolbar")
-                reader.SkipNewlines()
-                true
-
-    let private tryParseIncludeLayout (reader: TokenReader) (ctx: ReportCompileContext) =
-        if not (reader.TryKeyword "include") then false
-        else
-            let kind, reference = DiagramModuleParser.readIncludeReference reader
-            if not (String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)) then
-                raise (DashSpecParseException($"Tab module shell allows include layout only at file top, got include {kind}."))
-            match ctx.SpecDirectory with
-            | None | Some "" ->
-                raise (DashSpecParseException("include layout requires spec directory when parsing (path to the .dashspec folder)."))
-            | Some specDirectory ->
-                if ctx.LayoutBoard.IsSome then
-                    raise (DashSpecParseException("Tab module declares more than one layout board."))
-                ctx.AssignTabLayoutBoard(LayoutModuleParser.load reference specDirectory, "include layout")
-                reader.SkipNewlines()
-                true
-
     let private applyTabModuleBlock
         (ctx: ReportCompileContext)
         (moduleLabel: string option)
@@ -96,12 +66,7 @@ module ReportBodyParser =
                 applyTabModuleBlock ctx moduleLabel moduleFilters moduleLayout
 
     let rec tryParseStatement (reader: TokenReader) (ctx: ReportCompileContext) =
-        if ctx.Mode = ReportCompileMode.Dashboard && tryParseIncludeToolbar reader ctx then
-            true
-        elif (ctx.Mode = ReportCompileMode.TabStandalone || ctx.Mode = ReportCompileMode.TabEmbedded)
-             && tryParseIncludeLayout reader ctx then
-            true
-        elif reader.TryKeyword "connector" then
+        if reader.TryKeyword "connector" then
             reader.ReadIdent() |> ignore
             raise (DashSpecParseException("Data provider belongs on dashflow source nodes (use provider <id> inside source { }), not on the report module."))
         elif reader.TryKeyword "layout" then

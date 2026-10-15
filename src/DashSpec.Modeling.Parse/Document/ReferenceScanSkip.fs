@@ -176,8 +176,6 @@ module internal ReferenceScanSkip =
                 skipBalancedBlock reader "defaults" None
             elif reader.TryKeyword "default" then
                 skipBalancedBlock reader "default" None
-            elif reader.TryKeyword "include" then
-                consumeLine reader
             elif reader.TryKeyword "phase" then
                 skipPhase reader diagramIds rowTypes
             else

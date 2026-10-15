@@ -1,0 +1,5 @@
+module presentation pie_right_360
+namespace DashSpec.Std
+
+legend = right
+height = 360

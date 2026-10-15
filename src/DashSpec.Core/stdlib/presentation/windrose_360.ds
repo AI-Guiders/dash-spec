@@ -1,0 +1,5 @@
+module presentation windrose_360
+namespace DashSpec.Std
+
+legend = right
+height = 360

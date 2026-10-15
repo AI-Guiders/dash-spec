@@ -40,7 +40,6 @@ type DashSpecBlockKeyword =
     | DiagramLibrary
     | Bind
     | Import
-    | Include
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -81,7 +80,6 @@ module DashSpecBlockKeyword =
         | "diagramlibrary" -> Some DashSpecBlockKeyword.DiagramLibrary
         | "bind" -> Some DashSpecBlockKeyword.Bind
         | "import" -> Some DashSpecBlockKeyword.Import
-        | "include" -> Some DashSpecBlockKeyword.Include
         | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge"
         | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" ->
             Some(DashSpecBlockKeyword.Other name)
@@ -159,5 +157,4 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.DiagramLibrary -> "diagramlibrary"
         | DashSpecBlockKeyword.Bind -> "bind"
         | DashSpecBlockKeyword.Import -> "import"
-        | DashSpecBlockKeyword.Include -> "include"
         | DashSpecBlockKeyword.Other name -> name

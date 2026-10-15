@@ -1,0 +1,5 @@
+module presentation bar_horizontal_360
+namespace DashSpec.Std
+
+legend = bottom
+height = 360

@@ -42,7 +42,7 @@ public static class HostViewerServiceCollectionExtensions
     public static IServiceCollection AddDashSpecHostViewerPorts(this IServiceCollection services)
     {
         services.AddSingleton<HostPresentationSignals>();
-        services.AddSingleton<ICatalogUsageClient, CatalogUsageClientAdapter>();
+        services.AddScoped<ICatalogUsageClient, CatalogUsageClientAdapter>();
         services.AddSingleton<IViewerExternalLinksProvider, ViewerExternalLinksProviderAdapter>();
         services.AddSingleton<IViewerShellChrome, ViewerShellChromeAdapter>();
         services.AddSingleton<IViewerPresentationOptions, ViewerPresentationOptionsAdapter>();

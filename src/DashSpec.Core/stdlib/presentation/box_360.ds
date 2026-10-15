@@ -1,0 +1,5 @@
+module presentation box_360
+namespace DashSpec.Std
+
+legend = bottom
+height = 360

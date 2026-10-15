@@ -10,11 +10,6 @@ open DashSpec.Modeling.Parse.Tooltip
 
 module DiagramModuleParser =
 
-    let readIncludeReference (reader: TokenReader) =
-        let kind = reader.ReadIdent()
-        let reference = reader.ReadString()
-        kind, reference
-
     let private toPresentationBlock (props: IDictionary<string, string>) =
         let usePreset =
             match props.TryGetValue "use" with
@@ -76,10 +71,6 @@ module DiagramModuleParser =
         while not reader.IsEof do
             reader.SkipNewlines()
             if reader.IsEof then ()
-            elif reader.TryKeyword "include" then
-                let kind, reference = readIncludeReference reader
-                statements.Add(IncludeStatement { Kind = kind; Reference = reference })
-                reader.SkipNewlines()
             else
                 match tryParseDiagramKindBlock reader with
                 | Some diagram ->

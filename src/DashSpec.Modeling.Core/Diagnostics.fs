@@ -14,12 +14,13 @@ type SourceSpan =
       EndLine: int
       EndCharacter: int }
 
-/// <summary>Accumulated parse/validation diagnostic.</summary>
+/// <summary>Accumulated parse/validation diagnostic. Code is the stable DS### rule code when a language rule produced it.</summary>
 [<CLIMutable>]
 type DashSpecDiagnostic =
     { Span: SourceSpan
       Message: string
-      Severity: DashSpecDiagnosticSeverity }
+      Severity: DashSpecDiagnosticSeverity
+      Code: string option }
 
 module DashSpecDiagnostic =
     let create line character endLine endCharacter message severity =
@@ -29,7 +30,11 @@ module DashSpecDiagnostic =
               EndLine = endLine
               EndCharacter = endCharacter }
           Message = message
-          Severity = severity }
+          Severity = severity
+          Code = None }
+
+    let withCode (code: string) (diagnostic: DashSpecDiagnostic) =
+        { diagnostic with Code = Some code }
 
     let error line character endLine endCharacter message =
         create line character endLine endCharacter message DashSpecDiagnosticSeverity.Error

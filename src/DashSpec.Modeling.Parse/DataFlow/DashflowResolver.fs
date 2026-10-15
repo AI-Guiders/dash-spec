@@ -15,8 +15,8 @@ module DashflowResolver =
 
         if File.Exists path then
             path
-        elif File.Exists(path + ".dashflow") then
-            path + ".dashflow"
+        elif File.Exists(path + ".ds") then
+            path + ".ds"
         else
             raise (FileNotFoundException($"Dashflow not found: '{reference}' (resolved: '{path}').", path))
 

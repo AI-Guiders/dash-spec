@@ -1,0 +1,6 @@
+module presentation bar_stacked_360
+namespace DashSpec.Std
+
+legend = bottom
+height = 360
+stacked = true

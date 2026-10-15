@@ -1,0 +1,4 @@
+module presentation kpi_compact
+namespace DashSpec.Std
+
+height = 120
