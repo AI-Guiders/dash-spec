@@ -1,51 +1,64 @@
-# DashSpec — справочник авторинга
+﻿# DashSpec — справочник авторинга
 
 > Сгенерировано из XML-doc (`AuthoringCatalog` + парсеры). Не редактировать вручную.
 > Команда: `dotnet run --project src/DashSpec.DocGen`
 
 # Обзор DashSpec
             
-             DashSpec — DSL для дашбордов: shell (`.dashspec`), модули диаграмм (`.dashdiagram`),
-             chrome-пресеты (`.dashpresentation`), layout, palette, catalog.
+             DashSpec — DSL для дашбордов. Единица компиляции — один файл `.ds` с заголовком
+             `module <kind> <id>` и опциональной строкой `namespace <Namespace>`.
             
              Источник правды — парсер `DashSpec.Core` (Host и LSP используют один и тот же код).
             
-             ## Типы файлов
+             ## Виды юнитов
             
-             | Расширение | Назначение |
-             |------------|------------|
-             | `.dashspec` | dashboard shell или tab module |
-             | `.dashdiagram` | `@diagram` + kind block (`heatmap`, `bar`, …) |
-             | `.dashpresentation` | `@presentation` chrome preset |
-             | `.dashlayout` | toolbar / card grid |
-             | `.dashpalette` | цветовая палитра |
-             | `.dashcatalog` | каталог entry → dashspec |
-             | `.dashinclude` | bundle include |
+             | Заголовок | Назначение |
+             |-----------|------------|
+             | `module dashboard <id>` | dashboard shell |
+             | `module tab <id>` | tab module |
+             | `module diagram <id>` | диаграмма (kind block: `heatmap`, `bar`, …) |
+             | `module presentation <id>` | chrome preset |
+             | `module layout <id>` | toolbar / card grid |
+             | `module palette <id>` | цветовая палитра |
+             | `module types <id>` | row types |
+             | `module flow <id>` | поток данных |
+             | `module tooltip <id>` | tooltip |
+             | `module catalog <id>` | каталог entry → dashspec |
+             | `module host <id>` | host shell (layouts) |
             
-             ADR: 0024 (document layers), 0011 (tab modules), 0039 (chart chrome).
+             Юниты ссылаются друг на друга импортом по namespace: `import <kind> from <Namespace> [as <alias>]`.
+            
+             ADR: 0024 (document layers), 0011 (tab modules), 0039 (chart chrome), 0098 (import by namespace),
+             0101 (единый тип юнита), 0102 (один язык).
 
 ---
 
 # Dashboard shell
             
-             Корневой отчёт — `@dashboard id` с end-block телом (без фигурных скобок модуля).
+             Корневой отчёт — `module dashboard <id>` с end-block телом.
             
              ```text
-             @dashboard demo_soak
+             module dashboard demo_soak
+               namespace Demo.Soak
+            
+               import types from Demo.Types
+               import layouts from Demo.Layouts
+               import palettes from Demo.Palettes
+               import flows from Demo.Flows as report_flow
+               import presentations from DashSpec.Std
+               import tabs from Demo.Analytics
             
              runtime
-               manifest = "demo-runtime.toml"
+               manifest = "demo.toml"
              end runtime
             
              configuration
                sqldialect = tsql
-               palette = "palettes/demo-apps.dashpalette"
              end configuration
-            
-             !include "layouts/soak-toolbar.dashlayout"
             
              connect
                use palette demo_apps
+               use flow report_flow
              end connect
             
              report
@@ -54,13 +67,13 @@
              end report
              ```
             
-             - **runtime** — только путь к TOML manifest (секреты и connectors в TOML, не в spec).
-             - **configuration** — `sqldialect`, `palette`, …
-             - **wiring** — `use connector`, `use palette` (имена из manifest/runtime).
+             - **runtime** — только путь к TOML manifest (секреты и providers в TOML, не в spec).
+             - **configuration** — `sqldialect`, …
+             - **connect** — `use palette <id>` (id из `import palettes`), `use flow <alias>` (alias из `import flows`); `use provider` (id или infer) на `source` в flow-юните; card `datasource { infer … }` — то же намерение.
              - **report** — фильтры, toolbar chrome, вкладки.
             
-             Shell может ссылаться на tab modules: `tab overview as "…" dashspec "demo-overview.dashspec"`.
-             LSP валидирует **только открытый файл** (без merge дочерних tab-dashspec).
+             Shell ссылается на tab modules по id: `import tabs from Demo.Analytics` + `tab analytics as "…"` без тела.
+             LSP валидирует **только открытый файл** (без merge дочерних tab modules).
 
 ---
 
@@ -101,19 +114,28 @@
 
 # Tab modules
             
-             В shell:
+             В shell — ссылка по id, без тела:
             
              ```text
-             tab overview as "Обзор" dashspec "demo-overview.dashspec"
+             module dashboard demo_soak
+               import tabs from Demo.Analytics
+            
+             report
+               tab analytics as "Обзор"
+             end report
              ```
             
-             Tab module — отдельный `.dashspec` с `@tab id`:
+             Tab module — юнит `module tab <id>`:
             
              ```text
-             @tab overview
-             runtime … end runtime
-             configuration … end configuration
-             extensions { use card_views }
+             module tab analytics
+               namespace Demo.Analytics
+               import palettes from Demo.Palettes
+            
+             runtime
+               manifest = "demo.toml"
+             end runtime
+            
              report
                filters { … }   # опционально, локальные фильтры tab
                card …
@@ -121,10 +143,13 @@
              end tab
              ```
             
+             Вкладка с телом (`cards` или `layout` на следующих строках) объявляется inline;
+             вкладка без тела берёт юнит по id из `import tabs`.
+            
              Фильтры shell и tab module **не должны дублировать id** при full merge (Host).
              В редакторе каждый файл проверяется отдельно.
             
-             ADR-0011.
+             ADR-0011, ADR-0098.
 
 ---
 
@@ -134,7 +159,7 @@
              card peak ref peak_card
                title = "…"
                data
-                 datasource view demo.v_…
+                 datasource infer view demo.v_…
                  bind usage_date, app_name
                end data
                diagram demo_peak_heatmap
@@ -142,17 +167,20 @@
              end card
              ```
             
-             Preset диаграммы — в `.dashdiagram`:
+             Preset диаграммы — юнит `module diagram <id>`:
             
              ```text
-             @diagram demo_peak_heatmap
+             module diagram demo_peak_heatmap
+               namespace Demo.Diagrams
+            
              heatmap
                x = …
                y = …
              end heatmap
              ```
             
-             `diagram` в card ссылается на id из include / library. `chrome use <preset>` — presentation preset (ADR-0039).
+             `diagram` в card ссылается на id юнита, подключённого через `import diagrams`.
+             `chrome use <preset>` — presentation preset (ADR-0039), id из `import presentations`.
 
 ---
 
@@ -163,37 +191,54 @@
              ```text
              page executive_summary
                title = "Сводка"
-               toolbar period_grain, period_start, chart_top
-               include layout "layouts/stakeholder-page-executive.dashlayout"
+               toolbar chrome
                card kpi_total_users … end card
              end page
              ```
             
-             Layout (`.dashlayout`) — bracket board:
+             Страница отдаёт toolbar через `toolbar chrome`; попадание фильтров на него — show flow
+             (`filter -> [toolbar] chrome.page.<id>`).
+            
+             Board — юнит `module layout <id>` с bracket-строками:
             
              ```text
-             @layout stakeholder_page_executive
-             scope page
+             module layout stakeholder_grid
+               namespace Demo.Layouts
+            
+             scope tab
             
              [ kpi_a kpi_b kpi_c ]
              [ chart_left chart_right ]
              ```
             
-             Id в скобках = id карточек на странице. `scope page` привязывает layout к `page`.
+             Id в скобках = id карточек. Board подключается импортом (`import layouts from Demo.Layouts`) и
+             назначается модулю: вкладке — board вкладки, дашборду — toolbar. Инлайн-board — `layout … end layout`
+             в card.
+            
+             `scope page` парсер принимает, но точки подключения у страницы нет — board живёт на уровне
+             tab/dashboard или в card.
             
              ADR-0020, ADR-0021, ADR-0030 (phase browse/detail).
 
 ---
 
-# Chart chrome (`@presentation`)
+# Chart chrome (`presentation`)
             
-             Пресеты в `.dashpresentation`:
+             Пресеты — юнит `module presentation <id>`:
             
              ```text
-             @presentation heatmap_tall
+             module presentation heatmap_tall
+               namespace Demo.Chrome
+            
              scale_value = percent
              y_max = 100
              end presentation
+             ```
+            
+             Подключение в shell или tab module:
+            
+             ```text
+             import presentations from Demo.Chrome
              ```
             
              В diagram module или card:
@@ -202,25 +247,33 @@
              chrome use heatmap_tall
              ```
             
-             Регистрация в shell: `!include "presentations/*.dashpresentation"`.
+             Стандартные пресеты не подгружаются неявно: `import presentations from DashSpec.Std`.
             
-             ADR-0039.
+             ADR-0039, ADR-0098.
 
 ---
 
-# Includes
+# Imports
+            
+             Юниты ссылаются друг на друга импортом по namespace:
             
              ```text
-             !include "layouts/soak-toolbar.dashlayout"
-             !include "diagrams/*.dashdiagram"
-             !include "presentations/*.dashpresentation"
+             module dashboard demo_soak
+               namespace Demo.Soak
+               import layouts from Demo.Layouts
+               import palettes from Demo.Palettes
+               import flows from Demo.Flows as report_flow
+               import presentations from DashSpec.Std
              ```
             
-             Пути относительно каталога `.dashspec`. Glob поддерживается.
+             Kinds: `diagrams`, `layouts`, `presentations`, `tooltips`, `types`, `flows`, `palettes`, `tabs`.
             
-             `.dashinclude` — явный bundle (layout + diagram list).
+             Из namespace берутся только юниты запрошенного вида. Namespace объявляется строкой
+             `namespace <NS>` в заголовке юнита; стандартные презенты живут в `DashSpec.Std`.
             
-             ADR-0017.
+             `as <alias>` задаёт имя для ссылок по alias (`use flow report_flow`).
+            
+             ADR-0098, ADR-0101, ADR-0102.
 
 ---
 
@@ -260,8 +313,8 @@
              ## LSP
             
              - Diagnostics при open/change/save (позиции из парсера)
-             - Completion: `diagram `, `chrome use `, `!include "`, keywords
-             - Go to definition: diagram id, chrome preset, include path
+             - Completion: `diagram `, `chrome use `, `import <kind> from `, keywords
+             - Go to definition: diagram id, chrome preset, namespace import
             
              Настройки `dashspec.*` обычно не нужны. `dashspec.hostDll` — только для CLI validate.
             

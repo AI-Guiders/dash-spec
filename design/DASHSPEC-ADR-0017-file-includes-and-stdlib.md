@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · v0.5 |
+| **Status** | Accepted · v0.5 · **superseded** — file-level `!include` and stdlib `<kind/name>` refs were removed; units are referenced by `import <kind> from <Namespace>`, the stdlib is `DashSpec.Std` ([ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md)) |
 | **Date** | 2026-07-01 |
 | **Relates to** | [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
 

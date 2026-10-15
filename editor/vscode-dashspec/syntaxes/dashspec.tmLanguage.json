@@ -9,7 +9,7 @@
     { "include": "#strings" },
     { "include": "#stdlib-ref" },
     { "include": "#at-directive" },
-    { "include": "#bang-include" },
+    { "include": "#module-header" },
     { "include": "#end-block" },
     { "include": "#keywords" },
     { "include": "#numbers" },
@@ -23,7 +23,7 @@
         { "include": "#tab-inline-block" },
         { "include": "#strings" },
         { "include": "#stdlib-ref" },
-        { "include": "#bang-include" },
+        { "include": "#module-header" },
         { "include": "#end-block" },
         { "include": "#keywords" },
         { "include": "#numbers" },
@@ -69,11 +69,11 @@
         }
       ]
     },
-    "bang-include": {
+    "module-header": {
       "patterns": [
         {
-          "name": "keyword.control.include.dashspec",
-          "match": "!include\\b"
+          "name": "keyword.control.import.dashspec",
+          "match": "\\b(import|namespace)\\b"
         }
       ]
     },

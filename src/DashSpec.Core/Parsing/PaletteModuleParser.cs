@@ -12,15 +12,4 @@ internal static class PaletteModuleParser
 
         throw new InvalidOperationException("Palette parse bridge not registered.");
     }
-
-    public static SpecLibrary LoadPaletteFile(string path)
-    {
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException($"Palette file not found: {path}", path);
-        }
-
-        var (id, props) = ParsePaletteFile(File.ReadAllText(path));
-        return SpecLibrary.FromPalette(id, props);
-    }
 }
