@@ -121,6 +121,11 @@ public static class DashSpecDiagnosticService
             case "tooltip":
                 TooltipModuleParser.ParseTooltipFile(text);
                 return [];
+            case "types":
+            case "flow":
+                // Type and flow units have no standalone validation facade: they are validated in the
+                // context of the module that imports them.
+                return [];
             case "catalog":
                 return LintCatalog(text, filePath, specDirectory, parseOptions);
             case "host":

@@ -23,6 +23,25 @@ public static class DashSpecValidator
         }
 
         var directory = specDirectory ?? Path.GetDirectoryName(path)!;
+
+        if (Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
+        {
+            // Unit files (ADR-0101) are routed by the kind in their module header, exactly like the editor path.
+            var diagnostics = DashSpecDiagnosticService.ValidateFile(path, directory, parseOptions);
+            var error = diagnostics.FirstOrDefault(d => d.Severity == DashSpecDiagnosticSeverity.Error);
+            if (error is not null)
+            {
+                throw new DashSpecParseException(error.Message);
+            }
+
+            foreach (var warning in diagnostics.Where(d => d.Severity == DashSpecDiagnosticSeverity.Warning))
+            {
+                Console.Error.WriteLine($"warning: {warning.Message}");
+            }
+
+            return;
+        }
+
         var document = DashSpecParser.Parse(File.ReadAllText(path), directory, parseOptions);
         EmitResolutionWarnings(ResolutionLint.Analyze(document));
     }

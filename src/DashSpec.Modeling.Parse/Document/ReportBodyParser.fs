@@ -49,7 +49,17 @@ module ReportBodyParser =
         ctx.LayoutBoard <- ctx.LayoutBoard |> Option.orElse moduleLayout
 
         match ctx.Mode with
-        | ReportCompileMode.TabStandalone -> ctx.Filters.AddRange moduleFilters
+        | ReportCompileMode.TabStandalone ->
+            // The `standalone` block is parsed before the module-scope `filters` block, and the two describe the
+            // same filter for two modes (standalone vs embedded) — so the standalone declaration wins and the
+            // module-scope copy is not added twice.
+            for filter in moduleFilters do
+                let alreadyDeclared =
+                    ctx.Filters
+                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
+
+                if not alreadyDeclared then
+                    ctx.Filters.Add filter
         | ReportCompileMode.TabEmbedded -> ctx.TabLocalFilters.AddRange moduleFilters
         | _ -> ()
 
