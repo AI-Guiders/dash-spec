@@ -14,8 +14,6 @@ module rec DashboardParser =
 
     let readDiagramLibraryPath (text: string) = DocumentModuleParser.readConfigurationValue text "diagramlibrary"
 
-    let readPalettePath (text: string) = DocumentModuleParser.readConfigurationValue text "palette"
-
     let readSqlDialect (text: string) =
         match DocumentModuleParser.readConfigurationValue text "sqldialect" with
         | Some dialect -> SqlDialectParser.parse dialect
@@ -26,11 +24,6 @@ module rec DashboardParser =
             raise (DashSpecParseException("ReadDashboardHeader requires block module format."))
         else
             readBlockDashboardHeader text
-
-    let readPaletteReference (reader: TokenReader) =
-        if reader.RawKind = TokenKind.Eq then
-            reader.Advance()
-        reader.ReadScalarValue()
 
     let private skipEnvelopeSection (reader: TokenReader) =
         if reader.TryKeyword "runtime" || reader.TryKeyword "configuration" || reader.TryKeyword "connect" then

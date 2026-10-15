@@ -1,4 +1,3 @@
-using DashSpec.Core.Validation;
 using DashSpec.LanguageServer;
 using MediatR;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
@@ -22,8 +21,6 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
         "filter",
         "chrome",
         "use",
-        "include",
-        "!include",
         "end",
         "heatmap",
         "gantt",
@@ -85,7 +82,6 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
                 _state.Index.Presentations.Keys,
                 context.Value.Prefix,
                 CompletionItemKind.Color),
-            DashSpecLspHelpers.CompletionKind.Include => BuildIncludeItems(path, context.Value.Prefix),
             _ => BuildKeywordItems(line, position.Character),
         };
 
@@ -110,19 +106,6 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
                 Label = id,
                 Kind = kind,
                 InsertText = id,
-            })
-            .ToList();
-    }
-
-    private static List<CompletionItem> BuildIncludeItems(string filePath, string partial)
-    {
-        var directory = DashSpecLspHelpers.GetSpecDirectory(filePath);
-        return IncludePathCompletion.Suggest(directory, partial)
-            .Select(s => new CompletionItem
-            {
-                Label = s,
-                Kind = s.EndsWith('/') ? CompletionItemKind.Folder : CompletionItemKind.File,
-                InsertText = s,
             })
             .ToList();
     }

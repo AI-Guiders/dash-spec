@@ -2,7 +2,7 @@ namespace DashSpec.Modeling.Parse
 
 open System
 open System.Collections.Generic
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 
 module PhraseScopes =
     let onClick = "card.on_click"

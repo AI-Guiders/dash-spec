@@ -90,7 +90,7 @@ module DocumentCompilePipeline =
     /// <summary>Qualified scope flows only — prefer <see cref="compileReportModule"/> after module parse.</summary>
     let compileScopeFlows (shell: ReportCompileContext) = ScopeFlows.apply shell
 
-    /// <summary>Bind phase: module header imports (ADR-0098). v1 validates only; linking replaces <c>!include</c> later.</summary>
+    /// <summary>Bind phase: module header imports (ADR-0098).</summary>
     let resolveImports (shell: ReportCompileContext) = ModuleImportResolver.resolve shell
 
     /// <summary>Post-parse: imports (stub) → qualified flows → card/shell fields.</summary>

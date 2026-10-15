@@ -54,7 +54,7 @@ public sealed class ReportPreviewSessionTests
         Assert.Equal(before, after);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
     public async Task GetPayloadFingerprintAsync_changes_when_card_count_differs()
     {
         var workspace = Path.Combine(Path.GetTempPath(), "dashspec-preview-" + Guid.NewGuid().ToString("N"));

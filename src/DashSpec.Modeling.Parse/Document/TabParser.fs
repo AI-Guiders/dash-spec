@@ -11,19 +11,20 @@ open DashSpec.Modeling.Parse.Lexing
 
 module TabParser =
 
+    /// Tab with a cards body is inline; a tab without one references the tab module imported under its id (`import tabs`).
     let parse (reader: TokenReader) =
         let id = reader.ReadIdent()
         let mutable label: string option = None
         if reader.TryKeyword "as" then
             label <- Some(reader.ReadString())
 
-        if reader.TryKeywordSameLine "dashspec" then
-            let path = reader.ReadString()
-            { Id = id; Label = label; CardIds = [||]; DashspecPath = Some path; LayoutBoard = None }
-        else
-            if not (reader.IsOnNewline()) then
-                raise (DashSpecParseException($"Tab '{id}' requires dashspec \"path\" or a body closed with end tab."))
+        if not (reader.IsOnNewline()) then
+            raise (DashSpecParseException($"Tab '{id}' header must end its line."))
 
+        reader.SkipNewlines()
+
+        match reader.TryPeekIdent() with
+        | Some("cards" | "layout") ->
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
             let mutable cardIds: IReadOnlyList<string> = [||]
@@ -45,9 +46,11 @@ module TabParser =
             BlockSyntax.expectBlockEnd reader "tab" (Some id)
 
             if cardIds.Count = 0 then
-                raise (DashSpecParseException($"Tab '{id}' requires a cards block or dashspec \"path\"."))
+                raise (DashSpecParseException($"Tab '{id}' requires a cards block."))
 
-            { Id = id; Label = label; CardIds = cardIds; DashspecPath = None; LayoutBoard = layoutBoard }
+            { Id = id; Label = label; CardIds = cardIds; ModulePath = None; LayoutBoard = layoutBoard }
+        | _ ->
+            { Id = id; Label = label; CardIds = [||]; ModulePath = None; LayoutBoard = None }
 
     let parseModuleLocalBlock (reader: TokenReader) (expectedTabId: string) (allowFilters: bool) =
         let id = reader.ReadIdent()
@@ -77,7 +80,7 @@ module TabParser =
                     layoutBoard <- Some(LayoutParser.parseBoard reader)
                     reader.SkipNewlines()
                 elif allowFilters && reader.TryKeyword "defaults" then
-                    raise (DashSpecParseException($"Tab block does not support defaults; declare defaults in report or tab dashspec."))
+                    raise (DashSpecParseException($"Tab block does not support defaults; declare defaults in report or tab module."))
                 elif allowFilters && reader.TryKeyword "filter" then
                     filters.Add(FilterParser.parse reader (fun _ _ -> None))
                     reader.SkipNewlines()

@@ -12,6 +12,7 @@ type ImportKind =
     | Types
     | Flows
     | Palettes
+    | Tabs
 
 /// <summary>Single registry for import kind keywords — change kinds here only.</summary>
 module ImportKindRegistry =
@@ -29,6 +30,7 @@ module ImportKindRegistry =
             { Kind = ImportKind.Types; Keyword = "types" }
             { Kind = ImportKind.Flows; Keyword = "flows" }
             { Kind = ImportKind.Palettes; Keyword = "palettes" }
+            { Kind = ImportKind.Tabs; Keyword = "tabs" }
         |]
 
     let allDefinitions = definitions

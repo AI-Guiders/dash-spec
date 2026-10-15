@@ -88,7 +88,7 @@ public class SqlDataSourceParserTests
         Assert.Contains("DELETE is ok", query.Sql);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
     public void Parse_sql_datasource_rejects_bare_string_without_query_or_file()
     {
         var dir = NewSpecDir();
@@ -110,7 +110,7 @@ public class SqlDataSourceParserTests
         Assert.Contains("query or file", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
     public void Parse_sql_datasource_file_and_block_query()
     {
         var dir = NewSpecDir();

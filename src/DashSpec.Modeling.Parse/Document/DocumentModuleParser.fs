@@ -8,7 +8,7 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Card
 open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Filter
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Toolbar
@@ -42,7 +42,7 @@ module rec DocumentModuleParser =
           DiagramLibraryPath: string option
           ReportTitle: string option }
 
-    let private exportModuleDiagrams (includes: ModuleIncludeState) =
+    let private exportModuleDiagrams (includes: ModuleImportState) =
         if includes.Diagrams.Count = 0 then
             DashboardDocument.emptyModuleDiagrams
         else
@@ -63,7 +63,7 @@ module rec DocumentModuleParser =
             |> dict
             |> fun map -> Dictionary<string, ModuleDiagramDefinition>(map, StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
 
-    let private exportModuleRowTypes (includes: ModuleIncludeState) =
+    let private exportModuleRowTypes (includes: ModuleImportState) =
         if includes.ExportRowTypes().Count = 0 then
             DashboardDocument.emptyRowTypes
         else
@@ -119,7 +119,7 @@ module rec DocumentModuleParser =
             [ { Id = tabId
                 Label = Some title
                 CardIds = result.Context.Cards |> Seq.map (fun c -> c.Id) |> Seq.toList :> IReadOnlyList<_>
-                DashspecPath = None
+                ModulePath = None
                 LayoutBoard = result.Context.LayoutBoard } ]
 
         let dashboardFilters =
@@ -166,6 +166,11 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
 
+    let private resolveTabModules (includes: ModuleImportState) (tabs: IReadOnlyList<TabDefinition>) : IReadOnlyList<TabDefinition> =
+        let resolved =
+            tabs |> Seq.map (fun tab -> if tab.CardIds.Count > 0 then tab else { tab with ModulePath = includes.TryGetTabModule tab.Id })
+        Seq.toList resolved :> IReadOnlyList<_>
+
     let private parseDashboard (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let dashboardId = reader.ReadIdent()
         let (dashShell: ReportCompileContext), sqlDialect, palettePath, diagramLibraryPath, (reportTitle: string option) =
@@ -199,7 +204,7 @@ module rec DocumentModuleParser =
               CardsChrome = dashShell.CardsChrome
               Filters = dashShell.Filters :> IReadOnlyList<_>
               DashboardFilters = dashboardFilters
-              Tabs = dashShell.Tabs :> IReadOnlyList<_>
+              Tabs = resolveTabModules dashShell.Includes (dashShell.Tabs :> IReadOnlyList<_>)
               Cards = cards :> IReadOnlyList<_>
               ToolbarBoard = dashShell.ToolbarBoard
               ModuleExtensions = Some dashShell.ModuleExtensions
@@ -234,14 +239,7 @@ module rec DocumentModuleParser =
         if reader.TryKeyword "tab" then
             composeTabStandalone reader specDirectory parseOptions diagnostics
         elif reader.TryKeyword "dashboard" then
-            let document = parseDashboard reader specDirectory parseOptions
-
-            if document.Tabs |> Seq.forall (fun t -> String.IsNullOrWhiteSpace(Option.defaultValue "" t.DashspecPath)) then
-                document
-            elif specDirectory.IsNone || String.IsNullOrWhiteSpace specDirectory.Value then
-                raise (DashSpecParseException("Tab dashspec references require specDirectory when parsing."))
-            else
-                document
+            parseDashboard reader specDirectory parseOptions
         else
             raise (DashSpecParseException("Block module must start with @dashboard or @tab."))
 
@@ -385,7 +383,7 @@ module rec DocumentModuleParser =
         (parseOptions: DashSpecParseOptions)
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         : ReportCompileContext * SqlDialect * string option * string option * string option =
-        let includes = ModuleIncludeState()
+        let includes = ModuleImportState()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -394,7 +392,6 @@ module rec DocumentModuleParser =
         let mutable layout = LayoutDefinition.Default
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
-        let mutable flowConnectPath = None
         let mutable flowConnectSymbol = None
         let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
@@ -432,7 +429,6 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> connectLayoutBoard <- Some lb)
                     (fun tb -> connectToolbarBoard <- Some tb)
-                    (fun v -> flowConnectPath <- v)
                     (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
                     seenCode
@@ -452,7 +448,6 @@ module rec DocumentModuleParser =
                         layout
                         connectLayoutBoard
                         connectToolbarBoard
-                        flowConnectPath
                         flowConnectSymbol
                         parseOptions
                         moduleExtensions
@@ -484,7 +479,7 @@ module rec DocumentModuleParser =
         (parseOptions: DashSpecParseOptions)
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         =
-        let includes = ModuleIncludeState()
+        let includes = ModuleImportState()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
         let mutable palettePath = None
@@ -493,7 +488,6 @@ module rec DocumentModuleParser =
         let mutable layout = LayoutDefinition.Default
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
-        let mutable flowConnectPath = None
         let mutable flowConnectSymbol = None
         let mutable shell: ReportCompileContext option = None
         let mutable reportTitle = None
@@ -531,7 +525,6 @@ module rec DocumentModuleParser =
                     (fun v -> moduleExtensions <- v)
                     (fun lb -> connectLayoutBoard <- Some lb)
                     (fun tb -> connectToolbarBoard <- Some tb)
-                    (fun v -> flowConnectPath <- v)
                     (fun v -> flowConnectSymbol <- v)
                     (fun props -> timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc props)
                     seenCode
@@ -551,7 +544,6 @@ module rec DocumentModuleParser =
                         layout
                         connectLayoutBoard
                         connectToolbarBoard
-                        flowConnectPath
                         flowConnectSymbol
                         parseOptions
                         moduleExtensions
@@ -586,7 +578,7 @@ module rec DocumentModuleParser =
         (reader: TokenReader)
         (moduleKind: DocumentModuleKind)
         (specDirectory: string option)
-        (includes: ModuleIncludeState)
+        (includes: ModuleImportState)
         (parseOptions: DashSpecParseOptions)
         (setSqlDialect: SqlDialect -> unit)
         (setPalettePath: string option -> unit)
@@ -596,7 +588,6 @@ module rec DocumentModuleParser =
         (setModuleExtensions: ModuleExtensionsDefinition -> unit)
         (setLayoutBoard: LayoutBoardDefinition -> unit)
         (setToolbarBoard: LayoutBoardDefinition -> unit)
-        (setFlowConnectPath: string option -> unit)
         (setFlowConnectSymbol: string option -> unit)
         (mergeTimeConfiguration: IReadOnlyDictionary<string, string> -> unit)
         (seenCode: bool ref)
@@ -612,10 +603,6 @@ module rec DocumentModuleParser =
 
             match props.TryGetValue "sqldialect" with
             | true, dialectRaw -> setSqlDialect (SqlDialectParser.parse dialectRaw)
-            | false, _ -> ()
-
-            match props.TryGetValue "palette" with
-            | true, path -> setPalettePath (Some path)
             | false, _ -> ()
 
             match props.TryGetValue "diagramlibrary" with
@@ -639,24 +626,25 @@ module rec DocumentModuleParser =
                 elif reader.TryKeyword "wiring" then
                     raise (DashSpecParseException("Module section 'wiring' was removed; use 'connect' (palette, flow, layout)."))
                 elif reader.TryKeyword "connect" then
-                    let wiredPalette, layout, layoutBoard, toolbarBoard, flowPath, flowSymbol = parseConnectBlock reader
+                    let wiredPalette, layout, layoutBoard, toolbarBoard, flowSymbol = parseConnectBlock reader
                     setLayout layout
                     if layoutBoard.IsSome then setLayoutBoard layoutBoard.Value
                     if toolbarBoard.IsSome then setToolbarBoard toolbarBoard.Value
+                    match wiredPalette with
+                    | Some id -> setPalettePath (Some(includes.ResolvePalette id))
+                    | None -> ()
                     setPaletteUse wiredPalette
-                    setFlowConnectPath flowPath
                     setFlowConnectSymbol flowSymbol
                     seenCode.Value <- true
                     reader.SkipNewlines()
                     true
                 else false
 
-    let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option * string option =
+    let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
         let paletteUse = ref (None: string option)
         let layout = ref LayoutDefinition.Default
         let layoutBoard = ref (None: LayoutBoardDefinition option)
         let toolbarBoard = ref (None: LayoutBoardDefinition option)
-        let flowPath = ref (None: string option)
         let flowConnectSymbol = ref (None: string option)
 
         BlockSyntax.beginBlock reader
@@ -676,8 +664,6 @@ module rec DocumentModuleParser =
             else
                 raise (DashSpecParseException($"connect use must be palette or flow, got '{useKind}'."))
 
-        let onFlow () = flowPath.Value <- Some(reader.ReadString())
-
         let onLayout () =
             match reader.TryPeekIdent() with
             | Some kind when String.Equals(kind, "grid", StringComparison.OrdinalIgnoreCase) ->
@@ -689,7 +675,6 @@ module rec DocumentModuleParser =
 
         let members: BlockGrammar.ContainerMember list =
             [ BlockGrammar.ChildKeyword("use", fun _ -> onUse ())
-              BlockGrammar.ChildKeyword("flow", fun _ -> onFlow ())
               BlockGrammar.ChildKeyword("layout", fun _ -> onLayout ()) ]
 
         while not (BlockSyntax.isBlockEnd reader "connect" None) && not reader.IsEof do
@@ -700,7 +685,7 @@ module rec DocumentModuleParser =
                 raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "connect" (None: string option)
-        paletteUse.Value, layout.Value, layoutBoard.Value, toolbarBoard.Value, flowPath.Value, flowConnectSymbol.Value
+        paletteUse.Value, layout.Value, layoutBoard.Value, toolbarBoard.Value, flowConnectSymbol.Value
 
     let private parseReportDefaultsBlock (reader: TokenReader) (shell: ReportCompileContext) (blockKeyword: string) =
         shell.FormatDefaults <-
@@ -1045,12 +1030,11 @@ module rec DocumentModuleParser =
         (specDirectory: string option)
         (tabModuleId: string option)
         (parentFilters: IReadOnlyList<FilterDefinition> option)
-        (includes: ModuleIncludeState)
+        (includes: ModuleImportState)
         (paletteUse: string option)
         (layout: LayoutDefinition)
         (layoutBoard: LayoutBoardDefinition option)
         (toolbarBoard: LayoutBoardDefinition option)
-        (flowConnectPath: string option)
         (flowConnectSymbol: string option)
         (parseOptions: DashSpecParseOptions)
         (moduleExtensions: ModuleExtensionsDefinition)
@@ -1066,7 +1050,6 @@ module rec DocumentModuleParser =
         shell.SpecDirectory <- specDirectory
         shell.TabModuleId <- tabModuleId
         shell.ParentFilters <- parentFilters
-        shell.FlowConnectPath <- flowConnectPath
         shell.FlowConnectSymbol <- flowConnectSymbol
         shell.ColorPalette <- paletteUse
         shell.Layout <- layout

@@ -18,7 +18,7 @@ module HostModuleParser =
             match DashSpec.Modeling.Parse.Document.UnitSource.findByNamespace dir namespaceName with
             | [ path ] ->
                 let board = LayoutModuleParser.parseLayoutFile (DashSpec.Modeling.Parse.Document.UnitSource.readUnit path)
-                LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Host "import layouts"
+                LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Host "import layouts"
                 board
             | [] -> raise (DashSpecParseException($"No module found for import layouts from '{namespaceName}'."))
             | _ -> raise (DashSpecParseException($"Host imports more than one layouts unit from '{namespaceName}'."))

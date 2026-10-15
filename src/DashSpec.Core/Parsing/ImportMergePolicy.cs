@@ -1,7 +1,7 @@
 namespace DashSpec.Core.Parsing;
 
-/// <summary>Include / glob merge order (ADR-0024, ADR-0057 §include).</summary>
-public static class IncludeMergePolicy
+/// <summary>Import / glob merge order (ADR-0024, ADR-0057).</summary>
+public static class ImportMergePolicy
 {
     /// <summary>Deterministic glob expansion order — ordinal ignore-case full path.</summary>
     public static IReadOnlyList<string> OrderGlobPaths(IEnumerable<string> paths) =>
@@ -15,7 +15,7 @@ public static class IncludeMergePolicy
         if (!seenIds.Add(moduleId))
         {
             throw new DashSpecParseException(
-                $"Duplicate module id '{moduleId}' after include merge (last at '{path}').");
+                $"Duplicate module id '{moduleId}' after import merge (last at '{path}').");
         }
     }
 }

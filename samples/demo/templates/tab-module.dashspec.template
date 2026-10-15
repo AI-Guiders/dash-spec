@@ -1,83 +1,38 @@
-# Tab module template — see design/DASHSPEC-ADR-0024-document-authoring-layers.md
-#
-# Standalone: catalog entry → this file (@tab root).
-# Embedded: parent dashboard → tab my_tab dashspec "path/to/this.dashspec"
-#   (runtime/configuration/wiring below is ignored on embed — parent wins.)
+# Tab module template — unit file (ADR-0101), referenced by id from a dashboard.
+#   Dashboard: import tabs from Demo.MyTab   +   tab my_tab as "My tab"   (no body)
+#   Units shared by namespace: import palettes / layouts / diagrams … from <Namespace> (ADR-0098).
 
-@tab my_tab {
-  runtime {
-    manifest = "demo.toml"
-  }
+module tab my_tab
+    namespace Demo.MyTab
+    import palettes from Demo.Palettes
 
-  configuration {
-    sqldialect = tsql
-    palette = "palettes/demo-apps.dashpalette"
-  }
+    runtime
+        manifest = "demo.toml"
+    end runtime
 
-  !include "layouts/my-tab-grid.dashlayout"
-  !include "diagrams/my-tab/*.dashdiagram"
-  # optional bundle: !include "imports/my-tab.dashinclude"
+    configuration
+        sqldialect = tsql
+    end configuration
 
-  connect {
-    use palette demo_apps
-    layout grid {
-      columns = 12
-      gap = 16
-    }
-  }
+    connect
+        use palette demo_apps
+        layout grid
+            columns = 12
+            gap = 16
+        end grid
+    end connect
 
-  report "My tab label" {
-    defaults {
-      filter.usage_date.range = -7d..today
-      filter.rows_top.limit = 100
-    }
+    report
+        title = "My tab label"
 
-    standalone {
-      filter usage_date
-        bind date
-          column = usage_date
-        end bind
-        show
-          label = "Report date"
-        end show
-      end filter
-      filter app_name
-        bind field
-          column = demo.v_daily_active_users.app_name
-        end bind
-        show
-          label = "Products"
-          widget = combobox
-        end show
-      end filter
-
-      toolbar chrome {
-        layout = bar
-        sticky = line
-        apply = auto
-        debounce_ms = 400
-      }
-
-      toolbar {
-        usage_date
-        app_name
-      }
-    }
-
-    filters {
-      filter rows_top
-        bind top
-        end bind
-        show
-          label = "Rows (TOP)"
-        end show
-      end filter
-    }
-
-    card my_card as "Example card" ref Q {
-      diagram my_diagram
-      datasource infer view demo.v_example
-      bind usage_date, app_name
-    }
-  }
-}
+        card my_card as "Example card"
+            data flow
+                my_rows [rows] -> [rows] __diagram__
+            end data flow
+            diagram my_diagram
+                bind
+                    usage_date, app_name
+                end bind
+            end card
+        end report
+end tab

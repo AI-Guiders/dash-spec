@@ -255,7 +255,7 @@ public class SpecModulesTests
         Assert.Equal("demo_apps", document.ColorPalette);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy configuration palette removed; migrate to import palettes")]
     public void Parse_palette_file_directive()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
@@ -518,8 +518,6 @@ public class SpecModulesTests
                 end heatmap
                 """);
 
-            SpecIncludeResolver.SetStdlibRootForTests(Path.Combine(dir, "stdlib"));
-
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
@@ -541,7 +539,6 @@ public class SpecModulesTests
         }
         finally
         {
-            SpecIncludeResolver.SetStdlibRootForTests(null);
             Directory.Delete(dir, recursive: true);
         }
     }

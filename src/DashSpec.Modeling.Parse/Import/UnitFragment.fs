@@ -1,16 +1,23 @@
-namespace DashSpec.Modeling.Parse.Include
+namespace DashSpec.Modeling.Parse.Import
 
 open System
 open System.Collections.Generic
-open System.IO
-open System.Reflection
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 
-module SpecIncludeFragmentResolver =
+/// Resolved diagram / presentation / transform / tooltip fragment of one unit file.
+[<CLIMutable>]
+type UnitFragment =
+    { Diagram: DiagramDefinition option
+      Presentation: PresentationBlock option
+      SeriesTransform: SeriesTransformBlock option
+      Tooltips: IReadOnlyDictionary<string, TooltipDefinition> option
+      Inspect: InspectPresentation option }
+
+module UnitFragmentResolver =
 
     let emptyFragment =
         { Diagram = None
@@ -75,77 +82,14 @@ module SpecIncludeFragmentResolver =
                     merged.[kv.Key] <- kv.Value
                 Some(merged :> IReadOnlyDictionary<_, _>)
 
-    let merge (current: SpecIncludeFragment) (incoming: SpecIncludeFragment) =
+    let merge (current: UnitFragment) (incoming: UnitFragment) =
         { Diagram = mergeDiagram current.Diagram incoming.Diagram
           Presentation = mergePresentation current.Presentation incoming.Presentation
           SeriesTransform = mergeSeriesTransform current.SeriesTransform incoming.SeriesTransform
           Tooltips = mergeTooltips current.Tooltips incoming.Tooltips
           Inspect = InspectPresentationParser.merge current.Inspect incoming.Inspect }
 
-    let private resolveExistingFile (path: string) (includeKind: string) =
-        if File.Exists path then path
-        else
-            let extensions =
-                match includeKind.ToLowerInvariant() with
-                | "diagram" -> [| ".ds" |]
-                | "presentation" | "chrome" -> [| ".ds" |]
-                | "transform" -> [| ".ds" |]
-                | "tooltip" -> [| ".ds" |]
-                | _ -> Array.empty
-            let mutable resolved = path
-            for ext in extensions do
-                let withExt =
-                    if path.EndsWith(ext, StringComparison.OrdinalIgnoreCase) then path
-                    else path + ext
-                if File.Exists withExt then resolved <- withExt
-            resolved
-
-    let private loadTooltipFragment (text: string) =
-        let id, definition = TooltipModuleParser.parseTooltipFileWithId text
-        let map = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
-        map.[id] <- definition
-        { emptyFragment with Tooltips = Some(map :> IReadOnlyDictionary<_, _>) }
-
-    let private isChartChromeIncludeKind (kind: string) =
-        String.Equals(kind, "presentation", StringComparison.OrdinalIgnoreCase)
-        || String.Equals(kind, "chrome", StringComparison.OrdinalIgnoreCase)
-
-    let rec load (includeKind: string) (reference: string) (specDirectory: string) =
-        let path = SpecFragmentPaths.resolvePath reference specDirectory
-        let resolved = resolveExistingFile path includeKind
-        if not (File.Exists resolved) then
-            raise (FileNotFoundException($"Include {includeKind} not found: '{reference}' (resolved: {resolved}).", resolved))
-
-        let text = DashSpec.Modeling.Parse.Document.UnitSource.readUnit resolved
-        let baseDirectory = Path.GetDirectoryName resolved |> Option.ofObj |> Option.defaultValue specDirectory
-
-        match includeKind.ToLowerInvariant() with
-        | "diagram" ->
-            foldDiagramStatements (DiagramModuleParser.parseDiagramModule text).Statements baseDirectory
-        | "presentation" | "chrome" ->
-            { emptyFragment with Presentation = Some(parsePresentationFile text (Some baseDirectory)) }
-        | "transform" ->
-            { emptyFragment with SeriesTransform = Some(TransformModuleParser.parseTransformFile text) }
-        | "tooltip" -> loadTooltipFragment text
-        | _ ->
-            raise (DashSpecParseException($"Include kind must be diagram, presentation, chrome, transform, or tooltip, got '{includeKind}'."))
-
-    and private parsePresentationFile (text: string) (baseDirectory: string option) =
-        let doc = PresentationModuleParser.parsePresentationModule text
-        let mutable merged: PresentationBlock option = None
-
-        for includeRef in doc.Includes do
-            if baseDirectory.IsNone || String.IsNullOrWhiteSpace baseDirectory.Value then
-                raise (DashSpecParseException("Presentation include requires a base directory (parse from file path)."))
-            if not (isChartChromeIncludeKind includeRef.Kind) then
-                raise (DashSpecParseException($"@presentation module only supports include presentation/chrome, got '{includeRef.Kind}'."))
-            let fragment = load includeRef.Kind includeRef.Reference baseDirectory.Value
-            merged <- mergePresentation merged fragment.Presentation
-
-        mergePresentation merged doc.Local
-        |> Option.defaultWith (fun () -> raise (DashSpecParseException("@presentation module requires at least one property.")))
-
-    and private foldDiagramStatements (statements: IReadOnlyList<DiagramFragmentStatement>) (baseDirectory: string) =
+    let private foldDiagramStatements (statements: IReadOnlyList<DiagramFragmentStatement>) =
         let mutable fragment = emptyFragment
         let mutable hasDiagram = false
 
@@ -170,14 +114,13 @@ module SpecIncludeFragmentResolver =
 
         fragment
 
-    /// Fold diagram module statements into a fragment (module !include / registration).
-    let foldDiagramModule (text: string) (baseDirectory: string) : SpecIncludeFragment =
-        let doc = DiagramModuleParser.parseDiagramModule text
-        foldDiagramStatements doc.Statements baseDirectory
+    let foldDiagramModule (text: string) : UnitFragment =
+        foldDiagramStatements (DiagramModuleParser.parseDiagramModule text).Statements
 
-    let foldDiagramModuleWithId (text: string) (baseDirectory: string) : string * SpecIncludeFragment =
+    let foldDiagramModuleWithId (text: string) : string * UnitFragment =
         let id, doc = DiagramModuleParser.parseDiagramModuleWithId text
-        id, foldDiagramStatements doc.Statements baseDirectory
+        id, foldDiagramStatements doc.Statements
 
-    let parsePresentationBlockFromFile (text: string) (baseDirectory: string) : PresentationBlock =
-        parsePresentationFile text (Some baseDirectory)
+    let parsePresentationBlock (text: string) : PresentationBlock =
+        (PresentationModuleParser.parsePresentationModule text).Local
+        |> Option.defaultWith (fun () -> raise (DashSpecParseException("@presentation module requires at least one property.")))

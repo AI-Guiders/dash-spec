@@ -35,9 +35,7 @@ public static class DashSpecParser
 
 
 
-    public static string? ReadPalettePath(string text) =>
 
-        RequireBridge(DocumentParseBridge.ReadPalettePath, "ReadPalettePath")(text);
 
 
 

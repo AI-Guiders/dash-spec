@@ -4,5 +4,5 @@ public sealed record TabDefinition(
     string Id,
     string? Label,
     IReadOnlyList<string> CardIds,
-    string? DashspecPath = null,
+    string? ModulePath = null,
     LayoutBoardDefinition? LayoutBoard = null);

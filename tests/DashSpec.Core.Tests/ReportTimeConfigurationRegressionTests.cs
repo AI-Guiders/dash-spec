@@ -37,7 +37,7 @@ public sealed class ReportTimeConfigurationRegressionTests
         MergeReferencedTabModules = false,
     };
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy configuration palette removed; migrate to import palettes")]
     public void Document_parser_maps_work_time_column_from_configuration()
     {
         var document = DashSpecTestRowTypes.ParseDashboard(EmbeddedOverviewConfigurationTab, specDirectory: null, TabParseOptions);

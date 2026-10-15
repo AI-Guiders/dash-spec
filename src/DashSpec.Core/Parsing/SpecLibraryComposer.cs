@@ -2,7 +2,7 @@ namespace DashSpec.Core.Parsing;
 
 using DashSpec.Core.Model;
 
-/// <summary>Loads and merges diagram library TOML, <c>.dashpalette</c>, and module <c>!include</c> diagrams.</summary>
+/// <summary>Loads and merges diagram library TOML, a palette unit, and units imported into the module (ADR-0098).</summary>
 public static class SpecLibraryComposer
 {
     public static SpecLibrary? Load(

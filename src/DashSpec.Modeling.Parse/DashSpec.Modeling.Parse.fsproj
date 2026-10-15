@@ -45,7 +45,6 @@
     <Compile Include="BlockGrammar.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
-    <Compile Include="Include\SpecFragmentPaths.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
     <Compile Include="Layout\LayoutBoardCellParser.fs" />
     <Compile Include="Layout\LayoutBracketRowParser.fs" />
@@ -92,12 +91,9 @@
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
-    <Compile Include="SpecIncludeResolver.fs" />
-    <Compile Include="DataFlow\DashflowResolver.fs" />
     <Compile Include="DataFlow\DashflowPathResolver.fs" />
-    <Compile Include="Include\SpecIncludeTypes.fs" />
-    <Compile Include="Include\SpecIncludeFragmentResolver.fs" />
-    <Compile Include="Include\ModuleIncludeState.fs" />
+    <Compile Include="Import\UnitFragment.fs" />
+    <Compile Include="Import\ModuleImportState.fs" />
     <Compile Include="ParseOptions.fs" />
     <Compile Include="Phrase\PhraseLineReader.fs" />
     <Compile Include="Phrase\PhraseTemplateMatcher.fs" />
@@ -151,7 +147,6 @@
     <Compile Include="Document\DashboardParser.fs" />
     <Compile Include="Document\DashboardComposer.fs" />
     <Compile Include="Document\DashSpecCompiler.fs" />
-    <Compile Include="Document\TabModuleParser.fs" />
   </ItemGroup>
 </Project>
 

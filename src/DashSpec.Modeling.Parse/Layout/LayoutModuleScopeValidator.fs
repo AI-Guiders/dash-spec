@@ -13,7 +13,7 @@ module LayoutModuleScopeValidator =
         | LayoutScope.Card -> "card"
         | LayoutScope.Host -> "host"
 
-    let ensureMatchesIncludeSite (board: LayoutBoardDefinition) (expected: LayoutScope) (context: string) =
+    let ensureMatchesImportSite (board: LayoutBoardDefinition) (expected: LayoutScope) (context: string) =
         if String.IsNullOrWhiteSpace context then
             invalidArg "context" "Context is required."
 

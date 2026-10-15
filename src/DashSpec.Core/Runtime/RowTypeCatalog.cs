@@ -26,7 +26,7 @@ public sealed class RowTypeCatalog
 
         if (!_schemas.TryGetValue(typeName, out var schema))
         {
-            throw new InvalidOperationException($"Row type '{typeName}' is not defined in Modeling (import .dashtype or !include).");
+            throw new InvalidOperationException($"Row type '{typeName}' is not defined in Modeling (declare it in a types unit and import it by namespace).");
         }
 
         return schema;

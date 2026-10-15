@@ -16,22 +16,4 @@ public static class LayoutModuleParser
         throw new InvalidOperationException(
             "Layout parse bridge not registered. Reference DashSpec.Execution.Core or register LayoutParseBridge.ParseLayoutFile.");
     }
-
-    public static LayoutBoardDefinition Load(string reference, string specDirectory)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
-        ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
-
-        var path = SpecIncludeResolver.ResolveLayoutFile(
-            SpecIncludeResolver.ResolvePath(reference, specDirectory));
-
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException(
-                $"Include layout not found: '{reference}' (resolved: {path}).",
-                path);
-        }
-
-        return ParseLayoutFile(File.ReadAllText(path));
-    }
 }

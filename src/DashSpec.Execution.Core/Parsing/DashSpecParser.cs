@@ -25,9 +25,6 @@ public static class DashSpecParser
     public static string? ReadDiagramLibraryPath(string text) =>
         RequireBridge(DocumentParseBridge.ReadDiagramLibraryPath, "ReadDiagramLibraryPath")(text);
 
-    public static string? ReadPalettePath(string text) =>
-        RequireBridge(DocumentParseBridge.ReadPalettePath, "ReadPalettePath")(text);
-
     public static SqlDialect ReadSqlDialect(string text) =>
         RequireBridge(DocumentParseBridge.ReadSqlDialect, "ReadSqlDialect")(text);
 

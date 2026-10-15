@@ -8,7 +8,7 @@ public static class DashSpecEditorIntelligence
     static readonly string[] Keywords =
     [
         "module dashboard", "module tab", "module diagram", "module presentation", "module palette",
-        "card", "diagram", "filter", "chrome", "use", "include", "!include",
+        "card", "diagram", "filter", "chrome", "use",
         "end", "heatmap", "gantt", "bar", "line", "table", "toolbar", "filters",
         "datasource", "phase", "page", "catalog", "report", "bind", "layout",
         "presentation", "palette",
@@ -41,10 +41,6 @@ public static class DashSpecEditorIntelligence
         var context = GetCompletionContext(currentLine, column);
         return context?.Kind switch
         {
-            CompletionKind.Include => IncludePathCompletion
-                .Suggest(GetSpecDirectory(filePath), context.Value.Prefix)
-                .Select(path => new CompletionSuggestion(path, path, Kind: "file"))
-                .ToArray(),
             CompletionKind.Diagram => BuildIdItems(
                 workspaceIndex?.Diagrams.Keys ?? [],
                 context.Value.Prefix,
@@ -104,7 +100,6 @@ public static class DashSpecEditorIntelligence
                 => diagramPath,
             DefinitionKind.Presentation when workspaceIndex?.Presentations.TryGetValue(word, out var presentationPath) == true
                 => presentationPath,
-            DefinitionKind.Include => ResolveIncludePath(filePath, word),
             _ => null,
         };
 
@@ -169,12 +164,6 @@ public static class DashSpecEditorIntelligence
     {
         var before = line[..Math.Clamp(character, 0, line.Length)];
 
-        if (before.Contains("!include", StringComparison.OrdinalIgnoreCase) &&
-            before.LastIndexOf('"') > before.LastIndexOf('!'))
-        {
-            return (ExtractPartialInclude(before), CompletionKind.Include);
-        }
-
         if (TryMatchKeywordPrefix(before, "diagram", out var diagramPrefix))
         {
             return (diagramPrefix, CompletionKind.Diagram);
@@ -182,8 +171,7 @@ public static class DashSpecEditorIntelligence
 
         if (TryMatchKeywordPrefix(before, "use", out var usePrefix) &&
             (before.Contains("chrome", StringComparison.OrdinalIgnoreCase) ||
-             before.Contains("presentation", StringComparison.OrdinalIgnoreCase) ||
-             before.Contains("include", StringComparison.OrdinalIgnoreCase)))
+             before.Contains("presentation", StringComparison.OrdinalIgnoreCase)))
         {
             return (usePrefix, CompletionKind.Presentation);
         }
@@ -221,12 +209,6 @@ public static class DashSpecEditorIntelligence
             return DefinitionKind.Presentation;
         }
 
-        if (line.Contains("!include", StringComparison.OrdinalIgnoreCase) &&
-            line.Contains(word, StringComparison.Ordinal))
-        {
-            return DefinitionKind.Include;
-        }
-
         return null;
     }
 
@@ -234,12 +216,6 @@ public static class DashSpecEditorIntelligence
     {
         var directory = Path.GetDirectoryName(filePath);
         return string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
-    }
-
-    static string ExtractPartialInclude(string before)
-    {
-        var start = before.LastIndexOf('"');
-        return start < 0 ? string.Empty : before[(start + 1)..];
     }
 
     static bool TryMatchKeywordPrefix(string before, string keyword, out string prefix)
@@ -263,27 +239,6 @@ public static class DashSpecEditorIntelligence
             line,
             $@"\b{keyword}\s+{Regex.Escape(word)}\b",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-    static string? ResolveIncludePath(string filePath, string reference)
-    {
-        var directory = GetSpecDirectory(filePath);
-        var combined = Path.GetFullPath(Path.Combine(directory, reference.Replace('/', Path.DirectorySeparatorChar)));
-        if (File.Exists(combined))
-        {
-            return combined;
-        }
-
-        foreach (var ext in new[] { ".dashdiagram", ".dashpresentation", ".dashspec", ".dashinclude" })
-        {
-            var withExt = combined.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? combined : combined + ext;
-            if (File.Exists(withExt))
-            {
-                return withExt;
-            }
-        }
-
-        return null;
-    }
 
     static string GetWordAt(string line, int character)
     {
@@ -315,7 +270,6 @@ public static class DashSpecEditorIntelligence
     {
         Diagram,
         Presentation,
-        Include,
         Palette,
     }
 
@@ -323,6 +277,5 @@ public static class DashSpecEditorIntelligence
     {
         Diagram,
         Presentation,
-        Include,
     }
 }

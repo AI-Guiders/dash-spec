@@ -4,13 +4,16 @@ module dashboard demo_soak
     import diagrams from Demo.Diagrams
     import types from Demo.Types
     import flows from Demo.Flows as demo_report_flow
+    import palettes from Demo.Palettes
+    import tabs from Demo.Analytics
+    import presentations from DashSpec.Std
     runtime
         manifest = "demo.toml"
     end runtime
 
     configuration
         sqldialect = tsql
-        palette = "palettes/demo-apps.ds"
+
     end configuration
 
     connect
@@ -127,7 +130,7 @@ module dashboard demo_soak
             end cards
         end tab
 
-        tab analytics as "Analytics" dashspec "demo-analytics.ds"
+        tab analytics as "Analytics"
             tab detail as "Detail"
                 cards
                     events_detail

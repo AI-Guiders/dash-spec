@@ -58,7 +58,6 @@ internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
                 => diagramPath,
             DashSpecLspHelpers.DefinitionKind.Presentation when _state.Index.Presentations.TryGetValue(word, out var presentationPath)
                 => presentationPath,
-            DashSpecLspHelpers.DefinitionKind.Include => ResolveIncludePath(path, word),
             _ => null,
         };
 
@@ -74,27 +73,6 @@ internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
         };
 
         return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
-    }
-
-    private static string? ResolveIncludePath(string filePath, string reference)
-    {
-        var directory = DashSpecLspHelpers.GetSpecDirectory(filePath);
-        var combined = Path.GetFullPath(Path.Combine(directory, reference.Replace('/', Path.DirectorySeparatorChar)));
-        if (File.Exists(combined))
-        {
-            return combined;
-        }
-
-        foreach (var ext in new[] { ".ds", ".dashdiagram", ".dashpresentation", ".ds", ".dashspec", ".dashinclude" })
-        {
-            var withExt = combined.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? combined : combined + ext;
-            if (File.Exists(withExt))
-            {
-                return withExt;
-            }
-        }
-
-        return null;
     }
 
     private static string GetWordAt(string line, int character)

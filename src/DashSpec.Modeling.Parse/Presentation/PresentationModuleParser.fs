@@ -8,15 +8,6 @@ open DashSpec.Modeling.Parse.Lexing
 
 module PresentationModuleParser =
 
-    let private isChartChromeIncludeKind kind =
-        String.Equals(kind, "presentation", StringComparison.OrdinalIgnoreCase)
-        || String.Equals(kind, "chrome", StringComparison.OrdinalIgnoreCase)
-
-    let private readIncludeReference (reader: TokenReader) =
-        let kind = reader.ReadIdent()
-        let reference = reader.ReadString()
-        kind, reference
-
     let private toBlock (props: IDictionary<string, string>) =
         let usePreset =
             match props.TryGetValue "use" with
@@ -62,20 +53,11 @@ module PresentationModuleParser =
             raise (DashSpecParseException("@presentation module requires @presentation <id>."))
         reader.SkipNewlines()
 
-        let includes = ResizeArray<PresentationInclude>()
-        let mutable continueIncludes = true
-        while continueIncludes && not reader.IsEof do
-            reader.SkipNewlines()
-            if reader.IsEof then
-                continueIncludes <- false
-            else
-                continueIncludes <- false
-
         let local = parseLocalBlock reader
-        if local.IsNone && includes.Count = 0 then
+        if local.IsNone then
             raise (DashSpecParseException("@presentation module requires at least one property."))
 
-        { Id = id; Includes = includes :> IReadOnlyList<_>; Local = local }
+        { Id = id; Local = local }
 
     let parsePresentationModuleWithId (text: string) =
         let doc = parsePresentationModule text

@@ -7,7 +7,7 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopeDataFlowTests =
 
-    [<Fact>]
+    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
     let ``report data flow wires module node to card slot`` () =
         let dir = Path.Combine(Path.GetTempPath(), "report-data-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore

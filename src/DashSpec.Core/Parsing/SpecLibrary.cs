@@ -182,7 +182,6 @@ public sealed class SpecLibrary
             var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
             {
-                EnsureStdlibPresentation(presentation.UsePreset);
                 if (_presentations.TryGetValue(presentation.UsePreset, out var parent))
                 {
                     foreach (var (key, value) in parent)
@@ -243,17 +242,6 @@ public sealed class SpecLibrary
             definition.Tooltip);
     }
 
-    private void EnsureStdlibPresentation(string name)
-    {
-        if (_presentations.ContainsKey(name))
-        {
-            return;
-        }
-
-        var fragment = SpecIncludeResolver.Load("presentation", $"<presentation/{name}>", ".");
-        RegisterPresentationBlock(name, fragment.Presentation);
-    }
-
     private void RegisterPresentationBlock(string name, PresentationBlock? block)
     {
         if (block is null)
@@ -264,7 +252,6 @@ public sealed class SpecLibrary
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(block.UsePreset))
         {
-            EnsureStdlibPresentation(block.UsePreset);
             if (_presentations.TryGetValue(block.UsePreset, out var parent))
             {
                 foreach (var (key, value) in parent)

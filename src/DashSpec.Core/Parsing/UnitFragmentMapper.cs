@@ -2,7 +2,7 @@ using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
-using FsharpFragment = DashSpec.Modeling.Parse.Include.SpecIncludeFragment;
+using FsharpFragment = DashSpec.Modeling.Parse.Import.UnitFragment;
 using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
 using FsharpPresentation = DashSpec.Modeling.Parse.Presentation.PresentationBlock;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
@@ -10,10 +10,10 @@ using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
 
 namespace DashSpec.Core.Parsing;
 
-/// <summary>Maps F# include fragments to Core runtime models (ADR-0048).</summary>
-internal static class SpecIncludeFragmentMapper
+/// <summary>Maps F# import fragments to Core runtime models (ADR-0048).</summary>
+internal static class UnitFragmentMapper
 {
-    public static SpecIncludeFragment ToCore(FsharpFragment fragment) =>
+    public static UnitFragment ToCore(FsharpFragment fragment) =>
         new(
             FromFsharpOption(fragment.Diagram, ToCoreDiagram),
             FromFsharpOption(fragment.Presentation, ToCorePresentation),
@@ -21,7 +21,7 @@ internal static class SpecIncludeFragmentMapper
             FromFsharpTooltips(fragment.Tooltips),
             FromFsharpOption(fragment.Inspect, ToCoreInspect));
 
-    public static FsharpFragment ToFsharp(SpecIncludeFragment fragment) =>
+    public static FsharpFragment ToFsharp(UnitFragment fragment) =>
         new()
         {
             Diagram = ToFsharpOption(fragment.Diagram, ToFsharpDiagram),
