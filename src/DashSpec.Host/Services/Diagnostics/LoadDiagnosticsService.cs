@@ -95,7 +95,6 @@ public sealed class LoadDiagnosticsService(
             var library = SpecLibraryComposer.Load(
                 specFullPath,
                 document.DiagramLibraryPath,
-                document.PalettePath,
                 hostContext.DefaultSpecDirectory,
                 document);
             librarySw.Stop();

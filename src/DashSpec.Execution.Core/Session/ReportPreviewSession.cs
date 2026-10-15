@@ -50,7 +50,6 @@ public sealed class ReportPreviewSession : IReportPreviewSession
         var library = SpecLibraryComposer.Load(
             fullPath,
             document.DiagramLibraryPath,
-            document.PalettePath,
             specDirectory,
             document);
         var resolved = SpecResolver.Resolve(document, library);

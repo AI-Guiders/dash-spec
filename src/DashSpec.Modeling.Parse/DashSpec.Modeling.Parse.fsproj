@@ -51,6 +51,8 @@
     <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
     <Compile Include="Document\UnitSource.fs" />
+    <Compile Include="Project\DashSpecProjectConfig.fs" />
+    <Compile Include="Document\UnitIndex.fs" />
     <Compile Include="Layout\LayoutModuleScopeValidator.fs" />
     <Compile Include="Tooltip\TooltipTypes.fs" />
     <Compile Include="Tooltip\TooltipModuleParser.fs" />
@@ -119,7 +121,6 @@
     <Compile Include="Document\ModuleHeaderTypes.fs" />
     <Compile Include="Document\ModuleHeaderParser.fs" />
     <Compile Include="Document\DocumentTypes.fs" />
-    <Compile Include="Project\DashSpecProjectConfig.fs" />
     <Compile Include="Document\ReportTimePolicyParser.fs" />
     <Compile Include="Document\SqlDialectParser.fs" />
     <Compile Include="Document\ToolbarPlacementResolver.fs" />

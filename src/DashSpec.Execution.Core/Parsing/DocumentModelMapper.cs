@@ -11,6 +11,7 @@ using FsharpDiagram = DashSpec.Modeling.Parse.Diagram;
 using FsharpDocument = DashSpec.Modeling.Parse.Document;
 using FsharpFilter = DashSpec.Modeling.Parse.Filter;
 using FsharpLayout = DashSpec.Modeling.Parse.Layout;
+using FsharpPalette = DashSpec.Modeling.Parse.Palette;
 using FsharpPresentation = DashSpec.Modeling.Parse.Presentation;
 using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip;
 using FsharpTransform = DashSpec.Modeling.Parse.Transform;
@@ -29,7 +30,7 @@ internal static class DocumentModelMapper
             FirstOrNull(document.ConnectorId),
             ToCore(document.SqlDialect),
             FirstOrNull(document.DiagramLibraryPath),
-            FirstOrNull(document.PalettePath),
+            MapOptional(document.Palette, ToCore),
             FirstOrNull(document.ColorPalette),
             ToCore(document.Layout),
             ToCore(document.FiltersChrome),
@@ -50,6 +51,11 @@ internal static class DocumentModelMapper
             ToRowTypeSchemas(document.ResolvedRowTypes),
             FirstOrNull(document.DashflowPath),
             MapOptional(document.Dashflow, ToCoreDashflow));
+
+    private static PaletteDefinition ToCore(FsharpPalette.PaletteDocument palette) =>
+        new(
+            palette.Id,
+            palette.Properties.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase));
 
     private static ReportTimePolicy ToCore(FsharpDocument.ReportTimePolicy policy) =>
         new(

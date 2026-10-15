@@ -51,18 +51,29 @@ module ModuleImportResolver =
         else
             match specDirectory with
             | Some dir ->
-                for directive in header.Imports do
-                    let paths = UnitSource.findByNamespace dir directive.Namespace |> Seq.ofList
+                let index = UnitIndex.build dir
 
-                    if Seq.isEmpty paths then
+                for directive in header.Imports do
+                    let keyword = ImportKindRegistry.keyword directive.Kind
+                    let unitKeyword = ImportKindRegistry.moduleKeyword directive.Kind
+
+                    let entries =
+                        index.Find directive.Namespace
+                        |> List.filter (fun entry ->
+                            match entry.Kind with
+                            | None -> true
+                            | Some kind -> String.Equals(kind, unitKeyword, StringComparison.OrdinalIgnoreCase)
+                        )
+
+                    if List.isEmpty entries then
                         raise (
                             DashSpecParseException(
-                                $"No module found for import {ImportKindRegistry.keyword directive.Kind} from '{directive.Namespace}'."
+                                $"No module found for import {keyword} from '{directive.Namespace}'."
                             )
                         )
 
-                    for path in paths do
-                        UnitImport.registerUnitFile path moduleKind includes (Some directive.Kind)
+                    for entry in entries do
+                        UnitImport.registerUnitFile entry.Path moduleKind includes (Some directive.Kind)
 
                     if directive.Kind = ImportKind.Flows then
                         let namespaceName = directive.Namespace

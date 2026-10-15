@@ -44,7 +44,6 @@ public sealed class DevSpecResolveService(
             var library = SpecLibraryComposer.Load(
                 specFullPath,
                 document.DiagramLibraryPath,
-                document.PalettePath,
                 hostContext.DefaultSpecDirectory,
                 document);
 

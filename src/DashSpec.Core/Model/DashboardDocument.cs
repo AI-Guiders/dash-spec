@@ -8,7 +8,7 @@ public sealed record DashboardDocument(
     string? ConnectorId,
     SqlDialect SqlDialect,
     string? DiagramLibraryPath,
-    string? PalettePath,
+    PaletteDefinition? Palette,
     string? ColorPalette,
     LayoutDefinition Layout,
     FiltersChromeDefinition FiltersChrome,
