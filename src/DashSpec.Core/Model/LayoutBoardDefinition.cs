@@ -1,6 +1,6 @@
 namespace DashSpec.Core.Model;
 
-/// <summary>Bracket layout board; optional <see cref="ModuleScope"/> when loaded from <c>.dashlayout</c>.</summary>
+/// <summary>Bracket layout board; optional <see cref="ModuleScope"/> when it comes from an imported layout unit.</summary>
 public sealed record LayoutBoardDefinition(
     IReadOnlyList<LayoutBoardEntry> Entries,
     LayoutScope? ModuleScope = null)

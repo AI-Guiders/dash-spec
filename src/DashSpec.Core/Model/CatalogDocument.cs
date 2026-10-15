@@ -1,6 +1,6 @@
 namespace DashSpec.Core.Model;
 
-/// <summary>Report catalog — whitelist of top-level .dashspec entry points.</summary>
+/// <summary>Report catalog — whitelist of top-level `.ds` entry points.</summary>
 public sealed record CatalogDocument(
     string Id,
     string DefaultEntryId,
