@@ -1,7 +1,7 @@
 namespace DashSpec.Core.Parsing;
 
 /// <summary>
-/// Проверка текста <c>datasource sql</c> и имён <c>datasource view</c> при разборе .dashspec.
+/// Проверка текста <c>datasource sql</c> и имён <c>datasource view</c> при разборе спеки.
 /// SSOT: <c>DashSpec.Modeling.Parse.DataSource.SqlReadOnlyValidator</c> (F#).
 /// </summary>
 public static class SqlReadOnlyValidator

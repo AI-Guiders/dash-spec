@@ -3,7 +3,7 @@ using DashSpec.Core.Parsing;
 namespace DashSpec.Core.Runtime;
 
 /// <summary>
-/// Parses date filter defaults from .dashspec (e.g. <c>-7d..today</c>, <c>2026-06-01..2026-06-30</c>).
+/// Parses date filter defaults from a `.ds` spec (e.g. <c>-7d..today</c>, <c>2026-06-01..2026-06-30</c>).
 /// No magic preset names — range is fully spelled in the spec.
 /// </summary>
 public static partial class DateDefaultRange
