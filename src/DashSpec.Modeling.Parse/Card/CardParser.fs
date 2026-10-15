@@ -514,47 +514,44 @@ module CardParser =
         let onWhere () : unit =
             raise (DashSpecParseException($"Card '{id}': 'where' is no longer used — list filters in bind …; Core compiles WHERE from bind (date/field → AND …, top → TOP/LIMIT)."))
 
-        let handlers : (string * (unit -> unit)) list =
-            [ "title", onTitle
-              "chrome", onChrome
-              "when", onWhen
-              "limits", onLimits
-              "on", onOn
-              "include", onInclude
-              "use", onUse
-              "view", onView
-              "override", onOverride
-              "overrides", onOverrides
-              "bind", onBind
-              "filters", onFilters
-              "diagram", onDiagram
-              "place", onPlace
-              "layout", onLayout
-              "legend", onLegend
-              "presentation", onPresentation
-              "inspect", onInspect
-              "tooltip", onTooltip
-              "transform", onTransform
-              "where", onWhere ]
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("title", fun _ -> onTitle ())
+              BlockGrammar.ChildKeyword("chrome", fun _ -> onChrome ())
+              BlockGrammar.ChildKeyword("when", fun _ -> onWhen ())
+              BlockGrammar.ChildKeyword("limits", fun _ -> onLimits ())
+              BlockGrammar.ChildKeyword("on", fun _ -> onOn ())
+              BlockGrammar.ChildKeyword("include", fun _ -> onInclude ())
+              BlockGrammar.ChildKeyword("use", fun _ -> onUse ())
+              BlockGrammar.ChildKeyword("view", fun _ -> onView ())
+              BlockGrammar.ChildKeyword("override", fun _ -> onOverride ())
+              BlockGrammar.ChildKeyword("overrides", fun _ -> onOverrides ())
+              BlockGrammar.ChildKeyword("bind", fun _ -> onBind ())
+              BlockGrammar.ChildKeyword("filters", fun _ -> onFilters ())
+              BlockGrammar.ChildKeyword("diagram", fun _ -> onDiagram ())
+              BlockGrammar.ChildKeyword("place", fun _ -> onPlace ())
+              BlockGrammar.ChildKeyword("layout", fun _ -> onLayout ())
+              BlockGrammar.ChildKeyword("legend", fun _ -> onLegend ())
+              BlockGrammar.ChildKeyword("presentation", fun _ -> onPresentation ())
+              BlockGrammar.ChildKeyword("inspect", fun _ -> onInspect ())
+              BlockGrammar.ChildKeyword("tooltip", fun _ -> onTooltip ())
+              BlockGrammar.ChildKeyword("transform", fun _ -> onTransform ())
+              BlockGrammar.ChildKeyword("where", fun _ -> onWhere ()) ]
 
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
             reader.SkipNewlines()
             ModuleImportGuard.rejectModuleImportInBody reader $"Card '{id}'"
             if BlockSyntax.isBlockEnd reader "card" (Some id) then ()
+            elif BlockGrammar.tryDispatchChild reader members then ()
+            elif CardInteriorFlowParser.tryAddQualifiedBlock reader interiorFlowBuilder id then
+                reader.SkipNewlines()
             else
-                match handlers |> List.tryFind (fun (keyword, _) -> reader.TryKeyword keyword) with
-                | Some (_, handle) -> handle ()
-                | None ->
-                    if CardInteriorFlowParser.tryAddQualifiedBlock reader interiorFlowBuilder id then
-                        reader.SkipNewlines()
-                    else
-                        match reader.TryPeekIdent() with
-                        | Some extensionKeyword when parseOptions.ExtensionBlockKeywords.Contains extensionKeyword ->
-                            let block = ExtensionBlockParser.parse reader extensionKeyword parseOptions.ExtensionBlockKeywords
-                            validateExtensionBlock block id parseOptions
-                            extensionBlocks.Add(block)
-                            reader.SkipNewlines()
-                        | _ -> raise (reader.Unexpected())
+                match reader.TryPeekIdent() with
+                | Some extensionKeyword when parseOptions.ExtensionBlockKeywords.Contains extensionKeyword ->
+                    let block = ExtensionBlockParser.parse reader extensionKeyword parseOptions.ExtensionBlockKeywords
+                    validateExtensionBlock block id parseOptions
+                    extensionBlocks.Add(block)
+                    reader.SkipNewlines()
+                | _ -> raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "card" (Some id)
 

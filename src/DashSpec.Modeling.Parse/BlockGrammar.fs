@@ -70,6 +70,14 @@ module BlockGrammar =
                 false
         | SchemaProperties _ -> false
 
+    /// Consumes the next keyword and runs the first matching ChildKeyword member. Returns false, consuming nothing, when none matches.
+    let tryDispatchChild (reader: TokenReader) (members: ContainerMember list) : bool =
+        match members |> List.tryPick (function ChildKeyword(keyword, parseChild) when reader.TryKeyword keyword -> Some parseChild | _ -> None) with
+        | Some parseChild ->
+            parseChild reader
+            true
+        | None -> false
+
     let private parseBody
         (reader: TokenReader)
         endKind
