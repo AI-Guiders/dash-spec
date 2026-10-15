@@ -43,13 +43,18 @@ internal static class ModuleParseRegistration
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
 
+    /// <summary>Bridge entry for unit text: a `.ds` unit still carries its ADR-0098 header (`namespace` / `import`)
+    /// while every unit parser reads only the body, so the header is blanked here once — same length, same offsets.</summary>
+    private static string UnitText(string text) =>
+        DashSpec.Modeling.Parse.Document.UnitSource.blankHeader(text);
+
     private static void RegisterLayout()
     {
         LayoutParseBridge.ParseLayoutFile = text =>
         {
             try
             {
-                return ToCore(DashSpec.Modeling.Parse.Layout.LayoutModuleParser.parseLayoutFile(text));
+                return ToCore(DashSpec.Modeling.Parse.Layout.LayoutModuleParser.parseLayoutFile(UnitText(text)));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -64,7 +69,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFile(text));
+                return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFile(UnitText(text)));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -76,7 +81,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var (id, def) = DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFileWithId(text);
+                var (id, def) = DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFileWithId(UnitText(text));
                 return (id, ToCore(def));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
@@ -104,7 +109,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                return ToCore(DashSpec.Modeling.Parse.Catalog.CatalogParser.parse(text));
+                return ToCore(DashSpec.Modeling.Parse.Catalog.CatalogParser.parse(UnitText(text)));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -121,7 +126,7 @@ internal static class ModuleParseRegistration
             {
                 var directory =
                     string.IsNullOrWhiteSpace(specDirectory) ? null : specDirectory;
-                return ToCore(DashSpec.Modeling.Parse.Host.HostModuleParser.parse(text, directory));
+                return ToCore(DashSpec.Modeling.Parse.Host.HostModuleParser.parse(UnitText(text), directory));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -136,7 +141,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                return ToCore(DashSpec.Modeling.Parse.Transform.TransformModuleParser.parseTransformFile(text));
+                return ToCore(DashSpec.Modeling.Parse.Transform.TransformModuleParser.parseTransformFile(UnitText(text)));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -151,7 +156,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var doc = DashSpec.Modeling.Parse.Palette.PaletteModuleParser.parsePaletteFile(text);
+                var doc = DashSpec.Modeling.Parse.Palette.PaletteModuleParser.parsePaletteFile(UnitText(text));
                 return (doc.Id, ToCore(doc));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
@@ -167,7 +172,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                return UnitFragmentMapper.ToCore(FsharpImport.foldDiagramModule(text));
+                return UnitFragmentMapper.ToCore(FsharpImport.foldDiagramModule(UnitText(text)));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -179,7 +184,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var (id, fragment) = FsharpImport.foldDiagramModuleWithId(text);
+                var (id, fragment) = FsharpImport.foldDiagramModuleWithId(UnitText(text));
                 return (id, UnitFragmentMapper.ToCore(fragment));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
@@ -198,7 +203,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
+                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(UnitText(text));
                 return (doc.Id, ParsePresentationBlock(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
@@ -213,7 +218,7 @@ internal static class ModuleParseRegistration
         try
         {
             return UnitFragmentMapper.ToCorePresentation(
-                FsharpImport.parsePresentationBlock(text));
+                FsharpImport.parsePresentationBlock(UnitText(text)));
         }
         catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
