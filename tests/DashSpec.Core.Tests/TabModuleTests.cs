@@ -11,8 +11,8 @@ namespace DashSpec.Core.Tests;
 
 public class TabModuleTests
 {
-    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
-    public void Parse_tab_dashspec_ignores_module_shell_filters_when_embedded()
+    [Fact]
+    public void Parse_imported_tab_module_ignores_module_shell_filters_when_embedded()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
@@ -20,37 +20,39 @@ public class TabModuleTests
         {
             DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
             File.WriteAllText(
-                Path.Combine(dir, "extra.dashspec"),
+                Path.Combine(dir, "extra.ds"),
                 """
                 module tab extra
-                  report
-                  title = "Extra"
-                  type ExtraRow
-                    optional int n
-                  end type
-                  defaults
-                    filter.n.limit = 5
-                  end defaults
-                  filter n
-                    bind top
-                    end bind
-                    show
-                      label = "Top"
-                    end show
-                  end filter
-                  card x as "X"
-                  diagram number
-                  value = n
-                  end number
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  end report
+                namespace Extra
+                report
+                title = "Extra"
+                type ExtraRow
+                  optional int n
+                end type
+                defaults
+                  filter.n.limit = 5
+                end defaults
+                filter n
+                  bind top
+                  end bind
+                  show
+                    label = "Top"
+                  end show
+                end filter
+                card x as "X"
+                diagram number
+                value = n
+                end number
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
+                end card
+                end report
                 end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
+                  import tabs from Extra
                   report
                   title = "T"
                   filter app_name
@@ -66,7 +68,7 @@ public class TabModuleTests
                   a
                   end cards
                   end tab
-                  tab extra dashspec "extra.dashspec"
+                  tab extra as "Extra"
                   card a as "A"
                   diagram number
                   value = n
@@ -187,8 +189,8 @@ public class TabModuleTests
         Assert.Contains("filters host", ex.Message);
     }
 
-    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
-    public void Parse_tab_dashspec_merges_module_cards()
+    [Fact]
+    public void Parse_imported_tab_module_merges_module_cards()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
@@ -196,27 +198,29 @@ public class TabModuleTests
         {
             DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
             File.WriteAllText(
-                Path.Combine(dir, "extra.dashspec"),
+                Path.Combine(dir, "extra.ds"),
                 """
                 module tab extra
-                  report
-                  title = "Extra"
-                  type ExtraRow
-                    optional int n
-                  end type
-                  card x as "X"
-                  diagram number
-                  value = n
-                  end number
-                  data flow { fixture_src [rows] -> [rows] __diagram__ }
-                  end card
-                  end report
+                namespace Extra
+                report
+                title = "Extra"
+                type ExtraRow
+                  optional int n
+                end type
+                card x as "X"
+                diagram number
+                value = n
+                end number
+                data flow { fixture_src [rows] -> [rows] __diagram__ }
+                end card
+                end report
                 end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
+                  import tabs from Extra
                   report
                   title = "T"
                   tab overview as "Overview"
@@ -224,7 +228,7 @@ public class TabModuleTests
                   a
                   end cards
                   end tab
-                  tab extra dashspec "extra.dashspec"
+                  tab extra as "Extra"
                   card a as "A"
                   diagram number
                   value = n

@@ -5,14 +5,16 @@ namespace DashSpec.Core.Tests;
 
 public class DashSpecTestRowTypesTests
 {
-    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
+    [Fact]
     public void Parse_source_requires_explicit_ports()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-src-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         DashSpecTestRowTypes.SeedFixtureTypesDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "broken.dashflow"), """
+        File.WriteAllText(Path.Combine(dir, "broken.ds"), """
             module flow broken
+            namespace BrokenRows
+
             source s {
               use provider infer
               from view dbo.t
@@ -24,8 +26,9 @@ public class DashSpecTestRowTypesTests
             """
             module dashboard t
                   import types from Fixtures.QueryRowTypes
+                  import flows from BrokenRows as broken_flow
               connect
-              flow "broken.dashflow"
+              use flow broken_flow
               end connect
               report
               title = "T"

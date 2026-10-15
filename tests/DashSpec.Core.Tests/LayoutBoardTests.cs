@@ -220,15 +220,16 @@ end tab
         Assert.Equal(new PlacementDefinition(3, 1, 12), layout["f"]);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_include_layout_at_tab_module_shell()
+    [Fact]
+    public void Parse_imported_layout_at_tab_module_shell()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
+                namespace Layouts.Grid
                 scope tab
                 
                 [ Q E ]
@@ -237,9 +238,9 @@ end tab
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
 module tab demo
+  import layouts from Layouts.Grid
   report
   title = "demo"
-  include layout "layouts/grid.dashlayout"
   card a as "A" ref Q
   diagram bar
   x = a y
@@ -279,22 +280,23 @@ end tab
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_include_layout_conflicts_with_inline_tab_layout()
+    [Fact]
+    public void Parse_imported_layout_conflicts_with_inline_tab_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
+                namespace Layouts.Grid
                 scope tab
                 [ Q ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 module tab demo
-                  !include "layouts/grid.dashlayout"
+                  import layouts from Layouts.Grid
                   connect
                   layout board
                   [ Q ]
@@ -563,25 +565,26 @@ end tab
         Assert.Equal(new PlacementDefinition(1, 7, 6), layout["f1"]);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_include_toolbar_dashlayout()
+    [Fact]
+    public void Parse_imported_toolbar_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "tb.ds"), """
                 module layout tb
+                namespace Layouts.Toolbar
                 scope toolbar
                 
                 [ D A ]
                 [ U ]
                 """);
-            File.WriteAllText(Path.Combine(dir, "root.dashspec"), """
+            File.WriteAllText(Path.Combine(dir, "root.ds"), """
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  !include "layouts/tb.dashlayout"
+                  import layouts from Layouts.Toolbar
                   report
                   title = "T"
                   defaults
@@ -629,7 +632,7 @@ end tab
                 end dashboard
                 """);
 
-            var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(Path.Combine(dir, "root.dashspec")), dir);
+            var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(Path.Combine(dir, "root.ds")), dir);
 
             Assert.NotNull(doc.ToolbarBoard);
             Assert.Equal(["d1", "f1", "f2"], doc.DashboardFilters);
@@ -693,22 +696,23 @@ end tab
         Assert.Contains("requires scope", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_include_tab_layout_rejects_toolbar_scope()
+    [Fact]
+    public void Parse_imported_tab_layout_rejects_toolbar_scope()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "tb.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "tb.ds"), """
                 module layout tb
+                namespace Layouts.Toolbar
                 scope toolbar
                 [ D ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 module tab demo
-                  !include "layouts/tb.dashlayout"
+                  import layouts from Layouts.Toolbar
                   report
                   title = "demo"
                   card a as "A" ref D
@@ -730,15 +734,16 @@ end tab
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_include_toolbar_rejects_tab_scope()
+    [Fact]
+    public void Parse_imported_toolbar_rejects_tab_scope()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-toolbar-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "grid.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
+                namespace Layouts.Tab
                 scope tab
                 [ Q ]
                 """);
@@ -746,7 +751,7 @@ end tab
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  !include "layouts/grid.dashlayout"
+                  import layouts from Layouts.Tab
                   report
                   title = "T"
                   defaults
@@ -783,15 +788,16 @@ end tab
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
+    [Fact]
     public void TabLayoutPlanner_places_group_inner_cards_and_top_level_rows()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-layout-group-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "layouts"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "layouts", "grouped.dashlayout"), """
+            File.WriteAllText(Path.Combine(dir, "layouts", "grouped.ds"), """
                 module layout grouped
+                namespace Layouts.Grouped
                 scope tab
 
                 group distribution {
@@ -803,7 +809,7 @@ end tab
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module tab demo
-                  !include "layouts/grouped.dashlayout"
+                  import layouts from Layouts.Grouped
                   report
                   title = "demo"
                   card a as "A" ref Q

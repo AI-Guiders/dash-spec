@@ -255,32 +255,49 @@ public class SpecModulesTests
         Assert.Equal("demo_apps", document.ColorPalette);
     }
 
-    [Fact(Skip = "ADR-0102: legacy configuration palette removed; migrate to import palettes")]
-    public void Parse_palette_file_directive()
+    [Fact]
+    public void Parse_imported_palette_bound_with_connect_use()
     {
-        var document = DashSpecTestRowTypes.ParseDashboard("""
+        var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "brand.ds"), """
+                module palette brand
+                namespace Brand
 
-            module dashboard t
-                  import types from Fixtures.QueryRowTypes
-              configuration
-              palette = "palettes/brand.dashpalette"
-              end configuration
-              report
-              title = "T"
-              palette brand
-              card c as "C"
-              diagram number
-              value = x
-              end number
-              data flow { fixture_src [rows] -> [rows] __diagram__ }
-              end card
-              end report
-            end dashboard
-""");
+                palette
+                  default = "#999999"
+                end palette
+                """);
 
-        Assert.NotNull(document.Palette);
-        Assert.Equal("brand", document.Palette!.Id);
-        Assert.Equal("brand", document.ColorPalette);
+            var document = DashSpecTestRowTypes.ParseDashboard("""
+                module dashboard t
+                      import types from Fixtures.QueryRowTypes
+                      import palettes from Brand
+                  connect
+                    use palette brand
+                  end connect
+                  report
+                  title = "T"
+                  card c as "C"
+                  diagram number
+                  value = x
+                  end number
+                  data flow { fixture_src [rows] -> [rows] __diagram__ }
+                  end card
+                  end report
+                end dashboard
+                """, dir);
+
+            Assert.NotNull(document.Palette);
+            Assert.Equal("brand", document.Palette!.Id);
+            Assert.Equal("brand", document.ColorPalette);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]
@@ -508,26 +525,21 @@ public class SpecModulesTests
         return path;
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void Parse_card_include_diagram_file_and_stdlib_presentation()
+    [Fact]
+    public void Parse_card_imports_diagram_file_with_stdlib_presentation()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-include-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(dir, "diagrams"));
-        var stdlib = Path.Combine(dir, "stdlib", "presentation");
-        Directory.CreateDirectory(stdlib);
         try
         {
-            File.WriteAllText(Path.Combine(stdlib, "heatmap_tall.dashpresentation"), """
-                module presentation heatmap_tall
-                
-                height = 420
-                """);
-
-            File.WriteAllText(Path.Combine(dir, "diagrams", "activity.dashdiagram"), """
+            File.WriteAllText(Path.Combine(dir, "diagrams", "activity.ds"), """
                 module diagram activity
-                
-                include presentation "<presentation/heatmap_tall>"
-                
+                namespace Diagrams
+
+                presentation
+                  use heatmap_tall
+                end presentation
+
                 heatmap
                   x = bucket_start_utc
                   y = app_name
@@ -540,7 +552,8 @@ public class SpecModulesTests
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  !include "diagrams/activity.dashdiagram"
+                  import diagrams from Diagrams
+                  import presentations from DashSpec.Std
                   report
                   title = "T"
                   card c as "C"
@@ -554,7 +567,8 @@ public class SpecModulesTests
             var card = doc.Cards.Single();
             Assert.Equal("heatmap", card.Diagram.Kind);
             Assert.Equal("bucket_start_utc", card.Diagram.Properties["x"]);
-            Assert.Equal("420", card.Presentation!.Properties["height"]);
+            Assert.Equal("heatmap_tall", card.Presentation!.UsePreset);
+            Assert.Equal("420", doc.ResolvedChartChromePresets["heatmap_tall"].Properties["height"]);
         }
         finally
         {
@@ -562,7 +576,7 @@ public class SpecModulesTests
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
+    [Fact]
     public void Parse_diagram_chrome_use_registers_module_presentation_presets()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-chrome-" + Guid.NewGuid().ToString("N"));
@@ -570,16 +584,18 @@ public class SpecModulesTests
         Directory.CreateDirectory(Path.Combine(dir, "diagrams"));
         try
         {
-            File.WriteAllText(Path.Combine(dir, "presentations", "bar-tall.dashpresentation"), """
+            File.WriteAllText(Path.Combine(dir, "presentations", "bar-tall.ds"), """
                 module presentation bar_tall
+                namespace Presentations
 
                 legend = bottom
                 height = 320
                 y_max = 100
                 """);
 
-            File.WriteAllText(Path.Combine(dir, "diagrams", "util.dashdiagram"), """
+            File.WriteAllText(Path.Combine(dir, "diagrams", "util.ds"), """
                 module diagram util
+                namespace Diagrams
 
                 chrome
                   use bar_tall
@@ -595,8 +611,8 @@ public class SpecModulesTests
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  !include "presentations/bar-tall.dashpresentation"
-                  !include "diagrams/util.dashdiagram"
+                  import diagrams from Diagrams
+                  import presentations from Presentations
                   report
                   title = "T"
                   card c as "C"

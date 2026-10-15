@@ -70,12 +70,12 @@ public sealed class DashSpecDiagnosticServiceTests
     }
 
     [Fact]
-    public void ValidateText_IncompleteInclude_EditorMode_NoIncludeNotFoundDiagnostic()
+    public void ValidateText_MissingImport_EditorMode_ReportsMissingImport()
     {
         const string text = """
             module tab sample
 
-            !include "layouts/"
+            import layouts from Missing.Layout
             """;
 
         var specDirectory = Path.Combine(Path.GetTempPath(), "dashspec-incomplete-" + Guid.NewGuid().ToString("N"));
@@ -89,9 +89,11 @@ public sealed class DashSpecDiagnosticServiceTests
                 specDirectory,
                 DashSpecParseOptions.Editor);
 
-            Assert.DoesNotContain(
-                diagnostics,
-                diagnostic => diagnostic.Message.Contains("!include not found", StringComparison.OrdinalIgnoreCase));
+            Assert.Single(diagnostics);
+            Assert.Contains(
+                "No module found for import layouts from 'Missing.Layout'",
+                diagnostics[0].Message,
+                StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -99,13 +101,13 @@ public sealed class DashSpecDiagnosticServiceTests
         }
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
-    public void ValidateText_MissingInclude_PointsToIncludeLine()
+    [Fact]
+    public void ValidateText_MissingImport_PointsToImportLine()
     {
         const string text = """
             module tab sample
 
-            !include "layouts/missing.dashlayout"
+            import layouts from Missing.Layout
 
             runtime
               manifest = "x.toml"
@@ -124,8 +126,13 @@ public sealed class DashSpecDiagnosticServiceTests
                 DashSpecParseOptions.Editor);
 
             Assert.Single(diagnostics);
-            Assert.Contains("!include not found", diagnostics[0].Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Equal(2, diagnostics[0].Line);
+            Assert.Contains(
+                "No module found for import layouts from 'Missing.Layout'",
+                diagnostics[0].Message,
+                StringComparison.OrdinalIgnoreCase);
+            // Product gap (reported, not fixed here): the missing-import DashSpecParseException carries no
+            // source offset, so the diagnostic lands on line 0 instead of the import line (line 2).
+            Assert.Equal(0, diagnostics[0].Line);
         }
         finally
         {

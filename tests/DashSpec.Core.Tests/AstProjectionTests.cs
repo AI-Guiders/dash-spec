@@ -11,7 +11,7 @@ public class AstProjectionTests
         """
         module dashboard sample
           import types from Sample.Types as rows
-          !include "layouts/one.dashlayout"
+          import layouts from Sample.Layouts
 
           runtime
             manifest = "x.toml"
@@ -41,7 +41,7 @@ public class AstProjectionTests
         return string.Join("|", parts);
     }
 
-    [Fact(Skip = "ADR-0102: include/legacy syntax removed; covered by import tests - to rewrite")]
+    [Fact]
     public void Parse_emits_module_unit_and_import_nodes()
     {
         var tree = DashSpecSurfaceSyntax.parse(Sample);
