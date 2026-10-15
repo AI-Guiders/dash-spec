@@ -10,10 +10,11 @@ open DashSpec.Modeling.Parse.Lexing
 
 module HostModuleParser =
 
-    let private importTopbarLayout (specDirectory: string option) (namespaceName: string) =
+    let private importTopbarLayout (specDirectory: string option) (sourceOffset: int) (namespaceName: string) =
         match specDirectory with
         | None
-        | Some "" -> raise (DashSpecParseException("import layouts requires host file directory when parsing."))
+        | Some "" ->
+            raise (DashSpecParseException("import layouts requires host file directory when parsing.", sourceOffset))
         | Some dir ->
             let index = DashSpec.Modeling.Parse.Document.UnitIndex.build dir
 
@@ -34,8 +35,10 @@ module HostModuleParser =
 
                 LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Host "import layouts"
                 board
-            | [] -> raise (DashSpecParseException($"No module found for import layouts from '{namespaceName}'."))
-            | _ -> raise (DashSpecParseException($"Host imports more than one layouts unit from '{namespaceName}'."))
+            | [] ->
+                raise (DashSpecParseException($"No module found for import layouts from '{namespaceName}'.", sourceOffset))
+            | _ ->
+                raise (DashSpecParseException($"Host imports more than one layouts unit from '{namespaceName}'.", sourceOffset))
 
     let private parseLink (reader: TokenReader) =
         let linkId = reader.ReadIdent()
@@ -169,14 +172,15 @@ module HostModuleParser =
             elif reader.TryKeyword "surfaces" then
                 parseSurfacesBlock reader surfaces
             elif reader.TryKeyword "import" then
+                let sourceOffset = reader.CurrentOffset
                 let kind = reader.ReadIdent()
                 reader.ExpectKeyword "from"
                 let namespaceName = AccessorGrammar.readQualifiedName reader
 
                 if not (String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}."))
+                    raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}.", sourceOffset))
 
-                topbarLayout <- Some(importTopbarLayout specDirectory namespaceName)
+                topbarLayout <- Some(importTopbarLayout specDirectory sourceOffset namespaceName)
                 reader.SkipNewlines()
             else
                 raise (reader.Unexpected())

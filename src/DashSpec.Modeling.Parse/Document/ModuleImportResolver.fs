@@ -68,7 +68,8 @@ module ModuleImportResolver =
                     if List.isEmpty entries then
                         raise (
                             DashSpecParseException(
-                                $"No module found for import {keyword} from '{directive.Namespace}'."
+                                $"No module found for import {keyword} from '{directive.Namespace}'.",
+                                directive.SourceOffset
                             )
                         )
 

@@ -9,10 +9,11 @@ open DashSpec.Modeling.Parse.Lexing
 module ModuleHeaderParser =
 
     let private parseImportAfterKeyword (reader: TokenReader) =
+        let sourceOffset = reader.CurrentOffset
         let kindKeyword = reader.ReadIdent()
 
         match ImportKindRegistry.tryFindByKeyword kindKeyword with
-        | None -> raise (DashSpecParseException($"Unknown import kind '{kindKeyword}'."))
+        | None -> raise (DashSpecParseException($"Unknown import kind '{kindKeyword}'.", sourceOffset))
         | Some kind ->
             reader.ExpectKeyword "from"
             let namespaceName = AccessorGrammar.readQualifiedName reader
@@ -21,7 +22,8 @@ module ModuleHeaderParser =
 
             { Kind = kind
               Namespace = namespaceName
-              Alias = alias }
+              Alias = alias
+              SourceOffset = sourceOffset }
 
     let parse (reader: TokenReader) : ModuleHeader =
         let imports = ResizeArray<ModuleImportDirective>()
@@ -30,10 +32,11 @@ module ModuleHeaderParser =
 
         while continueHeader && not reader.IsEof do
             reader.SkipNewlines()
+            let directiveOffset = reader.CurrentOffset
 
             if reader.TryKeyword "namespace" then
                 if namespaceName.IsSome then
-                    raise (DashSpecParseException("Module header allows only one 'namespace' directive."))
+                    raise (DashSpecParseException("Module header allows only one 'namespace' directive.", directiveOffset))
 
                 namespaceName <- Some(AccessorGrammar.readQualifiedName reader)
             else
