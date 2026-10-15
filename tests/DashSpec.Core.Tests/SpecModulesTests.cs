@@ -303,7 +303,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_loads_quoted_series_keys()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette demo_apps
             
             palette
@@ -324,7 +324,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_resolves_const_refs_css_names_and_color_list()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette brand
             
             const default = "#999999"
@@ -349,7 +349,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_keeps_legacy_colors_string()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette legacy
             palette
               colors = "#111111,#222222"
@@ -363,7 +363,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_parses_bare_hex_in_colors_list()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette brand
             
             palette
@@ -379,7 +379,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_accepts_color_call_syntax()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette brand
             
             const tekla = "#e11d48"
@@ -399,7 +399,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_treats_line_start_slash_slash_as_comment()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette brand
             
             // not a color — line comment
@@ -415,7 +415,7 @@ public class SpecModulesTests
     [Fact]
     public void PaletteModuleParser_line_start_hash_hex_is_color_not_comment()
     {
-        var library = PaletteModuleParser.LoadPaletteFile(WriteTempPalette("""
+        var library = LoadPaletteFromFile(WriteTempPalette("""
             module palette brand
             palette
               accent = #e11d48
@@ -466,37 +466,26 @@ public class SpecModulesTests
     }
 
     [Fact]
-    public void Parse_demo_palette_specs_when_repo_present()
+    public void Parse_demo_palette_specs()
     {
-        var dir = @"samples/demo";
+        var dir = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "samples", "demo"));
         var soakPath = Path.Combine(dir, "demo-soak.ds");
-        if (!File.Exists(soakPath))
-        {
-            return;
-        }
 
         var parseOptions = CreateExtendedPluginParseOptions();
-        try
-        {
-            var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
-            Assert.NotNull(soak.Palette);
-            Assert.Equal("demo_apps", soak.Palette!.Id);
-            Assert.Equal("demo_apps", soak.ColorPalette);
 
-            var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, dir, soak);
-            Assert.Equal("#94a3b8", library!.TryGetPalette("demo_apps")!["default"]);
+        var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
+        Assert.NotNull(soak.Palette);
+        Assert.Equal("demo_apps", soak.Palette!.Id);
+        Assert.Equal("demo_apps", soak.ColorPalette);
 
-            var analyticsPath = Path.Combine(dir, "demo-analytics.ds");
-            if (File.Exists(analyticsPath))
-            {
-                var analytics = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(analyticsPath), dir, parseOptions);
-                Assert.Equal("demo_apps", analytics.ColorPalette);
-            }
-        }
-        catch (DashSpecParseException ex) when (ex.Message.Contains("ADR-0029", StringComparison.OrdinalIgnoreCase))
-        {
-            // demo specs not migrated to module tooltip + inspect yet (parent task).
-        }
+        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, dir, soak);
+        Assert.Equal("#94a3b8", library!.TryGetPalette("demo_apps")!["default"]);
+
+        // demo-analytics.ds is a tab unit (ADR-0101): its cards bind filters owned by the dashboard,
+        // so it is parsed through demo-soak.ds (import tabs from Demo.Analytics), not standalone.
     }
 
     private static DashSpecParseOptions CreateExtendedPluginParseOptions() =>
@@ -518,9 +507,16 @@ public class SpecModulesTests
             },
         };
 
+    /// <summary>Parses a palette unit file into a library: the product resolves palettes in the parser, so the composition lives here.</summary>
+    private static SpecLibrary LoadPaletteFromFile(string path)
+    {
+        var (id, properties) = PaletteModuleParser.ParsePaletteFile(File.ReadAllText(path));
+        return SpecLibrary.FromPalette(id, properties);
+    }
+
     private static string WriteTempPalette(string text)
     {
-        var path = Path.Combine(Path.GetTempPath(), "dashpalette-" + Guid.NewGuid().ToString("N") + ".dashpalette");
+        var path = Path.Combine(Path.GetTempPath(), "dashpalette-" + Guid.NewGuid().ToString("N") + ".ds");
         File.WriteAllText(path, text);
         return path;
     }
