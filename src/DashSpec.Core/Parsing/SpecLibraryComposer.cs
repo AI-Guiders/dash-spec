@@ -2,13 +2,12 @@ namespace DashSpec.Core.Parsing;
 
 using DashSpec.Core.Model;
 
-/// <summary>Loads and merges diagram library TOML, a palette unit, and units imported into the module (ADR-0098).</summary>
+/// <summary>Loads and merges diagram library TOML, the document palette and units imported into the module (ADR-0098).</summary>
 public static class SpecLibraryComposer
 {
     public static SpecLibrary? Load(
         string specFullPath,
         string? diagramLibraryPath,
-        string? palettePath,
         string? fallbackDirectory = null,
         DashboardDocument? document = null)
     {
@@ -20,10 +19,9 @@ public static class SpecLibraryComposer
             library = SpecLibrary.Merge(library, SpecLibrary.LoadFile(path));
         }
 
-        if (!string.IsNullOrWhiteSpace(palettePath))
+        if (document?.Palette is { } palette)
         {
-            var path = SpecPathResolver.ResolveNearSpec(specFullPath, palettePath, fallbackDirectory);
-            library = SpecLibrary.Merge(library, PaletteModuleParser.LoadPaletteFile(path));
+            library = SpecLibrary.Merge(library, SpecLibrary.FromPalette(palette.Id, palette.Properties));
         }
 
         if (document is not null &&

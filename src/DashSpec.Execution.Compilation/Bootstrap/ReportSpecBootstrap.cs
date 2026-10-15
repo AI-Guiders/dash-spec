@@ -45,7 +45,6 @@ public sealed class ReportSpecBootstrap(
         var library = SpecLibraryComposer.Load(
             specFullPath,
             document.DiagramLibraryPath,
-            document.PalettePath,
             environment.DefaultSpecDirectory,
             document);
         _ = SpecResolver.Resolve(document, library);

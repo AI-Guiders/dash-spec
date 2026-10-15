@@ -8,6 +8,7 @@ open DashSpec.Modeling.Parse.Filter
 open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
+open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
@@ -114,7 +115,7 @@ type DashboardDocument =
       ConnectorId: string option
       SqlDialect: SqlDialect
       DiagramLibraryPath: string option
-      PalettePath: string option
+      Palette: PaletteDocument option
       ColorPalette: string option
       Layout: LayoutDefinition
       FiltersChrome: FiltersChromeDefinition

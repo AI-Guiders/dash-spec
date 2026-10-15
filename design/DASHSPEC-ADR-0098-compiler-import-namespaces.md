@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted · **implemented** (`IReportCompiler`, namespace scan, `import`; `samples/demo` + `tests/Fixtures/import-project`; legacy `!include` in module headers rejected when `disable_legacy_includes`; product migration — ADR-0099 B5) |
+| **Status** | Accepted · **implemented** (`IReportCompiler`, `import` by namespace + kind; `samples/demo` + `tests/Fixtures/import-project`; `!include` removed, product migration — ADR-0099 B5; resolution index over `.dsproj` membership and resolved units instead of paths — 2026-10-15) |
 | **Date** | 2026-10-07 |
 | **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) |
 
@@ -142,7 +142,19 @@ Register phases in [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md); p
 
 ### Project root
 
-Marker file (`dashspec.toml` / `dspec.json`): `root_namespace`, source roots. LSP and `dspec build` share it.
+Marker file `*.dsproj` ([ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md)): `root_namespace`, `source_roots`, `files`, `exclude`. LSP and the compiler share it.
+
+### Resolution index and resolved units (implemented 2026-10-15)
+
+`import` no longer scans the tree per directive. `UnitIndex` (`DashSpec.Modeling.Parse/…/UnitIndex.fs`) is built once per compile:
+
+1. **Roots** — from the project file (`DashSpecProjectLocator`): declared `files` minus `exclude` when membership is explicit, otherwise the project `source_roots`; without a project file, the spec directory. The product stdlib root is always added.
+2. **Entries** — one header read per `*.ds`: declared `namespace` and the unit kind keyword (`module <kind> <id>`; `None` for a mixed module).
+3. **Lookup** — by `namespace` and requested kind; units without a kind fall back to import-kind dispatch.
+
+The document model carries **resolved units, not paths**: diagrams, chrome presets, tooltips and the palette (`Palette: PaletteDocument option` — id plus colour table). `SpecLibraryComposer.Load` merges them into `SpecLibrary`, where palettes are keyed by id, so `use palette <id>` resolves there. Paths remain only for non-unit assets: the runtime manifest, the diagram-library TOML (`configuration diagramlibrary`) and layout boards (`include layout` / `include toolbar`, ADR-0021, ADR-0022).
+
+Consequences: no machine-specific paths in the model; a multi-root project resolves the same way the authoring graph does; one directory scan per compile instead of one per import directive.
 
 ## Migration
 

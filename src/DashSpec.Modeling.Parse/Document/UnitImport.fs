@@ -130,7 +130,9 @@ module UnitImport =
             | Tooltip -> registerTooltipFile path state
             | Types -> registerTypesFile path state
             | Flow -> registerDashflowText path text state
-            | Palette -> state.RegisterPalette(unitIdOf "palette" path text, path)
+            | Palette ->
+                let palette = Palette.PaletteModuleParser.parsePaletteFile text
+                state.RegisterPalette(palette.Id, palette)
             | Tab -> state.RegisterTabModule(unitIdOf "tab" path text, path)
             | Transform ->
                 raise (DashSpecParseException($"'{path}': register transform via .dashdiagram or card block, not module import."))

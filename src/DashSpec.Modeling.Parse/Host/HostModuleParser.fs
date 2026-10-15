@@ -15,9 +15,23 @@ module HostModuleParser =
         | None
         | Some "" -> raise (DashSpecParseException("import layouts requires host file directory when parsing."))
         | Some dir ->
-            match DashSpec.Modeling.Parse.Document.UnitSource.findByNamespace dir namespaceName with
-            | [ path ] ->
-                let board = LayoutModuleParser.parseLayoutFile (DashSpec.Modeling.Parse.Document.UnitSource.readUnit path)
+            let index = DashSpec.Modeling.Parse.Document.UnitIndex.build dir
+
+            let entries =
+                index.Find namespaceName
+                |> List.filter (fun entry ->
+                    match entry.Kind with
+                    | None -> true
+                    | Some kind -> String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)
+                )
+
+            match entries with
+            | [ entry ] ->
+                let board =
+                    LayoutModuleParser.parseLayoutFile (
+                        DashSpec.Modeling.Parse.Document.UnitSource.readUnit entry.Path
+                    )
+
                 LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Host "import layouts"
                 board
             | [] -> raise (DashSpecParseException($"No module found for import layouts from '{namespaceName}'."))

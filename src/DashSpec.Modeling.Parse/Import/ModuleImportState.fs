@@ -6,6 +6,7 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
+open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.DataFlow
 
@@ -21,18 +22,18 @@ type ModuleImportState() =
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
     let aliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    let palettes = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let palettes = Dictionary<string, PaletteDocument>(StringComparer.OrdinalIgnoreCase)
     let tabModules = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
-    member _.RegisterPalette(id: string, path: string) =
+    member _.RegisterPalette(id: string, palette: PaletteDocument) =
         if palettes.ContainsKey id then
             raise (DashSpecParseException($"palette '{id}' is imported twice."))
 
-        palettes.[id] <- path
+        palettes.[id] <- palette
 
-    member _.ResolvePalette(id: string) =
+    member _.ResolvePalette(id: string) : PaletteDocument =
         match palettes.TryGetValue id with
-        | true, path -> path
+        | true, palette -> palette
         | false, _ -> raise (DashSpecParseException($"palette '{id}' is not imported; add 'import palettes from <Namespace>'."))
 
     member _.RegisterTabModule(id: string, path: string) =

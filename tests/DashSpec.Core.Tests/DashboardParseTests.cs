@@ -40,7 +40,7 @@ public class DashboardParseTests
         Assert.Equal("My **Title**", doc.Title);
     }
 
-    [Fact(Skip = "ADR-0098: PalettePath is now the resolved absolute import path; assert the suffix instead")]
+    [Fact]
     public void Parse_demo_sample_has_cards_and_filters()
     {
         var path = Path.GetFullPath(Path.Combine(
@@ -55,7 +55,9 @@ public class DashboardParseTests
         Assert.Null(doc.ConnectorId);
         Assert.Equal(SqlDialect.TSql, doc.SqlDialect);
         Assert.Null(doc.DiagramLibraryPath);
-        Assert.Equal("palettes/demo-apps.ds", doc.PalettePath);
+        Assert.NotNull(doc.Palette);
+        Assert.Equal("demo_apps", doc.Palette!.Id);
+        Assert.Equal("#94a3b8", doc.Palette.Properties["default"]);
         Assert.Equal("demo_apps", doc.ColorPalette);
         Assert.Equal(18, doc.Cards.Count);
         Assert.Equal(8, doc.Filters.Count);

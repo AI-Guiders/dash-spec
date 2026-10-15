@@ -22,7 +22,7 @@ public class ToolbarLayoutCompactorTests
             ConnectorId: null,
             SqlDialect: SqlDialect.TSql,
             DiagramLibraryPath: null,
-            PalettePath: null,
+            Palette: null,
             ColorPalette: null,
             Layout: new LayoutDefinition(12, 8),
             FiltersChrome: FiltersChromeDefinition.Default,

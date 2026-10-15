@@ -278,7 +278,8 @@ public class SpecModulesTests
             end dashboard
 """);
 
-        Assert.Equal("palettes/brand.dashpalette", document.PalettePath);
+        Assert.NotNull(document.Palette);
+        Assert.Equal("brand", document.Palette!.Id);
         Assert.Equal("brand", document.ColorPalette);
     }
 
@@ -414,17 +415,34 @@ public class SpecModulesTests
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-palette-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
-        var specPath = Path.Combine(dir, "t.dashspec");
-        File.WriteAllText(specPath, "module dashboard t\n  report\n  title = \"T\"\n  end report\nend dashboard");
-        File.WriteAllText(Path.Combine(dir, "lib.toml"), "[diagram.d1]\nkind = \"line\"\n");
-        File.WriteAllText(Path.Combine(dir, "brand.dashpalette"), """
+        File.WriteAllText(Path.Combine(dir, "brand.ds"), """
             module palette brand
-            palette
-              default = "#999999"
-            end palette
-            """);
+                namespace Brand
 
-        var library = SpecLibraryComposer.Load(specPath, "lib.toml", "brand.dashpalette");
+                palette
+                  default = "#999999"
+                end palette
+            """);
+        File.WriteAllText(Path.Combine(dir, "lib.toml"), "[diagram.d1]\nkind = \"line\"\n");
+        var specPath = Path.Combine(dir, "t.ds");
+        var specText = """
+            module dashboard t
+                namespace T
+                import palettes from Brand
+
+            connect
+                use palette brand
+            end connect
+
+            report
+                title = "T"
+            end report
+            end dashboard
+            """;
+        File.WriteAllText(specPath, specText);
+
+        var document = DashSpecTestRowTypes.ParseDashboard(specText, dir);
+        var library = SpecLibraryComposer.Load(specPath, "lib.toml", dir, document);
         Assert.NotNull(library);
         Assert.NotNull(library!.TryGetDiagram("d1"));
         Assert.Equal("#999999", library.TryGetPalette("brand")!["default"]);
@@ -444,11 +462,12 @@ public class SpecModulesTests
         try
         {
             var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
-            Assert.Equal("palettes/demo-apps.ds", soak.PalettePath);
+            Assert.NotNull(soak.Palette);
+            Assert.Equal("demo_apps", soak.Palette!.Id);
             Assert.Equal("demo_apps", soak.ColorPalette);
 
-            var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, soak.PalettePath, dir, soak);
-            Assert.Equal("#e11d48", library!.TryGetPalette("demo_apps")!["Tekla"]);
+            var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, dir, soak);
+            Assert.Equal("#94a3b8", library!.TryGetPalette("demo_apps")!["default"]);
 
             var analyticsPath = Path.Combine(dir, "demo-analytics.ds");
             if (File.Exists(analyticsPath))
@@ -591,7 +610,7 @@ public class SpecModulesTests
             Assert.Single(doc.ResolvedChartChromePresets);
             Assert.True(doc.ResolvedChartChromePresets.ContainsKey("bar_tall"));
 
-            var library = SpecLibraryComposer.Load("spec.dashspec", null, null, dir, doc);
+            var library = SpecLibraryComposer.Load("spec.dashspec", null, dir, doc);
             var card = doc.Cards.Single();
             var resolved = CardDiagramResolver.Resolve(card, library).Card;
             var presentation = CardChromeResolver.ResolveChartPresentation(resolved, library);

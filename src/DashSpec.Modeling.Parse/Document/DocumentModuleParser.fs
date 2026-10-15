@@ -11,6 +11,7 @@ open DashSpec.Modeling.Parse.Filter
 open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Toolbar
 open DashSpec.Modeling.Parse.Types
 open DashSpec.Modeling.Parse.DataFlow
@@ -38,7 +39,7 @@ module rec DocumentModuleParser =
     type private ReportCompileResult =
         { Context: ReportCompileContext
           SqlDialect: SqlDialect
-          PalettePath: string option
+          Palette: PaletteDocument option
           DiagramLibraryPath: string option
           ReportTitle: string option }
 
@@ -140,7 +141,7 @@ module rec DocumentModuleParser =
               ConnectorId = None
               SqlDialect = result.SqlDialect
               DiagramLibraryPath = result.DiagramLibraryPath
-              PalettePath = result.PalettePath
+              Palette = result.Palette
               ColorPalette = result.Context.ColorPalette
               Layout = result.Context.Layout
               FiltersChrome = result.Context.FiltersChrome
@@ -173,7 +174,7 @@ module rec DocumentModuleParser =
 
     let private parseDashboard (reader: TokenReader) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         let dashboardId = reader.ReadIdent()
-        let (dashShell: ReportCompileContext), sqlDialect, palettePath, diagramLibraryPath, (reportTitle: string option) =
+        let (dashShell: ReportCompileContext), sqlDialect, palette, diagramLibraryPath, (reportTitle: string option) =
             parseDashboardReport reader dashboardId specDirectory parseOptions (ResizeArray())
 
         if reportTitle.IsNone || String.IsNullOrWhiteSpace (reportTitle.Value) then
@@ -197,7 +198,7 @@ module rec DocumentModuleParser =
               ConnectorId = None
               SqlDialect = sqlDialect
               DiagramLibraryPath = diagramLibraryPath
-              PalettePath = palettePath
+              Palette = palette
               ColorPalette = dashShell.ColorPalette
               Layout = dashShell.Layout
               FiltersChrome = dashShell.FiltersChrome
@@ -382,11 +383,11 @@ module rec DocumentModuleParser =
         (specDirectory: string option)
         (parseOptions: DashSpecParseOptions)
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
-        : ReportCompileContext * SqlDialect * string option * string option * string option =
+        : ReportCompileContext * SqlDialect * PaletteDocument option * string option * string option =
         let includes = ModuleImportState()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
-        let mutable palettePath = None
+        let mutable palette = None
         let mutable diagramLibraryPath = None
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
@@ -422,7 +423,7 @@ module rec DocumentModuleParser =
                     includes
                     parseOptions
                     (fun v -> sqlDialect <- v)
-                    (fun v -> palettePath <- v)
+                    (fun v -> palette <- v)
                     (fun v -> diagramLibraryPath <- v)
                     (fun v -> paletteUse <- v)
                     (fun v -> layout <- v)
@@ -467,7 +468,7 @@ module rec DocumentModuleParser =
 
         match shell with
         | None -> raise (DashSpecParseException("@dashboard module body is empty."))
-        | Some s -> s, sqlDialect, palettePath, diagramLibraryPath, reportTitle
+        | Some s -> s, sqlDialect, palette, diagramLibraryPath, reportTitle
 
     let private parseTabReportCompile
         (reader: TokenReader)
@@ -482,7 +483,7 @@ module rec DocumentModuleParser =
         let includes = ModuleImportState()
         let mutable moduleExtensions = { EnabledPluginIds = []; Imports = [] }
         let mutable sqlDialect = SqlDialect.TSql
-        let mutable palettePath = None
+        let mutable palette = None
         let mutable diagramLibraryPath = None
         let mutable paletteUse = None
         let mutable layout = LayoutDefinition.Default
@@ -518,7 +519,7 @@ module rec DocumentModuleParser =
                     includes
                     parseOptions
                     (fun v -> sqlDialect <- v)
-                    (fun v -> palettePath <- v)
+                    (fun v -> palette <- v)
                     (fun v -> diagramLibraryPath <- v)
                     (fun v -> paletteUse <- v)
                     (fun v -> layout <- v)
@@ -570,7 +571,7 @@ module rec DocumentModuleParser =
         | Some s ->
             { Context = s
               SqlDialect = sqlDialect
-              PalettePath = palettePath
+              Palette = palette
               DiagramLibraryPath = diagramLibraryPath
               ReportTitle = reportTitle }
 
@@ -581,7 +582,7 @@ module rec DocumentModuleParser =
         (includes: ModuleImportState)
         (parseOptions: DashSpecParseOptions)
         (setSqlDialect: SqlDialect -> unit)
-        (setPalettePath: string option -> unit)
+        (setPalette: PaletteDocument option -> unit)
         (setDiagramLibraryPath: string option -> unit)
         (setPaletteUse: string option -> unit)
         (setLayout: LayoutDefinition -> unit)
@@ -631,7 +632,7 @@ module rec DocumentModuleParser =
                     if layoutBoard.IsSome then setLayoutBoard layoutBoard.Value
                     if toolbarBoard.IsSome then setToolbarBoard toolbarBoard.Value
                     match wiredPalette with
-                    | Some id -> setPalettePath (Some(includes.ResolvePalette id))
+                    | Some id -> setPalette (Some(includes.ResolvePalette id))
                     | None -> ()
                     setPaletteUse wiredPalette
                     setFlowConnectSymbol flowSymbol

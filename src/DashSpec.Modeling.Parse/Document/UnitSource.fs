@@ -46,6 +46,23 @@ module UnitSource =
             let parts = lines.[start].Trim().Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
             if parts.Length >= 3 then Some parts.[2] else None
 
+    /// Unit kind keyword of a unit file (`module <kind> <id>`), or None for a mixed module (`module <name>`).
+    let moduleKindOf (text: string) : string option =
+        let lines = text.Split('\n')
+
+        match moduleIndex lines with
+        | None -> None
+        | Some start ->
+            let parts = lines.[start].Trim().Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+
+            if
+                parts.Length >= 2
+                && (DashSpec.Modeling.Core.ImportKindRegistry.tryFindByModuleKeyword parts.[1]).IsSome
+            then
+                Some(parts.[1].ToLowerInvariant())
+            else
+                None
+
     /// Namespace declared in the header of a unit file, if any.
     let namespaceOf (text: string) : string option =
         let lines = text.Split('\n')
@@ -97,15 +114,3 @@ module UnitSource =
                     | None -> raise (InvalidOperationException("DashSpec stdlib directory was not found."))
             else
                 raise (InvalidOperationException("DashSpec stdlib directory was not found."))
-
-    /// Unit files under the spec directory and the product stdlib whose header declares the namespace (namespace scan, no index).
-    let findByNamespace (specDirectory: string) (namespaceName: string) : string list =
-        [ specDirectory; stdlibRoot () ]
-        |> List.collect (fun root -> Directory.EnumerateFiles(root, "*.ds", SearchOption.AllDirectories) |> Seq.toList)
-        |> List.filter (fun path ->
-            try
-                match namespaceOf (File.ReadAllText path) with
-                | Some ns -> String.Equals(ns, namespaceName, StringComparison.OrdinalIgnoreCase)
-                | None -> false
-            with _ ->
-                false)

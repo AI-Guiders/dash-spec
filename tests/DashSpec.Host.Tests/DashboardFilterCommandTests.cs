@@ -1024,7 +1024,7 @@ public class DashboardFilterCommandTests
                 ConnectorId: "stub",
                 SqlDialect: SqlDialect.TSql,
                 DiagramLibraryPath: null,
-                PalettePath: null,
+                Palette: null,
                 ColorPalette: null,
                 Layout: new LayoutDefinition(),
                 FiltersChrome: FiltersChromeDefinition.Default,
