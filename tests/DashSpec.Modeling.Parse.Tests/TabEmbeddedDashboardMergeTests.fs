@@ -11,6 +11,7 @@ module TabEmbeddedDashboardMergeTests =
     let private flowText =
         """
 module flow embed_flow
+    namespace Test.Flows
 
 source mod {
   use provider sqlserver
@@ -24,18 +25,20 @@ source mod {
 end flow
 """
 
-    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
+    [<Fact>]
     let ``dashboard merge parses tab multi-slot card when filters are report-level`` () =
         let dir = Path.Combine(Path.GetTempPath(), "tab-embed-merge-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "embed.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "embed.ds"), flowText)
 
         let tabText =
             """
 module tab versions
+  namespace Test.Tabs
+  import flows from Test.Flows as embed_flow
 
 connect
-  flow "embed.dashflow"
+  use flow embed_flow
 end connect
 
 report "Versions"
@@ -74,10 +77,7 @@ end tab versions
         let dashboardText =
             """
 module dashboard soak
-
-connect
-  flow "embed.dashflow"
-end connect
+  import tabs from Test.Tabs
 
 report "Soak"
   defaults
@@ -93,11 +93,11 @@ report "Soak"
     end show
   end filter
 
-  tab versions as "Versions" dashspec "tab-versions.dashspec"
+  tab versions as "Versions"
 end report
 """
 
-        File.WriteAllText(Path.Combine(dir, "tab-versions.dashspec"), tabText)
+        File.WriteAllText(Path.Combine(dir, "versions.ds"), tabText)
 
         try
             let document =
@@ -114,18 +114,20 @@ end report
             with _ ->
                 ()
 
-    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
+    [<Fact>]
     let ``dashboard merge fails when embed tab keeps filters only in standalone`` () =
         let dir = Path.Combine(Path.GetTempPath(), "tab-embed-standalone-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
-        File.WriteAllText(Path.Combine(dir, "embed.dashflow"), flowText)
+        File.WriteAllText(Path.Combine(dir, "embed.ds"), flowText)
 
         let tabText =
             """
 module tab versions
+  namespace Test.Tabs
+  import flows from Test.Flows as embed_flow
 
 connect
-  flow "embed.dashflow"
+  use flow embed_flow
 end connect
 
 report "Versions"
@@ -166,17 +168,14 @@ end tab versions
         let dashboardText =
             """
 module dashboard soak
-
-connect
-  flow "embed.dashflow"
-end connect
+  import tabs from Test.Tabs
 
 report "Soak"
-  tab versions as "Versions" dashspec "tab-versions.dashspec"
+  tab versions as "Versions"
 end report
 """
 
-        File.WriteAllText(Path.Combine(dir, "tab-versions.dashspec"), tabText)
+        File.WriteAllText(Path.Combine(dir, "versions.ds"), tabText)
 
         try
             let ex =
