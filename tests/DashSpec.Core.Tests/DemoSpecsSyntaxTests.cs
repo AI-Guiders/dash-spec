@@ -15,21 +15,26 @@ public class DemoSpecsSyntaxTests
         },
     };
 
+    /// <summary>Repo-relative sample root: the test host runs from tests/&lt;project&gt;/bin/&lt;cfg&gt;/&lt;tfm&gt; (five levels up).</summary>
+    private static readonly string SamplesDemo = Path.GetFullPath(Path.Combine(
+        AppContext.BaseDirectory,
+        "..", "..", "..", "..", "..",
+        "samples", "demo"));
+
+    /// <summary>
+    /// Standalone dashboard specs. <c>demo-analytics.ds</c> is a tab unit (ADR-0101): its cards bind filters
+    /// owned by the dashboard, so it is parsed through <c>demo-soak.ds</c> (<c>import tabs from Demo.Analytics</c>),
+    /// not on its own.
+    /// </summary>
     public static TheoryData<string> DemoSpecPaths =>
     [
-        @"samples/demo\demo-soak.ds",
-        @"samples/demo\demo-analytics.ds",
+        Path.Combine(SamplesDemo, "demo-soak.ds"),
     ];
 
     [Theory]
     [MemberData(nameof(DemoSpecPaths))]
     public void Parse_demo_specs(string path)
     {
-        if (!File.Exists(path))
-        {
-            return;
-        }
-
         var text = File.ReadAllText(path);
         var doc = DashSpecTestRowTypes.ParseDashboard(text, Path.GetDirectoryName(path)!, DemoParseOptions);
         Assert.NotEmpty(doc.Filters);
@@ -176,12 +181,11 @@ public class DemoSpecsSyntaxTests
     [Fact]
     public void Parse_demo_events_detail_table_diagram()
     {
-        var path = @"samples/demo\diagrams\detail\events-detail-table.dashdiagram";
-        if (!File.Exists(path))
-        {
-            return;
-        }
+        var path = Path.Combine(SamplesDemo, "diagrams", "events-detail-table.ds");
 
+        // Product gap (reported, not fixed here): the diagram-module bridge feeds the unit text straight to
+        // F# DiagramModuleParser.parseDiagramModuleWithId, which does not skip the ADR-0098 `namespace` header
+        // (UnitSource.blankHeader is applied by the import path and by PaletteModuleParser, not here).
         var text = File.ReadAllText(path);
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
             text,

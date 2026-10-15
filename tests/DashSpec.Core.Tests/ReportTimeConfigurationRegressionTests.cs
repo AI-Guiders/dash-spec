@@ -9,10 +9,7 @@ namespace DashSpec.Core.Tests;
 /// </summary>
 public sealed class ReportTimeConfigurationRegressionTests
 {
-    private const string DocsOverview =
-        @"samples/demo\demo-overview.dashspec";
-
-    /// <summary>Minimal module tab reproduction when demo docs path is absent (CI).</summary>
+    /// <summary>Minimal module tab reproduction: no demo sample sets <c>work_time_column</c> any more.</summary>
     private const string EmbeddedOverviewConfigurationTab = """
         module tab overview
           configuration
@@ -44,31 +41,5 @@ public sealed class ReportTimeConfigurationRegressionTests
         Assert.NotNull(document.TimePolicy);
         Assert.Equal(ReportTimeBasis.Calendar, document.TimePolicy!.Basis);
         Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
-    }
-
-    [Fact]
-    public void Parse_demo_overview_file_when_present_accepts_work_time_column()
-    {
-        if (!File.Exists(DocsOverview))
-        {
-            return;
-        }
-
-        var options = new DashSpecParseOptions
-        {
-            ExtensionBlockKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "views" },
-            ExtensionBlockPluginIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["views"] = "card_views",
-            },
-            MergeReferencedTabModules = true,
-        };
-
-        var doc = DashSpecTestRowTypes.ParseDashboard(
-            File.ReadAllText(DocsOverview),
-            Path.GetDirectoryName(DocsOverview)!,
-            options);
-
-        Assert.Equal("bucket_start_utc", doc.TimePolicy?.WorkTimeColumn);
     }
 }
