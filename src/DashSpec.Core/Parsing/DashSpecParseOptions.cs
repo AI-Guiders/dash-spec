@@ -10,15 +10,12 @@ public sealed class DashSpecParseOptions
     public static DashSpecParseOptions Editor { get; } = new()
     {
         MergeReferencedTabModules = false,
-        LinkOnlyReferencedDiagramUnits = false,
         ExtensionBlockKeywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "views" },
     };
 
     public bool MergeReferencedTabModules { get; init; } = true;
 
-    /// <summary>Parse only units referenced by the report (runtime default).</summary>
-    public bool LinkOnlyReferencedDiagramUnits { get; init; } = true;
-
+    /// <summary>Block keywords registered by plugin extensions (e.g. <c>views</c>).</summary>
     public IReadOnlySet<string> ExtensionBlockKeywords { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

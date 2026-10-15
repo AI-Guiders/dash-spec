@@ -31,7 +31,7 @@ public sealed class ReportSpecBootstrap(
         if (string.IsNullOrWhiteSpace(entryRuntime))
         {
             throw new InvalidOperationException(
-                "В .dashspec нет @runtime — укажите runtime { manifest = \"...\" } в блоке @dashboard/@tab.");
+                "В модуле нет runtime — укажите runtime { manifest = \"...\" } рядом с report.");
         }
 
         var configPath = runtimePaths.ResolveRuntimeConfigPath(

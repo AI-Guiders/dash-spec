@@ -407,7 +407,6 @@ module rec DocumentModuleParser =
             specDirectory
             DocumentModuleKind.Dashboard
             includes
-            parseOptions
             diagnostics
 
         let seenCode = ref false
@@ -503,7 +502,6 @@ module rec DocumentModuleParser =
             specDirectory
             DocumentModuleKind.Tab
             includes
-            parseOptions
             diagnostics
 
         let seenCode = ref false

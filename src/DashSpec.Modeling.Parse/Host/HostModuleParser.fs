@@ -188,7 +188,7 @@ module HostModuleParser =
         BlockSyntax.expectBlockEnd reader "host" (Some hostId)
 
         if String.IsNullOrWhiteSpace catalogPath then
-            raise (DashSpecParseException($"@host '{hostId}' requires catalog \"path/to.dashcatalog\"."))
+            raise (DashSpecParseException($"@host '{hostId}' requires catalog \"path/to-catalog.ds\"."))
 
         { Id = hostId
           CatalogPath = catalogPath
