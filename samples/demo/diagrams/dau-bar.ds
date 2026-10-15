@@ -1,0 +1,10 @@
+module diagram demo_dau_bar
+namespace Demo.Diagrams
+
+    bar
+    render = "chartjs"
+    category = app_name
+    value = distinct_users
+    scale_value = integer
+
+    end bar

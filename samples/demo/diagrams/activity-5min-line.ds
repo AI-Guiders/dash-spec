@@ -1,0 +1,19 @@
+module diagram demo_activity_5min_line
+namespace Demo.Diagrams
+
+    series
+        max = 6
+        other = "Other"
+
+    end series
+
+    line
+    render = "chartjs"
+    x = bucket_start_utc
+    x_format = time.short
+    x_step = 5m
+    y = event_count
+    scale_y = integer
+    series = app_name
+
+    end line

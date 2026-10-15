@@ -1,0 +1,15 @@
+module diagram demo_peak_sparkline
+namespace Demo.Diagrams
+
+    chrome
+        use sparkline_64
+
+    end chrome
+
+    sparkline
+    render = "chartjs"
+    x = usage_date
+    y = peak_concurrent_proxy
+    scale_y = integer
+
+    end sparkline

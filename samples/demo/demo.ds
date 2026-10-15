@@ -1,0 +1,22 @@
+module host demo
+import layouts from Demo.Layouts
+
+catalog "demo-catalog.ds"
+
+configuration
+  language = "ru-RU"
+  display_timezone = "Europe/Moscow"
+end configuration
+
+presentation
+  product_title = "DashSpec Demo"
+  catalog_label = "Отчёт"
+  color_scheme = dark
+end presentation
+
+
+surfaces
+  show help, settings, spec_dev
+end surfaces
+
+end host
