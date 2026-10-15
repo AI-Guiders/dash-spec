@@ -992,27 +992,35 @@ module rec DocumentModuleParser =
         let resolveFilterProperty (filterName: string) (property: string) =
             FilterScopeDefaults.resolveProperty [ blockFilterDefaults; shell.FilterDefaults ] filterName property
 
+        let onDefaults () =
+            shell.FormatDefaults <-
+                DefaultsBlockParser.parse reader "defaults" shell.FormatDefaults blockFilterDefaults
+
+        let onDefault () =
+            shell.FormatDefaults <-
+                DefaultsBlockParser.parse reader "default" shell.FormatDefaults blockFilterDefaults
+
+        let onFilter () =
+            let filter = FilterParser.parse reader resolveFilterProperty
+
+            if mode = ReportBodyMode.TabEmbedded then
+                shell.TabLocalFilters.Add filter
+            else
+                shell.Filters.Add filter
+
+            reader.SkipNewlines()
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ()) ]
+
         while not (BlockSyntax.isBlockEnd reader "filters" None) && not reader.IsEof do
             reader.SkipNewlines()
 
             if BlockSyntax.isBlockEnd reader "filters" None then ()
-            elif reader.TryKeyword "defaults" then
-                shell.FormatDefaults <-
-                    DefaultsBlockParser.parse reader "defaults" shell.FormatDefaults blockFilterDefaults
-            elif reader.TryKeyword "default" then
-                shell.FormatDefaults <-
-                    DefaultsBlockParser.parse reader "default" shell.FormatDefaults blockFilterDefaults
-            elif not (reader.TryKeyword "filter") then
+            elif not (BlockGrammar.tryDispatchChild reader members) then
                 raise (reader.Unexpected())
-            else
-                let filter = FilterParser.parse reader resolveFilterProperty
-
-                if mode = ReportBodyMode.TabEmbedded then
-                    shell.TabLocalFilters.Add filter
-                else
-                    shell.Filters.Add filter
-
-                reader.SkipNewlines()
 
         BlockSyntax.expectBlockEnd reader "filters" (None: string option)
 
