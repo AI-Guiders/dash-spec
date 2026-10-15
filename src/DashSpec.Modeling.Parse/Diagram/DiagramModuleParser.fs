@@ -113,6 +113,7 @@ module DiagramModuleParser =
 
     let parseDiagramModule (text: string) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Diagram text is required."
+        let text = DashSpec.Modeling.Parse.Document.UnitSource.blankHeader text
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.ExpectKeyword "module"
