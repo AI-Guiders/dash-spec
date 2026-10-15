@@ -49,22 +49,22 @@ internal sealed class DashSpecServerState
 
     private void RegisterFromOpenDocument(string path, string text)
     {
-        var ext = Path.GetExtension(path);
-        if (ext.Equals(".dashdiagram", StringComparison.OrdinalIgnoreCase))
+        if (!Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
         {
-            var id = DashSpecWorkspaceIndex.TryReadDiagramId(text);
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                _index.RegisterDiagram(id, path);
-            }
+            return;
         }
-        else if (ext.Equals(".dashpresentation", StringComparison.OrdinalIgnoreCase))
+
+        var diagramId = DashSpecWorkspaceIndex.TryReadDiagramId(text);
+        if (!string.IsNullOrWhiteSpace(diagramId))
         {
-            var id = DashSpecWorkspaceIndex.TryReadPresentationId(text);
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                _index.RegisterPresentation(id, path);
-            }
+            _index.RegisterDiagram(diagramId, path);
+            return;
+        }
+
+        var presentationId = DashSpecWorkspaceIndex.TryReadPresentationId(text);
+        if (!string.IsNullOrWhiteSpace(presentationId))
+        {
+            _index.RegisterPresentation(presentationId, path);
         }
     }
 }

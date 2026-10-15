@@ -1,4 +1,5 @@
 using DashSpec.Core.Parsing;
+using FsharpDocument = DashSpec.Modeling.Parse.Document;
 
 namespace DashSpec.Core.Validation;
 
@@ -31,6 +32,7 @@ public sealed class DashSpecWorkspaceIndex
         }
     }
 
+    /// <summary>Scans the `.ds` units of a workspace (ADR-0101) and registers the diagram / presentation ones.</summary>
     public static DashSpecWorkspaceIndex Scan(string rootDirectory)
     {
         var index = new DashSpecWorkspaceIndex();
@@ -41,25 +43,30 @@ public sealed class DashSpecWorkspaceIndex
 
         foreach (var path in Directory.EnumerateFiles(rootDirectory, "*.*", SearchOption.AllDirectories))
         {
-            var ext = Path.GetExtension(path);
-            if (ext.Equals(".dashdiagram", StringComparison.OrdinalIgnoreCase))
+            if (Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
             {
-                index.RegisterDiagramFile(path);
-            }
-            else if (ext.Equals(".dashpresentation", StringComparison.OrdinalIgnoreCase))
-            {
-                index.RegisterPresentationFile(path);
+                index.RegisterUnitFile(path);
             }
         }
 
         return index;
     }
 
-    public static string? TryReadDiagramId(string text) => TryReadModuleId(text, "diagram");
+    public static string? TryReadDiagramId(string text) => TryReadHeaderId(text, "diagram");
 
-    public static string? TryReadPresentationId(string text) => TryReadModuleId(text, "presentation");
+    public static string? TryReadPresentationId(string text) => TryReadHeaderId(text, "presentation");
 
-    private void RegisterDiagramFile(string path)
+    /// <summary>Reads `module &lt;kind&gt; &lt;id&gt;` (ADR-0101) through the language's own header reader.</summary>
+    private static string? TryReadHeaderId(string text, string kindKeyword)
+    {
+        var (kind, id) = FsharpDocument.UnitSource.tryKindAndId(text);
+
+        return !string.IsNullOrWhiteSpace(id) && kind.Equals(kindKeyword, StringComparison.OrdinalIgnoreCase)
+            ? id
+            : null;
+    }
+
+    private void RegisterUnitFile(string path)
     {
         string text;
         try
@@ -71,54 +78,19 @@ public sealed class DashSpecWorkspaceIndex
             return;
         }
 
-        var id = TryReadDiagramId(text);
-        if (!string.IsNullOrWhiteSpace(id))
+        var (kind, id) = FsharpDocument.UnitSource.tryKindAndId(text);
+        if (string.IsNullOrWhiteSpace(kind) || string.IsNullOrWhiteSpace(id))
+        {
+            return;
+        }
+
+        if (kind.Equals("diagram", StringComparison.OrdinalIgnoreCase))
         {
             RegisterDiagram(id, path);
         }
-    }
-
-    private void RegisterPresentationFile(string path)
-    {
-        string text;
-        try
-        {
-            text = File.ReadAllText(path);
-        }
-        catch
-        {
-            return;
-        }
-
-        var id = TryReadPresentationId(text);
-        if (!string.IsNullOrWhiteSpace(id))
+        else if (kind.Equals("presentation", StringComparison.OrdinalIgnoreCase))
         {
             RegisterPresentation(id, path);
-        }
-    }
-
-    private static string? TryReadModuleId(string text, string keyword)
-    {
-        try
-        {
-            var reader = ParserUtilities.CreateReader(text);
-            reader.SkipFileDirectives();
-            if (!reader.IsAt(TokenKind.At))
-            {
-                return null;
-            }
-
-            reader.Advance();
-            if (!reader.TryKeyword(keyword))
-            {
-                return null;
-            }
-
-            return reader.ReadIdent();
-        }
-        catch
-        {
-            return null;
         }
     }
 }

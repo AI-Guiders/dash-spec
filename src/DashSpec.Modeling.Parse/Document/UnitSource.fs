@@ -63,6 +63,12 @@ module UnitSource =
             else
                 None
 
+    /// Kind and id of a unit header in a C#-friendly shape: empty strings when the file declares neither.
+    let tryKindAndId (text: string) : string * string =
+        match moduleKindOf text, moduleIdOf text with
+        | Some kind, Some id -> kind, id
+        | _ -> "", ""
+
     /// Namespace declared in the header of a unit file, if any.
     let namespaceOf (text: string) : string option =
         let lines = text.Split('\n')

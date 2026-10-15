@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Lexing
 
 open System
+open DashSpec.Modeling.Core
 
 /// Shared keyword tables for parser-side classification (formatter, syntax, symbols).
 module DashSpecKeywords =
@@ -8,16 +9,22 @@ module DashSpecKeywords =
     let identEquals (left: string) (right: string) =
         String.Equals(left, right, StringComparison.OrdinalIgnoreCase)
 
+    /// Diagram kind ids of the language (ADR-0101). `DiagramKindRegistry` owns their properties and
+    /// binding rules; this is only the vocabulary the lexer/formatter classifies.
+    let diagramKinds =
+        [ "line"; "area"; "sparkline"; "bar"; "pie"; "donut"; "doughnut"; "scatter"; "histogram"; "box"
+          "boxplot"; "treemap"; "gauge"; "windrose"; "wind_rose"; "table"; "number"; "heatmap"; "gantt" ]
+
     let isBlockKeyword (value: string) =
-        match value.ToLowerInvariant() with
+        let keyword = value.ToLowerInvariant()
+
+        match keyword with
         | "runtime" | "configuration" | "connect" | "report" | "extensions" | "links" | "surfaces"
         | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
-        | "diagramlibrary" | "group" | "phase" | "diagram"
-        | "heatmap" | "gantt" | "bar" | "line" | "area" | "pie" | "donut" | "gauge"
-        | "table" | "scatter" | "treemap" | "windrose" | "box" | "histogram" | "number" -> true
-        | _ -> false
+        | "diagramlibrary" | "group" | "phase" | "diagram" -> true
+        | _ -> diagramKinds |> List.contains keyword
 
     let isControlKeyword (value: string) =
         match value.ToLowerInvariant() with
@@ -27,7 +34,9 @@ module DashSpecKeywords =
         | "diagram" | "end" -> true
         | _ -> isBlockKeyword value
 
+    /// `module <kind> <id>` roots: every importable unit kind plus the module-only roots.
     let isModuleDirective (value: string) =
-        match value.ToLowerInvariant() with
-        | "dashboard" | "tab" | "catalog" | "diagram" | "presentation" | "host" | "layout" -> true
-        | _ -> false
+        ImportKindRegistry.tryFindByModuleKeyword value |> Option.isSome
+        || (match value.ToLowerInvariant() with
+            | "dashboard" | "catalog" | "host" -> true
+            | _ -> false)

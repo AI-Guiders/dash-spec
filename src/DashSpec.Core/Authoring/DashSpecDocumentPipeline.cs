@@ -4,8 +4,8 @@ public static class DashSpecDocumentPipeline
 {
     static readonly HashSet<string> DashSpecDocumentExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".dashspec", ".dashlibrary", ".dashlayout", ".dashdiagram", ".dashpalette",
-        ".dashcatalog", ".dashtooltip", ".dashpresentation", ".sql", ".toml",
+        // Units and shells (ADR-0101/0102). `.sql` and `.toml` are repo assets that still get newline hygiene.
+        ".ds", ".sql", ".toml",
     };
 
     public static EditorConfig.EditorConfigOptions ResolveOptions(string absoluteFilePath, string? searchRoot = null) =>
@@ -52,7 +52,8 @@ public static class DashSpecDocumentPipeline
     static bool IsDashSpecSurface(string absoluteFilePath)
     {
         var ext = Path.GetExtension(absoluteFilePath);
-        return ext.StartsWith(".dash", StringComparison.OrdinalIgnoreCase) ||
+        return ext.Equals(".ds", StringComparison.OrdinalIgnoreCase) ||
+               ext.StartsWith(".dash", StringComparison.OrdinalIgnoreCase) ||
                ext.Equals(".catalog.gdl", StringComparison.OrdinalIgnoreCase);
     }
 }

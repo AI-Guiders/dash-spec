@@ -108,12 +108,12 @@ public sealed class DashboardSessionService(
         var safeName = Path.GetFileName(fileName);
         if (string.IsNullOrWhiteSpace(safeName))
         {
-            safeName = "upload.dashspec";
+            safeName = "upload.ds";
         }
 
-        if (!safeName.EndsWith(".dashspec", StringComparison.OrdinalIgnoreCase))
+        if (!safeName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase))
         {
-            safeName += ".dashspec";
+            safeName += ".ds";
         }
 
         var savedPath = Path.Combine(uploadsDir, safeName);
