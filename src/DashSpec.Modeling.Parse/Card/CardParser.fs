@@ -323,8 +323,8 @@ module CardParser =
         =
         let parseOptions = defaultArg parseOptions DashSpecParseOptions.defaultOptions
         let id = reader.ReadIdent()
-        let mutable title: string option = None
-        if reader.TryKeywordSameLine "as" then title <- Some(reader.ReadString())
+        let title = ref (None: string option)
+        if reader.TryKeywordSameLine "as" then title.Value <- Some(reader.ReadString())
         let layoutRef = ParserUtilities.tryReadLayoutRef reader
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -333,7 +333,7 @@ module CardParser =
         let diagram = ref None
         let dataSource = ref None
         let placement = ref None
-        let mutable useCardPreset: string option = None
+        let useCardPreset = ref (None: string option)
         let boundFilters = ResizeArray<string>()
         let localFilters = ResizeArray<string>()
         let mutable filterHostCardId: string option = None
@@ -346,12 +346,12 @@ module CardParser =
         let clickBehaviour = ref None
         let visibility = ref None
         let matrixLimits = ref None
-        let mutable oversizeMessage: string option = None
+        let oversizeMessage = ref (None: string option)
         let chrome = ref None
         let extensionBlocks = ResizeArray<ExtensionBlockNode>()
-        let mutable localFiltersManualApply = false
-        let mutable localFiltersApplySplitIndex : int option = None
-        let mutable localFiltersChromeBoard : LayoutBoardDefinition option = None
+        let localFiltersManualApply = ref false
+        let localFiltersApplySplitIndex = ref (None: int option)
+        let localFiltersChromeBoard = ref (None: LayoutBoardDefinition option)
         let includeFragment = ref SpecIncludeFragmentResolver.emptyFragment
         let inspect = ref None
         let tooltip = ref None
@@ -360,155 +360,210 @@ module CardParser =
         let interiorFlowBuilder = CardInteriorFlowParser.createBuilder ()
         let inlineTooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
 
+        let onTitle () =
+            reader.Expect TokenKind.Eq
+            title.Value <- Some(reader.ReadString())
+            reader.SkipNewlines()
+
+        let onChrome () =
+            if chrome.Value.IsSome then
+                raise (DashSpecParseException($"Card '{id}': duplicate chrome block."))
+            chrome.Value <- Some(CardChromeParser.parse reader id)
+            reader.SkipNewlines()
+
+        let onWhen () =
+            let whenTarget = reader.ReadIdent()
+            if String.Equals(whenTarget, "oversize", StringComparison.OrdinalIgnoreCase) then
+                if oversizeMessage.Value.IsSome then
+                    raise (DashSpecParseException($"Card '{id}': duplicate when oversize block."))
+                oversizeMessage.Value <- Some(CardVisibilityParser.parseOversizeWhen reader id)
+            else
+                if visibility.Value.IsSome then
+                    raise (DashSpecParseException($"Card '{id}': duplicate when block."))
+                visibility.Value <- Some(CardVisibilityParser.parseFilterWhen reader id whenTarget)
+            reader.SkipNewlines()
+
+        let onLimits () =
+            if matrixLimits.Value.IsSome then
+                raise (DashSpecParseException($"Card '{id}': duplicate limits block."))
+            matrixLimits.Value <- Some(CardLimitsParser.parse reader id)
+            reader.SkipNewlines()
+
+        let onOn () =
+            if not (reader.TryKeyword "click") then
+                raise (DashSpecParseException($"Card '{id}': only 'on click' is supported in v1."))
+            if clickBehaviour.Value.IsSome then
+                raise (DashSpecParseException($"Card '{id}': duplicate on click block."))
+            clickBehaviour.Value <- Some(CardClickParser.parseClickBlock reader id parseOptions)
+            reader.SkipNewlines()
+
+        let onInclude () =
+            match specDirectory with
+            | None | Some (null | "") ->
+                raise (DashSpecParseException($"Card '{id}': include requires spec directory when parsing (path to the .dashspec folder)."))
+            | Some dir ->
+                let kind, reference = DiagramModuleParser.readIncludeReference reader
+                includeFragment.Value <-
+                    SpecIncludeFragmentResolver.merge includeFragment.Value (SpecIncludeFragmentResolver.load kind reference dir)
+            reader.SkipNewlines()
+
+        let onUse () =
+            useCardPreset.Value <- Some(reader.ReadIdent())
+            reader.SkipNewlines()
+
+        let onView () =
+            parseViewBlock reader id specDirectory includes parseOptions slotBuilder diagram diagramSlotRef legend presentation seriesTransform includeFragment
+            reader.SkipNewlines()
+
+        let onOverride () =
+            CardDiagramOverrideParser.parseOverridesBlock reader id false diagram legend presentation seriesTransform
+            reader.SkipNewlines()
+
+        let onOverrides () =
+            CardDiagramOverrideParser.parseOverridesBlock reader id true diagram legend presentation seriesTransform
+            reader.SkipNewlines()
+
+        let onBind () =
+            boundFilters.AddRange(parseBind reader)
+            reader.SkipNewlines()
+
+        let onFilters () =
+            if reader.TryKeywordSameLine "host" then
+                raise (
+                    DashSpecParseException(
+                        $"Card '{id}': filters host removed; use page/report flow: hostCard.filter -> host.chrome.card.<consumer>."
+                    )
+                )
+            elif reader.IsOnNewline()
+                 || (reader.TryPeekIdent().IsSome
+                     && String.Equals(reader.TryPeekIdent().Value, "apply", StringComparison.OrdinalIgnoreCase)) then
+                let names, manualApply, applySplit, chromeBoard = parseLocalFiltersBlock reader id
+                localFilters.AddRange(names)
+                localFiltersManualApply.Value <- manualApply
+                localFiltersApplySplitIndex.Value <- applySplit
+                localFiltersChromeBoard.Value <- chromeBoard
+            else
+                raise (
+                    DashSpecParseException(
+                        $"Card '{id}': inline filters list removed; use flow: filter -> [toolbar] chrome.card.{id}."
+                    )
+                )
+
+            reader.SkipNewlines()
+
+        let onDiagram () =
+            let slotRef =
+                match ParserUtilities.tryReadLayoutRef reader with
+                | Some r ->
+                    if diagramSlotRef.Value.IsNone then diagramSlotRef.Value <- Some r
+                    r
+                | None -> CardDiagramSlotBuilder.DiagramSlotId
+            parseDiagramStatement reader id includes "card" diagramSlotRef diagram legend presentation seriesTransform includeFragment
+            match diagram.Value with
+            | Some d ->
+                CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+            | None -> ()
+            reader.SkipNewlines()
+
+        let onPlace () =
+            placement.Value <- Some(LayoutParser.parsePlacement reader)
+            reader.SkipNewlines()
+
+        let onLayout () =
+            if reader.TryPeekIdent().IsSome && String.Equals(reader.TryPeekIdent().Value, "grid", StringComparison.OrdinalIgnoreCase) then
+                raise (DashSpecParseException($"Card '{id}': use module connect block for layout grid; card layout is a bracket board only."))
+            let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
+            if placement.Value.IsNone then placement.Value <- parsedPlacement
+            if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
+            reader.SkipNewlines()
+
+        let onLegend () =
+            legend.Value <- Some(parseLegend reader)
+            reader.SkipNewlines()
+
+        let onPresentation () =
+            presentation.Value <- Some(parsePresentation reader)
+            reader.SkipNewlines()
+
+        let onInspect () =
+            inspect.Value <-
+                InspectPresentationParser.merge inspect.Value (Some(InspectPresentationParser.parse reader $"Card '{id}'"))
+            reader.SkipNewlines()
+
+        let onTooltip () =
+            let tooltipId = reader.ReadIdent()
+            if String.IsNullOrWhiteSpace tooltipId then
+                raise (DashSpecParseException($"Card '{id}': inline tooltip requires an id."))
+            inlineTooltips.[tooltipId] <- TooltipModuleParser.parseInline reader tooltipId
+            reader.SkipNewlines()
+
+        let onTransform () =
+            if not (reader.TryKeyword "series") then
+                raise (DashSpecParseException("Expected 'series' after transform."))
+            if reader.TryKeyword "max" then
+                reader.Expect TokenKind.Eq
+                let mutable max = 0
+                if not (Int32.TryParse(reader.ReadScalarValue(), &max) && max > 0) then
+                    raise (DashSpecParseException($"Card '{id}': transform series max must be a positive integer."))
+                seriesTransform.Value <- Some({ UsePreset = None; Max = Some max; OtherLabel = None })
+            else
+                reader.SkipNewlines()
+                seriesTransform.Value <- Some(parseSeriesTransform reader)
+            reader.SkipNewlines()
+
+        let onWhere () : unit =
+            raise (DashSpecParseException($"Card '{id}': 'where' is no longer used — list filters in bind …; Core compiles WHERE from bind (date/field → AND …, top → TOP/LIMIT)."))
+
+        let handlers : (string * (unit -> unit)) list =
+            [ "title", onTitle
+              "chrome", onChrome
+              "when", onWhen
+              "limits", onLimits
+              "on", onOn
+              "include", onInclude
+              "use", onUse
+              "view", onView
+              "override", onOverride
+              "overrides", onOverrides
+              "bind", onBind
+              "filters", onFilters
+              "diagram", onDiagram
+              "place", onPlace
+              "layout", onLayout
+              "legend", onLegend
+              "presentation", onPresentation
+              "inspect", onInspect
+              "tooltip", onTooltip
+              "transform", onTransform
+              "where", onWhere ]
+
         while not (BlockSyntax.isBlockEnd reader "card" (Some id)) && not reader.IsEof do
             reader.SkipNewlines()
             ModuleImportGuard.rejectModuleImportInBody reader $"Card '{id}'"
             if BlockSyntax.isBlockEnd reader "card" (Some id) then ()
-            elif reader.TryKeyword "title" then
-                reader.Expect TokenKind.Eq
-                title <- Some(reader.ReadString())
-                reader.SkipNewlines()
-            elif reader.TryKeyword "chrome" then
-                if chrome.Value.IsSome then
-                    raise (DashSpecParseException($"Card '{id}': duplicate chrome block."))
-                chrome.Value <- Some(CardChromeParser.parse reader id)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "when" then
-                let whenTarget = reader.ReadIdent()
-                if String.Equals(whenTarget, "oversize", StringComparison.OrdinalIgnoreCase) then
-                    if oversizeMessage.IsSome then
-                        raise (DashSpecParseException($"Card '{id}': duplicate when oversize block."))
-                    oversizeMessage <- Some(CardVisibilityParser.parseOversizeWhen reader id)
-                else
-                    if visibility.Value.IsSome then
-                        raise (DashSpecParseException($"Card '{id}': duplicate when block."))
-                    visibility.Value <- Some(CardVisibilityParser.parseFilterWhen reader id whenTarget)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "limits" then
-                if matrixLimits.Value.IsSome then
-                    raise (DashSpecParseException($"Card '{id}': duplicate limits block."))
-                matrixLimits.Value <- Some(CardLimitsParser.parse reader id)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "on" then
-                if not (reader.TryKeyword "click") then
-                    raise (DashSpecParseException($"Card '{id}': only 'on click' is supported in v1."))
-                if clickBehaviour.Value.IsSome then
-                    raise (DashSpecParseException($"Card '{id}': duplicate on click block."))
-                clickBehaviour.Value <- Some(CardClickParser.parseClickBlock reader id parseOptions)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "include" then
-                match specDirectory with
-                | None | Some (null | "") ->
-                    raise (DashSpecParseException($"Card '{id}': include requires spec directory when parsing (path to the .dashspec folder)."))
-                | Some dir ->
-                    let kind, reference = DiagramModuleParser.readIncludeReference reader
-                    includeFragment.Value <-
-                        SpecIncludeFragmentResolver.merge includeFragment.Value (SpecIncludeFragmentResolver.load kind reference dir)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "use" then
-                useCardPreset <- Some(reader.ReadIdent())
-                reader.SkipNewlines()
-            elif CardInteriorFlowParser.tryAddQualifiedBlock reader interiorFlowBuilder id then
-                reader.SkipNewlines()
-            elif reader.TryKeyword "view" then
-                parseViewBlock reader id specDirectory includes parseOptions slotBuilder diagram diagramSlotRef legend presentation seriesTransform includeFragment
-                reader.SkipNewlines()
-            elif reader.TryKeyword "override" then
-                CardDiagramOverrideParser.parseOverridesBlock reader id false diagram legend presentation seriesTransform
-                reader.SkipNewlines()
-            elif reader.TryKeyword "overrides" then
-                CardDiagramOverrideParser.parseOverridesBlock reader id true diagram legend presentation seriesTransform
-                reader.SkipNewlines()
-            elif reader.TryKeyword "bind" then
-                boundFilters.AddRange(parseBind reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "filters" then
-                if reader.TryKeywordSameLine "host" then
-                    raise (
-                        DashSpecParseException(
-                            $"Card '{id}': filters host removed; use page/report flow: hostCard.filter -> host.chrome.card.<consumer>."
-                        )
-                    )
-                elif reader.IsOnNewline()
-                     || (reader.TryPeekIdent().IsSome
-                         && String.Equals(reader.TryPeekIdent().Value, "apply", StringComparison.OrdinalIgnoreCase)) then
-                    let names, manualApply, applySplit, chromeBoard = parseLocalFiltersBlock reader id
-                    localFilters.AddRange(names)
-                    localFiltersManualApply <- manualApply
-                    localFiltersApplySplitIndex <- applySplit
-                    localFiltersChromeBoard <- chromeBoard
-                else
-                    raise (
-                        DashSpecParseException(
-                            $"Card '{id}': inline filters list removed; use flow: filter -> [toolbar] chrome.card.{id}."
-                        )
-                    )
-
-                reader.SkipNewlines()
-            elif reader.TryKeyword "diagram" then
-                let slotRef =
-                    match ParserUtilities.tryReadLayoutRef reader with
-                    | Some r ->
-                        if diagramSlotRef.Value.IsNone then diagramSlotRef.Value <- Some r
-                        r
-                    | None -> CardDiagramSlotBuilder.DiagramSlotId
-                parseDiagramStatement reader id includes "card" diagramSlotRef diagram legend presentation seriesTransform includeFragment
-                match diagram.Value with
-                | Some d ->
-                    CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
-                | None -> ()
-                reader.SkipNewlines()
-            elif reader.TryKeyword "place" then
-                placement.Value <- Some(LayoutParser.parsePlacement reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "layout" then
-                if reader.TryPeekIdent().IsSome && String.Equals(reader.TryPeekIdent().Value, "grid", StringComparison.OrdinalIgnoreCase) then
-                    raise (DashSpecParseException($"Card '{id}': use module connect block for layout grid; card layout is a bracket board only."))
-                let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
-                if placement.Value.IsNone then placement.Value <- parsedPlacement
-                if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
-                reader.SkipNewlines()
-            elif reader.TryKeyword "legend" then
-                legend.Value <- Some(parseLegend reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "presentation" then
-                presentation.Value <- Some(parsePresentation reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "inspect" then
-                inspect.Value <-
-                    InspectPresentationParser.merge inspect.Value (Some(InspectPresentationParser.parse reader $"Card '{id}'"))
-                reader.SkipNewlines()
-            elif reader.TryKeyword "tooltip" then
-                let tooltipId = reader.ReadIdent()
-                if String.IsNullOrWhiteSpace tooltipId then
-                    raise (DashSpecParseException($"Card '{id}': inline tooltip requires an id."))
-                inlineTooltips.[tooltipId] <- TooltipModuleParser.parseInline reader tooltipId
-                reader.SkipNewlines()
-            elif reader.TryKeyword "transform" then
-                if not (reader.TryKeyword "series") then
-                    raise (DashSpecParseException("Expected 'series' after transform."))
-                if reader.TryKeyword "max" then
-                    reader.Expect TokenKind.Eq
-                    let mutable max = 0
-                    if not (Int32.TryParse(reader.ReadScalarValue(), &max) && max > 0) then
-                        raise (DashSpecParseException($"Card '{id}': transform series max must be a positive integer."))
-                    seriesTransform.Value <- Some({ UsePreset = None; Max = Some max; OtherLabel = None })
-                else
-                    reader.SkipNewlines()
-                    seriesTransform.Value <- Some(parseSeriesTransform reader)
-                reader.SkipNewlines()
-            elif reader.TryKeyword "where" then
-                raise (DashSpecParseException($"Card '{id}': 'where' is no longer used — list filters in bind …; Core compiles WHERE from bind (date/field → AND …, top → TOP/LIMIT)."))
             else
-                match reader.TryPeekIdent() with
-                | Some extensionKeyword when parseOptions.ExtensionBlockKeywords.Contains extensionKeyword ->
-                    let block = ExtensionBlockParser.parse reader extensionKeyword parseOptions.ExtensionBlockKeywords
-                    validateExtensionBlock block id parseOptions
-                    extensionBlocks.Add(block)
-                    reader.SkipNewlines()
-                | _ -> raise (reader.Unexpected())
+                match handlers |> List.tryFind (fun (keyword, _) -> reader.TryKeyword keyword) with
+                | Some (_, handle) -> handle ()
+                | None ->
+                    if CardInteriorFlowParser.tryAddQualifiedBlock reader interiorFlowBuilder id then
+                        reader.SkipNewlines()
+                    else
+                        match reader.TryPeekIdent() with
+                        | Some extensionKeyword when parseOptions.ExtensionBlockKeywords.Contains extensionKeyword ->
+                            let block = ExtensionBlockParser.parse reader extensionKeyword parseOptions.ExtensionBlockKeywords
+                            validateExtensionBlock block id parseOptions
+                            extensionBlocks.Add(block)
+                            reader.SkipNewlines()
+                        | _ -> raise (reader.Unexpected())
 
         BlockSyntax.expectBlockEnd reader "card" (Some id)
+
+        let title = title.Value
+        let useCardPreset = useCardPreset.Value
+        let oversizeMessage = oversizeMessage.Value
+        let localFiltersManualApply = localFiltersManualApply.Value
+        let localFiltersApplySplitIndex = localFiltersApplySplitIndex.Value
+        let localFiltersChromeBoard = localFiltersChromeBoard.Value
 
         match title with
         | None | Some (null | "") -> raise (DashSpecParseException($"Card '{id}' requires title (as \"…\" or title = \"…\")."))
