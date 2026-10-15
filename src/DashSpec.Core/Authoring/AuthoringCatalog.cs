@@ -310,28 +310,32 @@ public static class AuthoringCatalog
     /// ```text
     /// page executive_summary
     ///   title = "Сводка"
-    ///   toolbar period_grain, period_start, chart_top
-    ///   include layout "layouts/stakeholder-page-executive.dashlayout"
+    ///   toolbar chrome
     ///   card kpi_total_users … end card
     /// end page
     /// ```
     ///
-    /// Layout — юнит `module layout &lt;id&gt;` с board:
+    /// Страница отдаёт toolbar через `toolbar chrome`; попадание фильтров на него — show flow
+    /// (`filter -> [toolbar] chrome.page.&lt;id&gt;`).
+    ///
+    /// Board — юнит `module layout &lt;id&gt;` с bracket-строками:
     ///
     /// ```text
-    /// module layout stakeholder_page_executive
+    /// module layout stakeholder_grid
     ///   namespace Demo.Layouts
     ///
-    /// scope page
+    /// scope tab
     ///
     /// [ kpi_a kpi_b kpi_c ]
     /// [ chart_left chart_right ]
     /// ```
     ///
-    /// Id в скобках = id карточек на странице. `scope page` привязывает layout к `page`.
+    /// Id в скобках = id карточек. Board подключается импортом (`import layouts from Demo.Layouts`) и
+    /// назначается модулю: вкладке — board вкладки, дашборду — toolbar. Инлайн-board — `layout … end layout`
+    /// в card.
     ///
-    /// Привязка board к странице/toolbar остаётся путевой (`include layout "…"`, `include toolbar "…"`),
-    /// а не импортом: это ссылка на board внутри документа, не юнит-ссылка (ADR-0021, ADR-0022, ADR-0101).
+    /// `scope page` парсер принимает, но точки подключения у страницы нет — board живёт на уровне
+    /// tab/dashboard или в card.
     ///
     /// ADR-0020, ADR-0021, ADR-0030 (phase browse/detail).
     /// </summary>

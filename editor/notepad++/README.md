@@ -9,10 +9,10 @@
 [Keywords 1]
 runtime configuration wiring report extensions filter bind show card data view layout chrome
 presentation transform series diagram phase page toolbar filters when focus preserve drill
-invoke buttons views datasource include use end bar line heatmap table
+invoke buttons views datasource import namespace use end bar line heatmap table
 
 [Keywords 2]
-@dashboard @tab @catalog @diagram @presentation !include goto
+@dashboard @tab @catalog @diagram @presentation module namespace import goto
 
 [Operators]
 =

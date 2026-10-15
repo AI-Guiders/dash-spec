@@ -1,32 +1,30 @@
 {
-  "Tab module shell": {
+  "Tab module unit": {
     "prefix": "dstab",
     "body": [
-      "@tab ${1:my_tab}",
+      "module tab ${1:my_tab}",
+      "    namespace ${2:Demo.MyTab}",
+      "    import palettes from ${3:Demo.Palettes}",
       "",
-      "runtime",
-      "  manifest = \"${2:demo-runtime.toml}\"",
-      "end runtime",
+      "    runtime",
+      "        manifest = \"${4:demo.toml}\"",
+      "    end runtime",
       "",
-      "configuration",
-      "  sqldialect = tsql",
-      "  palette = \"palettes/${3:apps}.dashpalette\"",
-      "end configuration",
+      "    configuration",
+      "        sqldialect = tsql",
+      "    end configuration",
       "",
-      "!include \"presentations/*.dashpresentation\"",
-      "!include \"diagrams/${1:my_tab}/*.dashdiagram\"",
+      "    connect",
+      "        use palette ${5:demo_apps}",
+      "    end connect",
       "",
-      "wiring",
-      "  use connector sqlserver",
-      "  use palette ${4:demo_apps}",
-      "end wiring",
-      "",
-      "report",
-      "  title = \"${5:Title}\"",
-      "  $0",
-      "end report"
+      "    report",
+      "        title = \"${6:Title}\"",
+      "        $0",
+      "    end report",
+      "end tab"
     ],
-    "description": "DashSpec @tab module skeleton (end-block syntax)"
+    "description": "DashSpec tab module unit: module tab <id>, namespace, imports (ADR-0101)"
   },
   "Card with data and view": {
     "prefix": "dscard",
@@ -47,18 +45,19 @@
   "Diagram module": {
     "prefix": "dsdiagram",
     "body": [
-      "@diagram ${1:id}",
+      "module diagram ${1:id}",
+      "    namespace ${2:Demo.Diagrams}",
       "",
       "chrome",
-      "  use ${2:bar_horizontal_320}",
+      "  use ${3:bar_horizontal_360}",
       "end chrome",
       "",
       "bar",
-      "  category = ${3:col}",
-      "  value = ${4:metric}",
+      "  category = ${4:col}",
+      "  value = ${5:metric}",
       "end bar"
     ],
-    "description": ".dashdiagram module with chrome preset"
+    "description": "Diagram unit: module diagram <id> with chrome preset"
   },
   "Filter bind field": {
     "prefix": "dsfilter",
@@ -124,11 +123,12 @@
   "Presentation preset": {
     "prefix": "dspresentation",
     "body": [
-      "@presentation ${1:id}",
+      "module presentation ${1:id}",
+      "    namespace ${2:Demo.Chrome}",
       "",
-      "legend = ${2|bottom,top,none|}",
-      "height = ${3:320}"
+      "legend = ${3|bottom,top,none|}",
+      "height = ${4:320}"
     ],
-    "description": ".dashpresentation module"
+    "description": "Presentation unit: module presentation <id>"
   }
 }

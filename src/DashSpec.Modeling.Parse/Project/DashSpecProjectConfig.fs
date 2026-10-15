@@ -38,7 +38,7 @@ module DashSpecProjectConfig =
         |> Array.map (fun part -> trimQuotes (part.Trim()))
         |> Array.toList
 
-    /// <summary>Minimal TOML reader for <c>root_namespace</c>, <c>source_roots</c>, <c>disable_legacy_includes</c>, <c>files</c> and <c>exclude</c>.</summary>
+    /// <summary>Minimal TOML reader for <c>root_namespace</c>, <c>source_roots</c>, <c>files</c> and <c>exclude</c>.</summary>
     let load (path: string) =
         if String.IsNullOrWhiteSpace path then invalidArg "path" "Path is required."
         if not (File.Exists path) then raise (FileNotFoundException($"dashspec.toml not found: '{path}'.", path))

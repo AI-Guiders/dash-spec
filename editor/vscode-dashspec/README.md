@@ -71,8 +71,8 @@ Syntax highlighting, snippets, and **LSP** (diagnostics, completion, go-to-defin
 | Feature | Notes |
 |---------|--------|
 | **Diagnostics** | on open / change / save; line/column from parser offsets |
-| **Completion** | diagram / chrome preset ids, `!include` paths, keywords |
-| **Go to definition** | `diagram foo`, `chrome use bar`, `!include "path"` |
+| **Completion** | diagram / chrome preset ids, keywords (namespace/`import` completion is not implemented yet) |
+| **Go to definition** | `diagram foo`, `chrome use bar` (namespace imports are not implemented yet) |
 
 Command: **DashSpec: Restart Language Server**.
 

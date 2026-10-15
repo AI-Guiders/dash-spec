@@ -43,14 +43,14 @@ end diagram
 
 The project file is the **source of truth** for a package: `root_namespace`, `source_roots`, legacy switches, and the `files` / `exclude` membership (modules are found by their `namespace` header) ("where the modules are"). Imports and path resolution read the project — no text heuristics, no implicit roots.
 
-- Canonical name: **`*.dsproj`** (one per package directory; `dashspec.toml` remains a compat marker and is discovered when no `.dsproj` is present).
+- Canonical name: **`*.dsproj`** (one per package directory; the parser's resolution index reads `*.dsproj` only — the legacy `dashspec.toml` marker with `[[index]]` tables belongs to the deferred platform authoring layer, not to the compiler).
 - Membership globs live here (per ADR-0089 Phase 2); `exclude` follows in the membership extension.
-- Missing-include diagnostics resolve against project membership and carry deterministic positions.
+- Missing-import diagnostics resolve against project membership and carry deterministic positions (the import directive carries its source offset).
 
 ## Consequences
 
 - One extension to discover, glob, watch, and associate with editors: `*.ds`.
 - `dashspec.toml` has no index tables; modules are found by their `namespace` header under the source roots. `kind` filters the import, not a filename convention.
-- Path references (`include layout "…"` etc.) accept extension-less paths resolved against `.ds` and legacy suffixes.
+- Board references are unit references: a board is an imported layout unit (`import layouts from <NS>`, unit with `scope tab|toolbar|host`) or an inline `layout … end layout` inside a card. The removed `include layout "…"` / `include toolbar "…"` path forms have no replacement in the language.
 - Mechanical migration: root rewrite (`@x` → `module x`) + file rename; no grammar change inside bodies.
 - Follow-ups: file-directive sigil removal; LSP classification/coloring update; deprecation removal of legacy extensions.

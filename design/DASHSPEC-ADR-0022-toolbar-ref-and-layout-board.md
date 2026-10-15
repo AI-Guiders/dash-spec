@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted · **superseded in part** — `include toolbar "…"` was removed; a toolbar board is an imported layout unit (`scope toolbar`) or an inline board ([ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md)) |
 | **Date** | 2026-07-02 |
 | **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md), [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md) |
 
