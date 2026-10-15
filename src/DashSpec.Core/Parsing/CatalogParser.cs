@@ -39,7 +39,7 @@ public static class CatalogParser
 
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var path = SpecIncludeResolver.ResolvePath(dashspecReference, dir);
+            var path = Path.GetFullPath(Path.Combine(dir, dashspecReference));
             if (File.Exists(path))
             {
                 return path;

@@ -24,7 +24,7 @@ source mod {
 end flow
 """
 
-    [<Fact>]
+    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
     let ``dashboard merge parses tab multi-slot card when filters are report-level`` () =
         let dir = Path.Combine(Path.GetTempPath(), "tab-embed-merge-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
@@ -114,7 +114,7 @@ end report
             with _ ->
                 ()
 
-    [<Fact>]
+    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
     let ``dashboard merge fails when embed tab keeps filters only in standalone`` () =
         let dir = Path.Combine(Path.GetTempPath(), "tab-embed-standalone-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore

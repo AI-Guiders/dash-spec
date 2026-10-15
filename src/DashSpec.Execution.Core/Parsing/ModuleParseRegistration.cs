@@ -19,7 +19,7 @@ using FsharpHostLink = DashSpec.Modeling.Parse.Host.HostLinkDefinition;
 using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
 using FsharpDiagramStmt = DashSpec.Modeling.Parse.Diagram.DiagramFragmentStatement;
 using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
-using FsharpInclude = DashSpec.Modeling.Parse.Include.SpecIncludeFragmentResolver;
+using FsharpImport = DashSpec.Modeling.Parse.Import.UnitFragmentResolver;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -167,8 +167,7 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var directory = ResolveDiagramBaseDirectory(text, baseDirectory);
-                return SpecIncludeFragmentMapper.ToCore(FsharpInclude.foldDiagramModule(text, directory));
+                return UnitFragmentMapper.ToCore(FsharpImport.foldDiagramModule(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -180,38 +179,27 @@ internal static class ModuleParseRegistration
         {
             try
             {
-                var directory = ResolveDiagramBaseDirectory(text, baseDirectory);
-                var (id, fragment) = FsharpInclude.foldDiagramModuleWithId(text, directory);
-                return (id, SpecIncludeFragmentMapper.ToCore(fragment));
+                var (id, fragment) = FsharpImport.foldDiagramModuleWithId(text);
+                return (id, UnitFragmentMapper.ToCore(fragment));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
                 throw new DashSpecParseException(ex.Message, ex.SourceOffset);
             }
         };
-    }
-
-    private static string ResolveDiagramBaseDirectory(string text, string? baseDirectory)
-    {
-        if (!string.IsNullOrWhiteSpace(baseDirectory))
-        {
-            return baseDirectory;
-        }
-
-        return ".";
     }
 
     private static void RegisterPresentation()
     {
-        PresentationParseBridge.ParsePresentationFile = (text, baseDirectory) =>
-            ParsePresentationBlock(text, baseDirectory);
+        PresentationParseBridge.ParsePresentationFile = (text, _) =>
+            ParsePresentationBlock(text);
 
-        PresentationParseBridge.ParsePresentationFileWithId = (text, baseDirectory) =>
+        PresentationParseBridge.ParsePresentationFileWithId = (text, _) =>
         {
             try
             {
                 var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
-                return (doc.Id, ParsePresentationBlock(text, baseDirectory));
+                return (doc.Id, ParsePresentationBlock(text));
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -220,27 +208,12 @@ internal static class ModuleParseRegistration
         };
     }
 
-    private static PresentationBlock ParsePresentationBlock(string text, string? baseDirectory)
+    private static PresentationBlock ParsePresentationBlock(string text)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(baseDirectory))
-            {
-                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
-                if (doc.Includes.Count > 0)
-                {
-                    throw new DashSpecParseException(
-                        "Presentation include requires a base directory (parse from file path).");
-                }
-
-                var localItems = OptionModule.ToArray(doc.Local);
-                return localItems.Length > 0
-                    ? SpecIncludeFragmentMapper.ToCorePresentation(localItems[0])
-                    : throw new DashSpecParseException("@presentation module requires at least one property.");
-            }
-
-            return SpecIncludeFragmentMapper.ToCorePresentation(
-                FsharpInclude.parsePresentationBlockFromFile(text, baseDirectory));
+            return UnitFragmentMapper.ToCorePresentation(
+                FsharpImport.parsePresentationBlock(text));
         }
         catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {

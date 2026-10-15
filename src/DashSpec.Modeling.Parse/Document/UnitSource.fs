@@ -2,6 +2,7 @@ namespace DashSpec.Modeling.Parse.Document
 
 open System
 open System.IO
+open System.Reflection
 open System.Text.RegularExpressions
 
 /// <summary>Unit files (ADR-0101): one unit per file, `module &lt;kind&gt; &lt;id&gt;`, header lines `namespace` and `import` directly after it (ADR-0098).</summary>
@@ -35,6 +36,16 @@ module UnitSource =
 
     let readUnit (path: string) = blankHeader (File.ReadAllText path)
 
+    /// Module id of a unit file: the third word of the `module <kind> <id>` line.
+    let moduleIdOf (text: string) : string option =
+        let lines = text.Split('\n')
+
+        match moduleIndex lines with
+        | None -> None
+        | Some start ->
+            let parts = lines.[start].Trim().Split([| ' '; '\t' |], StringSplitOptions.RemoveEmptyEntries)
+            if parts.Length >= 3 then Some parts.[2] else None
+
     /// Namespace declared in the header of a unit file, if any.
     let namespaceOf (text: string) : string option =
         let lines = text.Split('\n')
@@ -53,9 +64,43 @@ module UnitSource =
     [<Literal>]
     let StandardNamespace = "DashSpec.Std"
 
+    let mutable private stdlibRootOverride: string option = None
+
+    let setStdlibRootForTests (path: string option) = stdlibRootOverride <- path
+
+    let stdlibRoot () : string =
+        match stdlibRootOverride with
+        | Some path when not (String.IsNullOrWhiteSpace path) -> path
+        | _ ->
+            let assemblyDir =
+                Path.GetDirectoryName(Reflection.Assembly.GetExecutingAssembly().Location)
+            if not (String.IsNullOrWhiteSpace assemblyDir) then
+                let nextToAssembly = Path.Combine(assemblyDir, "stdlib")
+                if Directory.Exists nextToAssembly then nextToAssembly
+                else
+                    let dir = DirectoryInfo(AppContext.BaseDirectory)
+                    let mutable current: DirectoryInfo option = Some dir
+                    let mutable found = None
+                    while current.IsSome && found.IsNone do
+                        let d = current.Value
+                        let candidate = Path.Combine(d.FullName, "stdlib")
+                        if Directory.Exists candidate then
+                            found <- Some candidate
+                        else
+                            let coreCandidate = Path.Combine(d.FullName, "src", "DashSpec.Core", "stdlib")
+                            if Directory.Exists coreCandidate then
+                                found <- Some coreCandidate
+                            else
+                                current <- if isNull d.Parent then None else Some d.Parent
+                    match found with
+                    | Some path -> path
+                    | None -> raise (InvalidOperationException("DashSpec stdlib directory was not found."))
+            else
+                raise (InvalidOperationException("DashSpec stdlib directory was not found."))
+
     /// Unit files under the spec directory and the product stdlib whose header declares the namespace (namespace scan, no index).
     let findByNamespace (specDirectory: string) (namespaceName: string) : string list =
-        [ specDirectory; DashSpec.Modeling.Parse.Include.SpecFragmentPaths.getStdlibRoot () ]
+        [ specDirectory; stdlibRoot () ]
         |> List.collect (fun root -> Directory.EnumerateFiles(root, "*.ds", SearchOption.AllDirectories) |> Seq.toList)
         |> List.filter (fun path ->
             try

@@ -5,7 +5,7 @@ open System.Collections.Generic
 open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Project
 
@@ -36,12 +36,12 @@ module ModuleImportResolver =
                 DashSpecDiagnosticSeverity.Warning
         )
 
-    /// <summary>Register imported units before report body parse (replaces envelope <c>!include</c> when indexed).</summary>
+    /// <summary>Register imported units before report body parse (ADR-0098).</summary>
     let applyHeaderImports
         (header: ModuleHeader)
         (specDirectory: string option)
         (moduleKind: DocumentModuleKind)
-        (includes: ModuleIncludeState)
+        (includes: ModuleImportState)
         (parseOptions: DashSpecParseOptions)
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         =
@@ -62,12 +62,7 @@ module ModuleImportResolver =
                         )
 
                     for path in paths do
-                        UnitImport.registerUnitFile
-                            path
-                            dir
-                            moduleKind
-                            includes
-                            (Some directive.Kind)
+                        UnitImport.registerUnitFile path moduleKind includes (Some directive.Kind)
 
                     if directive.Kind = ImportKind.Flows then
                         let namespaceName = directive.Namespace

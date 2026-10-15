@@ -4,7 +4,6 @@ open System
 open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
-open DashSpec.Modeling.Parse.Include
 open DashSpec.Modeling.Parse.Lexing
 
 /// <summary>M2 pilot — F# lex + parse SSOT for <c>.dashlayout</c> (ADR-0048).</summary>
@@ -49,17 +48,3 @@ module LayoutModuleParser =
         let board = LayoutParser.parseBoardRows reader None None
         { board with ModuleScope = Some scope }
 
-    let load (reference: string) (specDirectory: string) =
-        if String.IsNullOrWhiteSpace reference then
-            invalidArg "reference" "Layout reference is required."
-        if String.IsNullOrWhiteSpace specDirectory then
-            invalidArg "specDirectory" "Spec directory is required."
-
-        let path =
-            SpecFragmentPaths.resolvePath reference specDirectory
-            |> SpecFragmentPaths.resolveLayoutFile
-
-        if not (File.Exists path) then
-            raise (FileNotFoundException($"Include layout not found: '{reference}' (resolved: {path}).", path))
-
-        parseLayoutFile (File.ReadAllText path)

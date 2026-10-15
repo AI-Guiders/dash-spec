@@ -98,6 +98,7 @@ module PaletteModuleParser =
         values
 
     let parsePaletteFile (text: string) : PaletteDocument =
+        let text = DashSpec.Modeling.Parse.Document.UnitSource.blankHeader text
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Palette text is required."
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()

@@ -66,11 +66,5 @@ internal sealed class DashSpecServerState
                 _index.RegisterPresentation(id, path);
             }
         }
-        else if (ext.Equals(".dashspec", StringComparison.OrdinalIgnoreCase) ||
-                 ext.Equals(".dashinclude", StringComparison.OrdinalIgnoreCase))
-        {
-            var directory = Path.GetDirectoryName(path) ?? string.Empty;
-            _index.RegisterIncludesFromText(text, directory);
-        }
     }
 }

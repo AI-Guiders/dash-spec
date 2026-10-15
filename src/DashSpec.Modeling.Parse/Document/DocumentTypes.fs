@@ -5,7 +5,7 @@ open System.Collections.Generic
 open DashSpec.Modeling.Parse.Card
 open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Filter
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Tooltip
@@ -37,7 +37,7 @@ type TabDefinition =
     { Id: string
       Label: string option
       CardIds: IReadOnlyList<string>
-      DashspecPath: string option
+      ModulePath: string option
       LayoutBoard: LayoutBoardDefinition option }
 
 [<CLIMutable>]
@@ -205,7 +205,7 @@ type ReportCompileContext(mode: ReportCompileMode) =
     member val Tabs = ResizeArray<TabDefinition>()
     member val Cards = ResizeArray<CardDefinition>()
     member val ConnectorId: string option = None with get, set
-    member val FlowConnectPath: string option = None with get, set
+
     member val FlowConnectSymbol: string option = None with get, set
     member val ColorPalette: string option = None with get, set
     member val Layout = LayoutDefinition.Default with get, set
@@ -214,7 +214,7 @@ type ReportCompileContext(mode: ReportCompileMode) =
     member val LayoutBoard: LayoutBoardDefinition option = None with get, set
     member val ToolbarBoard: LayoutBoardDefinition option = None with get, set
     member val TabModuleLabel: string option = None with get, set
-    member val Includes = ModuleIncludeState() with get, set
+    member val Includes = ModuleImportState() with get, set
     member val ModuleNamespace: string option = None with get, set
     member val ModuleImports = ResizeArray<ModuleImportDirective>()
     member val ParseOptions = DashSpec.Modeling.Parse.DashSpecParseOptions.defaultOptions with get, set
@@ -253,11 +253,11 @@ type ReportCompileContext(mode: ReportCompileMode) =
     member this.AssignToolbarBoard(board: LayoutBoardDefinition, context: string) =
         if this.ToolbarBoard.IsSome then
             raise (DashSpec.Modeling.Core.DashSpecParseException($"{context} declares more than one toolbar layout board."))
-        LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Toolbar context
+        LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Toolbar context
         this.ToolbarBoard <- Some board
 
     member this.AssignTabLayoutBoard(board: LayoutBoardDefinition, context: string) =
         if this.LayoutBoard.IsSome then
             raise (DashSpec.Modeling.Core.DashSpecParseException($"{context} declares more than one card layout board."))
-        LayoutModuleScopeValidator.ensureMatchesIncludeSite board LayoutScope.Tab context
+        LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Tab context
         this.LayoutBoard <- Some board

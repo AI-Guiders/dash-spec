@@ -6,7 +6,7 @@ open AIGuiders.Platform.Modeling.Core.Identity
 type DashSpecModuleDirective =
     | Dashboard of identifier: string
     | Tab of identifier: string
-    /// <summary>Any other compilation-unit root: `module &lt;kind&gt; &lt;id&gt;` (diagram, layout, types, flow, presentation, tooltip, palette, catalog, host, include, transform) — ADR-0101.</summary>
+    /// <summary>Any other compilation-unit root: `module &lt;kind&gt; &lt;id&gt;` (diagram, layout, types, flow, presentation, tooltip, palette, catalog, host, transform) — ADR-0101.</summary>
     | Unit of keyword: string * identifier: string
 
 type DashSpecBlockOpener =
@@ -66,15 +66,15 @@ and LineSyntax =
 
 and BlankLineSyntax = { Id: NodeId; Span: TextSpan }
 
-/// <summary>Module-header import edge: `import &lt;kind&gt; from &lt;namespace&gt; [as &lt;alias&gt;]` (ADR-0098) or legacy `!include "path"` / `using "path"` (ADR-0089).</summary>
+/// <summary>Module-header import edge: `import &lt;kind&gt; from &lt;namespace&gt; [as &lt;alias&gt;]` (ADR-0098).</summary>
 and ImportDeclarationSyntax =
     { Id: NodeId
       Span: TextSpan
-      /// `import` (canonical) or `include` (legacy path form).
+      /// Surface keyword (`import`).
       Keyword: string
-      /// Unit kind keyword (types/flows/layouts/…) — None for the path form.
+      /// Unit kind keyword (types/flows/layouts/…).
       Kind: string option
-      /// Namespace (canonical) or file path/glob (legacy).
+      /// Imported namespace.
       Target: string
       Alias: string option
       Tokens: SyntaxToken[] }

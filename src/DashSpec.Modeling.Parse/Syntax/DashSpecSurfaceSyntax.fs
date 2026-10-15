@@ -239,12 +239,11 @@ module DashSpecSurfaceSyntax =
               Tokens = lineSyntaxTokens text allTokens line
               Children = ResizeArray() }
 
-    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;target&gt; [as &lt;alias&gt;]` or legacy `!include "…"` / `using …`.</summary>
+    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;namespace&gt; [as &lt;alias&gt;]` (ADR-0098).</summary>
     let private tryParseImportLine (tokens: Token list) =
         let keyword, rest =
             match tokens with
             | { Kind = TokenKind.Ident; Value = "import" } :: tail -> Some "import", tail
-            | { Kind = TokenKind.Ident; Value = "using" } :: tail -> Some "using", tail
             | _ -> None, []
 
         match keyword with

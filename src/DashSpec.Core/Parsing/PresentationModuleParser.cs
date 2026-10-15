@@ -28,8 +28,4 @@ internal static class PresentationModuleParser
 
         throw new InvalidOperationException("Presentation parse bridge not registered.");
     }
-
-    internal static bool IsChartChromeIncludeKind(string kind) =>
-        string.Equals(kind, "presentation", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(kind, "chrome", StringComparison.OrdinalIgnoreCase);
 }

@@ -31,7 +31,8 @@ public static class DashSpecProject
             yield break;
         }
 
-        yield return SpecFragmentPaths.ResolveExistingFragmentPath(reference, baseDirectory);
+        var resolved = Path.GetFullPath(Path.Combine(baseDirectory, reference));
+        yield return File.Exists(resolved) || !File.Exists(resolved + ".ds") ? resolved : resolved + ".ds";
     }
 
     static IEnumerable<string> ResolveGlob(string reference, string specDirectory)
@@ -49,7 +50,7 @@ public static class DashSpecProject
             yield break;
         }
 
-        foreach (var path in IncludeMergePolicy.OrderGlobPaths(Directory.GetFiles(directory, pattern)))
+        foreach (var path in ImportMergePolicy.OrderGlobPaths(Directory.GetFiles(directory, pattern)))
         {
             yield return path;
         }

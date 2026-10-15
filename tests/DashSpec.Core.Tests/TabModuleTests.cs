@@ -11,7 +11,7 @@ namespace DashSpec.Core.Tests;
 
 public class TabModuleTests
 {
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
     public void Parse_tab_dashspec_ignores_module_shell_filters_when_embedded()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));
@@ -187,7 +187,7 @@ public class TabModuleTests
         Assert.Contains("filters host", ex.Message);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
     public void Parse_tab_dashspec_merges_module_cards()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-tab-" + Guid.NewGuid().ToString("N"));

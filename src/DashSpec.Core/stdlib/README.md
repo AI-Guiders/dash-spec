@@ -1,8 +1,13 @@
 # DashSpec stdlib
 
-Встроенные фрагменты ([ADR-0017](../../../design/DASHSPEC-ADR-0017-file-includes-and-stdlib.md)).
+Встроенные юниты ([ADR-0098](../../../design/DASHSPEC-ADR-0098-compiler-import-namespaces.md)).
+Подключаются импортом по namespace:
 
-Include: `!include "<presentation/donut_right_360>"` или на diagram:
+```text
+import presentations from DashSpec.Std
+```
+
+Далее в card или diagram module:
 
 ```text
 chrome

@@ -44,12 +44,6 @@ internal static class DashSpecLspHelpers
     {
         var before = line[..Math.Clamp(character, 0, line.Length)];
 
-        if (before.Contains("!include", StringComparison.OrdinalIgnoreCase) &&
-            before.LastIndexOf('"') > before.LastIndexOf('!'))
-        {
-            return (ExtractPartialInclude(before), CompletionKind.Include);
-        }
-
         if (TryMatchKeywordPrefix(before, "diagram", out var diagramPrefix))
         {
             return (diagramPrefix, CompletionKind.Diagram);
@@ -57,8 +51,7 @@ internal static class DashSpecLspHelpers
 
         if (TryMatchKeywordPrefix(before, "use", out var usePrefix) &&
             (before.Contains("chrome", StringComparison.OrdinalIgnoreCase) ||
-             before.Contains("presentation", StringComparison.OrdinalIgnoreCase) ||
-             before.Contains("include", StringComparison.OrdinalIgnoreCase)))
+             before.Contains("presentation", StringComparison.OrdinalIgnoreCase)))
         {
             return (usePrefix, CompletionKind.Presentation);
         }
@@ -91,19 +84,7 @@ internal static class DashSpecLspHelpers
             return DefinitionKind.Presentation;
         }
 
-        if (line.Contains("!include", StringComparison.OrdinalIgnoreCase) &&
-            line.Contains(word, StringComparison.Ordinal))
-        {
-            return DefinitionKind.Include;
-        }
-
         return null;
-    }
-
-    private static string ExtractPartialInclude(string before)
-    {
-        var start = before.LastIndexOf('"');
-        return start < 0 ? string.Empty : before[(start + 1)..];
     }
 
     private static bool TryMatchKeywordPrefix(string before, string keyword, out string prefix)
@@ -134,13 +115,11 @@ internal static class DashSpecLspHelpers
     {
         Diagram,
         Presentation,
-        Include,
     }
 
     internal enum DefinitionKind
     {
         Diagram,
         Presentation,
-        Include,
     }
 }

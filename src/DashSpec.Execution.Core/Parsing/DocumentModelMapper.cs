@@ -97,7 +97,7 @@ internal static class DocumentModelMapper
             tab.Id,
             FirstOrNull(tab.Label),
             tab.CardIds.ToList(),
-            FirstOrNull(tab.DashspecPath),
+            FirstOrNull(tab.ModulePath),
             MapOptional(tab.LayoutBoard, ToCore));
 
     private static ReportPageDefinition ToCore(FsharpDocument.ReportPageDefinition page) =>

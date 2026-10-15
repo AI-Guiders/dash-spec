@@ -71,17 +71,7 @@ internal static class DocumentParseRegistration
             }
         };
 
-        DocumentParseBridge.ReadPalettePath = text =>
-        {
-            try
-            {
-                return FromFsharpOption(ParseDoc.DashboardParser.readPalettePath(text));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
+
 
         DocumentParseBridge.ReadSqlDialect = text =>
         {

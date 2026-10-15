@@ -47,15 +47,15 @@ public static class DashSpecDiagnosticService
         }
         catch (FileNotFoundException ex)
         {
-            return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
+            return MapIncludeNotFoundDiagnostic(text, ex);
         }
         catch (DirectoryNotFoundException ex)
         {
-            return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
+            return MapIncludeNotFoundDiagnostic(text, ex);
         }
         catch (Exception ex) when (ex.Message.StartsWith("!include not found:", StringComparison.Ordinal))
         {
-            return MapIncludeNotFoundDiagnostic(text, specDirectory, ex);
+            return MapIncludeNotFoundDiagnostic(text, ex);
         }
         catch (Exception ex)
         {
@@ -65,18 +65,14 @@ public static class DashSpecDiagnosticService
 
     private static IReadOnlyList<DashSpecDiagnostic> MapIncludeNotFoundDiagnostic(
         string text,
-        string specDirectory,
         Exception ex)
     {
         var missingPath = ex is FileNotFoundException fnf && !string.IsNullOrWhiteSpace(fnf.FileName)
             ? fnf.FileName
             : ExtractIncludePathFromMessage(ex.Message);
 
-        var offset = !string.IsNullOrWhiteSpace(missingPath)
-            ? IncludeReferenceHeuristics.TryFindIncludeOffset(text, missingPath, specDirectory)
-            : null;
-
-        if (offset is null && !string.IsNullOrWhiteSpace(missingPath))
+        int? offset = null;
+        if (!string.IsNullOrWhiteSpace(missingPath))
         {
             var name = Path.GetFileName(missingPath.TrimEnd('"', '\''));
             if (!string.IsNullOrWhiteSpace(name))

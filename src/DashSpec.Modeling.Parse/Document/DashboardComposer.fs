@@ -54,12 +54,9 @@ module rec DashboardComposer =
         let document = DocumentModuleParser.parseDocument text specDirectory parseOptions
 
         let merged =
-            if
-                parseOptions.MergeReferencedTabModules
-                && document.Tabs |> Seq.exists (fun t -> not (String.IsNullOrWhiteSpace(Option.defaultValue "" t.DashspecPath)))
-            then
+            if parseOptions.MergeReferencedTabModules && document.Tabs |> Seq.exists (fun t -> t.CardIds.Count = 0) then
                 match specDirectory with
-                | None | Some "" -> raise (DashSpecParseException("Tab dashspec references require specDirectory when parsing."))
+                | None | Some "" -> raise (DashSpecParseException("Tab modules are resolved by import and require specDirectory when parsing."))
                 | Some dir -> mergeTabModules document dir parseOptions
             else
                 document
@@ -100,18 +97,18 @@ module rec DashboardComposer =
         let mutable dashflowPath = document.DashflowPath
 
         for tab in document.Tabs do
-            if String.IsNullOrWhiteSpace(Option.defaultValue "" tab.DashspecPath) then
+            if tab.CardIds.Count > 0 then
                 mergedTabs.Add tab
             else
-                let modulePath = Path.GetFullPath(Path.Combine(specDirectory, tab.DashspecPath.Value))
-
-                if not (File.Exists modulePath) then
-                    raise (FileNotFoundException($"Tab '{tab.Id}' dashspec not found: '{tab.DashspecPath.Value}' (resolved: {modulePath}).", modulePath))
+                let modulePath =
+                    match tab.ModulePath with
+                    | Some path -> path
+                    | None -> raise (DashSpecParseException($"Tab '{tab.Id}' has no cards and no imported tab module; declare cards or import tabs from a namespace."))
 
                 let moduleText = File.ReadAllText modulePath
 
                 if not (DocumentModuleParser.isBlockModuleFormat moduleText) then
-                    raise (DashSpecParseException($"Tab module '{tab.DashspecPath.Value}' must use block format (@tab id {{ … }} or end-block @tab id)."))
+                    raise (DashSpecParseException($"Tab module '{modulePath}' must use block format (module tab <id> with end tab)."))
 
                 let tabModule =
                     DocumentModuleParser.parseTabEmbedded moduleText tab.Id (Some specDirectory) (Some(filters :> IReadOnlyList<_>)) parseOptions

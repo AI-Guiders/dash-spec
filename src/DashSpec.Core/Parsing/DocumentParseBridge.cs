@@ -14,8 +14,6 @@ internal static class DocumentParseBridge
 
     internal static Func<string, string?>? ReadDiagramLibraryPath { get; set; }
 
-    internal static Func<string, string?>? ReadPalettePath { get; set; }
-
     internal static Func<string, SqlDialect>? ReadSqlDialect { get; set; }
 
     internal static Func<string, (string Id, string Title)>? ReadDashboardHeader { get; set; }

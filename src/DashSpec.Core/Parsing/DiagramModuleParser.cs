@@ -4,7 +4,7 @@ namespace DashSpec.Core.Parsing;
 
 internal static class DiagramModuleParser
 {
-    public static SpecIncludeFragment ParseDiagramFile(string text, string baseDirectory)
+    public static UnitFragment ParseDiagramFile(string text, string baseDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
         if (DiagramParseBridge.ParseDiagramFile is { } parse)
@@ -15,7 +15,7 @@ internal static class DiagramModuleParser
         throw new InvalidOperationException("Diagram parse bridge not registered.");
     }
 
-    public static (string Id, SpecIncludeFragment Fragment) ParseDiagramFileWithId(string text, string baseDirectory)
+    public static (string Id, UnitFragment Fragment) ParseDiagramFileWithId(string text, string baseDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
         if (DiagramParseBridge.ParseDiagramFileWithId is { } parse)
@@ -24,12 +24,5 @@ internal static class DiagramModuleParser
         }
 
         throw new InvalidOperationException("Diagram parse bridge not registered.");
-    }
-
-    internal static (string Kind, string Reference) ReadIncludeReference(TokenReader reader)
-    {
-        var kind = reader.ReadIdent();
-        var reference = reader.ReadString();
-        return (kind, reference);
     }
 }

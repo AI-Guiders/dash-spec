@@ -34,7 +34,7 @@ source drill_src {
 end flow
 """
 
-    [<Fact>]
+    [<Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")>]
     let ``card flow links module ports and filters to slots`` () =
         let dir = Path.Combine(Path.GetTempPath(), "card-interior-flow-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore

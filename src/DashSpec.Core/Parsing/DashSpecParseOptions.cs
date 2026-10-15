@@ -16,14 +16,8 @@ public sealed class DashSpecParseOptions
 
     public bool MergeReferencedTabModules { get; init; } = true;
 
-    /// <summary>Editor/LSP: skip <c>!include</c> paths ending in <c>/</c> or <c>\</c> (in-progress completion).</summary>
-
-    /// <summary>Legacy: process each include line in source order. Default: union glob membership then link (ADR-0089).</summary>
-
-    /// <summary>Parse only report-referenced .dashdiagram units from glob membership (runtime default).</summary>
+    /// <summary>Parse only units referenced by the report (runtime default).</summary>
     public bool LinkOnlyReferencedDiagramUnits { get; init; } = true;
-
-    /// <summary>When false (and project <c>dashspec.toml</c> disables legacy), <c>!include</c> paths are rejected (ADR-0098).</summary>
 
     public IReadOnlySet<string> ExtensionBlockKeywords { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);

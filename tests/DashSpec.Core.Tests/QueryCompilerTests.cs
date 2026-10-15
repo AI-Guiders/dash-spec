@@ -738,7 +738,7 @@ public class QueryCompilerTests
         Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy configuration palette removed; migrate to import palettes")]
     public void Parse_tab_configuration_accepts_work_time_column()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""

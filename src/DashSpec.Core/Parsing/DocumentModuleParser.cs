@@ -44,8 +44,6 @@ internal static class DocumentModuleParser
         {
             "diagramlibrary" => DocumentParseBridge.ReadDiagramLibraryPath?.Invoke(text)
                 ?? throw BridgeNotRegistered(nameof(DocumentParseBridge.ReadDiagramLibraryPath)),
-            "palette" => DocumentParseBridge.ReadPalettePath?.Invoke(text)
-                ?? throw BridgeNotRegistered(nameof(DocumentParseBridge.ReadPalettePath)),
             "sqldialect" => throw new InvalidOperationException(
                 "Use DocumentParseBridge.ReadSqlDialect for sqldialect configuration."),
             _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown configuration key."),

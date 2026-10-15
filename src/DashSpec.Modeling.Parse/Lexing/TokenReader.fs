@@ -11,11 +11,11 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
     let blockCloseStyles = Stack<BlockCloseStyle>()
     let mutable consumedRuntimePath: string option = None
     let mutable consumedDiagramLibraryPath: string option = None
-    let mutable consumedPalettePath: string option = None
+
 
     member _.ConsumedRuntimePath = consumedRuntimePath
     member _.ConsumedDiagramLibraryPath = consumedDiagramLibraryPath
-    member _.ConsumedPalettePath = consumedPalettePath
+
 
     member _.Current = tokens.[index]
 
@@ -320,17 +320,6 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
                 if this.IsAt TokenKind.String then
                     consumedDiagramLibraryPath <- Some(this.ReadString())
                 this.SkipNewlines()
-            elif this.TryKeyword "palette" then
-                this.SkipNewlines()
-
-                if this.RawKind = TokenKind.String then
-                    if consumedPalettePath.IsSome then
-                        raise (DashSpecParseException("Only one @palette file directive is allowed per .dashspec file."))
-                    consumedPalettePath <- Some(this.ReadString())
-                    this.SkipNewlines()
-                else
-                    index <- index - 2
-                    continueDirectives <- false
             else
                 index <- index - 1
                 continueDirectives <- false

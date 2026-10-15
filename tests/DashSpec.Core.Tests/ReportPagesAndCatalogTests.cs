@@ -150,7 +150,7 @@ public sealed class ReportPagesAndCatalogTests
         Assert.Null(catalog.Entries[1].GroupId);
     }
 
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy tab <id> dashspec removed; migrate to import tabs")]
     public void Parse_merged_paged_tab_module_allows_non_paged_sibling_tab()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-pages-" + Guid.NewGuid().ToString("N"));

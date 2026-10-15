@@ -7,7 +7,7 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.DataSource
 open DashSpec.Modeling.Parse.Diagram
 open DashSpec.Modeling.Parse.Filter
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Presentation
@@ -129,14 +129,14 @@ module CardParser =
     let private parseDiagramStatement
         (reader: TokenReader)
         (cardId: string)
-        (includes: ModuleIncludeState option)
+        (includes: ModuleImportState option)
         (parentEndKind: string)
         (diagramSlotRef: string option ref)
         (diagram: DiagramDefinition option ref)
         (legend: LegendDefinition option ref)
         (presentation: PresentationBlock option ref)
         (seriesTransform: SeriesTransformBlock option ref)
-        (includeFragment: SpecIncludeFragment ref)
+        (includeFragment: UnitFragment ref)
         =
         if diagramSlotRef.Value.IsNone then
             diagramSlotRef.Value <- ParserUtilities.tryReadLayoutRef reader
@@ -149,20 +149,20 @@ module CardParser =
             if reader.IsAt TokenKind.LBrace then
                 raise (DashSpecParseException($"Card '{cardId}': brace diagram blocks removed; use diagram {diagramName} … end diagram."))
 
-            let mutable registered = SpecIncludeFragmentResolver.emptyFragment
+            let mutable registered = UnitFragmentResolver.emptyFragment
             let mutable parsedKindRegistry = false
 
             match includes with
             | Some state when state.TryGetDiagram(diagramName, &registered) ->
-                includeFragment.Value <- SpecIncludeFragmentResolver.merge includeFragment.Value registered
+                includeFragment.Value <- UnitFragmentResolver.merge includeFragment.Value registered
                 if registered.Diagram.IsSome then
                     diagram.Value <-
                         match diagram.Value with
                         | None -> registered.Diagram
                         | Some current ->
-                            (SpecIncludeFragmentResolver.merge
-                                { SpecIncludeFragmentResolver.emptyFragment with Diagram = Some current }
-                                { SpecIncludeFragmentResolver.emptyFragment with Diagram = registered.Diagram }).Diagram
+                            (UnitFragmentResolver.merge
+                                { UnitFragmentResolver.emptyFragment with Diagram = Some current }
+                                { UnitFragmentResolver.emptyFragment with Diagram = registered.Diagram }).Diagram
             | _ ->
                 if DiagramKindRegistry.tryResolve diagramName |> fst then
                     diagram.Value <- Some(DiagramParser.parseAfterKindIdent reader diagramName)
@@ -183,32 +183,32 @@ module CardParser =
                             match diagram.Value with
                             | None -> inlineDelta.Diagram
                             | Some current ->
-                                (SpecIncludeFragmentResolver.merge
-                                    { SpecIncludeFragmentResolver.emptyFragment with Diagram = Some current }
-                                    { SpecIncludeFragmentResolver.emptyFragment with Diagram = inlineDelta.Diagram }).Diagram
+                                (UnitFragmentResolver.merge
+                                    { UnitFragmentResolver.emptyFragment with Diagram = Some current }
+                                    { UnitFragmentResolver.emptyFragment with Diagram = inlineDelta.Diagram }).Diagram
                     if inlineDelta.Legend.IsSome then legend.Value <- inlineDelta.Legend
                     if inlineDelta.Presentation.IsSome then
                         presentation.Value <-
                             match presentation.Value with
                             | None -> inlineDelta.Presentation
                             | Some current ->
-                                (SpecIncludeFragmentResolver.merge
-                                    { SpecIncludeFragmentResolver.emptyFragment with Presentation = Some current }
-                                    { SpecIncludeFragmentResolver.emptyFragment with Presentation = inlineDelta.Presentation }).Presentation
+                                (UnitFragmentResolver.merge
+                                    { UnitFragmentResolver.emptyFragment with Presentation = Some current }
+                                    { UnitFragmentResolver.emptyFragment with Presentation = inlineDelta.Presentation }).Presentation
                     if inlineDelta.SeriesTransform.IsSome then
                         seriesTransform.Value <-
                             match seriesTransform.Value with
                             | None -> inlineDelta.SeriesTransform
                             | Some current ->
-                                (SpecIncludeFragmentResolver.merge
-                                    { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = Some current }
-                                    { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = inlineDelta.SeriesTransform }).SeriesTransform
+                                (UnitFragmentResolver.merge
+                                    { UnitFragmentResolver.emptyFragment with SeriesTransform = Some current }
+                                    { UnitFragmentResolver.emptyFragment with SeriesTransform = inlineDelta.SeriesTransform }).SeriesTransform
 
     let private parseViewBlock
         (reader: TokenReader)
         (cardId: string)
         (specDirectory: string option)
-        (includes: ModuleIncludeState option)
+        (includes: ModuleImportState option)
         (parseOptions: DashSpecParseOptions)
         (slotBuilder: CardDiagramSlotBuilder.Builder)
         (diagram: DiagramDefinition option ref)
@@ -216,7 +216,7 @@ module CardParser =
         (legend: LegendDefinition option ref)
         (presentation: PresentationBlock option ref)
         (seriesTransform: SeriesTransformBlock option ref)
-        (includeFragment: SpecIncludeFragment ref)
+        (includeFragment: UnitFragment ref)
         =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
@@ -316,7 +316,7 @@ module CardParser =
         (reader: TokenReader)
         (filters: IReadOnlyList<FilterDefinition>)
         (specDirectory: string option)
-        (includes: ModuleIncludeState option)
+        (includes: ModuleImportState option)
         (parseOptions: DashSpecParseOptions option)
         (phaseId: string option)
         (pageId: string option)
@@ -352,7 +352,7 @@ module CardParser =
         let localFiltersManualApply = ref false
         let localFiltersApplySplitIndex = ref (None: int option)
         let localFiltersChromeBoard = ref (None: LayoutBoardDefinition option)
-        let includeFragment = ref SpecIncludeFragmentResolver.emptyFragment
+        let includeFragment = ref UnitFragmentResolver.emptyFragment
         let inspect = ref None
         let tooltip = ref None
         let flowInput = ref None
@@ -560,27 +560,27 @@ module CardParser =
                 match diagram.Value with
                 | None -> includeFragment.Value.Diagram
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with Diagram = Some current }
-                        { SpecIncludeFragmentResolver.emptyFragment with Diagram = includeFragment.Value.Diagram }).Diagram
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with Diagram = Some current }
+                        { UnitFragmentResolver.emptyFragment with Diagram = includeFragment.Value.Diagram }).Diagram
 
         if includeFragment.Value.Presentation.IsSome then
             presentation.Value <-
                 match presentation.Value with
                 | None -> includeFragment.Value.Presentation
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with Presentation = Some current }
-                        { SpecIncludeFragmentResolver.emptyFragment with Presentation = includeFragment.Value.Presentation }).Presentation
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with Presentation = Some current }
+                        { UnitFragmentResolver.emptyFragment with Presentation = includeFragment.Value.Presentation }).Presentation
 
         if includeFragment.Value.SeriesTransform.IsSome then
             seriesTransform.Value <-
                 match seriesTransform.Value with
                 | None -> includeFragment.Value.SeriesTransform
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = includeFragment.Value.SeriesTransform }
-                        { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = Some current }).SeriesTransform
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with SeriesTransform = includeFragment.Value.SeriesTransform }
+                        { UnitFragmentResolver.emptyFragment with SeriesTransform = Some current }).SeriesTransform
 
         inspect.Value <- InspectPresentationParser.merge includeFragment.Value.Inspect inspect.Value
         tooltip.Value <-

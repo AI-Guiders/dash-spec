@@ -172,7 +172,7 @@ Explicit `place { }` on card — **override** поверх board ([ADR-0020](DAS
 | `design/DASHSPEC-ADR-0057-resolution-registry.md` | Canonical tables (this ADR) | all |
 | `DashSpec.Core.Resolution.DisplayResolution` | Display titles, labels, gate messages | §4–§5 |
 | `DashSpec.Core.Resolution.HostOpsResolution` | WitDB / dashhost / TOML bootstrap | §8 `host.*` |
-| `DashSpec.Core.Parsing.IncludeMergePolicy` | Glob order + duplicate module id | §include |
+| `DashSpec.Core.Parsing.ImportMergePolicy` | Glob order + duplicate module id | §import |
 | `DashSpec.Core.Layout.LayoutPlacementResolution` | `place { }` override over board | §7 |
 | `DashSpec.Execution.Runtime.CompositionResolution` | Chart chrome / series transform facade | §6 |
 | `DashSpec.Host` `DisplayResolutionHost` | Session + catalog wiring | §4–§5 host surfaces |

@@ -8,10 +8,6 @@ type PresentationBlock =
       Properties: IReadOnlyDictionary<string, string> }
 
 [<CLIMutable>]
-type PresentationInclude = { Kind: string; Reference: string }
-
-[<CLIMutable>]
 type PresentationModuleDocument =
     { Id: string
-      Includes: IReadOnlyList<PresentationInclude>
       Local: PresentationBlock option }

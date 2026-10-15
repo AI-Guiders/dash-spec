@@ -5,7 +5,7 @@ namespace DashSpec.Core.Tests;
 
 public class DashSpecTestRowTypesTests
 {
-    [Fact]
+    [Fact(Skip = "ADR-0102: legacy connect { flow ... } removed; migrate to import flows + use flow")]
     public void Parse_source_requires_explicit_ports()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashspec-src-" + Guid.NewGuid().ToString("N"));

@@ -6,24 +6,31 @@ public static class AuthoringCatalog
     /// <summary>
     /// # Обзор DashSpec
     ///
-    /// DashSpec — DSL для дашбордов: shell (`.dashspec`), модули диаграмм (`.dashdiagram`),
-    /// chrome-пресеты (`.dashpresentation`), layout, palette, catalog.
+    /// DashSpec — DSL для дашбордов. Единица компиляции — один файл `.ds` с заголовком
+    /// `module &lt;kind&gt; &lt;id&gt;` и опциональной строкой `namespace &lt;Namespace&gt;`.
     ///
     /// Источник правды — парсер `DashSpec.Core` (Host и LSP используют один и тот же код).
     ///
-    /// ## Типы файлов
+    /// ## Виды юнитов
     ///
-    /// | Расширение | Назначение |
-    /// |------------|------------|
-    /// | `.dashspec` | dashboard shell или tab module |
-    /// | `.dashdiagram` | `@diagram` + kind block (`heatmap`, `bar`, …) |
-    /// | `.dashpresentation` | `@presentation` chrome preset |
-    /// | `.dashlayout` | toolbar / card grid |
-    /// | `.dashpalette` | цветовая палитра |
-    /// | `.dashcatalog` | каталог entry → dashspec |
-    /// | `.dashinclude` | bundle include |
+    /// | Заголовок | Назначение |
+    /// |-----------|------------|
+    /// | `module dashboard &lt;id&gt;` | dashboard shell |
+    /// | `module tab &lt;id&gt;` | tab module |
+    /// | `module diagram &lt;id&gt;` | диаграмма (kind block: `heatmap`, `bar`, …) |
+    /// | `module presentation &lt;id&gt;` | chrome preset |
+    /// | `module layout &lt;id&gt;` | toolbar / card grid |
+    /// | `module palette &lt;id&gt;` | цветовая палитра |
+    /// | `module types &lt;id&gt;` | row types |
+    /// | `module flow &lt;id&gt;` | поток данных |
+    /// | `module tooltip &lt;id&gt;` | tooltip |
+    /// | `module catalog &lt;id&gt;` | каталог entry → dashspec |
+    /// | `module host &lt;id&gt;` | host shell (layouts) |
     ///
-    /// ADR: 0024 (document layers), 0011 (tab modules), 0039 (chart chrome).
+    /// Юниты ссылаются друг на друга импортом по namespace: `import &lt;kind&gt; from &lt;Namespace&gt; [as &lt;alias&gt;]`.
+    ///
+    /// ADR: 0024 (document layers), 0011 (tab modules), 0039 (chart chrome), 0098 (import by namespace),
+    /// 0101 (единый тип юнита), 0102 (один язык).
     /// </summary>
     [AuthoringTopic("overview", 10)]
     public static class Overview { }
@@ -31,25 +38,30 @@ public static class AuthoringCatalog
     /// <summary>
     /// # Dashboard shell
     ///
-    /// Корневой отчёт — `@dashboard id` с end-block телом (без фигурных скобок модуля).
+    /// Корневой отчёт — `module dashboard &lt;id&gt;` с end-block телом.
     ///
     /// ```text
-    /// @dashboard demo_soak
+    /// module dashboard demo_soak
+    ///   namespace Demo.Soak
+    ///
+    ///   import types from Demo.Types
+    ///   import layouts from Demo.Layouts
+    ///   import palettes from Demo.Palettes
+    ///   import flows from Demo.Flows as report_flow
+    ///   import presentations from DashSpec.Std
+    ///   import tabs from Demo.Analytics
     ///
     /// runtime
-    ///   manifest = "demo-runtime.toml"
+    ///   manifest = "demo.toml"
     /// end runtime
     ///
     /// configuration
     ///   sqldialect = tsql
-    ///   palette = "palettes/demo-apps.dashpalette"
     /// end configuration
-    ///
-    /// !include "layouts/soak-toolbar.dashlayout"
     ///
     /// connect
     ///   use palette demo_apps
-    ///   flow "flows/report.dashflow"
+    ///   use flow report_flow
     /// end connect
     ///
     /// report
@@ -59,12 +71,12 @@ public static class AuthoringCatalog
     /// ```
     ///
     /// - **runtime** — только путь к TOML manifest (секреты и providers в TOML, не в spec).
-    /// - **configuration** — `sqldialect`, `palette`, …
-    /// - **connect** — `use palette`, `flow "…"` (data graph); `use provider` (id или infer) на `source` в `.dashflow`; card `datasource { infer … }` — то же намерение.
+    /// - **configuration** — `sqldialect`, …
+    /// - **connect** — `use palette &lt;id&gt;` (id из `import palettes`), `use flow &lt;alias&gt;` (alias из `import flows`); `use provider` (id или infer) на `source` в flow-юните; card `datasource { infer … }` — то же намерение.
     /// - **report** — фильтры, toolbar chrome, вкладки.
     ///
-    /// Shell может ссылаться на tab modules: `tab overview as "…" dashspec "demo-overview.dashspec"`.
-    /// LSP валидирует **только открытый файл** (без merge дочерних tab-dashspec).
+    /// Shell ссылается на tab modules по id: `import tabs from Demo.Analytics` + `tab analytics as "…"` без тела.
+    /// LSP валидирует **только открытый файл** (без merge дочерних tab modules).
     /// </summary>
     [AuthoringTopic("dashboard-shell", 20)]
     public static class DashboardShell { }
@@ -109,19 +121,28 @@ public static class AuthoringCatalog
     /// <summary>
     /// # Tab modules
     ///
-    /// В shell:
+    /// В shell — ссылка по id, без тела:
     ///
     /// ```text
-    /// tab overview as "Обзор" dashspec "demo-overview.dashspec"
+    /// module dashboard demo_soak
+    ///   import tabs from Demo.Analytics
+    ///
+    /// report
+    ///   tab analytics as "Обзор"
+    /// end report
     /// ```
     ///
-    /// Tab module — отдельный `.dashspec` с `@tab id`:
+    /// Tab module — юнит `module tab &lt;id&gt;`:
     ///
     /// ```text
-    /// @tab overview
-    /// runtime … end runtime
-    /// configuration … end configuration
-    /// extensions { use card_views }
+    /// module tab analytics
+    ///   namespace Demo.Analytics
+    ///   import palettes from Demo.Palettes
+    ///
+    /// runtime
+    ///   manifest = "demo.toml"
+    /// end runtime
+    ///
     /// report
     ///   filters { … }   # опционально, локальные фильтры tab
     ///   card …
@@ -129,10 +150,13 @@ public static class AuthoringCatalog
     /// end tab
     /// ```
     ///
+    /// Вкладка с телом (`cards` или `layout` на следующих строках) объявляется inline;
+    /// вкладка без тела берёт юнит по id из `import tabs`.
+    ///
     /// Фильтры shell и tab module **не должны дублировать id** при full merge (Host).
     /// В редакторе каждый файл проверяется отдельно.
     ///
-    /// ADR-0011.
+    /// ADR-0011, ADR-0098.
     /// </summary>
     [AuthoringTopic("tabs", 40)]
     public static class Tabs { }
@@ -152,31 +176,42 @@ public static class AuthoringCatalog
     /// end card
     /// ```
     ///
-    /// Preset диаграммы — в `.dashdiagram`:
+    /// Preset диаграммы — юнит `module diagram &lt;id&gt;`:
     ///
     /// ```text
-    /// @diagram demo_peak_heatmap
+    /// module diagram demo_peak_heatmap
+    ///   namespace Demo.Diagrams
+    ///
     /// heatmap
     ///   x = …
     ///   y = …
     /// end heatmap
     /// ```
     ///
-    /// `diagram` в card ссылается на id из include / library. `chrome use &lt;preset&gt;` — presentation preset (ADR-0039).
+    /// `diagram` в card ссылается на id юнита, подключённого через `import diagrams`.
+    /// `chrome use &lt;preset&gt;` — presentation preset (ADR-0039), id из `import presentations`.
     /// </summary>
     [AuthoringTopic("cards-diagrams", 50)]
     public static class CardsAndDiagrams { }
 
     /// <summary>
-    /// # Chart chrome (`@presentation`)
+    /// # Chart chrome (`presentation`)
     ///
-    /// Пресеты в `.dashpresentation`:
+    /// Пресеты — юнит `module presentation &lt;id&gt;`:
     ///
     /// ```text
-    /// @presentation heatmap_tall
+    /// module presentation heatmap_tall
+    ///   namespace Demo.Chrome
+    ///
     /// scale_value = percent
     /// y_max = 100
     /// end presentation
+    /// ```
+    ///
+    /// Подключение в shell или tab module:
+    ///
+    /// ```text
+    /// import presentations from Demo.Chrome
     /// ```
     ///
     /// В diagram module или card:
@@ -185,30 +220,38 @@ public static class AuthoringCatalog
     /// chrome use heatmap_tall
     /// ```
     ///
-    /// Регистрация в shell: `!include "presentations/*.dashpresentation"`.
+    /// Стандартные пресеты не подгружаются неявно: `import presentations from DashSpec.Std`.
     ///
-    /// ADR-0039.
+    /// ADR-0039, ADR-0098.
     /// </summary>
     [AuthoringTopic("chrome", 60)]
     public static class Chrome { }
 
     /// <summary>
-    /// # Includes
+    /// # Imports
+    ///
+    /// Юниты ссылаются друг на друга импортом по namespace:
     ///
     /// ```text
-    /// !include "layouts/soak-toolbar.dashlayout"
-    /// !include "diagrams/*.dashdiagram"
-    /// !include "presentations/*.dashpresentation"
+    /// module dashboard demo_soak
+    ///   namespace Demo.Soak
+    ///   import layouts from Demo.Layouts
+    ///   import palettes from Demo.Palettes
+    ///   import flows from Demo.Flows as report_flow
+    ///   import presentations from DashSpec.Std
     /// ```
     ///
-    /// Пути относительно каталога `.dashspec`. Glob поддерживается.
+    /// Kinds: `diagrams`, `layouts`, `presentations`, `tooltips`, `types`, `flows`, `palettes`, `tabs`.
     ///
-    /// `.dashinclude` — явный bundle (layout + diagram list).
+    /// Из namespace берутся только юниты запрошенного вида. Namespace объявляется строкой
+    /// `namespace &lt;NS&gt;` в заголовке юнита; стандартные презенты живут в `DashSpec.Std`.
     ///
-    /// ADR-0017.
+    /// `as &lt;alias&gt;` задаёт имя для ссылок по alias (`use flow report_flow`).
+    ///
+    /// ADR-0098, ADR-0101, ADR-0102.
     /// </summary>
-    [AuthoringTopic("includes", 70)]
-    public static class Includes { }
+    [AuthoringTopic("imports", 70)]
+    public static class Imports { }
 
     /// <summary>
     /// # Extension blocks (plugins)
@@ -249,8 +292,8 @@ public static class AuthoringCatalog
     /// ## LSP
     ///
     /// - Diagnostics при open/change/save (позиции из парсера)
-    /// - Completion: `diagram `, `chrome use `, `!include "`, keywords
-    /// - Go to definition: diagram id, chrome preset, include path
+    /// - Completion: `diagram `, `chrome use `, `import &lt;kind&gt; from `, keywords
+    /// - Go to definition: diagram id, chrome preset, namespace import
     ///
     /// Настройки `dashspec.*` обычно не нужны. `dashspec.hostDll` — только для CLI validate.
     ///
@@ -273,10 +316,12 @@ public static class AuthoringCatalog
     /// end page
     /// ```
     ///
-    /// Layout (`.dashlayout`) — bracket board:
+    /// Layout — юнит `module layout &lt;id&gt;` с board:
     ///
     /// ```text
-    /// @layout stakeholder_page_executive
+    /// module layout stakeholder_page_executive
+    ///   namespace Demo.Layouts
+    ///
     /// scope page
     ///
     /// [ kpi_a kpi_b kpi_c ]
@@ -284,6 +329,9 @@ public static class AuthoringCatalog
     /// ```
     ///
     /// Id в скобках = id карточек на странице. `scope page` привязывает layout к `page`.
+    ///
+    /// Привязка board к странице/toolbar остаётся путевой (`include layout "…"`, `include toolbar "…"`),
+    /// а не импортом: это ссылка на board внутри документа, не юнит-ссылка (ADR-0021, ADR-0022, ADR-0101).
     ///
     /// ADR-0020, ADR-0021, ADR-0030 (phase browse/detail).
     /// </summary>

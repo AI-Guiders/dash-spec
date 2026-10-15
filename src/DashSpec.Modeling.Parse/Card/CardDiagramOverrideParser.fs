@@ -5,7 +5,7 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Diagram
-open DashSpec.Modeling.Parse.Include
+open DashSpec.Modeling.Parse.Import
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Transform
@@ -131,9 +131,9 @@ module CardDiagramOverrideParser =
                 match diagram.Value with
                 | None -> delta.Diagram
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with Diagram = Some current }
-                        { SpecIncludeFragmentResolver.emptyFragment with Diagram = delta.Diagram }).Diagram
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with Diagram = Some current }
+                        { UnitFragmentResolver.emptyFragment with Diagram = delta.Diagram }).Diagram
 
         if delta.Legend.IsSome then legend.Value <- delta.Legend
         if delta.Presentation.IsSome then
@@ -141,17 +141,17 @@ module CardDiagramOverrideParser =
                 match presentation.Value with
                 | None -> delta.Presentation
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with Presentation = Some current }
-                        { SpecIncludeFragmentResolver.emptyFragment with Presentation = delta.Presentation }).Presentation
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with Presentation = Some current }
+                        { UnitFragmentResolver.emptyFragment with Presentation = delta.Presentation }).Presentation
         if delta.SeriesTransform.IsSome then
             seriesTransform.Value <-
                 match seriesTransform.Value with
                 | None -> delta.SeriesTransform
                 | Some current ->
-                    (SpecIncludeFragmentResolver.merge
-                        { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = Some current }
-                        { SpecIncludeFragmentResolver.emptyFragment with SeriesTransform = delta.SeriesTransform }).SeriesTransform
+                    (UnitFragmentResolver.merge
+                        { UnitFragmentResolver.emptyFragment with SeriesTransform = Some current }
+                        { UnitFragmentResolver.emptyFragment with SeriesTransform = delta.SeriesTransform }).SeriesTransform
 
     let parseOverridesBlock
         (reader: TokenReader)

@@ -114,7 +114,6 @@ module PropertySchemas =
 
     let configuration =
         [ spec "sqldialect" Scalar
-          spec "palette" String
           spec "diagramlibrary" String
           spec "time_basis" Scalar
           spec "time_apply" Scalar
