@@ -15,7 +15,7 @@ module TabParser =
     let parse (reader: TokenReader) =
         let id = reader.ReadIdent()
         let mutable label: string option = None
-        if reader.TryKeyword "as" then
+        if reader.TryKeywordSameLine "as" then
             label <- Some(reader.ReadString())
 
         if not (reader.IsOnNewline()) then
@@ -58,7 +58,7 @@ module TabParser =
             raise (DashSpecParseException($"Tab module declares @tab '{expectedTabId}' but tab block uses '{id}'."))
 
         let mutable label: string option = None
-        if reader.TryKeyword "as" then
+        if reader.TryKeywordSameLine "as" then
             label <- Some(reader.ReadString())
 
         let filters = ResizeArray<FilterDefinition>()

@@ -781,8 +781,6 @@ module rec DocumentModuleParser =
             raise (DashSpecParseException($"Report declares duplicate page id '{pageId}'."))
 
         let pageTitle = ref None
-        let pageLayout = ref None
-        let pageToolbar = ref None
         let usageDateDerive = ref None
         let pageDisplayBindings: IReadOnlyDictionary<string, string> option ref = ref None
         let pageFlowBuilder = ReportScopeFlowParser.createBuilder ()
@@ -841,6 +839,12 @@ module rec DocumentModuleParser =
             ModuleImportGuard.rejectModuleImportInBody reader $"Page '{pageId}'"
 
             if BlockSyntax.isBlockEnd reader "page" (Some pageId) then ()
+            elif reader.TryKeyword "layout" then
+                raise (
+                    DashSpecParseException(
+                        $"Page '{pageId}': boards are declared in the tab module or inline in a card, not on a page."
+                    )
+                )
             elif BlockGrammar.tryDispatchChild reader members then ()
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader pageFlowBuilder $"Page '{pageId}'" then
                 reader.SkipNewlines()
@@ -849,8 +853,6 @@ module rec DocumentModuleParser =
                 raise (reader.Unexpected())
 
         let pageTitle = pageTitle.Value
-        let pageLayout = pageLayout.Value
-        let pageToolbar = pageToolbar.Value
         let usageDateDerive = usageDateDerive.Value
         let pageDisplayBindings = pageDisplayBindings.Value
 
@@ -860,9 +862,9 @@ module rec DocumentModuleParser =
         shell.Pages.Add
             { Id = pageId
               Title = pageTitle
-              LayoutBoard = pageLayout
+              LayoutBoard = None
               TabId = shell.TabModuleId
-              ToolbarBoard = pageToolbar
+              ToolbarBoard = None
               UsageDateDerive = usageDateDerive
               FilterDefaults = FilterScopeDefaults.toReadOnly pageFilterDefaults
               DisplayBindings = pageDisplayBindings
