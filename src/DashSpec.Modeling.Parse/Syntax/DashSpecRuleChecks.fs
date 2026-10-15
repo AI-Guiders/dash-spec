@@ -103,6 +103,7 @@ module DashSpecRuleChecks =
                         signal DashSpecRule.ImportAfterCode $"'{import.Keyword}' belongs in the module header, before code sections (ADR-0101)." import.Span
                     | DashSpecAstNode.ImportDeclaration _
                     | DashSpecAstNode.BlankLine _ -> ()
+                    | _ when DashSpecAst.isTrivia child -> ()
                     | _ -> seenCode <- true
 
                     walk child

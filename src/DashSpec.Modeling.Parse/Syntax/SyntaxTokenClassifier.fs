@@ -40,6 +40,7 @@ module SyntaxTokenClassifier =
             if DashSpecKeywords.isModuleDirective value then DashSpecSyntaxKind.ModuleHeader
             else DashSpecSyntaxKind.Identifier
         | Some prev when identAt tokens prev "end" -> DashSpecSyntaxKind.Keyword
+        | _ when DashSpecKeywords.identEquals value "module" -> DashSpecSyntaxKind.ModuleHeader
         | _ when DashSpecKeywords.identEquals value "end" -> DashSpecSyntaxKind.EndKeyword
         | _ when matchesPhrase tokens index "layout" "grid" -> DashSpecSyntaxKind.Keyword
         | _ when matchesPhrase tokens index "toolbar" "chrome" -> DashSpecSyntaxKind.Keyword

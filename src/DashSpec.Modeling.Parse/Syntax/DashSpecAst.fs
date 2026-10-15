@@ -86,6 +86,16 @@ module DashSpecAst =
         | _ ->
             String.Join(" ", tokens node |> Array.map (fun token -> token.Text)).Trim()
 
+    /// Trivia: blank lines and comment-only lines. Grammar, concepts and rules ignore them.
+    let isTrivia (node: DashSpecAstNode) =
+        match node with
+        | DashSpecAstNode.BlankLine _ -> true
+        | DashSpecAstNode.Line n ->
+            not (Array.isEmpty n.Tokens)
+            && n.Tokens
+               |> Array.forall (fun token -> token.LexKind = TokenKind.LineComment || token.LexKind = TokenKind.BlockComment)
+        | _ -> false
+
     let isOutlineNode (node: DashSpecAstNode) =
         match node with
         | DashSpecAstNode.ModuleDeclaration _

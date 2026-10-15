@@ -36,6 +36,15 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
         this.SkipNewlines()
         tokens.[index].Kind = TokenKind.Eof
 
+    /// End check for the surface tree: skips line breaks only, so comment-only lines still reach the line reader.
+    member this.IsEofKeepingTrivia =
+        this.SkipNewlinesOnly()
+        tokens.[index].Kind = TokenKind.Eof
+
+    member _.SkipNewlinesOnly() =
+        while tokens.[index].Kind = TokenKind.Newline do
+            index <- index + 1
+
     member this.IsAt kind =
         this.SkipNewlines()
         tokens.[index].Kind = kind
