@@ -137,29 +137,6 @@ public sealed class CardLocalFilterUiStore
     private IReadOnlyDictionary<string, int>? BuildTopLimits(string cardId) =>
         _topLimits.TryGetValue(cardId, out var map) ? map : null;
 
-    private bool TryGetDate(string cardId, string filterName, out DateOnly from, out DateOnly to)
-    {
-        from = default;
-        to = default;
-        return _dateFrom.TryGetValue(cardId, out var fromMap) &&
-               _dateTo.TryGetValue(cardId, out var toMap) &&
-               fromMap.TryGetValue(filterName, out from) &&
-               toMap.TryGetValue(filterName, out to);
-    }
-
-    private bool TryGetField(string cardId, string filterName, out HashSet<string> values)
-    {
-        values = [];
-        return _fields.TryGetValue(cardId, out var map) &&
-               map.TryGetValue(filterName, out values!);
-    }
-
-    private bool TryGetTop(string cardId, string filterName, out int limit)
-    {
-        limit = 0;
-        return _topLimits.TryGetValue(cardId, out var map) && map.TryGetValue(filterName, out limit);
-    }
-
     private void EnsureCard(string cardId)
     {
         if (!_dateFrom.ContainsKey(cardId))

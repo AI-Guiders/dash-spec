@@ -8,14 +8,4 @@ public static class ImportMergePolicy
         paths
             .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
-
-    /// <summary>Later paths in ordered glob expansion win on duplicate module ids.</summary>
-    public static void EnsureUniqueModuleId(string moduleId, string path, ISet<string> seenIds)
-    {
-        if (!seenIds.Add(moduleId))
-        {
-            throw new DashSpecParseException(
-                $"Duplicate module id '{moduleId}' after import merge (last at '{path}').");
-        }
-    }
 }

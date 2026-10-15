@@ -12,15 +12,4 @@ public sealed class ImportMergePolicyTests
             ["b.ds", "A.ds", "a.ds"]);
         Assert.Equal(["A.ds", "a.ds", "b.ds"], ordered);
     }
-
-    [Fact]
-    public void EnsureUniqueModuleId_throws_on_duplicate()
-    {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        ImportMergePolicy.EnsureUniqueModuleId("sales", "first.ds", seen);
-        var ex = Assert.Throws<DashSpecParseException>(() =>
-            ImportMergePolicy.EnsureUniqueModuleId("sales", "second.ds", seen));
-        Assert.Contains("sales", ex.Message, StringComparison.Ordinal);
-        Assert.Contains("second.ds", ex.Message, StringComparison.Ordinal);
-    }
 }

@@ -183,9 +183,8 @@ public class DemoSpecsSyntaxTests
     {
         var path = Path.Combine(SamplesDemo, "diagrams", "events-detail-table.ds");
 
-        // Product gap (reported, not fixed here): the diagram-module bridge feeds the unit text straight to
-        // F# DiagramModuleParser.parseDiagramModuleWithId, which does not skip the ADR-0098 `namespace` header
-        // (UnitSource.blankHeader is applied by the import path and by PaletteModuleParser, not here).
+        // The bridge must blank the ADR-0098 module header too, exactly like the import path does — a real
+        // `.ds` diagram unit carries `namespace` on its second line.
         var text = File.ReadAllText(path);
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
             text,

@@ -44,8 +44,3 @@ module DashSpecParseOptions =
           PhraseTemplates = Array.empty
           KnownActionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
           KnownInteractionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }
-
-    let editor =
-        { defaultOptions with
-            MergeReferencedTabModules = false
-            ExtensionBlockKeywords = HashSet<string>([ "views" ], StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }

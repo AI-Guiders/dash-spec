@@ -42,7 +42,6 @@ module ModuleImportResolver =
         (specDirectory: string option)
         (moduleKind: DocumentModuleKind)
         (includes: ModuleImportState)
-        (parseOptions: DashSpecParseOptions)
         (diagnostics: ResizeArray<DashSpecDiagnostic>)
         =
         validateImports header.Imports
