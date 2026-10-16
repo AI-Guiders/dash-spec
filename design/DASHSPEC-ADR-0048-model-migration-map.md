@@ -127,11 +127,23 @@ internal static class ModelOption
 
 Вывод: объём **не катастрофический** (дни, не недели), но это **одна большая правка**, а не серия независимых волн.
 
-### Препятствие 1 — каталог в генерируемом файле
+### Препятствие 1 — снято (это была моя ошибка)
 
-`src/DashSpec.Host/Generated/DashCatalog.g.cs` (298 строк) **конструирует `CatalogDocument`** и защищён drift-gate: файл обязан совпадать с результатом `gdlc emit` из `dash.catalog.gdl` (генератор живёт в соседнем репозитории `authoring-toolchain`).
+Ранее здесь было записано, что `src/DashSpec.Host/Generated/DashCatalog.g.cs` конструирует `CatalogDocument` и потому блокирует миграцию. **Это неверно** — вывод сделан grep'ом по имени и оказался ложным срабатыванием.
 
-Следствие: тип `CatalogDocument` нельзя мигрировать, не меняя генератор в другом репозитории. Варианты: (а) сначала обновить генератор, (б) перевести каталог в конце, (в) вендорить генератор в этот репозиторий (попутно снимает риск из [§15.3 архитектурного документа](../docs/ARCHITECTURE_RU.md)).
+Проверка показала: в репозитории **два разных каталога** с похожими именами типов.
+
+| | Каталог отчётов | Каталог команд федерации |
+|---|---|---|
+| Что это | Список разрешённых верхнеуровневых отчётов для зрителя ([ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md)) | Каталог команд и грамматик CommandPlane: slash-палитра `/select`, console, CCL (GUIDERS-ADR-0047) |
+| Язык | `module catalog` (`.ds`), `samples/demo/demo-catalog.ds` | `catalog dash` (`.gdl`), `src/DashSpec.Host/Catalog/dash.catalog.gdl` |
+| Тип | `DashSpec.Core.Model.CatalogDocument` — поля `Id`, `DefaultEntryId`, `Entries`, `Groups` | `AIGuiders.Platform.Authoring.Command.Catalog.CatalogDocument` — поля `Planet`, `Imports`, `Defaults`, `Channels` |
+| Кто разбирает | F#-парсер DashSpec, в рантайме | внешний `gdlc` из соседнего репозитория `authoring-toolchain` |
+| Генерация | нет, парсится на старте | `gdlc emit` → `src/DashSpec.Host/Generated/DashCatalog.g.cs` + drift-gate ([ADR-0052](DASHSPEC-ADR-0052-catalog-emit-drift-gate.md)) |
+
+`DashCatalog.g.cs` использует **федеральный** тип (`using AIGuiders.Platform.Authoring.Command.Catalog;`, поля `Planet`/`Imports`/`Defaults`), а `CatalogEntryDefinition`/`CatalogGroupDefinition` там не встречаются вовсе.
+
+**Следствие:** каталог отчётов мигрирует как любой другой тип модели; внешний генератор к этой миграции отношения не имеет. Блокирующих препятствий по каталогу нет.
 
 ### Препятствие 2 — C#-only члены на типах модели
 
@@ -151,10 +163,9 @@ internal static class ModelOption
 ### Исполнимая процедура
 
 1. Вынести C#-only члены (§Препятствие 2) в extension-методы `Execution.*` — сборка остаётся зелёной, поведение не меняется.
-2. Решить судьбу каталога (§Препятствие 1).
-3. Включить алиасы во всех потребителях **и** в `DashSpec.Core` (`python tools/gen-model-aliases.py --write`), удалить `src/DashSpec.Core/Model/*.cs`, дальше идти по списку `dotnet build` до нуля ошибок (ожидаемо 400–600 мест, из них ~200 механических).
-4. Прогнать `dotnet test DashSpec.slnx` (база 554 passed), `dotnet test tests/DashSpec.Architecture.Tests` (правило ADR-0103).
-5. Затем W10: перенос `Layout`/`Resolution`/`Analysis`/`Validation`/`Authoring`/`Runtime`/`Transforms` в `Execution.*` и удаление проекта.
+2. Включить алиасы во всех потребителях **и** в `DashSpec.Core` (`python tools/gen-model-aliases.py --write`), удалить `src/DashSpec.Core/Model/*.cs`, дальше идти по списку `dotnet build` до нуля ошибок (ожидаемо 400–600 мест, из них ~200 механических).
+3. Прогнать `dotnet test DashSpec.slnx` (база 554 passed), `dotnet test tests/DashSpec.Architecture.Tests` (правило ADR-0103).
+4. Затем W10: перенос `Layout`/`Resolution`/`Analysis`/`Validation`/`Authoring`/`Runtime`/`Transforms` в `Execution.*` и удаление проекта.
 
 ## Риски и что их снимает
 
