@@ -97,7 +97,7 @@ public static class DisplayResolution
         ResolveChain(HumanizeFilterName(filter.Name), filter.Label);
 
     public static string ResolveGateMessage(CardVisibilityRule? visibility) =>
-        string.IsNullOrWhiteSpace(visibility?.Message) ? string.Empty : visibility.Message;
+        string.IsNullOrWhiteSpace(visibility?.Message?.Value) ? string.Empty : visibility.Message.Value;
 
     public static string ResolveDiagramAxisLabel(
         IReadOnlyDictionary<string, string> diagramProperties,

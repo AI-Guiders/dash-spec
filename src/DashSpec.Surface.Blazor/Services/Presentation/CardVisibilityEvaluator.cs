@@ -34,7 +34,7 @@ public static class CardVisibilityEvaluator
             CardVisibilityMode.WhenEmpty when !hasValue => CardVisibilityOutcome.Visible,
             CardVisibilityMode.WhenEmpty => CardVisibilityOutcome.Hidden,
             CardVisibilityMode.WhenSet when hasValue => CardVisibilityOutcome.Visible,
-            CardVisibilityMode.WhenSet when !string.IsNullOrWhiteSpace(card.Visibility.Message)
+            CardVisibilityMode.WhenSet when !string.IsNullOrWhiteSpace(card.Visibility.Message?.Value)
                 => CardVisibilityOutcome.Placeholder,
             CardVisibilityMode.WhenSet => CardVisibilityOutcome.Hidden,
             _ => CardVisibilityOutcome.Visible,

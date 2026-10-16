@@ -239,8 +239,8 @@ internal static class DocumentModelMapper
     private static CardVisibilityRule ToCore(FsharpCard.CardVisibilityRule rule) =>
         new(
             rule.FilterName,
-            (CardVisibilityMode)(int)rule.Mode,
-            FirstOrNull(rule.Message));
+            rule.Mode,
+            rule.Message);
 
     private static CardsChromeDefinition ToCore(FsharpCard.CardsChromeDefinition chrome) =>
         new((CardsFoldPolicy)(int)chrome.FoldPolicy);

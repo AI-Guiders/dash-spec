@@ -1,6 +1,5 @@
-// Алиасы F#-модели (ADR-0048 / ADR-0103): в C# своей модели нет.
-// global using-алиас перекрывает одноимённый тип из `DashSpec.Core.Model`,
-// поэтому потребители видят F#-IR, а C#-тип удаляется.
+// В этой ручной партии переведённые ниже имена ссылаются на F#-IR.
+// Остальные C#-типы модели пока остаются переходными и мигрируются отдельно.
 global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;
 global using PlacementDefinition = DashSpec.Modeling.Parse.Layout.PlacementDefinition;
 global using LayoutBoardNestDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardNestDefinition;
