@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Model;
+namespace DashSpec.Execution.Runtime;
 
 public enum VizValueLabelMode
 {
