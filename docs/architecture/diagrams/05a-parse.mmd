@@ -1,0 +1,16 @@
+%% Диаграмма 5a. Конвейер компиляции — разбор и построение IR
+flowchart TB
+  classDef src fill:#f5d6a0,stroke:#b58a3a,color:#111111
+  classDef fsharp fill:#a3c4f3,stroke:#3d6ea8,color:#111111
+  classDef diag fill:#f3c7cc,stroke:#a85a63,color:#111111
+
+  SRC["<b>Исходники пакета</b><br/>*.ds · *.dsproj · TOML"]:::src
+  IDX["<b>Индексация и импорт</b><br/>заголовки namespace и вида единиц:<br/>один скан вместо разбора всего дерева"]:::fsharp
+  LEX["<b>Лексический разбор</b><br/>токены и позиции в тексте"]:::fsharp
+  PAR["<b>Синтаксический разбор</b><br/>свой парсер на каждый вид единицы"]:::fsharp
+  IR["<b>IR (F#) — промежуточное представление</b><br/>документ · диаграммы · палитра · типы · графы"]:::fsharp
+  DIAG["<b>Диагностики</b><br/>код · позиция · подсказка<br/>LSP, IDE, dashspec validate"]:::diag
+
+  SRC --> IDX --> LEX --> PAR --> IR
+  PAR -.->|"синтаксические ошибки"| DIAG
+  DIAG -.->|"исправления автора"| SRC

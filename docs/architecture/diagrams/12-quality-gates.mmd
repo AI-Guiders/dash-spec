@@ -1,0 +1,30 @@
+%% Диаграмма 12. Контур качества
+flowchart LR
+  classDef gate fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef test fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+  classDef ok fill:#cfe3cf,stroke:#4f7d2d,color:#111111
+
+  PR["Изменение в pull request"]:::gate
+  BUILD["dotnet build<br/>предупреждения равны ошибкам"]:::gate
+  ROS["Roslyn-анализаторы<br/>DSCHOST001-003, DSPEC020-021, DSPEC030-034"]:::gate
+  ARCH["Тесты архитектуры (NetArchTest)<br/>запрет запрещённых зависимостей"]:::gate
+  GUARD["Source guards<br/>regex-правила по исходникам хоста"]:::gate
+  L1["L1: язык — парсер и компилятор<br/>Modeling.Parse.Tests"]:::test
+  L2["L2: компиляция отчёта<br/>Execution.Compilation.Tests"]:::test
+  L3["L3: сессия на фиктивном коннекторе<br/>Platform.Session.Tests"]:::test
+  L4["L4: поверхность и сквозной сценарий<br/>Host.E2E"]:::test
+  DRIFT["Drift gate: сгенерированный каталог<br/>совпадает с gdlc emit"]:::test
+  GREEN["Зелёный merge"]:::ok
+
+  PR --> BUILD
+  BUILD --> ROS
+  BUILD --> ARCH
+  BUILD --> GUARD
+  ROS --> L1
+  ARCH --> L2
+  GUARD --> L3
+  L1 --> L4
+  L2 --> L4
+  L3 --> L4
+  L4 --> DRIFT
+  DRIFT --> GREEN

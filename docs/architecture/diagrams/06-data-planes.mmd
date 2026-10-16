@@ -1,0 +1,28 @@
+%% Диаграмма 6. Три плоскости работы с данными
+flowchart LR
+  classDef db fill:#6b6b6b,stroke:#3d3d3d,color:#ffffff
+  classDef acq fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef flow fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+  classDef present fill:#f0a30a,stroke:#a86f05,color:#111111
+  classDef ext fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+
+  DB[("База данных<br/>представления v_* и таблицы")]:::db
+  CONN["Коннектор<br/>SqlServer, Postgres<br/>креденшелы только здесь"]:::acq
+  ACQ["Материализация<br/>DbDataReader → DashValue"]:::acq
+  BATCH["TypedRowBatch<br/>схема строки + данные<br/>без Dictionary и object"]:::acq
+  SRC["source<br/>граница наружу: from view или from sql"]:::flow
+  TR1["transformer<br/>to_zone: UTC в отчётный пояс"]:::flow
+  TR2["transformer<br/>apply_filters: значения фильтров"]:::flow
+  TR3["transformer<br/>project, aggregate, limit"]:::flow
+  PB["Payload-билдеры карточек<br/>chart, table, matrix, scalar"]:::present
+  VZ["Viz-плагин<br/>Chart.js, CSS-grid, KPI"]:::present
+  SCREEN["Экран зрителя"]:::present
+
+  FILTERS["Фильтры: объявление в отчёте,<br/>значения в сессии"]:::ext
+
+  DB --> CONN --> ACQ --> BATCH --> SRC --> TR1 --> TR2 --> TR3 --> PB --> VZ --> SCREEN
+  FILTERS -.->|"bind: WHERE и TOP в SQL"| CONN
+  FILTERS -.->|"маршрут: placement flow"| PB
+  FLOWDEF["Файл потока *.ds: module flow<br/>узлы и связи вида producer → consumer"]:::ext
+  FLOWDEF -.->|"описывает"| SRC
+  FLOWDEF -.-> TR1

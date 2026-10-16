@@ -1,0 +1,32 @@
+%% Диаграмма 9. Семейства плагинов вокруг микроядра
+flowchart TB
+  classDef core fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef fam fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+  classDef tier fill:#f0a30a,stroke:#a86f05,color:#111111
+  classDef sample fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+
+  KERNEL["Микроядро<br/>загрузка, реестры, диспетчеризация,<br/>оболочка страницы"]:::core
+
+  KERNEL --> FCONN["Connectors<br/>IDataSourceConnector"]:::fam
+  KERNEL --> FDIAG["Diagram kinds<br/>IDiagramKindContributor"]:::fam
+  KERNEL --> FVIZ["Viz renderers<br/>IVizPlugin и IVizRenderer"]:::fam
+  KERNEL --> FFILT["Filter widgets<br/>виджеты фильтров"]:::fam
+  KERNEL --> FINTER["Interactions и chrome<br/>IInteractionContributor"]:::fam
+  KERNEL --> FEXT["Extension blocks<br/>IExtensionBlockPlugin"]:::fam
+  KERNEL --> FSURF["Surfaces (направление развития)<br/>ISurfaceHost"]:::fam
+  KERNEL --> FFLOW["Transforms и types (направление развития)<br/>шаги dashflow и семантические типы"]:::fam
+
+  FCONN --> S1["SqlServer, Postgres"]:::sample
+  FDIAG --> S2["line, bar, table, heatmap,<br/>matrix, KPI, gantt"]:::sample
+  FVIZ --> S3["chartjs, css-grid,<br/>table-html, matrix-canvas"]:::sample
+  FFILT --> S4["date, combobox, chips,<br/>top, day, grain"]:::sample
+  FINTER --> S5["selection, drill-down"]:::sample
+  FEXT --> S6["export CSV/XLSX,<br/>view-switch"]:::sample
+
+  TIERS["Уровни доверия<br/>core: поставляется с хостом<br/>extended: необязательные платформенные<br/>product: сборка продукта"]:::tier
+  BUNDLE["Манифест и bundle<br/>TOML: [[plugins.load]] и active_bundle<br/>DSL: extensions use ..."]:::tier
+  CAPS["Карта возможностей<br/>capabilities snapshot для lint и CI"]:::tier
+
+  KERNEL -.-> TIERS
+  TIERS -.-> BUNDLE
+  BUNDLE -.-> CAPS

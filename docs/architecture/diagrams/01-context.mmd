@@ -1,0 +1,30 @@
+%% Диаграмма 1. Контекст системы (C4 уровень 1)
+flowchart LR
+  classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+  classDef system fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef external fill:#9a9a9a,stroke:#616161,color:#ffffff
+  classDef db fill:#6b6b6b,stroke:#3d3d3d,color:#ffffff
+
+  AUTHOR["Автор отчёта<br/>аналитик, инженер данных"]:::person
+  VIEWER["Зритель<br/>стейкхолдер, руководитель"]:::person
+  ENGINEER["Инженер платформы<br/>автор коннекторов и плагинов"]:::person
+  ADMIN["Администратор<br/>эксплуатация сервиса"]:::person
+
+  GIT["Git-репозиторий продукта<br/>тексты отчётов, SQL, настройки"]:::external
+  DB["База данных<br/>SQL Server или PostgreSQL"]:::db
+  IDE["Редактор или IDE<br/>VS Code, CodeCenter, Studio"]:::external
+  CI["CI/CD<br/>сборка, тесты, проверки"]:::external
+  PLATFORM["DashSpec Platform<br/>компилятор языка отчётов<br/>+ движок данных и сессий"]:::system
+  SURFACE["Surfaces<br/>вьюеры: web, desktop, BFF"]:::system
+
+  AUTHOR -->|"пишет текстовые спецификации"| GIT
+  ENGINEER -->|"собирает плагины и коннекторы"| PLATFORM
+  GIT -->|"спецификации отчётов"| PLATFORM
+  PLATFORM -->|"готовые данные для карточек"| SURFACE
+  SURFACE -->|"интерактивные отчёты и дашборды"| VIEWER
+  PLATFORM -->|"SQL-запросы"| DB
+  DB -->|"строки данных"| PLATFORM
+  IDE -->|"правки спецификаций"| GIT
+  PLATFORM -->|"диагностика и подсказки"| IDE
+  ADMIN -->|"ключи, манифесты, служба"| PLATFORM
+  CI -->|"проверка спецификаций"| GIT

@@ -1,0 +1,24 @@
+%% Диаграмма 7. Пример графа потока данных (dashflow)
+flowchart LR
+  classDef src fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+  classDef tr fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef card fill:#f0a30a,stroke:#a86f05,color:#111111
+  classDef filt fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+  classDef view fill:#6b6b6b,stroke:#3d3d3d,color:#ffffff
+
+  V[("представление<br/>demo.v_daily_peak")]:::view
+  S["source utilization<br/>выход: utilization: UtilizationRow"]:::src
+  T["transformer reporting_calendar<br/>шаг to_zone, пояс UTC+3"]:::tr
+  C1["карточка peak<br/>слот diagram"]:::card
+  C2["карточка peak_table<br/>слот diagram"]:::card
+  U["transformer user_filter<br/>apply_filters"]:::tr
+  F["фильтр usage_date<br/>объявление в отчёте"]:::filt
+
+  V --> S
+  S -->|"выход utilization → вход raw"| T
+  T -->|"выход localized"| U
+  U -->|"поток строк"| C1
+  U -->|"поток строк"| C2
+  F -.->|"bind: WHERE по usage_date"| S
+  F -.->|"значения фильтра"| U
+  F -.->|"маршрут: виджет в панели отчёта"| C1

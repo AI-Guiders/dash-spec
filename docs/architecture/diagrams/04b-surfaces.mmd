@@ -1,0 +1,70 @@
+%% Диаграмма 4b. Поверхности, UI-контракты, плагины и инструменты
+flowchart LR
+  classDef ui fill:#cfd8e3,stroke:#5b6b7d,color:#111111
+  classDef plugin fill:#f3c7cc,stroke:#a85a63,color:#111111
+  classDef tool fill:#e2d3f3,stroke:#7a58a8,color:#111111
+  classDef platform fill:#c7e5c0,stroke:#4f7d2d,color:#111111
+
+  subgraph TOOLS["Инструменты разработчика"]
+    CC["CodeCenter (+ Plugin)<br/>F#: граф понятий, правила, подсказки"]:::tool
+    ADAPT["Language.Adapters.DashSpec<br/>F#: языковой backend для IDE"]:::tool
+    LSP["LanguageServer<br/>отдельный LSP-хост"]:::tool
+    DOCGEN["DocGen<br/>генерация документации авторинга"]:::tool
+  end
+
+  subgraph SURF["Поверхности"]
+    HOST["DashSpec.Host<br/>точка входа деплоя"]:::ui
+    BLZ["Surface.Blazor<br/>страницы и компоненты"]:::ui
+    VIEW["Viewer<br/>реестры плагинов,<br/>диспетчер действий"]:::ui
+  end
+
+  subgraph UICONTRACTS["UI-контракты"]
+    PRES["Presentation<br/>общие компоненты"]:::ui
+    VIZ["Viz<br/>контракты визуализации"]:::ui
+    FILT["Filters<br/>контракты виджетов фильтров"]:::ui
+  end
+
+  subgraph PLAT["Платформа (подробно на диаграмме 4a)"]
+    PLATNOTE["Modeling.* · Execution.* ·<br/>Core · Abstractions · Analyzers"]:::platform
+  end
+
+  subgraph PLUG["Плагины и коннекторы"]
+    PVZB["Plugin.Viz.Builtins<br/>Chart.js, CSS-grid, HTML-таблица,<br/>матрица, KPI, диаграмма Ганта"]:::plugin
+    PFLB["Plugin.Filter.Builtins<br/>виджеты фильтров"]:::plugin
+    PEXP["Plugin.Export<br/>выгрузка CSV и XLSX"]:::plugin
+    PVSW["Plugin.ViewSwitch"]:::plugin
+    PCONN["Connectors<br/>SqlServer, Postgres"]:::plugin
+  end
+
+  HOST --> BLZ
+  HOST --> VIEW
+  HOST --> PLATNOTE
+  HOST --> PEXP
+  HOST --> PVSW
+  HOST --> PVZB
+  HOST --> PFLB
+  HOST --> PCONN
+  BLZ --> VIEW
+  BLZ --> PRES
+  BLZ --> VIZ
+  BLZ --> FILT
+  BLZ --> PLATNOTE
+  VIEW --> VIZ
+  VIEW --> FILT
+  VIEW --> PVZB
+  VIEW --> PFLB
+  VIEW --> PLATNOTE
+  PRES --> PLATNOTE
+  VIZ --> PLATNOTE
+  FILT --> PLATNOTE
+  PVZB --> VIZ
+  PVZB --> PRES
+  PFLB --> FILT
+  PFLB --> VIZ
+  PFLB --> PRES
+  PEXP --> PLATNOTE
+  PCONN --> PLATNOTE
+  CC --> PLATNOTE
+  ADAPT --> PLATNOTE
+  LSP --> PLATNOTE
+  DOCGEN --> PLATNOTE
