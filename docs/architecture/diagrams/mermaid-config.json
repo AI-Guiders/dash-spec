@@ -2,18 +2,21 @@
   "theme": "base",
   "themeVariables": {
     "fontFamily": "Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-    "fontSize": "15px"
+    "fontSize": "18px"
   },
   "flowchart": {
-    "wrappingWidth": 420,
-    "nodeSpacing": 40,
-    "rankSpacing": 55,
+    "wrappingWidth": 440,
+    "nodeSpacing": 45,
+    "rankSpacing": 60,
     "curve": "basis",
     "htmlLabels": true,
     "useMaxWidth": true
   },
   "sequence": {
     "useMaxWidth": true,
-    "wrap": true
+    "wrap": true,
+    "actorFontSize": 17,
+    "noteFontSize": 16,
+    "messageFontSize": 17
   }
 }
