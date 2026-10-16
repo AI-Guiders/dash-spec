@@ -58,6 +58,8 @@ type CardsFoldPolicy =
 type CardsChromeDefinition =
     { FoldPolicy: CardsFoldPolicy }
 
+    static member Default = { FoldPolicy = CardsFoldPolicy.None }
+
 [<CLIMutable>]
 type CardChromeDefinition =
     { BoundFilters: CardBoundFilterChrome

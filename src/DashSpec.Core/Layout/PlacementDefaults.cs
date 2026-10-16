@@ -7,6 +7,6 @@ public static class PlacementDefaults
 {
     public static PlacementDefinition ForFamily(DiagramDataFamily family, int columns) =>
         family is DiagramDataFamily.Table or DiagramDataFamily.Matrix or DiagramDataFamily.Gantt
-            ? new PlacementDefinition(Row: 1, Col: 1, Span: columns)
-            : new PlacementDefinition(Span: columns / 2);
+            ? new PlacementDefinition(1, 1, columns)
+            : new PlacementDefinition(1, 1, columns / 2);
 }
