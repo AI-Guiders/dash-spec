@@ -108,7 +108,7 @@ public sealed class DisplayResolutionTests
     {
         var card = SampleCatalogDoc.Cards[1] with
         {
-            Chrome = new CardChromeDefinition(CardBoundFilterChrome.Hidden, HideTitle: true),
+            Chrome = new CardChromeDefinition(CardBoundFilterChrome.Hidden, true, CardFoldMode.None),
         };
         var context = ResolutionContext.ForSoak(SampleCatalogDoc);
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
