@@ -27,12 +27,24 @@ public sealed class LayerDependencyTests
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
     }
 
+    /// <summary>
+    /// ADR-0103: поверхность читает F#-IR напрямую (модель — SSOT), но не разбирает
+    /// и не компилирует текст сама. Запрещены точки разбора/компиляции F#-парсера,
+    /// а не сам проект IR.
+    /// </summary>
     [Fact]
-    public void Host_must_not_reference_Modeling_Parse()
+    public void Host_must_not_parse_or_compile_dashspec()
     {
         var result = Types.InAssembly(HostAssembly)
             .ShouldNot()
-            .HaveDependencyOn("DashSpec.Modeling.Parse")
+            .HaveDependencyOnAny(
+                "DashSpec.Modeling.Parse.Lexing",
+                "DashSpec.Modeling.Parse.Syntax",
+                "DashSpec.Modeling.Parse.Document.DashSpecCompiler",
+                "DashSpec.Modeling.Parse.Document.DashboardComposer",
+                "DashSpec.Modeling.Parse.Document.DashboardParser",
+                "DashSpec.Modeling.Parse.Document.DocumentModuleParser",
+                "DashSpec.Modeling.Parse.Document.TabParser")
             .GetResult();
 
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));

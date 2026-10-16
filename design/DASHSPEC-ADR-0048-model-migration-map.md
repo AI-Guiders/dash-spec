@@ -85,9 +85,9 @@ internal static class ModelOption
 }
 ```
 
-## Волны (каждая — зелёная сборка + тесты)
+## Волны — это порядок **содержания**, а не порядок исполнения
 
-Порядок — по замыканию зависимостей, от периферии к центру.
+Порядок ниже — по замыканию зависимостей, от периферии к центру. Он полезен как чеклист «что смотреть», но **по отдельности волны неисполнимы**: см. следующий раздел.
 
 | Волна | Что мигрирует | Объём |
 |-------|----------------|-------|
@@ -104,6 +104,57 @@ internal static class ModelOption
 | **W10** | Перенос не-модельных частей `Core` в `Execution.*` (Layout 1525, Resolution 613, Analysis 529, Validation 616, Authoring 884, Runtime 565, Transforms 245 строк) и удаление проекта | 167 файлов |
 
 Проверка каждой волны: `dotnet build DashSpec.slnx` (предупреждения = ошибки), `dotnet test DashSpec.slnx` (база: 554 passed / 0 failed / 4 skipped), точечно `DashSpec.Architecture.Tests` (барьер «Host не ссылается на `Modeling.Parse`» — при прямом чтении IR его придётся пересмотреть) и `DashSpec.Core.Tests`.
+
+## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
+
+### Модель — один связный компонент
+
+Типы вложены друг в друга (`DashboardDocument` → `CardDefinition` → `DiagramDefinition` / `DataSourceDefinition`, `HostDocument.TopbarLayout` → `LayoutBoardDefinition`, …), поэтому «волна по типу» невозможна: алиас перекрывает **имя**, а не идентичность типа, и частичная миграция даёт несоответствия на каждой границе. Мигрировать надо одним компонентом.
+
+**Замер.** Алиасы поставлены в 13 проектах-потребителях (кроме самого `DashSpec.Core`), сборка `DashSpec.slnx`:
+
+| Код ошибки | Значение | Штук |
+|-----------|----------|------|
+| `CS1503` | аргумент не того типа (`option` против `string`, C#-тип против F#-типа) | 136 |
+| `CS9135` | `x is not FilterKind.Top` — это DU, нужен `.IsTop` | 50 |
+| `CS1061` | нет члена: нужен `.Value`, либо на F#-типе нет C#--only члена (`IsDayWidget`, `RowCount`, `ResolvedCardsChrome`) | 46 |
+| `CS8858`, `CS0029`, `CS0019`, `CS1929`, `CS1739`, `CS8602`, `CS0117`, `CS7036`, `CS8121` | прочее | 78 |
+| **Итого** | | **310** |
+
+Плюс собственные ошибки `DashSpec.Core`, который в замере не участвовал (он владелец модели). Реалистичная оценка полного объёма — **400–600 мест**.
+
+Топ файлов: `FlowCardExecution.cs` (56), `TabLayoutCompactor.cs` (24), `GrainFilterPresentation.cs` (20), `DashflowPathResolver.cs` (20), `MatrixPresentation.cs` (18), `FilterDisplaySource.cs` (18).
+
+Вывод: объём **не катастрофический** (дни, не недели), но это **одна большая правка**, а не серия независимых волн.
+
+### Препятствие 1 — каталог в генерируемом файле
+
+`src/DashSpec.Host/Generated/DashCatalog.g.cs` (298 строк) **конструирует `CatalogDocument`** и защищён drift-gate: файл обязан совпадать с результатом `gdlc emit` из `dash.catalog.gdl` (генератор живёт в соседнем репозитории `authoring-toolchain`).
+
+Следствие: тип `CatalogDocument` нельзя мигрировать, не меняя генератор в другом репозитории. Варианты: (а) сначала обновить генератор, (б) перевести каталог в конце, (в) вендорить генератор в этот репозиторий (попутно снимает риск из [§15.3 архитектурного документа](../docs/ARCHITECTURE_RU.md)).
+
+### Препятствие 2 — C#-only члены на типах модели
+
+На C#-модели висят члены, которых нет в F# («логика внутри модели»):
+
+| Где | Что | Куда это должно уйти |
+|-----|-----|----------------------|
+| `DashboardDocument` | `ResolvedCardsChrome`, `ResolvedFormatDefaults`, `ResolvedTimePolicy`, `ResolvedCommandAliases`, `ResolvedModuleDiagrams`, `ResolvedChartChromePresets`, `ResolvedModuleTooltips`, `ResolvedRowTypeSchemas` + 5 статических пустышек | extension-методы в `Execution.*` |
+| `FilterDefinition` | `IsDayWidget`, `IsComboboxWidget`, `IsSelectWidget`, `IsSingleSelectField`, `IsBindScopeInline/Hidden/Tooltip` | extension-методы в `Execution.*` |
+| `FiltersChromeDefinition` | `IsBarLayout`, `IsSticky*`, `IsAutoApply`, `ToolbarDateLabelClass` и др. | extension-методы |
+| `LayoutBoardDefinition` | `RowCount`, `ColumnCount`, `Rows`, `FromCardRows` | extension-методы (часть уже есть в F#) |
+| `MatrixRenderLimitsDefinition` | `EffectiveMaxCells/AxisLabels`, `IsOversized`, `DescribeOversize` | extension-методы / F# |
+| `ReportTimePolicy` | `ClipsQueries` | extension-методы / F# |
+
+Это и есть настоящий «второй источник истины»: не данные, а **поведение**. Его надо вынести из модели до/во время миграции, иначе F#-тип его не отдаст.
+
+### Исполнимая процедура
+
+1. Вынести C#-only члены (§Препятствие 2) в extension-методы `Execution.*` — сборка остаётся зелёной, поведение не меняется.
+2. Решить судьбу каталога (§Препятствие 1).
+3. Включить алиасы во всех потребителях **и** в `DashSpec.Core` (`python tools/gen-model-aliases.py --write`), удалить `src/DashSpec.Core/Model/*.cs`, дальше идти по списку `dotnet build` до нуля ошибок (ожидаемо 400–600 мест, из них ~200 механических).
+4. Прогнать `dotnet test DashSpec.slnx` (база 554 passed), `dotnet test tests/DashSpec.Architecture.Tests` (правило ADR-0103).
+5. Затем W10: перенос `Layout`/`Resolution`/`Analysis`/`Validation`/`Authoring`/`Runtime`/`Transforms` в `Execution.*` и удаление проекта.
 
 ## Риски и что их снимает
 
