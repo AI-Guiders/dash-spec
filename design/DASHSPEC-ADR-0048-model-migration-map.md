@@ -30,7 +30,7 @@ global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
 
 Всего в `src/DashSpec.Core/Model/` **51 тип** (без служебных: `FilterKind`, `SqlDialect`, `DataSourceKind`, `DataSourceSqlCarrier`, `LayoutScope` — это F#-DU, см. ниже).
 
-Инструмент: `python tools/model-shape-diff.py` (сравнивает состав и типы полей C#-модели и F#-IR, `--json` — машинный отчёт).
+Инвентарь в этой карте составлен вручную по определениям типов и потребителям. Отдельные генераторы алиасов и отчётов удалены: миграция ведётся вручную, по типу и его потребителям, а проверяется компилятором.
 
 | Группа | Типов | Что это значит |
 |--------|-------|----------------|
@@ -85,13 +85,17 @@ internal static class ModelOption
 }
 ```
 
-## Волны — это порядок **содержания**, а не порядок исполнения
+## Ручная стратегия миграции
 
-Порядок ниже — по замыканию зависимостей, от периферии к центру. Он полезен как чеклист «что смотреть», но **по отдельности волны неисполнимы**: см. следующий раздел.
+Генераторы удалены по решению оператора. Каждую группу мигрируем вручную: изучить F#-тип, найти всех C#-потребителей, добавить алиас именно этим проектам, удалить C#-объявление, собрать и прогнать тесты. Компилятор даёт точный список несовместимых мест.
+
+Модель связана графом, но это не означает, что нужен один большой PR: **независимые листья можно мигрировать по одному**, как уже показали `HostLinkDefinition`, `LayoutDefinition` и другие. Корневые типы (`DashboardDocument`, `CardDefinition`, `FilterDefinition`) имеют большой fan-out и потребуют отдельной согласованной партии.
+
+Таблица ниже — ручной инвентарь содержательных групп, а не план автоматически запускаемых волн.
 
 | Волна | Что мигрирует | Объём |
 |-------|----------------|-------|
-| **W0** | Инфраструктура: генератор алиасов, `ModelOption`, `tools/model-shape-diff.py` | — |
+| **W0** | Ручной список соответствий, решение по C#-only членам и тесты F#-IR | — |
 | **W1** | Каталог и оболочка хоста: `CatalogDocument`, `CatalogEntryDefinition`, `CatalogGroupDefinition`, `HostDocument`, `HostLinkDefinition` | ~15 файлов |
 | **W2** | Раскладка: `LayoutDefinition`, `PlacementDefinition`, `LayoutScope`, `LayoutBoardDefinition`, `LayoutBoardGroupDefinition`, `LayoutBoardNestDefinition`, `LayoutBoardEntry` | ~35 файлов |
 | **W3** | Оформление: `PaletteDefinition`, `PresentationBlock`, `SeriesTransformBlock`, `CardChromeDefinition`, `CardsChromeDefinition`, `CardVisibilityRule`, `LegendDefinition`, `TooltipDefinition`, `InspectPresentation`, `MatrixRenderLimitsDefinition`, `ExtensionBlockNode`, `ModuleExtensionsDefinition`, `ModuleExtensionImport`, `ModuleDiagramDefinition` | ~40 файлов |
@@ -103,18 +107,19 @@ internal static class ModelOption
 | **W9** | Удаление `src/DashSpec.Core/Model/*` и `DocumentModelMapper` (маппинг больше не нужен) | — |
 | **W10** | Перенос не-модельных частей `Core` в `Execution.*` (Layout 1525, Resolution 613, Analysis 529, Validation 616, Authoring 884, Runtime 565, Transforms 245 строк) и удаление проекта | 167 файлов |
 
-Проверка каждой волны: `dotnet build DashSpec.slnx` (предупреждения = ошибки), `dotnet test DashSpec.slnx` (база: 554 passed / 0 failed / 4 skipped), точечно `DashSpec.Architecture.Tests` (барьер «Host не ссылается на `Modeling.Parse`» — при прямом чтении IR его придётся пересмотреть) и `DashSpec.Core.Tests`.
+Проверка каждой ручной партии: `dotnet build DashSpec.slnx` (предупреждения = ошибки), затем `dotnet test DashSpec.slnx` (база: 554 passed / 0 failed / 4 skipped). Не запускать build и test одновременно: у них общие `bin/obj`.
 
 ## Прогресс
 
 | Шаг | Состояние |
 |-----|-----------|
 | **ADR-0103** — барьер «поверхности читают IR, но не разбирают» | ✅ сделано |
-| **B** — члены модели перенесены в F# (`FilterDefinition.Is*`, `FiltersChromeDefinition.Is*`, `ReportTimePolicy.ClipsQueries`, `DashboardDocument.Resolved*`, `MatrixRenderLimitsDefinition.Effective*` / `IsOversized`) | ✅ сделано, коммит `a67bd58` |
+| **B** — члены модели перенесены в F# (`FilterDefinition.Is*`, `FiltersChromeDefinition.Is*`, `ReportTimePolicy.ClipsQueries`, `DashboardDocument.Resolved*`, `MatrixRenderLimitsDefinition.Effective*` / `IsOversized`) | ✅ сделано; прямые F#-тесты добавлены |
 | **C** — не-модельный код вынесен из `Model/`: `VizAxisPresentation.cs` (133), `CategoryAxisOrder.cs` (102), `CardClickRefreshPlanner.cs` (37), `SeriesTransformSettings` → `Execution.Runtime` | ✅ сделано, коммит `733569e` |
 | **C (остаток)** — `DiagramKindInfo` (используется самим `Core` → переезд только внутри `Core`); `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
 | **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
+| **E** — ручная миграция независимых записей: `HostLinkDefinition`, layout/chrome/palette/tooltip-типы, `ExtensionBlockNode`, `CardFlowInputDefinition`, `DashflowTransformParameterDefinition`, `CatalogGroupDefinition`, `CardVisibilityRule`/mode | ✅ 17 C#-типов удалено; продолжаем вручную |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
 
@@ -138,7 +143,7 @@ internal static class ModelOption
 
 Топ файлов: `FlowCardExecution.cs` (56), `TabLayoutCompactor.cs` (24), `GrainFilterPresentation.cs` (20), `DashflowPathResolver.cs` (20), `MatrixPresentation.cs` (18), `FilterDisplaySource.cs` (18).
 
-Вывод: объём **не катастрофический** (дни, не недели), но это **одна большая правка**, а не серия независимых волн.
+Это был замер до первой ручной партии, а не прогноз оставшейся работы. Практика уже показала, что листья можно переключать отдельно с зелёной сборкой; объём миграции корневых типов будет измеряться по фактическим ошибкам компилятора.
 
 ### Препятствие 1 — снято (это была моя ошибка)
 
@@ -158,27 +163,29 @@ internal static class ModelOption
 
 **Следствие:** каталог отчётов мигрирует как любой другой тип модели; внешний генератор к этой миграции отношения не имеет. Блокирующих препятствий по каталогу нет.
 
-### Препятствие 2 — C#-only члены на типах модели
+### C#-члены модели: перенесённые и оставшиеся
 
-На C#-модели висят члены, которых нет в F# («логика внутри модели»):
+Следующие простые члены уже перенесены в F#-записи (`FilterTypes.fs`, `DocumentTypes.fs`, `CardTypes.fs`): `FilterDefinition.Is*`, `FiltersChromeDefinition.Is*`, `ReportTimePolicy.ClipsQueries`, `DashboardDocument.Resolved*`, `MatrixRenderLimitsDefinition.Effective*` / `IsOversized`. **Они пока не являются production SSOT**, потому что C#-корневые типы ещё используются; поведение нужно покрыть F#-тестами до алиасирования этих корней.
+
+Оставшиеся C#-члены, которые не относятся к данным модели:
 
 | Где | Что | Куда это должно уйти |
 |-----|-----|----------------------|
-| `DashboardDocument` | `ResolvedCardsChrome`, `ResolvedFormatDefaults`, `ResolvedTimePolicy`, `ResolvedCommandAliases`, `ResolvedModuleDiagrams`, `ResolvedChartChromePresets`, `ResolvedModuleTooltips`, `ResolvedRowTypeSchemas` + 5 статических пустышек | extension-методы в `Execution.*` |
-| `FilterDefinition` | `IsDayWidget`, `IsComboboxWidget`, `IsSelectWidget`, `IsSingleSelectField`, `IsBindScopeInline/Hidden/Tooltip` | extension-методы в `Execution.*` |
-| `FiltersChromeDefinition` | `IsBarLayout`, `IsSticky*`, `IsAutoApply`, `ToolbarDateLabelClass` и др. | extension-методы |
+| `DashboardDocument` | часть `Resolved*` перенесена; `ResolvedModuleDiagrams`, `ResolvedChartChromePresets`, `ResolvedModuleTooltips`, `ResolvedRowTypeSchemas` + пустые словари | оставить F# extension/member; не переносить в C# execution |
+| `FilterDefinition` | `IsDayWidget`, `IsComboboxWidget`, `IsSelectWidget`, `IsSingleSelectField`, `IsBindScopeInline/Hidden/Tooltip` уже продублированы в F# | покрыть F#-тестами; C#-дубликаты уйдут при алиасировании типа |
+| `FiltersChromeDefinition` | предикаты уже продублированы в F#; `ToolbarDateLabelClass` (CSS) относится к UI | предикаты покрыть и убрать C#-копии; CSS оставить в Presentation |
 | `LayoutBoardDefinition` | `RowCount`, `ColumnCount`, `Rows`, `FromCardRows` | extension-методы (часть уже есть в F#) |
 | `MatrixRenderLimitsDefinition` | `EffectiveMaxCells/AxisLabels`, `IsOversized`, `DescribeOversize` | extension-методы / F# |
 | `ReportTimePolicy` | `ClipsQueries` | extension-методы / F# |
 
-Это и есть настоящий «второй источник истины»: не данные, а **поведение**. Его надо вынести из модели до/во время миграции, иначе F#-тип его не отдаст.
+Фабрики/парсеры/локализованный текст не переносить в F#-модель только ради совпадения API. Члены, являющиеся частью семантики IR, принадлежат F#; UI, разбор и execution-алгоритмы — своим слоям.
 
 ### Исполнимая процедура
 
-1. Вынести C#-only члены (§Препятствие 2) в extension-методы `Execution.*` — сборка остаётся зелёной, поведение не меняется.
-2. Включить алиасы во всех потребителях **и** в `DashSpec.Core` (`python tools/gen-model-aliases.py --write`), удалить `src/DashSpec.Core/Model/*.cs`, дальше идти по списку `dotnet build` до нуля ошибок (ожидаемо 400–600 мест, из них ~200 механических).
-3. Прогнать `dotnet test DashSpec.slnx` (база 554 passed), `dotnet test tests/DashSpec.Architecture.Tests` (правило ADR-0103).
-4. Затем W10: перенос `Layout`/`Resolution`/`Analysis`/`Validation`/`Authoring`/`Runtime`/`Transforms` в `Execution.*` и удаление проекта.
+1. Для каждого типа вручную сверить форму F#-IR, C#-потребителей и mapper.
+2. Если тип независим: добавить алиас потребителям, удалить C#-объявление, собрать решение, устранить ошибки компилятора.
+3. Перед корневыми типами добавить F#-тесты для перенесённых членов и проверить поля, которые mapper раньше терял.
+4. После удаления модели разобрать и удалить `DocumentModelMapper`; затем переносить `Layout`/`Resolution`/`Analysis`/`Validation`/`Authoring`/`Runtime`/`Transforms` в `Execution.*` и растворять `Core`.
 
 ## Риски и что их снимает
 
@@ -191,6 +198,4 @@ internal static class ModelOption
 
 ## Оценка
 
-- Модель (W1–W9): **3–5 дней**.
-- Растворение `Core` (W10): **10–15 дней**.
-- Итого: **15–20 человеко-дней**, 10 волн, каждая заканчивается зелёной сборкой.
+Старую оценку 15–20 человеко-дней отозвана: она опиралась на неверное предположение о единственной большой правке и не учитывала ручное прохождение зависимостей. Новая оценка будет дана после миграции корневых типов (`DashboardDocument`, `CardDefinition`, `FilterDefinition`) и замера количества ручных исправлений.

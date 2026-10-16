@@ -24,8 +24,6 @@ public enum DashflowSourceFromKind
 
 public sealed record DashflowTransformerPortDefinition(string Name, string RowType);
 
-public sealed record DashflowTransformParameterDefinition(string Key, string Value);
-
 public sealed record DashflowTransformStepDefinition(
     string PluginId,
     IReadOnlyList<DashflowTransformParameterDefinition> Parameters);
@@ -42,8 +40,3 @@ public sealed record DashflowLinkDefinition(
     string? FromPort,
     string ToNode,
     string? ToPort);
-
-public sealed record CardFlowInputDefinition(
-    string Alias,
-    string NodeId,
-    string PortName);
