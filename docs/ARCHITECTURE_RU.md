@@ -135,7 +135,7 @@ DashSpec выбирает **четвёртый путь**.
 
 # 4. Компоненты (C4, уровень 3)
 
-![Диаграмма 3. Слои и правило зависимостей](architecture/diagrams/03-layers.png)
+![Диаграмма 3. Слои и правило зависимостей](architecture/diagrams/03-layers.png){width=5.3in}
 
 *Диаграмма 3 — шесть слоёв и направление зависимостей. Источник: [`03-layers.mmd`](architecture/diagrams/03-layers.mmd).*
 

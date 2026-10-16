@@ -37,8 +37,23 @@ if (-not $pandoc) {
 if (-not $pandoc) { throw 'Не найден pandoc. Установка: winget install JohnMacFarlane.Pandoc' }
 
 Write-Host "pandoc: $pandoc"
-& $pandoc $Source -o $Output --resource-path=$docsRoot --toc-depth=3
-if ($LASTEXITCODE -ne 0) { throw "pandoc вернул код $LASTEXITCODE" }
+$reference = Join-Path $here 'reference.docx'
+$pandocArgs = @($Source, '-o', $Output, "--resource-path=$docsRoot", '--toc-depth=3')
+if (Test-Path $reference) {
+    $pandocArgs += "--reference-doc=$reference"
+    Write-Host "reference: $reference"
+}
+
+# Сообщения pandoc в stderr при $ErrorActionPreference='Stop' обрывают процесс,
+# поэтому забираем вывод сами и проверяем код возврата.
+$previousNative = $PSNativeCommandUseErrorActionPreference
+$PSNativeCommandUseErrorActionPreference = $false
+$pandocOutput = & $pandoc @pandocArgs 2>&1 | Out-String
+$pandocExit = $LASTEXITCODE
+$PSNativeCommandUseErrorActionPreference = $previousNative
+
+if ($pandocOutput.Trim()) { Write-Host $pandocOutput.Trim() }
+if ($pandocExit -ne 0) { throw "pandoc вернул код $pandocExit" }
 
 # --- 2. оглавление Word -----------------------------------------------------
 try {

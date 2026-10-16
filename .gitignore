@@ -35,3 +35,6 @@ scripts/_*.py
 scripts/run_mig.py
 scripts/migrate_file.py
 *.dashdiagram.full
+
+# Word lock files
+~\$*
