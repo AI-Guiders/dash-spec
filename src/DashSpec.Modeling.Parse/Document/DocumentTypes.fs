@@ -108,6 +108,11 @@ type ReportTimePolicy =
       WorkTimeColumn: string option
       WorkCalendar: WorkCalendarDefinition option }
 
+    member this.ClipsQueries =
+        this.Basis = ReportTimeBasis.Working
+        && (this.Apply = ReportTimeApply.Clip || this.Apply = ReportTimeApply.Both)
+        && (this.WorkTimeColumn |> Option.exists (String.IsNullOrWhiteSpace >> not))
+
 [<CLIMutable>]
 type DashboardDocument =
     { Id: string
@@ -157,6 +162,28 @@ module DashboardDocument =
         Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
 
 type DashboardDocument with
+    member this.ResolvedCardsChrome =
+        match this.CardsChrome with
+        | Some chrome -> chrome
+        | None -> { FoldPolicy = CardsFoldPolicy.None }
+
+    member this.ResolvedFormatDefaults =
+        this.FormatDefaults
+
+    member this.ResolvedTimePolicy =
+        match this.TimePolicy with
+        | Some policy -> policy
+        | None ->
+            { Basis = ReportTimeBasis.Calendar
+              Apply = ReportTimeApply.Clip
+              WorkTimeColumn = None
+              WorkCalendar = None }
+
+    member this.ResolvedCommandAliases =
+        match this.CommandAliases with
+        | None -> DashboardDocument.emptyCommandAliases
+        | Some aliases -> aliases
+
     member this.ResolvedModuleDiagrams =
         match this.ModuleDiagrams with
         | None -> DashboardDocument.emptyModuleDiagrams

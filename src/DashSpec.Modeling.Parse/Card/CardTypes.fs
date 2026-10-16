@@ -79,6 +79,17 @@ type MatrixRenderLimitsDefinition =
     { MaxCells: int option
       MaxAxisLabels: int option }
 
+    member this.EffectiveMaxCells =
+        defaultArg this.MaxCells 2500
+
+    member this.EffectiveMaxAxisLabels =
+        defaultArg this.MaxAxisLabels 80
+
+    member this.IsOversized(xCount: int, yCount: int) =
+        xCount * yCount > this.EffectiveMaxCells
+        || xCount > this.EffectiveMaxAxisLabels
+        || yCount > this.EffectiveMaxAxisLabels
+
 [<CLIMutable>]
 type ExtensionBlockNode =
     { Keyword: string
