@@ -1,0 +1,66 @@
+%% Диаграмма 2. Контейнеры (C4 уровень 2)
+flowchart LR
+  classDef client fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+  classDef surface fill:#438dd5,stroke:#2e6295,color:#ffffff
+  classDef platform fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef extension fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+  classDef store fill:#6b6b6b,stroke:#3d3d3d,color:#ffffff
+
+  subgraph CLIENTS["Клиентская сторона"]
+    direction TB
+    BROWSER["Браузер зрителя<br/>Blazor Server, SignalR"]:::client
+    STUDIO["DashSpec Studio<br/>desktop: авторинг и превью"]:::client
+    PARTNER["SPA или портал партнёра<br/>через BFF, план"]:::client
+  end
+
+  subgraph SURFACES["Surfaces — то, что разворачивается"]
+    direction TB
+    HOST["DashSpec.Host<br/>точка входа деплоя:<br/>Kestrel-служба, доступ,<br/>каталог, загрузка плагинов"]:::surface
+    BLZ["Surface.Blazor<br/>страницы, компоненты,<br/>команды"]:::surface
+    VIEWER["Viewer<br/>реестры плагинов,<br/>диспетчер действий"]:::surface
+    PRES["Presentation, Filters, Viz<br/>UI-контракты<br/>и хосты виджетов"]:::surface
+  end
+
+  subgraph PLATFORM["DashSpec Platform — ядро без пользовательского интерфейса"]
+    direction TB
+    MODEL["Modeling.Core и Modeling.Parse (F#)<br/>лексер, парсеры, IR,<br/>UnitIndex, конвейер компиляции"]:::platform
+    ECORE["Execution.Core<br/>Resolve: эффективная модель,<br/>мост IR в модель исполнения"]:::platform
+    ECOMP["Execution.Compilation<br/>ReportCompiler, QueryCompiler,<br/>диалекты SQL"]:::platform
+    ERUN["Execution.Runtime<br/>ReportSession, сборка payload,<br/>исполнитель dashflow"]:::platform
+    ABS["Abstractions<br/>порты, DTO,<br/>типизированные строки"]:::platform
+  end
+
+  subgraph EXTENSIONS["Расширения — подключаемые сборки"]
+    direction TB
+    CONN["connectors/<br/>SqlServer, Postgres"]:::extension
+    VIZP["plugins/viz<br/>Chart.js, CSS-grid,<br/>таблицы, KPI"]:::extension
+    FILTP["plugins/filter<br/>виджеты фильтров"]:::extension
+    PRODP["продуктовые плагины<br/>export, view-switch"]:::extension
+  end
+
+  REPO["Git-репозиторий<br/>*.ds, *.dsproj, TOML, SQL"]:::store
+  DATABASE["База данных<br/>представления и таблицы"]:::store
+
+  BROWSER --> HOST
+  STUDIO --> ABS
+  PARTNER --> BLZ
+  HOST --> BLZ
+  BLZ --> VIEWER
+  BLZ --> PRES
+  VIEWER --> ABS
+  REPO --> HOST
+  HOST --> MODEL
+  MODEL --> ECORE
+  ECORE --> ECOMP
+  ECOMP --> ERUN
+  MODEL --> ABS
+  ECORE --> ABS
+  ERUN --> ABS
+  ABS --> CONN
+  ABS --> VIZP
+  ABS --> FILTP
+  ABS --> PRODP
+  ERUN --> CONN
+  VIEWER --> VIZP
+  VIEWER --> FILTP
+  CONN --> DATABASE

@@ -1,0 +1,17 @@
+%% Диаграмма 3. Слои и правило зависимостей (стрелки идут только вниз)
+flowchart TB
+  classDef text fill:#f5d6a0,stroke:#b58a3a,color:#111111
+  classDef fsharp fill:#a3c4f3,stroke:#3d6ea8,color:#111111
+  classDef csharp fill:#c7e5c0,stroke:#4f7d2d,color:#111111
+  classDef contract fill:#e2d3f3,stroke:#7a58a8,color:#111111
+  classDef plugin fill:#f3c7cc,stroke:#a85a63,color:#111111
+  classDef surface fill:#cfd8e3,stroke:#5b6b7d,color:#111111
+
+  L1["<b>Слой 1. Авторинг — текст в Git</b><br/>*.ds · *.dsproj · TOML"]:::text
+  L2["<b>Слой 2. Modeling (F#) — модель предметной области</b><br/>лексер · парсеры · IR · конвейер компиляции · диагностики"]:::fsharp
+  L3["<b>Слой 3. Execution (C#) — механика исполнения</b><br/>разрешение модели · SQL-компиляция · сессия · payload · dashflow"]:::csharp
+  L4["<b>Слой 4. Abstractions — контракты</b><br/>IReportSession · IDataSourceConnector · IVizPlugin · TypedRowBatch"]:::contract
+  L5["<b>Слой 5. Extensions — плагины</b><br/>connectors · viz · filter · transform · type · interaction"]:::plugin
+  L6["<b>Слой 6. Surfaces — приложения</b><br/>Host · Surface.Blazor · Viewer · Presentation"]:::surface
+
+  L1 --> L2 --> L3 --> L4 --> L5 --> L6

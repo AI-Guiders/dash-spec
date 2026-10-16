@@ -1,0 +1,32 @@
+%% Диаграмма 11. Развёртывание
+flowchart TB
+  classDef dev fill:#e2d3f3,stroke:#7a58a8,color:#111111
+  classDef run fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef store fill:#6b6b6b,stroke:#3d3d3d,color:#ffffff
+  classDef user fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+
+  subgraph DEV["Среда разработки и поставки"]
+    direction LR
+    VSC["VS Code и CodeCenter<br/>подсветка, LSP, диагностика"]:::dev
+    CI["CI: сборка, тесты L1-L4,<br/>анализаторы, drift gate"]:::dev
+    NUGET["SDK для авторов плагинов<br/>DashSpec.Abstractions"]:::dev
+  end
+
+  GIT["<b>Git-репозиторий продукта</b><br/>*.ds · *.dsproj · TOML · SQL"]:::dev
+  BOOT["<b>Bootstrap хоста</b><br/>dash-spec.toml → module host → catalog<br/>плюс приём webhook и синхронизация каталога"]:::run
+  KESTREL["<b>Kestrel и Blazor Server</b><br/>HTTP, SignalR, статика, доступ по ключу"]:::run
+  LOADER["<b>Загрузчик плагинов</b><br/>bundle + реестры возможностей"]:::run
+  WITDB[("WitDB<br/>настройки хоста")]:::store
+  SQL[("SQL Server / PostgreSQL")]:::store
+  BROWSER["Зритель<br/>браузер или desktop-клиент"]:::user
+
+  VSC --> GIT
+  CI --> GIT
+  NUGET --> GIT
+  GIT -->|"git pull и webhook"| BOOT
+  BOOT --> KESTREL
+  BOOT --> LOADER
+  WITDB --> KESTREL
+  KESTREL --> SQL
+  LOADER --> SQL
+  KESTREL --> BROWSER

@@ -1,0 +1,17 @@
+%% Диаграмма 5b. Конвейер компиляции — проверка, модель исполнения, композиция
+flowchart TB
+  classDef fsharp fill:#a3c4f3,stroke:#3d6ea8,color:#111111
+  classDef csharp fill:#c7e5c0,stroke:#4f7d2d,color:#111111
+  classDef diag fill:#f3c7cc,stroke:#a85a63,color:#111111
+  classDef out fill:#cfd8e3,stroke:#5b6b7d,color:#111111
+
+  PIPE["<b>DocumentCompilePipeline — единый оркестратор</b><br/>фаза 1: data flow → слоты карточек<br/>фаза 2: placement flow → виджеты фильтров<br/>фаза 3: show, wire, action → chrome и события"]:::fsharp
+  MAT["<b>Материализация и проводка</b><br/>узел dashflow → источник данных карточки ·<br/>единый граф проводки для Studio"]:::fsharp
+  VAL["<b>Проверки</b><br/>совместимость · полнота · раскладка · время"]:::fsharp
+  DOC["<b>Модель для исполнения (C#)</b>"]:::csharp
+  COMPOSE["<b>Композиция: ComposedDashboardView</b><br/>навигация · начальный маршрут · слоты · chrome —<br/>явно, без догадок интерфейса"]:::csharp
+  SHELL["<b>Рендер в оболочке хоста</b>"]:::out
+  DIAG["<b>Диагностики</b><br/>код · позиция · подсказка"]:::diag
+
+  PIPE --> MAT --> VAL --> DOC --> COMPOSE --> SHELL
+  VAL -.->|"семантические ошибки<br/>и предупреждения"| DIAG

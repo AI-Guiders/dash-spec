@@ -8,6 +8,14 @@
 | **[HOWTO_RU.md](HOWTO_RU.md)** | How-to: рецепты от demo Host до catalog / службы |
 | **[DIAGRAM_KINDS_ROADMAP_RU.md](DIAGRAM_KINDS_ROADMAP_RU.md)** | Какие kinds добавлять дальше (world census + приоритеты) |
 
+## Архитектура решения
+
+| Документ | Тема |
+|----------|------|
+| **[ARCHITECTURE_RU.md](ARCHITECTURE_RU.md)** | Подробное описание архитектуры: C4-модель, слои, конвейеры, потоки данных, сильные и слабые стороны |
+| [architecture/DashSpec-Architecture-RU.docx](architecture/DashSpec-Architecture-RU.docx) | Тот же документ в формате Word (диаграммы — картинки) |
+| [architecture/diagrams/](architecture/diagrams/) | Исходники диаграмм (Mermaid) + SVG- и PNG-версии |
+
 ## Справочники
 
 | Документ | Тема |

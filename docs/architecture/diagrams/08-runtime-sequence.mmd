@@ -1,0 +1,26 @@
+%% Диаграмма 8. Сценарий: зритель меняет фильтр и карточки обновляются
+sequenceDiagram
+  autonumber
+  actor U as Зритель
+  participant UI as Surface (Blazor)
+  participant S as ReportSession
+  participant F as Реестр фильтров
+  participant Q as QueryCompiler
+  participant C as Коннектор
+  participant P as Payload-билдер
+  participant V as Viz-плагин
+
+  U->>UI: меняет значение фильтра
+  UI->>S: SetFilter(имя, значение)
+  S->>F: нормализация значения и области действия
+  F-->>S: список затронутых карточек
+  S->>Q: компиляция SQL из bind и фильтров
+  Q-->>S: SQL, параметры, схема строк
+  S->>C: QueryAsync(CompiledQuery)
+  C-->>S: TypedRowBatch
+  S->>P: построить payload карточки
+  P-->>S: payload: chart, table, matrix, scalar
+  S-->>UI: набор обновлённых карточек
+  UI->>V: отрисовать payload
+  V-->>U: обновлённый экран
+  Note over S,Q: Фильтр не компилирует SQL сам,<br/>а передаёт намерение компилятору запроса.

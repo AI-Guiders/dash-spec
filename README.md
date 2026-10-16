@@ -12,6 +12,7 @@
 
 | Документ | Для кого |
 |----------|----------|
+| **[docs/ARCHITECTURE_RU.md](docs/ARCHITECTURE_RU.md)** | Архитектура решения: C4-модель, слои, конвейеры, сильные и слабые стороны (есть [DOCX](docs/architecture/DashSpec-Architecture-RU.docx)) |
 | **[docs/AUTHORING_GUIDE_RU.md](docs/AUTHORING_GUIDE_RU.md)** | Authoring Guide: модель, файлы, bind, клики, dogfood |
 | **[docs/HOWTO_RU.md](docs/HOWTO_RU.md)** | How-to: локальный Host, первый card, кросс-фильтры, catalog, runtime, служба |
 | [docs/README.md](docs/README.md) | Оглавление всей папки `docs/` |

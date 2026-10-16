@@ -1,0 +1,33 @@
+%% Диаграмма 4a. Ствол платформы: реальные зависимости проектов
+flowchart TB
+  classDef base fill:#cfe3cf,stroke:#4f7d2d,color:#111111
+  classDef model fill:#a3c4f3,stroke:#3d6ea8,color:#111111
+  classDef legacy fill:#ffd9a0,stroke:#b57b1a,color:#111111
+  classDef exec fill:#c7e5c0,stroke:#4f7d2d,color:#111111
+
+  ECOMP["<b>Execution.Compilation</b><br/>компилятор отчёта и запросов"]:::exec
+  ECORE["<b>Execution.Core</b><br/>разрешение модели"]:::exec
+  ERUN["<b>Execution.Runtime</b><br/>сессия, payload, dashflow"]:::exec
+  CORE["<b>DashSpec.Core</b><br/>переходный слой: IR на C# и мосты"]:::legacy
+  MPARSE["<b>Modeling.Parse (F#)</b><br/>лексер, парсеры, UnitIndex, конвейер"]:::model
+  MCORE["<b>Modeling.Core (F#)</b><br/>диагностики, типы, графы"]:::model
+  ABS["<b>Abstractions</b><br/>порты, DTO"]:::base
+  AN["<b>Analyzers</b><br/>Roslyn-правила"]:::base
+
+  ECOMP --> ECORE
+  ECOMP --> ERUN
+  ECOMP --> CORE
+  ECOMP --> ABS
+  ECOMP --> AN
+  ECORE --> ERUN
+  ECORE --> CORE
+  ECORE --> MPARSE
+  ECORE --> ABS
+  ERUN --> CORE
+  ERUN --> ABS
+  ERUN --> AN
+  CORE --> MPARSE
+  CORE --> ABS
+  CORE --> AN
+  MPARSE --> MCORE
+  MPARSE --> ABS

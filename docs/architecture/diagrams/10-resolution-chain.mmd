@@ -1,0 +1,34 @@
+%% Диаграмма 10. Реестр разрешений: кто побеждает
+flowchart TB
+  classDef weak fill:#e8e8e8,stroke:#9a9a9a,color:#111111
+  classDef mid fill:#a3c4f3,stroke:#3d6ea8,color:#111111
+  classDef strong fill:#1168bd,stroke:#0b4884,color:#ffffff
+  classDef fb fill:#f0a30a,stroke:#a86f05,color:#111111
+  classDef mode fill:#7ab648,stroke:#4f7d2d,color:#ffffff
+
+  subgraph CHAIN["Пример: заголовок отчёта в режиме каталога"]
+    direction LR
+    W["catalog.entry.title<br/>самый слабый источник"]:::weak --> M["report.title<br/>источник модуля"]:::mid --> S["побеждает самый правый заданный"]:::strong --> F["fallback: entry.id<br/>если ничего не задано"]:::fb
+  end
+
+  MODES["Режим загрузки определяет таблицу цепочек"]:::mode
+  M1["catalog.prod — открытие через каталог"]:::mode
+  M2["dashboard.embed — встраивание вкладки"]:::mode
+  M3["soak.dev — разработка без каталога"]:::mode
+  M4["host.ops — настройки оболочки хоста"]:::mode
+
+  MODES --> M1
+  MODES --> M2
+  MODES --> M3
+  MODES --> M4
+  M1 --> CHAIN
+  M2 --> CHAIN
+  M3 --> CHAIN
+  M4 --> CHAIN
+
+  REG["Единый реестр слотов<br/>документ + один модуль кода"]:::strong
+  REG --> SL1["Заголовки: отчёт, вкладка, страница,<br/>карточка, группа компоновки"]:::mid
+  REG --> SL2["Подписи: фильтр, ось диаграммы,<br/>сообщение заглушки"]:::mid
+  REG --> SL3["Оформление графика: preset, presentation,<br/>override на карточке"]:::mid
+  REG --> SL4["Геометрия: раскладка карточек,<br/>панель фильтров, внутренняя сетка карточки"]:::mid
+  REG --> SL5["Настройки хоста: каталог, тема,<br/>часовой пояс, подключение к БД"]:::mid
