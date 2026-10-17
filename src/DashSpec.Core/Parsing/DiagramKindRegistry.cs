@@ -12,11 +12,7 @@ public static class DiagramKindRegistry
     {
         if (FsharpDiagramKindRegistry.tryResolve(kind) is (true, { } spec))
         {
-            info = new DiagramKindInfo(
-                spec.Id,
-                (DiagramDataFamily)(int)spec.DataFamily,
-                spec.SupportsTopLimit,
-                spec.AllowExtensionProperties);
+            info = spec;
             return true;
         }
 

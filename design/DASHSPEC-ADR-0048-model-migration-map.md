@@ -116,14 +116,14 @@ internal static class ModelOption
 | **ADR-0103** — барьер «поверхности читают IR, но не разбирают» | ✅ сделано |
 | **B** — члены модели перенесены в F# (`FilterDefinition.Is*`, `FiltersChromeDefinition.Is*`, `ReportTimePolicy.ClipsQueries`, `DashboardDocument.Resolved*`, `MatrixRenderLimitsDefinition.Effective*` / `IsOversized`) | ✅ сделано; прямые F#-тесты добавлены |
 | **C** — не-модельный код вынесен из `Model/`: `VizAxisPresentation.cs` (133), `CategoryAxisOrder.cs` (102), `CardClickRefreshPlanner.cs` (37), `SeriesTransformSettings` → `Execution.Runtime` | ✅ сделано, коммит `733569e` |
-| **C (остаток)** — `DiagramKindInfo` (используется самим `Core` → переезд только внутри `Core`); `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
+| **C (остаток)** — `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
 | **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
-| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition`, `CardDefinition` | ✅ 26 C#-типов удалено; продолжаем вручную |
+| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition`, `CardDefinition`, `DiagramDataFamily`, `DiagramKindInfo` | ✅ 28 C#-типов удалено; продолжаем вручную |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
 
-Проверка партии 2026-10-17: `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `FilterDefinition`, `DataSourceDefinition`, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlot` и `CardDefinition` используются напрямую из F#; остаются C# `DashboardDocument`/другие вложенные декларации, `CardClickBehaviour` и `DocumentModelMapper`.
+Проверка партии 2026-10-17: `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `FilterDefinition`, `DataSourceDefinition`, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlot`, `CardDefinition`, `DiagramDataFamily` и `DiagramKindInfo` используются напрямую из F#; остаются C# `DashboardDocument`/другие вложенные декларации, `CardClickBehaviour` и `DocumentModelMapper`.
 
 ## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
 

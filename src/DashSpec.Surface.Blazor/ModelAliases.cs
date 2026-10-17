@@ -35,3 +35,5 @@ global using DataSourceSqlCarrier = DashSpec.Modeling.Parse.DataSource.DataSourc
 global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
 global using TabDefinition = DashSpec.Modeling.Parse.Document.TabDefinition;
 global using ReportPageDefinition = DashSpec.Modeling.Parse.Document.ReportPageDefinition;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
+global using DiagramKindInfo = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramKindSpec;

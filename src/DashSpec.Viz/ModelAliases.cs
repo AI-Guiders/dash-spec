@@ -15,3 +15,5 @@ global using MatrixRenderLimitsDefinition = DashSpec.Modeling.Parse.Card.MatrixR
 global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
 global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
 global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
+global using DiagramKindInfo = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramKindSpec;
