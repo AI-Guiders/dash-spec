@@ -1,5 +1,4 @@
 using DashSpec.Abstractions.Query;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;

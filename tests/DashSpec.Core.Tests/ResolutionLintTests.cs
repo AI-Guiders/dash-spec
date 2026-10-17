@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 using DashSpec.Core.Resolution;
 using Xunit;
 
