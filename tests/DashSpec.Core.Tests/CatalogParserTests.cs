@@ -20,7 +20,7 @@ public sealed class CatalogParserTests
               dashspec "demo-analytics.ds"
             """;
 
-        var catalog = CatalogParser.Parse(text);
+        var catalog = CatalogReader.Parse(text);
 
         Assert.Equal("demo", catalog.Id);
         Assert.Equal("soak", catalog.DefaultEntryId);
@@ -37,7 +37,7 @@ public sealed class CatalogParserTests
             entry overview as "Overview" dashspec "demo-soak.ds"
             """;
 
-        var catalog = CatalogParser.Parse(text);
+        var catalog = CatalogReader.Parse(text);
 
         Assert.Equal("overview", catalog.DefaultEntryId);
         Assert.Single(catalog.Entries);
@@ -53,7 +53,7 @@ public sealed class CatalogParserTests
               tab versions
             """;
 
-        var catalog = CatalogParser.Parse(text);
+        var catalog = CatalogReader.Parse(text);
 
         Assert.Equal("versions", catalog.Entries[0].InitialTabId.Value);
     }
@@ -67,6 +67,6 @@ public sealed class CatalogParserTests
             entry a dashspec "b.dashspec"
             """;
 
-        Assert.Throws<DashSpecParseException>(() => CatalogParser.Parse(text));
+        Assert.Throws<DashSpecParseException>(() => CatalogReader.Parse(text));
     }
 }

@@ -142,11 +142,11 @@ public static class DashSpecDiagnosticService
         string specDirectory,
         DashSpecParseOptions parseOptions)
     {
-        var catalog = CatalogParser.Parse(text);
+        var catalog = CatalogReader.Parse(text);
         var findings = new List<ResolutionLintFinding>();
         foreach (var entry in catalog.Entries)
         {
-            var specPath = CatalogParser.ResolveEntrySpecPath(catalogPath, entry.DashspecPath);
+            var specPath = CatalogReader.ResolveEntrySpecPath(catalogPath, entry.DashspecPath);
             var specDirectoryForEntry = Path.GetDirectoryName(specPath)!;
             var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectoryForEntry, parseOptions);
             findings.AddRange(ResolutionLint.Analyze(document, entry));

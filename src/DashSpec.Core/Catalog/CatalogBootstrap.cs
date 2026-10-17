@@ -9,5 +9,5 @@ public sealed record CatalogBootstrap(CatalogDocument Document, string FullPath)
         ?? throw new InvalidOperationException($"Catalog entry '{entryId}' not found.");
 
     public string ResolveEntrySpecFullPath(string entryId) =>
-        CatalogParser.ResolveEntrySpecPath(FullPath, RequireEntry(entryId).DashspecPath);
+        CatalogReader.ResolveEntrySpecPath(FullPath, RequireEntry(entryId).DashspecPath);
 }

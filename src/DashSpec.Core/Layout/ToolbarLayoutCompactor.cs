@@ -17,7 +17,7 @@ public static class ToolbarLayoutCompactor
                     document.ToolbarBoard.Value,
                     columns,
                     "Toolbar",
-                    token => FilterLayoutRefResolver.Resolve(token, document.Filters, "Toolbar")),
+                    token => FilterLayoutRefBridge.Resolve(token, document.Filters, "Toolbar")),
                 StringComparer.OrdinalIgnoreCase);
             LayoutPlacementResolution.ApplyFilterPlacementOverrides(document.Filters, layout);
             return layout;
@@ -102,7 +102,7 @@ public static class ToolbarLayoutCompactor
             foreach (var token in row)
             {
                 var cell = LayoutBoardRowPlacer.ParseCell(token, "Toolbar", compactedRow + 1);
-                var filterName = FilterLayoutRefResolver.Resolve(cell.RefToken, filters, "Toolbar");
+                var filterName = FilterLayoutRefBridge.Resolve(cell.RefToken, filters, "Toolbar");
                 if (visibleFilterNames.Contains(filterName))
                 {
                     visibleInRow.Add(filterName);

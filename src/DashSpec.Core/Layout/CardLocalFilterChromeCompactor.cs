@@ -49,7 +49,7 @@ public static class CardLocalFilterChromeCompactor
             return ApplySlotId;
         }
 
-        return FilterLayoutRefResolver.Resolve(token, filterDefs, $"Card '{card.Id}' filters layout");
+        return FilterLayoutRefBridge.Resolve(token, filterDefs, $"Card '{card.Id}' filters layout");
     }
 
     /// <summary>Chrome row weights define a local grid (e.g. 2+1+1 → 4 cols), not the page layout width.</summary>

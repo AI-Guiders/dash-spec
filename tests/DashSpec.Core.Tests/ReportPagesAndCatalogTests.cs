@@ -132,7 +132,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_catalog_group_assigns_group_id()
     {
-        var catalog = CatalogParser.Parse("""
+        var catalog = CatalogReader.Parse("""
             module catalog demo
             
             default soak
