@@ -3,15 +3,6 @@
 global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;
 global using FiltersChromeDefinition = DashSpec.Modeling.Parse.Filter.FiltersChromeDefinition;
 global using SqlDialect = DashSpec.Modeling.Parse.Document.SqlDialect;
-global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
-global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
-global using PlacementDefinition = DashSpec.Modeling.Parse.Layout.PlacementDefinition;
-global using LayoutBoardNestDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardNestDefinition;
-global using PaletteDefinition = DashSpec.Modeling.Parse.Palette.PaletteDocument;
-global using CardBoundFilterChrome = DashSpec.Modeling.Parse.Card.CardBoundFilterChrome;
-global using CardFoldMode = DashSpec.Modeling.Parse.Card.CardFoldMode;
-global using CardChromeDefinition = DashSpec.Modeling.Parse.Card.CardChromeDefinition;
-global using CardsFoldPolicy = DashSpec.Modeling.Parse.Card.CardsFoldPolicy;
 global using CardsChromeDefinition = DashSpec.Modeling.Parse.Card.CardsChromeDefinition;
 global using TooltipDefinition = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
