@@ -29,12 +29,8 @@ public static class CardDiagramSlotCatalog
 
     public static string ResolvePrimarySlotRef(CardDefinition card)
     {
-        if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef))
-        {
-            return card.DiagramSlotRef;
-        }
-
-        return CardInteriorSlots.Diagram;
+        var slotRef = card.DiagramSlotRef?.Value;
+        return string.IsNullOrWhiteSpace(slotRef) ? CardInteriorSlots.Diagram : slotRef;
     }
 
     public static bool IsDiagramSlotToken(CardDefinition card, string token)

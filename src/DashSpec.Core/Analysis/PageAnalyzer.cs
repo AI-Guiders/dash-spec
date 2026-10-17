@@ -49,7 +49,7 @@ internal static class PageAnalyzer
             }
 
             var tabCards = document.Cards
-                .Where(card => string.Equals(card.TabId, tab.Id, StringComparison.OrdinalIgnoreCase))
+                .Where(card => string.Equals(card.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             ValidateTabCardsInPages(tabCards, tabPages, tab.Id);
@@ -68,16 +68,17 @@ internal static class PageAnalyzer
 
         foreach (var card in tabCards)
         {
-            if (string.IsNullOrWhiteSpace(card.PageId))
+            var pageId = card.PageId?.Value;
+            if (string.IsNullOrWhiteSpace(pageId))
             {
                 throw new DashSpecParseException(
                     $"Card '{card.Id}' must be inside a page block when tab '{tabId}' declares pages.");
             }
 
-            if (!pageIdSet.Contains(card.PageId))
+            if (!pageIdSet.Contains(pageId))
             {
                 throw new DashSpecParseException(
-                    $"Card '{card.Id}' references unknown page '{card.PageId}' on tab '{tabId}'.");
+                    $"Card '{card.Id}' references unknown page '{pageId}' on tab '{tabId}'.");
             }
         }
     }
@@ -90,7 +91,7 @@ internal static class PageAnalyzer
         foreach (var page in tabPages)
         {
             var pageCards = tabCards
-                .Where(card => string.Equals(card.PageId, page.Id, StringComparison.OrdinalIgnoreCase))
+                .Where(card => string.Equals(card.PageId?.Value, page.Id, StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (pageCards.Count == 0 || page.LayoutBoard is null)
             {

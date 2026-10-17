@@ -103,8 +103,8 @@ public class DashboardParseTests
 """);
 
         Assert.Equal(8, doc.Layout.GapPx);
-        Assert.Equal(6, doc.Cards[0].Placement?.Span);
-        Assert.Equal(1, doc.Cards[0].Placement?.Row);
+        Assert.Equal(6, doc.Cards[0].Placement?.Value.Span);
+        Assert.Equal(1, doc.Cards[0].Placement?.Value.Row);
     }
 
     [Fact]
@@ -483,11 +483,11 @@ public class DashboardParseTests
         Assert.Equal("peak_concurrent_apps", diagram.Properties["value"]);
         Assert.Equal("Разных ПО", diagram.Properties["value_as"]);
         Assert.NotNull(card.Tooltip);
-        Assert.Equal("peak_apps", card.Tooltip!.Id);
+        Assert.Equal("peak_apps", card.Tooltip!.Value.Id);
         Assert.NotNull(card.Inspect);
-        Assert.Equal("peak_apps", card.Inspect!.TooltipId);
-        Assert.Equal("Состав в пике", card.Inspect.Label);
-        Assert.Equal("list", card.Inspect.Format);
+        Assert.Equal("peak_apps", card.Inspect!.Value.TooltipId?.Value);
+        Assert.Equal("Состав в пике", card.Inspect.Value.Label?.Value);
+        Assert.Equal("list", card.Inspect!.Value.Format);
     }
 
     [Fact]
@@ -521,14 +521,14 @@ public class DashboardParseTests
 
         var props = doc.Cards[0].Diagram.Properties;
         Assert.Equal("viridis", props["color_scale"]);
-        Assert.Equal("list", doc.Cards[0].Inspect!.Format);
-        Assert.Equal(", ", doc.Cards[0].Inspect!.Split);
+        Assert.Equal("list", doc.Cards[0].Inspect!.Value.Format);
+        Assert.Equal(", ", doc.Cards[0].Inspect!.Value.Split);
     }
 
     [Fact]
     public void MatrixPresentation_defaults_tooltip_format_to_list_when_inspect_has_split()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), null),
@@ -606,14 +606,14 @@ public class DashboardParseTests
 
         var legend = doc.Cards[0].Legend;
         Assert.NotNull(legend);
-        Assert.Equal("мин. {min}", legend.MinLabel);
-        Assert.Equal("макс. {max}", legend.MaxLabel);
+        Assert.Equal("мин. {min}", legend.Value.MinLabel?.Value);
+        Assert.Equal("макс. {max}", legend.Value.MaxLabel?.Value);
     }
 
     [Fact]
     public void MatrixPresentation_legend_templates_substitute_min_max()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
@@ -634,7 +634,7 @@ public class DashboardParseTests
     [Fact]
     public void MatrixPresentation_reads_visible_rows_from_chrome_preset_and_series_fallback()
     {
-        var cardWithChrome = new CardDefinition(
+        var cardWithChrome = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
@@ -650,7 +650,7 @@ public class DashboardParseTests
 
         Assert.Equal(6, MatrixPresentation.FromCard(cardWithChrome).VisibleRows);
 
-        var cardWithSeries = new CardDefinition(
+        var cardWithSeries = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),

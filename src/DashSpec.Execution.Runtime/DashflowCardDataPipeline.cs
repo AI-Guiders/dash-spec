@@ -7,7 +7,7 @@ namespace DashSpec.Execution.Runtime;
 public static class DashflowCardDataPipeline
 {
     public static TypedRowBatch ApplyTransforms(DashboardDocument document, CardDefinition card, TypedRowBatch rows) =>
-        ApplyTransforms(document, card.FlowInput, rows);
+        ApplyTransforms(document, card.FlowInput?.Value, rows);
 
     public static TypedRowBatch ApplyTransforms(
         DashboardDocument document,

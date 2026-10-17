@@ -27,6 +27,7 @@ global using DataSourceDefinition = DashSpec.Modeling.Parse.DataSource.DataSourc
 global using DataSourceKind = DashSpec.Modeling.Parse.DataSource.DataSourceKind;
 global using DataSourceSqlCarrier = DashSpec.Modeling.Parse.DataSource.DataSourceSqlCarrier;
 global using CardDiagramSlotDefinition = DashSpec.Modeling.Parse.Card.CardDiagramSlot;
+global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
 global using LayoutBoardDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
 global using LayoutBoardEntry = DashSpec.Modeling.Parse.Layout.LayoutBoardEntry;
 global using LayoutScope = DashSpec.Modeling.Parse.Layout.LayoutScope;

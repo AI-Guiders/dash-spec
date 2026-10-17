@@ -26,21 +26,19 @@ public static class CardDiagramResolver
         }
 
         var diagram = new DiagramDefinition(preset.Kind, diagramProps, FSharpOption<string>.None);
-        var presentation = MergePresentation(preset.PresentationPreset, card.Presentation);
-        var seriesTransform = MergeSeriesTransform(preset.SeriesTransformPreset, card.SeriesTransform);
-        var inspect = InspectPresentationParser.Merge(preset.Inspect, card.Inspect);
-        var tooltip = card.Tooltip ?? preset.Tooltip;
+        var presentation = MergePresentation(preset.PresentationPreset, card.Presentation?.Value);
+        var seriesTransform = MergeSeriesTransform(preset.SeriesTransformPreset, card.SeriesTransform?.Value);
+        var inspect = InspectPresentationParser.Merge(preset.Inspect, card.Inspect?.Value);
+        var tooltip = card.Tooltip?.Value ?? preset.Tooltip;
 
-        return new ResolvedCardView(
-            card with
-            {
-                Diagram = diagram,
-                Presentation = presentation,
-                SeriesTransform = seriesTransform,
-                Inspect = inspect,
-                Tooltip = tooltip,
-            },
-            preset.Render);
+        var resolvedCard = card
+            .WithDiagram(diagram)
+            .WithPresentation(ToFSharpOption(presentation))
+            .WithSeriesTransform(ToFSharpOption(seriesTransform))
+            .WithInspect(ToFSharpOption(inspect))
+            .WithTooltip(ToFSharpOption(tooltip));
+
+        return new ResolvedCardView(resolvedCard, preset.Render);
     }
 
     public static string ResolveKind(CardDefinition card, SpecLibrary? library) =>
@@ -98,6 +96,9 @@ public static class CardDiagramResolver
         var use = cardBlock.UsePreset ?? presetBlock.UsePreset;
         return new SeriesTransformBlock(use, cardBlock.Max, cardBlock.OtherLabel);
     }
+
+    private static FSharpOption<T> ToFSharpOption<T>(T? value) where T : class =>
+        value is null ? FSharpOption<T>.None : FSharpOption<T>.Some(value);
 }
 
 public sealed record ResolvedCardView(CardDefinition Card, string? RenderPluginId);

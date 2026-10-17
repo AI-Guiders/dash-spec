@@ -78,7 +78,7 @@ public static class ToolbarFilterVisibility
         if (!string.IsNullOrWhiteSpace(activePageId))
         {
             cards = cards.Where(card =>
-                string.Equals(card.PageId, activePageId, StringComparison.OrdinalIgnoreCase));
+                string.Equals(card.PageId?.Value, activePageId, StringComparison.OrdinalIgnoreCase));
         }
 
         return cards.Select(card => card.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);

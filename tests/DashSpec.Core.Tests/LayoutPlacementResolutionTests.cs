@@ -6,7 +6,7 @@ namespace DashSpec.Core.Tests;
 
 public sealed class LayoutPlacementResolutionTests
 {
-    private static readonly CardDefinition Card = new(
+    private static readonly CardDefinition Card = CardTestData.Create(
         "card_a",
         "",
             new DiagramDefinition("bar", new Dictionary<string, string>(), null),

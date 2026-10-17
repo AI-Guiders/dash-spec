@@ -46,11 +46,11 @@ public class ChartRuntimeTests
         var card = doc.Cards[0];
         Assert.Equal("lib.toml", doc.DiagramLibraryPath);
         Assert.NotNull(card.Presentation);
-        Assert.Equal("line_bottom", card.Presentation!.UsePreset);
-        Assert.Equal("right", card.Presentation.Properties["legend"]);
+        Assert.Equal("line_bottom", card.Presentation!.Value.UsePreset?.Value);
+        Assert.Equal("right", card.Presentation.Value.Properties["legend"]);
         Assert.NotNull(card.SeriesTransform);
-        Assert.Equal(4, card.SeriesTransform!.Max);
-        Assert.Equal("Прочее", card.SeriesTransform.OtherLabel);
+        Assert.Equal(4, card.SeriesTransform!.Value.Max);
+        Assert.Equal("Прочее", card.SeriesTransform.Value.OtherLabel?.Value);
     }
 
     [Fact]
@@ -138,15 +138,16 @@ public class ChartRuntimeTests
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
         Assert.True(presentation.IsHorizontal);
 
-        var verticalCard = card with
+        var verticalPresentationBlock = new PresentationBlock
         {
-            Presentation = new PresentationBlock(
-                "bar_horizontal_320",
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["orientation"] = "vertical",
-                }),
+            UsePreset = Microsoft.FSharp.Core.FSharpOption<string>.Some("bar_horizontal_320"),
+            Properties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["orientation"] = "vertical",
+            },
         };
+        var verticalCard = card.WithPresentation(
+            Microsoft.FSharp.Core.FSharpOption<PresentationBlock>.Some(verticalPresentationBlock));
         var verticalPresentation = CardChromeResolver.ResolveChartPresentation(verticalCard, library);
         Assert.False(verticalPresentation.IsHorizontal);
     }
@@ -214,7 +215,7 @@ public class ChartRuntimeTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -256,7 +257,7 @@ public class ChartRuntimeTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,

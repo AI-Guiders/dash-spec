@@ -70,10 +70,13 @@ public sealed class DrillDownPhraseTests
             end tab
             """, specDirectory: null, options);
 
-        var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("drill_down", invoke.HandlerId);
-        Assert.Equal("detail", invoke.Args["tab"]);
-        Assert.Equal("user_name", invoke.Args["target"]);
-        Assert.Equal("y", invoke.Args["from"]);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("InvokeHandler", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal("drill_down", fields[0]!);
+        var args = (IReadOnlyDictionary<string, string>)fields[1]!;
+        Assert.Equal("detail", args["tab"]);
+        Assert.Equal("user_name", args["target"]);
+        Assert.Equal("y", args["from"]);
     }
 }

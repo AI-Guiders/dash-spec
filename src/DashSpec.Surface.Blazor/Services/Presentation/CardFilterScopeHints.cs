@@ -46,9 +46,9 @@ internal static class CardFilterScopeHints
                 continue;
             }
 
-            if (string.Equals(other.FilterHostCardId, card.Id, StringComparison.OrdinalIgnoreCase) &&
-                other.HostedFilters is not null &&
-                other.HostedFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
+            if (string.Equals(other.FilterHostCardId?.Value, card.Id, StringComparison.OrdinalIgnoreCase) &&
+                other.HostedFilters?.Value is { } hostedFilters &&
+                hostedFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase))
             {
                 affected.Add(other.Title);
             }

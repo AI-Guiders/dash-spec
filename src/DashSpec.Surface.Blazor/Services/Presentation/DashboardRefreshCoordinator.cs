@@ -278,7 +278,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
                 if (visibility is CardVisibilityOutcome.Placeholder)
                 {
-                    var gateMessage = DisplayResolution.ResolveGateMessage(card.Visibility);
+                    var gateMessage = DisplayResolution.ResolveGateMessage(card.Visibility?.Value);
                     if (!string.IsNullOrWhiteSpace(gateMessage))
                     {
                         return (card.Id, EnrichCard(card, CardRenderSkeletonFactory.CreatePlaceholder(
@@ -423,7 +423,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
             render,
             filterDisplay,
             PageDisplayBindings);
-        return enriched with { FoldMode = card.Chrome?.Fold ?? CardFoldMode.None };
+        return enriched with { FoldMode = card.Chrome?.Value?.Fold ?? CardFoldMode.None };
     }
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)
@@ -469,7 +469,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
         foreach (var dependent in _session.Document.Cards)
         {
-            if (string.Equals(dependent.FilterHostCardId, cardId, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(dependent.FilterHostCardId?.Value, cardId, StringComparison.OrdinalIgnoreCase))
             {
                 cardIds.Add(dependent.Id);
             }

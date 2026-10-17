@@ -18,7 +18,7 @@ public static class CardInteriorLayoutCompactor
             throw new ArgumentOutOfRangeException(nameof(columns));
         }
 
-        var board = card.InteriorBoard ?? CardInteriorLayoutDefaults.Synthesize(card);
+        var board = card.InteriorBoard?.Value ?? CardInteriorLayoutDefaults.Synthesize(card);
 
         var context = $"Card '{card.Id}' interior";
         var placements = LayoutBoardPlacer.Resolve(

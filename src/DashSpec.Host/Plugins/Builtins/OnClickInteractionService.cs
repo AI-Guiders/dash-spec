@@ -1,25 +1,63 @@
+using System.Collections;
 using DashSpec.Core.Model;
 using DashSpec.Viz;
 using DashSpec.Surface.Blazor.Services.Presentation;
+using Microsoft.FSharp.Core;
+using Microsoft.FSharp.Reflection;
+using System.Reflection;
 
 namespace DashSpec.Host.Plugins.Builtins;
 
 public sealed class OnClickInteractionService : IOnClickInteractionService
 {
-    public ShowSelectionEffect? ResolveShowEffect(CardClickBehaviour? behaviour) =>
+    public ShowSelectionEffect? ResolveShowEffect(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
         CardSelectionPresenter.FindShowEffect(behaviour);
 
-    public bool HasNavigationEffects(CardClickBehaviour? behaviour) =>
-        behaviour?.Effects.Any(effect => effect switch
-        {
-            SetFilterFromFieldEffect or DrillTableFromCellEffect or GotoTabEffect or GotoPageEffect or FocusPhaseEffect => true,
-            InvokeHandlerEffect invoke =>
-                string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase),
-            _ => false,
-        }) == true;
+    public bool HasNavigationEffects(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
+        behaviour?.Effects.Any(static effect => effect.IsNavigationEffect) == true;
 
-    public IEnumerable<CardClickEffect> ExpandClickEffects(IEnumerable<CardClickEffect> effects) =>
-        effects.SelectMany(ExpandSingle);
+    public IEnumerable<CardClickEffect> ExpandClickEffects(
+        IEnumerable<DashSpec.Modeling.Parse.Card.CardClickEffect> effects) =>
+        effects.Select(ToExecutionEffect).SelectMany(ExpandSingle);
+
+    private static CardClickEffect ToExecutionEffect(DashSpec.Modeling.Parse.Card.CardClickEffect effect)
+    {
+        var (caseInfo, fields) = FSharpValue.GetUnionFields(
+            effect,
+            typeof(DashSpec.Modeling.Parse.Card.CardClickEffect),
+            FSharpOption<BindingFlags>.None);
+
+        return caseInfo.Name switch
+        {
+            "ShowSelection" => new ShowSelectionEffect(
+                Enum.Parse<ShowPlacement>(fields[0]!.ToString()!),
+                Enum.Parse<ShowFormat>(fields[1]!.ToString()!),
+                Enum.Parse<ShowSource>(fields[2]!.ToString()!),
+                (bool)fields[3]!,
+                (fields[4] as FSharpOption<string>)?.Value),
+            "SetFilterFromField" => new SetFilterFromFieldEffect(
+                (string)fields[0]!,
+                (string)fields[1]!),
+            "DrillTableFromCell" => new DrillTableFromCellEffect(
+                ((IEnumerable)fields[0]!)
+                    .Cast<object>()
+                    .Select(static bind => FSharpValue.GetTupleFields(bind))
+                    .Select(static bind => new SetFilterFromFieldEffect(
+                        (string)bind[0]!,
+                        (string)bind[1]!))
+                    .ToList()),
+            "InvokeHandler" => new InvokeHandlerEffect(
+                (string)fields[0]!,
+                (IReadOnlyDictionary<string, string>)fields[1]!),
+            "GotoTab" => new GotoTabEffect((string)fields[0]!),
+            "FocusPhase" => new FocusPhaseEffect((string)fields[0]!),
+            "GotoPage" => new GotoPageEffect((string)fields[0]!),
+            "GotoCatalogEntry" => new GotoCatalogEntryEffect(
+                (string)fields[0]!,
+                (fields[1] as FSharpOption<IReadOnlyList<string>>)?.Value),
+            _ => throw new ArgumentOutOfRangeException(nameof(effect), caseInfo.Name, "Unknown click-effect case."),
+        };
+    }
 
     private static IEnumerable<CardClickEffect> ExpandSingle(CardClickEffect effect) =>
         effect is InvokeHandlerEffect invoke

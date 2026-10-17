@@ -28,10 +28,13 @@ public sealed class PhraseTemplateTests
             end tab
             """);
 
-        var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("drill_down", invoke.HandlerId);
-        Assert.Equal("y", invoke.Args["from"]);
-        Assert.Equal("user_name", invoke.Args["target"]);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("InvokeHandler", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal("drill_down", fields[0]!);
+        var args = (IReadOnlyDictionary<string, string>)fields[1]!;
+        Assert.Equal("y", args["from"]);
+        Assert.Equal("user_name", args["target"]);
     }
 
     [Fact]
@@ -72,9 +75,12 @@ public sealed class PhraseTemplateTests
             end tab
             """, specDirectory: null, options);
 
-        var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("csv_export", invoke.HandlerId);
-        Assert.Equal("csv", invoke.Args["format"]);
-        Assert.Equal(";", invoke.Args["delimiter"]);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("InvokeHandler", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal("csv_export", fields[0]!);
+        var args = (IReadOnlyDictionary<string, string>)fields[1]!;
+        Assert.Equal("csv", args["format"]);
+        Assert.Equal(";", args["delimiter"]);
     }
 }

@@ -49,7 +49,7 @@ public static class FilterBinding
         DashboardDocument document,
         SpecLibrary? library)
     {
-        if (string.IsNullOrWhiteSpace(card.UseCardPreset) && library is null)
+        if (string.IsNullOrWhiteSpace(card.UseCardPreset?.Value) && library is null)
         {
             return CardBindResolver.Expand(
                 card.BoundFilters,

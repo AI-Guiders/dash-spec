@@ -10,14 +10,14 @@ public static class LayoutPlacementResolution
         CardDefinition card,
         IReadOnlyDictionary<string, PlacementDefinition> boardPlacements)
     {
-        if (card.Placement is not null)
-        {
-            return card.Placement;
-        }
-
-        if (boardPlacements.TryGetValue(card.Id, out var placement))
+        if (card.Placement?.Value is { } placement)
         {
             return placement;
+        }
+
+        if (boardPlacements.TryGetValue(card.Id, out var boardPlacement))
+        {
+            return boardPlacement;
         }
 
         throw new KeyNotFoundException(
@@ -30,9 +30,9 @@ public static class LayoutPlacementResolution
     {
         foreach (var card in cards)
         {
-            if (card.Placement is not null)
+            if (card.Placement?.Value is { } placement)
             {
-                boardPlacements[card.Id] = card.Placement;
+                boardPlacements[card.Id] = placement;
             }
         }
     }

@@ -14,3 +14,4 @@ global using ExtensionBlockNode = DashSpec.Modeling.Parse.Card.ExtensionBlockNod
 global using MatrixRenderLimitsDefinition = DashSpec.Modeling.Parse.Card.MatrixRenderLimitsDefinition;
 global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
 global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
+global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;

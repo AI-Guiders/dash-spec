@@ -11,6 +11,7 @@ internal static class CardInteriorSlotResolver
         ArgumentNullException.ThrowIfNull(card);
 
         var slots = CardDiagramSlotCatalog.ResolveSlots(card);
+        var diagramSlotRef = card.DiagramSlotRef?.Value;
 
         if (string.Equals(token, "diagram", StringComparison.OrdinalIgnoreCase))
         {
@@ -20,18 +21,18 @@ internal static class CardInteriorSlotResolver
             }
 
             // Named slot literally "diagram" (diagram ref diagram): auto-interior still uses token "diagram".
-            if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
-                string.Equals(card.DiagramSlotRef, "diagram", StringComparison.OrdinalIgnoreCase) &&
-                slots.ContainsKey(card.DiagramSlotRef))
+            if (!string.IsNullOrWhiteSpace(diagramSlotRef) &&
+                string.Equals(diagramSlotRef, "diagram", StringComparison.OrdinalIgnoreCase) &&
+                slots.ContainsKey(diagramSlotRef))
             {
-                return card.DiagramSlotRef;
+                return diagramSlotRef;
             }
 
-            if (!string.IsNullOrWhiteSpace(card.DiagramSlotRef) &&
-                slots.ContainsKey(card.DiagramSlotRef))
+            if (!string.IsNullOrWhiteSpace(diagramSlotRef) &&
+                slots.ContainsKey(diagramSlotRef))
             {
                 throw new DashSpecParseException(
-                    $"Card '{card.Id}' interior: use diagram ref '{card.DiagramSlotRef}' instead of reserved token 'diagram'.");
+                    $"Card '{card.Id}' interior: use diagram ref '{diagramSlotRef}' instead of reserved token 'diagram'.");
             }
         }
 

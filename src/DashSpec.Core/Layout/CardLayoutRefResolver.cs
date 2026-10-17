@@ -14,8 +14,8 @@ internal static class CardLayoutRefResolver
 
         foreach (var card in cards)
         {
-            if (!string.IsNullOrWhiteSpace(card.LayoutRef) &&
-                string.Equals(card.LayoutRef, token, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(card.LayoutRef?.Value) &&
+                string.Equals(card.LayoutRef?.Value, token, StringComparison.OrdinalIgnoreCase))
             {
                 if (byRef is not null)
                 {

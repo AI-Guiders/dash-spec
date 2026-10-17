@@ -40,7 +40,7 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_label_visibility_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(
@@ -65,7 +65,7 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_toolbar_labels_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(
@@ -89,7 +89,7 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_value_labels_threshold_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(

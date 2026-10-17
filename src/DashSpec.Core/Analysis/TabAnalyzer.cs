@@ -57,7 +57,7 @@ internal static class TabAnalyzer
                 foreach (var page in tabPages)
                 {
                     var pageCards = tabCards
-                        .Where(card => string.Equals(card.PageId, page.Id, StringComparison.OrdinalIgnoreCase))
+                        .Where(card => string.Equals(card.PageId?.Value, page.Id, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                     if (pageCards.Count == 0 || page.LayoutBoard is null)
                     {
@@ -75,7 +75,7 @@ internal static class TabAnalyzer
 
         foreach (var card in document.Cards)
         {
-            if (string.IsNullOrWhiteSpace(card.TabId))
+            if (string.IsNullOrWhiteSpace(card.TabId?.Value))
             {
                 throw new DashSpecParseException(
                     $"Card '{card.Id}' is not assigned to any tab.");
@@ -89,15 +89,16 @@ internal static class TabAnalyzer
 
         foreach (var card in tabCards)
         {
-            if (string.IsNullOrWhiteSpace(card.LayoutRef))
+            var layoutRef = card.LayoutRef?.Value;
+            if (string.IsNullOrWhiteSpace(layoutRef))
             {
                 continue;
             }
 
-            if (!refs.Add(card.LayoutRef))
+            if (!refs.Add(layoutRef))
             {
                 throw new DashSpecParseException(
-                    $"Tab '{tab.Id}': duplicate card ref '{card.LayoutRef}'.");
+                    $"Tab '{tab.Id}': duplicate card ref '{layoutRef}'.");
             }
         }
     }

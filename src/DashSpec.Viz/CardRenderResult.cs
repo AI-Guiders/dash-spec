@@ -28,7 +28,7 @@ public sealed record CardRenderResult(
     GanttPayload? Gantt = null,
     MatrixPresentation? MatrixPresentation = null,
     TablePresentation? TablePresentation = null,
-    CardClickBehaviour? ClickBehaviour = null,
+    DashSpec.Modeling.Parse.Card.CardClickBehaviour? ClickBehaviour = null,
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,
     int? LocalFiltersApplySplitIndex = null,

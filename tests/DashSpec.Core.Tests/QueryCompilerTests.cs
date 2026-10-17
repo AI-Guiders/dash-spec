@@ -424,7 +424,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_period_start_with_grain_filter_uses_period_anchor()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -525,7 +525,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_bar_applies_bound_top_filter_with_order_by()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "over",
             "Over",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -560,7 +560,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_donut_sums_measure_by_category_after_filters()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "by_form",
             "Form",
             new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -592,7 +592,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_defaults_to_sum_over_filtered_rows()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "dau_total",
             "DAU",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -620,7 +620,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_max_aggregate_without_group_by()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -651,7 +651,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_aggregate_none_keeps_row_select()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "single",
             "Single",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -673,7 +673,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_working_time_basis_appends_work_window_predicate()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition(
