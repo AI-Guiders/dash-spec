@@ -5,11 +5,11 @@
 @using DashSpec.Viz
 @implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
-@inject IVizCardToolbarLocalizer Loc
+@inject IStringLocalizer<VizStrings> Loc
 
 @if (Context.Card.MatrixPresentation is not null)
 {
-    <div class="card-matrix-glyph-group" role="group" aria-label="@Loc.T("Matrix display")">
+    <div class="card-matrix-glyph-group" role="group" aria-label="@Loc["Matrix display"]">
         <button type="button"
                 class="@GlyphBtnClass(MatrixValueLabelsVisible)"
                 title="@ValueLabelsTitle"
@@ -82,13 +82,13 @@
             ? "secondary card-icon-btn card-matrix-glyph-btn is-on"
             : "secondary card-icon-btn card-matrix-glyph-btn is-off";
 
-    private string ValueLabelsTitle => Loc.T("Toggle cell values");
+    private string ValueLabelsTitle => Loc["Toggle cell values"];
 
-    private string AxisLabelsXTitle => Loc.T("Toggle X axis labels");
+    private string AxisLabelsXTitle => Loc["Toggle X axis labels"];
 
-    private string AxisLabelsYTitle => Loc.T("Toggle Y axis labels");
+    private string AxisLabelsYTitle => Loc["Toggle Y axis labels"];
 
-    private string LegendTitle => Loc.T("Toggle gradient legend");
+    private string LegendTitle => Loc["Toggle gradient legend"];
 
     protected override void OnInitialized()
     {

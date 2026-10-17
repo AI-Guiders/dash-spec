@@ -14,6 +14,10 @@
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <Import Project="..\..\..\build\ValidateJavaScriptSyntax.targets" />
 
   <ItemGroup>
