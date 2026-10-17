@@ -340,10 +340,10 @@ public sealed class CardRenderService(
                 Diagram = slot.Diagram,
                 DataSource = slot.DataSource,
                 BoundFilters = slot.BoundFilters,
-                Legend = slot.Legend,
-                Presentation = slot.Presentation,
-                SeriesTransform = slot.SeriesTransform,
-                FlowInput = slot.FlowInput ?? card.FlowInput,
+                Legend = slot.Legend?.Value,
+                Presentation = slot.Presentation?.Value,
+                SeriesTransform = slot.SeriesTransform?.Value,
+                FlowInput = slot.FlowInput?.Value ?? card.FlowInput,
             };
 
             var errorContext = slotCard;

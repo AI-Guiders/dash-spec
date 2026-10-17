@@ -119,7 +119,7 @@ internal static class ModelOption
 | **C (остаток)** — `DiagramKindInfo` (используется самим `Core` → переезд только внутри `Core`); `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
 | **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
-| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition` | ✅ 24 C#-типа удалено; продолжаем вручную |
+| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition` | ✅ 25 C#-типов удалено; продолжаем вручную |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
 

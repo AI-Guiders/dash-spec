@@ -36,8 +36,8 @@ public static class FlowCardExecution
             return slot;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, slot.FlowInput);
-        return slot with { DataSource = dataSource };
+        var dataSource = MaterializeDataSource(document.Dashflow, slot.FlowInput.Value);
+        return slot.WithDataSource(dataSource);
     }
 
     public static DataSourceDefinition MaterializeDataSource(

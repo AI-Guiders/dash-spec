@@ -221,18 +221,28 @@ public sealed class FlowCardExecutionTests
 
         var slots = new Dictionary<string, CardDiagramSlotDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["heatmap"] = new CardDiagramSlotDefinition(
-                "heatmap",
-                new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
-                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
-                [],
-                FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
-            ["drill"] = new CardDiagramSlotDefinition(
-                "drill",
-                new DiagramDefinition("table", new Dictionary<string, string>(), null),
-                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
-                [],
-                FlowInput: new CardFlowInputDefinition("rows", "drill_src", "rows")),
+            ["heatmap"] = new CardDiagramSlotDefinition
+            {
+                SlotRef = "heatmap",
+                Diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+                DataSource = DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
+                BoundFilters = [],
+                Legend = Microsoft.FSharp.Core.FSharpOption<LegendDefinition>.None,
+                Presentation = Microsoft.FSharp.Core.FSharpOption<PresentationBlock>.None,
+                SeriesTransform = Microsoft.FSharp.Core.FSharpOption<SeriesTransformBlock>.None,
+                FlowInput = Microsoft.FSharp.Core.FSharpOption<CardFlowInputDefinition>.Some(new CardFlowInputDefinition("rows", "utilization", "utilization")),
+            },
+            ["drill"] = new CardDiagramSlotDefinition
+            {
+                SlotRef = "drill",
+                Diagram = new DiagramDefinition("table", new Dictionary<string, string>(), null),
+                DataSource = DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
+                BoundFilters = [],
+                Legend = Microsoft.FSharp.Core.FSharpOption<LegendDefinition>.None,
+                Presentation = Microsoft.FSharp.Core.FSharpOption<PresentationBlock>.None,
+                SeriesTransform = Microsoft.FSharp.Core.FSharpOption<SeriesTransformBlock>.None,
+                FlowInput = Microsoft.FSharp.Core.FSharpOption<CardFlowInputDefinition>.Some(new CardFlowInputDefinition("rows", "drill_src", "rows")),
+            },
         };
 
         var card = new CardDefinition(
