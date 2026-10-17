@@ -53,14 +53,14 @@ public sealed class FlowCardExecutionTests
             [],
             [],
             [
-                new CardDefinition(
+                CardTestData.Create(
                     "c",
                     "C",
                     new DiagramDefinition("table", new Dictionary<string, string>(), null),
                     DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
-                    FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
+                    flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
             ],
             Dashflow: Flow);
 
@@ -73,14 +73,14 @@ public sealed class FlowCardExecutionTests
     [Fact]
     public void ResolveProviderId_returns_named_source_provider()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("table", new Dictionary<string, string>(), null),
             DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
             [],
             [],
-            FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
+            flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
 
         var document = new DashboardDocument(
             "t",
@@ -119,14 +119,14 @@ public sealed class FlowCardExecutionTests
             [],
             [],
             [
-                new CardDefinition(
+                CardTestData.Create(
                     "c",
                     "C",
                     new DiagramDefinition("table", new Dictionary<string, string>(), null),
                     DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
-                    FlowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
+                    flowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
             ],
             Dashflow: Flow);
 
@@ -171,14 +171,14 @@ public sealed class FlowCardExecutionTests
             [],
             [],
             [
-                new CardDefinition(
+                CardTestData.Create(
                     "c",
                     "C",
                     new DiagramDefinition("table", new Dictionary<string, string>(), null),
                     DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
-                    FlowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
+                    flowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
             ],
             Dashflow: flow);
 
@@ -245,16 +245,16 @@ public sealed class FlowCardExecutionTests
             },
         };
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             slots["heatmap"].Diagram,
             DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
             [],
             [],
-            DiagramSlotRef: "heatmap",
-            DiagramSlots: slots,
-            FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
+            diagramSlotRef: "heatmap",
+            diagramSlots: slots,
+            flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
 
         var document = new DashboardDocument(
             "t",

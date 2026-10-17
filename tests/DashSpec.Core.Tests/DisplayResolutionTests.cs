@@ -25,14 +25,14 @@ public sealed class DisplayResolutionTests
             Microsoft.FSharp.Core.FSharpOption<string>.None,
             Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
         [
-            new CardDefinition(
+            CardTestData.Create(
                 "peak_by_app",
                 "",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
                 DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 [],
                 []),
-            new CardDefinition(
+            CardTestData.Create(
                 "detail_card",
                 "Detail slice",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
@@ -103,7 +103,7 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void DashboardEmbed_card_chrome_falls_back_to_entry_title()
     {
-        var card = SampleCatalogDoc.Cards[0] with { Title = "" };
+        var card = SampleCatalogDoc.Cards[0].WithTitle("");
         var context = ResolutionContext.ForEmbed(SampleCatalogDoc, SampleCatalogEntry);
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("Peak by app (catalog)", resolved.Title);
@@ -113,10 +113,14 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Card_chrome_title_hidden_when_chrome_requests_it()
     {
-        var card = SampleCatalogDoc.Cards[1] with
+        var chrome = new CardChromeDefinition
         {
-            Chrome = new CardChromeDefinition(CardBoundFilterChrome.Hidden, true, CardFoldMode.None),
+            BoundFilters = CardBoundFilterChrome.Hidden,
+            HideTitle = true,
+            Fold = CardFoldMode.None,
         };
+        var card = SampleCatalogDoc.Cards[1].WithChrome(
+            Microsoft.FSharp.Core.FSharpOption<CardChromeDefinition>.Some(chrome));
         var context = ResolutionContext.ForSoak(SampleCatalogDoc);
         var resolved = DisplayResolution.ResolveCardChrome(context, card);
         Assert.Equal("Detail slice", resolved.Title);

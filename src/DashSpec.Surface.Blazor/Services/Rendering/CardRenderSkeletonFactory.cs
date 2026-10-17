@@ -34,7 +34,7 @@ public static class CardRenderSkeletonFactory
             Loading: true,
             BoundFilters: effective.BoundFilters,
             LocalFilters: effective.LocalFilters,
-            Placement: effective.Placement,
+            Placement: effective.Placement?.Value,
             InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
                 ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -45,15 +45,15 @@ public static class CardRenderSkeletonFactory
             TablePresentation: kind.DataFamily is DiagramDataFamily.Table
                 ? CompositionResolution.ResolveTablePresentation(effective, library)
                 : null,
-            ClickBehaviour: card.ClickBehaviour,
+            ClickBehaviour: card.ClickBehaviour?.Value,
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
-            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
+            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
             LocalFilterChromePlacements: document is not null
                 ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
                 : null,
-            MatrixLimits: card.MatrixLimits,
-            OversizeMessage: card.OversizeMessage);
+            MatrixLimits: card.MatrixLimits?.Value,
+            OversizeMessage: card.OversizeMessage?.Value);
     }
 
     public static CardRenderResult CreatePlaceholder(
@@ -97,7 +97,7 @@ public static class CardRenderSkeletonFactory
             Error: error,
             BoundFilters: effective.BoundFilters,
             LocalFilters: effective.LocalFilters,
-            Placement: effective.Placement,
+            Placement: effective.Placement?.Value,
             InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
                 ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -108,14 +108,14 @@ public static class CardRenderSkeletonFactory
             TablePresentation: kind.DataFamily is DiagramDataFamily.Table
                 ? CompositionResolution.ResolveTablePresentation(effective, library)
                 : null,
-            ClickBehaviour: card.ClickBehaviour,
+            ClickBehaviour: card.ClickBehaviour?.Value,
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
-            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
+            LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
             LocalFilterChromePlacements: document is not null
                 ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
                 : null,
-            MatrixLimits: card.MatrixLimits,
-            OversizeMessage: card.OversizeMessage);
+            MatrixLimits: card.MatrixLimits?.Value,
+            OversizeMessage: card.OversizeMessage?.Value);
     }
 }

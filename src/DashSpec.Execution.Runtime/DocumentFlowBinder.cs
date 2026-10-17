@@ -79,9 +79,9 @@ public static class DocumentFlowBinder
             string.IsNullOrWhiteSpace(result.DataSource.Value) &&
             !string.IsNullOrWhiteSpace(primary.DataSource.Value))
         {
-            result = result with { DataSource = primary.DataSource };
+            result = result.WithDataSource(primary.DataSource);
         }
 
-        return result with { DiagramSlots = slots };
+        return result.WithDiagramSlots(slots);
     }
 }

@@ -54,11 +54,13 @@ public class CardClickBehaviourTests
 
         var card = doc.Cards[0];
         Assert.NotNull(card.ClickBehaviour);
-        var show = Assert.IsType<ShowSelectionEffect>(card.ClickBehaviour!.Effects[0]);
-        Assert.Equal(ShowPlacement.Below, show.Placement);
-        Assert.Equal(ShowFormat.List, show.Format);
-        Assert.Equal(ShowSource.Tooltip, show.Source);
-        Assert.True(show.CopyFriendly);
+        var showEffect = card.ClickBehaviour!.Value.Effects[0];
+        var showFields = CardClickEffectTestData.Fields(showEffect);
+        Assert.Equal("ShowSelection", CardClickEffectTestData.CaseName(showEffect));
+        Assert.Equal(nameof(ShowPlacement.Below), showFields[0]?.ToString());
+        Assert.Equal(nameof(ShowFormat.List), showFields[1]?.ToString());
+        Assert.Equal(nameof(ShowSource.Tooltip), showFields[2]?.ToString());
+        Assert.Equal(true, showFields[3]);
         Assert.NotNull(card.Tooltip);
     }
 
@@ -110,10 +112,10 @@ public class CardClickBehaviourTests
 
         var card = doc.Cards[0];
         Assert.NotNull(card.ClickBehaviour);
-        Assert.Equal(3, card.ClickBehaviour!.Effects.Count);
-        Assert.IsType<SetFilterFromFieldEffect>(card.ClickBehaviour.Effects[0]);
-        Assert.IsType<SetFilterFromFieldEffect>(card.ClickBehaviour.Effects[1]);
-        Assert.IsType<GotoTabEffect>(card.ClickBehaviour.Effects[2]);
+        Assert.Equal(3, card.ClickBehaviour!.Value.Effects.Count);
+        Assert.Equal("SetFilterFromField", CardClickEffectTestData.CaseName(card.ClickBehaviour!.Value.Effects[0]));
+        Assert.Equal("SetFilterFromField", CardClickEffectTestData.CaseName(card.ClickBehaviour.Value.Effects[1]));
+        Assert.Equal("GotoTab", CardClickEffectTestData.CaseName(card.ClickBehaviour.Value.Effects[2]));
     }
 
     [Fact]
@@ -139,8 +141,9 @@ public class CardClickBehaviourTests
             end tab
             """);
 
-        var drill = Assert.IsType<DrillTableFromCellEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal(2, drill.Binds.Count);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        Assert.Equal("DrillTableFromCell", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal(2, System.Linq.Enumerable.Count(System.Linq.Enumerable.Cast<object>((System.Collections.IEnumerable)CardClickEffectTestData.Fields(effect)[0]!)));
     }
 
     [Fact]
@@ -194,7 +197,8 @@ public class CardClickBehaviourTests
             end tab
             """);
 
-        var show = Assert.IsType<ShowSelectionEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("; ", show.Split);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        Assert.Equal("ShowSelection", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal("; ", ((Microsoft.FSharp.Core.FSharpOption<string>)CardClickEffectTestData.Fields(effect)[4]!)?.Value);
     }
 }

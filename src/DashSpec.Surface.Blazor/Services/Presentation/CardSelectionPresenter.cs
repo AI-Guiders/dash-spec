@@ -1,6 +1,8 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using Microsoft.FSharp.Core;
+using Microsoft.FSharp.Reflection;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
@@ -120,8 +122,35 @@ public static class CardSelectionPresenter
         return rows;
     }
 
-    public static ShowSelectionEffect? FindShowEffect(CardClickBehaviour? behaviour) =>
-        behaviour?.Effects.OfType<ShowSelectionEffect>().FirstOrDefault();
+    public static ShowSelectionEffect? FindShowEffect(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour)
+    {
+        if (behaviour is null)
+        {
+            return null;
+        }
+
+        foreach (var effect in behaviour.Effects)
+        {
+            var (caseInfo, fields) = FSharpValue.GetUnionFields(
+                effect,
+                typeof(DashSpec.Modeling.Parse.Card.CardClickEffect),
+                FSharpOption<System.Reflection.BindingFlags>.None);
+            if (!string.Equals(caseInfo.Name, "ShowSelection", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var split = (FSharpOption<string>)fields[4]!;
+            return new ShowSelectionEffect(
+                Enum.Parse<ShowPlacement>(fields[0]!.ToString()!),
+                Enum.Parse<ShowFormat>(fields[1]!.ToString()!),
+                Enum.Parse<ShowSource>(fields[2]!.ToString()!),
+                (bool)fields[3]!,
+                split?.Value);
+        }
+
+        return null;
+    }
 
     private static string? BuildSelectionHeadline(HeatmapCellContext context, string? peakTime)
     {

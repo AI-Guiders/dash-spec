@@ -447,7 +447,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -491,7 +491,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -529,7 +529,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -569,7 +569,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -613,7 +613,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -645,7 +645,7 @@ public class ChartDataBuilderTests
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "d", ["n"] = 10d },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
@@ -683,7 +683,7 @@ public class ChartDataBuilderTests
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 9d },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "h",
             "H",
             diagram,
@@ -721,7 +721,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "s",
             "S",
             diagram,
@@ -766,7 +766,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "s",
             "S",
             diagram,
@@ -810,7 +810,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "b",
             "B",
             diagram,
@@ -856,7 +856,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             diagram,
@@ -890,7 +890,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "g",
             "G",
             diagram,
@@ -929,7 +929,7 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "w",
             "W",
             diagram,

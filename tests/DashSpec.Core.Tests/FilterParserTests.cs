@@ -581,7 +581,7 @@ public class FilterParserTests
     [Fact]
     public void Compile_day_widget_uses_half_open_day_range_not_equality()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "activity",
             "Activity",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

@@ -26,7 +26,7 @@ public sealed class ResolutionLintTests
                 Microsoft.FSharp.Core.FSharpOption<string>.None,
                 Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
             [
-                new CardDefinition(
+                CardTestData.Create(
                     "c",
                     cardTitle ?? "",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
@@ -68,7 +68,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Composition_warns_legacy_diagram_chrome_with_card_presentation()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "",
             new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }, null),
@@ -84,7 +84,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Placement_information_when_place_and_board_both_set()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),

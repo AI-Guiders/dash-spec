@@ -138,7 +138,7 @@ public class TabModuleTests
             """);
 
         Assert.Equal("host", doc.Cards.Single(c => c.Id == "guest").FilterHostCardId);
-        Assert.Equal(["period_start"], doc.Cards.Single(c => c.Id == "guest").HostedFilters);
+        Assert.Equal(["period_start"], doc.Cards.Single(c => c.Id == "guest").HostedFilters?.Value);
     }
 
     [Fact]

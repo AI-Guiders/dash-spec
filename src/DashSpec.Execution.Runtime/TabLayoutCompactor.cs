@@ -49,7 +49,7 @@ public static class TabLayoutCompactor
         if (!string.IsNullOrWhiteSpace(effectivePageId))
         {
             tabCards = tabCards
-                .Where(card => string.Equals(card.PageId, effectivePageId, StringComparison.OrdinalIgnoreCase))
+                .Where(card => string.Equals(card.PageId?.Value, effectivePageId, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
@@ -103,7 +103,7 @@ public static class TabLayoutCompactor
             {
                 var kind = DiagramKindRegistry.Resolve(
                     CardResolver.ResolveKind(card, library, document.DashboardFilters));
-                var placement = card.Placement ?? PlacementDefaults.ForFamily(kind.DataFamily, columns);
+                var placement = card.Placement?.Value ?? PlacementDefaults.ForFamily(kind.DataFamily, columns);
                 var row = placement.Row > 0 ? placement.Row : 1;
                 var col = placement.Col > 0 ? placement.Col : 1;
                 var span = Math.Min(placement.Span, columns);

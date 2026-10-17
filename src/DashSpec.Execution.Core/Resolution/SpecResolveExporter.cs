@@ -97,7 +97,7 @@ public static class SpecResolveExporter
         return new ResolvedCardExport(
             card.Id,
             card.Title,
-            card.TabId,
+            card.TabId?.Value,
             card.Diagram.Kind,
             view.RenderPluginId,
             card.Diagram.Properties,
@@ -125,13 +125,14 @@ public static class SpecResolveExporter
         CardDefinition card,
         SpecLibrary? library)
     {
-        if (card.Presentation?.Properties.TryGetValue("color_palette", out var inlinePalette) == true &&
+        if (card.Presentation?.Value is { } inlinePresentation &&
+            inlinePresentation.Properties.TryGetValue("color_palette", out var inlinePalette) &&
             !string.IsNullOrWhiteSpace(inlinePalette))
         {
             return inlinePalette;
         }
 
-        if (card.Presentation?.UsePreset?.Value is { } presetName &&
+        if (card.Presentation?.Value?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset &&
             preset.TryGetValue("color_palette", out var presetPalette) &&
             !string.IsNullOrWhiteSpace(presetPalette))
@@ -153,7 +154,7 @@ public static class SpecResolveExporter
         SpecLibrary? library)
     {
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (card.Presentation?.UsePreset?.Value is { } presetName &&
+        if (card.Presentation?.Value?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset)
         {
             foreach (var (key, value) in preset)
@@ -162,9 +163,9 @@ public static class SpecResolveExporter
             }
         }
 
-        if (card.Presentation is not null)
+        if (card.Presentation?.Value is { } presentation)
         {
-            foreach (var (key, value) in card.Presentation.Properties)
+            foreach (var (key, value) in presentation.Properties)
             {
                 if (!string.Equals(key, "use", StringComparison.OrdinalIgnoreCase))
                 {

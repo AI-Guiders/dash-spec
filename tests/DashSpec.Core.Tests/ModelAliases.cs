@@ -42,4 +42,5 @@ global using ReportPageDefinition = DashSpec.Modeling.Parse.Document.ReportPageD
 global using DataSourceDefinition = DashSpec.Modeling.Parse.DataSource.DataSourceDefinition;
 global using DataSourceKind = DashSpec.Modeling.Parse.DataSource.DataSourceKind;
 global using DataSourceSqlCarrier = DashSpec.Modeling.Parse.DataSource.DataSourceSqlCarrier;
+global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
 global using CardDiagramSlotDefinition = DashSpec.Modeling.Parse.Card.CardDiagramSlot;

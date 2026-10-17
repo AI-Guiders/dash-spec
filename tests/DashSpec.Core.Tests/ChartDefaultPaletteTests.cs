@@ -22,7 +22,7 @@ public sealed class ChartDefaultPaletteTests
     [Fact]
     public void ResolveLabelColors_uses_round_robin_for_category_labels()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

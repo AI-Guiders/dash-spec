@@ -17,24 +17,26 @@ public static class CardVisibilityEvaluator
         IReadOnlyDictionary<string, HashSet<string>> selectedFields,
         string? activePhaseId)
     {
-        if (card.PhaseId is not null &&
-            !string.Equals(card.PhaseId, activePhaseId, StringComparison.OrdinalIgnoreCase))
+        var phaseId = card.PhaseId?.Value;
+        if (phaseId is not null &&
+            !string.Equals(phaseId, activePhaseId, StringComparison.OrdinalIgnoreCase))
         {
             return CardVisibilityOutcome.Hidden;
         }
 
-        if (card.Visibility is null)
+        var visibility = card.Visibility?.Value;
+        if (visibility is null)
         {
             return CardVisibilityOutcome.Visible;
         }
 
-        var hasValue = FilterHasSelection(card.Visibility.FilterName, selectedFields);
-        return card.Visibility.Mode switch
+        var hasValue = FilterHasSelection(visibility.FilterName, selectedFields);
+        return visibility.Mode switch
         {
             CardVisibilityMode.WhenEmpty when !hasValue => CardVisibilityOutcome.Visible,
             CardVisibilityMode.WhenEmpty => CardVisibilityOutcome.Hidden,
             CardVisibilityMode.WhenSet when hasValue => CardVisibilityOutcome.Visible,
-            CardVisibilityMode.WhenSet when !string.IsNullOrWhiteSpace(card.Visibility.Message?.Value)
+            CardVisibilityMode.WhenSet when !string.IsNullOrWhiteSpace(visibility.Message?.Value)
                 => CardVisibilityOutcome.Placeholder,
             CardVisibilityMode.WhenSet => CardVisibilityOutcome.Hidden,
             _ => CardVisibilityOutcome.Visible,
@@ -51,7 +53,7 @@ public static class CardVisibilityEvaluator
             return null;
         }
 
-        return DisplayResolution.ResolveGateMessage(card.Visibility);
+        return DisplayResolution.ResolveGateMessage(card.Visibility?.Value);
     }
 
     public static bool FilterHasSelection(

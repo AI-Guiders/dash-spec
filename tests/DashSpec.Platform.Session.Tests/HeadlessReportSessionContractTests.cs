@@ -95,13 +95,43 @@ public sealed class HeadlessReportSessionContractTests
 
         public ReportCompileResult Compile(string text, string? specDirectory, DashSpecParseOptions parseOptions)
         {
-            var card = new CardDefinition(
-                "kpi",
-                "KPI",
-                new DiagramDefinition("number", new Dictionary<string, string>(), null),
-                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "v_kpi"),
-                [],
-                []);
+            var card = new CardDefinition
+            {
+                Id = "kpi",
+                Title = "KPI",
+                Diagram = new DiagramDefinition("number", new Dictionary<string, string>(), Microsoft.FSharp.Core.FSharpOption<string>.None),
+                DataSource = DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "v_kpi"),
+                BoundFilters = [],
+                LocalFilters = [],
+                Placement = Microsoft.FSharp.Core.FSharpOption<PlacementDefinition>.None,
+                TabId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                LayoutRef = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                UseCardPreset = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Legend = Microsoft.FSharp.Core.FSharpOption<LegendDefinition>.None,
+                Presentation = Microsoft.FSharp.Core.FSharpOption<PresentationBlock>.None,
+                SeriesTransform = Microsoft.FSharp.Core.FSharpOption<SeriesTransformBlock>.None,
+                FilterHostCardId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                HostedFilters = Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<string>>.None,
+                InteriorBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+                DiagramSlotRef = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                DiagramSlots = new Dictionary<string, CardDiagramSlotDefinition>(),
+                ClickBehaviour = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Card.CardClickBehaviour>.None,
+                ExtensionBlocks = [],
+                LocalFiltersManualApply = false,
+                LocalFiltersApplySplitIndex = Microsoft.FSharp.Core.FSharpOption<int>.None,
+                LocalFiltersChromeBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+                Visibility = Microsoft.FSharp.Core.FSharpOption<CardVisibilityRule>.None,
+                PhaseId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                PageId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                MatrixLimits = Microsoft.FSharp.Core.FSharpOption<MatrixRenderLimitsDefinition>.None,
+                OversizeMessage = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Chrome = Microsoft.FSharp.Core.FSharpOption<CardChromeDefinition>.None,
+                Inspect = Microsoft.FSharp.Core.FSharpOption<InspectPresentation>.None,
+                Tooltip = Microsoft.FSharp.Core.FSharpOption<TooltipDefinition>.None,
+                FlowInput = Microsoft.FSharp.Core.FSharpOption<CardFlowInputDefinition>.None,
+                CardInputs = new Dictionary<string, CardFlowInputDefinition>(),
+                InteriorFlow = Microsoft.FSharp.Core.FSharpOption<CardInteriorFlowDefinition>.None,
+            };
             var doc = new DashboardDocument(
                 "demo",
                 "Demo",

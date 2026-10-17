@@ -91,7 +91,7 @@ public class SpecModulesTests
             "Tekla = \"#e11d48\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -150,7 +150,7 @@ public class SpecModulesTests
             "Cursor = \"#8b5cf6\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -179,7 +179,7 @@ public class SpecModulesTests
             "Tekla = \"#e11d48\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -563,7 +563,7 @@ public class SpecModulesTests
             var card = doc.Cards.Single();
             Assert.Equal("heatmap", card.Diagram.Kind);
             Assert.Equal("bucket_start_utc", card.Diagram.Properties["x"]);
-            Assert.Equal("heatmap_tall", card.Presentation!.UsePreset);
+            Assert.Equal("heatmap_tall", card.Presentation!.Value.UsePreset?.Value);
             Assert.Equal("420", doc.ResolvedChartChromePresets["heatmap_tall"].Properties["height"]);
         }
         finally
@@ -743,8 +743,8 @@ public class SpecModulesTests
         var resolved = CardDiagramResolver.Resolve(card, library);
         Assert.Equal("line", resolved.Card.Diagram.Kind);
         Assert.Equal("usage_date", resolved.Card.Diagram.Properties["x"]);
-        Assert.Equal("line_bottom_300", resolved.Card.Presentation!.UsePreset);
-        Assert.Equal("top5", resolved.Card.SeriesTransform!.UsePreset);
+        Assert.Equal("line_bottom_300", resolved.Card.Presentation!.Value.UsePreset?.Value);
+        Assert.Equal("top5", resolved.Card.SeriesTransform!.Value.UsePreset?.Value);
 
         var presentation = CardChromeResolver.ResolveChartPresentation(resolved.Card, library);
         Assert.Equal(300, presentation.HeightPx);

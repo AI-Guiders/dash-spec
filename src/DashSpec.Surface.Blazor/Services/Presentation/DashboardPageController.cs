@@ -365,7 +365,7 @@ public sealed class DashboardPageController : IDisposable
     public void ToggleCardBodyFold(string cardId)
     {
         var foldable = _session.Document.Cards.Select(c =>
-            (c.Id, c.Chrome?.Fold ?? CardFoldMode.None)).ToList();
+            (c.Id, c.Chrome?.Value.Fold ?? CardFoldMode.None)).ToList();
         var policy = _session.Document.ResolvedCardsChrome.FoldPolicy;
 
         _cardFold.Toggle(cardId, policy, foldable);
@@ -795,7 +795,7 @@ public sealed class DashboardPageController : IDisposable
 
             var definition = FindCardDefinition(card.Id);
             return definition is null ||
-                   string.Equals(definition.PageId, ActivePageId, StringComparison.OrdinalIgnoreCase);
+                   string.Equals(definition.PageId?.Value, ActivePageId, StringComparison.OrdinalIgnoreCase);
         });
     }
 
@@ -985,7 +985,7 @@ public sealed class DashboardPageController : IDisposable
     public IReadOnlyList<string> DashboardBoundForCard(CardRenderResult card)
     {
         var definition = FindCardDefinition(card.Id);
-        if (definition?.Chrome?.BoundFilters is CardBoundFilterChrome.Hidden or CardBoundFilterChrome.ToolbarOnly)
+        if (definition?.Chrome?.Value.BoundFilters is CardBoundFilterChrome.Hidden or CardBoundFilterChrome.ToolbarOnly)
         {
             return [];
         }
@@ -1429,8 +1429,8 @@ public sealed class DashboardPageController : IDisposable
         }
 
         var pageIds = _session.Document.Cards
-            .Where(card => tabCardIds.Contains(card.Id) && !string.IsNullOrWhiteSpace(card.PageId))
-            .Select(card => card.PageId!)
+            .Where(card => tabCardIds.Contains(card.Id) && !string.IsNullOrWhiteSpace(card.PageId?.Value))
+            .Select(card => card.PageId?.Value!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return (_session.Document.Pages ?? [])

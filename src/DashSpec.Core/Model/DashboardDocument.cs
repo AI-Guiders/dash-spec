@@ -63,36 +63,4 @@ public sealed record DashboardDocument(
         RowTypeSchemas ?? EmptyRowTypeSchemas;
 }
 
-public sealed record CardDefinition(
-    string Id,
-    string Title,
-    DiagramDefinition Diagram,
-    DataSourceDefinition DataSource,
-    IReadOnlyList<string> BoundFilters,
-    IReadOnlyList<string> LocalFilters,
-    PlacementDefinition? Placement = null,
-    string? TabId = null,
-    string? LayoutRef = null,
-    string? UseCardPreset = null,
-    LegendDefinition? Legend = null,
-    PresentationBlock? Presentation = null,
-    SeriesTransformBlock? SeriesTransform = null,
-    string? FilterHostCardId = null,
-    IReadOnlyList<string>? HostedFilters = null,
-    LayoutBoardDefinition? InteriorBoard = null,
-    string? DiagramSlotRef = null,
-    IReadOnlyDictionary<string, CardDiagramSlotDefinition>? DiagramSlots = null,
-    CardClickBehaviour? ClickBehaviour = null,
-    IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
-    bool LocalFiltersManualApply = false,
-    int? LocalFiltersApplySplitIndex = null,
-    LayoutBoardDefinition? LocalFiltersChromeBoard = null,
-    CardVisibilityRule? Visibility = null,
-    string? PhaseId = null,
-    string? PageId = null,
-    MatrixRenderLimitsDefinition? MatrixLimits = null,
-    string? OversizeMessage = null,
-    CardChromeDefinition? Chrome = null,
-    InspectPresentation? Inspect = null,
-    TooltipDefinition? Tooltip = null,
-    CardFlowInputDefinition? FlowInput = null);
+// CardDefinition is owned by DashSpec.Modeling.Parse.Card (F#).

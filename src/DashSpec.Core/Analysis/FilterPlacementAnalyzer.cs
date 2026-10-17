@@ -38,9 +38,9 @@ internal static class FilterPlacementAnalyzer
         foreach (var card in document.Cards)
         {
             var localSet = new HashSet<string>(card.LocalFilters, StringComparer.OrdinalIgnoreCase);
-            var hostedSet = new HashSet<string>(card.HostedFilters ?? [], StringComparer.OrdinalIgnoreCase);
+            var hostedSet = new HashSet<string>(card.HostedFilters?.Value ?? [], StringComparer.OrdinalIgnoreCase);
 
-            if (string.IsNullOrWhiteSpace(card.UseCardPreset))
+            if (string.IsNullOrWhiteSpace(card.UseCardPreset?.Value))
             {
                 var effectiveBind = CardBindResolver.Expand(
                     card.BoundFilters,
@@ -84,7 +84,7 @@ internal static class FilterPlacementAnalyzer
                 if (registry[filterName].Kind == FilterKind.Top)
                 {
                     var hasUnresolvedPreset =
-                        !string.IsNullOrWhiteSpace(card.UseCardPreset) ||
+                        !string.IsNullOrWhiteSpace(card.UseCardPreset?.Value) ||
                         !string.IsNullOrWhiteSpace(card.Diagram.UsePreset?.Value);
                     var violation = TopFilterPlacementRules.GetViolation(
                         filterName,
@@ -98,7 +98,7 @@ internal static class FilterPlacementAnalyzer
                 }
             }
 
-            foreach (var filterName in card.HostedFilters ?? [])
+            foreach (var filterName in card.HostedFilters?.Value ?? [])
             {
                 if (!registry.ContainsKey(filterName))
                 {
@@ -118,17 +118,17 @@ internal static class FilterPlacementAnalyzer
                         $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
-                if (string.IsNullOrWhiteSpace(card.FilterHostCardId))
+                if (string.IsNullOrWhiteSpace(card.FilterHostCardId?.Value))
                 {
                     errors.Add($"Card '{card.Id}' declares hosted filters without filters host <card>.");
                     continue;
                 }
 
                 var host = document.Cards.FirstOrDefault(other =>
-                    string.Equals(other.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(other.Id, card.FilterHostCardId?.Value, StringComparison.OrdinalIgnoreCase));
                 if (host is null)
                 {
-                    errors.Add($"Card '{card.Id}' filters host '{card.FilterHostCardId}' was not found.");
+                    errors.Add($"Card '{card.Id}' filters host '{card.FilterHostCardId?.Value}' was not found.");
                     continue;
                 }
 
@@ -155,14 +155,14 @@ internal static class FilterPlacementAnalyzer
 
     private static bool IsOnPageToolbar(DashboardDocument document, CardDefinition card, string filterName)
     {
-        if (string.IsNullOrWhiteSpace(card.PageId) || document.Pages is null)
+        if (string.IsNullOrWhiteSpace(card.PageId?.Value) || document.Pages is null)
         {
             return false;
         }
 
         var page = document.Pages.FirstOrDefault(p =>
-            string.Equals(p.Id, card.PageId, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(p.TabId?.Value ?? "", card.TabId ?? "", StringComparison.OrdinalIgnoreCase));
+            string.Equals(p.Id, card.PageId?.Value, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(p.TabId?.Value ?? "", card.TabId?.Value ?? "", StringComparison.OrdinalIgnoreCase));
         if (page?.ToolbarBoard is null)
         {
             return false;
@@ -180,14 +180,14 @@ internal static class FilterPlacementAnalyzer
         CardDefinition card,
         string filterName)
     {
-        if (!(card.HostedFilters ?? []).Contains(filterName, StringComparer.OrdinalIgnoreCase) ||
-            string.IsNullOrWhiteSpace(card.FilterHostCardId))
+        if (!(card.HostedFilters?.Value ?? []).Contains(filterName, StringComparer.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(card.FilterHostCardId?.Value))
         {
             return false;
         }
 
         var host = document.Cards.FirstOrDefault(other =>
-            string.Equals(other.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
+            string.Equals(other.Id, card.FilterHostCardId?.Value, StringComparison.OrdinalIgnoreCase));
         return host?.LocalFilters.Contains(filterName, StringComparer.OrdinalIgnoreCase) == true;
     }
 }

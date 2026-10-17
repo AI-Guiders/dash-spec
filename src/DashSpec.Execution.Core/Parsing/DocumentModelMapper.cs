@@ -80,44 +80,7 @@ internal static class DocumentModelMapper
         chrome;
 
     private static CardDefinition ToCore(FsharpCard.CardDefinition card) =>
-        new(
-            card.Id,
-            card.Title,
-            ToCore(card.Diagram),
-            ToCore(card.DataSource),
-            card.BoundFilters.ToList(),
-            card.LocalFilters.ToList(),
-            MapOptional(card.Placement, ToCore),
-            FirstOrNull(card.TabId),
-            FirstOrNull(card.LayoutRef),
-            FirstOrNull(card.UseCardPreset),
-            MapOptional(card.Legend, ToCore),
-            MapOptional(card.Presentation, ToCore),
-            MapOptional(card.SeriesTransform, ToCore),
-            FirstOrNull(card.FilterHostCardId),
-            ToListOrNull(card.HostedFilters),
-            MapOptional(card.InteriorBoard, ToCore),
-            FirstOrNull(card.DiagramSlotRef),
-            card.DiagramSlots.Count == 0
-                ? null
-                : card.DiagramSlots.ToDictionary(
-                    static kv => kv.Key,
-                    static kv => ToCore(kv.Value),
-                    StringComparer.OrdinalIgnoreCase),
-            MapOptional(card.ClickBehaviour, ToCore),
-            card.ExtensionBlocks.Select(ToCore).ToList(),
-            card.LocalFiltersManualApply,
-            MapOptional(card.LocalFiltersApplySplitIndex, static x => x),
-            MapOptional(card.LocalFiltersChromeBoard, ToCore),
-            MapOptional(card.Visibility, ToCore),
-            FirstOrNull(card.PhaseId),
-            FirstOrNull(card.PageId),
-            MapOptional(card.MatrixLimits, ToCore),
-            FirstOrNull(card.OversizeMessage),
-            MapOptional(card.Chrome, ToCore),
-            MapOptional(card.Inspect, ToCore),
-            MapOptional(card.Tooltip, ToCoreTooltip),
-            MapOptional(card.FlowInput, ToCoreFlowInput));
+        card;
 
     private static CardDiagramSlotDefinition ToCore(FsharpCard.CardDiagramSlot slot) =>
         slot;

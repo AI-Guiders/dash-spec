@@ -8,7 +8,7 @@ public static class ChartChromeProperties
     public static Dictionary<string, string> Merge(CardDefinition card, SpecLibrary? library)
     {
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        AbsorbPresentationChain(card.Presentation, library, merged);
+        AbsorbPresentationChain(card.Presentation?.Value, library, merged);
 
         foreach (var legacyKey in new[]
         {

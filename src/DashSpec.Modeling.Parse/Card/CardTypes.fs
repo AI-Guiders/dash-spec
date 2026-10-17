@@ -38,8 +38,38 @@ type CardClickEffect =
     | GotoPage of string
     | GotoCatalogEntry of string * IReadOnlyList<string> option
 
+    member this.IsNavigationEffect =
+        match this with
+        | SetFilterFromField _
+        | DrillTableFromCell _
+        | GotoTab _
+        | FocusPhase _
+        | GotoPage _
+        | GotoCatalogEntry _ -> true
+        | InvokeHandler(handlerId, _) ->
+            System.String.Equals(handlerId, "drill_down", System.StringComparison.OrdinalIgnoreCase)
+        | ShowSelection _ -> false
+
+    member this.RequiresInteriorSlotRefresh =
+        match this with
+        | DrillTableFromCell _ -> true
+        | _ -> false
+
+    member this.TryGetShowSelection =
+        match this with
+        | ShowSelection(placement, format, source, copyFriendly, split) ->
+            Some(placement, format, source, copyFriendly, split)
+        | _ -> None
+
 [<CLIMutable>]
-type CardClickBehaviour = { Effects: IReadOnlyList<CardClickEffect> }
+type CardClickBehaviour =
+    { Effects: IReadOnlyList<CardClickEffect> }
+
+    member this.HasTooltipSelection =
+        this.Effects
+        |> Seq.exists (function
+            | ShowSelection(_, _, ShowSource.Tooltip, _, _) -> true
+            | _ -> false)
 
 type CardBoundFilterChrome =
     | Chips = 0
@@ -176,6 +206,43 @@ type CardDefinition =
       FlowInput: CardFlowInput option
       CardInputs: IReadOnlyDictionary<string, CardFlowInput>
       InteriorFlow: CardInteriorFlowDefinition option }
+
+    member this.WithTitle(title: string) =
+        { this with Title = title }
+
+    member this.WithChrome(chrome: CardChromeDefinition option) =
+        { this with Chrome = chrome }
+
+    member this.WithDiagram(diagram: DiagramDefinition) =
+        { this with Diagram = diagram }
+
+    member this.WithDataSource(dataSource: DataSourceDefinition) =
+        { this with DataSource = dataSource }
+
+    member this.WithBoundFilters(boundFilters: IReadOnlyList<string>) =
+        { this with BoundFilters = boundFilters }
+
+    member this.WithDiagramSlots(diagramSlots: IReadOnlyDictionary<string, CardDiagramSlot>) =
+        { this with DiagramSlots = diagramSlots }
+
+    member this.WithLegend(legend: LegendDefinition option) =
+        { this with Legend = legend }
+
+    member this.WithPresentation(presentation: PresentationBlock option) =
+        { this with Presentation = presentation }
+
+    member this.WithSeriesTransform(seriesTransform: SeriesTransformBlock option) =
+        { this with SeriesTransform = seriesTransform }
+
+    member this.WithFlowInput(flowInput: CardFlowInput option) =
+        { this with FlowInput = flowInput }
+
+    member this.WithInspect(inspect: InspectPresentation option) =
+        { this with Inspect = inspect }
+
+    member this.WithTooltip(tooltip: TooltipDefinition option) =
+        { this with Tooltip = tooltip }
+
 
 module CardBindResolver =
     let dashboardToken = "dashboard"

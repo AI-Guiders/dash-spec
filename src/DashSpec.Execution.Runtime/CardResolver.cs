@@ -15,7 +15,7 @@ public static class CardResolver
         var working = ApplyCardPreset(card, library);
         var bindSource = working.BoundFilters;
         var bound = CardBindResolver.Expand(bindSource, working.LocalFilters, dashboardFilters);
-        working = working with { BoundFilters = bound };
+        working = working.WithBoundFilters(bound);
         return CardDiagramResolver.Resolve(working, library);
     }
 
@@ -33,14 +33,15 @@ public static class CardResolver
 
     private static CardDefinition ApplyCardPreset(CardDefinition card, SpecLibrary? library)
     {
-        if (string.IsNullOrWhiteSpace(card.UseCardPreset))
+        var presetId = card.UseCardPreset?.Value;
+        if (string.IsNullOrWhiteSpace(presetId))
         {
             return card;
         }
 
-        var preset = library?.TryGetCard(card.UseCardPreset)
+        var preset = library?.TryGetCard(presetId)
             ?? throw new InvalidOperationException(
-                $"Card '{card.Id}': card preset '{card.UseCardPreset}' was not found in @diagramlibrary.");
+                $"Card '{card.Id}': card preset '{presetId}' was not found in @diagramlibrary.");
 
         var diagram = card.Diagram;
         if (NeedsDiagramPreset(diagram) && !string.IsNullOrWhiteSpace(preset.DiagramPreset))
@@ -50,17 +51,16 @@ public static class CardResolver
 
         var dataSource = NeedsDataSourcePreset(card.DataSource)
             ? preset.DataSource ?? throw new InvalidOperationException(
-                $"Card preset '{card.UseCardPreset}' has no datasource.")
+                $"Card preset '{presetId}' has no datasource.")
             : card.DataSource;
 
         var boundFilters = card.BoundFilters.Count > 0 ? card.BoundFilters : preset.BindFilters;
 
-        return card with
-        {
-            Diagram = diagram,
-            DataSource = dataSource,
-            BoundFilters = boundFilters,
-        };
+        return card
+            .WithDiagram(diagram)
+            .WithDataSource(dataSource)
+            .WithBoundFilters(boundFilters);
+
     }
 
     private static bool NeedsDiagramPreset(DiagramDefinition diagram) =>

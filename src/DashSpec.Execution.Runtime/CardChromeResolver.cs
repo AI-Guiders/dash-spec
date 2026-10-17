@@ -66,7 +66,7 @@ public static class CardChromeResolver
         CardDefinition card,
         SpecLibrary? library)
     {
-        var fromBlock = ResolveSeriesTransformFromBlock(card.SeriesTransform, library);
+        var fromBlock = ResolveSeriesTransformFromBlock(card.SeriesTransform?.Value, library);
         if (fromBlock is not null)
         {
             return fromBlock;

@@ -62,12 +62,13 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var effects = doc.Cards[0].ClickBehaviour!.Effects;
-        Assert.IsType<GotoPageEffect>(effects[0]);
-        Assert.Equal("detail", ((GotoPageEffect)effects[0]).PageId);
-        Assert.IsType<GotoCatalogEntryEffect>(effects[1]);
-        Assert.Equal("soak", ((GotoCatalogEntryEffect)effects[1]).EntryId);
-        Assert.Null(((GotoCatalogEntryEffect)effects[1]).PreserveFilterNames);
+        var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
+        Assert.Equal("GotoPage", CardClickEffectTestData.CaseName(effects[0]));
+        Assert.Equal("detail", CardClickEffectTestData.Fields(effects[0])[0]!);
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effects[1]));
+        var entryFields = CardClickEffectTestData.Fields(effects[1]);
+        Assert.Equal("soak", entryFields[0]!);
+        Assert.Null(entryFields[1]);
     }
 
     [Fact]
@@ -91,11 +92,13 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var effects = doc.Cards[0].ClickBehaviour!.Effects;
-        Assert.IsType<SetFilterFromFieldEffect>(effects[0]);
-        var gotoEntry = Assert.IsType<GotoCatalogEntryEffect>(effects[1]);
-        Assert.Equal("detail", gotoEntry.EntryId);
-        Assert.Equal(["usage_date", "user_name"], gotoEntry.PreserveFilterNames);
+        var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
+        Assert.Equal("SetFilterFromField", CardClickEffectTestData.CaseName(effects[0]));
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effects[1]));
+        var fields = CardClickEffectTestData.Fields(effects[1]);
+        Assert.Equal("detail", fields[0]!);
+        var preserved = (Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<string>>)fields[1]!;
+        Assert.Equal(["usage_date", "user_name"], preserved.Value);
     }
 
     [Fact]
@@ -118,10 +121,13 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var gotoEntry = Assert.IsType<GotoCatalogEntryEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("detail", gotoEntry.EntryId);
-        Assert.NotNull(gotoEntry.PreserveFilterNames);
-        Assert.Empty(gotoEntry.PreserveFilterNames!);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effect));
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("detail", fields[0]!);
+        var preserved = (Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<string>>)fields[1]!;
+        Assert.NotNull(preserved);
+        Assert.Empty(preserved.Value);
     }
 
     [Fact]

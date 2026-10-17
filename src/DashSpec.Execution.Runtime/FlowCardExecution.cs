@@ -18,8 +18,8 @@ public static class FlowCardExecution
             return card;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, card.FlowInput);
-        return card with { DataSource = dataSource };
+        var dataSource = MaterializeDataSource(document.Dashflow, card.FlowInput.Value);
+        return card.WithDataSource(dataSource);
     }
 
     public static CardDiagramSlotDefinition ApplyFlowInputToSlot(

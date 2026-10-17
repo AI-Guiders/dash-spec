@@ -33,9 +33,9 @@ public sealed record MatrixPresentation(
         var height = CompositionResolution.ResolveMatrixHeightPx(card, library);
         var visibleRows = CompositionResolution.ResolveVisibleRows(card, library);
 
-        var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect);
-        var tooltipSplit = card.Inspect?.Split ?? ", ";
-        var tooltipLabel = card.Inspect?.Label?.Value;
+        var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect?.Value);
+        var tooltipSplit = card.Inspect?.Value.Split ?? ", ";
+        var tooltipLabel = card.Inspect?.Value?.Label?.Value;
 
         var xFormat = LabelFormat.ResolveAxisFormat(diagram.Properties.GetValueOrDefault("x_format"));
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
@@ -69,7 +69,7 @@ public sealed record MatrixPresentation(
             toolbarValueLabels,
             toolbarAxisLabelsX,
             toolbarAxisLabelsY,
-            card.Legend,
+            card.Legend?.Value,
             card.Tooltip is not null);
     }
 

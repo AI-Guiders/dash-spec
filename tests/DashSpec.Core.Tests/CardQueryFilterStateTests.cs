@@ -14,7 +14,7 @@ public class CardQueryFilterStateTests
         session.SetField("app_name", ["OverviewApp"]);
         session.SetDate("usage_date", new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 7));
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "versions_card",
             "T",
             default!,

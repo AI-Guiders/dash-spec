@@ -13,12 +13,12 @@ public static class CardLocalFilterChromeCompactor
         IReadOnlyList<FilterDefinition> filters,
         int columns)
     {
-        if (card.LocalFilters is not { Count: > 0 } || card.LocalFiltersChromeBoard is null)
+        if (card.LocalFilters is not { Count: > 0 } || card.LocalFiltersChromeBoard?.Value is null)
         {
             return new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
         }
 
-        var row = card.LocalFiltersChromeBoard.Rows.FirstOrDefault();
+        var row = card.LocalFiltersChromeBoard?.Value.Rows.FirstOrDefault();
         if (row is null or { Count: 0 })
         {
             return new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
