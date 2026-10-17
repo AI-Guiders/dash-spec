@@ -158,7 +158,7 @@ public class ChartRuntimeTests
         {
             ["category"] = "app_name",
             ["value"] = "distinct_users",
-        });
+        }, null);
 
         Assert.Equal("app_name", DiagramBindings.Column(diagram, "x"));
         Assert.Equal("distinct_users", DiagramBindings.Column(diagram, "y"));
@@ -203,7 +203,7 @@ public class ChartRuntimeTests
             ["category"] = "app_name",
             ["value"] = "peak_concurrent_proxy",
             ["orientation"] = "horizontal",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -218,7 +218,7 @@ public class ChartRuntimeTests
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -238,7 +238,7 @@ public class ChartRuntimeTests
             ["reference"] = "purchased_seats",
             ["reference_as"] = "Куплено",
             ["orientation"] = "horizontal",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -260,7 +260,7 @@ public class ChartRuntimeTests
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 

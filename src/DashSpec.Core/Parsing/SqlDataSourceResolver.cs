@@ -14,7 +14,7 @@ internal static class SqlDataSourceResolver
                 $"Expected sql datasource, got '{source.Kind}'.");
         }
 
-        if (source.SqlCarrier is DataSourceSqlCarrier.File)
+        if (source.SqlCarrier?.Value == DataSourceSqlCarrier.File)
         {
             if (string.IsNullOrWhiteSpace(specDirectory))
             {

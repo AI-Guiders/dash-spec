@@ -38,14 +38,14 @@ public sealed class DashboardFilterUiState
             if (filter.Kind is FilterKind.Date)
             {
                 var range = session.Filters.GetDate(filter.Name)
-                    ?? DateDefaultRange.Resolve(filter.DefaultExpression!, DateOnly.FromDateTime(DateTime.UtcNow));
+                    ?? DateDefaultRange.Resolve(filter.DefaultExpression?.Value!, DateOnly.FromDateTime(DateTime.UtcNow));
                 DateFrom[filter.Name] = range.From;
                 DateTo[filter.Name] = range.To;
             }
             else if (filter.Kind is FilterKind.Field)
             {
                 var values = session.Filters.GetField(filter.Name)?.Values
-                    ?? FieldFilterDefaults.ResolveValues(filter.DefaultExpression);
+                    ?? FieldFilterDefaults.ResolveValues(filter.DefaultExpression?.Value);
                 SelectedFields[filter.Name] = values.ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
             else if (filter.Kind is FilterKind.Top)

@@ -153,7 +153,7 @@ public sealed class LoadDiagnosticsService(
                             $"field_options:{filter.Name}",
                             false,
                             filterSw.ElapsedMilliseconds,
-                            filter.ColumnReference,
+                            filter.ColumnReference?.Value,
                             ex.Message));
                     }
                 }

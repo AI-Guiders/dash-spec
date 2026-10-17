@@ -53,7 +53,7 @@ public static class TabLayoutCompactor
                 .ToList();
         }
 
-        var board = tab.LayoutBoard;
+        LayoutBoardDefinition? board = tab.LayoutBoard?.Value;
         if (!string.IsNullOrWhiteSpace(effectivePageId))
         {
             var page = tabPages.FirstOrDefault(p =>

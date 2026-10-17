@@ -42,7 +42,7 @@ public sealed class DashboardHostCommandCoordinator
         _catalogState.Current.Document.Entries;
 
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
-        _catalogState.Current.Document.Groups ?? [];
+        _catalogState.Current.Document.Groups?.Value ?? [];
 
     public string ActiveCatalogEntryId => ResolveActiveCatalogEntryId();
 

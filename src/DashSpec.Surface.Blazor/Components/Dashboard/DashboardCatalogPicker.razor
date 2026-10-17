@@ -27,7 +27,7 @@
                 </optgroup>
             }
 
-            @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId)))
+            @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId?.Value)))
             {
                 <option value="@entry.Id">@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)</option>
             }
@@ -84,5 +84,5 @@
     }
 
     private IEnumerable<CatalogEntryDefinition> GroupEntries(CatalogGroupDefinition group) =>
-        Entries.Where(entry => string.Equals(entry.GroupId, group.Id, StringComparison.OrdinalIgnoreCase));
+        Entries.Where(entry => string.Equals(entry.GroupId?.Value, group.Id, StringComparison.OrdinalIgnoreCase));
 }

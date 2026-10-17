@@ -67,9 +67,9 @@ internal static class TabAnalyzer
                     ValidateLayoutBoard(tab, pageCards, page.LayoutBoard, document.Layout.Columns);
                 }
             }
-            else if (tab.LayoutBoard is not null)
+            else if (tab.LayoutBoard?.Value is { } layoutBoard)
             {
-                ValidateLayoutBoard(tab, tabCards, tab.LayoutBoard, document.Layout.Columns);
+                ValidateLayoutBoard(tab, tabCards, layoutBoard, document.Layout.Columns);
             }
         }
 

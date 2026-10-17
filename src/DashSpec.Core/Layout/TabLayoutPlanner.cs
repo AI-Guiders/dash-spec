@@ -32,12 +32,12 @@ public static class TabLayoutPlanner
         {
             switch (entry)
             {
-                case LayoutBoardNestRow:
+                case LayoutBoardEntry.NestRow:
                     continue;
-                case LayoutBoardCardRow cardRow:
+                case LayoutBoardEntry.CardRow cardRow:
                     outerRow++;
                     PlaceCardRow(
-                        cardRow.CardIds,
+                        cardRow.Item,
                         outerRow,
                         columns,
                         context,
@@ -47,7 +47,8 @@ public static class TabLayoutPlanner
                         allCards,
                         nests);
                     break;
-                case LayoutBoardGroupRow { Group: var group }:
+                case LayoutBoardEntry.GroupRow groupRow:
+                    var group = groupRow.Item;
                     outerRow++;
                     if (groups.ContainsKey(group.Id))
                     {
@@ -86,10 +87,12 @@ public static class TabLayoutPlanner
         var nests = new Dictionary<string, LayoutBoardNestDefinition>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in board.Entries)
         {
-            if (entry is not LayoutBoardNestRow { Nest: var nest })
+            if (entry is not LayoutBoardEntry.NestRow nestRow)
             {
                 continue;
             }
+
+            var nest = nestRow.Item;
 
             if (nest.Rows.Count == 0)
             {

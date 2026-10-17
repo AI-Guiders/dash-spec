@@ -49,7 +49,7 @@ public static class ResolutionLint
 
         foreach (var tab in document.Tabs)
         {
-            if (HasText(tab.Label) && HasText(entry.Title))
+            if (HasText(tab.Label?.Value) && HasText(entry.Title))
             {
                 yield return Finding(
                     "tab.label",
@@ -78,7 +78,7 @@ public static class ResolutionLint
 
         foreach (var tab in document.Tabs)
         {
-            if (HasText(tab.Label) && HasText(entry.Title))
+            if (HasText(tab.Label?.Value) && HasText(entry.Title))
             {
                 yield return Finding(
                     "tab.label",
@@ -163,7 +163,7 @@ public static class ResolutionLint
 
         foreach (var tab in document.Tabs)
         {
-            CollectBoard(tab.LayoutBoard, tab.CardIds, cards, $"tab '{tab.Id}'", ids);
+            CollectBoard(tab.LayoutBoard?.Value, tab.CardIds, cards, $"tab '{tab.Id}'", ids);
         }
 
         if (document.Pages is not null)
@@ -195,8 +195,8 @@ public static class ResolutionLint
         {
             switch (entry)
             {
-                case LayoutBoardCardRow cardRow:
-                    foreach (var token in cardRow.CardIds)
+                case LayoutBoardEntry.CardRow cardRow:
+                    foreach (var token in cardRow.Item)
                     {
                         var target = LayoutBoardRefResolver.Resolve(
                             LayoutBoardCellFormat.RefToken(token),
@@ -210,7 +210,8 @@ public static class ResolutionLint
                     }
 
                     break;
-                case LayoutBoardGroupRow { Group: var group }:
+                case LayoutBoardEntry.GroupRow groupRow:
+                    var group = groupRow.Item;
                     foreach (var row in group.Rows)
                     {
                         foreach (var token in row)
@@ -220,7 +221,8 @@ public static class ResolutionLint
                     }
 
                     break;
-                case LayoutBoardNestRow { Nest: var nest }:
+                case LayoutBoardEntry.NestRow nestRow:
+                    var nest = nestRow.Item;
                     foreach (var row in nest.Rows)
                     {
                         foreach (var token in row)
@@ -241,10 +243,12 @@ public static class ResolutionLint
         var nests = new Dictionary<string, LayoutBoardNestDefinition>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in board.Entries)
         {
-            if (entry is not LayoutBoardNestRow { Nest: var nest })
+            if (entry is not LayoutBoardEntry.NestRow nestRow)
             {
                 continue;
             }
+
+            var nest = nestRow.Item;
 
             if (!nests.TryAdd(nest.Id, nest))
             {

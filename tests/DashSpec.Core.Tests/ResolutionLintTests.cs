@@ -16,16 +16,21 @@ public sealed class ResolutionLintTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+            TestModelDefaults.FiltersChrome,
             [],
             [],
-            [new TabDefinition("t", tabLabel, ["c"])],
+            [new TabDefinition(
+                "t",
+                tabLabel is null ? Microsoft.FSharp.Core.FSharpOption<string>.None : Microsoft.FSharp.Core.FSharpOption<string>.Some(tabLabel),
+                ["c"],
+                Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
             [
                 new CardDefinition(
                     "c",
                     cardTitle ?? "",
-                    new DiagramDefinition("bar", new Dictionary<string, string>()),
-                    new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+                    DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                     [],
                     []),
             ]);
@@ -33,7 +38,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void CatalogProd_warns_when_report_and_entry_titles_both_set()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -44,7 +49,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void DashboardEmbed_warns_entry_title_over_report_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -55,7 +60,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Embed_warns_tab_title_shadowed_by_entry_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report", tabLabel: "Tab Title"), entry);
         Assert.Contains(findings, f => f.Slot == "tab.label" && f.Mode == ResolutionMode.DashboardEmbed);
     }
@@ -66,8 +71,8 @@ public sealed class ResolutionLintTests
         var card = new CardDefinition(
             "c",
             "",
-            new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Presentation: new PresentationBlock(null, new Dictionary<string, string> { ["legend"] = "top" }));
@@ -82,8 +87,8 @@ public sealed class ResolutionLintTests
         var card = new CardDefinition(
             "c",
             "",
-            new DiagramDefinition("bar", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Placement: new PlacementDefinition(2, 1, 6));
@@ -91,7 +96,7 @@ public sealed class ResolutionLintTests
         var doc = Doc("x") with
         {
             Cards = [card],
-            Tabs = [new TabDefinition("t", null, ["c"], LayoutBoard: board)],
+                Tabs = [new TabDefinition("t", Microsoft.FSharp.Core.FSharpOption<string>.None, ["c"], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(board))],
         };
 
         var findings = ResolutionLint.Analyze(doc);
@@ -103,7 +108,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void No_findings_when_single_source_per_slot()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc(""), entry);
         Assert.DoesNotContain(findings, f => f.Slot == "report.header_title");
     }

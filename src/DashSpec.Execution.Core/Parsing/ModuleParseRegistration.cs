@@ -270,92 +270,23 @@ internal static class ModuleParseRegistration
             topbarLayout);
     }
 
-    private static CatalogDocument ToCore(FsharpCatalog catalog)
-    {
-        var entries = catalog.Entries
-            .Select(e => new CatalogEntryDefinition(
-                e.Id,
-                e.Title,
-                e.DashspecPath,
-                OptionModule.ToArray(e.GroupId).FirstOrDefault(),
-                OptionModule.ToArray(e.InitialTabId).FirstOrDefault()))
-            .ToList();
-
-        IReadOnlyList<CatalogGroupDefinition>? groups = null;
-        var groupItems = OptionModule.ToArray(catalog.Groups);
-        if (groupItems.Length > 0)
-        {
-            groups = groupItems[0]
-                .Select(g => new CatalogGroupDefinition(g.Id, g.Title))
-                .ToList();
-        }
-
-        return new CatalogDocument(catalog.Id, catalog.DefaultEntryId, entries, groups);
-    }
+    private static CatalogDocument ToCore(FsharpCatalog catalog) => catalog;
 
     private static SeriesTransformBlock ToCore(FsharpTransform transform) =>
-        new(
-            OptionModule.ToArray(transform.UsePreset).FirstOrDefault(),
-            OptionModule.ToArray(transform.Max).FirstOrDefault(),
-            OptionModule.ToArray(transform.OtherLabel).FirstOrDefault());
+        transform;
 
     private static IReadOnlyDictionary<string, string> ToCore(FsharpPalette palette) =>
         palette.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 
     private static PresentationBlock ToCore(FsharpPresentationBlock block) =>
-        new(
-            OptionModule.ToArray(block.UsePreset).FirstOrDefault(),
-            block.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase));
+        block;
 
-    private static DiagramDefinition ToCore(FsharpDiagram diagram)
-    {
-        var usePreset = OptionModule.ToArray(diagram.UsePreset).FirstOrDefault();
-        return new DiagramDefinition(
-            diagram.Kind,
-            diagram.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
-            usePreset);
-    }
+    private static DiagramDefinition ToCore(FsharpDiagram diagram) =>
+        diagram;
 
     private static InspectPresentation ToCore(FsharpInspect inspect) =>
-        new(
-            OptionModule.ToArray(inspect.TooltipId).FirstOrDefault(),
-            OptionModule.ToArray(inspect.Label).FirstOrDefault(),
-            inspect.Format,
-            inspect.Split);
+        inspect;
 
-    private static LayoutScope? MapScope(FsharpScope scope)
-    {
-        if (scope.Equals(FsharpScope.Toolbar)) return LayoutScope.Toolbar;
-        if (scope.Equals(FsharpScope.Tab)) return LayoutScope.Tab;
-        if (scope.Equals(FsharpScope.Page)) return LayoutScope.Page;
-        if (scope.Equals(FsharpScope.Card)) return LayoutScope.Card;
-        if (scope.Equals(FsharpScope.Host)) return LayoutScope.Host;
-        return null;
-    }
-
-    private static LayoutBoardDefinition ToCore(FsharpBoard board)
-    {
-        var scopes = OptionModule.ToArray(board.ModuleScope);
-        LayoutScope? moduleScope = scopes.Length > 0 ? MapScope(scopes[0]) : null;
-        return new LayoutBoardDefinition(
-            board.Entries.Select(ToLayoutEntry).ToList(),
-            moduleScope);
-    }
-
-    private static LayoutBoardEntry ToLayoutEntry(FsharpLayout.LayoutBoardEntry entry) =>
-        entry switch
-        {
-            FsharpLayout.LayoutBoardEntry.CardRow cardRow =>
-                new LayoutBoardCardRow(cardRow.Item.ToList()),
-            FsharpLayout.LayoutBoardEntry.GroupRow groupRow =>
-                new LayoutBoardGroupRow(ToLayoutGroup(groupRow.Item)),
-            _ => throw new InvalidOperationException($"Unknown layout board entry: {entry}")
-        };
-
-    private static LayoutBoardGroupDefinition ToLayoutGroup(FsharpLayout.LayoutBoardGroupDefinition group) =>
-        new(
-            group.Id,
-            OptionModule.ToArray(group.Title).FirstOrDefault(),
-            group.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
+    private static LayoutBoardDefinition ToCore(FsharpBoard board) =>
+        board;
 }
-

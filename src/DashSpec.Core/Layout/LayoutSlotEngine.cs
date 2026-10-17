@@ -58,8 +58,8 @@ public static class LayoutSlotEngine
         {
             switch (entry)
             {
-                case LayoutBoardCardRow cardRow:
-                    foreach (var token in cardRow.CardIds)
+                case LayoutBoardEntry.CardRow cardRow:
+                    foreach (var token in cardRow.Item)
                     {
                         var refId = LayoutBoardCellFormat.RefToken(token);
                         if (plan.Nests.TryGetValue(refId, out var nest))
@@ -84,7 +84,8 @@ public static class LayoutSlotEngine
                     }
 
                     break;
-                case LayoutBoardGroupRow { Group: var group }:
+                case LayoutBoardEntry.GroupRow groupRow:
+                    var group = groupRow.Item;
                     if (plan.Groups.TryGetValue(group.Id, out var groupPlacement))
                     {
                         slots.Add(new LayoutSlotDescriptor(

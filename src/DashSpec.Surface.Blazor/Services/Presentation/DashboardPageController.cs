@@ -149,7 +149,7 @@ public sealed class DashboardPageController : IDisposable
         _cultureAmbient.DisplayTimeZone);
 
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
-        _catalogState.Current.Document.Groups ?? [];
+        _catalogState.Current.Document.Groups?.Value ?? [];
 
     public bool HasPages => ActiveTabPages().Count > 1;
 
@@ -176,7 +176,7 @@ public sealed class DashboardPageController : IDisposable
         DisplayResolutionHost.ResolveDisplayTitle(
             template,
             BuildFilterDisplayContext(),
-            ActivePage()?.DisplayBindings?.Slots);
+            ActivePage()?.DisplayBindings);
 
     public FilterDisplayContext BuildFilterDisplayContext() =>
         new(
@@ -739,8 +739,8 @@ public sealed class DashboardPageController : IDisposable
         }
 
         return TabLayoutPlan.Entries
-            .OfType<LayoutBoardGroupRow>()
-            .Select(static row => row.Group)
+            .OfType<LayoutBoardEntry.GroupRow>()
+            .Select(static row => row.Item)
             .FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -1175,13 +1175,13 @@ public sealed class DashboardPageController : IDisposable
 
         var entry = _catalogState.Current.Document.Entries.FirstOrDefault(e =>
             string.Equals(e.Id, entryId, StringComparison.OrdinalIgnoreCase));
-        if (string.IsNullOrWhiteSpace(entry?.InitialTabId))
+        if (string.IsNullOrWhiteSpace(entry?.InitialTabId?.Value))
         {
             return;
         }
 
         var tab = _session.Document.Tabs.FirstOrDefault(t =>
-            string.Equals(t.Id, entry.InitialTabId, StringComparison.OrdinalIgnoreCase));
+            string.Equals(t.Id, entry.InitialTabId.Value, StringComparison.OrdinalIgnoreCase));
         if (tab is null)
         {
             return;
@@ -1227,7 +1227,7 @@ public sealed class DashboardPageController : IDisposable
     {
         var reference = ResolvePeriodReferenceDate();
         foreach (var grainHost in _session.FilterIndex.Values
-                     .Select(filter => filter.GrainFilterName)
+                     .Select(filter => filter.GrainFilterName?.Value)
                      .Where(name => !string.IsNullOrWhiteSpace(name))
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -1352,7 +1352,7 @@ public sealed class DashboardPageController : IDisposable
             _refresh.DisplayContext = null;
         }
 
-        _refresh.PageDisplayBindings = ActivePage()?.DisplayBindings?.Slots;
+        _refresh.PageDisplayBindings = ActivePage()?.DisplayBindings;
         _refresh.FilterDisplayFactory = BuildFilterDisplayContext;
     }
 
@@ -1407,7 +1407,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var grain = PeriodAnchorResolver.TryReadGrain(_session.Filters, derive.GrainFilterName);
+        var grain = PeriodAnchorResolver.TryReadGrain(_session.Filters, derive.GrainFilterName?.Value);
         var from = PeriodAnchorResolver.ResolveAnchor(anchor, grain);
         var to = PeriodAnchorResolver.ResolvePeriodEnd(from, grain);
         DateFrom[derive.TargetFilter] = from;

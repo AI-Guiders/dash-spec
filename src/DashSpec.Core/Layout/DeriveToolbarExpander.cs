@@ -47,10 +47,11 @@ public static class DeriveToolbarExpander
         FilterDeriveDefinition derive,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex)
     {
-        if (!string.IsNullOrWhiteSpace(derive.GrainFilterName)
-            && filterIndex.ContainsKey(derive.GrainFilterName))
+        var grainFilterName = derive.GrainFilterName?.Value;
+        if (!string.IsNullOrWhiteSpace(grainFilterName)
+            && filterIndex.ContainsKey(grainFilterName))
         {
-            Add(expanded, seen, derive.GrainFilterName);
+            Add(expanded, seen, grainFilterName);
         }
 
         if (!string.IsNullOrWhiteSpace(derive.SourceFilter)

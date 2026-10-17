@@ -42,7 +42,13 @@ public class GanttTimelineScaleTests
     [Fact]
     public void BuildTicks_weekly_aligns_to_report_culture_first_day_of_week()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(Culture: "en-US"));
+        LabelFormat.SetReportDefaults(new ReportFormatDefaults
+        {
+            Culture = Microsoft.FSharp.Core.FSharpOption<string>.Some("en-US"),
+            DateFormat = Microsoft.FSharp.Core.FSharpOption<string>.None,
+            TimeFormat = Microsoft.FSharp.Core.FSharpOption<string>.None,
+            DateTimeFormat = Microsoft.FSharp.Core.FSharpOption<string>.None,
+        });
         try
         {
             var start = new DateTime(2026, 9, 24, 0, 0, 0);

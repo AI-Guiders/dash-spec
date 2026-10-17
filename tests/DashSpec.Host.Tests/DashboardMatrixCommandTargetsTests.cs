@@ -15,14 +15,14 @@ public sealed class DashboardMatrixCommandTargetsTests
                 "line_card",
                 "Line",
                 new DiagramDefinition("line", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 BoundFilters: [],
                 LocalFilters: []),
             new(
                 "heat_card",
                 "Heat",
                 new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 BoundFilters: [],
                 LocalFilters: []),
         };

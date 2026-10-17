@@ -54,8 +54,8 @@ public static class DashflowPathResolver
             var inbound = inboundLinks.Count == 1
                 ? inboundLinks[0]
                 : inboundLinks.FirstOrDefault(l =>
-                      !string.IsNullOrWhiteSpace(transformer.DefaultInputPort)
-                      && string.Equals(l.ToPort, transformer.DefaultInputPort, StringComparison.OrdinalIgnoreCase))
+                       !string.IsNullOrWhiteSpace(transformer.DefaultInputPort)
+                       && string.Equals(l.ToPort?.Value, transformer.DefaultInputPort, StringComparison.OrdinalIgnoreCase))
                   ?? inboundLinks[0];
 
             nodeId = inbound.FromNode;
@@ -65,9 +65,9 @@ public static class DashflowPathResolver
 
     private static string ResolveUpstreamPort(DashflowModuleDefinition flow, DashflowLinkDefinition inbound)
     {
-        if (!string.IsNullOrWhiteSpace(inbound.FromPort))
+        if (!string.IsNullOrWhiteSpace(inbound.FromPort?.Value))
         {
-            return inbound.FromPort;
+            return inbound.FromPort.Value;
         }
 
         var upstreamSource = flow.Sources.FirstOrDefault(s =>

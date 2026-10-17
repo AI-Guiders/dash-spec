@@ -55,7 +55,7 @@ public sealed class CatalogParserTests
 
         var catalog = CatalogParser.Parse(text);
 
-        Assert.Equal("versions", catalog.Entries[0].InitialTabId);
+        Assert.Equal("versions", catalog.Entries[0].InitialTabId.Value);
     }
 
     [Fact]

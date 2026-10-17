@@ -157,7 +157,7 @@ public static class HeatmapCellFilterResolver
         FilterState filters,
         IEnumerable<string>? anchorDateFilterNames)
     {
-        var column = filter.ColumnReference ?? filter.Name;
+        var column = filter.ColumnReference?.Value ?? filter.Name;
 
         if (column.Contains("bucket_start_utc", StringComparison.OrdinalIgnoreCase) &&
             context.XBucketUtc is { } bucketUtc)

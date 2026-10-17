@@ -143,10 +143,10 @@ public sealed class ReportPagesAndCatalogTests
             """);
 
         Assert.NotNull(catalog.Groups);
-        Assert.Single(catalog.Groups);
-        Assert.Equal("customer", catalog.Groups[0].Id);
-        Assert.Equal("Customer", catalog.Groups[0].Title);
-        Assert.Equal("customer", catalog.Entries[0].GroupId);
+        Assert.Single(catalog.Groups.Value);
+        Assert.Equal("customer", catalog.Groups.Value[0].Id);
+        Assert.Equal("Customer", catalog.Groups.Value[0].Title);
+        Assert.Equal("customer", catalog.Entries[0].GroupId.Value);
         Assert.Null(catalog.Entries[1].GroupId);
     }
 

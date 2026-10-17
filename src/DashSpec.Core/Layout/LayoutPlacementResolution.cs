@@ -44,9 +44,9 @@ public static class LayoutPlacementResolution
     {
         foreach (var filter in filters)
         {
-            if (filter.Placement is not null)
+            if (filter.Placement is { } placement)
             {
-                toolbarPlacements[filter.Name] = filter.Placement;
+                toolbarPlacements[filter.Name] = placement.Value;
             }
         }
     }

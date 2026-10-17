@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Core.Resolution;
 
@@ -14,20 +15,29 @@ public static class ReportTimePolicyResolver
               ?? specPolicy
               ?? ReportTimePolicy.Default
             : specPolicy ?? ReportTimePolicy.Default;
-        if (merged.Basis is not ReportTimeBasis.Working)
+        if (!merged.Basis.IsWorking)
         {
             return merged;
         }
 
-        var calendar = merged.WorkCalendar ?? new WorkCalendarDefinition(null, null, null, null);
-        calendar = calendar with
+        var calendar = merged.WorkCalendar?.Value;
+        var resolvedCalendar = new WorkCalendarDefinition
         {
-            TimeZoneId = calendar.TimeZoneId ?? fallbackTimeZoneId,
-            StartTime = calendar.StartTime ?? "09:00",
-            EndTime = calendar.EndTime ?? "18:00",
-            WorkDays = calendar.WorkDays ?? "mon,tue,wed,thu,fri",
+            TimeZoneId = ToOption(calendar?.TimeZoneId?.Value ?? fallbackTimeZoneId),
+            StartTime = ToOption(calendar?.StartTime?.Value ?? "09:00"),
+            EndTime = ToOption(calendar?.EndTime?.Value ?? "18:00"),
+            WorkDays = ToOption(calendar?.WorkDays?.Value ?? "mon,tue,wed,thu,fri"),
         };
 
-        return merged with { WorkCalendar = calendar };
+        return new ReportTimePolicy
+        {
+            Basis = merged.Basis,
+            Apply = merged.Apply,
+            WorkTimeColumn = merged.WorkTimeColumn,
+            WorkCalendar = FSharpOption<WorkCalendarDefinition>.Some(resolvedCalendar),
+        };
     }
+
+    private static FSharpOption<string> ToOption(string? value) =>
+        value is null ? FSharpOption<string>.None : FSharpOption<string>.Some(value);
 }

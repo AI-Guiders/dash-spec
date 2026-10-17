@@ -177,12 +177,13 @@ public sealed class SpecLibrary
         }
 
         string? presentationPreset = null;
-        if (definition.Presentation is { } presentation)
+        if (definition.Presentation?.Value is { } presentation)
         {
+            var usePreset = presentation.UsePreset?.Value;
             var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
+            if (!string.IsNullOrWhiteSpace(usePreset))
             {
-                if (_presentations.TryGetValue(presentation.UsePreset, out var parent))
+                if (_presentations.TryGetValue(usePreset, out var parent))
                 {
                     foreach (var (key, value) in parent)
                     {
@@ -205,25 +206,26 @@ public sealed class SpecLibrary
                 _presentations[presetId] = merged;
                 presentationPreset = presetId;
             }
-            else if (!string.IsNullOrWhiteSpace(presentation.UsePreset))
+            else if (!string.IsNullOrWhiteSpace(usePreset))
             {
-                presentationPreset = presentation.UsePreset;
+                presentationPreset = usePreset;
             }
         }
 
         string? seriesTransformPreset = null;
-        if (definition.SeriesTransform is { } seriesTransform)
+        if (definition.SeriesTransform?.Value is { } seriesTransform)
         {
-            if (!string.IsNullOrWhiteSpace(seriesTransform.UsePreset))
+            var usePreset = seriesTransform.UsePreset?.Value;
+            if (!string.IsNullOrWhiteSpace(usePreset))
             {
-                seriesTransformPreset = seriesTransform.UsePreset;
+                seriesTransformPreset = usePreset;
             }
-            else if (seriesTransform.Max is int max && max > 0)
+            else if (seriesTransform.Max?.Value is int max && max > 0)
             {
                 seriesTransformPreset = $"{id}__series";
                 _seriesTransforms[seriesTransformPreset] = new SeriesTransformPreset(
                     max,
-                    seriesTransform.OtherLabel ?? "Other");
+                    seriesTransform.OtherLabel?.Value ?? "Other");
             }
         }
 
@@ -238,8 +240,8 @@ public sealed class SpecLibrary
             presentationPreset,
             seriesTransformPreset,
             diagramProps,
-            definition.Inspect,
-            definition.Tooltip);
+            definition.Inspect?.Value,
+            definition.Tooltip?.Value);
     }
 
     private void RegisterPresentationBlock(string name, PresentationBlock? block)
@@ -250,9 +252,10 @@ public sealed class SpecLibrary
         }
 
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(block.UsePreset))
+        var usePreset = block.UsePreset?.Value;
+        if (!string.IsNullOrWhiteSpace(usePreset))
         {
-            if (_presentations.TryGetValue(block.UsePreset, out var parent))
+            if (_presentations.TryGetValue(usePreset, out var parent))
             {
                 foreach (var (key, value) in parent)
                 {
@@ -437,7 +440,16 @@ public sealed class SpecLibrary
 
         return new CardPreset(
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, datasource),
+            new DataSourceDefinition
+            {
+                Kind = DataSourceKind.View,
+                Value = datasource,
+                SqlCarrier = Microsoft.FSharp.Core.FSharpOption<DataSourceSqlCarrier>.None,
+                Sheet = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                RowsType = string.Empty,
+                ProviderInfer = false,
+                ProviderId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+            },
             bindFilters);
     }
 

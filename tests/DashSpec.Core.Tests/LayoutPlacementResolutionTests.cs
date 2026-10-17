@@ -9,8 +9,8 @@ public sealed class LayoutPlacementResolutionTests
     private static readonly CardDefinition Card = new(
         "card_a",
         "",
-        new DiagramDefinition("bar", new Dictionary<string, string>()),
-        new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+        DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
         [],
         [],
         Placement: new PlacementDefinition(2, 1, 6));

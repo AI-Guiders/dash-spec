@@ -588,8 +588,8 @@ public class FilterParserTests
             {
                 ["x"] = "bucket_start_utc",
                 ["y"] = "event_count",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_hourly_activity", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_hourly_activity", rowsType: "FixtureRow"),
             ["activity_slot"],
             []);
 
@@ -598,12 +598,12 @@ public class FilterParserTests
 
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["activity_slot"] = new(
+            ["activity_slot"] = FilterTestData.Create(
                 FilterKind.Date,
                 "activity_slot",
                 "today..today",
                 "bucket_start_utc",
-                Widget: "day"),
+                widget: "day"),
         };
 
         var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);

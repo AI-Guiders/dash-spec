@@ -33,7 +33,7 @@ public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
         _contributors.FilterWidgets.ContainsKey(widgetId);
 
     private static string ResolveWidgetId(FilterDefinition filter) =>
-        filter.Widget?.ToLowerInvariant() switch
+        filter.Widget?.Value?.ToLowerInvariant() switch
         {
             "select" => "select",
             "chips" => "chips",

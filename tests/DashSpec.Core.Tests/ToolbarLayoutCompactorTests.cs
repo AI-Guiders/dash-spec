@@ -25,13 +25,13 @@ public class ToolbarLayoutCompactorTests
             Palette: null,
             ColorPalette: null,
             Layout: new LayoutDefinition(12, 8),
-            FiltersChrome: FiltersChromeDefinition.Default,
+            FiltersChrome: TestModelDefaults.FiltersChrome,
             Filters:
             [
-                new FilterDefinition(FilterKind.Date, "usage_date", null, null),
-                new FilterDefinition(FilterKind.Field, "app_name", null, null),
-                new FilterDefinition(FilterKind.Field, "period_grain", null, null),
-                new FilterDefinition(FilterKind.Date, "period_start", null, null),
+                FilterTestData.Create(FilterKind.Date, "usage_date", null, null),
+                FilterTestData.Create(FilterKind.Field, "app_name", null, null),
+                FilterTestData.Create(FilterKind.Field, "period_grain", null, null),
+                FilterTestData.Create(FilterKind.Date, "period_start", null, null),
             ],
             DashboardFilters: ["usage_date", "app_name"],
             Tabs: [],

@@ -98,8 +98,8 @@ public sealed class HeadlessReportSessionContractTests
             var card = new CardDefinition(
                 "kpi",
                 "KPI",
-                new DiagramDefinition("number", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, "v_kpi"),
+                new DiagramDefinition("number", new Dictionary<string, string>(), null),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "v_kpi"),
                 [],
                 []);
             var doc = new DashboardDocument(

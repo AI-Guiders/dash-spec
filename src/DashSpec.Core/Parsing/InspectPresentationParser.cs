@@ -25,27 +25,11 @@ internal static class InspectPresentationParser
         inspect is null ? FSharpOption<FsharpInspect>.None : FSharpOption<FsharpInspect>.Some(ToFsharp(inspect));
 
     private static FsharpInspect ToFsharp(InspectPresentation inspect) =>
-        new()
-        {
-            TooltipId = ToFsharpStringOption(inspect.TooltipId),
-            Label = ToFsharpStringOption(inspect.Label),
-            Format = inspect.Format,
-            Split = inspect.Split,
-        };
+        inspect;
 
     private static InspectPresentation? ToCore(FSharpOption<FsharpInspect> inspect) =>
         FSharpOption<FsharpInspect>.get_IsSome(inspect) ? ToCore(inspect.Value) : null;
 
     private static InspectPresentation ToCore(FsharpInspect inspect) =>
-        new(
-            FromFsharpStringOption(inspect.TooltipId),
-            FromFsharpStringOption(inspect.Label),
-            inspect.Format,
-            inspect.Split);
-
-    private static FSharpOption<string> ToFsharpStringOption(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? FSharpOption<string>.None : FSharpOption<string>.Some(value);
-
-    private static string? FromFsharpStringOption(FSharpOption<string> value) =>
-        FSharpOption<string>.get_IsSome(value) ? value.Value : null;
+        inspect;
 }

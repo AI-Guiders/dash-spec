@@ -29,7 +29,11 @@ public sealed class FlowCardExecutionTests
                 Steps: []),
         ],
         [
-            new DashflowLinkDefinition("utilization", "utilization", "reporting_calendar", "raw"),
+                new DashflowLinkDefinition(
+                    "utilization",
+                    Microsoft.FSharp.Core.FSharpOption<string>.Some("utilization"),
+                    "reporting_calendar",
+                    Microsoft.FSharp.Core.FSharpOption<string>.Some("raw")),
         ]);
 
     [Fact]
@@ -44,7 +48,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+                    TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
@@ -52,8 +56,8 @@ public sealed class FlowCardExecutionTests
                 new CardDefinition(
                     "c",
                     "C",
-                    new DiagramDefinition("table", new Dictionary<string, string>()),
-                    new DataSourceDefinition(DataSourceKind.View, string.Empty, RowsType: string.Empty),
+                    new DiagramDefinition("table", new Dictionary<string, string>(), null),
+                    DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
                     FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
@@ -72,8 +76,8 @@ public sealed class FlowCardExecutionTests
         var card = new CardDefinition(
             "c",
             "C",
-            new DiagramDefinition("table", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, string.Empty),
+            new DiagramDefinition("table", new Dictionary<string, string>(), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
             [],
             [],
             FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
@@ -87,7 +91,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+                TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
@@ -110,7 +114,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+                TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
@@ -118,8 +122,8 @@ public sealed class FlowCardExecutionTests
                 new CardDefinition(
                     "c",
                     "C",
-                    new DiagramDefinition("table", new Dictionary<string, string>()),
-                    new DataSourceDefinition(DataSourceKind.View, string.Empty, RowsType: string.Empty),
+                    new DiagramDefinition("table", new Dictionary<string, string>(), null),
+                    DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
                     FlowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
@@ -162,7 +166,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+                    TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
@@ -170,8 +174,8 @@ public sealed class FlowCardExecutionTests
                 new CardDefinition(
                     "c",
                     "C",
-                    new DiagramDefinition("table", new Dictionary<string, string>()),
-                    new DataSourceDefinition(DataSourceKind.View, string.Empty, RowsType: string.Empty),
+                    new DiagramDefinition("table", new Dictionary<string, string>(), null),
+                    DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
                     [],
                     [],
                     FlowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
@@ -219,14 +223,14 @@ public sealed class FlowCardExecutionTests
         {
             ["heatmap"] = new CardDiagramSlotDefinition(
                 "heatmap",
-                new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, string.Empty),
+                new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
                 [],
                 FlowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
             ["drill"] = new CardDiagramSlotDefinition(
                 "drill",
-                new DiagramDefinition("table", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, string.Empty),
+                new DiagramDefinition("table", new Dictionary<string, string>(), null),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
                 [],
                 FlowInput: new CardFlowInputDefinition("rows", "drill_src", "rows")),
         };
@@ -235,7 +239,7 @@ public sealed class FlowCardExecutionTests
             "c",
             "C",
             slots["heatmap"].Diagram,
-            new DataSourceDefinition(DataSourceKind.View, string.Empty),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty),
             [],
             [],
             DiagramSlotRef: "heatmap",
@@ -251,7 +255,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+            TestModelDefaults.FiltersChrome,
             [],
             [],
             [],

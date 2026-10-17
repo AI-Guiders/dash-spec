@@ -55,8 +55,8 @@ public sealed class LayoutSlotEngineTests
     {
         var entries = new LayoutBoardEntry[]
         {
-            new LayoutBoardCardRow(["nest_a", "kpi"]),
-            new LayoutBoardGroupRow(new LayoutBoardGroupDefinition("g1", "G", [["c2"]])),
+            LayoutBoardEntry.NewCardRow(["nest_a", "kpi"]),
+            LayoutBoardEntry.NewGroupRow(new LayoutBoardGroupDefinition("g1", Microsoft.FSharp.Core.FSharpOption<string>.Some("G"), [["c2"]])),
         };
         var top = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase)
         {

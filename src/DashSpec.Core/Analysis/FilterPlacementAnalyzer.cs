@@ -29,7 +29,7 @@ internal static class FilterPlacementAnalyzer
                 continue;
             }
 
-            if (registry[filterName].Kind is FilterKind.Top)
+            if (registry[filterName].Kind == FilterKind.Top)
             {
                 errors.Add($"Top filter '{filterName}' cannot be placed in toolbar; use card filters {{ }}.");
             }
@@ -81,11 +81,11 @@ internal static class FilterPlacementAnalyzer
                         $"Filter '{filterName}' cannot be both local and hosted on card '{card.Id}'.");
                 }
 
-                if (registry[filterName].Kind is FilterKind.Top)
+                if (registry[filterName].Kind == FilterKind.Top)
                 {
                     var hasUnresolvedPreset =
                         !string.IsNullOrWhiteSpace(card.UseCardPreset) ||
-                        !string.IsNullOrWhiteSpace(card.Diagram.UsePreset);
+                        !string.IsNullOrWhiteSpace(card.Diagram.UsePreset?.Value);
                     var violation = TopFilterPlacementRules.GetViolation(
                         filterName,
                         card.Id,

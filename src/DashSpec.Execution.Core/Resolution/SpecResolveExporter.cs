@@ -115,7 +115,7 @@ public static class SpecResolveExporter
         source.Kind switch
         {
             DataSourceKind.View => source.Value,
-            DataSourceKind.Sql when source.SqlCarrier is DataSourceSqlCarrier.File => $"file:{source.Value}",
+            DataSourceKind.Sql when source.SqlCarrier?.Value == DataSourceSqlCarrier.File => $"file:{source.Value}",
             DataSourceKind.Sql => source.Value,
             _ => source.Value,
         };
@@ -131,7 +131,7 @@ public static class SpecResolveExporter
             return inlinePalette;
         }
 
-        if (card.Presentation?.UsePreset is { } presetName &&
+        if (card.Presentation?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset &&
             preset.TryGetValue("color_palette", out var presetPalette) &&
             !string.IsNullOrWhiteSpace(presetPalette))
@@ -153,7 +153,7 @@ public static class SpecResolveExporter
         SpecLibrary? library)
     {
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (card.Presentation?.UsePreset is { } presetName &&
+        if (card.Presentation?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset)
         {
             foreach (var (key, value) in preset)

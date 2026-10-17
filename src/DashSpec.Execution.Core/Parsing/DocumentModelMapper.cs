@@ -28,7 +28,7 @@ internal static class DocumentModelMapper
             document.Id,
             document.Title,
             FirstOrNull(document.ConnectorId),
-            ToCore(document.SqlDialect),
+            document.SqlDialect,
             FirstOrNull(document.DiagramLibraryPath),
             MapOptional(document.Palette, ToCore),
             FirstOrNull(document.ColorPalette),
@@ -47,7 +47,7 @@ internal static class DocumentModelMapper
             ToDictionaryOrNull(document.CommandAliases, static x => x),
             ToCore(document.FormatDefaults),
             MapOptional(document.CardsChrome, ToCore),
-            MapOptional(document.TimePolicy, ToCore),
+            MapOptional(document.TimePolicy, static policy => policy),
             ToRowTypeSchemas(document.ResolvedRowTypes),
             FirstOrNull(document.DashflowPath),
             MapOptional(document.Dashflow, ToCoreDashflow));
@@ -57,54 +57,11 @@ internal static class DocumentModelMapper
             palette.Id,
             palette.Properties.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase));
 
-    private static ReportTimePolicy ToCore(FsharpDocument.ReportTimePolicy policy) =>
-        new(
-            ToCore(policy.Basis),
-            ToCore(policy.Apply),
-            FirstOrNull(policy.WorkTimeColumn),
-            MapOptional(policy.WorkCalendar, ToCore));
-
-    private static WorkCalendarDefinition ToCore(FsharpDocument.WorkCalendarDefinition calendar) =>
-        new(
-            FirstOrNull(calendar.TimeZoneId),
-            FirstOrNull(calendar.StartTime),
-            FirstOrNull(calendar.EndTime),
-            FirstOrNull(calendar.WorkDays));
-
-    private static ReportTimeBasis ToCore(FsharpDocument.ReportTimeBasis basis) =>
-        basis == FsharpDocument.ReportTimeBasis.Working
-            ? ReportTimeBasis.Working
-            : ReportTimeBasis.Calendar;
-
-    private static ReportTimeApply ToCore(FsharpDocument.ReportTimeApply apply)
-    {
-        if (apply == FsharpDocument.ReportTimeApply.Measure)
-        {
-            return ReportTimeApply.Measure;
-        }
-
-        if (apply == FsharpDocument.ReportTimeApply.Both)
-        {
-            return ReportTimeApply.Both;
-        }
-
-        return ReportTimeApply.Clip;
-    }
-
     private static ReportFormatDefaults ToCore(FsharpDocument.ReportFormatDefaults defaults) =>
-        new(
-            FirstOrNull(defaults.TimeFormat),
-            FirstOrNull(defaults.DateFormat),
-            FirstOrNull(defaults.DateTimeFormat),
-            FirstOrNull(defaults.Culture));
+        defaults;
 
     private static TabDefinition ToCore(FsharpDocument.TabDefinition tab) =>
-        new(
-            tab.Id,
-            FirstOrNull(tab.Label),
-            tab.CardIds.ToList(),
-            FirstOrNull(tab.ModulePath),
-            MapOptional(tab.LayoutBoard, ToCore));
+        tab;
 
     private static ReportPageDefinition ToCore(FsharpDocument.ReportPageDefinition page) =>
         new(
@@ -118,38 +75,17 @@ internal static class DocumentModelMapper
             ToDisplayBindingsOrNull(page.DisplayBindings));
 
     private static FilterDeriveDefinition ToCore(FsharpCard.FilterDeriveDefinition derive) =>
-        new(
-            derive.TargetFilter,
-            derive.SourceFilter,
-            FirstOrNull(derive.GrainFilterName));
+        derive;
 
     private static ModuleDiagramDefinition ToCore(FsharpDocument.ModuleDiagramDefinition module) =>
-        new(
-            ToCore(module.Diagram),
-            MapOptional(module.Presentation, ToCore),
-            MapOptional(module.SeriesTransform, ToCore),
-            MapOptional(module.Inspect, ToCore),
-            MapOptional(module.Tooltip, ToCoreTooltip));
+        module;
 
     private static FilterDefinition ToCore(FsharpFilter.FilterDefinition filter) =>
-        new(
-            ToCore(filter.Kind),
-            filter.Name,
-            FirstOrNull(filter.DefaultExpression),
-            FirstOrNull(filter.ColumnReference),
-            FirstOrNull(filter.Label),
-            FirstOrNull(filter.Widget),
-            FirstOrNull(filter.MinValue),
-            FirstOrNull(filter.MaxValue),
-            FirstOrNull(filter.GrainFilterName),
-            filter.SingleSelect,
-            FirstOrNull(filter.LayoutRef),
-            FirstOrNull(filter.BindScopeHint),
-            ToDictionaryOrNull(filter.GrainLabels, static x => x),
-            MapOptional(filter.Placement, ToCore));
+        filter;
+
 
     private static FiltersChromeDefinition ToCore(FsharpFilter.FiltersChromeDefinition chrome) =>
-        new(chrome.Layout, chrome.Sticky, chrome.Apply, chrome.ApplyControl, chrome.DebounceMs, chrome.FormatGuide, chrome.Cells);
+        chrome;
 
     private static CardDefinition ToCore(FsharpCard.CardDefinition card) =>
         new(
@@ -203,11 +139,7 @@ internal static class DocumentModelMapper
             MapOptional(slot.FlowInput, ToCoreFlowInput));
 
     private static LegendDefinition ToCore(FsharpCard.LegendDefinition legend) =>
-        new(
-            FirstOrNull(legend.MinLabel),
-            FirstOrNull(legend.MaxLabel),
-            FirstOrNull(legend.Title),
-            FirstOrNull(legend.Show));
+        legend;
 
     private static CardClickBehaviour ToCore(FsharpCard.CardClickBehaviour behaviour) =>
         new(behaviour.Effects.Select(ToCore).ToList());
@@ -249,7 +181,7 @@ internal static class DocumentModelMapper
         new((CardBoundFilterChrome)(int)chrome.BoundFilters, chrome.HideTitle, (CardFoldMode)(int)chrome.Fold);
 
     private static MatrixRenderLimitsDefinition ToCore(FsharpCard.MatrixRenderLimitsDefinition limits) =>
-        new(FirstOrNull(limits.MaxCells), FirstOrNull(limits.MaxAxisLabels));
+        limits;
 
     private static ExtensionBlockNode ToCore(FsharpCard.ExtensionBlockNode node) =>
         new(
@@ -258,25 +190,14 @@ internal static class DocumentModelMapper
             node.Nested.Select(ToCore).ToList());
 
     private static ModuleExtensionsDefinition ToCore(FsharpCard.ModuleExtensionsDefinition extensions) =>
-        new(
-            extensions.EnabledPluginIds.ToList(),
-            extensions.Imports.Select(static i => new ModuleExtensionImport(i.PluginId, FirstOrNull(i.AssemblyPath))).ToList());
+        extensions;
 
     private static DiagramDefinition ToCore(FsharpDiagram.DiagramDefinition diagram) =>
-        new(
-            diagram.Kind,
-            diagram.Properties.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase),
-            FirstOrNull(diagram.UsePreset));
+        diagram;
 
     private static DataSourceDefinition ToCore(FsharpDataSource.DataSourceDefinition source) =>
-        new(
-            ToCore(source.Kind),
-            source.Value,
-            MapOptional(source.SqlCarrier, ToCore),
-            FirstOrNull(source.Sheet),
-            source.RowsType,
-            source.ProviderInfer,
-            FirstOrNull(source.ProviderId));
+        source;
+
 
     private static IReadOnlyDictionary<string, RowTypeSchema> ToRowTypeSchemas(
         IReadOnlyDictionary<string, DashSpec.Modeling.Core.RowTypeDef> types)
@@ -295,55 +216,17 @@ internal static class DocumentModelMapper
     private static PlacementDefinition ToCore(FsharpLayout.PlacementDefinition placement) =>
         new(placement.Row, placement.Col, placement.Span);
 
-    private static LayoutBoardDefinition ToCore(FsharpLayout.LayoutBoardDefinition board)
-    {
-        var scopes = OptionModule.ToArray(board.ModuleScope);
-        LayoutScope? moduleScope = scopes.Length > 0 ? MapScope(scopes[0]) : null;
-        return new LayoutBoardDefinition(
-            board.Entries.Select(ToCore).ToList(),
-            moduleScope);
-    }
-
-    private static LayoutBoardEntry ToCore(FsharpLayout.LayoutBoardEntry entry) =>
-        entry switch
-        {
-            FsharpLayout.LayoutBoardEntry.CardRow cardRow =>
-                new LayoutBoardCardRow(cardRow.Item.ToList()),
-            FsharpLayout.LayoutBoardEntry.GroupRow groupRow =>
-                new LayoutBoardGroupRow(ToCore(groupRow.Item)),
-            FsharpLayout.LayoutBoardEntry.NestRow nestRow =>
-                new LayoutBoardNestRow(ToCore(nestRow.Item)),
-            _ => throw new InvalidOperationException($"Unknown layout board entry: {entry}")
-        };
-
-    private static LayoutBoardNestDefinition ToCore(FsharpLayout.LayoutBoardNestDefinition nest) =>
-        new(
-            nest.Id,
-            nest.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
-
-    private static LayoutBoardGroupDefinition ToCore(FsharpLayout.LayoutBoardGroupDefinition group) =>
-        new(
-            group.Id,
-            FirstOrNull(group.Title),
-            group.Rows.Select(static row => (IReadOnlyList<string>)row.ToList()).ToList());
+    private static LayoutBoardDefinition ToCore(FsharpLayout.LayoutBoardDefinition board) =>
+        board;
 
     private static PresentationBlock ToCore(FsharpPresentation.PresentationBlock block) =>
-        new(
-            FirstOrNull(block.UsePreset),
-            block.Properties.ToDictionary(static x => x.Key, static x => x.Value, StringComparer.OrdinalIgnoreCase));
+        block;
 
     private static SeriesTransformBlock ToCore(FsharpTransform.SeriesTransformBlock transform) =>
-        new(
-            FirstOrNull(transform.UsePreset),
-            FirstOrNull(transform.Max),
-            FirstOrNull(transform.OtherLabel));
+        transform;
 
     private static InspectPresentation ToCore(FsharpDiagram.InspectPresentation inspect) =>
-        new(
-            FirstOrNull(inspect.TooltipId),
-            FirstOrNull(inspect.Label),
-            inspect.Format,
-            inspect.Split);
+        inspect;
 
     private static TooltipDefinition ToCoreTooltip(FsharpTooltip.TooltipDefinition tooltip)
     {
@@ -363,44 +246,12 @@ internal static class DocumentModelMapper
         return definition;
     }
 
-    private static SqlDialect ToCore(FsharpDocument.SqlDialect dialect)
-    {
-        if (dialect.Equals(FsharpDocument.SqlDialect.TSql)) return SqlDialect.TSql;
-        if (dialect.Equals(FsharpDocument.SqlDialect.Postgres)) return SqlDialect.Postgres;
-        if (dialect.Equals(FsharpDocument.SqlDialect.Generic)) return SqlDialect.Generic;
-        throw new ArgumentOutOfRangeException(nameof(dialect), dialect, "Unknown SQL dialect.");
-    }
-
     private static FilterKind ToCore(FsharpFilter.FilterKind kind)
     {
         if (kind.Equals(FsharpFilter.FilterKind.Date)) return FilterKind.Date;
         if (kind.Equals(FsharpFilter.FilterKind.Field)) return FilterKind.Field;
         if (kind.Equals(FsharpFilter.FilterKind.Top)) return FilterKind.Top;
         throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown filter kind.");
-    }
-
-    private static DataSourceKind ToCore(FsharpDataSource.DataSourceKind kind)
-    {
-        if (kind.Equals(FsharpDataSource.DataSourceKind.View)) return DataSourceKind.View;
-        if (kind.Equals(FsharpDataSource.DataSourceKind.Sql)) return DataSourceKind.Sql;
-        if (kind.Equals(FsharpDataSource.DataSourceKind.Xlsx)) return DataSourceKind.Xlsx;
-        throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown data source kind.");
-    }
-
-    private static DataSourceSqlCarrier ToCore(FsharpDataSource.DataSourceSqlCarrier carrier)
-    {
-        if (carrier.Equals(FsharpDataSource.DataSourceSqlCarrier.Query)) return DataSourceSqlCarrier.Query;
-        if (carrier.Equals(FsharpDataSource.DataSourceSqlCarrier.File)) return DataSourceSqlCarrier.File;
-        throw new ArgumentOutOfRangeException(nameof(carrier), carrier, "Unknown SQL carrier.");
-    }
-
-    private static LayoutScope? MapScope(FsharpLayout.LayoutScope scope)
-    {
-        if (scope.Equals(FsharpLayout.LayoutScope.Toolbar)) return LayoutScope.Toolbar;
-        if (scope.Equals(FsharpLayout.LayoutScope.Tab)) return LayoutScope.Tab;
-        if (scope.Equals(FsharpLayout.LayoutScope.Page)) return LayoutScope.Page;
-        if (scope.Equals(FsharpLayout.LayoutScope.Card)) return LayoutScope.Card;
-        return null;
     }
 
     private static T? FirstOrNull<T>(FSharpOption<T> option) where T : class
@@ -472,7 +323,7 @@ internal static class DocumentModelMapper
             StringComparer.OrdinalIgnoreCase);
     }
 
-    private static DisplayBindingDefinition? ToDisplayBindingsOrNull(
+    private static IReadOnlyDictionary<string, string>? ToDisplayBindingsOrNull(
         FSharpOption<IReadOnlyDictionary<string, string>> option)
     {
         var items = OptionModule.ToArray(option);
@@ -481,11 +332,10 @@ internal static class DocumentModelMapper
             return null;
         }
 
-        return new DisplayBindingDefinition(
-            items[0].ToDictionary(
-                static x => x.Key,
-                static x => x.Value,
-                StringComparer.OrdinalIgnoreCase));
+        return items[0].ToDictionary(
+            static x => x.Key,
+            static x => x.Value,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     private static CardFlowInputDefinition ToCoreFlowInput(FsharpCard.CardFlowInput input) =>
@@ -545,9 +395,5 @@ internal static class DocumentModelMapper
             step.Parameters.Select(static p => new DashflowTransformParameterDefinition(p.Key, p.Value)).ToList());
 
     private static DashflowLinkDefinition ToCoreDashflowLink(FsharpDataFlow.FlowLinkDef link) =>
-        new(
-            link.FromNode,
-            FirstOrNull(link.FromPort),
-            link.ToNode,
-            FirstOrNull(link.ToPort));
+        link;
 }

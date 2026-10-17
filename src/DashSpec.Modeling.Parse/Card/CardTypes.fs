@@ -81,6 +81,8 @@ type MatrixRenderLimitsDefinition =
     { MaxCells: int option
       MaxAxisLabels: int option }
 
+    static member Default = { MaxCells = None; MaxAxisLabels = None }
+
     member this.EffectiveMaxCells =
         defaultArg this.MaxCells 2500
 
@@ -105,6 +107,8 @@ type ModuleExtensionImport = { PluginId: string; AssemblyPath: string option }
 type ModuleExtensionsDefinition =
     { EnabledPluginIds: IReadOnlyList<string>
       Imports: IReadOnlyList<ModuleExtensionImport> }
+
+    static member Empty = { EnabledPluginIds = []; Imports = [] }
 
 [<CLIMutable>]
 type FilterDeriveDefinition =

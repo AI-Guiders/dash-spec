@@ -91,17 +91,17 @@ public static class CardChromeResolver
             return null;
         }
 
-        if (block.UsePreset is { } presetName &&
+        if (block.UsePreset?.Value is { } presetName &&
             library?.TryGetSeriesTransform(presetName) is { } preset)
         {
             return new SeriesTransformSettings(
                 preset.Max,
-                block.OtherLabel ?? preset.OtherLabel);
+                block.OtherLabel?.Value ?? preset.OtherLabel);
         }
 
-        if (block.Max is int maxValue && maxValue > 0)
+        if (block.Max?.Value is int maxValue && maxValue > 0)
         {
-            return new SeriesTransformSettings(maxValue, block.OtherLabel ?? "Other");
+            return new SeriesTransformSettings(maxValue, block.OtherLabel?.Value ?? "Other");
         }
 
         return null;
