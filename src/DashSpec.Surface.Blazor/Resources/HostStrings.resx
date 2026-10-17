@@ -234,19 +234,7 @@
   <data name="Y axis labels" xml:space="preserve">
     <value>Y axis labels</value>
   </data>
-  <data name="Toggle cell values" xml:space="preserve">
-    <value>Show or hide cell values</value>
-  </data>
-  <data name="Toggle X axis labels" xml:space="preserve">
-    <value>Show or hide X axis labels</value>
-  </data>
-  <data name="Toggle Y axis labels" xml:space="preserve">
-    <value>Show or hide Y axis labels</value>
-  </data>
   <data name="Legend" xml:space="preserve">
     <value>Legend</value>
-  </data>
-  <data name="Toggle gradient legend" xml:space="preserve">
-    <value>Show or hide gradient legend</value>
   </data>
 </root>
