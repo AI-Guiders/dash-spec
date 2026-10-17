@@ -47,10 +47,10 @@ internal static class TabAnalyzer
             var tabPages = PageTabScope.FilterForTab(document.Pages, tab.Id);
             if (PageTabScope.TabDeclaresPages(document.Pages, tab.Id, document.Tabs.Count))
             {
-                if (tabPages.Any(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase)))
+                if (tabPages.Any(page => string.Equals(page.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase)))
                 {
                     tabPages = tabPages
-                        .Where(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase))
+                        .Where(page => string.Equals(page.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
 
@@ -64,7 +64,7 @@ internal static class TabAnalyzer
                         continue;
                     }
 
-                    ValidateLayoutBoard(tab, pageCards, page.LayoutBoard, document.Layout.Columns);
+                    ValidateLayoutBoard(tab, pageCards, page.LayoutBoard.Value, document.Layout.Columns);
                 }
             }
             else if (tab.LayoutBoard?.Value is { } layoutBoard)

@@ -13,11 +13,13 @@ public sealed class HostExternalLinksProviderTests
         var hostShell = new HostShellBootstrap
         {
             FullPath = "dashspec/demo.dashhost",
-            Document = new HostDocument(
-                "demo",
-                "catalogs/demo.dashcatalog",
-                new Dictionary<string, string>(),
-                new Dictionary<string, string>(),
+            Document = new HostDocument
+            {
+                Id = "demo",
+                CatalogPath = "catalogs/demo.dashcatalog",
+                Configuration = new Dictionary<string, string>(),
+                Presentation = new Dictionary<string, string>(),
+                Links =
                 [
                     new HostLinkDefinition(
                         "agent_admin",
@@ -27,8 +29,9 @@ public sealed class HostExternalLinksProviderTests
                         false,
                         true),
                 ],
-                [],
-                null),
+                Surfaces = [],
+                TopbarLayout = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+            },
         };
 
         var provider = new HostExternalLinksProvider(new DashSpecHostContext

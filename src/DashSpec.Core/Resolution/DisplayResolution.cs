@@ -61,7 +61,7 @@ public static class DisplayResolution
     }
 
     public static string ResolvePageNavTitle(ReportPageDefinition page) =>
-        ResolveChain(page.Id, page.Title);
+        ResolveChain(page.Id, page.Title?.Value);
 
     /// <summary>Group header text; <see langword="null"/> when <c>title</c> omitted on layout group.</summary>
     public static string? TryResolveLayoutGroupChromeTitle(LayoutBoardGroupDefinition group) =>

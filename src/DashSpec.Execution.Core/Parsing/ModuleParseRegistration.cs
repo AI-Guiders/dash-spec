@@ -241,34 +241,9 @@ internal static class ModuleParseRegistration
         return definition;
     }
 
-    private static HostDocument ToCore(FsharpHost host)
-    {
-        var links = host.Links
-            .Select(link => new HostLinkDefinition(
-                link.Id,
-                link.Label,
-                link.Url,
-                link.Target,
-                link.Topbar,
-                link.Settings))
-            .ToList();
+    private static HostDocument ToCore(FsharpHost host) =>
+        host;
 
-        LayoutBoardDefinition? topbarLayout = null;
-        var layoutItems = OptionModule.ToArray(host.TopbarLayout);
-        if (layoutItems.Length > 0)
-        {
-            topbarLayout = ToCore(layoutItems[0]);
-        }
-
-        return new HostDocument(
-            host.Id,
-            host.CatalogPath,
-            host.Configuration.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
-            host.Presentation.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
-            links,
-            host.Surfaces.ToList(),
-            topbarLayout);
-    }
 
     private static CatalogDocument ToCore(FsharpCatalog catalog) => catalog;
 

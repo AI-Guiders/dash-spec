@@ -176,7 +176,7 @@ public sealed class DashboardPageController : IDisposable
         DisplayResolutionHost.ResolveDisplayTitle(
             template,
             BuildFilterDisplayContext(),
-            ActivePage()?.DisplayBindings);
+            ActivePage()?.DisplayBindings?.Value);
 
     public FilterDisplayContext BuildFilterDisplayContext() =>
         new(
@@ -1352,7 +1352,7 @@ public sealed class DashboardPageController : IDisposable
             _refresh.DisplayContext = null;
         }
 
-        _refresh.PageDisplayBindings = ActivePage()?.DisplayBindings;
+        _refresh.PageDisplayBindings = ActivePage()?.DisplayBindings?.Value;
         _refresh.FilterDisplayFactory = BuildFilterDisplayContext;
     }
 

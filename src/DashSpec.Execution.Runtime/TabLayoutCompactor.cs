@@ -60,7 +60,7 @@ public static class TabLayoutCompactor
                 string.Equals(p.Id, effectivePageId, StringComparison.OrdinalIgnoreCase));
             if (page?.LayoutBoard is not null)
             {
-                board = page.LayoutBoard;
+                board = page.LayoutBoard.Value;
             }
         }
 
