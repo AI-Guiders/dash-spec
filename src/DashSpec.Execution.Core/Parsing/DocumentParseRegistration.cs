@@ -1,6 +1,5 @@
-using System.Linq;
+﻿using System.Linq;
 using DashSpec.Core.Analysis;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;
 using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;

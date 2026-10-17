@@ -1,6 +1,5 @@
-using DashSpec.Abstractions.Query;
+﻿using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation.Dialects;
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Compilation;
 

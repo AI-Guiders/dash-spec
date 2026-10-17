@@ -1,5 +1,5 @@
-using System.Globalization;
-using DashSpec.Core.Model;
+﻿using System.Globalization;
+using DashSpec.Core.Interaction;
 using DashSpec.Core.Runtime;
 
 namespace DashSpec.Execution.Runtime;

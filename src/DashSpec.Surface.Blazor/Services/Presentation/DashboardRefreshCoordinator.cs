@@ -1,5 +1,4 @@
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
+﻿using DashSpec.Core.Layout;
 using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
 using DashSpec.Viewer.Plugins;

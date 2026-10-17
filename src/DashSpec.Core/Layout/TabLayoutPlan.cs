@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Core.Layout;
 
 /// <summary>Resolved placements for a tab layout board including optional card groups (ADR-0056).</summary>

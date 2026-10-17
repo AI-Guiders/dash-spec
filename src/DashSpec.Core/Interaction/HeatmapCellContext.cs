@@ -1,7 +1,6 @@
-// Interaction DTO for heatmap-cell click drill (ADR-0028 / ADR-0064).
-// Stays in the DashSpec.Core.Model namespace for consumer compatibility
-// after the spec model moved to F# (ADR-0048).
-namespace DashSpec.Core.Model;
+// Runtime interaction DTO for heatmap-cell click drill (ADR-0028 / ADR-0064).
+// Not spec model: it moved out of the retired DashSpec.Core.Model namespace (ADR-0048).
+namespace DashSpec.Core.Interaction;
 
 public sealed record HeatmapCellContext(
     int Yi,

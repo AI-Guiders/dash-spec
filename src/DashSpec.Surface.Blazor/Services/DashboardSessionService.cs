@@ -1,8 +1,7 @@
-using DashSpec.Abstractions.Connectors;
+﻿using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Catalog;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Platform;
 using DashSpec.Core.Runtime;

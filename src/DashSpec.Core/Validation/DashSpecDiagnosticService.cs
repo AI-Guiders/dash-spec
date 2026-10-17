@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+﻿using DashSpec.Core.Parsing;
 using DashSpec.Core.Resolution;
 using FsharpDocument = DashSpec.Modeling.Parse.Document;
 

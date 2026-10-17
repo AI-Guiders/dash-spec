@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Core.Resolution;
 
 /// <summary>Canonical display merge for titles and labels (ADR-0057).</summary>

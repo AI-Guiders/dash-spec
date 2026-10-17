@@ -1,5 +1,4 @@
-using DashSpec.Abstractions.Connectors;
-using DashSpec.Core.Model;
+﻿using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;
 

@@ -1,6 +1,5 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Resolution;

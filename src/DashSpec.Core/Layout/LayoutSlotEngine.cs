@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Core.Layout;
 
 /// <summary>Plans ordered slot descriptors per scope (ADR-0072). Composition only — no SQL/render.</summary>

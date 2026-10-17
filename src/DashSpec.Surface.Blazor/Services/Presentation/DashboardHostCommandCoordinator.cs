@@ -1,5 +1,4 @@
-#nullable enable
-using DashSpec.Core.Model;
+﻿#nullable enable
 using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Core.Catalog;
 using Microsoft.AspNetCore.Components;
