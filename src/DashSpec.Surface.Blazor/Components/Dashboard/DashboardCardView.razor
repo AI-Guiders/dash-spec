@@ -66,35 +66,10 @@
             {
                 <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
             }
-            @if (CanExport)
+            @foreach (var chromeType in _cardChromeTypes)
             {
-                <button type="button"
-                        class="secondary card-icon-btn card-export-btn card-export-csv"
-                        title="@Loc.T("Export CSV")"
-                        aria-label="@Loc.T("Export CSV")"
-                        disabled="@Card.Loading"
-                        @onclick="ExportCsvAsync">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <path d="M8 13h8" />
-                        <path d="M8 17h5" />
-                        <path d="M8 9h2" />
-                    </svg>
-                </button>
-                <button type="button"
-                        class="secondary card-icon-btn card-export-btn card-export-xlsx"
-                        title="@Loc.T("Export XLSX")"
-                        aria-label="@Loc.T("Export XLSX")"
-                        disabled="@Card.Loading"
-                        @onclick="ExportXlsxAsync">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
-                        <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M8 11h2v2H8zM11 11h2v2h-2zM14 11h2v2h-2zM8 14h2v2H8zM11 14h2v2h-2zM14 14h2v2h-2z" fill="currentColor" stroke="none" />
-                    </svg>
-                </button>
-            }
+                <DynamicComponent Type="chromeType" Parameters="_cardChromeParameters" />
+            }            }
             @if (CanFullscreen)
             {
                 <button type="button"
@@ -262,8 +237,7 @@
 
     private bool HasHeadToolbar =>
         _vizToolbarType is not null ||
-        CanExport ||
-        CanFullscreen ||
+        CanFullscreen ||        CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
         (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
         Card.Loading ||
@@ -273,14 +247,6 @@
         (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
         DashboardBoundFilters.Count > 0;
 
-    private bool CanExport =>
-        !Card.IsVisibilityPlaceholder &&
-        !Card.Loading &&
-        string.IsNullOrEmpty(Card.Error) &&
-        Card.DataFamily is not DiagramDataFamily.Scalar &&
-        (Card.Table is { Columns.Count: > 0 } ||
-         Card.Matrix is not null ||
-         Card.Chart is { Labels.Count: > 0 });
 
     private bool CanFullscreen =>
         !Card.IsVisibilityPlaceholder &&
@@ -290,18 +256,17 @@
 
     [Inject] private ICardVizDisplayState VizDisplayState { get; set; } = default!;
 
+    [Inject] private DashSpecContributorRegistry Contributors { get; set; } = default!;
+
     private Type? _vizToolbarType;
     private Dictionary<string, object?> _vizToolbarParameters = new();
+    private IReadOnlyList<Type> _cardChromeTypes = [];
+    private Dictionary<string, object?> _cardChromeParameters = new();
 
     private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
 
     private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
 
-    private Task ExportCsvAsync() =>
-        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "csv_export", new Dictionary<string, string>()));
-
-    private Task ExportXlsxAsync() =>
-        OnCardAction.InvokeAsync(new CardActionRequest(Card.Id, "xlsx_export", new Dictionary<string, string>()));
 
     private void ToggleFullscreen()
     {
@@ -434,6 +399,22 @@
             : new Dictionary<string, object?>
             {
                 ["Context"] = new VizCardToolbarContext
+                {
+                    Card = Card,
+                    OnCardAction = OnCardAction,
+                },
+            };
+
+        _cardChromeTypes = Card.IsVisibilityPlaceholder ||
+                           Card.Loading ||
+                           !string.IsNullOrEmpty(Card.Error)
+            ? []
+            : Contributors.CardChromeComponents.Values.ToList();
+        _cardChromeParameters = _cardChromeTypes.Count == 0
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>
+            {
+                ["Context"] = new CardChromeContext
                 {
                     Card = Card,
                     OnCardAction = OnCardAction,
