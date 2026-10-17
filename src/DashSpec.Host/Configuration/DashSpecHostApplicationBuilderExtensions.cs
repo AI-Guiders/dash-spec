@@ -76,6 +76,11 @@ public static class DashSpecHostApplicationBuilderExtensions
         LabelFormat.UiCulture = uiCulture;
         TooltipTemplate.CellValueFormatter = static value => LabelFormat.FormatObject(value);
 
+        // UI copy SSOT is resx (ADR-0077): IStringLocalizer reads CurrentUICulture.
+        // RequestLocalization middleware covers HTTP; Blazor Server circuits render on pool threads,
+        // so the process-wide default UI culture must match the host language too.
+        CultureInfo.DefaultThreadCurrentUICulture = uiCulture;
+
         builder.Services.AddLocalization();
         builder.Services.Configure<RequestLocalizationOptions>(options =>
         {
@@ -88,6 +93,10 @@ public static class DashSpecHostApplicationBuilderExtensions
             options.SupportedCultures = supported;
             options.SupportedUICultures = supported;
             options.DefaultRequestCulture = new RequestCulture(uiCulture);
+
+            // Host language is the SSOT (ADR-0090: applied on host restart).
+            // Default providers would let the browser's Accept-Language override it.
+            options.RequestCultureProviders.Clear();
         });
 
         var defaultSpecRelativePath = pathResolver.ToHostSpecReference(

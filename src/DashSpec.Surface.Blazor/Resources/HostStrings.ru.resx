@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Дашборд</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="Spec" xml:space="preserve">
+    <value>Спека</value>
+  </data>
+  <data name="Reports" xml:space="preserve">
+    <value>Отчёты</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Справка</value>
+  </data>
+  <data name="Loading specification…" xml:space="preserve">
+    <value>Загрузка спецификации…</value>
+  </data>
+  <data name="Failed to load dashboard" xml:space="preserve">
+    <value>Не удалось загрузить дашборд</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Сбросить</value>
+  </data>
+  <data name="Expand" xml:space="preserve">
+    <value>Развернуть</value>
+  </data>
+  <data name="Collapse" xml:space="preserve">
+    <value>Свернуть</value>
+  </data>
+  <data name="Expand diagram" xml:space="preserve">
+    <value>Развернуть диаграмму</value>
+  </data>
+  <data name="Card actions" xml:space="preserve">
+    <value>Действия с карточкой</value>
+  </data>
+  <data name="Date and time formats" xml:space="preserve">
+    <value>Форматы даты и времени</value>
+  </data>
+  <data name="Kind" xml:space="preserve">
+    <value>Что</value>
+  </data>
+  <data name="Format" xml:space="preserve">
+    <value>Формат</value>
+  </data>
+  <data name="Example" xml:space="preserve">
+    <value>Пример</value>
+  </data>
+  <data name="Time zone" xml:space="preserve">
+    <value>Часовой пояс</value>
+  </data>
+  <data name="Export CSV" xml:space="preserve">
+    <value>Экспорт CSV</value>
+  </data>
+  <data name="Export XLSX" xml:space="preserve">
+    <value>Экспорт XLSX</value>
+  </data>
+  <data name="Loading…" xml:space="preserve">
+    <value>загрузка…</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>ошибка</value>
+  </data>
+  <data name="Date from" xml:space="preserve">
+    <value>Дата от</value>
+  </data>
+  <data name="Date to" xml:space="preserve">
+    <value>Дата до</value>
+  </data>
+  <data name="Field" xml:space="preserve">
+    <value>Поле</value>
+  </data>
+  <data name="Top" xml:space="preserve">
+    <value>Топ</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Пользователи</value>
+  </data>
+  <data name="Utilization" xml:space="preserve">
+    <value>Загрузка</value>
+  </data>
+  <data name="License load" xml:space="preserve">
+    <value>Загрузка лицензий</value>
+  </data>
+  <data name="Report" xml:space="preserve">
+    <value>Отчёт</value>
+  </data>
+  <data name="Page" xml:space="preserve">
+    <value>Страница</value>
+  </data>
+  <data name="Tab" xml:space="preserve">
+    <value>Вкладка</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Экспорт</value>
+  </data>
+  <data name="Upload spec" xml:space="preserve">
+    <value>Загрузить спеку</value>
+  </data>
+  <data name="Sync now" xml:space="preserve">
+    <value>Синхронизировать сейчас</value>
+  </data>
+  <data name="Syncing…" xml:space="preserve">
+    <value>Синхронизация…</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="Save access" xml:space="preserve">
+    <value>Сохранить доступ</value>
+  </data>
+  <data name="Save catalog" xml:space="preserve">
+    <value>Сохранить каталог</value>
+  </data>
+  <data name="Save presentation" xml:space="preserve">
+    <value>Сохранить настройки отображения</value>
+  </data>
+  <data name="Generate secret" xml:space="preserve">
+    <value>Сгенерировать секрет</value>
+  </data>
+  <data name="Show export" xml:space="preserve">
+    <value>Показать экспорт</value>
+  </data>
+  <data name="API key" xml:space="preserve">
+    <value>API-ключ</value>
+  </data>
+  <data name="set — leave blank to keep" xml:space="preserve">
+    <value>задан — оставьте пустым для сохранения</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Включено</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="Branch" xml:space="preserve">
+    <value>Ветка</value>
+  </data>
+  <data name="Path (.dashcatalog in repo)" xml:space="preserve">
+    <value>Путь (.dashcatalog в репозитории)</value>
+  </data>
+  <data name="Pull interval (minutes, safety net)" xml:space="preserve">
+    <value>Интервал опроса (минут, страховка)</value>
+  </data>
+  <data name="Git username" xml:space="preserve">
+    <value>Пользователь git</value>
+  </data>
+  <data name="Git password" xml:space="preserve">
+    <value>Пароль git</value>
+  </data>
+  <data name="Sync repo slug filter (optional)" xml:space="preserve">
+    <value>Фильтр slug репозитория (опционально)</value>
+  </data>
+  <data name="Allow unsigned webhooks (lab only)" xml:space="preserve">
+    <value>Разрешить неподписанные вебхуки (только lab)</value>
+  </data>
+  <data name="Display time zone (IANA id, e.g. Europe/Moscow; stored UTC → display TZ; remark 25)" xml:space="preserve">
+    <value>Часовой пояс отображения (IANA id, напр. Europe/Moscow; хранение UTC → вывод в TZ; замечание 25)</value>
+  </data>
+  <data name="Applied on host restart. Empty = Europe/Moscow." xml:space="preserve">
+    <value>Применяется после перезапуска хоста. Пусто = Europe/Moscow.</value>
+  </data>
+  <data name="Interface language (remark 23)" xml:space="preserve">
+    <value>Язык интерфейса (замечание 23)</value>
+  </data>
+  <data name="Applied on host restart. Empty = ru-RU." xml:space="preserve">
+    <value>Применяется после перезапуска хоста. Пусто = ru-RU.</value>
+  </data>
+  <data name="Long product filter lists (&gt;80 items; remark 7)" xml:space="preserve">
+    <value>Длинные списки фильтра ПО (&gt;80; замечание 7)</value>
+  </data>
+  <data name="Scroll in a fixed area (default)" xml:space="preserve">
+    <value>Прокрутка в фиксированной области (по умолчанию)</value>
+  </data>
+  <data name="Expand downward (full chip list)" xml:space="preserve">
+    <value>Раскрытие вниз (полный список чипов)</value>
+  </data>
+  <data name="Applies immediately after save. Affects chips / multi-select filters with more than 80 options." xml:space="preserve">
+    <value>Применяется сразу после сохранения. Для chips / multi-select с более чем 80 значениями.</value>
+  </data>
+  <data name="Presentation saved. Time zone / language apply after host restart; long filter layout applies immediately." xml:space="preserve">
+    <value>Настройки отображения сохранены. Часовой пояс и язык — после перезапуска; длинные фильтры — сразу.</value>
+  </data>
+  <data name="Presentation saved. Restart host to apply new time zone." xml:space="preserve">
+    <value>Настройки отображения сохранены. Перезапустите хост для применения часового пояса.</value>
+  </data>
+  <data name="Presentation saved. Restart host to apply new language." xml:space="preserve">
+    <value>Настройки отображения сохранены. Перезапустите хост для применения языка.</value>
+  </data>
+  <data name="Secret:" xml:space="preserve">
+    <value>Секрет:</value>
+  </data>
+  <data name="not set" xml:space="preserve">
+    <value>не задан</value>
+  </data>
+  <data name="set" xml:space="preserve">
+    <value>задан</value>
+  </data>
+  <data name="(copy now — not shown again)" xml:space="preserve">
+    <value>(скопируйте сейчас — больше не покажем)</value>
+  </data>
+  <data name="Paste into Forge FORGE_DASHSPEC_WEBHOOK_URL + shared secret." xml:space="preserve">
+    <value>Вставьте в Forge FORGE_DASHSPEC_WEBHOOK_URL + общий секрет.</value>
+  </data>
+  <data name="Runtime settings in WitDB (ADR-0042). Bootstrap TOML remains cold-start / disaster recovery." xml:space="preserve">
+    <value>Настройки времени выполнения в WitDB (ADR-0042). Bootstrap TOML остаётся для холодного старта / восстановления.</value>
+  </data>
+  <data name="Redacted TOML fragment from WitDB for air-gap backup (does not write local.toml)." xml:space="preserve">
+    <value>Отредактированный TOML-фрагмент из WitDB для резервного копирования без сети (не записывает local.toml).</value>
+  </data>
+  <data name="Cell values" xml:space="preserve">
+    <value>Цифры</value>
+  </data>
+  <data name="X axis labels" xml:space="preserve">
+    <value>Подписи X</value>
+  </data>
+  <data name="Y axis labels" xml:space="preserve">
+    <value>Подписи Y</value>
+  </data>
+  <data name="Toggle cell values" xml:space="preserve">
+    <value>Показать или скрыть цифры в ячейках</value>
+  </data>
+  <data name="Toggle X axis labels" xml:space="preserve">
+    <value>Показать или скрыть подписи оси X</value>
+  </data>
+  <data name="Toggle Y axis labels" xml:space="preserve">
+    <value>Показать или скрыть подписи оси Y</value>
+  </data>
+  <data name="Legend" xml:space="preserve">
+    <value>Легенда</value>
+  </data>
+  <data name="Toggle gradient legend" xml:space="preserve">
+    <value>Показать или скрыть градиентную легенду</value>
+  </data>
+</root>
