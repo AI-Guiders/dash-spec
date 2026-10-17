@@ -7,7 +7,6 @@
     "src/DashSpec.Host/Components/Pages"
   ],
   "files": {
-    "src/DashSpec.Surface.Blazor/Components/Dashboard/CardExtensionChrome.razor": 2,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/CardSelectionDetail.razor": 1,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCatalogPicker.razor": 2,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCommandPalette.razor": 2,
