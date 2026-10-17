@@ -118,12 +118,12 @@ internal static class ModelOption
 | **C** — не-модельный код вынесен из `Model/`: `VizAxisPresentation.cs` (133), `CategoryAxisOrder.cs` (102), `CardClickRefreshPlanner.cs` (37), `SeriesTransformSettings` → `Execution.Runtime` | ✅ сделано, коммит `733569e` |
 | **C (остаток)** — `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
-| **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
+| **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ✅ `src/DashSpec.Core/Model/` и `DocumentModelMapper.cs` удалены |
 | **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition`, `CardDefinition`, `DiagramDataFamily`, `DiagramKindInfo`, `DashboardDocument`, `CardClickBehaviour` + effects, dashflow-записи | ✅ 40+ C#-типов удалено; `DocumentModelMapper` сведён к identity |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
 
-Проверка партии 2026-10-17 (вечер): `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. Корневой `DashboardDocument`, `CardClickBehaviour` + effects и dashflow-записи используются напрямую из F# (алиасы во всех проектах-потребителях); `DocumentModelMapper.ToCore` сведён к identity-возврату F#-документа; C# потребители читают F# DU через семантические члены (`TryGetFilterBind`, `IsNavigationEffect`, `Source`/`Format`/`Placement` и т.д.). Остаётся: удалить `DocumentModelMapper.cs`, остатки `src/DashSpec.Core/Model/` (заглушки + `HeatmapCellContext`) и добить пункт **C (остаток)**.
+Проверка партии 2026-10-17 (финал): `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `src/DashSpec.Core/Model/` удалён целиком (включая `DashflowDefinitions.cs` и заглушки); `DocumentModelMapper.cs` удалён, вызовы инлайнены в `DocumentParseRegistration` (`document` напрямую). `HeatmapCellContext` — runtime DTO, а не spec-модель — переехал в `src/DashSpec.Core/Interaction/` (namespace `DashSpec.Core.Model` сохранён ради 240 потребителей). C# потребители читают F# DU через семантические члены (`TryGetFilterBind`, `IsNavigationEffect`, `Source`/`Format`/`Placement` и т.д.). Остаётся только пункт **C (остаток)**: `DescribeOversize`, `ToolbarDateLabelClass`, `LayoutBoardDefinition.FromCardRows`.
 
 ## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
 

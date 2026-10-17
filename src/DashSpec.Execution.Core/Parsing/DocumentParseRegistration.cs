@@ -16,7 +16,7 @@ internal static class DocumentParseRegistration
     {
         ParseDoc.DashboardValidationBridge.registerAction(document =>
         {
-            DashboardValidator.Validate(DocumentModelMapper.ToCore(document));
+            DashboardValidator.Validate(document);
         });
 
         DocumentParseBridge.Parse = (text, specDirectory, parseOptions) =>
@@ -27,7 +27,7 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                return DocumentModelMapper.ToCore(document);
+                return document;
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -119,7 +119,7 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                var document = DocumentModelMapper.ToCore(result.Document);
+                var document = result.Document;
                 var diagnostics = result.Diagnostics
                     .Select(ToCoreDiagnostic)
                     .ToList();
