@@ -1,4 +1,5 @@
 using DashSpec.Execution.Runtime;
+using DashSpec.Modeling.Parse.Filter;
 
 namespace DashSpec.Filters;
 
