@@ -1,5 +1,4 @@
-using System.Linq;
-using DashSpec.Core.Model;
+﻿using System.Linq;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using Microsoft.FSharp.Core;

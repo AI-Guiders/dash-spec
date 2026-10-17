@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Viz;
 
 public interface IOnClickInteractionService

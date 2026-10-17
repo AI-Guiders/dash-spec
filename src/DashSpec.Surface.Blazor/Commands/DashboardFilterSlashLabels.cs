@@ -1,6 +1,5 @@
-#nullable enable
+﻿#nullable enable
 
-using DashSpec.Core.Model;
 using DashSpec.Core.Resolution;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;

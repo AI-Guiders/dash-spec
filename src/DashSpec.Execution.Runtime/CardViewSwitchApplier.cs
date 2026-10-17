@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>Applies card <c>views { … }</c> extension block — swaps diagram preset for active view.</summary>

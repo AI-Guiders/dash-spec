@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-
+﻿
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
 public sealed class CardFoldState : ICardFoldState

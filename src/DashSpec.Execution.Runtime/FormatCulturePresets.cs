@@ -1,7 +1,6 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using DashSpec.Core.Localization;
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 

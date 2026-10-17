@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
+﻿using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Filters;
 
