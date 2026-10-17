@@ -53,7 +53,7 @@ internal static class CardInteriorSlotResolver
             localFilterDefs.Add(filter);
         }
 
-        var filterName = FilterLayoutRefResolver.Resolve(
+        var filterName = FilterLayoutRefBridge.Resolve(
             token,
             localFilterDefs,
             $"Card '{card.Id}' interior");

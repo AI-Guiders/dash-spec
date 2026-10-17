@@ -1100,7 +1100,7 @@ public sealed class DashboardPageController : IDisposable
 
         try
         {
-            var document = CatalogParser.ParseFile(path);
+            var document = CatalogReader.ParseFile(path);
             _catalogState.Replace(new CatalogBootstrap(document, path));
         }
         catch (Exception ex)

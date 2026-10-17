@@ -64,7 +64,7 @@ public sealed class HostBootstrapService(
     {
         DashSpecParser.EnsureModuleParsersRegistered();
         var catalogPath = pathResolver.ResolveCatalogPath(contentRoot, bootstrap.Dashboard.CatalogPath);
-        return new CatalogBootstrap(CatalogParser.ParseFile(catalogPath), catalogPath);
+        return new CatalogBootstrap(CatalogReader.ParseFile(catalogPath), catalogPath);
     }
 
     public string ResolveActiveSpecFullPath(CatalogBootstrap catalog, string? catalogEntryId = null)

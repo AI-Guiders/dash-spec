@@ -55,7 +55,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Catalog_unit_from_the_demo_parses()
     {
-        var catalog = CatalogParser.Parse(ReadUnit("samples/demo/demo-catalog.ds"));
+        var catalog = CatalogReader.Parse(ReadUnit("samples/demo/demo-catalog.ds"));
 
         Assert.NotEmpty(catalog.Entries);
     }

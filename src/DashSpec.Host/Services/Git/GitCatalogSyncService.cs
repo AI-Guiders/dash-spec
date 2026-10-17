@@ -51,7 +51,7 @@ public sealed class GitCatalogSyncService(
             if (changed)
             {
                 _lastCatalogHash = bytes;
-                var document = CatalogParser.ParseFile(catalogPath);
+                var document = CatalogReader.ParseFile(catalogPath);
                 catalogState.Replace(new CatalogBootstrap(document, catalogPath));
                 logger.LogInformation("Git catalog updated, requesting reload: {Path}", catalogPath);
                 reloadNotifier.Notify();

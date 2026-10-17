@@ -47,10 +47,10 @@ public static class DashSpecValidator
 
     public static void ValidateCatalog(string path)
     {
-        var catalog = CatalogParser.ParseFile(path);
+        var catalog = CatalogReader.ParseFile(path);
         foreach (var entry in catalog.Entries)
         {
-            var specPath = CatalogParser.ResolveEntrySpecPath(path, entry.DashspecPath);
+            var specPath = CatalogReader.ResolveEntrySpecPath(path, entry.DashspecPath);
             var specDirectory = Path.GetDirectoryName(specPath)!;
             var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectory);
             EmitResolutionWarnings(ResolutionLint.Analyze(document, entry));
