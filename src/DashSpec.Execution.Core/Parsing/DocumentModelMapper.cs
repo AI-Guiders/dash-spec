@@ -120,15 +120,7 @@ internal static class DocumentModelMapper
             MapOptional(card.FlowInput, ToCoreFlowInput));
 
     private static CardDiagramSlotDefinition ToCore(FsharpCard.CardDiagramSlot slot) =>
-        new(
-            slot.SlotRef,
-            ToCore(slot.Diagram),
-            ToCore(slot.DataSource),
-            slot.BoundFilters.ToList(),
-            MapOptional(slot.Legend, ToCore),
-            MapOptional(slot.Presentation, ToCore),
-            MapOptional(slot.SeriesTransform, ToCore),
-            MapOptional(slot.FlowInput, ToCoreFlowInput));
+        slot;
 
     private static LegendDefinition ToCore(FsharpCard.LegendDefinition legend) =>
         legend;

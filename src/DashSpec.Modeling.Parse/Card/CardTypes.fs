@@ -137,6 +137,9 @@ type CardDiagramSlot =
       SeriesTransform: SeriesTransformBlock option
       FlowInput: CardFlowInput option }
 
+    member this.WithDataSource(dataSource: DataSourceDefinition) =
+        { this with DataSource = dataSource }
+
 [<CLIMutable>]
 type CardDefinition =
     { Id: string
