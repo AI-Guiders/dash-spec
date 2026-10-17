@@ -162,7 +162,7 @@ internal static class FilterPlacementAnalyzer
 
         var page = document.Pages.FirstOrDefault(p =>
             string.Equals(p.Id, card.PageId, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(p.TabId ?? "", card.TabId ?? "", StringComparison.OrdinalIgnoreCase));
+            string.Equals(p.TabId?.Value ?? "", card.TabId ?? "", StringComparison.OrdinalIgnoreCase));
         if (page?.ToolbarBoard is null)
         {
             return false;
@@ -171,7 +171,7 @@ internal static class FilterPlacementAnalyzer
         return ToolbarPlacementResolver.ResolveFilterNames(
                 document.Filters,
                 [],
-                page.ToolbarBoard)
+                page.ToolbarBoard.Value)
             .Contains(filterName, StringComparer.OrdinalIgnoreCase);
     }
 

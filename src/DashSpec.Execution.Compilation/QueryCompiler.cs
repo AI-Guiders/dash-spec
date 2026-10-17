@@ -569,7 +569,7 @@ public static class QueryCompiler
 
         foreach (var page in document.Pages)
         {
-            var derive = page.UsageDateDerive;
+            var derive = page.UsageDateDerive?.Value;
             if (derive is not null && !map.ContainsKey(derive.TargetFilter))
             {
                 map[derive.TargetFilter] = derive;

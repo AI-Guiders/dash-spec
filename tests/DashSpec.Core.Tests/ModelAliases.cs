@@ -38,6 +38,7 @@ global using SqlDialect = DashSpec.Modeling.Parse.Document.SqlDialect;
 global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
 global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
 global using ModuleDiagramDefinition = DashSpec.Modeling.Parse.Document.ModuleDiagramDefinition;
+global using ReportPageDefinition = DashSpec.Modeling.Parse.Document.ReportPageDefinition;
 global using DataSourceDefinition = DashSpec.Modeling.Parse.DataSource.DataSourceDefinition;
 global using DataSourceKind = DashSpec.Modeling.Parse.DataSource.DataSourceKind;
 global using DataSourceSqlCarrier = DashSpec.Modeling.Parse.DataSource.DataSourceSqlCarrier;

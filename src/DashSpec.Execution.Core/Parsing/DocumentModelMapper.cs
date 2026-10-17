@@ -64,15 +64,7 @@ internal static class DocumentModelMapper
         tab;
 
     private static ReportPageDefinition ToCore(FsharpDocument.ReportPageDefinition page) =>
-        new(
-            page.Id,
-            FirstOrNull(page.Title),
-            MapOptional(page.LayoutBoard, ToCore),
-            FirstOrNull(page.TabId),
-            MapOptional(page.ToolbarBoard, ToCore),
-            MapOptional(page.UsageDateDerive, ToCore),
-            ToNestedFilterDefaultsOrNull(page.FilterDefaults),
-            ToDisplayBindingsOrNull(page.DisplayBindings));
+        page;
 
     private static FilterDeriveDefinition ToCore(FsharpCard.FilterDeriveDefinition derive) =>
         derive;

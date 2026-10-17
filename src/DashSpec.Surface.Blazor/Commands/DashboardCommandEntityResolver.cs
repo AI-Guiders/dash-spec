@@ -81,9 +81,9 @@ internal static class DashboardCommandEntityResolver
         }
 
         var matches = context.ReportPages
-            .Where(page => !string.IsNullOrEmpty(page.Title)
-                           && (page.Title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
-                               || page.Title.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
+            .Where(page => page.Title?.Value is { } title
+                           && (title.Contains(trimmed, StringComparison.OrdinalIgnoreCase)
+                               || title.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         return matches.Count == 1 ? matches[0].Id : null;
     }

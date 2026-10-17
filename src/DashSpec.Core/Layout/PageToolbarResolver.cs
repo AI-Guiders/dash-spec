@@ -16,11 +16,11 @@ public static class PageToolbarResolver
 
         var page = document.Pages.FirstOrDefault(p =>
             string.Equals(p.Id, activePageId, StringComparison.OrdinalIgnoreCase) &&
-            (string.IsNullOrWhiteSpace(p.TabId) ||
+            (string.IsNullOrWhiteSpace(p.TabId?.Value) ||
              string.IsNullOrWhiteSpace(activeTabId) ||
-             string.Equals(p.TabId, activeTabId, StringComparison.OrdinalIgnoreCase)));
+             string.Equals(p.TabId?.Value, activeTabId, StringComparison.OrdinalIgnoreCase)));
 
-        return page?.ToolbarBoard;
+        return page?.ToolbarBoard?.Value;
     }
 
     public static FilterDeriveDefinition? ResolveUsageDateDerive(
@@ -35,10 +35,10 @@ public static class PageToolbarResolver
 
         var page = document.Pages.FirstOrDefault(p =>
             string.Equals(p.Id, activePageId, StringComparison.OrdinalIgnoreCase) &&
-            (string.IsNullOrWhiteSpace(p.TabId) ||
+            (string.IsNullOrWhiteSpace(p.TabId?.Value) ||
              string.IsNullOrWhiteSpace(activeTabId) ||
-             string.Equals(p.TabId, activeTabId, StringComparison.OrdinalIgnoreCase)));
+             string.Equals(p.TabId?.Value, activeTabId, StringComparison.OrdinalIgnoreCase)));
 
-        return page?.UsageDateDerive;
+        return page?.UsageDateDerive?.Value;
     }
 }

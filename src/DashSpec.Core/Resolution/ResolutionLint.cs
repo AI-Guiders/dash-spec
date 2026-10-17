@@ -170,8 +170,8 @@ public static class ResolutionLint
         {
             foreach (var page in document.Pages)
             {
-                var tabCards = ResolveTabCards(document, page.TabId);
-                CollectBoard(page.LayoutBoard, tabCards.Select(c => c.Id).ToList(), tabCards, $"page '{page.Id}'", ids);
+                var tabCards = ResolveTabCards(document, page.TabId?.Value);
+                CollectBoard(page.LayoutBoard?.Value, tabCards.Select(c => c.Id).ToList(), tabCards, $"page '{page.Id}'", ids);
             }
         }
 

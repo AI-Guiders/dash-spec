@@ -188,7 +188,18 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Page_nav_title_falls_back_to_id()
     {
-        var page = new ReportPageDefinition("details", null, TabId: "customer_reports");
+        var page = new ReportPageDefinition
+        {
+            Id = "details",
+            Title = Microsoft.FSharp.Core.FSharpOption<string>.None,
+            LayoutBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+            TabId = Microsoft.FSharp.Core.FSharpOption<string>.Some("customer_reports"),
+            ToolbarBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+            UsageDateDerive = Microsoft.FSharp.Core.FSharpOption<FilterDeriveDefinition>.None,
+            FilterDefaults = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>>.None,
+            DisplayBindings = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, string>>.None,
+            ScopeFlow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.ScopeFlowDefinition>.None,
+        };
         Assert.Equal("details", DisplayResolution.ResolvePageNavTitle(page));
     }
 

@@ -16,14 +16,14 @@ internal static class PageAnalyzer
 
         var duplicatePage = pages
             .GroupBy(
-                page => (TabKey: page.TabId?.ToLowerInvariant() ?? "", PageKey: page.Id.ToLowerInvariant()))
+                page => (TabKey: page.TabId?.Value?.ToLowerInvariant() ?? "", PageKey: page.Id.ToLowerInvariant()))
             .FirstOrDefault(group => group.Count() > 1);
         if (duplicatePage is not null)
         {
             var sample = duplicatePage.First();
             throw new DashSpecParseException(
                 $"Report declares duplicate page id '{sample.Id}'" +
-                (string.IsNullOrWhiteSpace(sample.TabId) ? "." : $" on tab '{sample.TabId}'."));
+                (string.IsNullOrWhiteSpace(sample.TabId?.Value) ? "." : $" on tab '{sample.TabId?.Value}'."));
         }
 
         if (document.Tabs.Count == 0)
@@ -41,10 +41,10 @@ internal static class PageAnalyzer
             }
 
             var tabPages = PageTabScope.FilterForTab(pages, tab.Id);
-            if (tabPages.Any(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase)))
+            if (tabPages.Any(page => string.Equals(page.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase)))
             {
                 tabPages = tabPages
-                    .Where(page => string.Equals(page.TabId, tab.Id, StringComparison.OrdinalIgnoreCase))
+                    .Where(page => string.Equals(page.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
 
@@ -97,7 +97,7 @@ internal static class PageAnalyzer
                 continue;
             }
 
-            var placed = TabLayoutBoardResolver.Resolve(page.LayoutBoard, pageCards, columns, page.Id);
+            var placed = TabLayoutBoardResolver.Resolve(page.LayoutBoard!.Value, pageCards, columns, page.Id);
             if (placed.Count != pageCards.Count)
             {
                 var missing = pageCards

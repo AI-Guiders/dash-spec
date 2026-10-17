@@ -39,7 +39,18 @@ public class ToolbarLayoutCompactorTests
             ToolbarBoard: reportBoard,
             Pages:
             [
-                new ReportPageDefinition("p", null, ToolbarBoard: pageBoard),
+                new ReportPageDefinition
+                {
+                    Id = "p",
+                    Title = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    LayoutBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+                    TabId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    ToolbarBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(pageBoard),
+                    UsageDateDerive = Microsoft.FSharp.Core.FSharpOption<FilterDeriveDefinition>.None,
+                    FilterDefaults = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>>.None,
+                    DisplayBindings = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, string>>.None,
+                    ScopeFlow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.ScopeFlowDefinition>.None,
+                },
             ]);
 
         var visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

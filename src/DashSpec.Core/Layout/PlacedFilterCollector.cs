@@ -36,7 +36,7 @@ public static class PlacedFilterCollector
                     continue;
                 }
 
-                foreach (var name in page.ToolbarBoard.Rows.SelectMany(row => row))
+                foreach (var name in page.ToolbarBoard.Value.Rows.SelectMany(row => row))
                 {
                     Add(name);
                 }
@@ -86,7 +86,7 @@ public static class PlacedFilterCollector
                     continue;
                 }
 
-                foreach (var name in page.ToolbarBoard.Rows.SelectMany(row => row))
+                foreach (var name in page.ToolbarBoard.Value.Rows.SelectMany(row => row))
                 {
                     Add(name);
                 }

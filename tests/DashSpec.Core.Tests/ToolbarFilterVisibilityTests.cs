@@ -95,7 +95,7 @@ public class ToolbarFilterVisibilityTests
     private static void AssertPageToolbarHasChartTop(DashboardDocument doc, string pageId)
     {
         var page = doc.Pages!.Single(p => string.Equals(p.Id, pageId, StringComparison.OrdinalIgnoreCase));
-        var toolbar = page.ToolbarBoard!.Rows.SelectMany(row => row).ToList();
+        var toolbar = page.ToolbarBoard!.Value.Rows.SelectMany(row => row).ToList();
         Assert.Contains("chart_top", toolbar);
     }
 

@@ -1,5 +1,6 @@
 // Ручная миграция: Host читает F# IR, не содержит собственной модели.
 global using LayoutBoardDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
+global using HostDocument = DashSpec.Modeling.Parse.Host.HostDocument;
 global using LayoutBoardEntry = DashSpec.Modeling.Parse.Layout.LayoutBoardEntry;
 global using LayoutScope = DashSpec.Modeling.Parse.Layout.LayoutScope;
 global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;

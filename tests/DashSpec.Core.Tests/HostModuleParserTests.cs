@@ -84,8 +84,8 @@ public sealed class HostModuleParserTests
         {
             var host = HostModuleParser.Parse(text, dir);
             Assert.NotNull(host.TopbarLayout);
-            Assert.Equal(LayoutScope.Host, host.TopbarLayout!.ModuleScope);
-            Assert.Equal(["catalog", "nav"], host.TopbarLayout!.Rows[0]);
+            Assert.Equal(LayoutScope.Host, host.TopbarLayout!.Value.ModuleScope.Value);
+            Assert.Equal(["catalog", "nav"], host.TopbarLayout!.Value.Rows[0]);
         }
         finally
         {
