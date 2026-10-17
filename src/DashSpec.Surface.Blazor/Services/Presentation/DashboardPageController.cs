@@ -408,8 +408,8 @@ public sealed class DashboardPageController : IDisposable
         // Stacked field filters from sequential chart clicks often yield empty detail cards
         // (e.g. location=/PROJECTHUB AND program=DESIGN). Keep date; replace sibling fields.
         var fieldFiltersThisClick = effects
-            .OfType<SetFilterFromFieldEffect>()
-            .Select(x => x.FilterName)
+            .Where(effect => effect.TryGetFilterBind?.Value is not null)
+            .Select(effect => effect.TryGetFilterBind!.Value.Item1)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (fieldFiltersThisClick.Count > 0)
         {
@@ -427,45 +427,55 @@ public sealed class DashboardPageController : IDisposable
         var clickSetFilters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var effect in effects)
         {
-            if (effect is GotoCatalogEntryEffect gotoEntry)
+            if (effect.TryGetGotoCatalogEntry?.Value is { })
             {
-                catalogGoto = gotoEntry;
+                catalogGoto = effect;
                 continue;
             }
 
-            switch (effect)
+            if (effect.TryGetFilterBind?.Value is { } filterBind)
             {
-                case SetFilterFromFieldEffect setEffect:
-                    ApplyFilterFromHeatmapCell(setEffect, context);
-                    clickSetFilters.Add(setEffect.FilterName);
-                    navigate = true;
-                    break;
-                case GotoTabEffect gotoEffect:
-                    ActiveTabId = gotoEffect.TabId;
-                    RecomputeTabPlacements();
-                    RecomputeToolbarPlacements();
-                    navigate = true;
-                    break;
-                case FocusPhaseEffect focusEffect:
-                    ActivePhaseId = focusEffect.PhaseId;
-                    _refresh.ActivePhaseId = ActivePhaseId;
-                    navigate = true;
-                    break;
-                case GotoPageEffect gotoPage:
-                    ActivePageId = gotoPage.PageId;
-                    ActivePhaseId = "browse";
-                    _refresh.ActivePhaseId = ActivePhaseId;
-                    RecomputeTabPlacements();
-                    navigate = true;
-                    break;
-                case InvokeHandlerEffect invoke:
-                    await _actions.ExecuteAsync(
-                        invoke.HandlerId,
-                        card,
-                        invoke.Args,
-                        context,
-                        cancellationToken).ConfigureAwait(false);
-                    break;
+                ApplyFilterFromHeatmapCell(effect, context);
+                clickSetFilters.Add(filterBind.Item1);
+                navigate = true;
+                continue;
+            }
+
+            if (effect.TryGetGotoTabId?.Value is { } tabId)
+            {
+                ActiveTabId = tabId;
+                RecomputeTabPlacements();
+                RecomputeToolbarPlacements();
+                navigate = true;
+                continue;
+            }
+
+            if (effect.TryGetFocusPhaseId?.Value is { } phaseId)
+            {
+                ActivePhaseId = phaseId;
+                _refresh.ActivePhaseId = ActivePhaseId;
+                navigate = true;
+                continue;
+            }
+
+            if (effect.TryGetGotoPageId?.Value is { } pageId)
+            {
+                ActivePageId = pageId;
+                ActivePhaseId = "browse";
+                _refresh.ActivePhaseId = ActivePhaseId;
+                RecomputeTabPlacements();
+                navigate = true;
+                continue;
+            }
+
+            if (effect.TryGetInvokeHandler?.Value is { } invoke)
+            {
+                await _actions.ExecuteAsync(
+                    (string)invoke.Item1,
+                    card,
+                    (IReadOnlyDictionary<string, string>)invoke.Item2,
+                    context,
+                    cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -553,20 +563,21 @@ public sealed class DashboardPageController : IDisposable
         IReadOnlySet<string> clickSetFilters)
     {
         var snapshot = _filters.Capture();
-        if (gotoEntry.PreserveFilterNames is null)
+        var preserveFilterNames = gotoEntry.PreserveFilterNames?.Value;
+        if (preserveFilterNames is null)
         {
             return clickSetFilters.Count == 0
                 ? null
                 : snapshot.NarrowTo(clickSetFilters);
         }
 
-        if (gotoEntry.PreserveFilterNames.Count == 0)
+        if (preserveFilterNames.Count == 0)
         {
             return snapshot;
         }
 
         var names = clickSetFilters
-            .Concat(gotoEntry.PreserveFilterNames)
+            .Concat(preserveFilterNames)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return snapshot.NarrowTo(names);
     }
@@ -1417,7 +1428,7 @@ public sealed class DashboardPageController : IDisposable
 
     private IReadOnlyList<ReportPageDefinition> ResolveActiveTabPages()
     {
-        if ((_session.Document.Pages ?? []).Count == 0)
+        if ((_session.Document.Pages?.Value ?? []).Count == 0)
         {
             return [];
         }
@@ -1425,7 +1436,7 @@ public sealed class DashboardPageController : IDisposable
         var tabCardIds = ResolveActiveTabCardIds();
         if (tabCardIds.Count == 0)
         {
-            return _session.Document.Pages ?? [];
+            return _session.Document.Pages?.Value ?? [];
         }
 
         var pageIds = _session.Document.Cards
@@ -1433,7 +1444,7 @@ public sealed class DashboardPageController : IDisposable
             .Select(card => card.PageId?.Value!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        return (_session.Document.Pages ?? [])
+        return (_session.Document.Pages?.Value ?? [])
             .Where(page =>
                 (string.IsNullOrWhiteSpace(ActiveTabId) ||
                  PageTabScope.PageBelongsToTab(page, ActiveTabId)) &&

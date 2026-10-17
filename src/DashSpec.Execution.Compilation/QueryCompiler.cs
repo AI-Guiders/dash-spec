@@ -562,12 +562,12 @@ public static class QueryCompiler
     private static IReadOnlyDictionary<string, FilterDeriveDefinition> ResolveFilterDerives(DashboardDocument document)
     {
         var map = new Dictionary<string, FilterDeriveDefinition>(StringComparer.OrdinalIgnoreCase);
-        if (document.Pages is null)
+        if (document.Pages?.Value is not { } pages)
         {
             return map;
         }
 
-        foreach (var page in document.Pages)
+        foreach (var page in pages)
         {
             var derive = page.UsageDateDerive?.Value;
             if (derive is not null && !map.ContainsKey(derive.TargetFilter))

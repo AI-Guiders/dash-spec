@@ -155,12 +155,12 @@ internal static class FilterPlacementAnalyzer
 
     private static bool IsOnPageToolbar(DashboardDocument document, CardDefinition card, string filterName)
     {
-        if (string.IsNullOrWhiteSpace(card.PageId?.Value) || document.Pages is null)
+        if (string.IsNullOrWhiteSpace(card.PageId?.Value) || document.Pages?.Value is null)
         {
             return false;
         }
 
-        var page = document.Pages.FirstOrDefault(p =>
+        var page = document.Pages.Value.FirstOrDefault(p =>
             string.Equals(p.Id, card.PageId?.Value, StringComparison.OrdinalIgnoreCase) &&
             string.Equals(p.TabId?.Value ?? "", card.TabId?.Value ?? "", StringComparison.OrdinalIgnoreCase));
         if (page?.ToolbarBoard is null)

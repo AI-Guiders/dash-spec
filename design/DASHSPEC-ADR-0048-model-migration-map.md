@@ -119,11 +119,11 @@ internal static class ModelOption
 | **C (остаток)** — `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
 | **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
-| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition`, `CardDefinition`, `DiagramDataFamily`, `DiagramKindInfo` | ✅ 28 C#-типов удалено; продолжаем вручную |
+| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlotDefinition`, `CardDefinition`, `DiagramDataFamily`, `DiagramKindInfo`, `DashboardDocument`, `CardClickBehaviour` + effects, dashflow-записи | ✅ 40+ C#-типов удалено; `DocumentModelMapper` сведён к identity |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
 
-Проверка партии 2026-10-17: `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `FilterDefinition`, `DataSourceDefinition`, `HostDocument`, `ReportPageDefinition`, `CardDiagramSlot`, `CardDefinition`, `DiagramDataFamily` и `DiagramKindInfo` используются напрямую из F#; остаются C# `DashboardDocument`/другие вложенные декларации, `CardClickBehaviour` и `DocumentModelMapper`.
+Проверка партии 2026-10-17 (вечер): `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. Корневой `DashboardDocument`, `CardClickBehaviour` + effects и dashflow-записи используются напрямую из F# (алиасы во всех проектах-потребителях); `DocumentModelMapper.ToCore` сведён к identity-возврату F#-документа; C# потребители читают F# DU через семантические члены (`TryGetFilterBind`, `IsNavigationEffect`, `Source`/`Format`/`Placement` и т.д.). Остаётся: удалить `DocumentModelMapper.cs`, остатки `src/DashSpec.Core/Model/` (заглушки + `HeatmapCellContext`) и добить пункт **C (остаток)**.
 
 ## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
 

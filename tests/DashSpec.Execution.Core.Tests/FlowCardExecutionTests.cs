@@ -5,41 +5,69 @@ using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Execution.Core.Tests;
-
 public sealed class FlowCardExecutionTests
 {
-    private static readonly DashflowModuleDefinition Flow = new(
-        "peak",
-        [
-            new DashflowSourceDefinition(
-                "utilization",
-                ProviderInfer: false,
-                ProviderId: "postgres",
+    private static readonly DashflowModuleDefinition Flow = CreatePeakFlow();
+
+    private static DashflowModuleDefinition CreatePeakFlow()
+    {
+        var source = Source("utilization", "demo.v_daily_peak", "utilization", "UtilizationRow");
+        var transformer = Transformer("reporting_calendar", "raw", "localized");
+        var link = new DashflowLinkDefinition(
+            "utilization",
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("utilization"),
+            "reporting_calendar",
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("raw"));
+
+        return CreateModule([source], [transformer], [link]);
+    }
+
+    private static DashflowSourceDefinition Source(
+        string id,
+        string fromValue,
+        string outputPort,
+        string outputRowType) =>
+        new(
+            id,
+            DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding.NewNamed("postgres"),
+            new DashSpec.Modeling.Parse.DataFlow.SourceFrom(
                 DashflowSourceFromKind.View,
-                "demo.v_daily_peak",
-                "utilization",
-                "UtilizationRow"),
-        ],
-        [
-            new DashflowTransformerDefinition(
-                "reporting_calendar",
-                [new DashflowTransformerPortDefinition("localized", "UtilizationRowLocalized")],
-                DefaultInputPort: "raw",
-                DefaultOutputPort: "localized",
-                Steps: []),
-        ],
-        [
-                new DashflowLinkDefinition(
-                    "utilization",
-                    Microsoft.FSharp.Core.FSharpOption<string>.Some("utilization"),
-                    "reporting_calendar",
-                    Microsoft.FSharp.Core.FSharpOption<string>.Some("raw")),
-        ]);
+                fromValue,
+                Microsoft.FSharp.Core.FSharpOption<string>.None),
+            outputPort,
+            outputRowType,
+            Microsoft.FSharp.Core.FSharpOption<string>.None);
+
+    private static DashflowTransformerDefinition Transformer(
+        string id,
+        string defaultInputPort,
+        string defaultOutputPort,
+        params DashflowTransformStepDefinition[] steps) =>
+        new(
+            id,
+            [],
+            [System.Tuple.Create("localized", "UtilizationRowLocalized")],
+            Microsoft.FSharp.Core.FSharpOption<string>.Some(defaultInputPort),
+            Microsoft.FSharp.Core.FSharpOption<string>.Some(defaultOutputPort),
+            steps);
+
+    private static DashflowModuleDefinition CreateModule(
+        DashflowSourceDefinition[] sources,
+        DashflowTransformerDefinition[] transformers,
+        DashflowLinkDefinition[] links) =>
+        new(
+            "peak",
+            sources,
+            transformers,
+            [],
+            links,
+            DashSpec.Modeling.Core.FlowGraphModule.empty,
+            []);
 
     [Fact]
     public void ApplyFlowInput_materializes_view_datasource_from_source_port()
     {
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
             null,
@@ -62,8 +90,7 @@ public sealed class FlowCardExecutionTests
                     [],
                     flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization")),
             ],
-            Dashflow: Flow);
-
+            dashflow: Flow);
         var resolved = FlowCardExecution.ApplyFlowInput(document.Cards[0], document);
 
         Assert.Equal("demo.v_daily_peak", resolved.DataSource.Value);
@@ -82,7 +109,7 @@ public sealed class FlowCardExecutionTests
             [],
             flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
 
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
             null,
@@ -91,12 +118,12 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-                TestModelDefaults.FiltersChrome,
+            TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
             [card],
-            Dashflow: Flow);
+            dashflow: Flow);
 
         var materialized = DocumentFlowBinder.MaterializeCard(card, document);
         Assert.Equal("postgres", FlowCardExecution.ResolveProviderId(materialized));
@@ -105,7 +132,7 @@ public sealed class FlowCardExecutionTests
     [Fact]
     public void ApplyFlowInput_uses_transformer_output_row_type()
     {
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
             null,
@@ -114,7 +141,7 @@ public sealed class FlowCardExecutionTests
             null,
             null,
             LayoutDefinition.Default,
-                TestModelDefaults.FiltersChrome,
+            TestModelDefaults.FiltersChrome,
             [],
             [],
             [],
@@ -128,7 +155,7 @@ public sealed class FlowCardExecutionTests
                     [],
                     flowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
             ],
-            Dashflow: Flow);
+            dashflow: Flow);
 
         var resolved = FlowCardExecution.ApplyFlowInput(document.Cards[0], document);
 
@@ -136,28 +163,22 @@ public sealed class FlowCardExecutionTests
         Assert.Equal("demo.v_daily_peak", resolved.DataSource.Value);
     }
 
+
     [Fact]
     public void CardDataPipeline_runs_to_zone_on_transformer_path()
     {
-        var flow = Flow with
-        {
-            Transformers =
-            [
-                new DashflowTransformerDefinition(
-                    "reporting_calendar",
-                    [new DashflowTransformerPortDefinition("localized", "UtilizationRowLocalized")],
-                    DefaultInputPort: "raw",
-                    DefaultOutputPort: "localized",
-                    Steps:
-                    [
-                        new DashflowTransformStepDefinition(
-                            BuiltinScalarTransformIds.ToZone,
-                            [new DashflowTransformParameterDefinition("offset_minutes", "180")]),
-                    ]),
-            ],
-        };
+        var flow = Flow.WithTransformers(
+        [
+            Transformer(
+                "reporting_calendar",
+                "raw",
+                "localized",
+                new DashflowTransformStepDefinition(
+                    BuiltinScalarTransformIds.ToZone,
+                    [new DashflowTransformParameterDefinition("offset_minutes", "180")])),
+        ]);
 
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
             null,
@@ -180,7 +201,7 @@ public sealed class FlowCardExecutionTests
                     [],
                     flowInput: new CardFlowInputDefinition("rows", "reporting_calendar", "localized")),
             ],
-            Dashflow: flow);
+            dashflow: flow);
 
         var card = DocumentFlowBinder.MaterializeCard(document.Cards[0], document);
         var schema = new RowTypeSchema(
@@ -203,21 +224,11 @@ public sealed class FlowCardExecutionTests
     [Fact]
     public void MaterializeCard_materializes_per_slot_flow_inputs()
     {
-        var flow = Flow with
-        {
-            Sources =
-            [
-                Flow.Sources[0],
-                new DashflowSourceDefinition(
-                    "drill_src",
-                    ProviderInfer: false,
-                    ProviderId: "postgres",
-                    DashflowSourceFromKind.View,
-                    "demo.v_drill",
-                    "rows",
-                    "UtilizationRow"),
-            ],
-        };
+        var flow = Flow.WithSources(
+        [
+            Flow.Sources[0],
+            Source("drill_src", "demo.v_drill", "rows", "UtilizationRow"),
+        ]);
 
         var slots = new Dictionary<string, CardDiagramSlotDefinition>(StringComparer.OrdinalIgnoreCase)
         {
@@ -256,7 +267,7 @@ public sealed class FlowCardExecutionTests
             diagramSlots: slots,
             flowInput: new CardFlowInputDefinition("rows", "utilization", "utilization"));
 
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
             null,
@@ -270,7 +281,7 @@ public sealed class FlowCardExecutionTests
             [],
             [],
             [card],
-            Dashflow: flow);
+            dashflow: flow);
 
         var materialized = DocumentFlowBinder.MaterializeCard(card, document);
 

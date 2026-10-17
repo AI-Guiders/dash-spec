@@ -481,7 +481,12 @@
         Card.InteriorSlotRenders?.Values.Any(static slot => slot.DataFamily is DiagramDataFamily.Table) == true;
 
     private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
-        new(ShowPlacement.Below, ShowFormat.Kv, ShowSource.Cell, CopyFriendly: true);
+        CardClickEffect.NewShowSelection(
+            ShowPlacement.Below,
+            ShowFormat.Kv,
+            ShowSource.Cell,
+            true,
+            Microsoft.FSharp.Core.FSharpOption<string>.None);
 
     internal async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
     {

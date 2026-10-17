@@ -291,7 +291,7 @@ public class SpecModulesTests
                 """, dir);
 
             Assert.NotNull(document.Palette);
-            Assert.Equal("brand", document.Palette!.Id);
+            Assert.Equal("brand", document.Palette!.Value.Id);
             Assert.Equal("brand", document.ColorPalette);
         }
         finally
@@ -478,10 +478,10 @@ public class SpecModulesTests
 
         var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
         Assert.NotNull(soak.Palette);
-        Assert.Equal("demo_apps", soak.Palette!.Id);
+        Assert.Equal("demo_apps", soak.Palette!.Value.Id);
         Assert.Equal("demo_apps", soak.ColorPalette);
 
-        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, dir, soak);
+        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath?.Value, dir, soak);
         Assert.Equal("#94a3b8", library!.TryGetPalette("demo_apps")!["default"]);
 
         // demo-analytics.ds is a tab unit (ADR-0101): its cards bind filters owned by the dashboard,

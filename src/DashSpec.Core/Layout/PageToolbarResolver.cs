@@ -9,12 +9,12 @@ public static class PageToolbarResolver
         string? activeTabId,
         string? activePageId)
     {
-        if (string.IsNullOrWhiteSpace(activePageId) || document.Pages is null)
+        if (string.IsNullOrWhiteSpace(activePageId) || document.Pages?.Value is null)
         {
             return null;
         }
 
-        var page = document.Pages.FirstOrDefault(p =>
+        var page = document.Pages.Value.FirstOrDefault(p =>
             string.Equals(p.Id, activePageId, StringComparison.OrdinalIgnoreCase) &&
             (string.IsNullOrWhiteSpace(p.TabId?.Value) ||
              string.IsNullOrWhiteSpace(activeTabId) ||
@@ -28,12 +28,12 @@ public static class PageToolbarResolver
         string? activeTabId,
         string? activePageId)
     {
-        if (string.IsNullOrWhiteSpace(activePageId) || document.Pages is null)
+        if (string.IsNullOrWhiteSpace(activePageId) || document.Pages?.Value is null)
         {
             return null;
         }
 
-        var page = document.Pages.FirstOrDefault(p =>
+        var page = document.Pages.Value.FirstOrDefault(p =>
             string.Equals(p.Id, activePageId, StringComparison.OrdinalIgnoreCase) &&
             (string.IsNullOrWhiteSpace(p.TabId?.Value) ||
              string.IsNullOrWhiteSpace(activeTabId) ||

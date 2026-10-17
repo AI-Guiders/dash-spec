@@ -6,7 +6,7 @@ namespace DashSpec.Core.Tests;
 
 public sealed class DisplayResolutionTests
 {
-    private static readonly DashboardDocument SampleCatalogDoc = new(
+    private static readonly DashboardDocument SampleCatalogDoc = DocumentTestData.Create(
         "customer_reports",
         "Report DSL Title",
         "sqlserver",
@@ -58,7 +58,7 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void CatalogProd_report_header_falls_back_to_entry_title()
     {
-        var doc = SampleCatalogDoc with { Title = "" };
+        var doc = SampleCatalogDoc.WithTitle("");
         var context = ResolutionContext.ForCatalog(doc, SampleCatalogEntry);
         Assert.Equal("Peak by app (catalog)", DisplayResolution.ResolveReportHeaderTitle(context));
     }
@@ -183,7 +183,7 @@ public sealed class DisplayResolutionTests
             new TabDefinition("overview", Microsoft.FSharp.Core.FSharpOption<string>.Some("Обзор"), [], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None),
             new TabDefinition("detail", Microsoft.FSharp.Core.FSharpOption<string>.Some("Детализация"), [], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None),
         ];
-        var soakDoc = SampleCatalogDoc with { Tabs = soakTabs };
+        var soakDoc = SampleCatalogDoc.WithTabs(soakTabs);
         var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds", null, null);
         var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
         Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));

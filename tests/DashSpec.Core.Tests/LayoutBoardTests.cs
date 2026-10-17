@@ -381,7 +381,7 @@ end tab
 
         Assert.Equal("D", doc.Filters[0].LayoutRef);
         Assert.NotNull(doc.ToolbarBoard);
-        Assert.Equal(2, doc.ToolbarBoard!.RowCount);
+        Assert.Equal(2, doc.ToolbarBoard!.Value.RowCount);
         Assert.Equal(["usage_date", "app_name", "user_name"], doc.DashboardFilters);
     }
 

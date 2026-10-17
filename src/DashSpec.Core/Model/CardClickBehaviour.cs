@@ -1,58 +1,6 @@
+// CardClickBehaviour and click effects are owned by DashSpec.Modeling.Parse.Card (F#).
 namespace DashSpec.Core.Model;
 
-/// <summary>Bounded click interaction on a card (ADR-0028).</summary>
-public sealed record CardClickBehaviour(IReadOnlyList<CardClickEffect> Effects);
-
-public abstract record CardClickEffect;
-
-public sealed record ShowSelectionEffect(
-    ShowPlacement Placement,
-    ShowFormat Format,
-    ShowSource Source,
-    bool CopyFriendly,
-    string? Split = null) : CardClickEffect;
-
-public sealed record SetFilterFromFieldEffect(
-    string FilterName,
-    string Field) : CardClickEffect;
-
-/// <summary>Scope heatmap cell binds to interior drill SQL only (ADR-0064).</summary>
-public sealed record DrillTableFromCellEffect(
-    IReadOnlyList<SetFilterFromFieldEffect> Binds) : CardClickEffect;
-
-public sealed record InvokeHandlerEffect(
-    string HandlerId,
-    IReadOnlyDictionary<string, string> Args) : CardClickEffect;
-
-public sealed record GotoTabEffect(string TabId) : CardClickEffect;
-
-public sealed record FocusPhaseEffect(string PhaseId) : CardClickEffect;
-
-public sealed record GotoPageEffect(string PageId) : CardClickEffect;
-
-public sealed record GotoCatalogEntryEffect(
-    string EntryId,
-    IReadOnlyList<string>? PreserveFilterNames = null) : CardClickEffect;
-
-public enum ShowPlacement
-{
-    Below,
-}
-
-public enum ShowFormat
-{
-    List,
-    Plain,
-    Kv,
-}
-
-public enum ShowSource
-{
-    Tooltip,
-    Cell,
-}
-
-/// <summary>Selected heatmap cell context for inspect/act handlers.</summary>
 public sealed record HeatmapCellContext(
     int Yi,
     int Xi,

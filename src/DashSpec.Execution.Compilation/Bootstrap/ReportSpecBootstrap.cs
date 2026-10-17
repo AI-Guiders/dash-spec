@@ -44,11 +44,11 @@ public sealed class ReportSpecBootstrap(
         var document = compile.Document;
         var library = SpecLibraryComposer.Load(
             specFullPath,
-            document.DiagramLibraryPath,
+            document.DiagramLibraryPath?.Value,
             environment.DefaultSpecDirectory,
             document);
         _ = SpecResolver.Resolve(document, library);
-        var connector = connectorResolver.Resolve(configPath, document.ConnectorId);
+        var connector = connectorResolver.Resolve(configPath, document.ConnectorId?.Value);
         var filterIndex = DashboardBootstrap.IndexFilters(document);
         var filters = DashboardBootstrap.CreateInitialFilters(document, DateOnly.FromDateTime(DateTime.UtcNow));
         var fieldOptions = options.LoadFieldOptions

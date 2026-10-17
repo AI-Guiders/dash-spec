@@ -27,9 +27,9 @@ public static class PlacedFilterCollector
             Add(name);
         }
 
-        if (document.Pages is not null)
+        if (document.Pages?.Value is { } pages)
         {
-            foreach (var page in document.Pages)
+            foreach (var page in pages)
             {
                 if (page.ToolbarBoard is null)
                 {
@@ -77,9 +77,9 @@ public static class PlacedFilterCollector
             Add(name);
         }
 
-        if (document.Pages is not null)
+        if (document.Pages?.Value is { } pages)
         {
-            foreach (var page in document.Pages)
+            foreach (var page in pages)
             {
                 if (page.ToolbarBoard is null)
                 {

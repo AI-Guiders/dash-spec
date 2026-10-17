@@ -17,12 +17,13 @@ public static class HeatmapCellFilterResolver
         var overlay = new CardCellDrillOverlay();
         foreach (var bind in binds)
         {
-            if (!filterIndex.TryGetValue(bind.FilterName, out var filter))
+            var (filterName, field) = bind.TryGetFilterBind!.Value;
+            if (!filterIndex.TryGetValue(filterName, out var filter))
             {
                 continue;
             }
 
-            var raw = ReadRaw(bind.Field, context);
+            var raw = ReadRaw(field, context);
             if (!IsDrillableRaw(raw))
             {
                 continue;
@@ -30,14 +31,14 @@ public static class HeatmapCellFilterResolver
 
             switch (filter.Kind)
             {
-                case FilterKind.Date when TryParseHeatmapDateFilter(raw, bind.FilterName, filters, out var day):
-                    overlay.SetDate(bind.FilterName, day, day);
+                case FilterKind.Date when TryParseHeatmapDateFilter(raw, filterName, filters, out var day):
+                    overlay.SetDate(filterName, day, day);
                     break;
                 case FilterKind.Field:
                     var wire = ResolveFieldWireValue(filter, raw, context, filters, anchorDateFilterNames);
                     if (!string.IsNullOrWhiteSpace(wire))
                     {
-                        overlay.SetField(bind.FilterName, wire);
+                        overlay.SetField(filterName, wire);
                     }
 
                     break;
@@ -56,12 +57,13 @@ public static class HeatmapCellFilterResolver
         Action<string, string> setField,
         IEnumerable<string>? anchorDateFilterNames = null)
     {
-        if (!filterIndex.TryGetValue(effect.FilterName, out var filter))
+        var (filterName, field) = effect.TryGetFilterBind!.Value;
+        if (!filterIndex.TryGetValue(filterName, out var filter))
         {
             return;
         }
 
-        var raw = ReadRaw(effect.Field, context);
+        var raw = ReadRaw(field, context);
         if (!IsDrillableRaw(raw))
         {
             return;
@@ -69,14 +71,14 @@ public static class HeatmapCellFilterResolver
 
         switch (filter.Kind)
         {
-            case FilterKind.Date when TryParseHeatmapDateFilter(raw, effect.FilterName, filters, out var day):
-                setDate(effect.FilterName, day, day);
+            case FilterKind.Date when TryParseHeatmapDateFilter(raw, filterName, filters, out var day):
+                setDate(filterName, day, day);
                 break;
             case FilterKind.Field:
                 var wire = ResolveFieldWireValue(filter, raw, context, filters, anchorDateFilterNames);
                 if (!string.IsNullOrWhiteSpace(wire))
                 {
-                    setField(effect.FilterName, wire);
+                    setField(filterName, wire);
                 }
 
                 break;
@@ -85,18 +87,18 @@ public static class HeatmapCellFilterResolver
 
     public static IEnumerable<SetFilterFromFieldEffect> CollectDrillBinds(IReadOnlyList<CardClickEffect> effects)
     {
-        var drill = effects.OfType<DrillTableFromCellEffect>().FirstOrDefault();
+        var drill = effects.FirstOrDefault(static effect => effect.TryGetDrillBinds?.Value is not null);
         if (drill is null)
         {
-            return effects.OfType<SetFilterFromFieldEffect>();
+            return effects.Where(static effect => effect.TryGetFilterBind?.Value is not null);
         }
 
-        return drill.Binds
-            .Concat(effects.OfType<SetFilterFromFieldEffect>())
-            .GroupBy(static b => b.FilterName, StringComparer.OrdinalIgnoreCase)
+        return drill.TryGetDrillBinds!.Value
+            .Select(static bind => CardClickEffect.NewSetFilterFromField(bind.Item1, bind.Item2))
+            .Concat(effects.Where(static effect => effect.TryGetFilterBind?.Value is not null))
+            .GroupBy(static b => b.TryGetFilterBind!.Value.Item1, StringComparer.OrdinalIgnoreCase)
             .Select(static g => g.First());
     }
-
     public static IEnumerable<string> ResolveAnchorDateFilterNames(
         IReadOnlyList<string>? localFilters,
         IReadOnlyList<string>? boundFilters,

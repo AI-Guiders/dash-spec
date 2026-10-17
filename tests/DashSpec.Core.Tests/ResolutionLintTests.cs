@@ -7,7 +7,7 @@ namespace DashSpec.Core.Tests;
 public sealed class ResolutionLintTests
 {
     private static DashboardDocument Doc(string title, string? tabLabel = null, string? cardTitle = null) =>
-        new(
+        DocumentTestData.Create(
             "r",
             title,
             "sqlserver",
@@ -76,7 +76,7 @@ public sealed class ResolutionLintTests
             [],
             [],
             Presentation: new PresentationBlock(null, new Dictionary<string, string> { ["legend"] = "top" }));
-        var doc = Doc("x") with { Cards = [card] };
+        var doc = Doc("x").WithCards([card]);
         var findings = ResolutionLint.Analyze(doc);
         Assert.Contains(findings, f => f.Slot == "diagram.chart_chrome");
     }
@@ -87,17 +87,23 @@ public sealed class ResolutionLintTests
         var card = CardTestData.Create(
             "c",
             "",
-                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+            new DiagramDefinition("bar", new Dictionary<string, string>(), null),
             DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Placement: new PlacementDefinition(2, 1, 6));
         var board = LayoutBoardDefinition.FromCardRows([["c"]]);
-        var doc = Doc("x") with
-        {
-            Cards = [card],
-                Tabs = [new TabDefinition("t", Microsoft.FSharp.Core.FSharpOption<string>.None, ["c"], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(board))],
-        };
+        var doc = Doc("x")
+            .WithCards([card])
+            .WithTabs(
+            [
+                new TabDefinition(
+                    "t",
+                    Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    ["c"],
+                    Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(board)),
+            ]);
 
         var findings = ResolutionLint.Analyze(doc);
         Assert.Contains(findings, f =>

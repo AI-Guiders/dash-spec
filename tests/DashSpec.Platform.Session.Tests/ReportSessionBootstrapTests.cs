@@ -66,7 +66,7 @@ public sealed class ReportSessionBootstrapTests
             {
                 FilterTestData.Date("usage_date", null, "t.usage_date")
             };
-            var doc = new DashboardDocument(
+            var doc = DocumentTestData.Create(
                 "demo",
                 "Demo",
                 "fake",

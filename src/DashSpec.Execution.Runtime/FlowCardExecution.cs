@@ -1,5 +1,6 @@
 using DashSpec.Core.Model;
 using Microsoft.FSharp.Core;
+using FSharpDataFlow = DashSpec.Modeling.Parse.DataFlow;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -18,7 +19,7 @@ public static class FlowCardExecution
             return card;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, card.FlowInput.Value);
+        var dataSource = MaterializeDataSource(document.Dashflow!.Value, card.FlowInput.Value);
         return card.WithDataSource(dataSource);
     }
 
@@ -36,7 +37,7 @@ public static class FlowCardExecution
             return slot;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, slot.FlowInput.Value);
+        var dataSource = MaterializeDataSource(document.Dashflow!.Value, slot.FlowInput.Value);
         return slot.WithDataSource(dataSource);
     }
 
@@ -68,7 +69,7 @@ public static class FlowCardExecution
             throw new InvalidOperationException("Dashboard document has no resolved dashflow module.");
         }
 
-        return DashflowPathResolver.Resolve(document.Dashflow, input);
+        return DashflowPathResolver.Resolve(document.Dashflow!.Value, input);
     }
 
     private static DashflowSourceDefinition ResolveBackingSource(
@@ -96,8 +97,8 @@ public static class FlowCardExecution
         }
 
         return transformer.Outputs
-            .FirstOrDefault(p => PortMatches(p.Name, portName))
-            ?.RowType;
+            .FirstOrDefault(p => PortMatches(p.Item1, portName))
+            ?.Item2;
     }
 
     private static bool PortMatches(string expected, string actual) =>
@@ -105,30 +106,28 @@ public static class FlowCardExecution
 
     private static DataSourceDefinition ToDataSource(DashflowSourceDefinition source)
     {
-        var kind = source.FromKind == DashflowSourceFromKind.View
+        var kind = source.From.Kind.Equals(DashflowSourceFromKind.View)
             ? DataSourceKind.View
             : DataSourceKind.Sql;
-        DataSourceSqlCarrier? carrier = source.FromKind switch
+        DataSourceSqlCarrier? carrier = source.From.Kind switch
         {
-            DashflowSourceFromKind.View => null,
-            DashflowSourceFromKind.SqlQuery => DataSourceSqlCarrier.Query,
-            DashflowSourceFromKind.SqlFile => DataSourceSqlCarrier.File,
-            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.FromKind}'."),
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.View) => null,
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlQuery) => DataSourceSqlCarrier.Query,
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlFile) => DataSourceSqlCarrier.File,
+            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.From.Kind}'."),
         };
 
         return new DataSourceDefinition
         {
             Kind = kind,
-            Value = source.FromValue,
+            Value = source.From.Value,
             SqlCarrier = carrier is { } value
                 ? FSharpOption<DataSourceSqlCarrier>.Some(value)
                 : FSharpOption<DataSourceSqlCarrier>.None,
             Sheet = FSharpOption<string>.None,
             RowsType = source.OutputRowType,
-            ProviderInfer = source.ProviderInfer,
-            ProviderId = source.ProviderInfer || source.ProviderId is null
-                ? FSharpOption<string>.None
-                : FSharpOption<string>.Some(source.ProviderId),
+            ProviderInfer = FSharpDataFlow.DashflowProviderBridge.isInfer(source.Provider),
+            ProviderId = FSharpDataFlow.DashflowProviderBridge.tryNamedId(source.Provider),
         };
     }
 }
