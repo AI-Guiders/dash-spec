@@ -64,7 +64,7 @@ public sealed class ReportSessionBootstrapTests
         {
             var filters = new List<FilterDefinition>
             {
-                new(FilterKind.Date, "usage_date", null, "t.usage_date")
+                FilterTestData.Date("usage_date", null, "t.usage_date")
             };
             var doc = new DashboardDocument(
                 "demo",

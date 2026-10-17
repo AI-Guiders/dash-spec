@@ -63,52 +63,6 @@ public sealed record DashboardDocument(
         RowTypeSchemas ?? EmptyRowTypeSchemas;
 }
 
-public sealed record FilterDefinition(
-    FilterKind Kind,
-    string Name,
-    string? DefaultExpression,
-    string? ColumnReference,
-    string? Label = null,
-    string? Widget = null,
-    int? MinValue = null,
-    int? MaxValue = null,
-    string? GrainFilterName = null,
-    bool SingleSelect = false,
-    string? LayoutRef = null,
-    string? BindScopeHint = null,
-    IReadOnlyDictionary<string, string>? GrainLabels = null,
-    PlacementDefinition? Placement = null)
-{
-    public bool IsDayWidget =>
-        string.Equals(Widget, "day", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsComboboxWidget =>
-        string.Equals(Widget, "combobox", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsSelectWidget =>
-        string.Equals(Widget, "select", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsSingleSelectField =>
-        SingleSelect || IsSelectWidget;
-
-    public bool IsBindScopeInline =>
-        string.Equals(BindScopeHint, "inline", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsBindScopeHidden =>
-        string.Equals(BindScopeHint, "hidden", StringComparison.OrdinalIgnoreCase);
-
-    public bool IsBindScopeTooltip =>
-        string.IsNullOrWhiteSpace(BindScopeHint) ||
-        string.Equals(BindScopeHint, "tooltip", StringComparison.OrdinalIgnoreCase);
-}
-
-public enum FilterKind
-{
-    Date,
-    Field,
-    Top,
-}
-
 public sealed record CardDefinition(
     string Id,
     string Title,
@@ -142,29 +96,3 @@ public sealed record CardDefinition(
     InspectPresentation? Inspect = null,
     TooltipDefinition? Tooltip = null,
     CardFlowInputDefinition? FlowInput = null);
-public sealed record DiagramDefinition(
-    string Kind,
-    IReadOnlyDictionary<string, string> Properties,
-    string? UsePreset = null);
-
-public sealed record DataSourceDefinition(
-    DataSourceKind Kind,
-    string Value,
-    DataSourceSqlCarrier? SqlCarrier = null,
-    string? Sheet = null,
-    string RowsType = "",
-    bool ProviderInfer = false,
-    string? ProviderId = null);
-
-public enum DataSourceKind
-{
-    View,
-    Sql,
-    Xlsx,
-}
-
-public enum DataSourceSqlCarrier
-{
-    Query,
-    File,
-}

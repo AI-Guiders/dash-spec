@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Working document (ветка `refactor/model-fsharp-ssot`) |
-| **Date** | 2026-10-16 |
+| **Date** | 2026-10-17 |
 | **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) · [ADR-0102](DASHSPEC-ADR-0102-one-language.md) |
 
 ## Решение
@@ -119,9 +119,11 @@ internal static class ModelOption
 | **C (остаток)** — `DiagramKindInfo` (используется самим `Core` → переезд только внутри `Core`); `DescribeOversize` (русский текст) и `ToolbarDateLabelClass` (CSS) → presentation; `LayoutBoardDefinition.FromCardRows` | ⏳ осталось |
 | **A** — удаление C#-дубликатов `Resolved*`/`Rows`/`RowCount` | ⏳ **нельзя до переключения**: C#-копии нужны текущим потребителям, удаляются внутри большой волны |
 | **D** — большая волна: алиасы + удаление `Model/` + добить 400–600 мест | ⏳ |
-| **E** — ручная миграция независимых записей: `HostLinkDefinition`, layout/chrome/palette/tooltip-типы, `ExtensionBlockNode`, `CardFlowInputDefinition`, `DashflowTransformParameterDefinition`, `CatalogGroupDefinition`, `CardVisibilityRule`/mode | ✅ 17 C#-типов удалено; продолжаем вручную |
+| **E** — ручная миграция независимых записей: предыдущие листья + `FilterDefinition`/`FilterKind`, `DataSourceDefinition`/kind/carrier | ✅ 22 C#-типов удалено; продолжаем вручную |
 
 База на момент записи: сборка 0 warnings / 0 errors, тесты 554 passed / 0 failed.
+
+Проверка партии 2026-10-17: `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `FilterDefinition` и `DataSourceDefinition` теперь принадлежат F#; оставшиеся корни `DashboardDocument`/`CardDefinition` и `DocumentModelMapper` всё ещё требуют миграции.
 
 ## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
 

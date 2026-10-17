@@ -29,7 +29,7 @@ public static class HostTopbarLayoutResolver
 
     public static IReadOnlyList<string> Resolve(LayoutBoardDefinition? board)
     {
-        if (board is null || board.Rows.Count == 0)
+        if (board is null || !board.Rows.Any())
         {
             return DefaultSlots;
         }

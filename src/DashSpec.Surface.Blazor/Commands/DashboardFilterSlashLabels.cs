@@ -49,7 +49,7 @@ internal static class DashboardFilterSlashLabels
 
         if (context.FilterIndex.TryGetValue(filterName, out var filter)
 
-            && !string.IsNullOrWhiteSpace(filter.GrainFilterName))
+            && !string.IsNullOrWhiteSpace(filter.GrainFilterName?.Value))
 
         {
 

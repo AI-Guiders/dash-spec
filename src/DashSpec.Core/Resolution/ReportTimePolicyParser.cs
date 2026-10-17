@@ -1,7 +1,9 @@
 using DashSpec.Core.Model;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Core.Resolution;
 
+/// <summary>Parses host/runtime overrides for the F# report-time policy IR.</summary>
 public static class ReportTimePolicyParser
 {
     private static readonly string[] ConfigurationKeys =
@@ -20,13 +22,7 @@ public static class ReportTimePolicyParser
 
     public static ReportTimePolicy? ParseConfiguration(IReadOnlyDictionary<string, string> properties)
     {
-        if (properties.Count == 0)
-        {
-            return null;
-        }
-
-        var hasAny = ConfigurationKeys.Any(k => properties.ContainsKey(k));
-        if (!hasAny)
+        if (properties.Count == 0 || !ConfigurationKeys.Any(properties.ContainsKey))
         {
             return null;
         }
@@ -46,23 +42,23 @@ public static class ReportTimePolicyParser
             return overlay;
         }
 
-        var calendar = overlay.WorkCalendar ?? basePolicy.WorkCalendar;
-        if (overlay.WorkCalendar is not null && basePolicy.WorkCalendar is not null)
+        var baseCalendar = basePolicy.WorkCalendar?.Value;
+        var overlayCalendar = overlay.WorkCalendar?.Value;
+        var calendar = overlayCalendar ?? baseCalendar;
+        if (overlayCalendar is not null && baseCalendar is not null)
         {
-            calendar = new WorkCalendarDefinition(
-                overlay.WorkCalendar.TimeZoneId ?? basePolicy.WorkCalendar.TimeZoneId,
-                overlay.WorkCalendar.StartTime ?? basePolicy.WorkCalendar.StartTime,
-                overlay.WorkCalendar.EndTime ?? basePolicy.WorkCalendar.EndTime,
-                overlay.WorkCalendar.WorkDays ?? basePolicy.WorkCalendar.WorkDays);
+            calendar = CreateCalendar(
+                overlayCalendar.TimeZoneId?.Value ?? baseCalendar.TimeZoneId?.Value,
+                overlayCalendar.StartTime?.Value ?? baseCalendar.StartTime?.Value,
+                overlayCalendar.EndTime?.Value ?? baseCalendar.EndTime?.Value,
+                overlayCalendar.WorkDays?.Value ?? baseCalendar.WorkDays?.Value);
         }
 
-        return basePolicy with
-        {
-            Basis = overlay.Basis,
-            Apply = overlay.Apply,
-            WorkTimeColumn = overlay.WorkTimeColumn ?? basePolicy.WorkTimeColumn,
-            WorkCalendar = calendar,
-        };
+        return CreatePolicy(
+            overlay.Basis,
+            overlay.Apply,
+            overlay.WorkTimeColumn?.Value ?? basePolicy.WorkTimeColumn?.Value,
+            calendar);
     }
 
     public static ReportTimePolicy? ParsePartial(
@@ -81,34 +77,26 @@ public static class ReportTimePolicyParser
             apply = ParseApply(applyRaw);
         }
 
-        string? workColumn = existing?.WorkTimeColumn;
+        var workColumn = existing?.WorkTimeColumn?.Value;
         if (properties.TryGetValue("work_time_column", out var columnRaw) && !string.IsNullOrWhiteSpace(columnRaw))
         {
             workColumn = columnRaw.Trim();
         }
 
-        WorkCalendarDefinition? calendar = existing?.WorkCalendar;
-        if (properties.TryGetValue("work_timezone", out var tz) && !string.IsNullOrWhiteSpace(tz)
-            || properties.TryGetValue("work_start", out _)
-            || properties.TryGetValue("work_end", out _)
-            || properties.TryGetValue("work_days", out _))
+        var calendar = existing?.WorkCalendar?.Value;
+        if ((properties.TryGetValue("work_timezone", out var tz) && !string.IsNullOrWhiteSpace(tz))
+            || properties.ContainsKey("work_start")
+            || properties.ContainsKey("work_end")
+            || properties.ContainsKey("work_days"))
         {
-            calendar = new WorkCalendarDefinition(
-                properties.TryGetValue("work_timezone", out var tzRaw) && !string.IsNullOrWhiteSpace(tzRaw)
-                    ? tzRaw.Trim()
-                    : calendar?.TimeZoneId,
-                properties.TryGetValue("work_start", out var startRaw) && !string.IsNullOrWhiteSpace(startRaw)
-                    ? startRaw.Trim()
-                    : calendar?.StartTime,
-                properties.TryGetValue("work_end", out var endRaw) && !string.IsNullOrWhiteSpace(endRaw)
-                    ? endRaw.Trim()
-                    : calendar?.EndTime,
-                properties.TryGetValue("work_days", out var daysRaw) && !string.IsNullOrWhiteSpace(daysRaw)
-                    ? daysRaw.Trim()
-                    : calendar?.WorkDays);
+            calendar = CreateCalendar(
+                ReadValue(properties, "work_timezone") ?? calendar?.TimeZoneId?.Value,
+                ReadValue(properties, "work_start") ?? calendar?.StartTime?.Value,
+                ReadValue(properties, "work_end") ?? calendar?.EndTime?.Value,
+                ReadValue(properties, "work_days") ?? calendar?.WorkDays?.Value);
         }
 
-        return new ReportTimePolicy(basis, apply, workColumn, calendar);
+        return CreatePolicy(basis, apply, workColumn, calendar);
     }
 
     public static ReportTimeBasis ParseBasis(string raw) =>
@@ -125,4 +113,40 @@ public static class ReportTimePolicyParser
             "both" => ReportTimeApply.Both,
             _ => ReportTimeApply.Clip,
         };
+
+    private static string? ReadValue(IReadOnlyDictionary<string, string> properties, string key) =>
+        properties.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+            ? value.Trim()
+            : null;
+
+    private static ReportTimePolicy CreatePolicy(
+        ReportTimeBasis basis,
+        ReportTimeApply apply,
+        string? workTimeColumn,
+        WorkCalendarDefinition? calendar) =>
+        new()
+        {
+            Basis = basis,
+            Apply = apply,
+            WorkTimeColumn = ToOption(workTimeColumn),
+            WorkCalendar = calendar is null
+                ? FSharpOption<WorkCalendarDefinition>.None
+                : FSharpOption<WorkCalendarDefinition>.Some(calendar),
+        };
+
+    private static WorkCalendarDefinition CreateCalendar(
+        string? timeZoneId,
+        string? startTime,
+        string? endTime,
+        string? workDays) =>
+        new()
+        {
+            TimeZoneId = ToOption(timeZoneId),
+            StartTime = ToOption(startTime),
+            EndTime = ToOption(endTime),
+            WorkDays = ToOption(workDays),
+        };
+
+    private static FSharpOption<string> ToOption(string? value) =>
+        value is null ? FSharpOption<string>.None : FSharpOption<string>.Some(value);
 }

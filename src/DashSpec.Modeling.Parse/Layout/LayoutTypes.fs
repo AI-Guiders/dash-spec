@@ -69,3 +69,11 @@ type LayoutBoardDefinition =
                 | GroupRow group -> group.Rows |> Seq.map (fun row -> row.Count)
                 | NestRow nest -> nest.Rows |> Seq.map (fun row -> row.Count))
         if Seq.isEmpty counts then 0 else Seq.max counts
+
+    static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>) =
+        { Entries = rows |> Seq.map CardRow |> Seq.toList
+          ModuleScope = None }
+
+    static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>, moduleScope: LayoutScope) =
+        { Entries = rows |> Seq.map CardRow |> Seq.toList
+          ModuleScope = Some moduleScope }

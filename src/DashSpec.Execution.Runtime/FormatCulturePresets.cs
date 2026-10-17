@@ -10,9 +10,10 @@ public static partial class FormatCulturePresets
 {
     public static CultureInfo ResolveCulture(ReportFormatDefaults? defaults, CultureInfo? uiCulture)
     {
-        if (!string.IsNullOrWhiteSpace(defaults?.Culture))
+        var culture = defaults?.Culture?.Value;
+        if (!string.IsNullOrWhiteSpace(culture))
         {
-            return DashSpecCultures.Parse(defaults.Culture);
+            return DashSpecCultures.Parse(culture);
         }
 
         return uiCulture ?? CultureInfo.CurrentCulture;

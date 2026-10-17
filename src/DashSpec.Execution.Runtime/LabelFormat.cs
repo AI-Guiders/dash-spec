@@ -40,13 +40,13 @@ public static partial class LabelFormat
     public static CultureInfo ResolveReportCulture() => ReportCulture;
 
     public static string ResolveTimeFormat(string? diagramFormat) =>
-        CoalesceFormat(diagramFormat, ReportDefaults.Value?.TimeFormat, "time.short");
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.TimeFormat?.Value, "time.short");
 
     public static string ResolveDateFormat(string? diagramFormat) =>
-        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateFormat, "date.short");
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateFormat?.Value, "date.short");
 
     public static string ResolveDateTimeFormat(string? diagramFormat) =>
-        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateTimeFormat, "datetime.short");
+        CoalesceFormat(diagramFormat, ReportDefaults.Value?.DateTimeFormat?.Value, "datetime.short");
 
     public static string ResolveAxisFormat(string? diagramFormat)
     {

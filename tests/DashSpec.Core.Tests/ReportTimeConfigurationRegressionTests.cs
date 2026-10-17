@@ -40,6 +40,6 @@ public sealed class ReportTimeConfigurationRegressionTests
 
         Assert.NotNull(document.TimePolicy);
         Assert.Equal(ReportTimeBasis.Calendar, document.TimePolicy!.Basis);
-        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn.Value);
     }
 }

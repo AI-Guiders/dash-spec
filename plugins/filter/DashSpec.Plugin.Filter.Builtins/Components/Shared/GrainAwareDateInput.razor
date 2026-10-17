@@ -104,7 +104,7 @@ else
 
     [Parameter] public EventCallback<string> OnDayChanged { get; set; }
 
-    private bool HasGrainFilter => !string.IsNullOrWhiteSpace(Filter.GrainFilterName);
+    private bool HasGrainFilter => !string.IsNullOrWhiteSpace(Filter.GrainFilterName?.Value);
 
     private string? Grain => HasGrainFilter
         ? GrainFilterPresentation.ResolveGrain(Filter, FilterIndex, SelectedFields)

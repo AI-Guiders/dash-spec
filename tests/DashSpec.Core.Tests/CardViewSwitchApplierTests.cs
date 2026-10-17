@@ -14,7 +14,7 @@ public class CardViewSwitchApplierTests
             "peak",
             "Peak",
             new DiagramDefinition(string.Empty, new Dictionary<string, string>(), "default_diagram"),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.v"),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.v"),
             [],
             [],
             ExtensionBlocks:

@@ -4,10 +4,12 @@ open System
 open System.Collections.Generic
 open DashSpec.Modeling.Parse.Layout
 
+[<RequireQualifiedAccess>]
 type FilterKind =
-    | Date
-    | Field
-    | Top
+    | Date = 0
+    | Field = 1
+    | Top = 2
+
 
 [<CLIMutable>]
 type FilterDefinition =
@@ -51,6 +53,12 @@ type FilterDefinition =
         | Some hint ->
             String.IsNullOrWhiteSpace hint
             || String.Equals(hint, "tooltip", StringComparison.OrdinalIgnoreCase)
+
+    member this.WithDefaultExpression(value: string option) =
+        { this with DefaultExpression = value }
+
+    member this.WithColumnReference(value: string option) =
+        { this with ColumnReference = value }
 
 [<CLIMutable>]
 type FiltersChromeDefinition =
@@ -103,3 +111,4 @@ module FiltersChromeDefinition =
           DebounceMs = 400
           FormatGuide = FormatGuideHidden
           Cells = "" }
+

@@ -13,7 +13,7 @@ public sealed class FormatCulturePresetsTests
     public void ResolveCulture_prefers_report_over_ui()
     {
         var culture = FormatCulturePresets.ResolveCulture(
-            new ReportFormatDefaults(Culture: "en-GB"),
+            TestReportFormatDefaults.Create(culture: "en-GB"),
             CultureInfo.GetCultureInfo("ru-RU"));
         Assert.Equal("en-GB", culture.Name);
     }
@@ -41,7 +41,7 @@ public sealed class FormatCulturePresetsTests
     public void Report_culture_overrides_host_ui_for_presets()
     {
         LabelFormat.UiCulture = CultureInfo.GetCultureInfo("en-US");
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(Culture: "ru-RU"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(culture: "ru-RU"));
         try
         {
             var text = LabelFormat.FormatObject(new DateOnly(2026, 8, 3), "date.short");

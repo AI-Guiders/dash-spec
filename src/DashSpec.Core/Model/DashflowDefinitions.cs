@@ -34,9 +34,3 @@ public sealed record DashflowTransformerDefinition(
     string? DefaultInputPort,
     string? DefaultOutputPort,
     IReadOnlyList<DashflowTransformStepDefinition> Steps);
-
-public sealed record DashflowLinkDefinition(
-    string FromNode,
-    string? FromPort,
-    string ToNode,
-    string? ToPort);

@@ -49,9 +49,9 @@ public static class ChartChromeProperties
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(block.UsePreset))
+        if (!string.IsNullOrWhiteSpace(block.UsePreset?.Value))
         {
-            AbsorbPresentationPreset(block.UsePreset, library, merged, visited: []);
+            AbsorbPresentationPreset(block.UsePreset.Value, library, merged, visited: []);
         }
 
         foreach (var (key, value) in block.Properties)

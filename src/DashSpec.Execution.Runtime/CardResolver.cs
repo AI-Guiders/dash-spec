@@ -64,7 +64,7 @@ public static class CardResolver
     }
 
     private static bool NeedsDiagramPreset(DiagramDefinition diagram) =>
-        string.IsNullOrWhiteSpace(diagram.UsePreset) && string.IsNullOrWhiteSpace(diagram.Kind);
+        string.IsNullOrWhiteSpace(diagram.UsePreset?.Value) && string.IsNullOrWhiteSpace(diagram.Kind);
 
     private static bool NeedsDataSourcePreset(DataSourceDefinition dataSource) =>
         string.IsNullOrWhiteSpace(dataSource.Value);

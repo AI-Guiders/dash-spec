@@ -81,7 +81,7 @@ public static class ChartColorResolver
 
         Absorb(card.Diagram.Properties);
 
-        if (card.Presentation?.UsePreset is { } presentationPreset &&
+        if (card.Presentation?.UsePreset?.Value is { } presentationPreset &&
             library?.TryGetPresentation(presentationPreset) is { } presentationProps)
         {
             Absorb(presentationProps);
@@ -107,7 +107,7 @@ public static class ChartColorResolver
             return true;
         }
 
-        if (card.Presentation?.UsePreset is { } presetName &&
+        if (card.Presentation?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset &&
             HasSingleColorMode(preset))
         {

@@ -26,13 +26,14 @@ internal static class LayoutBoardPlacer
         {
             switch (entry)
             {
-                case LayoutBoardCardRow cardRow:
+                case LayoutBoardEntry.CardRow cardRow:
                     rowIndex++;
-                    PlaceCardRow(cardRow.CardIds, rowIndex, columns, context, resolveToken, result);
+                    PlaceCardRow(cardRow.Item, rowIndex, columns, context, resolveToken, result);
                     break;
-                case LayoutBoardNestRow:
+                case LayoutBoardEntry.NestRow:
                     break;
-                case LayoutBoardGroupRow { Group: var group }:
+                case LayoutBoardEntry.GroupRow groupRow:
+                    var group = groupRow.Item;
                     rowIndex++;
                     var innerBoard = LayoutBoardDefinition.FromCardRows(group.Rows);
                     var inner = Resolve(

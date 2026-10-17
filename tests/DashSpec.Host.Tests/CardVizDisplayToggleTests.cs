@@ -31,7 +31,7 @@ public sealed class CardVizDisplayToggleTests
             new DiagramDefinition(
                 "heatmap",
                 new Dictionary<string, string> { ["axis_labels_y"] = "show" }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 

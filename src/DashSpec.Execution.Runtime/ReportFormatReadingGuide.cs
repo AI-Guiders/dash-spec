@@ -40,14 +40,14 @@ public static class ReportFormatReadingGuide
     }
 
     internal static string ResolveDateFormat(ReportFormatDefaults? defaults) =>
-        string.IsNullOrWhiteSpace(defaults?.DateFormat)
+        string.IsNullOrWhiteSpace(defaults?.DateFormat?.Value)
             ? "date.short"
-            : defaults.DateFormat.Trim();
+            : defaults.DateFormat.Value.Trim();
 
     internal static string ResolveTimeFormat(ReportFormatDefaults? defaults) =>
-        string.IsNullOrWhiteSpace(defaults?.TimeFormat)
+        string.IsNullOrWhiteSpace(defaults?.TimeFormat?.Value)
             ? "time.short"
-            : defaults.TimeFormat.Trim();
+            : defaults.TimeFormat.Value.Trim();
 
     private static string DescribePattern(string format, bool isTime, CultureInfo culture)
     {

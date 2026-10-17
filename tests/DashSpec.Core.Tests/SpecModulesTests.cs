@@ -98,8 +98,8 @@ public class SpecModulesTests
             {
                 ["color_palette"] = "brand",
                 ["series_colors"] = "AVEVA:#2563eb",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,
@@ -156,8 +156,8 @@ public class SpecModulesTests
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["color_palette"] = "brand",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -185,8 +185,8 @@ public class SpecModulesTests
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["series"] = "app_name",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 

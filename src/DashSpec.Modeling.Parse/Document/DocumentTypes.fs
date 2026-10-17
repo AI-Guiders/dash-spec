@@ -72,6 +72,12 @@ type ReportFormatDefaults =
       DateTimeFormat: string option
       Culture: string option }
 
+    static member Empty =
+        { TimeFormat = None
+          DateFormat = None
+          DateTimeFormat = None
+          Culture = None }
+
 [<RequireQualifiedAccess>]
 module ReportFormatDefaults =
     let empty =
@@ -107,6 +113,12 @@ type ReportTimePolicy =
       Apply: ReportTimeApply
       WorkTimeColumn: string option
       WorkCalendar: WorkCalendarDefinition option }
+
+    static member Default =
+        { Basis = ReportTimeBasis.Calendar
+          Apply = ReportTimeApply.Clip
+          WorkTimeColumn = None
+          WorkCalendar = None }
 
     member this.ClipsQueries =
         this.Basis = ReportTimeBasis.Working

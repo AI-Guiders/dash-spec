@@ -16,18 +16,18 @@ public static class QueryCompiler
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         RowTypeCatalog rowTypes,
-        SqlDialect sqlDialect = SqlDialect.TSql,
+        SqlDialect? sqlDialect = null,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null) =>
-        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect), specDirectory, cellDrillOverlay, reportTimePolicy);
+        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy);
 
     public static CompiledQuery Compile(
         CardDefinition card,
         FilterState filters,
         IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
         DashboardDocument document,
-        SqlDialect sqlDialect = SqlDialect.TSql,
+        SqlDialect? sqlDialect = null,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null) =>
@@ -36,7 +36,7 @@ public static class QueryCompiler
             filters,
             filterDefinitions,
             RowTypeCatalog.FromDocument(document),
-            SqlDialectResolver.Resolve(sqlDialect),
+            SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql),
             specDirectory,
             cellDrillOverlay,
             reportTimePolicy,
@@ -347,7 +347,7 @@ public static class QueryCompiler
         }
 
         var path = TSqlXlsxOpenRowSet.ResolvePath(source.Value, specDirectory);
-        return TSqlXlsxOpenRowSet.Format(path, source.Sheet);
+        return TSqlXlsxOpenRowSet.Format(path, source.Sheet?.Value);
     }
 
     private static string WrapSqlDataSource(string rawSql)
@@ -359,27 +359,29 @@ public static class QueryCompiler
     /// <summary>Field filters need <c>table.column</c> to query DISTINCT options (wire-only / click-set filters may omit the table).</summary>
     public static bool CanLoadDistinctFieldOptions(FilterDefinition filter)
     {
-        if (filter.Kind is not FilterKind.Field || string.IsNullOrWhiteSpace(filter.ColumnReference))
+        var columnReference = filter.ColumnReference?.Value;
+        if (filter.Kind != FilterKind.Field || string.IsNullOrWhiteSpace(columnReference))
         {
             return false;
         }
 
-        var lastDot = filter.ColumnReference.LastIndexOf('.');
-        return lastDot > 0 && lastDot < filter.ColumnReference.Length - 1;
+        var lastDot = columnReference.LastIndexOf('.');
+        return lastDot > 0 && lastDot < columnReference.Length - 1;
     }
 
     public static string BuildDistinctFieldSql(FilterDefinition filter)
     {
         if (!CanLoadDistinctFieldOptions(filter))
         {
+            var columnReference = filter.ColumnReference?.Value;
             throw new ArgumentException(
-                filter.Kind is not FilterKind.Field || string.IsNullOrWhiteSpace(filter.ColumnReference)
+                filter.Kind != FilterKind.Field || string.IsNullOrWhiteSpace(columnReference)
                     ? "Field filter requires column reference."
-                    : $"Invalid column reference '{filter.ColumnReference}'.",
+                    : $"Invalid column reference '{columnReference}'.",
                 nameof(filter));
         }
 
-        var columnRef = filter.ColumnReference!;
+        var columnRef = filter.ColumnReference!.Value;
         var lastDot = columnRef.LastIndexOf('.');
 
         var table = columnRef[..lastDot];
@@ -489,23 +491,19 @@ public static class QueryCompiler
             // clause on the derive SOURCE column with the target's values.
             var sqlDefinition = definition;
             var derived = false;
-            if (!SchemaContainsColumn(rowSchema, ResolveColumnName(definition.ColumnReference, definition.Name)) &&
+            if (!SchemaContainsColumn(rowSchema, ResolveColumnName(definition.ColumnReference?.Value, definition.Name)) &&
                 filterDerives is not null &&
                 filterDerives.TryGetValue(filterName, out var derive) &&
                 !string.IsNullOrWhiteSpace(derive.SourceFilter))
             {
                 FilterDefinition? sourceDefinition = null;
                 var sourceColumnKnown = filterDefinitions.TryGetValue(derive.SourceFilter, out sourceDefinition)
-                    ? SchemaContainsColumn(rowSchema, ResolveColumnName(sourceDefinition.ColumnReference, sourceDefinition.Name))
+                    ? SchemaContainsColumn(rowSchema, ResolveColumnName(sourceDefinition.ColumnReference?.Value, sourceDefinition.Name))
                     : SchemaContainsColumn(rowSchema, derive.SourceFilter);
                 if (sourceColumnKnown)
                 {
-                    sqlDefinition = sourceDefinition ?? new FilterDefinition(
-                        FilterKind.Date,
-                        definition.Name,
-                        DefaultExpression: null,
-                        ColumnReference: derive.SourceFilter,
-                        GrainFilterName: derive.GrainFilterName);
+                    sqlDefinition = sourceDefinition ?? definition.WithColumnReference(
+                        Microsoft.FSharp.Core.FSharpOption<string>.Some(derive.SourceFilter));
                     derived = true;
                 }
             }
@@ -624,11 +622,11 @@ public static class QueryCompiler
         }
 
         var variable = definition.Name;
-        var column = ResolveColumnName(definition.ColumnReference, variable);
+        var column = ResolveColumnName(definition.ColumnReference?.Value, variable);
 
-        if (!string.IsNullOrWhiteSpace(definition.GrainFilterName))
+        if (!string.IsNullOrWhiteSpace(definition.GrainFilterName?.Value))
         {
-            var grain = PeriodAnchorResolver.TryReadGrain(filters, definition.GrainFilterName);
+            var grain = PeriodAnchorResolver.TryReadGrain(filters, definition.GrainFilterName?.Value);
             var anchor = PeriodAnchorResolver.ResolveAnchor(range.Value.From, grain);
             var param = $"@{variable}_anchor";
             parameters.Add(new QueryParameter(param, anchor));
@@ -656,7 +654,7 @@ public static class QueryCompiler
         }
 
         var variable = definition.Name;
-        var column = ResolveColumnName(definition.ColumnReference, variable);
+        var column = ResolveColumnName(definition.ColumnReference?.Value, variable);
 
         if (field.Value.Values.Count == 1)
         {

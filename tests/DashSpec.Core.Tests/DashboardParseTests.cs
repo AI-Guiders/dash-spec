@@ -64,7 +64,7 @@ public class DashboardParseTests
         Assert.Equal(["usage_date", "user_name", "app_name"], doc.DashboardFilters);
         Assert.True(doc.FiltersChrome.IsBarLayout);
         Assert.True(doc.FiltersChrome.IsStickyLine);
-        Assert.Equal(FiltersChromeDefinition.StickyLine, doc.FiltersChrome.Sticky);
+        Assert.Equal("line", doc.FiltersChrome.Sticky);
         Assert.True(doc.Filters.Single(f => f.Name == "app_name").IsComboboxWidget);
         Assert.True(doc.FiltersChrome.IsAutoApply);
         Assert.Equal(3, doc.Tabs.Count);
@@ -288,7 +288,7 @@ public class DashboardParseTests
 
         Assert.True(doc.FiltersChrome.IsBarLayout);
         Assert.True(doc.FiltersChrome.IsStickyLine);
-        Assert.Equal(FiltersChromeDefinition.StickyLine, doc.FiltersChrome.Sticky);
+        Assert.Equal("line", doc.FiltersChrome.Sticky);
         Assert.True(doc.FiltersChrome.IsAutoApply);
         Assert.Equal(250, doc.FiltersChrome.DebounceMs);
         Assert.Equal("main", doc.Tabs[0].Id);
@@ -338,7 +338,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.False(none.FiltersChrome.IsSticky);
-        Assert.Equal(FiltersChromeDefinition.StickyNone, none.FiltersChrome.Sticky);
+        Assert.Equal("none", none.FiltersChrome.Sticky);
     }
 
     [Fact]
@@ -360,7 +360,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.False(block.FiltersChrome.IsAutoApply);
-        Assert.Equal(FiltersChromeDefinition.ApplyControlButton, block.FiltersChrome.ApplyControl);
+        Assert.Equal("button", block.FiltersChrome.ApplyControl);
 
         var sugar = DashSpecTestRowTypes.ParseDashboard("""
             module dashboard t
@@ -374,7 +374,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.True(sugar.FiltersChrome.IsAutoApply);
-        Assert.Equal(FiltersChromeDefinition.ApplyControlIcon, sugar.FiltersChrome.ApplyControl);
+        Assert.Equal("icon", sugar.FiltersChrome.ApplyControl);
     }
 
     [Fact]
@@ -531,11 +531,17 @@ public class DashboardParseTests
         var card = new CardDefinition(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
-            Inspect: new InspectPresentation("peak_apps", null, "list", "; "),
+            Inspect: new InspectPresentation
+            {
+                TooltipId = Microsoft.FSharp.Core.FSharpOption<string>.Some("peak_apps"),
+                Label = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Format = "list",
+                Split = "; ",
+            },
             Tooltip: new TooltipDefinition("peak_apps", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["value"] = "peak_apps",
@@ -610,11 +616,15 @@ public class DashboardParseTests
         var card = new CardDefinition(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
-            Legend: new LegendDefinition(MinLabel: "от {min}", MaxLabel: "до {max}"));
+            Legend: new LegendDefinition
+            {
+                MinLabel = Microsoft.FSharp.Core.FSharpOption<string>.Some("от {min}"),
+                MaxLabel = Microsoft.FSharp.Core.FSharpOption<string>.Some("до {max}"),
+            });
 
         var presentation = MatrixPresentation.FromCard(card);
         Assert.Equal("от 1", presentation.FormatLegendMin(1, 5));
@@ -627,8 +637,8 @@ public class DashboardParseTests
         var cardWithChrome = new CardDefinition(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             Presentation: new PresentationBlock(
@@ -643,8 +653,8 @@ public class DashboardParseTests
         var cardWithSeries = new CardDefinition(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));
@@ -687,7 +697,7 @@ public class DashboardParseTests
         LabelFormat.DisplayTimeZone = moscow;
         try
         {
-            var filter = new FilterDefinition(
+            var filter = FilterTestData.Create(
                 FilterKind.Field,
                 "activity_bucket_time",
                 null,
@@ -765,7 +775,7 @@ public class DashboardParseTests
     [Fact]
     public void GrainFilterPresentation_chip_uses_report_date_format_not_iso()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(DateFormat: "dd.MM"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(dateFormat: "dd.MM"));
         try
         {
             var chip = GrainFilterPresentation.FormatChipValue(
@@ -824,20 +834,20 @@ public class DashboardParseTests
             end dashboard
             """);
 
-        Assert.Equal("en-GB", document.ResolvedFormatDefaults.Culture);
-        Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat);
-        Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat);
-        Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat);
+        Assert.Equal("en-GB", document.ResolvedFormatDefaults.Culture?.Value);
+        Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat?.Value);
+        Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat?.Value);
+        Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat?.Value);
     }
 
     [Fact]
     public void LabelFormat_report_defaults_apply_when_diagram_format_omitted()
     {
         LabelFormat.DisplayTimeZone = null;
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(
-            TimeFormat: "HH:mm",
-            DateFormat: "dd.MM.yyyy",
-            DateTimeFormat: "dd.MM.yyyy HH:mm"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(
+            timeFormat: "HH:mm",
+            dateFormat: "dd.MM.yyyy",
+            dateTimeFormat: "dd.MM.yyyy HH:mm"));
         try
         {
             var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
@@ -857,7 +867,7 @@ public class DashboardParseTests
     [Fact]
     public void LabelFormat_diagram_format_overrides_report_default()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(TimeFormat: "HH:mm"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(timeFormat: "HH:mm"));
         try
         {
             var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);

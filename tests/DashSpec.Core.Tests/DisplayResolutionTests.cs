@@ -15,23 +15,28 @@ public sealed class DisplayResolutionTests
         null,
         null,
         LayoutDefinition.Default,
-        FiltersChromeDefinition.Default,
+        TestModelDefaults.FiltersChrome,
         [],
         [],
-        [new TabDefinition("customer_reports", "Tab Label", ["peak_by_app"])],
+        [new TabDefinition(
+            "customer_reports",
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("Tab Label"),
+            ["peak_by_app"],
+            Microsoft.FSharp.Core.FSharpOption<string>.None,
+            Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
         [
             new CardDefinition(
                 "peak_by_app",
                 "",
-                new DiagramDefinition("bar", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 [],
                 []),
             new CardDefinition(
                 "detail_card",
                 "Detail slice",
-                new DiagramDefinition("bar", new Dictionary<string, string>()),
-                new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 [],
                 []),
         ]);
@@ -39,7 +44,9 @@ public sealed class DisplayResolutionTests
     private static readonly CatalogEntryDefinition SampleCatalogEntry = new(
         "peak_by_app",
         "Peak by app (catalog)",
-        "demo-peak-by-app.dashspec");
+        "demo-peak-by-app.dashspec",
+        null,
+        null);
 
     [Fact]
     public void CatalogProd_report_header_prefers_report_title_over_entry()
@@ -121,10 +128,11 @@ public sealed class DisplayResolutionTests
     {
         var group = new LayoutBoardGroupDefinition(
             "distribution",
-            "Распределение",
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("Распределение"),
             [["a", "b"]]);
         Assert.Equal("Распределение", DisplayResolution.TryResolveLayoutGroupChromeTitle(group));
-        Assert.Null(DisplayResolution.TryResolveLayoutGroupChromeTitle(group with { Title = null }));
+        Assert.Null(DisplayResolution.TryResolveLayoutGroupChromeTitle(
+            new LayoutBoardGroupDefinition(group.Id, null, group.Rows)));
     }
 
     [Fact]
@@ -138,21 +146,21 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Filter_label_humanizes_name_when_label_missing()
     {
-        var filter = new FilterDefinition(FilterKind.Field, "project_name", "all", "project");
+        var filter = FilterTestData.Create(FilterKind.Field, "project_name", "all", "project");
         Assert.Equal("project name", DisplayResolution.ResolveFilterLabel(filter));
     }
 
     [Fact]
     public void Filter_label_prefers_explicit_label()
     {
-        var filter = new FilterDefinition(FilterKind.Field, "project_name", "all", "project", Label: "Проект");
+        var filter = FilterTestData.Create(FilterKind.Field, "project_name", "all", "project", label: "Проект");
         Assert.Equal("Проект", DisplayResolution.ResolveFilterLabel(filter));
     }
 
     [Fact]
     public void Catalog_entry_title_falls_back_to_id()
     {
-        var entry = new CatalogEntryDefinition("overview", "", "overview.dashspec");
+        var entry = new CatalogEntryDefinition("overview", "", "overview.dashspec", null, null);
         Assert.Equal("overview", DisplayResolution.ResolveCatalogEntryTitle(entry));
     }
 
@@ -168,11 +176,11 @@ public sealed class DisplayResolutionTests
     {
         TabDefinition[] soakTabs =
         [
-            new TabDefinition("overview", "Обзор", []),
-            new TabDefinition("detail", "Детализация", []),
+            new TabDefinition("overview", Microsoft.FSharp.Core.FSharpOption<string>.Some("Обзор"), [], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None),
+            new TabDefinition("detail", Microsoft.FSharp.Core.FSharpOption<string>.Some("Детализация"), [], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None),
         ];
         var soakDoc = SampleCatalogDoc with { Tabs = soakTabs };
-        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds");
+        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds", null, null);
         var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
         Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));
     }

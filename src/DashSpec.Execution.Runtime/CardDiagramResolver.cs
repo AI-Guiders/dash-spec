@@ -1,5 +1,6 @@
 using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -8,12 +9,12 @@ public static class CardDiagramResolver
 {
     public static ResolvedCardView Resolve(CardDefinition card, SpecLibrary? library)
     {
-        if (string.IsNullOrWhiteSpace(card.Diagram.UsePreset))
+        if (string.IsNullOrWhiteSpace(card.Diagram.UsePreset?.Value))
         {
             return new ResolvedCardView(card, RenderPluginId: null);
         }
 
-        var presetId = card.Diagram.UsePreset;
+        var presetId = card.Diagram.UsePreset!.Value;
         var preset = library?.TryGetDiagram(presetId)
             ?? throw new InvalidOperationException(
                 $"Card '{card.Id}': diagram preset '{presetId}' was not found in @diagramlibrary.");
@@ -24,7 +25,7 @@ public static class CardDiagramResolver
             diagramProps[key] = value;
         }
 
-        var diagram = new DiagramDefinition(preset.Kind, diagramProps);
+        var diagram = new DiagramDefinition(preset.Kind, diagramProps, FSharpOption<string>.None);
         var presentation = MergePresentation(preset.PresentationPreset, card.Presentation);
         var seriesTransform = MergeSeriesTransform(preset.SeriesTransformPreset, card.SeriesTransform);
         var inspect = InspectPresentationParser.Merge(preset.Inspect, card.Inspect);
@@ -51,7 +52,7 @@ public static class CardDiagramResolver
     {
         var presetBlock = string.IsNullOrWhiteSpace(presetName)
             ? null
-            : new PresentationBlock(presetName, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
+            : new PresentationBlock(FSharpOption<string>.Some(presetName), new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
 
         if (presetBlock is null)
         {
@@ -79,7 +80,10 @@ public static class CardDiagramResolver
     {
         var presetBlock = string.IsNullOrWhiteSpace(presetName)
             ? null
-            : new SeriesTransformBlock(presetName, null, null);
+            : new SeriesTransformBlock(
+                FSharpOption<string>.Some(presetName),
+                FSharpOption<int>.None,
+                FSharpOption<string>.None);
 
         if (presetBlock is null)
         {

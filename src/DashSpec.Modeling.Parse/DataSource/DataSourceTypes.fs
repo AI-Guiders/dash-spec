@@ -1,13 +1,15 @@
 namespace DashSpec.Modeling.Parse.DataSource
 
+[<RequireQualifiedAccess>]
 type DataSourceKind =
-    | View
-    | Sql
-    | Xlsx
+    | View = 0
+    | Sql = 1
+    | Xlsx = 2
 
+[<RequireQualifiedAccess>]
 type DataSourceSqlCarrier =
-    | Query
-    | File
+    | Query = 0
+    | File = 1
 
 [<CLIMutable>]
 type DataSourceDefinition =
@@ -19,3 +21,6 @@ type DataSourceDefinition =
       /// <c>true</c> when <c>datasource { infer … }</c> — manifest <c>default_provider_id</c>.
       ProviderInfer: bool
       ProviderId: string option }
+
+    member this.WithRowsType(rowsType: string) =
+        { this with RowsType = rowsType }

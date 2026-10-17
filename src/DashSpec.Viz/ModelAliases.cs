@@ -11,3 +11,6 @@ global using CardsFoldPolicy = DashSpec.Modeling.Parse.Card.CardsFoldPolicy;
 global using CardsChromeDefinition = DashSpec.Modeling.Parse.Card.CardsChromeDefinition;
 global using TooltipDefinition = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 global using ExtensionBlockNode = DashSpec.Modeling.Parse.Card.ExtensionBlockNode;
+global using MatrixRenderLimitsDefinition = DashSpec.Modeling.Parse.Card.MatrixRenderLimitsDefinition;
+global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
+global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;

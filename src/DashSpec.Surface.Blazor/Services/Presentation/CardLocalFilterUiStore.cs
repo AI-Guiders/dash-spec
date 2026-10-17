@@ -153,11 +153,11 @@ public sealed class CardLocalFilterUiStore
         switch (filter.Kind)
         {
             case FilterKind.Date:
-                var range = DateDefaultRange.Resolve(filter.DefaultExpression!, today);
+                var range = DateDefaultRange.Resolve(filter.DefaultExpression?.Value!, today);
                 SetDate(cardId, filter.Name, range.From, range.To);
                 break;
             case FilterKind.Field:
-                var values = FieldFilterDefaults.ResolveValues(filter.DefaultExpression);
+                var values = FieldFilterDefaults.ResolveValues(filter.DefaultExpression?.Value);
                 SetField(cardId, filter.Name, values.ToHashSet(StringComparer.OrdinalIgnoreCase));
                 break;
             case FilterKind.Top:

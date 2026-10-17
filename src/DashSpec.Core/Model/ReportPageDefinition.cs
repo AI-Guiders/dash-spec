@@ -9,4 +9,4 @@ public sealed record ReportPageDefinition(
     LayoutBoardDefinition? ToolbarBoard = null,
     FilterDeriveDefinition? UsageDateDerive = null,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? FilterDefaults = null,
-    DisplayBindingDefinition? DisplayBindings = null);
+    IReadOnlyDictionary<string, string>? DisplayBindings = null);

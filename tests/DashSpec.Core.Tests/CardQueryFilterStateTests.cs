@@ -24,8 +24,8 @@ public class CardQueryFilterStateTests
 
         var index = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["usage_date"] = new(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["app_name"] = new(FilterKind.Field, "app_name", null, "app_name"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "app_name"),
         };
 
         var localDates = new Dictionary<string, DateRangeValue>(StringComparer.OrdinalIgnoreCase)

@@ -1027,7 +1027,7 @@ public class DashboardFilterCommandTests
                 Palette: null,
                 ColorPalette: null,
                 Layout: new LayoutDefinition(),
-                FiltersChrome: FiltersChromeDefinition.Default,
+            FiltersChrome: TestModelDefaults.FiltersChrome,
                 Filters: [],
                 DashboardFilters: [],
                 Tabs: [],

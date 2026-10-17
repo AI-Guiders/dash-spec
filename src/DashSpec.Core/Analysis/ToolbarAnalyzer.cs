@@ -10,12 +10,12 @@ internal static class ToolbarAnalyzer
         var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var filter in document.Filters)
         {
-            if (string.IsNullOrWhiteSpace(filter.LayoutRef))
+            if (string.IsNullOrWhiteSpace(filter.LayoutRef?.Value))
             {
                 continue;
             }
 
-            if (!refs.Add(filter.LayoutRef))
+            if (!refs.Add(filter.LayoutRef.Value))
             {
                 throw new DashSpecParseException(
                     $"Duplicate filter ref '{filter.LayoutRef}'.");

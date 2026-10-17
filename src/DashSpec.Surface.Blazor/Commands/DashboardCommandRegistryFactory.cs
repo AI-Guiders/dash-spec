@@ -22,7 +22,7 @@ internal static class DashboardCommandRegistryFactory
 
         foreach (var filterName in context.ToolbarFilterNames
                      .Where(name => context.FilterIndex.TryGetValue(name, out var filter)
-                                    && filter.Kind is DashSpec.Core.Model.FilterKind.Field)
+                                    && filter.Kind is FilterKind.Field)
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
             registry.Register(

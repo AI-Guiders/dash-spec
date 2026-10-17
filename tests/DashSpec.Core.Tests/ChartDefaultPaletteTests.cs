@@ -28,9 +28,9 @@ public sealed class ChartDefaultPaletteTests
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["x"] = "category",
-                ["y"] = "value",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                    ["y"] = "value",
+            }, null),
+            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,

@@ -30,7 +30,7 @@ internal sealed class SelectDateFilterCommand : PlatformCommand<DashboardFilterC
 
             || !context.FilterIndex.TryGetValue(filterName, out var filter)
 
-            || filter.Kind is not DashSpec.Core.Model.FilterKind.Date)
+            || filter.Kind is not FilterKind.Date)
 
         {
 

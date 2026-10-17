@@ -1,4 +1,5 @@
 using DashSpec.Core.Model;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -7,9 +8,9 @@ public sealed record SeriesTransformSettings(int Max, string OtherLabel)
 {
     public static SeriesTransformSettings? FromBlock(SeriesTransformBlock? block)
     {
-        if (block?.Max is int maxValue && maxValue > 0)
+        if (block?.Max?.Value is int maxValue && maxValue > 0)
         {
-            return new SeriesTransformSettings(maxValue, block.OtherLabel ?? "Other");
+            return new SeriesTransformSettings(maxValue, block.OtherLabel?.Value ?? "Other");
         }
 
         return null;

@@ -52,11 +52,11 @@ public static class DisplayResolution
         {
             ResolutionMode.CatalogProd when entry is not null =>
                 context.Document.Tabs.Count > 1
-                    ? ResolveChain(fallback, tab?.Label)
+                    ? ResolveChain(fallback, tab?.Label?.Value)
                     : ResolveChain(fallback, entry.Title),
             ResolutionMode.DashboardEmbed =>
-                ResolveChain(fallback, tab?.Label, entry?.Title),
-            _ => ResolveChain(fallback, tab?.Label),
+                ResolveChain(fallback, tab?.Label?.Value, entry?.Title),
+            _ => ResolveChain(fallback, tab?.Label?.Value),
         };
     }
 
@@ -65,7 +65,7 @@ public static class DisplayResolution
 
     /// <summary>Group header text; <see langword="null"/> when <c>title</c> omitted on layout group.</summary>
     public static string? TryResolveLayoutGroupChromeTitle(LayoutBoardGroupDefinition group) =>
-        string.IsNullOrWhiteSpace(group.Title) ? null : group.Title;
+        string.IsNullOrWhiteSpace(group.Title?.Value) ? null : group.Title.Value;
 
     public static ResolvedCardChrome ResolveCardChrome(ResolutionContext context, CardDefinition card)
     {
@@ -94,7 +94,7 @@ public static class DisplayResolution
         ResolveChain(group.Id, group.Title);
 
     public static string ResolveFilterLabel(FilterDefinition filter) =>
-        ResolveChain(HumanizeFilterName(filter.Name), filter.Label);
+        ResolveChain(HumanizeFilterName(filter.Name), filter.Label?.Value);
 
     public static string ResolveGateMessage(CardVisibilityRule? visibility) =>
         string.IsNullOrWhiteSpace(visibility?.Message?.Value) ? string.Empty : visibility.Message.Value;

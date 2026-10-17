@@ -32,24 +32,13 @@ internal static class UnitFragmentMapper
         };
 
     public static PresentationBlock ToCorePresentation(FsharpPresentation block) =>
-        new(
-            OptionModule.ToArray(block.UsePreset).FirstOrDefault(),
-            block.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase));
+        block;
 
-    private static DiagramDefinition ToCoreDiagram(FsharpDiagram diagram)
-    {
-        var usePreset = OptionModule.ToArray(diagram.UsePreset).FirstOrDefault();
-        return new DiagramDefinition(
-            diagram.Kind,
-            diagram.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase),
-            usePreset);
-    }
+    private static DiagramDefinition ToCoreDiagram(FsharpDiagram diagram) =>
+        diagram;
 
     private static SeriesTransformBlock ToCoreTransform(FsharpTransform transform) =>
-        new(
-            OptionModule.ToArray(transform.UsePreset).FirstOrDefault(),
-            OptionModule.ToArray(transform.Max).FirstOrDefault(),
-            OptionModule.ToArray(transform.OtherLabel).FirstOrDefault());
+        transform;
 
     private static TooltipDefinition ToCoreTooltip(FsharpTooltip tooltip)
     {
@@ -67,34 +56,16 @@ internal static class UnitFragmentMapper
     }
 
     private static InspectPresentation ToCoreInspect(FsharpInspect inspect) =>
-        new(
-            OptionModule.ToArray(inspect.TooltipId).FirstOrDefault(),
-            OptionModule.ToArray(inspect.Label).FirstOrDefault(),
-            inspect.Format,
-            inspect.Split);
+        inspect;
 
     private static FsharpDiagram ToFsharpDiagram(DiagramDefinition diagram) =>
-        new()
-        {
-            Kind = diagram.Kind,
-            Properties = diagram.Properties,
-            UsePreset = ToFsharpStringOption(diagram.UsePreset),
-        };
+        diagram;
 
     private static FsharpPresentation ToFsharpPresentation(PresentationBlock block) =>
-        new()
-        {
-            UsePreset = ToFsharpStringOption(block.UsePreset),
-            Properties = block.Properties,
-        };
+        block;
 
     private static FsharpTransform ToFsharpTransform(SeriesTransformBlock transform) =>
-        new()
-        {
-            UsePreset = ToFsharpStringOption(transform.UsePreset),
-            Max = transform.Max is int max ? FSharpOption<int>.Some(max) : FSharpOption<int>.None,
-            OtherLabel = ToFsharpStringOption(transform.OtherLabel),
-        };
+        transform;
 
     private static FsharpTooltip ToFsharpTooltip(TooltipDefinition tooltip) =>
         new()
@@ -105,13 +76,7 @@ internal static class UnitFragmentMapper
         };
 
     private static FsharpInspect ToFsharpInspect(InspectPresentation inspect) =>
-        new()
-        {
-            TooltipId = ToFsharpStringOption(inspect.TooltipId),
-            Label = ToFsharpStringOption(inspect.Label),
-            Format = inspect.Format,
-            Split = inspect.Split,
-        };
+        inspect;
 
     private static TCore? FromFsharpOption<TFsharp, TCore>(FSharpOption<TFsharp> option, Func<TFsharp, TCore> map) =>
         FSharpOption<TFsharp>.get_IsSome(option) ? map(option.Value) : default;

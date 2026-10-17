@@ -66,7 +66,7 @@ internal static class DisplayResolutionHost
 
     private static CatalogEntryDefinition? ResolveCatalogEntry(
         IDashboardSession session,
-        DashSpec.Core.Model.CatalogDocument catalogDocument)
+        DashSpecReportCatalogDocument catalogDocument)
     {
         if (string.IsNullOrWhiteSpace(session.ActiveCatalogEntryId))
         {

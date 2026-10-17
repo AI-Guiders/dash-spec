@@ -9,21 +9,21 @@ public class DeriveToolbarExpanderTests
     static readonly IReadOnlyDictionary<string, FilterDefinition> Index =
         new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["usage_date"] = new(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["period_start"] = new(
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["period_start"] = FilterTestData.Create(
                 FilterKind.Date,
                 "period_start",
                 "today",
                 "period_start",
-                GrainFilterName: "period_grain"),
-            ["period_grain"] = new(
+                grainFilterName: "period_grain"),
+            ["period_grain"] = FilterTestData.Create(
                 FilterKind.Field,
                 "period_grain",
                 "day",
                 "period_grain",
-                Widget: "combobox",
-                SingleSelect: true),
-            ["user_name"] = new(FilterKind.Field, "user_name", null, "user_name", Widget: "chips"),
+                widget: "combobox",
+                singleSelect: true),
+            ["user_name"] = FilterTestData.Create(FilterKind.Field, "user_name", null, "user_name", widget: "chips"),
         };
 
     [Fact]
