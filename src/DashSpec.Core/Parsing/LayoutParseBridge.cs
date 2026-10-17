@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Parsing;
 
 /// <summary>Runtime hook for F# layout SSOT without Core→Modeling.Parse cycle.</summary>

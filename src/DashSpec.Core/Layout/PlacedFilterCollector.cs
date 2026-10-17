@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Layout;
 
 /// <summary>Filter names declared on dashboard toolbar, page toolbars, or card-local blocks.</summary>

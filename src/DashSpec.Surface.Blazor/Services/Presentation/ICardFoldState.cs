@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
 public interface ICardFoldState

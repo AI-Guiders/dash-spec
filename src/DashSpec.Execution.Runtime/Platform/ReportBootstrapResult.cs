@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;

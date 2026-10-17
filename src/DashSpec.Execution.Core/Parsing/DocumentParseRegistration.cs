@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using DashSpec.Core.Analysis;
 using DashSpec.Core.Parsing;
 using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;

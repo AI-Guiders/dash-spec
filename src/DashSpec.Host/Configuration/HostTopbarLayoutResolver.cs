@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Flatten <c>scope host</c> layout board into topbar slot order (ADR-0054).</summary>

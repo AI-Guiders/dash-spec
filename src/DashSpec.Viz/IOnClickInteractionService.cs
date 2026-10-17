@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Viz;
 
 public interface IOnClickInteractionService

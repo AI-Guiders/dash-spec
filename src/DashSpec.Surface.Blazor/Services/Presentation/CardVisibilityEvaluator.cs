@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Resolution;
+using DashSpec.Core.Resolution;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 

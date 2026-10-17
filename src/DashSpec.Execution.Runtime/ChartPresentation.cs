@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Execution.Runtime;
 
 public sealed record ChartPresentation(

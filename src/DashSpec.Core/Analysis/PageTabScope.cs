@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Analysis;
 
 public static class PageTabScope

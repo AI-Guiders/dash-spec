@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Authoring;
+using DashSpec.Core.Authoring;
 using DashSpec.Modeling.Parse.Import;
 
 namespace DashSpec.Core.Parsing;

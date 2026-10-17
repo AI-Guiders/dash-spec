@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Parsing;
 
 /// <summary>Transitional entry — delegates to F# Modeling.Parse via <see cref="DocumentParseBridge"/>.</summary>

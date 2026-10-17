@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Data;
+using DashSpec.Abstractions.Data;
 using System.Globalization;
 
 using DashSpec.Core.Runtime;

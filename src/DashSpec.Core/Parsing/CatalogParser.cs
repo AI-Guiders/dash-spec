@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Parsing;
 
 public static class CatalogParser

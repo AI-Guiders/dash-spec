@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Layout;
 
 /// <summary>Ordered chrome slot ids (filters + apply) for card-head grid rendering.</summary>

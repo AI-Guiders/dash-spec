@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Plugins;
+using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Analysis;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;

@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Data;
+using DashSpec.Abstractions.Data;
 using DashSpec.Core.Transforms;
 
 namespace DashSpec.Execution.Runtime;

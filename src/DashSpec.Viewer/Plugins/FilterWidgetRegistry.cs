@@ -1,4 +1,4 @@
-﻿using DashSpec.Filters;
+using DashSpec.Filters;
 
 namespace DashSpec.Viewer.Plugins;
 

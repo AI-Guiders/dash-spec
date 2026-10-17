@@ -1,4 +1,4 @@
-﻿using Microsoft.FSharp.Core;
+using Microsoft.FSharp.Core;
 using FSharpDataFlow = DashSpec.Modeling.Parse.DataFlow;
 
 namespace DashSpec.Execution.Runtime;

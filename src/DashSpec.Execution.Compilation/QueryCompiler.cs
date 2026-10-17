@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Parsing;

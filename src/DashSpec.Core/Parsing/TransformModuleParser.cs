@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Parsing;
 
 internal static class TransformModuleParser

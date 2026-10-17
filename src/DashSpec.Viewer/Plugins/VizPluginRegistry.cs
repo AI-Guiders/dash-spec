@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Viz;
+using DashSpec.Abstractions.Viz;
 
 namespace DashSpec.Viewer.Plugins;
 

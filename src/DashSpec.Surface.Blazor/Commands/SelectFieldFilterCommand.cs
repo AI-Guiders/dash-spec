@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using AIGuiders.Platform.Execution.CommandPlane.Commands;
 
