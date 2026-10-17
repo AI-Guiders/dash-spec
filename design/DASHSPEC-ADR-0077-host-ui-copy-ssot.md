@@ -56,14 +56,16 @@ A plugin carries everything it needs, including its UI copy.
 | **Neutral locale** | English; Russian is a literary translation authored in the plugin, not machine-translated |
 | **Host contract** | No host-side `IVizCardToolbarLocalizer`-style indirection: plugin copy never sits in `HostStrings` |
 
-Deployment note: plugins referenced directly by the host ship their satellite assemblies (`ru/…resources.dll`) automatically. Plugins **staged** into `plugins/` by `StageConnectorPlugins` need that target to copy their satellites as well — add it when such a plugin gains resx (it currently copies only the main DLL).
+Scope — UI copy vs plugin metadata: this rule covers user-facing copy in Razor components. Plugin **metadata** (`DisplayName`, action descriptions such as `"Export card data as CSV"`) stays English by convention in *all* plugins (the viz plugin too) and is not localized; visible captions (e.g. `Export CSV`) come from the host resx.
+
+Current state: the staged plugins (`Export`, `ViewSwitch`, connectors) ship **no Razor and no localized copy**, so they carry no resources; connectors have no UI at all. Plugins referenced directly (viz, filter) ship their satellites automatically. If a staged plugin ever gains a resx, `StageConnectorPlugins` must copy its satellites too — it copies only the main DLL today.
 
 ### Localization mechanics (Blazor Server)
 
 - `DashboardLocalizer` wraps `IStringLocalizer<HostStrings>`; `T(key)` is the stable API, `T(key, args…)` formats resx placeholders (`{0}`…).
 - Culture: `AddLocalization` + `RequestLocalizationOptions` (supported ru-RU/en-US/en-GB) + `UseRequestLocalization`. Blazor Server circuits render on pool threads, so host bootstrap also sets `CultureInfo.DefaultThreadCurrentUICulture`.
 - Host language (`[presentation].language`, ADR-0090) is authoritative: `RequestCultureProviders` is cleared so a browser `Accept-Language` cannot override it.
-- Plugins receive the contract via `IVizCardToolbarLocalizer`; resource lookups stay host-side.
+- Plugins resolve their own resources (`IStringLocalizer<PluginStrings>`); the host-side `IVizCardToolbarLocalizer` indirection was removed.
 
 ## Non-goals
 
