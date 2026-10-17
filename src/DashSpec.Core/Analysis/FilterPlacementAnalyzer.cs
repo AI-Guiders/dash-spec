@@ -167,11 +167,18 @@ internal static class FilterPlacementAnalyzer
             return false;
         }
 
-        return ToolbarPlacementResolver.ResolveFilterNames(
-                document.Filters,
-                [],
-                page.ToolbarBoard.Value)
-            .Contains(filterName, StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            return DashSpec.Modeling.Parse.Document.ToolbarPlacementResolver.resolveFilterNames(
+                    document.Filters,
+                    [],
+                    Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition>.Some(page.ToolbarBoard.Value))
+                .Contains(filterName, StringComparer.OrdinalIgnoreCase);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
     }
 
     private static bool IsHostedOnCard(
