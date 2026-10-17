@@ -45,6 +45,19 @@ Shrinking the baseline is the intended path when moving strings into `DashboardL
 
 Cursor rule: `.cursor/rules/host-ui-copy-governance.mdc` (this repo).
 
+### Plugins are vertical slices
+
+A plugin carries everything it needs, including its UI copy.
+
+| | |
+|---|---|
+| **Resources** | `<plugin>/Resources/<Plugin>Strings.resx` (neutral = English) + `<Plugin>Strings.ru.resx`; marker type name = resource base name |
+| **Wiring** | Plugin Razor libraries add `<FrameworkReference Include="Microsoft.AspNetCore.App" />` and inject `IStringLocalizer<PluginStrings>` (host `AddLocalization` supplies the factory) |
+| **Neutral locale** | English; Russian is a literary translation authored in the plugin, not machine-translated |
+| **Host contract** | No host-side `IVizCardToolbarLocalizer`-style indirection: plugin copy never sits in `HostStrings` |
+
+Deployment note: plugins referenced directly by the host ship their satellite assemblies (`ru/…resources.dll`) automatically. Plugins **staged** into `plugins/` by `StageConnectorPlugins` need that target to copy their satellites as well — add it when such a plugin gains resx (it currently copies only the main DLL).
+
 ### Localization mechanics (Blazor Server)
 
 - `DashboardLocalizer` wraps `IStringLocalizer<HostStrings>`; `T(key)` is the stable API, `T(key, args…)` formats resx placeholders (`{0}`…).

@@ -2,10 +2,11 @@
 @using DashSpec.Abstractions.Viz
 @using DashSpec.Core.Model
 @inject DashSpec.Viz.IOnClickInteractionService Interactions
+@inject IStringLocalizer<VizStrings> Loc
 
 @if (Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart))
 {
-    <p class="empty-state">Нет данных за выбранный период</p>
+    <p class="empty-state">@Loc["No data for the selected period"]</p>
 }
 else
 {

@@ -1,5 +1,6 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Hosting
 @inject ICardVizComponentResolver VizComponents
+@inject IStringLocalizer<VizStrings> Loc
 
 @if (!string.IsNullOrEmpty(Slot.Error))
 {
@@ -7,7 +8,7 @@
 }
 else if (_componentType is null)
 {
-    <div class="card-error">Неизвестный viz plugin: @Slot.RenderPluginId</div>
+    <div class="card-error">@(Loc["Unknown viz plugin: {0}", Slot.RenderPluginId])</div>
 }
 else
 {

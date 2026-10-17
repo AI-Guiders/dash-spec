@@ -1,5 +1,7 @@
 using DashSpec.Core.Localization;
 using DashSpec.Execution.Runtime;
+using DashSpec.Plugin.Viz.Builtins.Resources;
+using Microsoft.Extensions.Localization;
 
 namespace DashSpec.Plugin.Viz.Builtins.Gantt;
 
@@ -66,7 +68,7 @@ public static class GanttTimelineScale
         return (int)Math.Clamp(span.TotalDays * 24, 960, 3200);
     }
 
-    public static GanttRowSpan SummarizeRow(GanttRow row)
+    public static GanttRowSpan SummarizeRow(GanttRow row, IStringLocalizer<VizStrings> loc)
     {
         if (row.Segments.Count == 0)
         {
@@ -79,31 +81,35 @@ public static class GanttTimelineScale
             row.Label,
             start,
             end,
-            FormatDuration(end - start));
+            FormatDuration(end - start, loc));
     }
 
-    public static string FormatDuration(TimeSpan duration)
+    public static string FormatDuration(TimeSpan duration, IStringLocalizer<VizStrings> loc)
     {
         if (duration.TotalMinutes < 1)
         {
-            return $"{Math.Max(1, (int)Math.Round(duration.TotalSeconds))}с";
+            return $"{Math.Max(1, (int)Math.Round(duration.TotalSeconds))}{loc["unit: seconds"]}";
         }
 
         if (duration.TotalHours < 1)
         {
-            return $"{(int)Math.Round(duration.TotalMinutes)}м";
+            return $"{(int)Math.Round(duration.TotalMinutes)}{loc["unit: minutes"]}";
         }
 
         if (duration.TotalDays < 1)
         {
             var hours = (int)duration.TotalHours;
             var minutes = duration.Minutes;
-            return minutes > 0 ? $"{hours}ч {minutes}м" : $"{hours}ч";
+            return minutes > 0
+                ? $"{hours}{loc["unit: hours"]} {minutes}{loc["unit: minutes"]}"
+                : $"{hours}{loc["unit: hours"]}";
         }
 
         var days = (int)duration.TotalDays;
         var hoursLeft = duration.Hours;
-        return hoursLeft > 0 ? $"{days}д {hoursLeft}ч" : $"{days}д";
+        return hoursLeft > 0
+            ? $"{days}{loc["unit: days"]} {hoursLeft}{loc["unit: hours"]}"
+            : $"{days}{loc["unit: days"]}";
     }
 
     private static IReadOnlyList<GanttTimelineTick> BuildHourlyTicks(
