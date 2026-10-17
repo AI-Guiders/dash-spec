@@ -1,23 +1,23 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Charts
 @using DashSpec.Core.Runtime
-@using DashSpec.Presentation.Matrix
 @using DashSpec.Core.Model
+@inject IStringLocalizer<VizStrings> Loc
 
 @if (Payload is null || Payload.XLabels.Count == 0 || Payload.YLabels.Count == 0)
 {
-    <p class="empty-state">Нет данных за выбранный период</p>
+    <p class="empty-state">@Loc["No data for the selected period"]</p>
 }
 else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
 {
     <div class="heatmap-oversized" role="alert">
-        <p><strong>Heatmap не отображается (лимит защиты)</strong> — @MatrixOversizeDescription.Describe(EffectiveLimits, Payload.XLabels.Count, Payload.YLabels.Count).</p>
+        <p><strong>@Loc["Heatmap not shown (protection limit)"]</strong> — @MatrixOversizeMessage.Format(Loc, EffectiveLimits, Payload.XLabels.Count, Payload.YLabels.Count).</p>
         @if (!string.IsNullOrWhiteSpace(OversizeMessage))
         {
             <p class="muted"><RichTextView Text="@OversizeMessage" /></p>
         }
         else
         {
-            <p class="muted">Сузьте период или выберите одного пользователя в toolbar.</p>
+            <p class="muted">@Loc["Narrow the period or select a single user in the toolbar."]</p>
         }
     </div>
 }

@@ -27,4 +27,70 @@
   <data name="Toggle gradient legend" xml:space="preserve">
     <value>Показать или скрыть градиентную легенду</value>
   </data>
+  <data name="No data for the selected period" xml:space="preserve">
+    <value>Нет данных за выбранный период</value>
+  </data>
+  <data name="No data for the selected user and period." xml:space="preserve">
+    <value>Нет данных для выбранного пользователя и периода.</value>
+  </data>
+  <data name="Heatmap not shown (protection limit)" xml:space="preserve">
+    <value>Heatmap не отображается (лимит защиты)</value>
+  </data>
+  <data name="Narrow the period or select a single user in the toolbar." xml:space="preserve">
+    <value>Сузьте период или выберите одного пользователя в toolbar.</value>
+  </data>
+  <data name="Matrix oversize: cells" xml:space="preserve">
+    <value>ячеек {0}×{1}={2} &gt; {3}</value>
+  </data>
+  <data name="Matrix oversize: X columns" xml:space="preserve">
+    <value>столбцов X ({0}) &gt; {1}</value>
+  </data>
+  <data name="Matrix oversize: Y rows" xml:space="preserve">
+    <value>строк Y ({0}) &gt; {1}</value>
+  </data>
+  <data name="No rows" xml:space="preserve">
+    <value>Нет строк</value>
+  </data>
+  <data name="Filter" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="Filter: {0}" xml:space="preserve">
+    <value>Фильтр: {0}</value>
+  </data>
+  <data name="Showing {0} of {1} rows" xml:space="preserve">
+    <value>Показано {0} из {1} строк</value>
+  </data>
+  <data name="Clear filters" xml:space="preserve">
+    <value>Сбросить фильтры</value>
+  </data>
+  <data name="Unknown viz plugin: {0}" xml:space="preserve">
+    <value>Неизвестный viz plugin: {0}</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Название</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Начало</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>Конец</value>
+  </data>
+  <data name="Dur." xml:space="preserve">
+    <value>Длит.</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>Сегодня</value>
+  </data>
+  <data name="unit: seconds" xml:space="preserve">
+    <value>с</value>
+  </data>
+  <data name="unit: minutes" xml:space="preserve">
+    <value>м</value>
+  </data>
+  <data name="unit: hours" xml:space="preserve">
+    <value>ч</value>
+  </data>
+  <data name="unit: days" xml:space="preserve">
+    <value>д</value>
+  </data>
 </root>

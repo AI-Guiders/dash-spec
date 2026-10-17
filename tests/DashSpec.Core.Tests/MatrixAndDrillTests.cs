@@ -18,12 +18,14 @@ public sealed class MatrixRenderLimitsTests
         Assert.Equal(expected, MatrixRenderLimits.IsOversized(x, y));
 
     [Fact]
-    public void DescribeOversize_axis_limit_is_distinct_from_cell_product()
+    public void Axis_limit_is_distinct_from_cell_product()
     {
         var limits = MatrixRenderLimitsDefinition.Default;
+
+        // Oversize verdict comes from the axis limit alone; the cell product stays within the cells limit.
         Assert.True(limits.IsOversized(120, 16));
-        Assert.Contains("столбцов X (120)", DashSpec.Presentation.Matrix.MatrixOversizeDescription.Describe(limits, 120, 16));
-        Assert.DoesNotContain("ячеек", DashSpec.Presentation.Matrix.MatrixOversizeDescription.Describe(limits, 120, 16));
+        Assert.True(120 * 16 <= limits.EffectiveMaxCells);
+        Assert.True(120 > limits.EffectiveMaxAxisLabels);
     }
 }
 

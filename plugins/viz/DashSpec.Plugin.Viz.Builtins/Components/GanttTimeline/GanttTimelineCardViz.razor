@@ -1,21 +1,22 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.GanttTimeline
 @using DashSpec.Execution.Runtime
+@inject IStringLocalizer<VizStrings> Loc
 @if (Context.EffectiveCard.Gantt is { Rows.Count: > 0 } gantt)
 {
     var ticks = GanttTimelineScale.BuildTicks(gantt.AxisStart, gantt.AxisEnd, gantt.AxisFormat);
     var todayLeft = GanttTimelineScale.TodayLeftPercent(gantt.AxisStart, gantt.AxisEnd);
     var trackMinWidth = GanttTimelineScale.ResolveTrackMinWidthPx(gantt.AxisStart, gantt.AxisEnd);
     var bodyHeight = ResolveBodyHeightPx(gantt);
-    var yCaption = gantt.YLabel ?? "Название";
+    var yCaption = gantt.YLabel ?? Loc["Name"];
 
     <div class="gantt-timeline"
          style="@($"--gantt-body-height:{bodyHeight}px;--gantt-track-min-width:{trackMinWidth}px")">
         <div class="gantt-timeline-head">
             <div class="gantt-timeline-sidebar-head" aria-hidden="true">
                 <span class="gantt-timeline-col-name">@yCaption</span>
-                <span class="gantt-timeline-col-start">Начало</span>
-                <span class="gantt-timeline-col-end">Конец</span>
-                <span class="gantt-timeline-col-duration">Длит.</span>
+                <span class="gantt-timeline-col-start">@Loc["Start"]</span>
+                <span class="gantt-timeline-col-end">@Loc["End"]</span>
+                <span class="gantt-timeline-col-duration">@Loc["Dur."]</span>
             </div>
             <div class="gantt-timeline-ruler-wrap">
                 <div class="gantt-timeline-ruler">
@@ -29,7 +30,7 @@
                     }
                     @if (todayLeft is double today)
                     {
-                        <span class="gantt-timeline-today" style="@($"left:{today:0.###}%")" title="Сегодня"></span>
+                        <span class="gantt-timeline-today" style="@($"left:{today:0.###}%")" title="@TodayTitle"></span>
                     }
                 </div>
             </div>
@@ -38,7 +39,7 @@
             <div class="gantt-timeline-body">
                 @foreach (var row in gantt.Rows)
                 {
-                    var summary = GanttTimelineScale.SummarizeRow(row);
+                    var summary = GanttTimelineScale.SummarizeRow(row, Loc);
                     <div class="gantt-timeline-row">
                         <div class="gantt-timeline-sidebar">
                             <span class="gantt-timeline-col-name" title="@row.Label">@row.Label</span>
@@ -70,10 +71,12 @@
 }
 else
 {
-    <div class="gantt-empty muted">Нет данных для выбранного пользователя и периода.</div>
+    <div class="gantt-empty muted">@Loc["No data for the selected user and period."]</div>
 }
 
 @code {
+    private string TodayTitle => Loc["Today"];
+
     private const int RowHeightPx = 34;
     private const int HeadHeightPx = 52;
 
