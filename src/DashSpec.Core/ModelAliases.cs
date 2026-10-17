@@ -51,3 +51,5 @@ global using DataSourceKind = DashSpec.Modeling.Parse.DataSource.DataSourceKind;
 global using DataSourceSqlCarrier = DashSpec.Modeling.Parse.DataSource.DataSourceSqlCarrier;
 global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
 global using CardDiagramSlotDefinition = DashSpec.Modeling.Parse.Card.CardDiagramSlot;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
+global using DiagramKindInfo = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramKindSpec;

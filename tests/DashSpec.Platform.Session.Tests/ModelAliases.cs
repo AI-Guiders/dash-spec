@@ -29,3 +29,4 @@ global using MatrixRenderLimitsDefinition = DashSpec.Modeling.Parse.Card.MatrixR
 global using InspectPresentation = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
 global using CardFlowInputDefinition = DashSpec.Modeling.Parse.Card.CardFlowInput;
 global using CardInteriorFlowDefinition = DashSpec.Modeling.Parse.Card.CardInteriorFlowDefinition;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
