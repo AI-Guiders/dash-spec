@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Filters;
 
 public interface IFilterWidgetComponentResolver

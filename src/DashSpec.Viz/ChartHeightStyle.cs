@@ -1,4 +1,4 @@
-﻿using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Viz;
 

@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Runtime;
+using DashSpec.Core.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
 

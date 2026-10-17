@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>Human-readable card/slot render failures for Host UI (not bare ADO column tokens).</summary>

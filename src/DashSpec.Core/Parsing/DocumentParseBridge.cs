@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Platform;
+using DashSpec.Core.Platform;
 
 namespace DashSpec.Core.Parsing;
 

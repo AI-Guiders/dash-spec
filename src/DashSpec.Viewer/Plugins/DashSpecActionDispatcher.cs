@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Interaction;
 using DashSpec.Viz;

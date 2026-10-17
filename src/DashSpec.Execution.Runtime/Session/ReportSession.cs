@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Platform;
+using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Core.Runtime;
 

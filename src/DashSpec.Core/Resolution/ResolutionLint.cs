@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Layout;
+using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 
 namespace DashSpec.Core.Resolution;

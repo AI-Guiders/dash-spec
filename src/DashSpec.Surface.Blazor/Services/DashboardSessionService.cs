@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Catalog;

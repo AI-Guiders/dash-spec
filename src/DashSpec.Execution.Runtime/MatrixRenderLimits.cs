@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Execution.Runtime;
 
 public static class MatrixRenderLimits

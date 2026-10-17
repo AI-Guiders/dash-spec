@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Runtime;
+using DashSpec.Core.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
 using FsharpFragment = DashSpec.Modeling.Parse.Import.UnitFragment;

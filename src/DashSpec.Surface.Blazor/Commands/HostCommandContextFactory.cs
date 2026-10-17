@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using DashSpec.Surface.Blazor.Services.Presentation;
 
 namespace DashSpec.Surface.Blazor.Commands;

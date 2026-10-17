@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using DashSpec.Core.Interaction;
 using DashSpec.Core.Runtime;
 

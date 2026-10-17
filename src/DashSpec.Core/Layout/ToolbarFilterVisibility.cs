@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Layout;
 
 /// <summary>Which dashboard filters appear in the toolbar for the active tab/page.</summary>

@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Interaction;
+using DashSpec.Core.Interaction;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Microsoft.FSharp.Core;

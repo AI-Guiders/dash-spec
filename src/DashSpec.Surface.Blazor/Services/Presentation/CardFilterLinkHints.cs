@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
 internal static class CardFilterLinkHints

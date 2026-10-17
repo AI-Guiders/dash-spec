@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Layout;
+using DashSpec.Core.Layout;
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Viz;

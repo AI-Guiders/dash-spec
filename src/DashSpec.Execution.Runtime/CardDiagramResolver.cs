@@ -1,4 +1,4 @@
-﻿using DashSpec.Core.Parsing;
+using DashSpec.Core.Parsing;
 using Microsoft.FSharp.Core;
 
 namespace DashSpec.Execution.Runtime;

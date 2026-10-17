@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using DashSpec.Abstractions.Data;
 using DashSpec.Core.Localization;

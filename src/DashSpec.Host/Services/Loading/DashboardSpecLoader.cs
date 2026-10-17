@@ -1,4 +1,4 @@
-﻿using DashSpec.Abstractions.Connectors;
+using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime.Platform;

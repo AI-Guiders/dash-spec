@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Layout;
 
 /// <summary>

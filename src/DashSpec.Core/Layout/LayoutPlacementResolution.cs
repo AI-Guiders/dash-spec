@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Layout;
 
 /// <summary>Card grid placement precedence (ADR-0057 §7, ADR-0020).</summary>

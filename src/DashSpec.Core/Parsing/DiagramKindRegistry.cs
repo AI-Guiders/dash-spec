@@ -1,4 +1,4 @@
-﻿using FsharpDiagramKindRegistry = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry;
+using FsharpDiagramKindRegistry = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry;
 
 namespace DashSpec.Core.Parsing;
 

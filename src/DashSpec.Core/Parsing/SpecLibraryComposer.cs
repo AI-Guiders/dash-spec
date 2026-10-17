@@ -1,4 +1,4 @@
-﻿namespace DashSpec.Core.Parsing;
+namespace DashSpec.Core.Parsing;
 
 
 /// <summary>Loads and merges diagram library TOML, the document palette and units imported into the module (ADR-0098).</summary>

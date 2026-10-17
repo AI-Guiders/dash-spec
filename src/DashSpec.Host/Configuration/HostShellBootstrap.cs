@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Planet-content Host shell from <c>.dashhost</c> (ADR-0054).</summary>

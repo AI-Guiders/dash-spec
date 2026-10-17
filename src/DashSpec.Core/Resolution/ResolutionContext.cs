@@ -1,4 +1,4 @@
-﻿
+
 namespace DashSpec.Core.Resolution;
 
 /// <summary>Inputs for <see cref="DisplayResolution"/> (ADR-0057).</summary>

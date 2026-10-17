@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 
 using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
