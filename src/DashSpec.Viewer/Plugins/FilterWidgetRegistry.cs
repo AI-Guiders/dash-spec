@@ -1,4 +1,5 @@
 using DashSpec.Filters;
+using DashSpec.Modeling.Parse.Filter;
 
 namespace DashSpec.Viewer.Plugins;
 
