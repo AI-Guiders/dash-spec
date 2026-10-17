@@ -1,6 +1,7 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.Charts
 @using DashSpec.Core.Model
 @using DashSpec.Core.Runtime
+@using DashSpec.Presentation.Matrix
 @using Microsoft.JSInterop
 @inject IJSRuntime Js
 @implements IAsyncDisposable
@@ -12,7 +13,7 @@
 else if (EffectiveLimits.IsOversized(Payload.XLabels.Count, Payload.YLabels.Count))
 {
     <div class="heatmap-oversized" role="alert">
-        <p><strong>Heatmap не отображается (лимит защиты)</strong> — @MatrixRenderLimits.DescribeOversize(EffectiveLimits, Payload.XLabels.Count, Payload.YLabels.Count).</p>
+        <p><strong>Heatmap не отображается (лимит защиты)</strong> — @MatrixOversizeDescription.Describe(EffectiveLimits, Payload.XLabels.Count, Payload.YLabels.Count).</p>
         @if (!string.IsNullOrWhiteSpace(OversizeMessage))
         {
             <p class="muted"><RichTextView Text="@OversizeMessage" /></p>
