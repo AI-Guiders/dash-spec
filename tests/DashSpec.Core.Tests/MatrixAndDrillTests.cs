@@ -22,8 +22,8 @@ public sealed class MatrixRenderLimitsTests
     {
         var limits = MatrixRenderLimitsDefinition.Default;
         Assert.True(limits.IsOversized(120, 16));
-        Assert.Contains("столбцов X (120)", MatrixRenderLimits.DescribeOversize(limits, 120, 16));
-        Assert.DoesNotContain("ячеек", MatrixRenderLimits.DescribeOversize(limits, 120, 16));
+        Assert.Contains("столбцов X (120)", DashSpec.Presentation.Matrix.MatrixOversizeDescription.Describe(limits, 120, 16));
+        Assert.DoesNotContain("ячеек", DashSpec.Presentation.Matrix.MatrixOversizeDescription.Describe(limits, 120, 16));
     }
 }
 
