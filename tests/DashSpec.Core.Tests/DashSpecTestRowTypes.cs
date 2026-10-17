@@ -1,5 +1,4 @@
 using System.Text;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Runtime;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;

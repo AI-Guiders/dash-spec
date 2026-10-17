@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;

@@ -1,5 +1,4 @@
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Core.Model;
 using DashSpec.Core.Parsing;
 using Xunit;
 

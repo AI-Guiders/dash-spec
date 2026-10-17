@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 using Xunit;
 using DashSpec.Execution.Runtime;
 

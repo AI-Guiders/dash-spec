@@ -1,6 +1,5 @@
 using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Model;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
