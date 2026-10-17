@@ -132,7 +132,7 @@ public sealed class HeadlessReportSessionContractTests
                 CardInputs = new Dictionary<string, CardFlowInputDefinition>(),
                 InteriorFlow = Microsoft.FSharp.Core.FSharpOption<CardInteriorFlowDefinition>.None,
             };
-            var doc = new DashboardDocument(
+            var doc = DocumentTestData.Create(
                 "demo",
                 "Demo",
                 "fake",

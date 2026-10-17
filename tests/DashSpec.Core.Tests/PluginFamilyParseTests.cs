@@ -45,7 +45,7 @@ public sealed class PluginFamilyParseTests
 
         var document = DashSpecTestRowTypes.ParseDashboard(text);
         Assert.NotNull(document.ModuleExtensions);
-        Assert.Contains("card_export", document.ModuleExtensions!.EnabledPluginIds);
+        Assert.Contains("card_export", document.ModuleExtensions!.Value.EnabledPluginIds);
     }
 
     [Fact]

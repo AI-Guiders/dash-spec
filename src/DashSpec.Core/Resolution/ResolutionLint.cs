@@ -166,9 +166,9 @@ public static class ResolutionLint
             CollectBoard(tab.LayoutBoard?.Value, tab.CardIds, cards, $"tab '{tab.Id}'", ids);
         }
 
-        if (document.Pages is not null)
+        if (document.Pages?.Value is { } pages)
         {
-            foreach (var page in document.Pages)
+            foreach (var page in pages)
             {
                 var tabCards = ResolveTabCards(document, page.TabId?.Value);
                 CollectBoard(page.LayoutBoard?.Value, tabCards.Select(c => c.Id).ToList(), tabCards, $"page '{page.Id}'", ids);

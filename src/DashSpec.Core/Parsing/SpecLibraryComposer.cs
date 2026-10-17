@@ -19,7 +19,7 @@ public static class SpecLibraryComposer
             library = SpecLibrary.Merge(library, SpecLibrary.LoadFile(path));
         }
 
-        if (document?.Palette is { } palette)
+        if (document?.Palette?.Value is { } palette)
         {
             library = SpecLibrary.Merge(library, SpecLibrary.FromPalette(palette.Id, palette.Properties));
         }

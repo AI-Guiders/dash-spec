@@ -743,8 +743,8 @@ public class QueryCompilerTests
             """);
 
         Assert.NotNull(document.TimePolicy);
-        Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Basis);
-        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn.Value);
+        Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Value.Basis);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);
     }
 
     [Fact]
@@ -768,6 +768,6 @@ public class QueryCompilerTests
             end tab
             """);
 
-        Assert.Equal("bucket_start_utc", document.TimePolicy?.WorkTimeColumn);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);
     }
 }

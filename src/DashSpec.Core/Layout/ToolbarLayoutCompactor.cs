@@ -11,11 +11,11 @@ public static class ToolbarLayoutCompactor
         ArgumentNullException.ThrowIfNull(document);
 
         var columns = document.Layout.Columns;
-        if (document.ToolbarBoard is not null)
+        if (document.ToolbarBoard?.Value is not null)
         {
             var layout = new Dictionary<string, PlacementDefinition>(
                 LayoutBoardPlacer.Resolve(
-                    document.ToolbarBoard,
+                    document.ToolbarBoard.Value,
                     columns,
                     "Toolbar",
                     token => FilterLayoutRefResolver.Resolve(token, document.Filters, "Toolbar")),
@@ -56,7 +56,7 @@ public static class ToolbarLayoutCompactor
         }
 
         var columns = document.Layout.Columns;
-        var board = activeToolbarBoard ?? document.ToolbarBoard;
+        var board = activeToolbarBoard ?? document.ToolbarBoard?.Value;
         if (board is not null)
         {
             return CompactVisibleBoard(

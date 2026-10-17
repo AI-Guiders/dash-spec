@@ -216,6 +216,18 @@ type DashboardDocument with
         | None -> DashboardDocument.emptyRowTypes
         | Some types -> types
 
+    member this.ResolvedRowTypeSchemas =
+        DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge.toCatalog (this.ResolvedRowTypes.Values)
+
+    member this.WithCards(cards: IReadOnlyList<CardDefinition>) =
+        { this with Cards = cards }
+
+    member this.WithTitle(title: string) =
+        { this with Title = title }
+
+    member this.WithTabs(tabs: IReadOnlyList<TabDefinition>) =
+        { this with Tabs = tabs }
+
 [<CLIMutable>]
 type TabModuleContent =
     { TabId: string

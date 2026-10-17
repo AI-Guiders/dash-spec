@@ -94,11 +94,11 @@ public sealed class LoadDiagnosticsService(
             var librarySw = Stopwatch.StartNew();
             var library = SpecLibraryComposer.Load(
                 specFullPath,
-                document.DiagramLibraryPath,
+                document.DiagramLibraryPath?.Value,
                 hostContext.DefaultSpecDirectory,
                 document);
             librarySw.Stop();
-            steps.Add(new LoadStepReport("load_library", true, librarySw.ElapsedMilliseconds, document.DiagramLibraryPath));
+            steps.Add(new LoadStepReport("load_library", true, librarySw.ElapsedMilliseconds, document.DiagramLibraryPath?.Value));
 
             var resolveSw = Stopwatch.StartNew();
             _ = SpecResolver.Resolve(document, library);
@@ -123,7 +123,7 @@ public sealed class LoadDiagnosticsService(
                 sameAsStartup ? "startup default" : "per-entry runtime"));
 
             var connectorSw = Stopwatch.StartNew();
-            var connector = runtimeConnectorResolver.Resolve(runtimePath, document.ConnectorId);
+            var connector = runtimeConnectorResolver.Resolve(runtimePath, document.ConnectorId?.Value);
             connectorSw.Stop();
             steps.Add(new LoadStepReport("resolve_connector", true, connectorSw.ElapsedMilliseconds, connector.Id));
 
@@ -176,7 +176,7 @@ public sealed class LoadDiagnosticsService(
                     {
                         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                         var reportTime = ReportTimePolicyResolver.ResolveEffective(
-                            loaded.Document.TimePolicy,
+                            loaded.Document.TimePolicy?.Value,
                             bootstrap.ReportTime.ToSettingsDictionary(),
                             LabelFormat.DisplayTimeZone?.Id);
                         _ = loaded.Connector.QueryAsync(

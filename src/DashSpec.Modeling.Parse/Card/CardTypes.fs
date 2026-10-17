@@ -55,11 +55,116 @@ type CardClickEffect =
         | DrillTableFromCell _ -> true
         | _ -> false
 
+    member this.TryGetFilterBind =
+        match this with
+        | SetFilterFromField(filterName, field) -> Some(filterName, field)
+        | _ -> None
+
+    member this.TryGetDrillBinds =
+        match this with
+        | DrillTableFromCell binds -> Some binds
+        | _ -> None
+
     member this.TryGetShowSelection =
         match this with
         | ShowSelection(placement, format, source, copyFriendly, split) ->
             Some(placement, format, source, copyFriendly, split)
         | _ -> None
+
+    member this.TryGetGotoTabId =
+        match this with
+        | GotoTab tabId -> Some tabId
+        | _ -> None
+
+    member this.TryGetFocusPhaseId =
+        match this with
+        | FocusPhase phaseId -> Some phaseId
+        | _ -> None
+
+    member this.TryGetGotoPageId =
+        match this with
+        | GotoPage pageId -> Some pageId
+        | _ -> None
+
+    member this.TryGetGotoCatalogEntry =
+        match this with
+        | GotoCatalogEntry(entryId, preserveFilterNames) -> Some(entryId, preserveFilterNames)
+        | _ -> None
+
+    member this.TryGetInvokeHandler =
+        match this with
+        | InvokeHandler(handlerId, args) -> Some(handlerId, args)
+        | _ -> None
+
+    member this.Source =
+        match this with
+        | ShowSelection(_, _, source, _, _) -> source
+        | _ -> ShowSource.Tooltip
+
+    member this.Format =
+        match this with
+        | ShowSelection(_, format, _, _, _) -> format
+        | _ -> ShowFormat.List
+
+    member this.Placement =
+        match this with
+        | ShowSelection(placement, _, _, _, _) -> placement
+        | _ -> ShowPlacement.Below
+
+    member this.CopyFriendly =
+        match this with
+        | ShowSelection(_, _, _, copyFriendly, _) -> copyFriendly
+        | _ -> false
+
+    member this.Split =
+        match this with
+        | ShowSelection(_, _, _, _, split) -> split
+        | _ -> None
+
+    member this.FilterName =
+        match this with
+        | SetFilterFromField(filterName, _) -> filterName
+        | _ -> ""
+
+    member this.Field =
+        match this with
+        | SetFilterFromField(_, field) -> field
+        | _ -> ""
+
+    member this.TabId =
+        match this with
+        | GotoTab tabId -> tabId
+        | _ -> ""
+
+    member this.PhaseId =
+        match this with
+        | FocusPhase phaseId -> phaseId
+        | _ -> ""
+
+    member this.PageId =
+        match this with
+        | GotoPage pageId -> pageId
+        | _ -> ""
+
+    member this.EntryId =
+        match this with
+        | GotoCatalogEntry(entryId, _) -> entryId
+        | _ -> ""
+
+    member this.PreserveFilterNames =
+        match this with
+        | GotoCatalogEntry(_, preserveFilterNames) -> preserveFilterNames
+        | _ -> None
+
+    member this.HandlerId =
+        match this with
+        | InvokeHandler(handlerId, _) -> handlerId
+        | _ -> ""
+
+    member this.Args =
+        match this with
+        | InvokeHandler(_, args) -> args
+        | _ -> System.Collections.Generic.Dictionary<string, string>() :> IReadOnlyDictionary<string, string>
 
 [<CLIMutable>]
 type CardClickBehaviour =

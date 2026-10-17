@@ -39,8 +39,8 @@ public static class SpecResolveExporter
         return new ResolvedSpecExport(
             document.Id,
             document.Title,
-            document.ColorPalette,
-            document.DiagramLibraryPath,
+            document.ColorPalette?.Value,
+            document.DiagramLibraryPath?.Value,
             cards);
     }
 
@@ -51,7 +51,7 @@ public static class SpecResolveExporter
     {
         var card = view.Card;
         var kind = DiagramKindRegistry.Resolve(card.Diagram.Kind);
-        var effectivePalette = ResolveEffectiveColorPalette(document.ColorPalette, card, library);
+        var effectivePalette = ResolveEffectiveColorPalette(document.ColorPalette?.Value, card, library);
 
         IReadOnlyDictionary<string, string>? chartPresentation = null;
         IReadOnlyDictionary<string, string>? matrixPresentation = null;

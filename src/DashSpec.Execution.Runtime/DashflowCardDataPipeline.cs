@@ -19,7 +19,7 @@ public static class DashflowCardDataPipeline
             return rows;
         }
 
-        var path = DashflowPathResolver.Resolve(document.Dashflow, flowInput);
+        var path = DashflowPathResolver.Resolve(document.Dashflow!.Value, flowInput);
         return path.Transformers.Count == 0
             ? rows
             : DashflowBatchExecutor.Apply(rows, path.Transformers);

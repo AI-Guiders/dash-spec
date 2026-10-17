@@ -53,15 +53,15 @@ public sealed class DashflowBatchExecutorTests
         [
             new DashflowTransformerDefinition(
                 "local",
-                new[] { new DashflowTransformerPortDefinition("out", "PeakRow") },
-                "in",
-                "out",
-                new[]
-                {
+                [],
+                [System.Tuple.Create("out", "PeakRow")],
+                Microsoft.FSharp.Core.FSharpOption<string>.Some("in"),
+                Microsoft.FSharp.Core.FSharpOption<string>.Some("out"),
+                [
                     new DashflowTransformStepDefinition(
                         BuiltinScalarTransformIds.ToZone,
-                        new[] { new DashflowTransformParameterDefinition("offset_minutes", "180") }),
-                }),
+                        [new DashflowTransformParameterDefinition("offset_minutes", "180")]),
+                ]),
         ];
 
         var result = DashflowBatchExecutor.Apply(batch, transformers);

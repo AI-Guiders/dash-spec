@@ -14,3 +14,5 @@ global using CardChromeDefinition = DashSpec.Modeling.Parse.Card.CardChromeDefin
 global using CardsFoldPolicy = DashSpec.Modeling.Parse.Card.CardsFoldPolicy;
 global using CardsChromeDefinition = DashSpec.Modeling.Parse.Card.CardsChromeDefinition;
 global using TooltipDefinition = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
+global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
+global using ReportFormatDefaults = DashSpec.Modeling.Parse.Document.ReportFormatDefaults;

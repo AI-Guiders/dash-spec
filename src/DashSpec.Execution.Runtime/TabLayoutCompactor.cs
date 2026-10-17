@@ -40,7 +40,7 @@ public static class TabLayoutCompactor
             .ToList();
 
         var effectivePageId = activePageId;
-        var tabPages = PageTabScope.FilterForTab(document.Pages, tabId);
+        var tabPages = PageTabScope.FilterForTab(document.Pages?.Value, tabId);
         if (string.IsNullOrWhiteSpace(effectivePageId) && tabPages.Count > 0)
         {
             effectivePageId = tabPages[0].Id;

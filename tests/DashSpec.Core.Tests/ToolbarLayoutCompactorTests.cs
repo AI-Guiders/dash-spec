@@ -16,28 +16,28 @@ public class ToolbarLayoutCompactorTests
             [["period_grain", "period_start"]],
             LayoutScope.Toolbar);
 
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
-            ConnectorId: null,
-            SqlDialect: SqlDialect.TSql,
-            DiagramLibraryPath: null,
-            Palette: null,
-            ColorPalette: null,
-            Layout: new LayoutDefinition(12, 8),
-            FiltersChrome: TestModelDefaults.FiltersChrome,
-            Filters:
+            connectorId: null,
+            sqlDialect: SqlDialect.TSql,
+            diagramLibraryPath: null,
+            palette: null,
+            colorPalette: null,
+            layout: new LayoutDefinition(12, 8),
+            filtersChrome: TestModelDefaults.FiltersChrome,
+            filters:
             [
                 FilterTestData.Create(FilterKind.Date, "usage_date", null, null),
                 FilterTestData.Create(FilterKind.Field, "app_name", null, null),
                 FilterTestData.Create(FilterKind.Field, "period_grain", null, null),
                 FilterTestData.Create(FilterKind.Date, "period_start", null, null),
             ],
-            DashboardFilters: ["usage_date", "app_name"],
-            Tabs: [],
-            Cards: [],
-            ToolbarBoard: reportBoard,
-            Pages:
+            dashboardFilters: ["usage_date", "app_name"],
+            tabs: [],
+            cards: [],
+            toolbarBoard: reportBoard,
+            pages:
             [
                 new ReportPageDefinition
                 {

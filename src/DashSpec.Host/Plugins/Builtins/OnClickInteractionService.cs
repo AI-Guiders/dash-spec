@@ -1,10 +1,5 @@
-using System.Collections;
-using DashSpec.Core.Model;
 using DashSpec.Viz;
 using DashSpec.Surface.Blazor.Services.Presentation;
-using Microsoft.FSharp.Core;
-using Microsoft.FSharp.Reflection;
-using System.Reflection;
 
 namespace DashSpec.Host.Plugins.Builtins;
 
@@ -16,66 +11,31 @@ public sealed class OnClickInteractionService : IOnClickInteractionService
     public bool HasNavigationEffects(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
         behaviour?.Effects.Any(static effect => effect.IsNavigationEffect) == true;
 
-    public IEnumerable<CardClickEffect> ExpandClickEffects(
-        IEnumerable<DashSpec.Modeling.Parse.Card.CardClickEffect> effects) =>
-        effects.Select(ToExecutionEffect).SelectMany(ExpandSingle);
+    public IEnumerable<CardClickEffect> ExpandClickEffects(IEnumerable<CardClickEffect> effects) =>
+        effects.SelectMany(ExpandSingle);
 
-    private static CardClickEffect ToExecutionEffect(DashSpec.Modeling.Parse.Card.CardClickEffect effect)
+    private static IEnumerable<CardClickEffect> ExpandSingle(CardClickEffect effect)
     {
-        var (caseInfo, fields) = FSharpValue.GetUnionFields(
-            effect,
-            typeof(DashSpec.Modeling.Parse.Card.CardClickEffect),
-            FSharpOption<BindingFlags>.None);
-
-        return caseInfo.Name switch
+        if (effect.TryGetInvokeHandler?.Value is not { } invoke)
         {
-            "ShowSelection" => new ShowSelectionEffect(
-                Enum.Parse<ShowPlacement>(fields[0]!.ToString()!),
-                Enum.Parse<ShowFormat>(fields[1]!.ToString()!),
-                Enum.Parse<ShowSource>(fields[2]!.ToString()!),
-                (bool)fields[3]!,
-                (fields[4] as FSharpOption<string>)?.Value),
-            "SetFilterFromField" => new SetFilterFromFieldEffect(
-                (string)fields[0]!,
-                (string)fields[1]!),
-            "DrillTableFromCell" => new DrillTableFromCellEffect(
-                ((IEnumerable)fields[0]!)
-                    .Cast<object>()
-                    .Select(static bind => FSharpValue.GetTupleFields(bind))
-                    .Select(static bind => new SetFilterFromFieldEffect(
-                        (string)bind[0]!,
-                        (string)bind[1]!))
-                    .ToList()),
-            "InvokeHandler" => new InvokeHandlerEffect(
-                (string)fields[0]!,
-                (IReadOnlyDictionary<string, string>)fields[1]!),
-            "GotoTab" => new GotoTabEffect((string)fields[0]!),
-            "FocusPhase" => new FocusPhaseEffect((string)fields[0]!),
-            "GotoPage" => new GotoPageEffect((string)fields[0]!),
-            "GotoCatalogEntry" => new GotoCatalogEntryEffect(
-                (string)fields[0]!,
-                (fields[1] as FSharpOption<IReadOnlyList<string>>)?.Value),
-            _ => throw new ArgumentOutOfRangeException(nameof(effect), caseInfo.Name, "Unknown click-effect case."),
-        };
-    }
-
-    private static IEnumerable<CardClickEffect> ExpandSingle(CardClickEffect effect) =>
-        effect is InvokeHandlerEffect invoke
-            ? ExpandInvoke(invoke)
-            : [effect];
-
-    private static IEnumerable<CardClickEffect> ExpandInvoke(InvokeHandlerEffect invoke)
-    {
-        if (!string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase))
-        {
-            yield return invoke;
-            yield break;
+            return [effect];
         }
 
-        var defaultFrom = invoke.Args.GetValueOrDefault("from") ?? "y";
+        var handlerId = (string)invoke.Item1;
+        if (!string.Equals(handlerId, "drill_down", StringComparison.OrdinalIgnoreCase))
+        {
+            return [effect];
+        }
+
+        return ExpandDrillDown((IReadOnlyDictionary<string, string>)invoke.Item2);
+    }
+
+    private static IEnumerable<CardClickEffect> ExpandDrillDown(IReadOnlyDictionary<string, string> args)
+    {
+        var defaultFrom = args.GetValueOrDefault("from") ?? "y";
         string? tabId = null;
 
-        foreach (var (key, value) in invoke.Args)
+        foreach (var (key, value) in args)
         {
             if (string.Equals(key, "from", StringComparison.OrdinalIgnoreCase))
             {
@@ -90,16 +50,16 @@ public sealed class OnClickInteractionService : IOnClickInteractionService
 
             if (string.Equals(key, "target", StringComparison.OrdinalIgnoreCase))
             {
-                yield return new SetFilterFromFieldEffect(value, defaultFrom);
+                yield return CardClickEffect.NewSetFilterFromField(value, defaultFrom);
                 continue;
             }
 
-            yield return new SetFilterFromFieldEffect(key, value);
+            yield return CardClickEffect.NewSetFilterFromField(key, value);
         }
 
         if (!string.IsNullOrWhiteSpace(tabId))
         {
-            yield return new GotoTabEffect(tabId);
+            yield return CardClickEffect.NewGotoTab(tabId);
         }
     }
 }

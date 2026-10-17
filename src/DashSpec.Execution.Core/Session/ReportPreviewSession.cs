@@ -49,7 +49,7 @@ public sealed class ReportPreviewSession : IReportPreviewSession
         var document = DashSpecParser.Compile(text, specDirectory).Document;
         var library = SpecLibraryComposer.Load(
             fullPath,
-            document.DiagramLibraryPath,
+            document.DiagramLibraryPath?.Value,
             specDirectory,
             document);
         var resolved = SpecResolver.Resolve(document, library);

@@ -79,3 +79,9 @@ type DashflowModule =
       Links: FlowLinkDef[]
       Graph: FlowGraph
       Diagnostics: FlowGraphDiagnostic[] }
+
+    member this.WithSources(sources: DashflowSourceDef[]) =
+        { this with Sources = sources }
+
+    member this.WithTransformers(transformers: DashflowTransformerDef[]) =
+        { this with Transformers = transformers }

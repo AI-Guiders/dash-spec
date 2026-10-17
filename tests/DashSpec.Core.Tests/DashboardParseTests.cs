@@ -56,8 +56,8 @@ public class DashboardParseTests
         Assert.Equal(SqlDialect.TSql, doc.SqlDialect);
         Assert.Null(doc.DiagramLibraryPath);
         Assert.NotNull(doc.Palette);
-        Assert.Equal("demo_apps", doc.Palette!.Id);
-        Assert.Equal("#94a3b8", doc.Palette.Properties["default"]);
+        Assert.Equal("demo_apps", doc.Palette!.Value.Id);
+        Assert.Equal("#94a3b8", doc.Palette!.Value.Properties["default"]);
         Assert.Equal("demo_apps", doc.ColorPalette);
         Assert.Equal(18, doc.Cards.Count);
         Assert.Equal(8, doc.Filters.Count);
@@ -711,7 +711,7 @@ public class DashboardParseTests
             var context = new HeatmapCellContext(0, 0, "14:05", "host", 3, null);
 
             var overlay = HeatmapCellFilterResolver.BuildOverlay(
-                [new SetFilterFromFieldEffect(filter.Name, "x")],
+                [CardClickEffect.NewSetFilterFromField(filter.Name, "x")],
                 context,
                 index,
                 filters,

@@ -11,11 +11,12 @@ public class CardClickRefreshPlannerTests
     {
         var effects = new CardClickEffect[]
         {
-            new DrillTableFromCellEffect(
-            [
-                new SetFilterFromFieldEffect("usage_date", "x"),
-                new SetFilterFromFieldEffect("app_name", "y"),
-            ]),
+            CardClickEffect.NewDrillTableFromCell(
+                new[]
+                {
+                    System.Tuple.Create("usage_date", "x"),
+                    System.Tuple.Create("app_name", "y"),
+                }),
         };
 
         Assert.Equal(CardInteractionRefresh.CardInteriorSlots, CardClickRefreshPlanner.Plan(effects));
@@ -26,7 +27,7 @@ public class CardClickRefreshPlannerTests
     {
         var effects = new CardClickEffect[]
         {
-            new SetFilterFromFieldEffect("app_name", "y"),
+            CardClickEffect.NewSetFilterFromField("app_name", "y"),
         };
 
         Assert.Equal(CardInteractionRefresh.Report, CardClickRefreshPlanner.Plan(effects));
@@ -37,7 +38,7 @@ public class CardClickRefreshPlannerTests
     {
         var effects = new CardClickEffect[]
         {
-            new ShowSelectionEffect(ShowPlacement.Below, ShowFormat.List, ShowSource.Tooltip, CopyFriendly: true),
+            CardClickEffect.NewShowSelection(ShowPlacement.Below, ShowFormat.List, ShowSource.Tooltip, true, Microsoft.FSharp.Core.FSharpOption<string>.None),
         };
 
         Assert.Equal(CardInteractionRefresh.None, CardClickRefreshPlanner.Plan(effects));

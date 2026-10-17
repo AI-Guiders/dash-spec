@@ -34,7 +34,7 @@ public static class DashflowPathResolver
                 ?? throw new InvalidOperationException(
                     $"Card input '{input.Alias}' references unknown dashflow node '{nodeId}'.");
 
-            if (!transformer.Outputs.Any(p => PortMatches(p.Name, portName)))
+            if (!transformer.Outputs.Any(p => PortMatches(p.Item1, portName)))
             {
                 throw new InvalidOperationException(
                     $"Transformer '{nodeId}' has no output port '{portName}'.");
@@ -54,8 +54,8 @@ public static class DashflowPathResolver
             var inbound = inboundLinks.Count == 1
                 ? inboundLinks[0]
                 : inboundLinks.FirstOrDefault(l =>
-                       !string.IsNullOrWhiteSpace(transformer.DefaultInputPort)
-                       && string.Equals(l.ToPort?.Value, transformer.DefaultInputPort, StringComparison.OrdinalIgnoreCase))
+                       !string.IsNullOrWhiteSpace(transformer.DefaultInputPort?.Value)
+                       && string.Equals(l.ToPort?.Value, transformer.DefaultInputPort?.Value, StringComparison.OrdinalIgnoreCase))
                   ?? inboundLinks[0];
 
             nodeId = inbound.FromNode;
@@ -79,9 +79,9 @@ public static class DashflowPathResolver
 
         var upstreamTransformer = flow.Transformers.FirstOrDefault(t =>
             string.Equals(t.Id, inbound.FromNode, StringComparison.OrdinalIgnoreCase));
-        if (upstreamTransformer is not null && !string.IsNullOrWhiteSpace(upstreamTransformer.DefaultOutputPort))
+        if (upstreamTransformer is not null && !string.IsNullOrWhiteSpace(upstreamTransformer.DefaultOutputPort?.Value))
         {
-            return upstreamTransformer.DefaultOutputPort;
+            return upstreamTransformer.DefaultOutputPort!.Value;
         }
 
         return string.Empty;

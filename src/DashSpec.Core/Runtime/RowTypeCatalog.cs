@@ -14,7 +14,7 @@ public sealed class RowTypeCatalog
         _schemas = schemas.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     }
 
-    public static RowTypeCatalog FromDocument(Model.DashboardDocument document) =>
+    public static RowTypeCatalog FromDocument(DashSpec.Modeling.Parse.Document.DashboardDocument document) =>
         new(document.ResolvedRowTypeSchemas);
 
     public RowTypeSchema GetRequired(string typeName)

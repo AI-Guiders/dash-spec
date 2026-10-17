@@ -21,24 +21,13 @@ public static class CardClickRefreshPlanner
 {
     public static CardInteractionRefresh Plan(IReadOnlyList<CardClickEffect> effects)
     {
-        if (effects.Any(static e => e is DrillTableFromCellEffect))
+        if (effects.Any(static effect => effect.RequiresInteriorSlotRefresh))
         {
             return CardInteractionRefresh.CardInteriorSlots;
         }
 
-        if (effects.Any(static e => e switch
-            {
-                SetFilterFromFieldEffect => true,
-                GotoTabEffect => true,
-                GotoPageEffect => true,
-                FocusPhaseEffect => true,
-                GotoCatalogEntryEffect => true,
-                _ => false,
-            }))
-        {
-            return CardInteractionRefresh.Report;
-        }
-
-        return CardInteractionRefresh.None;
+        return effects.Any(static effect => effect.IsNavigationEffect)
+            ? CardInteractionRefresh.Report
+            : CardInteractionRefresh.None;
     }
 }

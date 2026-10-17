@@ -217,10 +217,10 @@ public sealed class CardRenderService(
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
+                    Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette?.Value),
                     DetailChart: seriesTransform is null
                         ? null
-                        : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette),
+                        : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette?.Value),
                     Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
@@ -401,7 +401,7 @@ public sealed class CardRenderService(
                             seriesTransform,
                             effective,
                             library,
-                            document.ColorPalette)),
+                            document.ColorPalette?.Value)),
                     DiagramDataFamily.Gantt => new CardSlotRenderResult(
                         slotRef,
                         effective.Diagram.Kind,
@@ -517,7 +517,7 @@ public sealed class CardRenderService(
 
     private ReportTimePolicy ResolveReportTime(DashboardDocument document) =>
         ReportTimePolicyResolver.ResolveEffective(
-            document.TimePolicy,
+            document.TimePolicy?.Value,
             viewerContext.ReportTimeSettings,
             LabelFormat.DisplayTimeZone?.Id);
 }

@@ -8,7 +8,7 @@ internal static class PageAnalyzer
 {
     public static void Validate(DashboardDocument document)
     {
-        var pages = document.Pages ?? [];
+        var pages = document.Pages?.Value ?? [];
         if (pages.Count == 0)
         {
             return;

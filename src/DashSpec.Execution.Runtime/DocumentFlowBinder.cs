@@ -32,7 +32,7 @@ public static class DocumentFlowBinder
             cards.Add(materialized);
         }
 
-        return changed ? document with { Cards = cards } : document;
+        return changed ? document.WithCards(cards) : document;
     }
 
     public static CardDefinition MaterializeCard(CardDefinition card, DashboardDocument document)

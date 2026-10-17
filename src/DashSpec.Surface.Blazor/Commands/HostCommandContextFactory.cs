@@ -15,7 +15,7 @@ internal static class HostCommandContextFactory
             ActiveScope = [DashSpecCommandScope.ControlCenter],
             FilterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase),
             ToolbarFilterNames = [],
-            CommandAliases = DashboardDocument.EmptyCommandAliases,
+            CommandAliases = DashSpec.Modeling.Parse.Document.DashboardDocumentModule.emptyCommandAliases,
             UiState = uiState,
             GetFieldOptions = _ => [],
             Culture = culture.Culture,

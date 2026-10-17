@@ -35,10 +35,10 @@ public sealed class ReportPagesAndCatalogTests
             """);
 
         Assert.NotNull(doc.Pages);
-        Assert.Equal(2, doc.Pages.Count);
+        Assert.Equal(2, doc.Pages!.Value.Count);
         Assert.Equal("overview", doc.Cards[0].PageId);
         Assert.Equal("detail", doc.Cards[1].PageId);
-        Assert.Equal("Overview", doc.Pages[0].Title);
+        Assert.Equal("Overview", doc.Pages!.Value[0].Title);
     }
 
     [Fact]
@@ -209,8 +209,8 @@ public sealed class ReportPagesAndCatalogTests
 
             Assert.Equal(2, doc.Tabs.Count);
             Assert.NotNull(doc.Pages);
-            Assert.Single(doc.Pages);
-            Assert.Equal("paged_reports", doc.Pages[0].TabId);
+            Assert.Single(doc.Pages!.Value);
+            Assert.Equal("paged_reports", doc.Pages!.Value[0].TabId);
             Assert.Null(doc.Cards.First(c => c.Id == "plain").PageId);
             Assert.Equal("p1", doc.Cards.First(c => c.Id == "paged").PageId);
         }

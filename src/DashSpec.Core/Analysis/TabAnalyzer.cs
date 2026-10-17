@@ -44,8 +44,8 @@ internal static class TabAnalyzer
 
             ValidateLayoutRefs(tab, tabCards);
 
-            var tabPages = PageTabScope.FilterForTab(document.Pages, tab.Id);
-            if (PageTabScope.TabDeclaresPages(document.Pages, tab.Id, document.Tabs.Count))
+            var tabPages = PageTabScope.FilterForTab(document.Pages?.Value, tab.Id);
+            if (PageTabScope.TabDeclaresPages(document.Pages?.Value, tab.Id, document.Tabs.Count))
             {
                 if (tabPages.Any(page => string.Equals(page.TabId?.Value, tab.Id, StringComparison.OrdinalIgnoreCase)))
                 {
