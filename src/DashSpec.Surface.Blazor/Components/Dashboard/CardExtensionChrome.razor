@@ -2,7 +2,9 @@
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Core.Model
 @using DashSpec.Viewer.Plugins
+@using DashSpec.Surface.Blazor.Services.Localization
 @inject DashSpecContributorRegistry Contributors
+@inject DashboardLocalizer Loc
 
 @if (Blocks is { Count: > 0 })
 {
@@ -16,14 +18,15 @@
         @switch (chrome.RenderKind)
         {
             case CardChromeRenderKind.ViewSwitch:
+                var switchActionId = chrome.ActionId ?? string.Empty;
                 if (IsViewSwitchCombobox(block))
                 {
                     <label class="card-view-switch card-view-switch-combobox">
                         <select class="card-view-select field-select"
-                                aria-label="Представление"
+                                aria-label="@Loc.T("View")"
                                 disabled="@Card?.Loading"
                                 value="@(ActiveViewId ?? string.Empty)"
-                                @onchange="OnViewSelectChangedAsync">
+                                @onchange="args => OnViewSelectChangedAsync(args, switchActionId)">
                             @foreach (var view in block.Nested)
                             {
                                 var label = view.Properties.GetValueOrDefault("label") ?? view.Keyword;
@@ -34,7 +37,7 @@
                 }
                 else
                 {
-                    <div class="card-extension-chrome card-view-switch" role="group" aria-label="Представление">
+                    <div class="card-extension-chrome card-view-switch" role="group" aria-label="@Loc.T("View")">
                         @foreach (var view in block.Nested)
                         {
                             var label = view.Properties.GetValueOrDefault("label") ?? view.Keyword;
@@ -43,7 +46,7 @@
                                     class="card-view-switch-btn @(active ? "card-view-switch-btn-active" : null)"
                                     aria-pressed="@active"
                                     disabled="@Card?.Loading"
-                                    @onclick="() => SwitchViewAsync(view.Keyword)">
+                                    @onclick="() => SwitchViewAsync(view.Keyword, switchActionId)">
                                 @label
                             </button>
                         }
@@ -78,21 +81,21 @@
 
     [Parameter] public EventCallback<CardActionRequest> OnAction { get; set; }
 
-    private async Task SwitchViewAsync(string viewId)
+    private async Task SwitchViewAsync(string viewId, string actionId)
     {
-        if (Card is null || string.IsNullOrWhiteSpace(viewId))
+        if (Card is null || string.IsNullOrWhiteSpace(viewId) || string.IsNullOrWhiteSpace(actionId))
         {
             return;
         }
 
-        await OnAction.InvokeAsync(new CardActionRequest(Card.Id, "switch_view", new Dictionary<string, string>
+        await OnAction.InvokeAsync(new CardActionRequest(Card.Id, actionId, new Dictionary<string, string>
         {
             ["view"] = viewId,
         }));
     }
 
-    private Task OnViewSelectChangedAsync(ChangeEventArgs args) =>
-        SwitchViewAsync(args.Value?.ToString() ?? string.Empty);
+    private Task OnViewSelectChangedAsync(ChangeEventArgs args, string actionId) =>
+        SwitchViewAsync(args.Value?.ToString() ?? string.Empty, actionId);
 
     private static bool IsViewSwitchCombobox(ExtensionBlockNode block)
     {

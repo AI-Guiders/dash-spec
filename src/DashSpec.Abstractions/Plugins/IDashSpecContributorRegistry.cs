@@ -51,7 +51,8 @@ public enum CardChromeRenderKind
 public sealed record CardChromeContributorDescriptor(
     string PluginId,
     string BlockKeyword,
-    CardChromeRenderKind RenderKind);
+    CardChromeRenderKind RenderKind,
+    string? ActionId = null);
 
 public sealed record DiagramKindContributorDescriptor(
     string PluginId,

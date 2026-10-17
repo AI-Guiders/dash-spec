@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -230,5 +230,8 @@
   </data>
   <data name="Legend" xml:space="preserve">
     <value>Легенда</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Представление</value>
   </data>
 </root>

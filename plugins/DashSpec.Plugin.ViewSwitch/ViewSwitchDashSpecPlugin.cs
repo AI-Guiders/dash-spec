@@ -28,7 +28,8 @@ public sealed class ViewSwitchDashSpecPlugin : IDashSpecPlugin
         registry.AddCardChrome(new CardChromeContributorDescriptor(
             Id,
             "views",
-            CardChromeRenderKind.ViewSwitch));
+            CardChromeRenderKind.ViewSwitch,
+            "switch_view"));
 
         registry.AddActionHandler(new ActionHandlerDescriptor(
             Id,
