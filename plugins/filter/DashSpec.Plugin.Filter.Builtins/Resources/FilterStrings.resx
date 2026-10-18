@@ -21,7 +21,7 @@
   <data name="Reset" xml:space="preserve">
     <value>Reset</value>
   </data>
-  <data name="all" xml:space="preserve">
+  <data name="AllCount" xml:space="preserve">
     <value>all</value>
   </data>
   <data name="{0} of {1}" xml:space="preserve">
