@@ -1,7 +1,11 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Core.Layout
+@using DashSpec.Core.Interaction
+@using DashSpec.Abstractions.Plugins
+@using DashSpec.Viewer.Plugins
 @using DashSpec.Surface.Blazor.Services.Presentation
 @inject ILayoutSlotRendererRegistry SlotRegistry
+@inject DashSpecContributorRegistry Contributors
 
 @if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.ContentKind))
 {
@@ -21,10 +25,10 @@ else if (Owner is not null)
             break;
         case LayoutSlotContentKind.PrimaryDiagram:
             <div class="card-viz-stack">
-                <CardVizHost Card="Owner.Card"
-                             MatrixMin="@(Owner.Card.Matrix?.Min ?? 0)"
-                             MatrixMax="@(Owner.Card.Matrix?.Max ?? 0)"
-                             OnHeatmapCellSelected="Owner.HandleHeatmapCellSelectedAsync" />
+                @if (_cardBodyType is not null)
+                {
+                    <DynamicComponent Type="_cardBodyType" Parameters="_cardBodyParameters" />
+                }
                 @Owner.RenderSelectionDetail()
             </div>
             break;
@@ -34,4 +38,23 @@ else if (Owner is not null)
 @code {
     [Parameter, EditorRequired] public LayoutSlotDescriptor Slot { get; set; } = default!;
     [CascadingParameter] public DashboardCardView? Owner { get; set; }
+
+    private Type? _cardBodyType;
+    private Dictionary<string, object?> _cardBodyParameters = new();
+
+    protected override void OnParametersSet()
+    {
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardBody, out _cardBodyType);
+        _cardBodyParameters = Owner is null || _cardBodyType is null
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>
+            {
+                ["Card"] = Owner.Card,
+                ["MatrixMin"] = Owner.Card.Matrix?.Min ?? 0,
+                ["MatrixMax"] = Owner.Card.Matrix?.Max ?? 0,
+                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
+                    Owner.HandleHeatmapCellSelectedAsync),
+            };
+    }
 }
