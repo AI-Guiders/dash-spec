@@ -21,6 +21,12 @@ public interface IDashSpecContributorRegistry
     void RegisterFilterWidgetComponent(string widgetId, Type componentType);
 
     /// <summary>
+    /// Registers the component the host renders for a well-known slot
+    /// (<see cref="DashSpecComponentSlots"/>). Registering the same type twice is a no-op.
+    /// </summary>
+    void RegisterSlotComponent(string slotId, Type componentType);
+
+    /// <summary>
     /// Registers a plugin-owned card chrome component, rendered in the card head toolbar for every card.
     /// The component decides whether it applies and owns its own copy (ADR-0077).
     /// </summary>
