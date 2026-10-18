@@ -28,6 +28,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _slotComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _filterWidgetComponents = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
@@ -262,6 +263,35 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
     }
 
+    public void RegisterSlotComponent(string slotId, Type componentType)
+    {
+        if (string.IsNullOrWhiteSpace(slotId))
+        {
+            throw new ArgumentException("Slot id is required.", nameof(slotId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
+        {
+            throw new ArgumentException(
+                $"Type {componentType.FullName} must implement IComponent.",
+                nameof(componentType));
+        }
+
+        if (_slotComponents.TryGetValue(slotId, out var existing))
+        {
+            // Several viz plugins share one slot component; identical re-registration is fine.
+            if (existing != componentType)
+            {
+                throw new InvalidOperationException(
+                    $"Slot '{slotId}' already has component '{existing.FullName}'; cannot register '{componentType.FullName}'.");
+            }
+
+            return;
+        }
+
+        _slotComponents[slotId] = componentType;
+    }
+
     public CardVizComponentRegistry BuildCardVizComponentRegistry()
     {
         var registry = new CardVizComponentRegistry();
@@ -287,6 +317,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     public IReadOnlyDictionary<string, CardChromeContributorDescriptor> CardChromeBlocks => _cardChrome;
 
     public IReadOnlyDictionary<string, Type> CardChromeComponents => _cardChromeComponents;
+
+    public IReadOnlyDictionary<string, Type> SlotComponents => _slotComponents;
 
     public IReadOnlyDictionary<string, FilterWidgetContributorDescriptor> FilterWidgets => _filterWidgets;
 
