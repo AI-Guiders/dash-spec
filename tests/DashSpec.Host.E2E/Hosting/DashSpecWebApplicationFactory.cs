@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Hosting;
@@ -11,11 +13,25 @@ namespace DashSpec.Host.E2E.Hosting;
 public sealed class DashSpecWebApplicationFactory : WebApplicationFactory<Program>
 {
     /// <summary>Real HTTP endpoint for Playwright (TestServer is in-memory only).</summary>
-    public const string ListenUrl = "http://127.0.0.1:5199";
+    /// <remarks>
+    /// The port is picked per run. A fixed port stayed bound whenever a previous test host did not exit,
+    /// and every following run then failed with "address already in use".
+    /// </remarks>
+    public string ListenUrl { get; } = $"http://127.0.0.1:{ResolveFreePort()}";
 
-    public string BaseUrl { get; } = ListenUrl.TrimEnd('/');
+    public string BaseUrl => ListenUrl.TrimEnd('/');
 
     private IHost? _kestrelHost;
+
+    /// <summary>Asks the OS for an unused loopback port.</summary>
+    private static int ResolveFreePort()
+    {
+        using var probe = new TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        return port;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
