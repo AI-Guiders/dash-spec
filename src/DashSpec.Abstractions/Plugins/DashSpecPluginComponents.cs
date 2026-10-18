@@ -7,11 +7,8 @@ namespace DashSpec.Abstractions.Plugins;
 /// </summary>
 public static class DashSpecPluginComponents
 {
-    /// <summary>Card body component (supplied by a viz plugin).</summary>
-    public const string CardBody = "card.body";
-
-    /// <summary>Card interior (inner layout) component (supplied by a viz plugin).</summary>
-    public const string CardInterior = "card.interior";
+    /// <summary>Diagram component (supplied by a viz plugin) — used for any diagram, primary or from an inner slot.</summary>
+    public const string CardDiagram = "card.diagram";
 
     /// <summary>Filter widget component (supplied by a filter plugin).</summary>
     public const string FilterWidget = "filter.widget";
