@@ -38,3 +38,4 @@ scripts/migrate_file.py
 
 # Word lock files
 ~\$*
+.opencode/
