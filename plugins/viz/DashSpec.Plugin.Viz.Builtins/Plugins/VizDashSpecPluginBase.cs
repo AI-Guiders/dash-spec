@@ -30,8 +30,8 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
     {
         registry.AddVizRenderer(new VizRendererDescriptor(Id, RendererId, RendererDisplayName));
         registry.RegisterCardVizComponent(RendererId, CardVizComponentType);
-        registry.RegisterSlotComponent(DashSpecComponentSlots.CardHost, typeof(Components.Hosting.CardVizHost));
-        registry.RegisterSlotComponent(DashSpecComponentSlots.CardInteriorHost, typeof(Components.Hosting.CardInteriorVizHost));
+        registry.RegisterPluginComponent(DashSpecPluginComponents.CardBody, typeof(Components.Hosting.CardVizHost));
+        registry.RegisterPluginComponent(DashSpecPluginComponents.CardInterior, typeof(Components.Hosting.CardInteriorVizHost));
         if (CardToolbarComponentType is not null)
         {
             registry.RegisterVizCardToolbar(RendererId, CardToolbarComponentType);
