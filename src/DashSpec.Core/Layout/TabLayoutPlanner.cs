@@ -60,7 +60,7 @@ public static class TabLayoutPlanner
                         innerBoard,
                         columns,
                         $"{context} group '{group.Id}'",
-                        token => CardLayoutRefResolver.Resolve(token, tabCards, context));
+                        token => CardLayoutRefBridge.Resolve(token, tabCards, context));
 
                     groups[group.Id] = new LayoutGroupPlacement(
                         group.Id,
@@ -159,7 +159,7 @@ public static class TabLayoutPlanner
                             innerBoard,
                             columns,
                             $"{context} nest '{target.Id}'",
-                            token => CardLayoutRefResolver.Resolve(token, tabCards, context));
+                            token => CardLayoutRefBridge.Resolve(token, tabCards, context));
                         foreach (var (cardId, innerPlacement) in inner)
                         {
                             if (!allCards.TryAdd(cardId, innerPlacement))

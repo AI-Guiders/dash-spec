@@ -215,7 +215,7 @@ public static class ResolutionLint
                     {
                         foreach (var token in row)
                         {
-                            ids.Add(CardLayoutRefResolver.Resolve(token, tabCards, context));
+                            ids.Add(CardLayoutRefBridge.Resolve(token, tabCards, context));
                         }
                     }
 
@@ -226,7 +226,7 @@ public static class ResolutionLint
                     {
                         foreach (var token in row)
                         {
-                            ids.Add(CardLayoutRefResolver.Resolve(token, tabCards, context));
+                            ids.Add(CardLayoutRefBridge.Resolve(token, tabCards, context));
                         }
                     }
 
@@ -273,7 +273,7 @@ public static class ResolutionLint
         }
 
         return tab.CardIds
-            .Select(token => CardLayoutRefResolver.Resolve(token, document.Cards, $"tab '{tab.Id}'"))
+            .Select(token => CardLayoutRefBridge.Resolve(token, document.Cards, $"tab '{tab.Id}'"))
             .Select(id => document.Cards.Single(c =>
                 string.Equals(c.Id, id, StringComparison.OrdinalIgnoreCase)))
             .ToList();

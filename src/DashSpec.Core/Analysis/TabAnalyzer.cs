@@ -21,7 +21,7 @@ internal static class TabAnalyzer
 
             foreach (var token in tab.CardIds)
             {
-                var cardId = CardLayoutRefResolver.Resolve(
+                var cardId = CardLayoutRefBridge.Resolve(
                     token,
                     document.Cards,
                     $"Tab '{tab.Id}' cards");

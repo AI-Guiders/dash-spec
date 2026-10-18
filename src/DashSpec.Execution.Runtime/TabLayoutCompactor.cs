@@ -29,7 +29,7 @@ public static class TabLayoutCompactor
         var tabCards = tab.CardIds
             .Select(token =>
             {
-                var cardId = CardLayoutRefResolver.Resolve(
+                var cardId = CardLayoutRefBridge.Resolve(
                     token,
                     document.Cards,
                     $"Tab '{tab.Id}' cards");
@@ -72,7 +72,7 @@ public static class TabLayoutCompactor
             : TabLayoutPlanner.Plan(context.Board, context.TabCards, context.Columns, context.Tab.Id);
 
     public static string ResolveCardRef(TabLayoutContext context, string token) =>
-        CardLayoutRefResolver.Resolve(token, context.TabCards, $"Tab '{context.Tab.Id}' layout");
+        CardLayoutRefBridge.Resolve(token, context.TabCards, $"Tab '{context.Tab.Id}' layout");
 
     public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
         DashboardDocument document,
