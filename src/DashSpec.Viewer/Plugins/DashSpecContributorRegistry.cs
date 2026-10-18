@@ -28,7 +28,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, Type> _slotComponents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _PluginComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _filterWidgetComponents = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
@@ -263,7 +263,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
     }
 
-    public void RegisterSlotComponent(string slotId, Type componentType)
+    public void RegisterPluginComponent(string slotId, Type componentType)
     {
         if (string.IsNullOrWhiteSpace(slotId))
         {
@@ -277,7 +277,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
                 nameof(componentType));
         }
 
-        if (_slotComponents.TryGetValue(slotId, out var existing))
+        if (_PluginComponents.TryGetValue(slotId, out var existing))
         {
             // Several viz plugins share one slot component; identical re-registration is fine.
             if (existing != componentType)
@@ -289,7 +289,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             return;
         }
 
-        _slotComponents[slotId] = componentType;
+        _PluginComponents[slotId] = componentType;
     }
 
     public CardVizComponentRegistry BuildCardVizComponentRegistry()
@@ -318,7 +318,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 
     public IReadOnlyDictionary<string, Type> CardChromeComponents => _cardChromeComponents;
 
-    public IReadOnlyDictionary<string, Type> SlotComponents => _slotComponents;
+    public IReadOnlyDictionary<string, Type> PluginComponents => _PluginComponents;
 
     public IReadOnlyDictionary<string, FilterWidgetContributorDescriptor> FilterWidgets => _filterWidgets;
 
