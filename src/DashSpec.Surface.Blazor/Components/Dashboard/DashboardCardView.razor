@@ -186,11 +186,10 @@
                 </button>
             </header>
             <div class="card-fullscreen-body">
-                <CardVizHost Card="Card"
-                             DetailView="true"
-                             MatrixMin="@DetailMatrixMin"
-                             MatrixMax="@DetailMatrixMax"
-                             OnHeatmapCellSelected="HandleHeatmapCellSelectedAsync" />
+                @if (_cardBodyType is not null)
+                {
+                    <DynamicComponent Type="_cardBodyType" Parameters="_cardBodyParameters" />
+                }
             </div>
         </div>
     </div>
@@ -262,6 +261,9 @@
     private Dictionary<string, object?> _vizToolbarParameters = new();
     private IReadOnlyList<Type> _cardChromeTypes = [];
     private Dictionary<string, object?> _cardChromeParameters = new();
+    private Type? _cardBodyType;
+    private Dictionary<string, object?> _cardBodyParameters = new();
+    private Type? _filterWidgetType;
 
     private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
 
@@ -405,6 +407,21 @@
                 },
             };
 
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardBody, out _cardBodyType);
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.FilterWidget, out _filterWidgetType);
+        _cardBodyParameters = _cardBodyType is null
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>
+            {
+                ["Card"] = Card,
+                ["DetailView"] = true,
+                ["MatrixMin"] = DetailMatrixMin,
+                ["MatrixMax"] = DetailMatrixMax,
+                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
+                    HandleHeatmapCellSelectedAsync),
+            };
+
         _cardChromeTypes = Card.IsVisibilityPlaceholder ||
                            Card.Loading ||
                            !string.IsNullOrEmpty(Card.Error)
@@ -530,22 +547,41 @@
     internal RenderFragment RenderLocalFilter(string filterName, string? placementStyle) => __builder =>
     {
         var filter = FilterIndex[filterName];
-        <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
-                          Filter="filter"
-                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields)"
-                          Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
-                          PlacementStyle="@placementStyle"
-                          Disabled="@Card.Loading"
-                          Options="GetFieldOptions(filter.Name)"
-                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields)"
-                          SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
-                          DateFrom="CardLocalDateFrom"
-                          DateTo="CardLocalDateTo"
-                          FilterIndex="FilterIndex"
-                          SelectedFields="CardLocalSelectedFields"
-                          OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
-                          OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
-                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits)"
-                          TopValueChanged="value => OnLocalTopChanged(filter, value)" />
+        if (_filterWidgetType is null)
+        {
+            return;
+        }
+
+        var filterWidgetParameters = new Dictionary<string, object?>
+        {
+            ["Filter"] = filter,
+            ["Label"] = FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields),
+            ["Hint"] = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
+            ["PlacementStyle"] = placementStyle,
+            ["Disabled"] = Card.Loading,
+            ["Options"] = GetFieldOptions(filter.Name),
+            ["Selected"] = FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields),
+            ["SelectedChanged"] = EventCallback.Factory.Create<HashSet<string>>(
+                this,
+                values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))),
+            ["DateFrom"] = CardLocalDateFrom,
+            ["DateTo"] = CardLocalDateTo,
+            ["FilterIndex"] = FilterIndex,
+            ["SelectedFields"] = CardLocalSelectedFields,
+            ["OnDayChanged"] = EventCallback.Factory.Create<string>(
+                this,
+                args => OnCardDayChanged.InvokeAsync((Card.Id, args))),
+            ["OnRangeChanged"] = EventCallback.Factory.Create(
+                this,
+                () => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask),
+            ["TopValue"] = FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits),
+            ["TopValueChanged"] = EventCallback.Factory.Create<int>(
+                this,
+                value => OnLocalTopChanged(filter, value)),
+        };
+
+        <DynamicComponent @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
+                          Type="_filterWidgetType"
+                          Parameters="filterWidgetParameters" />
     };
 }
