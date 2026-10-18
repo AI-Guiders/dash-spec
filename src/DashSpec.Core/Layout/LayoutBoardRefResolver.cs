@@ -29,7 +29,7 @@ public static class LayoutBoardRefResolver
             }
         }
 
-        var cardId = CardLayoutRefResolver.Resolve(token, cards, context);
+        var cardId = CardLayoutRefBridge.Resolve(token, cards, context);
         return new LayoutBoardRefTarget(LayoutBoardRefKind.Card, cardId);
     }
 }
