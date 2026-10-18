@@ -407,7 +407,7 @@
                 },
             };
 
-        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardBody, out _cardBodyType);
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardDiagram, out _cardBodyType);
         Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.FilterWidget, out _filterWidgetType);
         _cardBodyParameters = _cardBodyType is null
             ? new Dictionary<string, object?>()

@@ -2,19 +2,19 @@
 @inject ICardVizComponentResolver VizComponents
 @inject IStringLocalizer<VizStrings> Loc
 
-@if (Card.Loading)
+@if (EffectiveCard.Loading)
 {
     <div class="card-skeleton">
         <div class="spinner" aria-hidden="true"></div>
     </div>
 }
-else if (!string.IsNullOrEmpty(Card.Error))
+else if (!string.IsNullOrEmpty(EffectiveCard.Error))
 {
-    <div class="card-error">@Card.Error</div>
+    <div class="card-error">@EffectiveCard.Error</div>
 }
 else if (_componentType is null)
 {
-    <div class="card-error">@(Loc["Unknown viz plugin: {0}", Card.RenderPluginId])</div>
+    <div class="card-error">@(Loc["Unknown viz plugin: {0}", EffectiveCard.RenderPluginId])</div>
 }
 else
 {
@@ -23,6 +23,10 @@ else
 
 @code {
     [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+
+    /// <summary>Inner-layout payload. A card has its own grid, so a slot is just another card to draw.</summary>
+    [Parameter] public CardSlotRenderResult? Slot { get; set; }
+
     [Parameter] public double MatrixMin { get; set; }
     [Parameter] public double MatrixMax { get; set; }
     [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
@@ -31,19 +35,37 @@ else
     private Type? _componentType;
     private Dictionary<string, object?> _parameters = new();
 
+    private CardRenderResult EffectiveCard => Slot is null ? Card : FromSlot(Slot);
+
     protected override void OnParametersSet()
     {
-        _componentType = VizComponents.TryGetComponentType(Card.RenderPluginId);
+        var card = EffectiveCard;
+        _componentType = VizComponents.TryGetComponentType(card.RenderPluginId);
         _parameters = new Dictionary<string, object?>
         {
             ["Context"] = new CardVizRenderContext
             {
-                Card = Card,
+                Card = card,
                 DetailView = DetailView,
                 MatrixMin = MatrixMin,
                 MatrixMax = MatrixMax,
                 OnHeatmapCellSelected = OnHeatmapCellSelected,
+                VizStateCardId = Slot is null ? null : Card.Id,
             },
         };
     }
+
+    private CardRenderResult FromSlot(CardSlotRenderResult slot) =>
+        new(
+            $"{Card.Id}:{slot.SlotRef}",
+            string.Empty,
+            slot.DiagramKind,
+            slot.DataFamily,
+            slot.RenderPluginId,
+            Chart: slot.Chart,
+            Table: slot.Table,
+            Matrix: slot.Matrix,
+            Gantt: slot.Gantt,
+            MatrixPresentation: slot.MatrixPresentation,
+            TablePresentation: slot.TablePresentation);
 }
