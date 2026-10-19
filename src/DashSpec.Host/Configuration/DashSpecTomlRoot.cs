@@ -47,6 +47,9 @@ public sealed class HostTomlSection
 
     /// <summary>WitDB path for Control Center settings (ADR-0042). Default: %ProgramData%\DashSpec\host-settings.witdb</summary>
     public string DatabasePath { get; set; } = string.Empty;
+
+    /// <summary>Windows service name for deployment (optional; default <c>DashSpecHost</c>).</summary>
+    public string ServiceName { get; set; } = string.Empty;
 }
 
 public sealed class PresentationTomlSection

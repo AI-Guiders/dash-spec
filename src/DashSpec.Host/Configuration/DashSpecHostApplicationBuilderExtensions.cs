@@ -37,9 +37,10 @@ public static class DashSpecHostApplicationBuilderExtensions
     public static async Task<DashSpecHostStartup> AddDashSpecHostAsync(
         this WebApplicationBuilder builder)
     {
+        var serviceName = "DashSpecHost";
         if (OperatingSystem.IsWindows())
         {
-            builder.Host.UseWindowsService(options => options.ServiceName = "UrsaLicenseUsageDashSpec");
+            builder.Host.UseWindowsService(options => options.ServiceName = serviceName);
         }
 
         var bootstrapServices = new ServiceCollection();
@@ -55,6 +56,10 @@ public static class DashSpecHostApplicationBuilderExtensions
         var pathResolver = bootstrapProvider.GetRequiredService<IHostPathResolver>();
 
         var (bootstrap, hostShell) = hostBootstrap.LoadBootstrapWithHost(builder.Environment);
+        if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(bootstrap.Host.ServiceName))
+        {
+            serviceName = bootstrap.Host.ServiceName;
+        }
 
         var catalog = hostBootstrap.LoadCatalog(bootstrap, builder.Environment.ContentRootPath);
         var catalogState = new CatalogSourceState(catalog);
