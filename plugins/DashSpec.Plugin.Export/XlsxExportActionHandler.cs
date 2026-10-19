@@ -1,5 +1,5 @@
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Core.Data;
+using DashSpec.Execution.Compilation;
 
 namespace DashSpec.Plugin.Export;
 
