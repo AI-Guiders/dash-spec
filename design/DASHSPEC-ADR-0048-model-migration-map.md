@@ -125,6 +125,22 @@ internal static class ModelOption
 
 Проверка партии 2026-10-17 (финал): `dotnet build DashSpec.slnx` — 0 warnings / 0 errors; `dotnet test` — 558 passed / 0 failed / 4 skipped. `src/DashSpec.Core/Model/` удалён целиком (включая `DashflowDefinitions.cs` и заглушки); `DocumentModelMapper.cs` удалён, вызовы инлайнены в `DocumentParseRegistration` (`document` напрямую). `HeatmapCellContext` — runtime DTO, а не spec-модель — переехал в `src/DashSpec.Core/Interaction/` (namespace `DashSpec.Core.Model` сохранён ради 240 потребителей). C# потребители читают F# DU через семантические члены (`TryGetFilterBind`, `IsNavigationEffect`, `Source`/`Format`/`Placement` и т.д.). Пункт **C (остаток)** закрыт 2026-10-17: `DescribeOversize` перенесён в `DashSpec.Presentation.Matrix.MatrixOversizeDescription` (потребители — viz-плагины `HeatmapView`/`MatrixCanvasView`); `ToolbarDateLabelClass` — CSS-решение, живёт в `FilterWidgetHost.razor` (`ToolbarLabeledCells ? "filter-inline-label" : "filter-label"`), в F#-модель сознательно не переносилось; `FromCardRows` — F# static member на `LayoutBoardDefinition`. Эпик закрыт: C#-модель и `DocumentModelMapper` удалены, F# — единственный источник модели.
 
+## W10 — растворение Core (2026-10-20, волны на ветке `refactor/model-fsharp-ssot`)
+
+Проверено боем: сборка 0/0 и тесты 558/0/4 после каждой волны; прод-smoke на спеках SSCAD (validate 7/9 OK, хост поднят с прод-БД, карточки живые).
+
+| Волна | Коммит | Что |
+|---|---|---|
+| W10.1 | `a293336` | Runtime-кодеки, IANA/offset-трансформы, cultures, `UtcOffsetZoneLiteral` → `Execution.Runtime` |
+| W10.2 | `70fa252` | Layout-листья (15) → `Execution.Runtime`; замыкание Analysis/Resolution осталось |
+| W10.3+4 | `e7b2c01` | Resolution+Analysis → `Execution.Runtime`, Validation → `Execution.Compilation` (разрез по направлению циклов) |
+| W10.5+6 | `30e3efa` | Parsing (36) + Authoring (18) + stdlib → `Execution.Core`; компиляторный контракт + `DashSpecDiagnostic` → `Execution.Runtime`; заглушка `DashSpecParser` удалена |
+| W10.7 | `113955f` | `XlsxWorkbook` → `Execution.Compilation`; `FilterLargeListOptions` → `Execution.Runtime`; `HeatmapCellContext` физически → `Execution.Runtime` (namespace-шрам `DashSpec.Core.Model` оставлен ради 240 потребителей) |
+
+**Осталось (W10.8):** в Core по дизайну осталась только Parsing I/O-семья (`SpecLibrary`, `SqlReadOnlyValidator`, `DashSpecParseException`, `DashSpecParseOptions`, `DiagramKindRegistry`) + csproj + ModelAliases. DSPEC021 запрещает File I/O в `Execution.Runtime`, а Runtime не может ссылаться на `Execution.Core` — значит финал требует **разреза `SpecLibrary`** (TOML-загрузчик на стороне Host/Compilation, in-memory реестр пресетов → Runtime), затем удаления `DashSpec.Core.csproj` и снятия ссылок. Это отдельная содержательная правка, не механика.
+
+**Долги, пойманные в W10 (не блокеры):** путь stdlib должен прийти из конфигурации (bootstrap/`.dashhost`-ключ), а не из хардкодов домов проектов (`UnitSource.fs`-кандидаты, `UnitBridgeHeaderTests`, `DashflowModuleParserTests` — последний уже переведён на `UnitSource.stdlibRoot()`); namespace-шрам `DashSpec.Core.Model` у `HeatmapCellContext`.
+
 ## Измеренный объём и два препятствия (проверено сборкой, 2026-10-16)
 
 ### Модель — один связный компонент
