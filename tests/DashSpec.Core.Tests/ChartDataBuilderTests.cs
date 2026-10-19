@@ -421,7 +421,7 @@ public class ChartDataBuilderTests
             {
                 new[]
                 {
-                    DashValue.FromDateTimeDisplayWallClock(new DateTime(2026, 10, 13, 9, 15, 0)),
+                    DashValue.FromDateTimeWithUtcOffset(new DateTime(2026, 10, 13, 9, 15, 0), 180),
                     DashValue.FromString("ANSYS"),
                     DashValue.FromInt(7),
                 },
