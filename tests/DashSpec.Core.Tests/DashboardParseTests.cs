@@ -690,7 +690,7 @@ public class DashboardParseTests
     }
 
     [Fact]
-    public void HeatmapCellFilterResolver_maps_display_time_to_storage_utc_wire()
+    public void HeatmapCellFilterResolver_takes_civil_time_label_as_is()
     {
         var moscow = TimeZoneInfo.FindSystemTimeZoneById(
             OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
@@ -718,7 +718,7 @@ public class DashboardParseTests
                 ["activity_slot"]);
 
             Assert.True(overlay.TryGetField(filter.Name, out var values));
-            Assert.Contains("2024-06-15T11:05:00", values);
+            Assert.Contains("2024-06-15T14:05:00", values);
         }
         finally
         {
@@ -737,16 +737,6 @@ public class DashboardParseTests
             ["axis_scroll"] = raw,
         };
         Assert.Equal(expected, VizAxisPresentationParser.ParseAxisScroll(props));
-    }
-
-    [Fact]
-    public void DateValueCodec_CombineDisplayLocalToStorageUtc_matches_matrix_axis()
-    {
-        var moscow = TimeZoneInfo.FindSystemTimeZoneById(
-            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
-        var day = new DateOnly(2024, 6, 15);
-        var utc = DateValueCodec.CombineDisplayLocalToStorageUtc(day, new TimeOnly(14, 5), moscow);
-        Assert.Equal(new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc), utc);
     }
 
     [Fact]

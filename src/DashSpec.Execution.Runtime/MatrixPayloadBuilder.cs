@@ -245,16 +245,8 @@ internal static class MatrixPayloadBuilder
         var axisWindow = TryParseAxisWindow(diagram);
         if (buckets.Count > 0 && IsDisplayWallClockColumn(rows, xColumn))
         {
-            // Значения уже гражданские (dashflow to_zone): подписи берём как есть, без перевода из UTC.
+            // Значения уже гражданские (dashflow to_zone): подписи берём как есть.
             (xKeys, xLabels) = BuildCivilTimeAxis(buckets.Keys.Min(), xStep, axisWindow);
-        }
-        else if (buckets.Count > 0 && LabelFormat.DisplayTimeZone is { } displayTz)
-        {
-            (xKeys, xLabels) = BuildDisplayLocalTimeAxis(
-                buckets.Keys.Min(),
-                displayTz,
-                xStep,
-                axisWindow);
         }
         else if (buckets.Count > 0)
         {
@@ -411,45 +403,6 @@ internal static class MatrixPayloadBuilder
         var start = anchorDay.Date.Add(window.Value.From.ToTimeSpan());
         var end = anchorDay.Date.Add(window.Value.To.ToTimeSpan());
         return end > start ? (start, end) : (start, start.AddHours(1));
-    }
-
-    private static (List<DateTime> UtcKeys, List<string> Labels) BuildDisplayLocalTimeAxis(
-        DateTime anchorUtcBucket,
-        TimeZoneInfo displayTz,
-        TimeSpan xStep,
-        AxisWindow? window)
-    {
-        var anchorUtc = DateValueCodec.NormalizeStorageUtc(anchorUtcBucket);
-        var anchorLocalDate = TimeZoneInfo.ConvertTimeFromUtc(anchorUtc, displayTz).Date;
-        DateTime localStart;
-        DateTime localEnd;
-        if (window is { } w)
-        {
-            localStart = DateTime.SpecifyKind(anchorLocalDate.Add(w.From.ToTimeSpan()), DateTimeKind.Unspecified);
-            localEnd = DateTime.SpecifyKind(anchorLocalDate.Add(w.To.ToTimeSpan()), DateTimeKind.Unspecified);
-        }
-        else
-        {
-            localStart = DateTime.SpecifyKind(anchorLocalDate, DateTimeKind.Unspecified);
-            localEnd = localStart.AddDays(1);
-        }
-
-        if (localEnd <= localStart)
-        {
-            localEnd = localStart.Add(xStep);
-        }
-
-        var utcKeys = new List<DateTime>();
-        var labels = new List<string>();
-        for (var local = localStart; local < localEnd; local = local.Add(xStep))
-        {
-            var utc = TimeZoneInfo.ConvertTimeToUtc(local, displayTz);
-            var key = TimeSeriesGrid.Floor(utc, xStep);
-            utcKeys.Add(key);
-            labels.Add(TimeOnly.FromDateTime(local).ToString("HH:mm", CultureInfo.InvariantCulture));
-        }
-
-        return (utcKeys, labels);
     }
 
     private static MatrixPayload FinalizeMatrix(
