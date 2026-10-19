@@ -84,7 +84,10 @@ public sealed class DashflowBatchExecutorTests
 
         var cell = transformed[0].Get("bucket_start_utc");
         Assert.True(cell.IsDisplayWallClockDateTime);
-        Assert.IsType<DashDisplayDateTime>(cell.ToClr());
+        Assert.Equal(180, cell.UtcOffsetMinutes);
+        Assert.Equal(new DateTime(2026, 1, 15, 12, 0, 0), cell.AsDateTimeUtc());
+        var display = Assert.IsType<DashDisplayDateTime>(cell.ToClr());
+        Assert.Equal(180, display.UtcOffsetMinutes);
     }
 
     [Fact]

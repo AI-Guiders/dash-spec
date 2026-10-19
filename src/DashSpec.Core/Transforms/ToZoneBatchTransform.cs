@@ -48,8 +48,9 @@ public static class ToZoneBatchTransform
                     continue;
                 }
 
-                cells[index] = DashValue.FromDateTimeDisplayWallClock(
-                    ConvertUtcToOffset(cell.AsDateTimeUtc(), offsetMinutes));
+                cells[index] = DashValue.FromDateTimeWithUtcOffset(
+                    ConvertUtcToOffset(cell.AsDateTimeUtc(), offsetMinutes),
+                    offsetMinutes);
             }
 
             rowValues.Add(cells);
