@@ -17,6 +17,7 @@
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
     <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\DashSpec.Compiler.Contract\DashSpec.Compiler.Contract.csproj" />
     <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Core\AIGuiders.Platform.Authoring.Core.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="AIGuiders.Platform.Authoring.Core" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
   </ItemGroup>

@@ -2,6 +2,8 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 public sealed class DashSpecDiagnosticServiceTests

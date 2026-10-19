@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Analyzers\DashSpec.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+    <ProjectReference Include="..\DashSpec.Compiler.Contract\DashSpec.Compiler.Contract.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\\DashSpec.Execution.Core\\DashSpec.Execution.Core.csproj" />
   </ItemGroup>

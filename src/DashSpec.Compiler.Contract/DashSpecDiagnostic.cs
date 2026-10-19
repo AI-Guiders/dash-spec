@@ -1,4 +1,4 @@
-namespace DashSpec.Execution.Runtime;
+namespace DashSpec.Compiler.Contract;
 
 public enum DashSpecDiagnosticSeverity
 {

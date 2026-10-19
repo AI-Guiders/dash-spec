@@ -1,5 +1,5 @@
 
-namespace DashSpec.Execution.Runtime;
+namespace DashSpec.Compiler.Contract;
 
 /// <summary>Document compile output (ADR-0098 front-end via <see cref="IReportCompiler"/>).</summary>
 public sealed record ReportCompileResult(

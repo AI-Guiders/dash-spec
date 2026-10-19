@@ -11,6 +11,8 @@ using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
 using DashSpec.Surface.Blazor.Services.Diagnostics;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Host.Services.Diagnostics;
 
 public sealed class LoadDiagnosticsService(

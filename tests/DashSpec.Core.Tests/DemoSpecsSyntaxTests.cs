@@ -2,6 +2,8 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Parsing;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 public class DemoSpecsSyntaxTests

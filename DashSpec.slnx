@@ -3,6 +3,7 @@
   <Project Path="src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
 
   <Project Path="src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+  <Project Path="src\DashSpec.Compiler.Contract\DashSpec.Compiler.Contract.csproj" />
   <Project Path="src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
   <Project Path="src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
 

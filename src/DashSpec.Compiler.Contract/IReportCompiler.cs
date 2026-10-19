@@ -1,6 +1,6 @@
 
 
-namespace DashSpec.Execution.Runtime;
+namespace DashSpec.Compiler.Contract;
 
 /// <summary>Platform compile port — wraps F# <c>DashSpecCompiler</c> (ADR-0099 B4).</summary>
 public interface IReportCompiler

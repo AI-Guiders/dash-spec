@@ -5,6 +5,8 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Resolution;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 public class SpecModulesTests

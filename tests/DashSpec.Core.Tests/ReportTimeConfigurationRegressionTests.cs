@@ -2,6 +2,8 @@ using Xunit;
 
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 /// <summary>

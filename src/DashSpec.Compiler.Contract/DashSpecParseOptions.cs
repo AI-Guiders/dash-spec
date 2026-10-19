@@ -1,7 +1,7 @@
 using DashSpec.Abstractions.Plugins;
 
 
-namespace DashSpec.Execution.Runtime;
+namespace DashSpec.Compiler.Contract;
 
 public sealed class DashSpecParseOptions
 {

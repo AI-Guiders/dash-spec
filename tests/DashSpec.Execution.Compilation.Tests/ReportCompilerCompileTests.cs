@@ -3,6 +3,8 @@ using DashSpec.Execution.Compilation;
 using ExecutionDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation.Tests;
 
 /// <summary>L2 compile contract tests (ADR-0099 B4 / ADR-0098 import index).</summary>

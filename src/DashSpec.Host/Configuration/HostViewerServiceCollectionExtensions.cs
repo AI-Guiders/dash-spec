@@ -11,6 +11,8 @@ using SurfaceDashboardSpecLoader = DashSpec.Surface.Blazor.Services.Loading.IDas
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Host.Configuration;
 
 /// <summary>Host adapters for platform report bootstrap (ADR-0099 B3 wiring).</summary>

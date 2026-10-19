@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation;
 
 public static partial class TextPositions

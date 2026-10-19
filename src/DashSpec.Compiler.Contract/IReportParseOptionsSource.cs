@@ -1,6 +1,6 @@
 
 
-namespace DashSpec.Execution.Runtime.Platform;
+namespace DashSpec.Compiler.Contract;
 
 /// <summary>Plugin-aware parse options for compile/bootstrap.</summary>
 public interface IReportParseOptionsSource

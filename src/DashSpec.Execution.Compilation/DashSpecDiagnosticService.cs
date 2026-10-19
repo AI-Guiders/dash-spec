@@ -3,6 +3,8 @@ using DashSpec.Execution.Runtime;
 using FsharpDocument = DashSpec.Modeling.Parse.Document;
 
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation;
 
 public static class DashSpecDiagnosticService

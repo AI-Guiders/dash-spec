@@ -5,6 +5,8 @@ using DashSpec.Execution.Resolution;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Bootstrap;
 
 /// <summary>Platform spec bootstrap — compile, library, connector, filters (ADR-0099 B2).</summary>

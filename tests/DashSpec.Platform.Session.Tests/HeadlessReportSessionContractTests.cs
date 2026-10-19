@@ -10,6 +10,8 @@ using DashSpec.Viz.Platform;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Platform.Session.Tests;
 
 public sealed class HeadlessReportSessionContractTests

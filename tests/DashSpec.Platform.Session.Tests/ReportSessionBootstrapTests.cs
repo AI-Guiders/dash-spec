@@ -9,6 +9,8 @@ using DashSpec.Execution.Runtime.Session;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Platform.Session.Tests;
 
 public sealed class ReportSessionBootstrapTests

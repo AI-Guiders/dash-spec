@@ -2,6 +2,8 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation;
 
 /// <summary>CLI-friendly validation entry points (ADR-0030).</summary>

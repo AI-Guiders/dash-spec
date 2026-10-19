@@ -6,6 +6,8 @@ using DashSpec.Host.Configuration;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Host.Services.Dev;
 
 public sealed class DevSpecResolveService(

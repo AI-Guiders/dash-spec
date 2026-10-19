@@ -1,6 +1,8 @@
 using DashSpec.Execution.Runtime;
 
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Parsing;
 
 /// <summary>Runtime hook for F# document SSOT without Core→Modeling.Parse cycle.</summary>
