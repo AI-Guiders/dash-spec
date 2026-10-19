@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Core.Analysis;
-using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Interaction;
-using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
+using DashSpec.Core.Interaction;
 using DashSpec.Core.Catalog;
 using DashSpec.Abstractions.Viewer;
 using DashSpec.Viewer.Plugins;

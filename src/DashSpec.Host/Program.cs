@@ -1,3 +1,4 @@
+using DashSpec.Execution.Compilation;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Validation;
 using DashSpec.Host.Configuration;

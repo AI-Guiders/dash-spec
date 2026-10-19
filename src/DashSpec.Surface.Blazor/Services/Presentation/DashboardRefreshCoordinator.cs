@@ -1,5 +1,3 @@
-using DashSpec.Core.Layout;
-using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;

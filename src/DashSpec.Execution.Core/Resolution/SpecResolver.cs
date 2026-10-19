@@ -1,6 +1,5 @@
-using DashSpec.Core.Analysis;
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
+using DashSpec.Core.Parsing;
 
 namespace DashSpec.Execution.Resolution;
 

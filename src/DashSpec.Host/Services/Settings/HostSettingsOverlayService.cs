@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Compilation;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Abstractions.Hosting;

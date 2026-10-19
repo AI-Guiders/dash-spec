@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using DashSpec.Core.Validation;
+using DashSpec.Execution.Compilation;
 
 namespace DashSpec.LanguageServer;
 

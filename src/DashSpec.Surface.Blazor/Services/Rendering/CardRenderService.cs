@@ -8,8 +8,6 @@ using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz;
 using DashSpec.Viz.Platform;
 using DashSpec.Surface.Blazor.Services.Presentation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Resolution;
 
 namespace DashSpec.Surface.Blazor.Services.Rendering;
 

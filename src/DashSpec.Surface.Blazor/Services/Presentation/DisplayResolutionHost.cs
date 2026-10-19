@@ -1,4 +1,3 @@
-using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
 using DashSpec.Core.Catalog;
 using DashSpec.Abstractions.Hosting;

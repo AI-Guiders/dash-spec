@@ -2,7 +2,7 @@
 
 using AIGuiders.Platform.Execution.CommandPlane;
 using AIGuiders.Platform.IntermediateRepresentation.Command;
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Runtime;
 using DashSpec.Surface.Blazor.Commands.Constructors;
 
 namespace DashSpec.Surface.Blazor.Commands;
