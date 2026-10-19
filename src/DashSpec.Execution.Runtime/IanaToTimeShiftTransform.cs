@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Transforms;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Scalar builtin: IANA zone id → <see cref="UtcOffsetZoneLiteral.Parsed"/> (TimeShift minutes).</summary>
 public static class IanaToTimeShiftTransform

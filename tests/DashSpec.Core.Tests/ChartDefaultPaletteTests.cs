@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 

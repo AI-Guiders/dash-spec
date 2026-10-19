@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace DashSpec.Core.Localization;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>BCL culture names for DashSpec (host + report). Specific cultures only (<c>ru-RU</c>, <c>en-US</c>, …).</summary>
 public static class DashSpecCultures

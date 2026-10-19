@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 using DashSpec.Abstractions.Data;
 
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// SSOT for parsing date/time values: wire tokens, spec defaults, SQL cell payloads.

@@ -3,7 +3,6 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Platform;
 using DashSpec.Execution.Resolution;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Viewer.Plugins;

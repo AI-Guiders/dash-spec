@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Transforms;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>IANA tz database ids via BCL <see cref="TimeZoneInfo"/> (ADR-0080).</summary>
 public static class IanaTimeZoneConverter

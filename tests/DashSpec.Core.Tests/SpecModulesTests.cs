@@ -3,7 +3,6 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Resolution;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 

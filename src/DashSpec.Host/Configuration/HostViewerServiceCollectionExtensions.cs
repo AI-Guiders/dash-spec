@@ -10,7 +10,7 @@ using DashSpec.Surface.Blazor.Services.Presentation;
 using SurfaceDashboardSpecLoader = DashSpec.Surface.Blazor.Services.Loading.IDashboardSpecLoader;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Host.Configuration;
 

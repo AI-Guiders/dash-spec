@@ -1,7 +1,7 @@
 using System.Collections.Frozen;
 using DashSpec.Abstractions.Data;
 
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Execution view of Modeling row types (ADR-0087 B2).</summary>
 public sealed class RowTypeCatalog

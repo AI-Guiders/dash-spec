@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace DashSpec.Core;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Fixed UTC offset literals for dashflow <c>to_zone</c> (ADR-0078/0080). IANA ids are not accepted.</summary>
 public static partial class UtcOffsetZoneLiteral

@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Transforms;
+namespace DashSpec.Execution.Runtime;
 
 public static class BuiltinScalarTransformIds
 {

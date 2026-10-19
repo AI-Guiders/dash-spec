@@ -22,6 +22,7 @@ global using DashflowSourceDefinition = DashSpec.Modeling.Parse.DataFlow.Dashflo
 global using DashflowSourceFromKind = DashSpec.Modeling.Parse.DataFlow.SourceFromKind;
 global using DashflowTransformStepDefinition = DashSpec.Modeling.Parse.DataFlow.DashflowTransformStepDef;
 global using DashflowTransformerDefinition = DashSpec.Modeling.Parse.DataFlow.DashflowTransformerDef;
+global using DashflowTransformParameterDefinition = DashSpec.Modeling.Parse.DataFlow.DashflowTransformParam;
 global using LayoutBoardDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
 global using MatrixRenderLimitsDefinition = DashSpec.Modeling.Parse.Card.MatrixRenderLimitsDefinition;
 global using DiagramDefinition = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;

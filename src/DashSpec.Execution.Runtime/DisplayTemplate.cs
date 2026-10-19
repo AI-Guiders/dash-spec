@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Interpolates <c>{slot}</c> placeholders in display strings (ADR-0058).</summary>
 public static partial class DisplayTemplate

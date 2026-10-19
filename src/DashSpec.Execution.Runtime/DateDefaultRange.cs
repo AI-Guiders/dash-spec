@@ -1,6 +1,6 @@
 using DashSpec.Core.Parsing;
 
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// Parses date filter defaults from a `.ds` spec (e.g. <c>-7d..today</c>, <c>2026-06-01..2026-06-30</c>).
