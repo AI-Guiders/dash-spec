@@ -1,9 +1,8 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
+using DashSpec.Execution.Runtime;
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Resolution;
-using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

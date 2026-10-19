@@ -17,5 +17,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DashSpec.Core.Tests" />
     <InternalsVisibleTo Include="DashSpec.Execution.Runtime.Tests" />
+    <InternalsVisibleTo Include="DashSpec.Execution.Core" />
+    <InternalsVisibleTo Include="DashSpec.Execution.Compilation" />
   </ItemGroup>
 </Project>

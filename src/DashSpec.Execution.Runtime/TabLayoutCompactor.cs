@@ -1,5 +1,3 @@
-using DashSpec.Core.Analysis;
-using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
 
