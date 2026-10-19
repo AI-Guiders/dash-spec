@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using DashSpec.Abstractions.Data;
+
 namespace DashSpec.Core.Runtime;
 
 /// <summary>
@@ -100,6 +102,8 @@ public static partial class DateValueCodec
             DateTime dt => NormalizeStorageUtc(dt),
             DateTimeOffset dto => dto.UtcDateTime,
             DateOnly d => d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
+            // dashflow to_zone уже перевёл время в гражданское: это не UTC, второй сдвиг не нужен.
+            DashDisplayDateTime civil => civil.Civil,
             _ => TryParseStoredDateTime(Convert.ToString(value), out var parsed) ? parsed : null,
         };
 

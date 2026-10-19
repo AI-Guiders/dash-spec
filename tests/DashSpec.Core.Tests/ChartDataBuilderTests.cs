@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Layout;
@@ -389,6 +390,54 @@ public class ChartDataBuilderTests
         Assert.Equal(120, matrix.XLabels.Count);
         Assert.Equal("08:00", matrix.XLabels[0]);
         Assert.Equal("17:55", matrix.XLabels[^1]);
+    }
+
+    [Fact]
+    public void BuildHeatmap_display_wall_clock_rows_are_not_shifted_twice()
+    {
+        var previous = LabelFormat.DisplayTimeZone;
+        LabelFormat.DisplayTimeZone = TimeZoneInfo.CreateCustomTimeZone(
+            "UTC+03-test", TimeSpan.FromHours(3), "UTC+03", "UTC+03");
+        try
+        {
+            var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "bucket_start_utc",
+                ["y"] = "app_name",
+                ["value"] = "event_count",
+                ["x_format"] = "time.short",
+                ["x_step"] = "1h",
+                ["y_format"] = "raw",
+            }, null);
+
+            var schema = new RowTypeSchema("ActivityBucketRow",
+            [
+                new RowFieldSchema("bucket_start_utc", DashPrimitiveKind.DateTime),
+                new RowFieldSchema("app_name", DashPrimitiveKind.String),
+                new RowFieldSchema("event_count", DashPrimitiveKind.Int),
+            ]);
+            // to_zone уже отдал гражданское время 09:15 → бакет 09:00; повторный сдвиг +3 дал бы 12:00.
+            var rows = TypedRowBatch.Create(schema, new List<DashValue[]>
+            {
+                new[]
+                {
+                    DashValue.FromDateTimeDisplayWallClock(new DateTime(2026, 10, 13, 9, 15, 0)),
+                    DashValue.FromString("ANSYS"),
+                    DashValue.FromInt(7),
+                },
+            });
+
+            var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+            Assert.Equal(24, matrix.XLabels.Count);
+            Assert.Equal("09:00", matrix.XLabels[9]);
+            Assert.Equal(7, matrix.Cells[0][9]);
+            Assert.Null(matrix.Cells[0][12]);
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = previous;
+        }
     }
 
     [Fact]
