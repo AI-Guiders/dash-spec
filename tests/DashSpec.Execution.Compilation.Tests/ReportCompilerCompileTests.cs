@@ -1,4 +1,3 @@
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using ExecutionDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
@@ -42,7 +41,7 @@ public sealed class ReportCompilerCompileTests
             """;
 
         var compiler = new ReportCompiler();
-        Assert.Throws<DashSpec.Core.Parsing.DashSpecParseException>(() =>
+        Assert.Throws<DashSpec.Execution.Runtime.DashSpecParseException>(() =>
             compiler.Compile(text, specDir, DashSpecParseOptions.Default));
     }
 
@@ -81,7 +80,7 @@ public sealed class ReportCompilerCompileTests
             """;
 
         var compiler = new ReportCompiler();
-        Assert.Throws<DashSpec.Core.Parsing.DashSpecParseException>(() =>
+        Assert.Throws<DashSpec.Execution.Runtime.DashSpecParseException>(() =>
             compiler.Compile(text, ImportFixtureDir, DashSpecParseOptions.Default));
     }
 }

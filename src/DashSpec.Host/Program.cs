@@ -1,6 +1,5 @@
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
-using DashSpec.Core.Parsing;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Viewer.Plugins;

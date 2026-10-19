@@ -1,7 +1,6 @@
 using DashSpec.Execution.Authoring;
 using DashSpec.Execution.Authoring.EditorConfig;
 using DashSpec.Execution.Authoring.Formatting;
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Parsing;
 using DashSpec.Modeling.Parse.Formatting;
 using Xunit;

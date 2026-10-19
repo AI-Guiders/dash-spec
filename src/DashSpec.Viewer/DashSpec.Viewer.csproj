@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
-    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\DashSpec.Filters\DashSpec.Filters.csproj" />
     <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
