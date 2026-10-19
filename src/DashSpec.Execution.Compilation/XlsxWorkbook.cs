@@ -2,7 +2,7 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Xml.Linq;
 
-namespace DashSpec.Core.Data;
+namespace DashSpec.Execution.Compilation;
 
 /// <summary>Writes a one-sheet xlsx for card export. Reading xlsx is SQL Server OPENROWSET.</summary>
 public static class XlsxWorkbook

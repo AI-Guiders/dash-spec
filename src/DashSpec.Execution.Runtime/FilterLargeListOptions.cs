@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Filters;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Remark 7: long field filters (e.g. app whitelist &gt;80 products).</summary>
 public static class FilterLargeListOptions
