@@ -1,6 +1,6 @@
 using DashSpec.Core.Parsing;
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 public static class PlacementDefaults
 {

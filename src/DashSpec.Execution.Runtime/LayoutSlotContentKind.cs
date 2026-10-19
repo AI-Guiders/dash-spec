@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>What occupies a grid slot; dispatch key for host/plugin renderers (ADR-0072).</summary>
 public enum LayoutSlotContentKind

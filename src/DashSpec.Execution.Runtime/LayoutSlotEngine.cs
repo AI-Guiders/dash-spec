@@ -1,5 +1,6 @@
+using DashSpec.Core.Layout;
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Plans ordered slot descriptors per scope (ADR-0072). Composition only — no SQL/render.</summary>
 public static class LayoutSlotEngine

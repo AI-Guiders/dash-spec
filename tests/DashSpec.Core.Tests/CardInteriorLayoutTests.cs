@@ -1,4 +1,5 @@
 using DashSpec.Core.Layout;
+using DashSpec.Execution.Runtime;
 using DashSpec.Core.Parsing;
 using Xunit;
 

@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Card-interior slot plan (ADR-0072 M1); delegates to <see cref="LayoutSlotEngine"/>.</summary>
 public static class CardInteriorSlotPlan

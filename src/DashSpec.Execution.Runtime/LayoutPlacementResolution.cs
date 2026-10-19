@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Card grid placement precedence (ADR-0057 §7, ADR-0020).</summary>
 public static class LayoutPlacementResolution

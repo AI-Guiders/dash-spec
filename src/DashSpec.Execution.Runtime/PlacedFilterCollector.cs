@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Filter names declared on dashboard toolbar, page toolbars, or card-local blocks.</summary>
 public static class PlacedFilterCollector

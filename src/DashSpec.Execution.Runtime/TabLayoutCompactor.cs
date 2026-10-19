@@ -3,7 +3,7 @@ using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Resolved tab cards and layout board for placement.</summary>
 public sealed record TabLayoutContext(

@@ -1,6 +1,7 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Toolbar grid placement from board or legacy flat filter list.</summary>
 public static class ToolbarLayoutCompactor
