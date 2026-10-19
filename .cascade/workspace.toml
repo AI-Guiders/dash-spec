@@ -27,6 +27,9 @@ id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
 "src/DashSpec.Core/" = [
   "design/DASHSPEC-ADR-0003-diagram-kinds-registry.md",
   "design/DASHSPEC-ADR-0002-layout-and-presentation.md",
+  "design/DASHSPEC-ADR-0078-dashflow-data-plane.md",
+  "design/DASHSPEC-ADR-0079-dashflow-type-system.md",
+  "design/DASHSPEC-ADR-0080-dataflow-transform-plugins.md",
   "docs/AUTHORING_GUIDE_RU.md",
 ]
 "src/DashSpec.Data/" = [
@@ -40,6 +43,22 @@ id_regex = '(?:^|/)design/(?<id>DASHSPEC-ADR-\d{4})-'
 "src/DashSpec.Abstractions/" = [
   "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
   "design/DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md",
+  "design/DASHSPEC-ADR-0079-dashflow-type-system.md",
+  "design/DASHSPEC-ADR-0087-typed-row-batch-analyzers.md",
+]
+"src/DashSpec.Execution.Runtime/" = [
+  "design/DASHSPEC-ADR-0078-dashflow-data-plane.md",
+  "design/DASHSPEC-ADR-0079-dashflow-type-system.md",
+  "design/DASHSPEC-ADR-0087-typed-row-batch-analyzers.md",
+]
+"connectors/" = [
+  "design/DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md",
+  "design/DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md",
+]
+"plugins/viz/" = [
+  "design/DASHSPEC-ADR-0008-viz-render-plugins.md",
+  "design/DASHSPEC-ADR-0059-vertical-viz-plugins.md",
+  "design/DASHSPEC-ADR-0062-viz-axis-presentation.md",
 ]
 "src/" = [
   "design/DASHSPEC-ADR-0001-connectors-as-plugins.md",
