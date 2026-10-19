@@ -41,6 +41,9 @@ public sealed class ExportDashSpecPlugin : IDashSpecPlugin
             "buttons",
             CardChromeRenderKind.Buttons));
 
+        // Vertical chrome: the plugin ships its own component and copy (ADR-0077).
+        registry.RegisterCardChromeComponent(Id, typeof(ExportCardChrome));
+
         registry.AddPhraseTemplate(new PhraseTemplateDescriptor(
             Id,
             "csv_export",

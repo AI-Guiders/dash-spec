@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -40,7 +39,7 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_label_visibility_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(
@@ -50,8 +49,8 @@ public sealed class VizAxisPresentationTests
                     ["value_labels"] = "hide",
                     ["axis_labels_x"] = "hide",
                     ["axis_labels_y"] = "show",
-                }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 
@@ -65,7 +64,7 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_toolbar_labels_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(
@@ -75,8 +74,8 @@ public sealed class VizAxisPresentationTests
                     ["toolbar_value_labels"] = "Значения",
                     ["toolbar_axis_labels_x"] = "Дни",
                     ["toolbar_axis_labels_y"] = "Пользователи",
-                }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 
@@ -89,13 +88,13 @@ public sealed class VizAxisPresentationTests
     [Fact]
     public void MatrixPresentation_reads_value_labels_threshold_from_diagram()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             new DiagramDefinition(
                 "heatmap",
-                new Dictionary<string, string> { ["value_labels_threshold"] = "18" }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new Dictionary<string, string> { ["value_labels_threshold"] = "18" }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 

@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Bootstrap;
 using DashSpec.Execution.Runtime.Platform;
 using Xunit;
@@ -61,20 +58,37 @@ public sealed class ReportSpecBootstrapTests
 
         public ReportCompileResult Compile(string text, string? specDirectory, DashSpecParseOptions parseOptions)
         {
-            var doc = new DashboardDocument(
-                "demo",
-                "Demo",
-                "fake",
-                SqlDialect.TSql,
-                null,
-                null,
-                null,
-                LayoutDefinition.Default,
-                new FiltersChromeDefinition(),
-                [],
-                [],
-                [],
-                []);
+            var doc = new DashboardDocument
+            {
+                Id = "demo",
+                Title = "Demo",
+                ConnectorId = Microsoft.FSharp.Core.FSharpOption<string>.Some("fake"),
+                SqlDialect = SqlDialect.TSql,
+                DiagramLibraryPath = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Palette = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Palette.PaletteDocument>.None,
+                ColorPalette = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Layout = LayoutDefinition.Default,
+                FiltersChrome = new FiltersChromeDefinition(),
+                CardsChrome = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Card.CardsChromeDefinition>.None,
+                Filters = [],
+                DashboardFilters = [],
+                Tabs = [],
+                Cards = [],
+                ToolbarBoard = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition>.None,
+                ModuleExtensions = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Card.ModuleExtensionsDefinition>.None,
+                ModuleDiagrams = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, DashSpec.Modeling.Parse.Document.ModuleDiagramDefinition>>.None,
+                ModuleChartChromePresets = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, DashSpec.Modeling.Parse.Presentation.PresentationBlock>>.None,
+                ModuleTooltips = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, TooltipDefinition>>.None,
+                Pages = Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<DashSpec.Modeling.Parse.Document.ReportPageDefinition>>.None,
+                CommandAliases = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, string>>.None,
+                FormatDefaults = new ReportFormatDefaults(),
+                TimePolicy = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.ReportTimePolicy>.None,
+                RowTypes = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, DashSpec.Modeling.Core.RowTypeDef>>.None,
+                DashflowPath = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Dashflow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.DataFlow.DashflowModule>.None,
+                ReportScopeFlow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.ScopeFlowDefinition>.None,
+                WiringGraph = DashSpec.Modeling.Core.WiringGraphModule.empty,
+            };
             return new ReportCompileResult(doc, []);
         }
     }

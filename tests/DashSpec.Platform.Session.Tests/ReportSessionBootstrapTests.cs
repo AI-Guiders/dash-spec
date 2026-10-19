@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Bootstrap;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime.Platform;
@@ -64,9 +61,9 @@ public sealed class ReportSessionBootstrapTests
         {
             var filters = new List<FilterDefinition>
             {
-                new(FilterKind.Date, "usage_date", null, "t.usage_date")
+                FilterTestData.Date("usage_date", null, "t.usage_date")
             };
-            var doc = new DashboardDocument(
+            var doc = DocumentTestData.Create(
                 "demo",
                 "Demo",
                 "fake",

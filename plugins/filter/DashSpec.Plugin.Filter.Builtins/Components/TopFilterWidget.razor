@@ -1,5 +1,4 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components
-@using DashSpec.Core.Runtime
 @using DashSpec.Execution.Runtime
 @using DashSpec.Filters
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
@@ -9,8 +8,8 @@
                 ScopeHintAriaLabel="@Context.HintAriaLabel"
                 ScopeHintInline="@Context.Filter.IsBindScopeInline"
                 Disabled="@Context.Disabled"
-                Min="@(Context.Filter.MinValue ?? 1)"
-                Max="@(Context.Filter.MaxValue ?? TopLimitDefaults.DefaultMax)"
+                Min="@(Context.Filter.MinValue?.Value ?? 1)"
+                Max="@(Context.Filter.MaxValue?.Value ?? TopLimitDefaults.DefaultMax)"
                 Value="@Context.TopValue"
                 ValueChanged="@Context.TopValueChanged"
                 ToolbarLabeledCells="@Context.ToolbarLabeledCells"

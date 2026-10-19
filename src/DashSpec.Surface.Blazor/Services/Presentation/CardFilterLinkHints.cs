@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
@@ -23,15 +22,17 @@ internal static class CardFilterLinkHints
             }
         }
 
-        if (string.IsNullOrWhiteSpace(card.FilterHostCardId) ||
-            card.HostedFilters is null ||
-            !card.HostedFilters.Contains(topFilter, StringComparer.OrdinalIgnoreCase))
+        var hostCardId = card.FilterHostCardId?.Value;
+        var hostedFilters = card.HostedFilters?.Value;
+        if (string.IsNullOrWhiteSpace(hostCardId) ||
+            hostedFilters is null ||
+            !hostedFilters.Contains(topFilter, StringComparer.OrdinalIgnoreCase))
         {
             return (null, null);
         }
 
         var host = document.Cards.FirstOrDefault(c =>
-            string.Equals(c.Id, card.FilterHostCardId, StringComparison.OrdinalIgnoreCase));
+            string.Equals(c.Id, hostCardId, StringComparison.OrdinalIgnoreCase));
         if (host is null)
         {
             return (null, null);
@@ -47,8 +48,12 @@ internal static class CardFilterLinkHints
 
     private static Func<CardDefinition, bool> IsSameListGuest(CardDefinition host, string topFilter) =>
         guest =>
-            string.Equals(guest.FilterHostCardId, host.Id, StringComparison.OrdinalIgnoreCase) &&
-            guest.HostedFilters is not null &&
-            guest.HostedFilters.Contains(topFilter, StringComparer.OrdinalIgnoreCase) &&
-            string.Equals(guest.DataSource.Value, host.DataSource.Value, StringComparison.OrdinalIgnoreCase);
+        {
+            var guestHostId = guest.FilterHostCardId?.Value;
+            var guestHostedFilters = guest.HostedFilters?.Value;
+            return string.Equals(guestHostId, host.Id, StringComparison.OrdinalIgnoreCase) &&
+                   guestHostedFilters is not null &&
+                   guestHostedFilters.Contains(topFilter, StringComparer.OrdinalIgnoreCase) &&
+                   string.Equals(guest.DataSource.Value, host.DataSource.Value, StringComparison.OrdinalIgnoreCase);
+        };
 }

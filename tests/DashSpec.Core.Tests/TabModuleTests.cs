@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -138,7 +135,7 @@ public class TabModuleTests
             """);
 
         Assert.Equal("host", doc.Cards.Single(c => c.Id == "guest").FilterHostCardId);
-        Assert.Equal(["period_start"], doc.Cards.Single(c => c.Id == "guest").HostedFilters);
+        Assert.Equal(["period_start"], doc.Cards.Single(c => c.Id == "guest").HostedFilters?.Value);
     }
 
     [Fact]

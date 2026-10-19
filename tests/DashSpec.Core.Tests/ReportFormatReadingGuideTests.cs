@@ -1,5 +1,4 @@
 using System.Globalization;
-using DashSpec.Core.Model;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -11,7 +10,7 @@ public sealed class ReportFormatReadingGuideTests
     public void BuildModel_uses_report_defaults_and_moscow_zone()
     {
         var model = ReportFormatReadingGuide.BuildModel(
-            new ReportFormatDefaults(TimeFormat: "HH:mm", DateFormat: "dd.MM"),
+            TestReportFormatDefaults.Create(timeFormat: "HH:mm", dateFormat: "dd.MM"),
             TimeZoneInfo.FindSystemTimeZoneById(
                 OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow"));
 
@@ -26,7 +25,7 @@ public sealed class ReportFormatReadingGuideTests
     public void BuildModel_falls_back_to_short_presets_when_defaults_empty()
     {
         var model = ReportFormatReadingGuide.BuildModel(
-            new ReportFormatDefaults(Culture: "ru-RU"),
+            TestReportFormatDefaults.Create(culture: "ru-RU"),
             null);
         Assert.Equal("дд.мм", model.Rows[0].Pattern);
         Assert.Equal("ЧЧ:мм", model.Rows[1].Pattern);
@@ -36,7 +35,7 @@ public sealed class ReportFormatReadingGuideTests
     [Fact]
     public void Build_keeps_compact_string_for_tooltips()
     {
-        var text = ReportFormatReadingGuide.Build(new ReportFormatDefaults(Culture: "ru-RU"), null);
+        var text = ReportFormatReadingGuide.Build(TestReportFormatDefaults.Create(culture: "ru-RU"), null);
         Assert.Contains("дд.мм", text);
         Assert.Contains("ЧЧ:мм", text);
     }

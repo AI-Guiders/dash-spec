@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -12,16 +10,16 @@ public class GrainFilterPresentationTests
     private static readonly IReadOnlyDictionary<string, FilterDefinition> Index =
         new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["period_grain"] = new(FilterKind.Field, "period_grain", "day", "demo.v.period_grain"),
-            ["period_start"] = new(
+            ["period_grain"] = FilterTestData.Create(FilterKind.Field, "period_grain", "day", "demo.v.period_grain"),
+            ["period_start"] = FilterTestData.Create(
                 FilterKind.Date,
                 "period_start",
                 "today..today",
                 "period_start",
-                Label: "Период",
-                Widget: "day",
-                GrainFilterName: "period_grain",
-                GrainLabels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                label: "Период",
+                widget: "day",
+                grainFilterName: "period_grain",
+                grainLabels: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["month"] = "Месяц отчёта",
                 }),

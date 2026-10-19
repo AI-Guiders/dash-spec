@@ -1,6 +1,6 @@
 using System.Globalization;
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Core.Model;
+using DashSpec.Core.Interaction;
 using DashSpec.Viz;
 using Microsoft.JSInterop;
 

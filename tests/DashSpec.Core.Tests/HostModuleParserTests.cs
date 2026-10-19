@@ -1,7 +1,8 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
+
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Tests;
 
@@ -84,8 +85,8 @@ public sealed class HostModuleParserTests
         {
             var host = HostModuleParser.Parse(text, dir);
             Assert.NotNull(host.TopbarLayout);
-            Assert.Equal(LayoutScope.Host, host.TopbarLayout!.ModuleScope);
-            Assert.Equal(["catalog", "nav"], host.TopbarLayout!.Rows[0]);
+            Assert.Equal(LayoutScope.Host, host.TopbarLayout!.Value.ModuleScope.Value);
+            Assert.Equal(["catalog", "nav"], host.TopbarLayout!.Value.Rows[0]);
         }
         finally
         {

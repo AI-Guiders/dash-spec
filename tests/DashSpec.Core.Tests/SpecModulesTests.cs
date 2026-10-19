@@ -1,11 +1,8 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Execution.Resolution;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Parsing;
+using DashSpec.Execution.Resolution;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -23,7 +20,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_presentation_and_transform_sections()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "# presets",
             "[presentation.line_bottom_300]",
@@ -42,7 +39,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_diagram_presets()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[diagram.demo_peak_line]",
             "kind = \"line\"",
@@ -66,7 +63,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_palette_sections()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -83,7 +80,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_maps_palette_and_series_overrides()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -91,15 +88,15 @@ public class SpecModulesTests
             "Tekla = \"#e11d48\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["color_palette"] = "brand",
                 ["series_colors"] = "AVEVA:#2563eb",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,
@@ -142,7 +139,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_prefix_matches_palette_keys()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -150,14 +147,14 @@ public class SpecModulesTests
             "Cursor = \"#8b5cf6\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["color_palette"] = "brand",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -171,7 +168,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_applies_dashboard_palette_when_diagram_has_none()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -179,14 +176,14 @@ public class SpecModulesTests
             "Tekla = \"#e11d48\"",
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("line", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["series"] = "app_name",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -198,7 +195,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecResolveExporter_includes_dashboard_palette_and_effective_card()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.demo_apps]",
             "default = \"#999999\"",
@@ -291,7 +288,7 @@ public class SpecModulesTests
                 """, dir);
 
             Assert.NotNull(document.Palette);
-            Assert.Equal("brand", document.Palette!.Id);
+            Assert.Equal("brand", document.Palette!.Value.Id);
             Assert.Equal("brand", document.ColorPalette);
         }
         finally
@@ -478,10 +475,10 @@ public class SpecModulesTests
 
         var soak = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), dir, parseOptions);
         Assert.NotNull(soak.Palette);
-        Assert.Equal("demo_apps", soak.Palette!.Id);
+        Assert.Equal("demo_apps", soak.Palette!.Value.Id);
         Assert.Equal("demo_apps", soak.ColorPalette);
 
-        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath, dir, soak);
+        var library = SpecLibraryComposer.Load(soakPath, soak.DiagramLibraryPath?.Value, dir, soak);
         Assert.Equal("#94a3b8", library!.TryGetPalette("demo_apps")!["default"]);
 
         // demo-analytics.ds is a tab unit (ADR-0101): its cards bind filters owned by the dashboard,
@@ -563,7 +560,7 @@ public class SpecModulesTests
             var card = doc.Cards.Single();
             Assert.Equal("heatmap", card.Diagram.Kind);
             Assert.Equal("bucket_start_utc", card.Diagram.Properties["x"]);
-            Assert.Equal("heatmap_tall", card.Presentation!.UsePreset);
+            Assert.Equal("heatmap_tall", card.Presentation!.Value.UsePreset?.Value);
             Assert.Equal("420", doc.ResolvedChartChromePresets["heatmap_tall"].Properties["height"]);
         }
         finally
@@ -710,7 +707,7 @@ public class SpecModulesTests
     [Fact]
     public void CardDiagramResolver_merges_diagram_preset()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.line_bottom_300]",
             "legend = \"bottom\"",
@@ -743,8 +740,8 @@ public class SpecModulesTests
         var resolved = CardDiagramResolver.Resolve(card, library);
         Assert.Equal("line", resolved.Card.Diagram.Kind);
         Assert.Equal("usage_date", resolved.Card.Diagram.Properties["x"]);
-        Assert.Equal("line_bottom_300", resolved.Card.Presentation!.UsePreset);
-        Assert.Equal("top5", resolved.Card.SeriesTransform!.UsePreset);
+        Assert.Equal("line_bottom_300", resolved.Card.Presentation!.Value.UsePreset?.Value);
+        Assert.Equal("top5", resolved.Card.SeriesTransform!.Value.UsePreset?.Value);
 
         var presentation = CardChromeResolver.ResolveChartPresentation(resolved.Card, library);
         Assert.Equal(300, presentation.HeightPx);

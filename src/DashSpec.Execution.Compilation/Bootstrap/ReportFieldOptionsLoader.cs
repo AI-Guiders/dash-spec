@@ -1,7 +1,5 @@
 using DashSpec.Abstractions.Connectors;
-using DashSpec.Core.Model;
-using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using Microsoft.Extensions.Logging;
 

@@ -1,6 +1,4 @@
 using DashSpec.Abstractions.Data;
-using DashSpec.Core.Model;
-using DashSpec.Core.Transforms;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -53,15 +51,15 @@ public sealed class DashflowBatchExecutorTests
         [
             new DashflowTransformerDefinition(
                 "local",
-                new[] { new DashflowTransformerPortDefinition("out", "PeakRow") },
-                "in",
-                "out",
-                new[]
-                {
+                [],
+                [System.Tuple.Create("out", "PeakRow")],
+                Microsoft.FSharp.Core.FSharpOption<string>.Some("in"),
+                Microsoft.FSharp.Core.FSharpOption<string>.Some("out"),
+                [
                     new DashflowTransformStepDefinition(
                         BuiltinScalarTransformIds.ToZone,
-                        new[] { new DashflowTransformParameterDefinition("offset_minutes", "180") }),
-                }),
+                        [new DashflowTransformParameterDefinition("offset_minutes", "180")]),
+                ]),
         ];
 
         var result = DashflowBatchExecutor.Apply(batch, transformers);
@@ -85,7 +83,10 @@ public sealed class DashflowBatchExecutorTests
 
         var cell = transformed[0].Get("bucket_start_utc");
         Assert.True(cell.IsDisplayWallClockDateTime);
-        Assert.IsType<DashDisplayDateTime>(cell.ToClr());
+        Assert.Equal(180, cell.UtcOffsetMinutes);
+        Assert.Equal(new DateTime(2026, 1, 15, 12, 0, 0), cell.AsDateTimeUtc());
+        var display = Assert.IsType<DashDisplayDateTime>(cell.ToClr());
+        Assert.Equal(180, display.UtcOffsetMinutes);
     }
 
     [Fact]

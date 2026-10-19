@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -27,7 +25,7 @@ public class CardFoldChromeTests
             end tab
             """);
 
-        Assert.Equal(CardFoldMode.Independent, doc.Cards[0].Chrome?.Fold);
+        Assert.Equal(CardFoldMode.Independent, doc.Cards[0].Chrome?.Value.Fold);
     }
 
 }

@@ -1,9 +1,7 @@
 using DashSpec.Abstractions.Query;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
-using DashSpec.Execution.Compilation;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -80,7 +78,7 @@ public class SqlDataSourceParserTests
         var document = DashSpecTestRowTypes.ParseDashboard(Spec("fixture.ds", sourceId));
         var card = document.Cards[0];
         var ex = Assert.ThrowsAny<Exception>(() =>
-            QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), document));
+            QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), document));
         Assert.Contains("datasource sql", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -91,7 +89,7 @@ public class SqlDataSourceParserTests
         var card = document.Cards[0];
         Assert.Contains("DELETE is ok", card.DataSource.Value);
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), document);
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), document);
         Assert.Contains("DELETE is ok", query.Sql);
     }
 

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Matrix display" xml:space="preserve">
+    <value>Matrix display</value>
+  </data>
+  <data name="Toggle cell values" xml:space="preserve">
+    <value>Toggle cell values</value>
+  </data>
+  <data name="Toggle X axis labels" xml:space="preserve">
+    <value>Toggle X axis labels</value>
+  </data>
+  <data name="Toggle Y axis labels" xml:space="preserve">
+    <value>Toggle Y axis labels</value>
+  </data>
+  <data name="Toggle gradient legend" xml:space="preserve">
+    <value>Toggle gradient legend</value>
+  </data>
+  <data name="No data for the selected period" xml:space="preserve">
+    <value>No data for the selected period</value>
+  </data>
+  <data name="No data for the selected user and period." xml:space="preserve">
+    <value>No data for the selected user and period.</value>
+  </data>
+  <data name="Heatmap not shown (protection limit)" xml:space="preserve">
+    <value>Heatmap not shown (protection limit)</value>
+  </data>
+  <data name="Narrow the period or select a single user in the toolbar." xml:space="preserve">
+    <value>Narrow the period or select a single user in the toolbar.</value>
+  </data>
+  <data name="Matrix oversize: cells" xml:space="preserve">
+    <value>{0}×{1}={2} cells &gt; {3}</value>
+  </data>
+  <data name="Matrix oversize: X columns" xml:space="preserve">
+    <value>X columns ({0}) &gt; {1}</value>
+  </data>
+  <data name="Matrix oversize: Y rows" xml:space="preserve">
+    <value>Y rows ({0}) &gt; {1}</value>
+  </data>
+  <data name="No rows" xml:space="preserve">
+    <value>No rows</value>
+  </data>
+  <data name="Filter" xml:space="preserve">
+    <value>Filter</value>
+  </data>
+  <data name="Filter: {0}" xml:space="preserve">
+    <value>Filter: {0}</value>
+  </data>
+  <data name="Showing {0} of {1} rows" xml:space="preserve">
+    <value>Showing {0} of {1} rows</value>
+  </data>
+  <data name="Clear filters" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="Unknown viz plugin: {0}" xml:space="preserve">
+    <value>Unknown viz plugin: {0}</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="Dur." xml:space="preserve">
+    <value>Dur.</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="unit: seconds" xml:space="preserve">
+    <value>s</value>
+  </data>
+  <data name="unit: minutes" xml:space="preserve">
+    <value>m</value>
+  </data>
+  <data name="unit: hours" xml:space="preserve">
+    <value>h</value>
+  </data>
+  <data name="unit: days" xml:space="preserve">
+    <value>d</value>
+  </data>
+</root>

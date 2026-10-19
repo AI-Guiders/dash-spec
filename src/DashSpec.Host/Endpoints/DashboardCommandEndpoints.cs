@@ -115,7 +115,7 @@ public static class DashboardCommandEndpoints
             UiState = uiState,
             GetFieldOptions = session.GetFieldOptions,
             CatalogEntries = [],
-            ReportPages = session.Document.Pages ?? [],
+            ReportPages = session.Document.Pages?.Value ?? [],
             ActiveCatalogEntryId = session.ActiveCatalogEntryId,
         };
 

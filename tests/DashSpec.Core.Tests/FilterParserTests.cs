@@ -1,10 +1,8 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Modeling.Parse.Lexing;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -14,7 +12,7 @@ public class FilterParserTests
     [Fact]
     public void Tokenize_activity_slot_is_single_ident()
     {
-        var tokens = DashSpecParser.Tokenize("filter date activity_slot {");
+        var tokens = DashSpecLexer.tokenize("filter date activity_slot {");
         var idents = tokens.Where(t => t.Kind == TokenKind.Ident).Select(t => t.Value).ToList();
         Assert.Equal(["filter", "date", "activity_slot"], idents);
     }
@@ -581,15 +579,15 @@ public class FilterParserTests
     [Fact]
     public void Compile_day_widget_uses_half_open_day_range_not_equality()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "activity",
             "Activity",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["x"] = "bucket_start_utc",
                 ["y"] = "event_count",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_hourly_activity", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_hourly_activity", rowsType: "FixtureRow"),
             ["activity_slot"],
             []);
 
@@ -598,12 +596,12 @@ public class FilterParserTests
 
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["activity_slot"] = new(
+            ["activity_slot"] = FilterTestData.Create(
                 FilterKind.Date,
                 "activity_slot",
                 "today..today",
                 "bucket_start_utc",
-                Widget: "day"),
+                widget: "day"),
         };
 
         var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);

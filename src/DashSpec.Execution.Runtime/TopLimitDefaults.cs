@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -8,8 +7,8 @@ public static class TopLimitDefaults
 
     public static int Resolve(FilterDefinition definition, int? current)
     {
-        var min = definition.MinValue ?? 1;
-        var max = definition.MaxValue ?? DefaultMax;
+        var min = definition.MinValue?.Value ?? 1;
+        var max = definition.MaxValue?.Value ?? DefaultMax;
         var value = current ?? ParseDefault(definition);
         if (min == 0 && value == 0)
         {
@@ -27,9 +26,9 @@ public static class TopLimitDefaults
             throw new ArgumentException($"Filter '{definition.Name}' is not a top filter.", nameof(definition));
         }
 
-        if (!int.TryParse(definition.DefaultExpression, out var parsed)
+        if (!int.TryParse(definition.DefaultExpression?.Value, out var parsed)
             || parsed < 0
-            || (parsed == 0 && definition.MinValue != 0))
+            || (parsed == 0 && definition.MinValue?.Value != 0))
         {
             throw new InvalidOperationException(
                 $"Top filter '{definition.Name}' requires numeric default, e.g. default = 200 (or 0 when min = 0).");

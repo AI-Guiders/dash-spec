@@ -1,7 +1,6 @@
 #nullable enable
-using DashSpec.Core.Model;
 using DashSpec.Surface.Blazor.Commands;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
@@ -42,7 +41,7 @@ public sealed class DashboardHostCommandCoordinator
         _catalogState.Current.Document.Entries;
 
     public IReadOnlyList<CatalogGroupDefinition> CatalogGroups =>
-        _catalogState.Current.Document.Groups ?? [];
+        _catalogState.Current.Document.Groups?.Value ?? [];
 
     public string ActiveCatalogEntryId => ResolveActiveCatalogEntryId();
 

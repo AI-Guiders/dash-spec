@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -32,7 +30,7 @@ public static class DocumentFlowBinder
             cards.Add(materialized);
         }
 
-        return changed ? document with { Cards = cards } : document;
+        return changed ? document.WithCards(cards) : document;
     }
 
     public static CardDefinition MaterializeCard(CardDefinition card, DashboardDocument document)
@@ -79,9 +77,9 @@ public static class DocumentFlowBinder
             string.IsNullOrWhiteSpace(result.DataSource.Value) &&
             !string.IsNullOrWhiteSpace(primary.DataSource.Value))
         {
-            result = result with { DataSource = primary.DataSource };
+            result = result.WithDataSource(primary.DataSource);
         }
 
-        return result with { DiagramSlots = slots };
+        return result.WithDiagramSlots(slots);
     }
 }

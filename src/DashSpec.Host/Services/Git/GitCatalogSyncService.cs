@@ -1,8 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
@@ -51,7 +50,7 @@ public sealed class GitCatalogSyncService(
             if (changed)
             {
                 _lastCatalogHash = bytes;
-                var document = CatalogParser.ParseFile(catalogPath);
+                var document = CatalogReader.ParseFile(catalogPath);
                 catalogState.Replace(new CatalogBootstrap(document, catalogPath));
                 logger.LogInformation("Git catalog updated, requesting reload: {Path}", catalogPath);
                 reloadNotifier.Notify();

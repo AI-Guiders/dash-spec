@@ -1,5 +1,5 @@
 using System.Globalization;
-using DashSpec.Core.Localization;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

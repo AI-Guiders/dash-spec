@@ -1,7 +1,7 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
 @using DashSpec.Presentation.Filters
 
-<div class="filter filter-chips @(Compact ? "filter-chips-compact" : null) @(FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
+<div class="filter filter-chips @(Compact ? "filter-chips-compact" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
     @if (!string.IsNullOrWhiteSpace(Label))
     {
         <span class="filter-label">@Label</span>

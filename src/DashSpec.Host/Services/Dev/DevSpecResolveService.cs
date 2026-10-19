@@ -1,5 +1,5 @@
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
+using DashSpec.Execution.Parsing;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Resolution;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Host.Configuration;
@@ -43,12 +43,12 @@ public sealed class DevSpecResolveService(
                 CreateDevResolveParseOptions()).Document;
             var library = SpecLibraryComposer.Load(
                 specFullPath,
-                document.DiagramLibraryPath,
+                document.DiagramLibraryPath?.Value,
                 hostContext.DefaultSpecDirectory,
                 document);
 
             var export = SpecResolveExporter.Export(document, library);
-            return DevSpecResolveResult.Ok(export, specFullPath, document.DiagramLibraryPath);
+            return DevSpecResolveResult.Ok(export, specFullPath, document.DiagramLibraryPath?.Value);
         }
         catch (Exception ex)
         {

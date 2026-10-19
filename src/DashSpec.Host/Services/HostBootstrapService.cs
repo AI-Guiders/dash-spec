@@ -1,7 +1,6 @@
-using DashSpec.Core.Localization;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Resolution;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
@@ -64,7 +63,7 @@ public sealed class HostBootstrapService(
     {
         DashSpecParser.EnsureModuleParsersRegistered();
         var catalogPath = pathResolver.ResolveCatalogPath(contentRoot, bootstrap.Dashboard.CatalogPath);
-        return new CatalogBootstrap(CatalogParser.ParseFile(catalogPath), catalogPath);
+        return new CatalogBootstrap(CatalogReader.ParseFile(catalogPath), catalogPath);
     }
 
     public string ResolveActiveSpecFullPath(CatalogBootstrap catalog, string? catalogEntryId = null)

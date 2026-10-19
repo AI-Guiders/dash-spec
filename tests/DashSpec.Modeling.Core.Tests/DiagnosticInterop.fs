@@ -4,8 +4,8 @@ open DashSpec.Modeling.Core
 
 /// <summary>Test-only bridge to transitional C# diagnostics (ADR-0048 §7).</summary>
 module DiagnosticInterop =
-    type LegacyDiagnostic = DashSpec.Core.Validation.DashSpecDiagnostic
-    type LegacySeverity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity
+    type LegacyDiagnostic = DashSpec.Execution.Runtime.DashSpecDiagnostic
+    type LegacySeverity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity
 
     let private toLegacySeverity =
         function

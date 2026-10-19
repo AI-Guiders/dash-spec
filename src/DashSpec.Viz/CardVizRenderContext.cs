@@ -1,4 +1,4 @@
-using DashSpec.Core.Model;
+using DashSpec.Core.Interaction;
 using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Viz;

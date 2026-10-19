@@ -1,7 +1,5 @@
 using System.Text;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Core.Tests;

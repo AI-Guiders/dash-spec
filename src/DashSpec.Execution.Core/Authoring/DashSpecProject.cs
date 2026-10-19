@@ -1,6 +1,7 @@
 using AIGuiders.Platform.Authoring.Core;
-using DashSpec.Core.Authoring;
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Authoring;
+
+using DashSpec.Execution.Parsing;
 
 namespace DashSpec.Execution.Authoring;
 

@@ -1,4 +1,5 @@
-using DashSpec.Core.Model;
+using Microsoft.FSharp.Core;
+using FSharpDataFlow = DashSpec.Modeling.Parse.DataFlow;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -17,8 +18,8 @@ public static class FlowCardExecution
             return card;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, card.FlowInput);
-        return card with { DataSource = dataSource };
+        var dataSource = MaterializeDataSource(document.Dashflow!.Value, card.FlowInput.Value);
+        return card.WithDataSource(dataSource);
     }
 
     public static CardDiagramSlotDefinition ApplyFlowInputToSlot(
@@ -35,8 +36,8 @@ public static class FlowCardExecution
             return slot;
         }
 
-        var dataSource = MaterializeDataSource(document.Dashflow, slot.FlowInput);
-        return slot with { DataSource = dataSource };
+        var dataSource = MaterializeDataSource(document.Dashflow!.Value, slot.FlowInput.Value);
+        return slot.WithDataSource(dataSource);
     }
 
     public static DataSourceDefinition MaterializeDataSource(
@@ -46,7 +47,7 @@ public static class FlowCardExecution
         var source = ResolveBackingSource(flow, input);
         var rowType = ResolvePortRowType(flow, input.NodeId, input.PortName)
             ?? source.OutputRowType;
-        return ToDataSource(source) with { RowsType = rowType };
+        return ToDataSource(source).WithRowsType(rowType);
     }
 
     public static string? ResolveProviderId(CardDefinition card)
@@ -57,7 +58,7 @@ public static class FlowCardExecution
                 $"Card '{card.Id}' has flow input but no materialized datasource; call DocumentFlowBinder.MaterializeCard first.");
         }
 
-        return card.DataSource.ProviderInfer ? null : card.DataSource.ProviderId;
+        return card.DataSource.ProviderInfer ? null : card.DataSource.ProviderId?.Value;
     }
 
     public static DashflowExecutionPath ResolvePath(DashboardDocument document, CardFlowInputDefinition input)
@@ -67,7 +68,7 @@ public static class FlowCardExecution
             throw new InvalidOperationException("Dashboard document has no resolved dashflow module.");
         }
 
-        return DashflowPathResolver.Resolve(document.Dashflow, input);
+        return DashflowPathResolver.Resolve(document.Dashflow!.Value, input);
     }
 
     private static DashflowSourceDefinition ResolveBackingSource(
@@ -95,36 +96,37 @@ public static class FlowCardExecution
         }
 
         return transformer.Outputs
-            .FirstOrDefault(p => PortMatches(p.Name, portName))
-            ?.RowType;
+            .FirstOrDefault(p => PortMatches(p.Item1, portName))
+            ?.Item2;
     }
 
     private static bool PortMatches(string expected, string actual) =>
         string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase);
 
-    private static DataSourceDefinition ToDataSource(DashflowSourceDefinition source) =>
-        source.FromKind switch
+    private static DataSourceDefinition ToDataSource(DashflowSourceDefinition source)
+    {
+        var kind = source.From.Kind.Equals(DashflowSourceFromKind.View)
+            ? DataSourceKind.View
+            : DataSourceKind.Sql;
+        DataSourceSqlCarrier? carrier = source.From.Kind switch
         {
-            DashflowSourceFromKind.View => new DataSourceDefinition(
-                DataSourceKind.View,
-                source.FromValue,
-                RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer,
-                ProviderId: source.ProviderInfer ? null : source.ProviderId),
-            DashflowSourceFromKind.SqlQuery => new DataSourceDefinition(
-                DataSourceKind.Sql,
-                source.FromValue,
-                DataSourceSqlCarrier.Query,
-                RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer,
-                ProviderId: source.ProviderInfer ? null : source.ProviderId),
-            DashflowSourceFromKind.SqlFile => new DataSourceDefinition(
-                DataSourceKind.Sql,
-                source.FromValue,
-                DataSourceSqlCarrier.File,
-                RowsType: source.OutputRowType,
-                ProviderInfer: source.ProviderInfer,
-                ProviderId: source.ProviderInfer ? null : source.ProviderId),
-            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.FromKind}'."),
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.View) => null,
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlQuery) => DataSourceSqlCarrier.Query,
+            { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlFile) => DataSourceSqlCarrier.File,
+            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.From.Kind}'."),
         };
+
+        return new DataSourceDefinition
+        {
+            Kind = kind,
+            Value = source.From.Value,
+            SqlCarrier = carrier is { } value
+                ? FSharpOption<DataSourceSqlCarrier>.Some(value)
+                : FSharpOption<DataSourceSqlCarrier>.None,
+            Sheet = FSharpOption<string>.None,
+            RowsType = source.OutputRowType,
+            ProviderInfer = FSharpDataFlow.DashflowProviderBridge.isInfer(source.Provider),
+            ProviderId = FSharpDataFlow.DashflowProviderBridge.tryNamedId(source.Provider),
+        };
+    }
 }

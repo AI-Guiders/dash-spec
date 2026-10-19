@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -35,10 +34,10 @@ public static class CardViewSwitchApplier
             return card;
         }
 
-        return card with
-        {
-            Diagram = new DiagramDefinition(string.Empty, new Dictionary<string, string>(), diagramId),
-        };
+        return card.WithDiagram(new DiagramDefinition(
+            string.Empty,
+            new Dictionary<string, string>(),
+            Microsoft.FSharp.Core.FSharpOption<string>.Some(diagramId)));
     }
 
     public static string? ResolveDefaultViewId(IReadOnlyList<ExtensionBlockNode> extensionBlocks)

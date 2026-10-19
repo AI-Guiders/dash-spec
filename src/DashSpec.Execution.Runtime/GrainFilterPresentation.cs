@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Resolution;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -19,21 +17,22 @@ public static class GrainFilterPresentation
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         IReadOnlyDictionary<string, HashSet<string>> selectedFields)
     {
-        if (string.IsNullOrWhiteSpace(filter.GrainFilterName))
+        var grainFilterName = filter.GrainFilterName?.Value;
+        if (string.IsNullOrWhiteSpace(grainFilterName))
         {
             return null;
         }
 
-        if (selectedFields.TryGetValue(filter.GrainFilterName, out var selected) &&
+        if (selectedFields.TryGetValue(grainFilterName, out var selected) &&
             selected.Count > 0)
         {
             return selected.First();
         }
 
-        if (filterIndex.TryGetValue(filter.GrainFilterName, out var grainFilter) &&
-            !string.IsNullOrWhiteSpace(grainFilter.DefaultExpression))
+        if (filterIndex.TryGetValue(grainFilterName, out var grainFilter) &&
+            !string.IsNullOrWhiteSpace(grainFilter.DefaultExpression?.Value))
         {
-            return grainFilter.DefaultExpression;
+            return grainFilter.DefaultExpression?.Value;
         }
 
         return "day";
@@ -44,7 +43,7 @@ public static class GrainFilterPresentation
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         IReadOnlyDictionary<string, HashSet<string>> selectedFields)
     {
-        if (string.IsNullOrWhiteSpace(filter.GrainFilterName))
+        if (string.IsNullOrWhiteSpace(filter.GrainFilterName?.Value))
         {
             return StaticLabel(filter);
         }
@@ -106,7 +105,7 @@ public static class GrainFilterPresentation
         string filterName,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex) =>
         filterIndex.Values.Any(filter =>
-            string.Equals(filter.GrainFilterName, filterName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(filter.GrainFilterName?.Value, filterName, StringComparison.OrdinalIgnoreCase));
 
     public static void SnapAnchoredDates(
         string grainFilterName,
@@ -129,15 +128,15 @@ public static class GrainFilterPresentation
         string grainFilterName,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex) =>
         filterIndex.Values.Where(filter =>
-            string.Equals(filter.GrainFilterName, grainFilterName, StringComparison.OrdinalIgnoreCase));
+            string.Equals(filter.GrainFilterName?.Value, grainFilterName, StringComparison.OrdinalIgnoreCase));
 
     private static bool TryResolveGrainLabel(
         FilterDefinition filter,
         string grain,
         out string label)
     {
-        if (filter.GrainLabels is not null &&
-            filter.GrainLabels.TryGetValue(grain, out var custom) &&
+        if (filter.GrainLabels?.Value is { } grainLabels &&
+            grainLabels.TryGetValue(grain, out var custom) &&
             !string.IsNullOrWhiteSpace(custom))
         {
             label = custom;

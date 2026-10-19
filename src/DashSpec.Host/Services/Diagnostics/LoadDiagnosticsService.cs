@@ -1,18 +1,14 @@
 using System.Diagnostics;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
-using DashSpec.Execution.Resolution;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Resolution;
 using DashSpec.Host.Configuration;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Core.Resolution;
 using DashSpec.Surface.Blazor.Services.Diagnostics;
 
 namespace DashSpec.Host.Services.Diagnostics;
@@ -94,11 +90,11 @@ public sealed class LoadDiagnosticsService(
             var librarySw = Stopwatch.StartNew();
             var library = SpecLibraryComposer.Load(
                 specFullPath,
-                document.DiagramLibraryPath,
+                document.DiagramLibraryPath?.Value,
                 hostContext.DefaultSpecDirectory,
                 document);
             librarySw.Stop();
-            steps.Add(new LoadStepReport("load_library", true, librarySw.ElapsedMilliseconds, document.DiagramLibraryPath));
+            steps.Add(new LoadStepReport("load_library", true, librarySw.ElapsedMilliseconds, document.DiagramLibraryPath?.Value));
 
             var resolveSw = Stopwatch.StartNew();
             _ = SpecResolver.Resolve(document, library);
@@ -123,7 +119,7 @@ public sealed class LoadDiagnosticsService(
                 sameAsStartup ? "startup default" : "per-entry runtime"));
 
             var connectorSw = Stopwatch.StartNew();
-            var connector = runtimeConnectorResolver.Resolve(runtimePath, document.ConnectorId);
+            var connector = runtimeConnectorResolver.Resolve(runtimePath, document.ConnectorId?.Value);
             connectorSw.Stop();
             steps.Add(new LoadStepReport("resolve_connector", true, connectorSw.ElapsedMilliseconds, connector.Id));
 
@@ -153,7 +149,7 @@ public sealed class LoadDiagnosticsService(
                             $"field_options:{filter.Name}",
                             false,
                             filterSw.ElapsedMilliseconds,
-                            filter.ColumnReference,
+                            filter.ColumnReference?.Value,
                             ex.Message));
                     }
                 }
@@ -176,7 +172,7 @@ public sealed class LoadDiagnosticsService(
                     {
                         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                         var reportTime = ReportTimePolicyResolver.ResolveEffective(
-                            loaded.Document.TimePolicy,
+                            loaded.Document.TimePolicy?.Value,
                             bootstrap.ReportTime.ToSettingsDictionary(),
                             LabelFormat.DisplayTimeZone?.Id);
                         _ = loaded.Connector.QueryAsync(

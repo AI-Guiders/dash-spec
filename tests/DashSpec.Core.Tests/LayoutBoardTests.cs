@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -56,8 +53,8 @@ end tab
 
         Assert.Equal("Q", doc.Cards[0].LayoutRef);
         Assert.NotNull(doc.Tabs[0].LayoutBoard);
-        Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
-        Assert.Equal(2, doc.Tabs[0].LayoutBoard!.ColumnCount);
+            Assert.Equal(2, doc.Tabs[0].LayoutBoard!.Value.RowCount);
+            Assert.Equal(2, doc.Tabs[0].LayoutBoard!.Value.ColumnCount);
     }
 
     [Fact]
@@ -207,8 +204,8 @@ module tab demo
 end tab
 """);
 
-        Assert.Equal(3, doc.Tabs[0].LayoutBoard!.RowCount);
-        Assert.Equal(3, doc.Tabs[0].LayoutBoard!.ColumnCount);
+            Assert.Equal(3, doc.Tabs[0].LayoutBoard!.Value.RowCount);
+            Assert.Equal(3, doc.Tabs[0].LayoutBoard!.Value.ColumnCount);
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
 
@@ -270,7 +267,7 @@ end tab
 """, dir);
 
             Assert.NotNull(doc.Tabs[0].LayoutBoard);
-            Assert.Equal(2, doc.Tabs[0].LayoutBoard!.RowCount);
+                Assert.Equal(2, doc.Tabs[0].LayoutBoard!.Value.RowCount);
             var layout = TabLayoutCompactor.Compact(doc, "demo");
             Assert.Equal(6, layout["a"].Span);
         }
@@ -381,7 +378,7 @@ end tab
 
         Assert.Equal("D", doc.Filters[0].LayoutRef);
         Assert.NotNull(doc.ToolbarBoard);
-        Assert.Equal(2, doc.ToolbarBoard!.RowCount);
+        Assert.Equal(2, doc.ToolbarBoard!.Value.RowCount);
         Assert.Equal(["usage_date", "app_name", "user_name"], doc.DashboardFilters);
     }
 

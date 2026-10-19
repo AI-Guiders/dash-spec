@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -9,20 +7,20 @@ public sealed class DisplayTitleResolverTests
 {
     static DisplayTitleResolverTests() => DashSpecTestCulture.Ensure();
 
-    private static readonly FilterDefinition ChartTop = new(
+    private static readonly FilterDefinition ChartTop = FilterTestData.Create(
         FilterKind.Top,
         "chart_top",
         "10",
         "chart_top",
-        MinValue: 0,
-        MaxValue: 50);
+        minValue: 0,
+        maxValue: 50);
 
-    private static readonly FilterDefinition PeriodStart = new(
+    private static readonly FilterDefinition PeriodStart = FilterTestData.Create(
         FilterKind.Date,
         "period_start",
         "today",
         "period_start",
-        GrainFilterName: "period_grain");
+        grainFilterName: "period_grain");
 
     [Fact]
     public void DisplayTemplate_collects_slots()

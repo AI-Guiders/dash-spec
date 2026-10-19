@@ -1,5 +1,4 @@
 using DashSpec.Abstractions.Data;
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Runtime;
 

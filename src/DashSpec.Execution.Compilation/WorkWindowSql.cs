@@ -1,5 +1,4 @@
 using System.Globalization;
-using DashSpec.Core.Model;
 
 namespace DashSpec.Execution.Compilation;
 
@@ -30,21 +29,26 @@ internal static class WorkWindowSql
             return null;
         }
 
-        var column = policy.WorkTimeColumn!.Trim();
-        var calendar = policy.WorkCalendar!;
-        var windowsTz = ResolveSqlServerTimeZoneId(calendar.TimeZoneId);
+        var column = policy.WorkTimeColumn?.Value?.Trim();
+        var calendar = policy.WorkCalendar?.Value;
+        if (string.IsNullOrWhiteSpace(column) || calendar is null)
+        {
+            return null;
+        }
+
+        var windowsTz = ResolveSqlServerTimeZoneId(calendar.TimeZoneId?.Value);
         if (windowsTz is null)
         {
             return null;
         }
 
-        if (!TryParseTime(calendar.StartTime ?? "09:00", out var start)
-            || !TryParseTime(calendar.EndTime ?? "18:00", out var end))
+        if (!TryParseTime(calendar.StartTime?.Value ?? "09:00", out var start)
+            || !TryParseTime(calendar.EndTime?.Value ?? "18:00", out var end))
         {
             return null;
         }
 
-        var weekdaySet = ParseWeekdays(calendar.WorkDays ?? "mon,tue,wed,thu,fri");
+        var weekdaySet = ParseWeekdays(calendar.WorkDays?.Value ?? "mon,tue,wed,thu,fri");
         if (weekdaySet.Count == 0)
         {
             return null;

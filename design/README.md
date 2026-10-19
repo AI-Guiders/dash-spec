@@ -105,3 +105,6 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) | Compiler `namespace` + `import` by kind | Accepted |
 | [0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) | Surface.Blazor full split + contract tests | Accepted |
 | [0100](DASHSPEC-ADR-0100-diagram-kind-catalog.md) | Diagram kind — vertical plugin capability + catalog (SSOT) | Accepted |
+| [0101](DASHSPEC-ADR-0101-single-unit-file-type.md) | Single compilation-unit file type (`.ds`) and `module <kind> <id>` | Accepted |
+| [0102](DASHSPEC-ADR-0102-one-language.md) | One language — legacy forms removed | Accepted |
+| [0103](DASHSPEC-ADR-0103-surfaces-read-ir-must-not-parse.md) | Surfaces read the F# IR, must not parse | Accepted |

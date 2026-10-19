@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **W10 — растворение `DashSpec.Core` (ADR-0048), завершено:** Runtime-кодеки, layout-механика, resolution/analysis, parsing, authoring, компиляторный контракт и диагностика разъехались по `DashSpec.Execution.{Runtime,Compilation,Core}`; stdlib переехала с парсерами в `Execution.Core`; `SpecLibrary` разрезан по I/O-шву (`SpecLibraryLoader` + реестр). **Проект `DashSpec.Core` удалён.** Проверено smoke-хостом (validate + живой рендер отчётов).
+
 ### Added
 
 - **Plugin families (ADR-0032 / ADR-0033)** — `IDashSpecPlugin`, contributor registry, TOML bundles/tiers, `extensions { use … }`, extension blocks on cards, `GET /dev/capabilities`, viz dispatch via `CardVizComponentRegistry`, sample plugin `DashSpec.Plugin.Export`, template `dotnet new dashspec-extension`, [docs/PLUGINS.md](docs/PLUGINS.md).

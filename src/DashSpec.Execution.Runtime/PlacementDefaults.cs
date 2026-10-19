@@ -1,0 +1,10 @@
+
+namespace DashSpec.Execution.Runtime;
+
+public static class PlacementDefaults
+{
+    public static PlacementDefinition ForFamily(DiagramDataFamily family, int columns) =>
+        family is DiagramDataFamily.Table or DiagramDataFamily.Matrix or DiagramDataFamily.Gantt
+            ? new PlacementDefinition(1, 1, columns)
+            : new PlacementDefinition(1, 1, columns / 2);
+}

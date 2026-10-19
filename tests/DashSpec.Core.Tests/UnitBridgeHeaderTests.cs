@@ -1,4 +1,3 @@
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Parsing;
 using Xunit;
 
@@ -55,7 +54,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Catalog_unit_from_the_demo_parses()
     {
-        var catalog = CatalogParser.Parse(ReadUnit("samples/demo/demo-catalog.ds"));
+        var catalog = CatalogReader.Parse(ReadUnit("samples/demo/demo-catalog.ds"));
 
         Assert.NotEmpty(catalog.Entries);
     }
@@ -64,7 +63,7 @@ public sealed class UnitBridgeHeaderTests
     public void Presentation_unit_with_header_parses()
     {
         var (id, block) = PresentationModuleParser.ParsePresentationFileWithId(
-            ReadUnit("src/DashSpec.Core/stdlib/presentation/bar_stacked_360.ds"),
+            ReadUnit("src/DashSpec.Execution.Core/stdlib/presentation/bar_stacked_360.ds"),
             null);
 
         Assert.Equal("bar_stacked_360", id);

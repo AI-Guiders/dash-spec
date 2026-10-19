@@ -1,8 +1,5 @@
 #nullable enable
 
-using DashSpec.Core.Model;
-using DashSpec.Core.Resolution;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 
 
@@ -49,7 +46,7 @@ internal static class DashboardFilterSlashLabels
 
         if (context.FilterIndex.TryGetValue(filterName, out var filter)
 
-            && !string.IsNullOrWhiteSpace(filter.GrainFilterName))
+            && !string.IsNullOrWhiteSpace(filter.GrainFilterName?.Value))
 
         {
 

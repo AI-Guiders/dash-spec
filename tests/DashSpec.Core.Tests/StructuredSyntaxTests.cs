@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -112,9 +110,9 @@ public class StructuredSyntaxTests
 
         var card = doc.Cards.Single();
         Assert.Equal("demo_peak_bar", card.Diagram.UsePreset);
-        Assert.Equal(12, card.SeriesTransform?.Max);
+        Assert.Equal(12, card.SeriesTransform?.Value.Max?.Value);
         Assert.Equal("dbo.t", card.DataSource.Value);
         Assert.Single(card.BoundFilters);
-        Assert.Equal(1, card.Placement?.Row);
+        Assert.Equal(1, card.Placement?.Value.Row);
     }
 }

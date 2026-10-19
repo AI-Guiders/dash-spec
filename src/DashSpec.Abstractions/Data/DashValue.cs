@@ -12,7 +12,7 @@ public readonly struct DashValue : IEquatable<DashValue>
     private readonly DateOnly _date;
     private readonly TimeOnly _time;
     private readonly DateTime _dateTimeUtc;
-    private readonly bool _dateTimeIsDisplayWallClock;
+    private readonly int _dateTimeUtcOffsetMinutes;
 
     private DashValue(DashPrimitiveKind kind, bool isNull)
     {
@@ -70,11 +70,12 @@ public readonly struct DashValue : IEquatable<DashValue>
         _dateTimeUtc = DateTime.SpecifyKind(dateTimeUtc, DateTimeKind.Utc);
     }
 
-    private DashValue(DateTime displayCivil, bool displayWallClock)
+    /// <summary>Гражданское (настенное) время вместе с офсетом от UTC — ADR-0079: офсет живёт на значении.</summary>
+    private DashValue(DateTime civil, int utcOffsetMinutes)
     {
         Kind = DashPrimitiveKind.DateTime;
-        _dateTimeIsDisplayWallClock = displayWallClock;
-        _dateTimeUtc = DateTime.SpecifyKind(displayCivil, DateTimeKind.Unspecified);
+        _dateTimeUtcOffsetMinutes = utcOffsetMinutes;
+        _dateTimeUtc = DateTime.SpecifyKind(civil, DateTimeKind.Unspecified);
     }
 
     public DashPrimitiveKind Kind { get; }
@@ -97,11 +98,16 @@ public readonly struct DashValue : IEquatable<DashValue>
 
     public static DashValue FromDateTimeUtc(DateTime value) => new(value);
 
-    /// <summary>Reporting civil time after dashflow <c>to_zone</c> (not UTC storage).</summary>
-    public static DashValue FromDateTimeDisplayWallClock(DateTime civil) => new(civil, displayWallClock: true);
+    /// <summary>Гражданское время после dashflow <c>to_zone</c>: офсет от UTC едет вместе со значением (ADR-0079).</summary>
+    public static DashValue FromDateTimeWithUtcOffset(DateTime civil, int utcOffsetMinutes) => new(civil, utcOffsetMinutes);
 
+    /// <summary>Офсет значения от UTC в минутах: 0 — UTC-кадр, иначе гражданский кадр (ADR-0079).</summary>
+    public int UtcOffsetMinutes =>
+        Kind == DashPrimitiveKind.DateTime && !_isNull ? _dateTimeUtcOffsetMinutes : 0;
+
+    /// <summary>Значение уже в гражданском кадре — повторно сдвигать нельзя.</summary>
     public bool IsDisplayWallClockDateTime =>
-        Kind == DashPrimitiveKind.DateTime && !_isNull && _dateTimeIsDisplayWallClock;
+        Kind == DashPrimitiveKind.DateTime && !_isNull && _dateTimeUtcOffsetMinutes != 0;
 
     public bool AsBool() => Kind == DashPrimitiveKind.Bool && !_isNull
         ? _bool
@@ -148,8 +154,8 @@ public readonly struct DashValue : IEquatable<DashValue>
                 DashPrimitiveKind.Duration => TimeSpan.FromTicks(_durationTicks),
                 DashPrimitiveKind.Date => _date,
                 DashPrimitiveKind.Time => _time,
-                DashPrimitiveKind.DateTime => _dateTimeIsDisplayWallClock
-                    ? new DashDisplayDateTime(_dateTimeUtc)
+                DashPrimitiveKind.DateTime => _dateTimeUtcOffsetMinutes != 0
+                    ? new DashDisplayDateTime(_dateTimeUtc, _dateTimeUtcOffsetMinutes)
                     : _dateTimeUtc,
                 _ => null,
             };

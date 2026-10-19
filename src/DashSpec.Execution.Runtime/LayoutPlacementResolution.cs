@@ -1,0 +1,52 @@
+
+namespace DashSpec.Execution.Runtime;
+
+/// <summary>Card grid placement precedence (ADR-0057 §7, ADR-0020).</summary>
+public static class LayoutPlacementResolution
+{
+    /// <summary>Explicit <c>place</c> on card overrides layout board placement.</summary>
+    public static PlacementDefinition ResolveCardPlacement(
+        CardDefinition card,
+        IReadOnlyDictionary<string, PlacementDefinition> boardPlacements)
+    {
+        if (card.Placement?.Value is { } placement)
+        {
+            return placement;
+        }
+
+        if (boardPlacements.TryGetValue(card.Id, out var boardPlacement))
+        {
+            return boardPlacement;
+        }
+
+        throw new KeyNotFoundException(
+            $"Card '{card.Id}' has no placement on the layout board and no explicit place block.");
+    }
+
+    public static void ApplyExplicitPlacementOverrides(
+        IEnumerable<CardDefinition> cards,
+        IDictionary<string, PlacementDefinition> boardPlacements)
+    {
+        foreach (var card in cards)
+        {
+            if (card.Placement?.Value is { } placement)
+            {
+                boardPlacements[card.Id] = placement;
+            }
+        }
+    }
+
+    /// <summary>Explicit <c>place</c> on filter overrides toolbar board placement (ADR-0061).</summary>
+    public static void ApplyFilterPlacementOverrides(
+        IEnumerable<FilterDefinition> filters,
+        IDictionary<string, PlacementDefinition> toolbarPlacements)
+    {
+        foreach (var filter in filters)
+        {
+            if (filter.Placement is { } placement)
+            {
+                toolbarPlacements[filter.Name] = placement.Value;
+            }
+        }
+    }
+}

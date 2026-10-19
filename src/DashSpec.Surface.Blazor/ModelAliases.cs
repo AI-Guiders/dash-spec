@@ -1,0 +1,32 @@
+// В этой ручной партии переведённые ниже имена ссылаются на F#-IR.
+// Остальные C#-типы модели пока остаются переходными и мигрируются отдельно.
+global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;
+global using PlacementDefinition = DashSpec.Modeling.Parse.Layout.PlacementDefinition;
+global using CardBoundFilterChrome = DashSpec.Modeling.Parse.Card.CardBoundFilterChrome;
+global using CardFoldMode = DashSpec.Modeling.Parse.Card.CardFoldMode;
+global using CardsFoldPolicy = DashSpec.Modeling.Parse.Card.CardsFoldPolicy;
+global using ExtensionBlockNode = DashSpec.Modeling.Parse.Card.ExtensionBlockNode;
+global using CatalogGroupDefinition = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
+global using CardVisibilityMode = DashSpec.Modeling.Parse.Card.CardVisibilityMode;
+global using DashSpecReportCatalogDocument = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
+global using CatalogEntryDefinition = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
+global using LayoutBoardGroupDefinition = DashSpec.Modeling.Parse.Layout.LayoutBoardGroupDefinition;
+global using ReportFormatDefaults = DashSpec.Modeling.Parse.Document.ReportFormatDefaults;
+global using ReportTimePolicy = DashSpec.Modeling.Parse.Document.ReportTimePolicy;
+global using LayoutBoardEntry = DashSpec.Modeling.Parse.Layout.LayoutBoardEntry;
+global using DiagramDefinition = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
+global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
+global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
+global using DataSourceKind = DashSpec.Modeling.Parse.DataSource.DataSourceKind;
+global using CardDefinition = DashSpec.Modeling.Parse.Card.CardDefinition;
+global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
+global using ShowSelectionEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
+global using SetFilterFromFieldEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
+global using GotoCatalogEntryEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
+global using TabDefinition = DashSpec.Modeling.Parse.Document.TabDefinition;
+global using ReportPageDefinition = DashSpec.Modeling.Parse.Document.ReportPageDefinition;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
+global using CardClickEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
+global using ShowPlacement = DashSpec.Modeling.Parse.Card.ShowPlacement;
+global using ShowFormat = DashSpec.Modeling.Parse.Card.ShowFormat;
+global using ShowSource = DashSpec.Modeling.Parse.Card.ShowSource;

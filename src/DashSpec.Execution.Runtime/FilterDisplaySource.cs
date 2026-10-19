@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Resolution;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -58,7 +56,7 @@ public static class FilterDisplaySource
     private static string FormatTopValue(FilterDefinition filter, int? current)
     {
         var value = TopLimitDefaults.Resolve(filter, current);
-        if (filter.MinValue == 0 && value == 0)
+        if (filter.MinValue?.Value == 0 && value == 0)
         {
             return "все";
         }
