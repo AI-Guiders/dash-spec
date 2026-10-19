@@ -1,7 +1,7 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -53,7 +53,7 @@ public class ChartRuntimeTests
     [Fact]
     public void CardChromeResolver_merges_library_presets()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.line_bottom_300]",
             "legend = \"bottom\"",
@@ -98,7 +98,7 @@ public class ChartRuntimeTests
     [Fact]
     public void ChartPresentation_reads_orientation_from_diagram_and_presentation()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_horizontal_320]",
             "legend = \"bottom\"",
@@ -386,7 +386,7 @@ public class ChartRuntimeTests
     [Fact]
     public void ResolveChartPresentation_merges_nested_presentation_y_max_for_utilization_bar()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_utilization_percent]",
             "scale_value = \"percent\"",
@@ -422,7 +422,7 @@ public class ChartRuntimeTests
     [Fact]
     public void CategoryChartPayloadBuilder_marks_bars_over_percent_cap_red()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_utilization_percent]",
             "color_mode = \"single\"",

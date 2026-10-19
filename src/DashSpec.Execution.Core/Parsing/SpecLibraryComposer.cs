@@ -1,4 +1,5 @@
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Parsing;
 
@@ -17,7 +18,7 @@ public static class SpecLibraryComposer
         if (!string.IsNullOrWhiteSpace(diagramLibraryPath))
         {
             var path = SpecPathResolver.ResolveNearSpec(specFullPath, diagramLibraryPath, fallbackDirectory);
-            library = SpecLibrary.Merge(library, SpecLibrary.LoadFile(path));
+            library = SpecLibrary.Merge(library, SpecLibraryLoader.LoadFile(path));
         }
 
         if (document?.Palette?.Value is { } palette)

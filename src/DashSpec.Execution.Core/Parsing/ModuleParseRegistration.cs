@@ -1,5 +1,4 @@
 using System.Linq;
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;

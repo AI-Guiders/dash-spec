@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Parsing;
+namespace DashSpec.Execution.Runtime;
 
 public sealed class DashSpecParseException : Exception
 {

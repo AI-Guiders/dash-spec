@@ -1,6 +1,5 @@
 using System.Linq;
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Parsing;
 using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;
 using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;
 using ParseDoc = DashSpec.Modeling.Parse.Document;
@@ -151,7 +150,7 @@ internal static class DocumentParseRegistration
         return items.Length > 0 ? items[0] : null;
     }
 
-    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Core.Parsing.DashSpecParseOptions options) =>
+    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Execution.Runtime.DashSpecParseOptions options) =>
         new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,

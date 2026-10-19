@@ -1,6 +1,6 @@
 using FsharpDiagramKindRegistry = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry;
 
-namespace DashSpec.Core.Parsing;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// Execution-facing facade over F# <see cref="FsharpDiagramKindRegistry"/> (ADR-0048 M6).

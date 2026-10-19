@@ -1,7 +1,6 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Parsing;
 using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Resolution;
 using Xunit;
@@ -21,7 +20,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_presentation_and_transform_sections()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "# presets",
             "[presentation.line_bottom_300]",
@@ -40,7 +39,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_diagram_presets()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[diagram.demo_peak_line]",
             "kind = \"line\"",
@@ -64,7 +63,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecLibrary_loads_palette_sections()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -81,7 +80,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_maps_palette_and_series_overrides()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -140,7 +139,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_prefix_matches_palette_keys()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -169,7 +168,7 @@ public class SpecModulesTests
     [Fact]
     public void ChartColorResolver_applies_dashboard_palette_when_diagram_has_none()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.brand]",
             "colors = \"#111111,#222222\"",
@@ -196,7 +195,7 @@ public class SpecModulesTests
     [Fact]
     public void SpecResolveExporter_includes_dashboard_palette_and_effective_card()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[palette.demo_apps]",
             "default = \"#999999\"",
@@ -708,7 +707,7 @@ public class SpecModulesTests
     [Fact]
     public void CardDiagramResolver_merges_diagram_preset()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.line_bottom_300]",
             "legend = \"bottom\"",

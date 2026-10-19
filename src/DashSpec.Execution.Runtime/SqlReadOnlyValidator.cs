@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Parsing;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// Проверка текста <c>datasource sql</c> и имён <c>datasource view</c> при разборе спеки.
