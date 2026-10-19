@@ -3,6 +3,8 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using Microsoft.Extensions.Logging;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Bootstrap;
 
 /// <summary>Loads distinct field filter options via connector SQL (ADR-0099 platform).</summary>

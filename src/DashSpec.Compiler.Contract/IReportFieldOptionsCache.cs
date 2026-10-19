@@ -1,4 +1,4 @@
-namespace DashSpec.Execution.Runtime;
+namespace DashSpec.Compiler.Contract;
 
 /// <summary>Distinct field-option list cache (viewer may provide memory-backed impl).</summary>
 public interface IReportFieldOptionsCache

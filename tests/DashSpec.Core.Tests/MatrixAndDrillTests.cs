@@ -1,6 +1,8 @@
 using DashSpec.Execution.Runtime;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 public sealed class MatrixRenderLimitsTests

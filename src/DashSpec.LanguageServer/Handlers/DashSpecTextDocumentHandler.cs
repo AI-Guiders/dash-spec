@@ -10,6 +10,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.LanguageServer.Handlers;
 
 internal sealed class DashSpecTextDocumentHandler : TextDocumentSyncHandlerBase

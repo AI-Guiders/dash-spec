@@ -2,6 +2,8 @@ using DashSpec.Execution.Runtime;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Core.Tests;
 
 /// <summary>

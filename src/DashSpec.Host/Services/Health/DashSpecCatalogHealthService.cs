@@ -2,6 +2,8 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Parsing;
 using DashSpec.Viewer.Plugins;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Host.Services.Health;
 
 public sealed class DashSpecCatalogHealthService(

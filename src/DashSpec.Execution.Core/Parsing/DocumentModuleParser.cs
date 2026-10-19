@@ -2,6 +2,8 @@
 
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Parsing;
 
 /// <summary>Transitional entry — delegates to F# Modeling.Parse via <see cref="DocumentParseBridge"/>.</summary>

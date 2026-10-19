@@ -1,5 +1,7 @@
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Viewer.Plugins;
 
 public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry registry)

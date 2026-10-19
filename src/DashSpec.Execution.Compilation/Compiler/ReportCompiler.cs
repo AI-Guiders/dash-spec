@@ -1,6 +1,8 @@
 using DashSpec.Execution.Runtime;
 using ExecutionDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation;
 
 /// <summary>C# adapter over F# <c>DashSpecCompiler.compile</c> (ADR-0099 B4).</summary>

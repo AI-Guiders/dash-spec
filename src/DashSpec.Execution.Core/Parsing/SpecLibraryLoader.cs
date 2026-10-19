@@ -4,6 +4,8 @@ using Tomlyn;
 using Tomlyn.Model;
 using DashSpec.Execution.Runtime;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Parsing;
 
 /// <summary>Loads <c>@diagramlibrary</c> TOML into a <see cref="SpecLibrary"/> (File/TOML side; ADR-0085 keeps I/O out of Runtime).</summary>

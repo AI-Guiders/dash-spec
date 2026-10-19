@@ -5,6 +5,8 @@ using DashSpec.Execution.Runtime.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Configuration;
 
 /// <summary>Headless report platform DI (ADR-0099 B2/B4).</summary>

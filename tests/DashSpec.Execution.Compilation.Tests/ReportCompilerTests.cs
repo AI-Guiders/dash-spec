@@ -3,6 +3,8 @@ using DashSpec.Execution.Compilation;
 using ExecutionDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation.Tests;
 
 public sealed class ReportCompilerTests

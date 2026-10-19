@@ -5,6 +5,8 @@ using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;
 using ParseDoc = DashSpec.Modeling.Parse.Document;
 using Microsoft.FSharp.Core;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Parsing;
 
 /// <summary>Wire F# document parsers into Core bridges (ADR-0048 M4).</summary>
@@ -121,7 +123,7 @@ internal static class DocumentParseRegistration
                 var diagnostics = result.Diagnostics
                     .Select(ToCoreDiagnostic)
                     .ToList();
-                return new DashSpec.Execution.Runtime.ReportCompileResult(document, diagnostics);
+                return new DashSpec.Compiler.Contract.ReportCompileResult(document, diagnostics);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -150,7 +152,7 @@ internal static class DocumentParseRegistration
         return items.Length > 0 ? items[0] : null;
     }
 
-    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Execution.Runtime.DashSpecParseOptions options) =>
+    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Compiler.Contract.DashSpecParseOptions options) =>
         new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,
@@ -179,20 +181,20 @@ internal static class DocumentParseRegistration
             Optional = slot.Optional,
         };
 
-    private static DashSpec.Execution.Runtime.DashSpecDiagnostic ToCoreDiagnostic(
+    private static DashSpec.Compiler.Contract.DashSpecDiagnostic ToCoreDiagnostic(
         DashSpec.Modeling.Core.DashSpecDiagnostic diagnostic)
     {
         var span = diagnostic.Span;
-        var severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Error;
+        var severity = DashSpec.Compiler.Contract.DashSpecDiagnosticSeverity.Error;
         if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Warning))
         {
-            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Warning;
+            severity = DashSpec.Compiler.Contract.DashSpecDiagnosticSeverity.Warning;
         }
         else if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Information))
         {
-            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Information;
+            severity = DashSpec.Compiler.Contract.DashSpecDiagnosticSeverity.Information;
         }
-        return new DashSpec.Execution.Runtime.DashSpecDiagnostic(
+        return new DashSpec.Compiler.Contract.DashSpecDiagnostic(
             span.Line,
             span.Character,
             span.EndLine,

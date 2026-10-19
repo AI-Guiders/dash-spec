@@ -6,6 +6,8 @@ using DashSpec.Execution.Bootstrap;
 using DashSpec.Execution.Runtime.Platform;
 using Xunit;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Execution.Compilation.Tests;
 
 public sealed class ReportSpecBootstrapTests

@@ -4,6 +4,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.LanguageServer;
 
 internal static class DashSpecLspHelpers

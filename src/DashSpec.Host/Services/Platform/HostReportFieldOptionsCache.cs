@@ -1,6 +1,8 @@
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Services.Loading;
 
+using DashSpec.Compiler.Contract;
+
 namespace DashSpec.Host.Services.Platform;
 
 public sealed class HostReportFieldOptionsCache(IFieldOptionsCache inner) : IReportFieldOptionsCache
