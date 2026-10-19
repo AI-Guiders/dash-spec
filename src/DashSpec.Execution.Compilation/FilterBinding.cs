@@ -1,6 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Compilation;
@@ -49,7 +46,7 @@ public static class FilterBinding
         DashboardDocument document,
         SpecLibrary? library)
     {
-        if (string.IsNullOrWhiteSpace(card.UseCardPreset) && library is null)
+        if (string.IsNullOrWhiteSpace(card.UseCardPreset?.Value) && library is null)
         {
             return CardBindResolver.Expand(
                 card.BoundFilters,

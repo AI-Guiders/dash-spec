@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 
 namespace DashSpec.Host.Configuration;
 
@@ -14,7 +13,7 @@ public sealed class HostShellBootstrap
     public string CatalogLabel => GetPresentation("catalog_label") ?? "Отчёт";
 
     public IReadOnlyList<string> TopbarSlots =>
-        HostTopbarLayoutResolver.Resolve(Document.TopbarLayout);
+        HostTopbarLayoutResolver.Resolve(Document.TopbarLayout?.Value);
 
     public bool ShowsSurface(string surface) =>
         Document.Surfaces.Count == 0

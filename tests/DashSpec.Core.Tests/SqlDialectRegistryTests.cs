@@ -2,7 +2,6 @@ using System.Text;
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Compilation.Dialects;
-using DashSpec.Core.Model;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

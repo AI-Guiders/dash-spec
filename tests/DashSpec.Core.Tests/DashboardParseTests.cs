@@ -1,11 +1,9 @@
 using System.Globalization;
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Core.Interaction;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -56,15 +54,15 @@ public class DashboardParseTests
         Assert.Equal(SqlDialect.TSql, doc.SqlDialect);
         Assert.Null(doc.DiagramLibraryPath);
         Assert.NotNull(doc.Palette);
-        Assert.Equal("demo_apps", doc.Palette!.Id);
-        Assert.Equal("#94a3b8", doc.Palette.Properties["default"]);
+        Assert.Equal("demo_apps", doc.Palette!.Value.Id);
+        Assert.Equal("#94a3b8", doc.Palette!.Value.Properties["default"]);
         Assert.Equal("demo_apps", doc.ColorPalette);
         Assert.Equal(18, doc.Cards.Count);
         Assert.Equal(8, doc.Filters.Count);
         Assert.Equal(["usage_date", "user_name", "app_name"], doc.DashboardFilters);
         Assert.True(doc.FiltersChrome.IsBarLayout);
         Assert.True(doc.FiltersChrome.IsStickyLine);
-        Assert.Equal(FiltersChromeDefinition.StickyLine, doc.FiltersChrome.Sticky);
+        Assert.Equal("line", doc.FiltersChrome.Sticky);
         Assert.True(doc.Filters.Single(f => f.Name == "app_name").IsComboboxWidget);
         Assert.True(doc.FiltersChrome.IsAutoApply);
         Assert.Equal(3, doc.Tabs.Count);
@@ -103,8 +101,8 @@ public class DashboardParseTests
 """);
 
         Assert.Equal(8, doc.Layout.GapPx);
-        Assert.Equal(6, doc.Cards[0].Placement?.Span);
-        Assert.Equal(1, doc.Cards[0].Placement?.Row);
+        Assert.Equal(6, doc.Cards[0].Placement?.Value.Span);
+        Assert.Equal(1, doc.Cards[0].Placement?.Value.Row);
     }
 
     [Fact]
@@ -288,7 +286,7 @@ public class DashboardParseTests
 
         Assert.True(doc.FiltersChrome.IsBarLayout);
         Assert.True(doc.FiltersChrome.IsStickyLine);
-        Assert.Equal(FiltersChromeDefinition.StickyLine, doc.FiltersChrome.Sticky);
+        Assert.Equal("line", doc.FiltersChrome.Sticky);
         Assert.True(doc.FiltersChrome.IsAutoApply);
         Assert.Equal(250, doc.FiltersChrome.DebounceMs);
         Assert.Equal("main", doc.Tabs[0].Id);
@@ -338,7 +336,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.False(none.FiltersChrome.IsSticky);
-        Assert.Equal(FiltersChromeDefinition.StickyNone, none.FiltersChrome.Sticky);
+        Assert.Equal("none", none.FiltersChrome.Sticky);
     }
 
     [Fact]
@@ -360,7 +358,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.False(block.FiltersChrome.IsAutoApply);
-        Assert.Equal(FiltersChromeDefinition.ApplyControlButton, block.FiltersChrome.ApplyControl);
+        Assert.Equal("button", block.FiltersChrome.ApplyControl);
 
         var sugar = DashSpecTestRowTypes.ParseDashboard("""
             module dashboard t
@@ -374,7 +372,7 @@ public class DashboardParseTests
             end dashboard
 """);
         Assert.True(sugar.FiltersChrome.IsAutoApply);
-        Assert.Equal(FiltersChromeDefinition.ApplyControlIcon, sugar.FiltersChrome.ApplyControl);
+        Assert.Equal("icon", sugar.FiltersChrome.ApplyControl);
     }
 
     [Fact]
@@ -483,11 +481,11 @@ public class DashboardParseTests
         Assert.Equal("peak_concurrent_apps", diagram.Properties["value"]);
         Assert.Equal("Разных ПО", diagram.Properties["value_as"]);
         Assert.NotNull(card.Tooltip);
-        Assert.Equal("peak_apps", card.Tooltip!.Id);
+        Assert.Equal("peak_apps", card.Tooltip!.Value.Id);
         Assert.NotNull(card.Inspect);
-        Assert.Equal("peak_apps", card.Inspect!.TooltipId);
-        Assert.Equal("Состав в пике", card.Inspect.Label);
-        Assert.Equal("list", card.Inspect.Format);
+        Assert.Equal("peak_apps", card.Inspect!.Value.TooltipId?.Value);
+        Assert.Equal("Состав в пике", card.Inspect.Value.Label?.Value);
+        Assert.Equal("list", card.Inspect!.Value.Format);
     }
 
     [Fact]
@@ -521,21 +519,27 @@ public class DashboardParseTests
 
         var props = doc.Cards[0].Diagram.Properties;
         Assert.Equal("viridis", props["color_scale"]);
-        Assert.Equal("list", doc.Cards[0].Inspect!.Format);
-        Assert.Equal(", ", doc.Cards[0].Inspect!.Split);
+        Assert.Equal("list", doc.Cards[0].Inspect!.Value.Format);
+        Assert.Equal(", ", doc.Cards[0].Inspect!.Value.Split);
     }
 
     [Fact]
     public void MatrixPresentation_defaults_tooltip_format_to_list_when_inspect_has_split()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
-            Inspect: new InspectPresentation("peak_apps", null, "list", "; "),
+            Inspect: new InspectPresentation
+            {
+                TooltipId = Microsoft.FSharp.Core.FSharpOption<string>.Some("peak_apps"),
+                Label = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Format = "list",
+                Split = "; ",
+            },
             Tooltip: new TooltipDefinition("peak_apps", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["value"] = "peak_apps",
@@ -600,21 +604,25 @@ public class DashboardParseTests
 
         var legend = doc.Cards[0].Legend;
         Assert.NotNull(legend);
-        Assert.Equal("мин. {min}", legend.MinLabel);
-        Assert.Equal("макс. {max}", legend.MaxLabel);
+        Assert.Equal("мин. {min}", legend.Value.MinLabel?.Value);
+        Assert.Equal("макс. {max}", legend.Value.MaxLabel?.Value);
     }
 
     [Fact]
     public void MatrixPresentation_legend_templates_substitute_min_max()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
-            Legend: new LegendDefinition(MinLabel: "от {min}", MaxLabel: "до {max}"));
+            Legend: new LegendDefinition
+            {
+                MinLabel = Microsoft.FSharp.Core.FSharpOption<string>.Some("от {min}"),
+                MaxLabel = Microsoft.FSharp.Core.FSharpOption<string>.Some("до {max}"),
+            });
 
         var presentation = MatrixPresentation.FromCard(card);
         Assert.Equal("от 1", presentation.FormatLegendMin(1, 5));
@@ -624,11 +632,11 @@ public class DashboardParseTests
     [Fact]
     public void MatrixPresentation_reads_visible_rows_from_chrome_preset_and_series_fallback()
     {
-        var cardWithChrome = new CardDefinition(
+        var cardWithChrome = CardTestData.Create(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             Presentation: new PresentationBlock(
@@ -640,11 +648,11 @@ public class DashboardParseTests
 
         Assert.Equal(6, MatrixPresentation.FromCard(cardWithChrome).VisibleRows);
 
-        var cardWithSeries = new CardDefinition(
+        var cardWithSeries = CardTestData.Create(
             "t",
             "T",
-            new DiagramDefinition("heatmap", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));
@@ -680,14 +688,14 @@ public class DashboardParseTests
     }
 
     [Fact]
-    public void HeatmapCellFilterResolver_maps_display_time_to_storage_utc_wire()
+    public void HeatmapCellFilterResolver_takes_civil_time_label_as_is()
     {
         var moscow = TimeZoneInfo.FindSystemTimeZoneById(
             OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
         LabelFormat.DisplayTimeZone = moscow;
         try
         {
-            var filter = new FilterDefinition(
+            var filter = FilterTestData.Create(
                 FilterKind.Field,
                 "activity_bucket_time",
                 null,
@@ -701,14 +709,14 @@ public class DashboardParseTests
             var context = new HeatmapCellContext(0, 0, "14:05", "host", 3, null);
 
             var overlay = HeatmapCellFilterResolver.BuildOverlay(
-                [new SetFilterFromFieldEffect(filter.Name, "x")],
+                [CardClickEffect.NewSetFilterFromField(filter.Name, "x")],
                 context,
                 index,
                 filters,
                 ["activity_slot"]);
 
             Assert.True(overlay.TryGetField(filter.Name, out var values));
-            Assert.Contains("2024-06-15T11:05:00", values);
+            Assert.Contains("2024-06-15T14:05:00", values);
         }
         finally
         {
@@ -727,16 +735,6 @@ public class DashboardParseTests
             ["axis_scroll"] = raw,
         };
         Assert.Equal(expected, VizAxisPresentationParser.ParseAxisScroll(props));
-    }
-
-    [Fact]
-    public void DateValueCodec_CombineDisplayLocalToStorageUtc_matches_matrix_axis()
-    {
-        var moscow = TimeZoneInfo.FindSystemTimeZoneById(
-            OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
-        var day = new DateOnly(2024, 6, 15);
-        var utc = DateValueCodec.CombineDisplayLocalToStorageUtc(day, new TimeOnly(14, 5), moscow);
-        Assert.Equal(new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc), utc);
     }
 
     [Fact]
@@ -765,7 +763,7 @@ public class DashboardParseTests
     [Fact]
     public void GrainFilterPresentation_chip_uses_report_date_format_not_iso()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(DateFormat: "dd.MM"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(dateFormat: "dd.MM"));
         try
         {
             var chip = GrainFilterPresentation.FormatChipValue(
@@ -824,20 +822,20 @@ public class DashboardParseTests
             end dashboard
             """);
 
-        Assert.Equal("en-GB", document.ResolvedFormatDefaults.Culture);
-        Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat);
-        Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat);
-        Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat);
+        Assert.Equal("en-GB", document.ResolvedFormatDefaults.Culture?.Value);
+        Assert.Equal("HH:mm", document.ResolvedFormatDefaults.TimeFormat?.Value);
+        Assert.Equal("dd.MM.yyyy", document.ResolvedFormatDefaults.DateFormat?.Value);
+        Assert.Equal("dd.MM.yyyy HH:mm", document.ResolvedFormatDefaults.DateTimeFormat?.Value);
     }
 
     [Fact]
     public void LabelFormat_report_defaults_apply_when_diagram_format_omitted()
     {
         LabelFormat.DisplayTimeZone = null;
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(
-            TimeFormat: "HH:mm",
-            DateFormat: "dd.MM.yyyy",
-            DateTimeFormat: "dd.MM.yyyy HH:mm"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(
+            timeFormat: "HH:mm",
+            dateFormat: "dd.MM.yyyy",
+            dateTimeFormat: "dd.MM.yyyy HH:mm"));
         try
         {
             var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);
@@ -857,7 +855,7 @@ public class DashboardParseTests
     [Fact]
     public void LabelFormat_diagram_format_overrides_report_default()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(TimeFormat: "HH:mm"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(timeFormat: "HH:mm"));
         try
         {
             var value = new DateTime(2024, 6, 15, 14, 5, 0, DateTimeKind.Unspecified);

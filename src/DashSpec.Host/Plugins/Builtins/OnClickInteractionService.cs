@@ -1,4 +1,3 @@
-using DashSpec.Core.Model;
 using DashSpec.Viz;
 using DashSpec.Surface.Blazor.Services.Presentation;
 
@@ -6,38 +5,37 @@ namespace DashSpec.Host.Plugins.Builtins;
 
 public sealed class OnClickInteractionService : IOnClickInteractionService
 {
-    public ShowSelectionEffect? ResolveShowEffect(CardClickBehaviour? behaviour) =>
+    public ShowSelectionEffect? ResolveShowEffect(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
         CardSelectionPresenter.FindShowEffect(behaviour);
 
-    public bool HasNavigationEffects(CardClickBehaviour? behaviour) =>
-        behaviour?.Effects.Any(effect => effect switch
-        {
-            SetFilterFromFieldEffect or DrillTableFromCellEffect or GotoTabEffect or GotoPageEffect or FocusPhaseEffect => true,
-            InvokeHandlerEffect invoke =>
-                string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase),
-            _ => false,
-        }) == true;
+    public bool HasNavigationEffects(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
+        behaviour?.Effects.Any(static effect => effect.IsNavigationEffect) == true;
 
     public IEnumerable<CardClickEffect> ExpandClickEffects(IEnumerable<CardClickEffect> effects) =>
         effects.SelectMany(ExpandSingle);
 
-    private static IEnumerable<CardClickEffect> ExpandSingle(CardClickEffect effect) =>
-        effect is InvokeHandlerEffect invoke
-            ? ExpandInvoke(invoke)
-            : [effect];
-
-    private static IEnumerable<CardClickEffect> ExpandInvoke(InvokeHandlerEffect invoke)
+    private static IEnumerable<CardClickEffect> ExpandSingle(CardClickEffect effect)
     {
-        if (!string.Equals(invoke.HandlerId, "drill_down", StringComparison.OrdinalIgnoreCase))
+        if (effect.TryGetInvokeHandler?.Value is not { } invoke)
         {
-            yield return invoke;
-            yield break;
+            return [effect];
         }
 
-        var defaultFrom = invoke.Args.GetValueOrDefault("from") ?? "y";
+        var handlerId = (string)invoke.Item1;
+        if (!string.Equals(handlerId, "drill_down", StringComparison.OrdinalIgnoreCase))
+        {
+            return [effect];
+        }
+
+        return ExpandDrillDown((IReadOnlyDictionary<string, string>)invoke.Item2);
+    }
+
+    private static IEnumerable<CardClickEffect> ExpandDrillDown(IReadOnlyDictionary<string, string> args)
+    {
+        var defaultFrom = args.GetValueOrDefault("from") ?? "y";
         string? tabId = null;
 
-        foreach (var (key, value) in invoke.Args)
+        foreach (var (key, value) in args)
         {
             if (string.Equals(key, "from", StringComparison.OrdinalIgnoreCase))
             {
@@ -52,16 +50,16 @@ public sealed class OnClickInteractionService : IOnClickInteractionService
 
             if (string.Equals(key, "target", StringComparison.OrdinalIgnoreCase))
             {
-                yield return new SetFilterFromFieldEffect(value, defaultFrom);
+                yield return CardClickEffect.NewSetFilterFromField(value, defaultFrom);
                 continue;
             }
 
-            yield return new SetFilterFromFieldEffect(key, value);
+            yield return CardClickEffect.NewSetFilterFromField(key, value);
         }
 
         if (!string.IsNullOrWhiteSpace(tabId))
         {
-            yield return new GotoTabEffect(tabId);
+            yield return CardClickEffect.NewGotoTab(tabId);
         }
     }
 }

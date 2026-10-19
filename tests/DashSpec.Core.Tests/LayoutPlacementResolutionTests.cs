@@ -1,16 +1,15 @@
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
 
 public sealed class LayoutPlacementResolutionTests
 {
-    private static readonly CardDefinition Card = new(
+    private static readonly CardDefinition Card = CardTestData.Create(
         "card_a",
         "",
-        new DiagramDefinition("bar", new Dictionary<string, string>()),
-        new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+        DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
         [],
         [],
         Placement: new PlacementDefinition(2, 1, 6));

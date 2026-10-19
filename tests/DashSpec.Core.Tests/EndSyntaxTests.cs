@@ -1,4 +1,3 @@
-using DashSpec.Core.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -100,7 +99,7 @@ public sealed class EndSyntaxTests
             end tab
             """);
 
-        var page = doc.Pages!.Single(p => p.Id == "p");
+        var page = doc.Pages!.Value.Single(p => p.Id == "p");
         Assert.NotNull(page.ToolbarBoard);
         Assert.NotNull(page.UsageDateDerive);
     }

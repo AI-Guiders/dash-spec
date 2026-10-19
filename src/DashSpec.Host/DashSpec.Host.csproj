@@ -67,7 +67,6 @@
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
     <ProjectReference Include="..\DashSpec.Viewer\DashSpec.Viewer.csproj" />
     <ProjectReference Include="..\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
-    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
@@ -109,6 +108,13 @@
     <Copy SourceFiles="$(_PostgresConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_PostgresConnectorPluginDll)')" />
     <Copy SourceFiles="$(_ExportPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportPluginDll)')" />
     <Copy SourceFiles="$(_ViewSwitchPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchPluginDll)')" />
+    <!-- Plugins are vertical slices: copy their satellite assemblies (ADR-0077). -->
+    <MakeDir Directories="$(OutputPath)plugins\ru" />
+    <MakeDir Directories="$(OutputPath)connectors\ru" />
+    <Copy SourceFiles="$(_ExportOutDir)ru\DashSpec.Plugin.Export.resources.dll" DestinationFolder="$(OutputPath)plugins\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportOutDir)ru\DashSpec.Plugin.Export.resources.dll')" />
+    <Copy SourceFiles="$(_ViewSwitchOutDir)ru\DashSpec.Plugin.ViewSwitch.resources.dll" DestinationFolder="$(OutputPath)plugins\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchOutDir)ru\DashSpec.Plugin.ViewSwitch.resources.dll')" />
+    <Copy SourceFiles="$(_ConnectorOutDir)ru\DashSpec.Connector.SqlServer.resources.dll" DestinationFolder="$(OutputPath)connectors\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ConnectorOutDir)ru\DashSpec.Connector.SqlServer.resources.dll')" />
+    <Copy SourceFiles="$(_PostgresConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll" DestinationFolder="$(OutputPath)connectors\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_PostgresConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll')" />
   </Target>
 
   <ItemGroup>

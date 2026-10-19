@@ -1,4 +1,4 @@
-using DashSpec.Core;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

@@ -1,7 +1,7 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
 using DashSpec.Abstractions.Plugins;
 using Xunit;
+
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Tests;
 
@@ -51,11 +51,11 @@ public sealed class CardVisibilityAndPhaseTests
             """);
 
         var card = doc.Cards[0];
-        Assert.Equal(120, card.MatrixLimits!.MaxAxisLabels);
-        Assert.Equal(3000, card.MatrixLimits.MaxCells);
+        Assert.Equal(120, card.MatrixLimits!.Value.MaxAxisLabels?.Value);
+        Assert.Equal(3000, card.MatrixLimits.Value.MaxCells?.Value);
         Assert.Equal("Too dense — narrow filters.", card.OversizeMessage);
-        Assert.False(card.MatrixLimits.IsOversized(90, 1));
-        Assert.True(card.MatrixLimits.IsOversized(121, 1));
+        Assert.False(card.MatrixLimits.Value.IsOversized(90, 1));
+        Assert.True(card.MatrixLimits.Value.IsOversized(121, 1));
     }
 
     [Fact]
@@ -86,9 +86,9 @@ public sealed class CardVisibilityAndPhaseTests
             end tab
             """);
 
-        Assert.Equal(CardVisibilityMode.WhenEmpty, doc.Cards[0].Visibility!.Mode);
-        Assert.Equal(CardVisibilityMode.WhenSet, doc.Cards[1].Visibility!.Mode);
-        Assert.Equal("Pick a user", doc.Cards[1].Visibility!.Message);
+        Assert.Equal(CardVisibilityMode.WhenEmpty, doc.Cards[0].Visibility!.Value.Mode);
+        Assert.Equal(CardVisibilityMode.WhenSet, doc.Cards[1].Visibility!.Value.Mode);
+        Assert.Equal("Pick a user", doc.Cards[1].Visibility!.Value.Message?.Value);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public sealed class CardVisibilityAndPhaseTests
 
         Assert.Equal("browse", doc.Cards[0].PhaseId);
         Assert.Equal("detail", doc.Cards[1].PhaseId);
-        Assert.IsType<FocusPhaseEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
+        Assert.Equal("FocusPhase", CardClickEffectTestData.CaseName(doc.Cards[0].ClickBehaviour!.Value.Effects[0]));
     }
 
     [Fact]
@@ -151,8 +151,8 @@ public sealed class CardVisibilityAndPhaseTests
             end tab
             """);
 
-        var effects = doc.Cards[0].ClickBehaviour!.Effects;
-        Assert.IsType<SetFilterFromFieldEffect>(effects[0]);
-        Assert.IsType<FocusPhaseEffect>(effects[1]);
+        var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
+        Assert.Equal("SetFilterFromField", CardClickEffectTestData.CaseName(effects[0]));
+        Assert.Equal("FocusPhase", CardClickEffectTestData.CaseName(effects[1]));
     }
 }

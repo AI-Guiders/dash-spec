@@ -1,6 +1,7 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using Xunit;
+
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Tests;
 
@@ -35,10 +36,10 @@ public sealed class ReportPagesAndCatalogTests
             """);
 
         Assert.NotNull(doc.Pages);
-        Assert.Equal(2, doc.Pages.Count);
+        Assert.Equal(2, doc.Pages!.Value.Count);
         Assert.Equal("overview", doc.Cards[0].PageId);
         Assert.Equal("detail", doc.Cards[1].PageId);
-        Assert.Equal("Overview", doc.Pages[0].Title);
+        Assert.Equal("Overview", doc.Pages!.Value[0].Title);
     }
 
     [Fact]
@@ -62,12 +63,13 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var effects = doc.Cards[0].ClickBehaviour!.Effects;
-        Assert.IsType<GotoPageEffect>(effects[0]);
-        Assert.Equal("detail", ((GotoPageEffect)effects[0]).PageId);
-        Assert.IsType<GotoCatalogEntryEffect>(effects[1]);
-        Assert.Equal("soak", ((GotoCatalogEntryEffect)effects[1]).EntryId);
-        Assert.Null(((GotoCatalogEntryEffect)effects[1]).PreserveFilterNames);
+        var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
+        Assert.Equal("GotoPage", CardClickEffectTestData.CaseName(effects[0]));
+        Assert.Equal("detail", CardClickEffectTestData.Fields(effects[0])[0]!);
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effects[1]));
+        var entryFields = CardClickEffectTestData.Fields(effects[1]);
+        Assert.Equal("soak", entryFields[0]!);
+        Assert.Null(entryFields[1]);
     }
 
     [Fact]
@@ -91,11 +93,13 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var effects = doc.Cards[0].ClickBehaviour!.Effects;
-        Assert.IsType<SetFilterFromFieldEffect>(effects[0]);
-        var gotoEntry = Assert.IsType<GotoCatalogEntryEffect>(effects[1]);
-        Assert.Equal("detail", gotoEntry.EntryId);
-        Assert.Equal(["usage_date", "user_name"], gotoEntry.PreserveFilterNames);
+        var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
+        Assert.Equal("SetFilterFromField", CardClickEffectTestData.CaseName(effects[0]));
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effects[1]));
+        var fields = CardClickEffectTestData.Fields(effects[1]);
+        Assert.Equal("detail", fields[0]!);
+        var preserved = (Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<string>>)fields[1]!;
+        Assert.Equal(["usage_date", "user_name"], preserved.Value);
     }
 
     [Fact]
@@ -118,16 +122,19 @@ public sealed class ReportPagesAndCatalogTests
             end tab
             """);
 
-        var gotoEntry = Assert.IsType<GotoCatalogEntryEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("detail", gotoEntry.EntryId);
-        Assert.NotNull(gotoEntry.PreserveFilterNames);
-        Assert.Empty(gotoEntry.PreserveFilterNames!);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        Assert.Equal("GotoCatalogEntry", CardClickEffectTestData.CaseName(effect));
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("detail", fields[0]!);
+        var preserved = (Microsoft.FSharp.Core.FSharpOption<IReadOnlyList<string>>)fields[1]!;
+        Assert.NotNull(preserved);
+        Assert.Empty(preserved.Value);
     }
 
     [Fact]
     public void Parse_catalog_group_assigns_group_id()
     {
-        var catalog = CatalogParser.Parse("""
+        var catalog = CatalogReader.Parse("""
             module catalog demo
             
             default soak
@@ -143,10 +150,10 @@ public sealed class ReportPagesAndCatalogTests
             """);
 
         Assert.NotNull(catalog.Groups);
-        Assert.Single(catalog.Groups);
-        Assert.Equal("customer", catalog.Groups[0].Id);
-        Assert.Equal("Customer", catalog.Groups[0].Title);
-        Assert.Equal("customer", catalog.Entries[0].GroupId);
+        Assert.Single(catalog.Groups.Value);
+        Assert.Equal("customer", catalog.Groups.Value[0].Id);
+        Assert.Equal("Customer", catalog.Groups.Value[0].Title);
+        Assert.Equal("customer", catalog.Entries[0].GroupId.Value);
         Assert.Null(catalog.Entries[1].GroupId);
     }
 
@@ -203,8 +210,8 @@ public sealed class ReportPagesAndCatalogTests
 
             Assert.Equal(2, doc.Tabs.Count);
             Assert.NotNull(doc.Pages);
-            Assert.Single(doc.Pages);
-            Assert.Equal("paged_reports", doc.Pages[0].TabId);
+            Assert.Single(doc.Pages!.Value);
+            Assert.Equal("paged_reports", doc.Pages!.Value[0].TabId);
             Assert.Null(doc.Cards.First(c => c.Id == "plain").PageId);
             Assert.Equal("p1", doc.Cards.First(c => c.Id == "paged").PageId);
         }

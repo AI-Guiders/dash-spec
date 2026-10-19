@@ -1,9 +1,5 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -64,10 +60,10 @@ public class QueryCompilerTests
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
         filters.SetField("app_name", ["Tekla Structures"]);
 
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v_daily_active_users.app_name"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "demo.v_daily_active_users.app_name"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, document);
@@ -128,10 +124,10 @@ public class QueryCompilerTests
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
         filters.SetField("app_name", ["OtherApp"]);
 
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v.app_name"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "demo.v.app_name"),
         };
 
         var overlay = new CardCellDrillOverlay();
@@ -186,9 +182,9 @@ public class QueryCompilerTests
 """); var card = document.Cards[0];
 
         var filters = new FilterState();
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["bucket"] = new(Model.FilterKind.Field, "bucket", null, "bucket_start_utc"),
+            ["bucket"] = FilterTestData.Create(FilterKind.Field, "bucket", null, "bucket_start_utc"),
         };
 
         var overlay = new CardCellDrillOverlay();
@@ -244,9 +240,9 @@ public class QueryCompilerTests
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql);
@@ -300,9 +296,9 @@ public class QueryCompilerTests
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", null, "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", null, "usage_date"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.Postgres);
@@ -333,7 +329,7 @@ public class QueryCompilerTests
             end dashboard
 """); var card = document.Cards[0];
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), DashSpecTestRowTypes.Catalog);
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), DashSpecTestRowTypes.Catalog);
 
         Assert.StartsWith("SELECT TOP 100", query.Sql, StringComparison.OrdinalIgnoreCase);
     }
@@ -366,7 +362,7 @@ public class QueryCompilerTests
         var query = QueryCompiler.Compile(
             card,
             new FilterState(),
-            new Dictionary<string, Model.FilterDefinition>(),
+            new Dictionary<string, FilterDefinition>(),
             document,
             SqlDialect.Postgres);
 
@@ -424,15 +420,15 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_period_start_with_grain_filter_uses_period_anchor()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["x"] = "app_name",
                 ["y"] = "peak_concurrent_proxy",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak_concurrent_by_period", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_concurrent_by_period", rowsType: "FixtureRow"),
             ["period_grain", "period_start", "app_name"],
             []);
 
@@ -442,14 +438,14 @@ public class QueryCompilerTests
 
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["period_grain"] = new(FilterKind.Field, "period_grain", "day", "demo.v_peak.period_grain"),
-            ["period_start"] = new(
+            ["period_grain"] = FilterTestData.Create(FilterKind.Field, "period_grain", "day", "demo.v_peak.period_grain"),
+            ["period_start"] = FilterTestData.Create(
                 FilterKind.Date,
                 "period_start",
                 "today..today",
                 "period_start",
-                GrainFilterName: "period_grain"),
-            ["app_name"] = new(FilterKind.Field, "app_name", null, "demo.v_peak.app_name"),
+                grainFilterName: "period_grain"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "demo.v_peak.app_name"),
         };
 
         var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);
@@ -525,7 +521,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_bar_applies_bound_top_filter_with_order_by()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "over",
             "Over",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -534,8 +530,8 @@ public class QueryCompilerTests
                 ["value"] = "peak_concurrent_proxy",
                 ["reference"] = "purchased_seats",
                 ["order_by"] = "utilization_pct DESC, app_name",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak_over_limit", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_over_limit", rowsType: "FixtureRow"),
             ["chart_top"],
             []);
 
@@ -544,7 +540,7 @@ public class QueryCompilerTests
 
         var filterIndex = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["chart_top"] = new(FilterKind.Top, "chart_top", "10", null, MaxValue: 50),
+            ["chart_top"] = FilterTestData.Create(FilterKind.Top, "chart_top", "10", null, maxValue: 50),
         };
 
         var query = QueryCompiler.Compile(card, filters, filterIndex, DashSpecTestRowTypes.Catalog);
@@ -560,7 +556,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_donut_sums_measure_by_category_after_filters()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "by_form",
             "Form",
             new DiagramDefinition("donut", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -568,16 +564,16 @@ public class QueryCompilerTests
                 ["category"] = "form",
                 ["value"] = "launch_count",
                 ["order_by"] = "launch_count DESC, form",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "product.v_launches_by_form", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_launches_by_form", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 7, 7), new DateOnly(2026, 8, 6));
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-30d..today", "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-30d..today", "usage_date"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql);
@@ -592,22 +588,22 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_defaults_to_sum_over_filtered_rows()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "dau_total",
             "DAU",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["value"] = "distinct_users",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_active_users", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_active_users", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog);
@@ -620,25 +616,25 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_max_aggregate_without_group_by()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["value"] = "peak_concurrent_proxy",
                 ["aggregate"] = "max",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy", rowsType: "FixtureRow"),
             ["usage_date", "app_name"],
             []);
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
         filters.SetField("app_name", ["Tekla Structures"]);
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["app_name"] = new(Model.FilterKind.Field, "app_name", null, "demo.v_daily_peak_concurrent_proxy.app_name"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "demo.v_daily_peak_concurrent_proxy.app_name"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog);
@@ -651,19 +647,19 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_number_aggregate_none_keeps_row_select()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "single",
             "Single",
             new DiagramDefinition("number", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["value"] = "kpi",
                 ["aggregate"] = "none",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_kpi", RowsType: "FixtureRow"),
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_kpi", rowsType: "FixtureRow"),
             [],
             []);
 
-        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, Model.FilterDefinition>(), DashSpecTestRowTypes.Catalog);
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), DashSpecTestRowTypes.Catalog);
 
         Assert.Contains("SELECT kpi FROM demo.v_kpi", query.Sql);
         Assert.DoesNotContain("SUM(", query.Sql);
@@ -673,7 +669,7 @@ public class QueryCompilerTests
     [Fact]
     public void Compile_working_time_basis_appends_work_window_predicate()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition(
@@ -682,22 +678,31 @@ public class QueryCompilerTests
                 {
                     ["x"] = "usage_date",
                     ["y"] = "peak_concurrent_proxy",
-                }),
-            new DataSourceDefinition(DataSourceKind.View, "demo.v_peak", RowsType: "FixtureRow"),
+                }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
-        var policy = new ReportTimePolicy(
-            ReportTimeBasis.Working,
-            ReportTimeApply.Clip,
-            "bucket_start_utc",
-            new WorkCalendarDefinition("Russian Standard Time", "09:00", "18:00", "mon,tue,wed,thu,fri"));
+        var policy = new ReportTimePolicy
+        {
+            Basis = ReportTimeBasis.Working,
+            Apply = ReportTimeApply.Clip,
+            WorkTimeColumn = Microsoft.FSharp.Core.FSharpOption<string>.Some("bucket_start_utc"),
+            WorkCalendar = Microsoft.FSharp.Core.FSharpOption<WorkCalendarDefinition>.Some(
+                new WorkCalendarDefinition
+                {
+                    TimeZoneId = Microsoft.FSharp.Core.FSharpOption<string>.Some("Russian Standard Time"),
+                    StartTime = Microsoft.FSharp.Core.FSharpOption<string>.Some("09:00"),
+                    EndTime = Microsoft.FSharp.Core.FSharpOption<string>.Some("18:00"),
+                    WorkDays = Microsoft.FSharp.Core.FSharpOption<string>.Some("mon,tue,wed,thu,fri"),
+                }),
+        };
 
         var filters = new FilterState();
         filters.SetDate("usage_date", new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 7));
-        var index = new Dictionary<string, Model.FilterDefinition>
+        var index = new Dictionary<string, FilterDefinition>
         {
-            ["usage_date"] = new(Model.FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
         };
 
         var query = QueryCompiler.Compile(card, filters, index, DashSpecTestRowTypes.Catalog, SqlDialect.TSql, reportTimePolicy: policy);
@@ -734,8 +739,8 @@ public class QueryCompilerTests
             """);
 
         Assert.NotNull(document.TimePolicy);
-        Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Basis);
-        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
+        Assert.Equal(ReportTimeBasis.Working, document.TimePolicy!.Value.Basis);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);
     }
 
     [Fact]
@@ -759,6 +764,6 @@ public class QueryCompilerTests
             end tab
             """);
 
-        Assert.Equal("bucket_start_utc", document.TimePolicy?.WorkTimeColumn);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);
     }
 }

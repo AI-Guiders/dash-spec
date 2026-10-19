@@ -1,6 +1,7 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
+using DashSpec.Core.Interaction;
 using DashSpec.Execution.Runtime;
+using Microsoft.FSharp.Core;
+using Microsoft.FSharp.Reflection;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
@@ -19,7 +20,7 @@ public static class CardSelectionPresenter
     {
         if (effect.Source is ShowSource.Tooltip)
         {
-            var split = effect.Split ?? presentation?.TooltipSplit ?? ", ";
+            var split = effect.Split?.Value ?? presentation?.TooltipSplit ?? ", ";
             var raw = context.TooltipRaw;
             if (!string.IsNullOrWhiteSpace(raw))
             {
@@ -116,12 +117,11 @@ public static class CardSelectionPresenter
             var tipLabel = presentation?.TooltipLabel ?? "Details";
             rows.Add((tipLabel, context.TooltipRaw));
         }
-
         return rows;
     }
 
-    public static ShowSelectionEffect? FindShowEffect(CardClickBehaviour? behaviour) =>
-        behaviour?.Effects.OfType<ShowSelectionEffect>().FirstOrDefault();
+    public static ShowSelectionEffect? FindShowEffect(DashSpec.Modeling.Parse.Card.CardClickBehaviour? behaviour) =>
+        behaviour?.Effects.FirstOrDefault(effect => effect.TryGetShowSelection?.Value is not null);
 
     private static string? BuildSelectionHeadline(HeatmapCellContext context, string? peakTime)
     {

@@ -10,7 +10,7 @@
                     class="dash-tab @(active ? "dash-tab-active" : null)"
                     aria-selected="@active"
                     @onclick="() => OnSelect.InvokeAsync(tab.Id)">
-                @(ResolveLabel?.Invoke(tab) ?? tab.Label ?? tab.Id)
+                @(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)
             </button>
         }
     </nav>

@@ -1,6 +1,6 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
 using Xunit;
+
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Tests;
 
@@ -39,7 +39,7 @@ public sealed class ReportTimeConfigurationRegressionTests
         var document = DashSpecTestRowTypes.ParseDashboard(EmbeddedOverviewConfigurationTab, specDirectory: null, TabParseOptions);
 
         Assert.NotNull(document.TimePolicy);
-        Assert.Equal(ReportTimeBasis.Calendar, document.TimePolicy!.Basis);
-        Assert.Equal("bucket_start_utc", document.TimePolicy!.WorkTimeColumn);
+        Assert.Equal(ReportTimeBasis.Calendar, document.TimePolicy!.Value.Basis);
+        Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);
     }
 }

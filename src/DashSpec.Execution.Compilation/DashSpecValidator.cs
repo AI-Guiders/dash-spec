@@ -1,0 +1,73 @@
+using DashSpec.Execution.Parsing;
+using DashSpec.Execution.Runtime;
+
+
+namespace DashSpec.Execution.Compilation;
+
+/// <summary>CLI-friendly validation entry points (ADR-0030).</summary>
+public static class DashSpecValidator
+{
+    public static void ValidateSpec(string path, string? specDirectory = null) =>
+        ValidateSpec(path, specDirectory, DashSpecParseOptions.Default);
+
+    public static void ValidateSpec(
+        string path,
+        string? specDirectory,
+        DashSpecParseOptions parseOptions)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(parseOptions);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException("DashSpec file not found.", path);
+        }
+
+        var directory = specDirectory ?? Path.GetDirectoryName(path)!;
+
+        if (Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
+        {
+            // Unit files (ADR-0101) are routed by the kind in their module header, exactly like the editor path.
+            var diagnostics = DashSpecDiagnosticService.ValidateFile(path, directory, parseOptions);
+            var error = diagnostics.FirstOrDefault(d => d.Severity == DashSpecDiagnosticSeverity.Error);
+            if (error is not null)
+            {
+                throw new DashSpecParseException(error.Message);
+            }
+
+            foreach (var warning in diagnostics.Where(d => d.Severity == DashSpecDiagnosticSeverity.Warning))
+            {
+                Console.Error.WriteLine($"warning: {warning.Message}");
+            }
+
+            return;
+        }
+
+        var document = DashSpecParser.Parse(File.ReadAllText(path), directory, parseOptions);
+        EmitResolutionWarnings(ResolutionLint.Analyze(document));
+    }
+
+    public static void ValidateCatalog(string path)
+    {
+        var catalog = CatalogReader.ParseFile(path);
+        foreach (var entry in catalog.Entries)
+        {
+            var specPath = CatalogReader.ResolveEntrySpecPath(path, entry.DashspecPath);
+            var specDirectory = Path.GetDirectoryName(specPath)!;
+            var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectory);
+            EmitResolutionWarnings(ResolutionLint.Analyze(document, entry));
+        }
+    }
+
+    public static IReadOnlyList<ResolutionLintFinding> GetResolutionFindings(
+        DashboardDocument document,
+        CatalogEntryDefinition? catalogEntry = null) =>
+        ResolutionLint.Analyze(document, catalogEntry);
+
+    private static void EmitResolutionWarnings(IReadOnlyList<ResolutionLintFinding> findings)
+    {
+        foreach (var finding in findings.Where(f => f.Severity == ResolutionLintSeverity.Warning))
+        {
+            Console.Error.WriteLine($"warning: {finding.FormatMessage()}");
+        }
+    }
+}

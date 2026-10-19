@@ -1,7 +1,8 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+@inject IStringLocalizer<FilterStrings> Loc
 @using DashSpec.Presentation.Filters
 
-<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null) @(FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
+<div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
     @if (NativeSelect)
     {
         @if (Compact)
@@ -50,7 +51,7 @@
                     {
                         <input class="combobox-search filter-search"
                                type="search"
-                               placeholder="Поиск…"
+                               placeholder="@SearchPlaceholder"
                                @bind="_search"
                                @bind:event="oninput"
                                @onclick:stopPropagation="true" />
@@ -83,8 +84,8 @@
                     @if (!SingleSelect)
                     {
                         <div class="combobox-actions chip-actions">
-                            <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
-                            <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+                            <button type="button" class="link-btn" @onclick="SelectAllAsync">@Loc["All"]</button>
+                            <button type="button" class="link-btn" @onclick="ClearAsync">@Loc["Reset"]</button>
                         </div>
                     }
                 </div>
@@ -105,11 +106,11 @@
                     <span class="muted filter-count">
                         @if (Selected.Count == 0)
                         {
-                            <text>все</text>
+                            <text>@Loc["AllCount"]</text>
                         }
                         else
                         {
-                            <text>@Selected.Count из @Options.Count</text>
+                            <text>@(Loc["{0} of {1}", Selected.Count, Options.Count])</text>
                         }
                     </span>
                 }
@@ -124,7 +125,7 @@
         {
             <input class="filter-search"
                    type="search"
-                   placeholder="Поиск…"
+                   placeholder="@SearchPlaceholder"
                    @bind="_search"
                    @bind:event="oninput" />
         }
@@ -147,14 +148,16 @@
         @if (!SingleSelect)
         {
             <div class="chip-actions">
-                <button type="button" class="link-btn" @onclick="SelectAllAsync">Все</button>
-                <button type="button" class="link-btn" @onclick="ClearAsync">Сбросить</button>
+                <button type="button" class="link-btn" @onclick="SelectAllAsync">@Loc["All"]</button>
+                <button type="button" class="link-btn" @onclick="ClearAsync">@Loc["Reset"]</button>
             </div>
         }
     }
 </div>
 
 @code {
+    private string SearchPlaceholder => Loc["Search…"];
+
     [Parameter, EditorRequired]
     public string Label { get; set; } = string.Empty;
 
@@ -226,7 +229,7 @@
 
         if (Selected.Count == 0)
         {
-            return "Все";
+            return Loc["All"];
         }
 
         var ordered = Options.Where(Selected.Contains).ToList();

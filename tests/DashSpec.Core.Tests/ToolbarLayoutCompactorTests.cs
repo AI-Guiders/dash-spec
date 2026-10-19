@@ -1,5 +1,4 @@
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -16,30 +15,41 @@ public class ToolbarLayoutCompactorTests
             [["period_grain", "period_start"]],
             LayoutScope.Toolbar);
 
-        var document = new DashboardDocument(
+        var document = DocumentTestData.Create(
             "t",
             "T",
-            ConnectorId: null,
-            SqlDialect: SqlDialect.TSql,
-            DiagramLibraryPath: null,
-            Palette: null,
-            ColorPalette: null,
-            Layout: new LayoutDefinition(12, 8),
-            FiltersChrome: FiltersChromeDefinition.Default,
-            Filters:
+            connectorId: null,
+            sqlDialect: SqlDialect.TSql,
+            diagramLibraryPath: null,
+            palette: null,
+            colorPalette: null,
+            layout: new LayoutDefinition(12, 8),
+            filtersChrome: TestModelDefaults.FiltersChrome,
+            filters:
             [
-                new FilterDefinition(FilterKind.Date, "usage_date", null, null),
-                new FilterDefinition(FilterKind.Field, "app_name", null, null),
-                new FilterDefinition(FilterKind.Field, "period_grain", null, null),
-                new FilterDefinition(FilterKind.Date, "period_start", null, null),
+                FilterTestData.Create(FilterKind.Date, "usage_date", null, null),
+                FilterTestData.Create(FilterKind.Field, "app_name", null, null),
+                FilterTestData.Create(FilterKind.Field, "period_grain", null, null),
+                FilterTestData.Create(FilterKind.Date, "period_start", null, null),
             ],
-            DashboardFilters: ["usage_date", "app_name"],
-            Tabs: [],
-            Cards: [],
-            ToolbarBoard: reportBoard,
-            Pages:
+            dashboardFilters: ["usage_date", "app_name"],
+            tabs: [],
+            cards: [],
+            toolbarBoard: reportBoard,
+            pages:
             [
-                new ReportPageDefinition("p", null, ToolbarBoard: pageBoard),
+                new ReportPageDefinition
+                {
+                    Id = "p",
+                    Title = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    LayoutBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
+                    TabId = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    ToolbarBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(pageBoard),
+                    UsageDateDerive = Microsoft.FSharp.Core.FSharpOption<FilterDeriveDefinition>.None,
+                    FilterDefaults = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>>.None,
+                    DisplayBindings = Microsoft.FSharp.Core.FSharpOption<IReadOnlyDictionary<string, string>>.None,
+                    ScopeFlow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.ScopeFlowDefinition>.None,
+                },
             ]);
 
         var visible = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+
 
 namespace DashSpec.Execution.Runtime;
 
@@ -81,15 +80,15 @@ public static class ChartColorResolver
 
         Absorb(card.Diagram.Properties);
 
-        if (card.Presentation?.UsePreset is { } presentationPreset &&
+        if (card.Presentation?.Value?.UsePreset?.Value is { } presentationPreset &&
             library?.TryGetPresentation(presentationPreset) is { } presentationProps)
         {
             Absorb(presentationProps);
         }
 
-        if (card.Presentation is not null)
+        if (card.Presentation?.Value is { } cardPresentation)
         {
-            Absorb(card.Presentation.Properties);
+            Absorb(cardPresentation.Properties);
         }
 
         if (ordered.Count == 0)
@@ -107,14 +106,14 @@ public static class ChartColorResolver
             return true;
         }
 
-        if (card.Presentation?.UsePreset is { } presetName &&
+        if (card.Presentation?.Value?.UsePreset?.Value is { } presetName &&
             library?.TryGetPresentation(presetName) is { } preset &&
             HasSingleColorMode(preset))
         {
             return true;
         }
 
-        return card.Presentation is not null && HasSingleColorMode(card.Presentation.Properties);
+        return card.Presentation?.Value is { } presentation && HasSingleColorMode(presentation.Properties);
     }
 
     private static bool HasSingleColorMode(IReadOnlyDictionary<string, string> props) =>

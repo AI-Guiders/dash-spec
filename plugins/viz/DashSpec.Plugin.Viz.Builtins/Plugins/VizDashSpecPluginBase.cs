@@ -30,6 +30,7 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
     {
         registry.AddVizRenderer(new VizRendererDescriptor(Id, RendererId, RendererDisplayName));
         registry.RegisterCardVizComponent(RendererId, CardVizComponentType);
+        registry.RegisterPluginComponent(DashSpecPluginComponents.CardDiagram, typeof(Components.Hosting.CardVizHost));
         if (CardToolbarComponentType is not null)
         {
             registry.RegisterVizCardToolbar(RendererId, CardToolbarComponentType);

@@ -1,11 +1,10 @@
 @page "/admin"
 @page "/admin/{SectionId}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using DashSpec.Core.Localization
+@using DashSpec.Execution.Runtime
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Git
 @using DashSpec.Surface.Blazor.Services.Presentation
-@using DashSpec.Core.Filters
 @using DashSpec.Host.Services.Settings
 @inject HostSettingsService Settings
 @inject DashSpecTomlRoot Bootstrap

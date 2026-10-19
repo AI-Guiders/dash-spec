@@ -1,5 +1,5 @@
-using DashSpec.Core.Model;
 using Xunit;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Core.Tests;
 

@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+
 
 namespace DashSpec.Execution.Runtime;
 
@@ -8,7 +7,7 @@ public static class ChartChromeProperties
     public static Dictionary<string, string> Merge(CardDefinition card, SpecLibrary? library)
     {
         var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        AbsorbPresentationChain(card.Presentation, library, merged);
+        AbsorbPresentationChain(card.Presentation?.Value, library, merged);
 
         foreach (var legacyKey in new[]
         {
@@ -49,9 +48,9 @@ public static class ChartChromeProperties
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(block.UsePreset))
+        if (!string.IsNullOrWhiteSpace(block.UsePreset?.Value))
         {
-            AbsorbPresentationPreset(block.UsePreset, library, merged, visited: []);
+            AbsorbPresentationPreset(block.UsePreset.Value, library, merged, visited: []);
         }
 
         foreach (var (key, value) in block.Properties)

@@ -1,7 +1,11 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
-@using DashSpec.Core.Layout
+@using DashSpec.Execution.Runtime
+@using DashSpec.Core.Interaction
+@using DashSpec.Abstractions.Plugins
+@using DashSpec.Viewer.Plugins
 @using DashSpec.Surface.Blazor.Services.Presentation
 @inject ILayoutSlotRendererRegistry SlotRegistry
+@inject DashSpecContributorRegistry Contributors
 
 @if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.ContentKind))
 {
@@ -9,29 +13,61 @@
 }
 else if (Owner is not null)
 {
-    @switch (Slot.ContentKind)
+    @if (Slot.ContentKind is LayoutSlotContentKind.Filter)
     {
-        case LayoutSlotContentKind.Filter:
-            <div class="card-interior-filter-slot">
-                @Owner.RenderLocalFilter(Slot.Token, Owner.InteriorSlotStyle(Slot.Token))
-            </div>
-            break;
-        case LayoutSlotContentKind.SecondaryDiagram:
-            <CardInteriorVizHost Card="Owner.Card" Slot="@Owner.Card.InteriorSlotRenders![Slot.Token]" />
-            break;
-        case LayoutSlotContentKind.PrimaryDiagram:
+        <div class="card-interior-filter-slot">
+            @Owner.RenderLocalFilter(Slot.Token, Owner.InteriorSlotStyle(Slot.Token))
+        </div>
+    }
+    else if (_diagramType is not null)
+    {
+        // Any diagram is one plugin component; it draws what it is given (the card, plus a slot payload when there is one).
+        @if (Slot.ContentKind is LayoutSlotContentKind.PrimaryDiagram)
+        {
             <div class="card-viz-stack">
-                <CardVizHost Card="Owner.Card"
-                             MatrixMin="@(Owner.Card.Matrix?.Min ?? 0)"
-                             MatrixMax="@(Owner.Card.Matrix?.Max ?? 0)"
-                             OnHeatmapCellSelected="Owner.HandleHeatmapCellSelectedAsync" />
+                <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
                 @Owner.RenderSelectionDetail()
             </div>
-            break;
+        }
+        else
+        {
+            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+        }
     }
 }
 
 @code {
     [Parameter, EditorRequired] public LayoutSlotDescriptor Slot { get; set; } = default!;
     [CascadingParameter] public DashboardCardView? Owner { get; set; }
+
+    private Type? _diagramType;
+    private Dictionary<string, object?> _diagramParameters = new();
+
+    protected override void OnParametersSet()
+    {
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardDiagram, out _diagramType);
+
+        if (Owner is null || _diagramType is null)
+        {
+            _diagramParameters = new Dictionary<string, object?>();
+            return;
+        }
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["Card"] = Owner.Card,
+            ["MatrixMin"] = Owner.Card.Matrix?.Min ?? 0,
+            ["MatrixMax"] = Owner.Card.Matrix?.Max ?? 0,
+            ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                this,
+                Owner.HandleHeatmapCellSelectedAsync),
+        };
+
+        if (Slot.ContentKind is LayoutSlotContentKind.SecondaryDiagram)
+        {
+            parameters["Slot"] = Owner.Card.InteriorSlotRenders![Slot.Token];
+        }
+
+        _diagramParameters = parameters;
+    }
 }

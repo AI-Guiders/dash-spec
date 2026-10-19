@@ -1,9 +1,10 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.TableHtml
 @using DashSpec.Execution.Runtime
+@inject IStringLocalizer<VizStrings> Loc
 
 @if (Context.Card.Table is null || Context.Card.Table.Rows.Count == 0)
 {
-    <p class="empty-state">Нет строк</p>
+    <p class="empty-state">@Loc["No rows"]</p>
 }
 else
 {
@@ -19,8 +20,8 @@ else
                             {
                                 <input type="search"
                                        class="table-col-filter"
-                                       placeholder="Фильтр"
-                                       aria-label="@($"Фильтр: {column}")"
+                                       placeholder="@FilterPlaceholder"
+                                       aria-label="@ResolveFilterAria(column)"
                                        value="@GetFilter(column)"
                                        @oninput="e => SetFilter(column, e.Value?.ToString())" />
                             }
@@ -42,16 +43,23 @@ else
         </table>
     </div>
     <p class="table-foot muted">
-        Показано @FilteredRowCount из @Context.Card.Table.Rows.Count строк
+        @RowsSummary
         @if (HasActiveFilters)
         {
-            <button type="button" class="table-filter-clear" @onclick="ClearFilters">Сбросить фильтры</button>
+            <button type="button" class="table-filter-clear" @onclick="ClearFilters">@Loc["Clear filters"]</button>
         }
     </p>
 }
 
 @code {
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private string FilterPlaceholder => Loc["Filter"];
+
+    private string ResolveFilterAria(string column) => Loc["Filter: {0}", column];
+
+    private string RowsSummary =>
+        Loc["Showing {0} of {1} rows", FilteredRowCount, Context.Card.Table!.Rows.Count];
 
     private TablePresentation Presentation =>
         Context.Card.TablePresentation ?? TablePresentation.FromProperties(new Dictionary<string, string>());

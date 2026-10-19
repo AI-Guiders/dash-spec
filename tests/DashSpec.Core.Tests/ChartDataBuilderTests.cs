@@ -1,9 +1,6 @@
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -27,7 +24,7 @@ public class ChartDataBuilderTests
             ["x"] = "usage_date",
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -82,7 +79,7 @@ public class ChartDataBuilderTests
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
             ["color_normalize"] = "map",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -116,7 +113,7 @@ public class ChartDataBuilderTests
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
             ["color_normalize"] = "column",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -157,7 +154,7 @@ public class ChartDataBuilderTests
             ["y"] = "user_name",
             ["value"] = "peak_concurrent_apps",
             ["y_format"] = "user.short",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -209,7 +206,7 @@ public class ChartDataBuilderTests
             ["value"] = "event_count",
             ["x_format"] = "time.short",
             ["y_format"] = "raw",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -252,7 +249,7 @@ public class ChartDataBuilderTests
             ["value"] = "peak_concurrent_proxy",
             ["x_format"] = "date.short",
             ["y_format"] = "raw",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -284,7 +281,7 @@ public class ChartDataBuilderTests
     [Fact]
     public void BuildHeatmap_sorts_report_csharp_date_format_chronologically()
     {
-        LabelFormat.SetReportDefaults(new ReportFormatDefaults(DateFormat: "dd.MM"));
+        LabelFormat.SetReportDefaults(TestReportFormatDefaults.Create(dateFormat: "dd.MM"));
         try
         {
             var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -292,8 +289,8 @@ public class ChartDataBuilderTests
                 ["x"] = "usage_date",
                 ["y"] = "app_name",
                 ["value"] = "peak_concurrent_proxy",
-                ["y_format"] = "raw",
-            });
+            ["y_format"] = "raw",
+        }, null);
 
             var rows = TypedRowBatchTestKit.FromDictionaries(
             [
@@ -338,7 +335,7 @@ public class ChartDataBuilderTests
             ["x_format"] = "time.short",
             ["x_step"] = "1h",
             ["y_format"] = "raw",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -373,7 +370,7 @@ public class ChartDataBuilderTests
             ["axis_from"] = "08:00",
             ["axis_to"] = "18:00",
             ["y_format"] = "raw",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -393,6 +390,54 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_display_wall_clock_rows_are_not_shifted_twice()
+    {
+        var previous = LabelFormat.DisplayTimeZone;
+        LabelFormat.DisplayTimeZone = TimeZoneInfo.CreateCustomTimeZone(
+            "UTC+03-test", TimeSpan.FromHours(3), "UTC+03", "UTC+03");
+        try
+        {
+            var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "bucket_start_utc",
+                ["y"] = "app_name",
+                ["value"] = "event_count",
+                ["x_format"] = "time.short",
+                ["x_step"] = "1h",
+                ["y_format"] = "raw",
+            }, null);
+
+            var schema = new RowTypeSchema("ActivityBucketRow",
+            [
+                new RowFieldSchema("bucket_start_utc", DashPrimitiveKind.DateTime),
+                new RowFieldSchema("app_name", DashPrimitiveKind.String),
+                new RowFieldSchema("event_count", DashPrimitiveKind.Int),
+            ]);
+            // to_zone уже отдал гражданское время 09:15 → бакет 09:00; повторный сдвиг +3 дал бы 12:00.
+            var rows = TypedRowBatch.Create(schema, new List<DashValue[]>
+            {
+                new[]
+                {
+                    DashValue.FromDateTimeWithUtcOffset(new DateTime(2026, 10, 13, 9, 15, 0), 180),
+                    DashValue.FromString("ANSYS"),
+                    DashValue.FromInt(7),
+                },
+            });
+
+            var matrix = ChartDataBuilder.BuildHeatmap(rows, diagram);
+
+            Assert.Equal(24, matrix.XLabels.Count);
+            Assert.Equal("09:00", matrix.XLabels[9]);
+            Assert.Equal(7, matrix.Cells[0][9]);
+            Assert.Null(matrix.Cells[0][12]);
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = previous;
+        }
+    }
+
+    [Fact]
     public void BuildHeatmap_series_max_keeps_all_y_rows_for_viewport_scroll()
     {
         var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -400,7 +445,7 @@ public class ChartDataBuilderTests
             ["x"] = "usage_date",
             ["y"] = "app_name",
             ["value"] = "peak_concurrent_proxy",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
             Enumerable.Range(1, 12)
@@ -431,7 +476,7 @@ public class ChartDataBuilderTests
             ["y"] = "n",
             ["x_step"] = "5m",
             ["x_format"] = "time.short",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -447,11 +492,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
         var payload = ChartDataBuilder.BuildLineOrBar(rows, diagram, null, card, null);
@@ -475,7 +520,7 @@ public class ChartDataBuilderTests
             ["y"] = "n",
             ["x_step"] = "10m",
             ["x_format"] = "time.short",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -491,11 +536,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -513,7 +558,7 @@ public class ChartDataBuilderTests
             ["x"] = "app_name",
             ["y"] = "peak_concurrent_proxy",
             ["orientation"] = "horizontal",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -529,11 +574,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -553,7 +598,7 @@ public class ChartDataBuilderTests
         {
             ["category"] = "location",
             ["value"] = "launch_count",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -569,11 +614,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -592,7 +637,7 @@ public class ChartDataBuilderTests
         {
             ["category"] = "location",
             ["value"] = "launch_count",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -613,11 +658,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -635,7 +680,7 @@ public class ChartDataBuilderTests
         {
             ["category"] = "name",
             ["value"] = "n",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -645,11 +690,11 @@ public class ChartDataBuilderTests
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["name"] = "d", ["n"] = 10d },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -673,7 +718,7 @@ public class ChartDataBuilderTests
         {
             ["value"] = "idle_minutes",
             ["bins"] = "4",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -683,11 +728,11 @@ public class ChartDataBuilderTests
             new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["idle_minutes"] = 9d },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "h",
             "H",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -705,7 +750,7 @@ public class ChartDataBuilderTests
         {
             ["x"] = "idle_minutes",
             ["y"] = "peak_apps",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -721,11 +766,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "s",
             "S",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -748,7 +793,7 @@ public class ChartDataBuilderTests
             ["x"] = "idle_minutes",
             ["y"] = "peak_apps",
             ["size"] = "intensity",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -766,11 +811,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "s",
             "S",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -789,7 +834,7 @@ public class ChartDataBuilderTests
         {
             ["x"] = "app_name",
             ["value"] = "idle_minutes",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -810,11 +855,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "b",
             "B",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -835,7 +880,7 @@ public class ChartDataBuilderTests
         {
             ["x"] = "app_name",
             ["y"] = "peak",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -856,11 +901,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "t",
             "T",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -880,7 +925,7 @@ public class ChartDataBuilderTests
             ["value"] = "peak",
             ["min"] = "0",
             ["max"] = "20",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -890,11 +935,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "g",
             "G",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -913,7 +958,7 @@ public class ChartDataBuilderTests
         {
             ["category"] = "direction",
             ["value"] = "speed",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -929,11 +974,11 @@ public class ChartDataBuilderTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "w",
             "W",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -979,7 +1024,7 @@ public class ChartDataBuilderTests
             ["from"] = "segment_start_utc",
             ["to"] = "segment_end_utc",
             ["color"] = "chart_color",
-        });
+        }, null);
 
         var start = new DateTime(2026, 6, 23, 9, 0, 0);
         var rows = TypedRowBatchTestKit.FromDictionaries(
@@ -1022,7 +1067,7 @@ public class ChartDataBuilderTests
             ["axis_from"] = "08:00",
             ["axis_to"] = "18:00",
             ["step"] = "5m",
-        });
+        }, null);
 
         var day = new DateOnly(2026, 9, 24);
         var start = new DateTime(2026, 9, 24, 9, 5, 0, DateTimeKind.Utc);

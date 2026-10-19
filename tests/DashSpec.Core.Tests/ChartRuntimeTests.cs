@@ -1,10 +1,7 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -46,17 +43,17 @@ public class ChartRuntimeTests
         var card = doc.Cards[0];
         Assert.Equal("lib.toml", doc.DiagramLibraryPath);
         Assert.NotNull(card.Presentation);
-        Assert.Equal("line_bottom", card.Presentation!.UsePreset);
-        Assert.Equal("right", card.Presentation.Properties["legend"]);
+        Assert.Equal("line_bottom", card.Presentation!.Value.UsePreset?.Value);
+        Assert.Equal("right", card.Presentation.Value.Properties["legend"]);
         Assert.NotNull(card.SeriesTransform);
-        Assert.Equal(4, card.SeriesTransform!.Max);
-        Assert.Equal("Прочее", card.SeriesTransform.OtherLabel);
+        Assert.Equal(4, card.SeriesTransform!.Value.Max);
+        Assert.Equal("Прочее", card.SeriesTransform.Value.OtherLabel?.Value);
     }
 
     [Fact]
     public void CardChromeResolver_merges_library_presets()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.line_bottom_300]",
             "legend = \"bottom\"",
@@ -101,7 +98,7 @@ public class ChartRuntimeTests
     [Fact]
     public void ChartPresentation_reads_orientation_from_diagram_and_presentation()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_horizontal_320]",
             "legend = \"bottom\"",
@@ -138,15 +135,16 @@ public class ChartRuntimeTests
         var presentation = CardChromeResolver.ResolveChartPresentation(card, library);
         Assert.True(presentation.IsHorizontal);
 
-        var verticalCard = card with
+        var verticalPresentationBlock = new PresentationBlock
         {
-            Presentation = new PresentationBlock(
-                "bar_horizontal_320",
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    ["orientation"] = "vertical",
-                }),
+            UsePreset = Microsoft.FSharp.Core.FSharpOption<string>.Some("bar_horizontal_320"),
+            Properties = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["orientation"] = "vertical",
+            },
         };
+        var verticalCard = card.WithPresentation(
+            Microsoft.FSharp.Core.FSharpOption<PresentationBlock>.Some(verticalPresentationBlock));
         var verticalPresentation = CardChromeResolver.ResolveChartPresentation(verticalCard, library);
         Assert.False(verticalPresentation.IsHorizontal);
     }
@@ -158,7 +156,7 @@ public class ChartRuntimeTests
         {
             ["category"] = "app_name",
             ["value"] = "distinct_users",
-        });
+        }, null);
 
         Assert.Equal("app_name", DiagramBindings.Column(diagram, "x"));
         Assert.Equal("distinct_users", DiagramBindings.Column(diagram, "y"));
@@ -203,7 +201,7 @@ public class ChartRuntimeTests
             ["category"] = "app_name",
             ["value"] = "peak_concurrent_proxy",
             ["orientation"] = "horizontal",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -214,11 +212,11 @@ public class ChartRuntimeTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -238,7 +236,7 @@ public class ChartRuntimeTests
             ["reference"] = "purchased_seats",
             ["reference_as"] = "Куплено",
             ["orientation"] = "horizontal",
-        });
+        }, null);
 
         var rows = TypedRowBatchTestKit.FromDictionaries(
         [
@@ -256,11 +254,11 @@ public class ChartRuntimeTests
             },
         ]);
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             diagram,
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -388,7 +386,7 @@ public class ChartRuntimeTests
     [Fact]
     public void ResolveChartPresentation_merges_nested_presentation_y_max_for_utilization_bar()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_utilization_percent]",
             "scale_value = \"percent\"",
@@ -424,7 +422,7 @@ public class ChartRuntimeTests
     [Fact]
     public void CategoryChartPayloadBuilder_marks_bars_over_percent_cap_red()
     {
-        var library = SpecLibrary.Parse(
+        var library = SpecLibraryLoader.Parse(
         [
             "[presentation.bar_utilization_percent]",
             "color_mode = \"single\"",

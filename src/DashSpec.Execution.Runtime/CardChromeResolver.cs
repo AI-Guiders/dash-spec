@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+
 
 namespace DashSpec.Execution.Runtime;
 
@@ -66,7 +65,7 @@ public static class CardChromeResolver
         CardDefinition card,
         SpecLibrary? library)
     {
-        var fromBlock = ResolveSeriesTransformFromBlock(card.SeriesTransform, library);
+        var fromBlock = ResolveSeriesTransformFromBlock(card.SeriesTransform?.Value, library);
         if (fromBlock is not null)
         {
             return fromBlock;
@@ -91,17 +90,17 @@ public static class CardChromeResolver
             return null;
         }
 
-        if (block.UsePreset is { } presetName &&
+        if (block.UsePreset?.Value is { } presetName &&
             library?.TryGetSeriesTransform(presetName) is { } preset)
         {
             return new SeriesTransformSettings(
                 preset.Max,
-                block.OtherLabel ?? preset.OtherLabel);
+                block.OtherLabel?.Value ?? preset.OtherLabel);
         }
 
-        if (block.Max is int maxValue && maxValue > 0)
+        if (block.Max?.Value is int maxValue && maxValue > 0)
         {
-            return new SeriesTransformSettings(maxValue, block.OtherLabel ?? "Other");
+            return new SeriesTransformSettings(maxValue, block.OtherLabel?.Value ?? "Other");
         }
 
         return null;

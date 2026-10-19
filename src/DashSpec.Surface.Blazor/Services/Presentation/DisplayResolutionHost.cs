@@ -1,7 +1,5 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Resolution;
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz.Platform;
 using DashSpec.Viz;
@@ -66,7 +64,7 @@ internal static class DisplayResolutionHost
 
     private static CatalogEntryDefinition? ResolveCatalogEntry(
         IDashboardSession session,
-        DashSpec.Core.Model.CatalogDocument catalogDocument)
+        DashSpecReportCatalogDocument catalogDocument)
     {
         if (string.IsNullOrWhiteSpace(session.ActiveCatalogEntryId))
         {

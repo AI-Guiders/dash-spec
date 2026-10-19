@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -14,7 +12,7 @@ public sealed class KpiPriorPeriodTests
         filters.SetDate("usage_date", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 10));
         var index = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["usage_date"] = new FilterDefinition(FilterKind.Date, "usage_date", null, "usage_date"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", null, "usage_date"),
         };
 
         Assert.True(KpiPriorPeriod.TryBuildPriorFilters(
@@ -49,12 +47,12 @@ public sealed class KpiPriorPeriodTests
     {
         Assert.True(KpiPriorPeriod.WantsPriorDelta(new DiagramDefinition(
             "number",
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "prior" })));
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "prior" }, null)));
         Assert.True(KpiPriorPeriod.WantsPriorDelta(new DiagramDefinition(
             "number",
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "previous" })));
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "previous" }, null)));
         Assert.False(KpiPriorPeriod.WantsPriorDelta(new DiagramDefinition(
             "number",
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "none" })));
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["delta"] = "none" }, null)));
     }
 }

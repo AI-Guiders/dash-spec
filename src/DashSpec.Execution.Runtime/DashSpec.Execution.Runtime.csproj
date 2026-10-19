@@ -12,10 +12,12 @@
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Analyzers\DashSpec.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
-    <ProjectReference Include="..\DashSpec.Core\DashSpec.Core.csproj" />
+    <ProjectReference Include="..\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="DashSpec.Core.Tests" />
     <InternalsVisibleTo Include="DashSpec.Execution.Runtime.Tests" />
+    <InternalsVisibleTo Include="DashSpec.Execution.Core" />
+    <InternalsVisibleTo Include="DashSpec.Execution.Compilation" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
-using DashSpec.Core.Validation;
+using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;

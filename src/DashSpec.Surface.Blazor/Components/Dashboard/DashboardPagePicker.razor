@@ -1,6 +1,4 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
-@using DashSpec.Core.Model
-
 @if (Pages is { Count: > 1 })
 {
     <nav class="dash-tabs dash-pages" aria-label="Страницы отчёта">
@@ -11,7 +9,7 @@
                     class="dash-tab @(active ? "dash-tab-active" : null)"
                     aria-selected="@active"
                     @onclick="() => OnSelect.InvokeAsync(page.Id)">
-                @(ResolveLabel?.Invoke(page) ?? page.Title ?? page.Id)
+                @(ResolveLabel?.Invoke(page) ?? page.Title?.Value ?? page.Id)
             </button>
         }
     </nav>

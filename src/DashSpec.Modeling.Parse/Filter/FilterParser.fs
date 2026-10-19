@@ -1,3 +1,4 @@
+#nowarn "0104" // FilterKind values originate from this parser's closed keyword set.
 namespace DashSpec.Modeling.Parse.Filter
 
 open System

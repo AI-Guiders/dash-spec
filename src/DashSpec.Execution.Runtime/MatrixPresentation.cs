@@ -1,6 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
+
 
 namespace DashSpec.Execution.Runtime;
 
@@ -33,9 +31,9 @@ public sealed record MatrixPresentation(
         var height = CompositionResolution.ResolveMatrixHeightPx(card, library);
         var visibleRows = CompositionResolution.ResolveVisibleRows(card, library);
 
-        var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect);
-        var tooltipSplit = card.Inspect?.Split ?? ", ";
-        var tooltipLabel = card.Inspect?.Label;
+        var tooltipFormat = InspectPresentationParser.ToTooltipFormat(card.Inspect?.Value);
+        var tooltipSplit = card.Inspect?.Value.Split ?? ", ";
+        var tooltipLabel = card.Inspect?.Value?.Label?.Value;
 
         var xFormat = LabelFormat.ResolveAxisFormat(diagram.Properties.GetValueOrDefault("x_format"));
         var yFormat = diagram.Properties.GetValueOrDefault("y_format") ?? "user.short";
@@ -69,21 +67,21 @@ public sealed record MatrixPresentation(
             toolbarValueLabels,
             toolbarAxisLabelsX,
             toolbarAxisLabelsY,
-            card.Legend,
+            card.Legend?.Value,
             card.Tooltip is not null);
     }
 
     public bool ShowsGradientLegend =>
-        Legend?.Show is false
+        Legend?.Show?.Value is false
             ? false
             : Legend is not null &&
-              (!string.IsNullOrWhiteSpace(Legend.MinLabel) || !string.IsNullOrWhiteSpace(Legend.MaxLabel));
+              (!string.IsNullOrWhiteSpace(Legend.MinLabel?.Value) || !string.IsNullOrWhiteSpace(Legend.MaxLabel?.Value));
 
     public string? FormatLegendMin(double min, double max) =>
-        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MinLabel, min, max) : null;
+        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MinLabel?.Value, min, max) : null;
 
     public string? FormatLegendMax(double min, double max) =>
-        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MaxLabel, min, max) : null;
+        ShowsGradientLegend ? FormatLegendTemplate(Legend?.MaxLabel?.Value, min, max) : null;
 
     private static string? FormatLegendTemplate(string? template, double min, double max)
     {

@@ -1,11 +1,7 @@
-using DashSpec.Core.Analysis;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 
-namespace DashSpec.Core.Layout;
+
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Resolved tab cards and layout board for placement.</summary>
 public sealed record TabLayoutContext(
@@ -30,7 +26,7 @@ public static class TabLayoutCompactor
         var tabCards = tab.CardIds
             .Select(token =>
             {
-                var cardId = CardLayoutRefResolver.Resolve(
+                var cardId = CardLayoutRefBridge.Resolve(
                     token,
                     document.Cards,
                     $"Tab '{tab.Id}' cards");
@@ -40,7 +36,7 @@ public static class TabLayoutCompactor
             .ToList();
 
         var effectivePageId = activePageId;
-        var tabPages = PageTabScope.FilterForTab(document.Pages, tabId);
+        var tabPages = PageTabScope.FilterForTab(document.Pages?.Value, tabId);
         if (string.IsNullOrWhiteSpace(effectivePageId) && tabPages.Count > 0)
         {
             effectivePageId = tabPages[0].Id;
@@ -49,18 +45,18 @@ public static class TabLayoutCompactor
         if (!string.IsNullOrWhiteSpace(effectivePageId))
         {
             tabCards = tabCards
-                .Where(card => string.Equals(card.PageId, effectivePageId, StringComparison.OrdinalIgnoreCase))
+                .Where(card => string.Equals(card.PageId?.Value, effectivePageId, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
-        var board = tab.LayoutBoard;
+        LayoutBoardDefinition? board = tab.LayoutBoard?.Value;
         if (!string.IsNullOrWhiteSpace(effectivePageId))
         {
             var page = tabPages.FirstOrDefault(p =>
                 string.Equals(p.Id, effectivePageId, StringComparison.OrdinalIgnoreCase));
             if (page?.LayoutBoard is not null)
             {
-                board = page.LayoutBoard;
+                board = page.LayoutBoard.Value;
             }
         }
 
@@ -73,7 +69,7 @@ public static class TabLayoutCompactor
             : TabLayoutPlanner.Plan(context.Board, context.TabCards, context.Columns, context.Tab.Id);
 
     public static string ResolveCardRef(TabLayoutContext context, string token) =>
-        CardLayoutRefResolver.Resolve(token, context.TabCards, $"Tab '{context.Tab.Id}' layout");
+        CardLayoutRefBridge.Resolve(token, context.TabCards, $"Tab '{context.Tab.Id}' layout");
 
     public static IReadOnlyDictionary<string, PlacementDefinition> Compact(
         DashboardDocument document,
@@ -103,7 +99,7 @@ public static class TabLayoutCompactor
             {
                 var kind = DiagramKindRegistry.Resolve(
                     CardResolver.ResolveKind(card, library, document.DashboardFilters));
-                var placement = card.Placement ?? PlacementDefaults.ForFamily(kind.DataFamily, columns);
+                var placement = card.Placement?.Value ?? PlacementDefaults.ForFamily(kind.DataFamily, columns);
                 var row = placement.Row > 0 ? placement.Row : 1;
                 var col = placement.Col > 0 ? placement.Col : 1;
                 var span = Math.Min(placement.Span, columns);

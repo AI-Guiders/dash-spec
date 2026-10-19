@@ -1,7 +1,5 @@
 using System.Linq;
-using DashSpec.Core.Analysis;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Runtime;
 using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;
 using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;
 using ParseDoc = DashSpec.Modeling.Parse.Document;
@@ -16,7 +14,7 @@ internal static class DocumentParseRegistration
     {
         ParseDoc.DashboardValidationBridge.registerAction(document =>
         {
-            DashboardValidator.Validate(DocumentModelMapper.ToCore(document));
+            DashboardValidator.Validate(document);
         });
 
         DocumentParseBridge.Parse = (text, specDirectory, parseOptions) =>
@@ -27,7 +25,7 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                return DocumentModelMapper.ToCore(document);
+                return document;
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -119,11 +117,11 @@ internal static class DocumentParseRegistration
                     text,
                     ToFsharpOption(specDirectory),
                     ToFsharp(parseOptions));
-                var document = DocumentModelMapper.ToCore(result.Document);
+                var document = result.Document;
                 var diagnostics = result.Diagnostics
                     .Select(ToCoreDiagnostic)
                     .ToList();
-                return new DashSpec.Core.Platform.ReportCompileResult(document, diagnostics);
+                return new DashSpec.Execution.Runtime.ReportCompileResult(document, diagnostics);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -152,7 +150,7 @@ internal static class DocumentParseRegistration
         return items.Length > 0 ? items[0] : null;
     }
 
-    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Core.Parsing.DashSpecParseOptions options) =>
+    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Execution.Runtime.DashSpecParseOptions options) =>
         new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,
@@ -181,20 +179,20 @@ internal static class DocumentParseRegistration
             Optional = slot.Optional,
         };
 
-    private static DashSpec.Core.Validation.DashSpecDiagnostic ToCoreDiagnostic(
+    private static DashSpec.Execution.Runtime.DashSpecDiagnostic ToCoreDiagnostic(
         DashSpec.Modeling.Core.DashSpecDiagnostic diagnostic)
     {
         var span = diagnostic.Span;
-        var severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Error;
+        var severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Error;
         if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Warning))
         {
-            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Warning;
+            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Warning;
         }
         else if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Information))
         {
-            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Information;
+            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Information;
         }
-        return new DashSpec.Core.Validation.DashSpecDiagnostic(
+        return new DashSpec.Execution.Runtime.DashSpecDiagnostic(
             span.Line,
             span.Character,
             span.EndLine,

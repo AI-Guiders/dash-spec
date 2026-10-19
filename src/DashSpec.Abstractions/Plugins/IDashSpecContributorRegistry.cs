@@ -20,6 +20,18 @@ public interface IDashSpecContributorRegistry
 
     void RegisterFilterWidgetComponent(string widgetId, Type componentType);
 
+    /// <summary>
+    /// Registers the component the host renders for a well-known slot
+    /// (<see cref="DashSpecPluginComponents"/>). Registering the same type twice is a no-op.
+    /// </summary>
+    void RegisterPluginComponent(string slotId, Type componentType);
+
+    /// <summary>
+    /// Registers a plugin-owned card chrome component, rendered in the card head toolbar for every card.
+    /// The component decides whether it applies and owns its own copy (ADR-0077).
+    /// </summary>
+    void RegisterCardChromeComponent(string pluginId, Type componentType);
+
     void AddCardChrome(CardChromeContributorDescriptor descriptor);
 
     void RegisterCardVizComponent(string rendererId, Type componentType);
@@ -45,7 +57,8 @@ public enum CardChromeRenderKind
 public sealed record CardChromeContributorDescriptor(
     string PluginId,
     string BlockKeyword,
-    CardChromeRenderKind RenderKind);
+    CardChromeRenderKind RenderKind,
+    string? ActionId = null);
 
 public sealed record DiagramKindContributorDescriptor(
     string PluginId,

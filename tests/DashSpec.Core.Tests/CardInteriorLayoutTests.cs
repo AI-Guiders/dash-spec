@@ -1,6 +1,4 @@
-using DashSpec.Core.Layout;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Model;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -61,7 +59,7 @@ public class CardInteriorLayoutTests
         var card = doc.Cards.Single();
         Assert.Equal("D", card.DiagramSlotRef);
         Assert.NotNull(card.InteriorBoard);
-        Assert.Equal(2, card.InteriorBoard!.RowCount);
+        Assert.Equal(2, card.InteriorBoard!.Value.RowCount);
 
         var placements = CardInteriorLayoutCompactor.Compact(card, doc.Filters, doc.Layout.Columns);
         Assert.Equal(1, placements["rows_top"].Row);

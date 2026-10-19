@@ -72,6 +72,12 @@ type ReportFormatDefaults =
       DateTimeFormat: string option
       Culture: string option }
 
+    static member Empty =
+        { TimeFormat = None
+          DateFormat = None
+          DateTimeFormat = None
+          Culture = None }
+
 [<RequireQualifiedAccess>]
 module ReportFormatDefaults =
     let empty =
@@ -107,6 +113,17 @@ type ReportTimePolicy =
       Apply: ReportTimeApply
       WorkTimeColumn: string option
       WorkCalendar: WorkCalendarDefinition option }
+
+    static member Default =
+        { Basis = ReportTimeBasis.Calendar
+          Apply = ReportTimeApply.Clip
+          WorkTimeColumn = None
+          WorkCalendar = None }
+
+    member this.ClipsQueries =
+        this.Basis = ReportTimeBasis.Working
+        && (this.Apply = ReportTimeApply.Clip || this.Apply = ReportTimeApply.Both)
+        && (this.WorkTimeColumn |> Option.exists (String.IsNullOrWhiteSpace >> not))
 
 [<CLIMutable>]
 type DashboardDocument =
@@ -157,6 +174,28 @@ module DashboardDocument =
         Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
 
 type DashboardDocument with
+    member this.ResolvedCardsChrome =
+        match this.CardsChrome with
+        | Some chrome -> chrome
+        | None -> { FoldPolicy = CardsFoldPolicy.None }
+
+    member this.ResolvedFormatDefaults =
+        this.FormatDefaults
+
+    member this.ResolvedTimePolicy =
+        match this.TimePolicy with
+        | Some policy -> policy
+        | None ->
+            { Basis = ReportTimeBasis.Calendar
+              Apply = ReportTimeApply.Clip
+              WorkTimeColumn = None
+              WorkCalendar = None }
+
+    member this.ResolvedCommandAliases =
+        match this.CommandAliases with
+        | None -> DashboardDocument.emptyCommandAliases
+        | Some aliases -> aliases
+
     member this.ResolvedModuleDiagrams =
         match this.ModuleDiagrams with
         | None -> DashboardDocument.emptyModuleDiagrams
@@ -176,6 +215,18 @@ type DashboardDocument with
         match this.RowTypes with
         | None -> DashboardDocument.emptyRowTypes
         | Some types -> types
+
+    member this.ResolvedRowTypeSchemas =
+        DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge.toCatalog (this.ResolvedRowTypes.Values)
+
+    member this.WithCards(cards: IReadOnlyList<CardDefinition>) =
+        { this with Cards = cards }
+
+    member this.WithTitle(title: string) =
+        { this with Title = title }
+
+    member this.WithTabs(tabs: IReadOnlyList<TabDefinition>) =
+        { this with Tabs = tabs }
 
 [<CLIMutable>]
 type TabModuleContent =

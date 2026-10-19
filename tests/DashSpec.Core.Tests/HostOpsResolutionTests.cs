@@ -1,4 +1,4 @@
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Compilation;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

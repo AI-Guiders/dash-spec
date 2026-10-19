@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -14,7 +12,7 @@ public class CardQueryFilterStateTests
         session.SetField("app_name", ["OverviewApp"]);
         session.SetDate("usage_date", new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 7));
 
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "versions_card",
             "T",
             default!,
@@ -24,8 +22,8 @@ public class CardQueryFilterStateTests
 
         var index = new Dictionary<string, FilterDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["usage_date"] = new(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
-            ["app_name"] = new(FilterKind.Field, "app_name", null, "app_name"),
+            ["usage_date"] = FilterTestData.Create(FilterKind.Date, "usage_date", "-7d..today", "usage_date"),
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "app_name"),
         };
 
         var localDates = new Dictionary<string, DateRangeValue>(StringComparer.OrdinalIgnoreCase)

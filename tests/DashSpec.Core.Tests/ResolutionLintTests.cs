@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Resolution;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -7,7 +6,7 @@ namespace DashSpec.Core.Tests;
 public sealed class ResolutionLintTests
 {
     private static DashboardDocument Doc(string title, string? tabLabel = null, string? cardTitle = null) =>
-        new(
+        DocumentTestData.Create(
             "r",
             title,
             "sqlserver",
@@ -16,16 +15,21 @@ public sealed class ResolutionLintTests
             null,
             null,
             LayoutDefinition.Default,
-            FiltersChromeDefinition.Default,
+            TestModelDefaults.FiltersChrome,
             [],
             [],
-            [new TabDefinition("t", tabLabel, ["c"])],
+            [new TabDefinition(
+                "t",
+                tabLabel is null ? Microsoft.FSharp.Core.FSharpOption<string>.None : Microsoft.FSharp.Core.FSharpOption<string>.Some(tabLabel),
+                ["c"],
+                Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
             [
-                new CardDefinition(
+                CardTestData.Create(
                     "c",
                     cardTitle ?? "",
-                    new DiagramDefinition("bar", new Dictionary<string, string>()),
-                    new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+                    DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                     [],
                     []),
             ]);
@@ -33,7 +37,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void CatalogProd_warns_when_report_and_entry_titles_both_set()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -44,7 +48,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void DashboardEmbed_warns_entry_title_over_report_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -55,7 +59,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Embed_warns_tab_title_shadowed_by_entry_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc("Report", tabLabel: "Tab Title"), entry);
         Assert.Contains(findings, f => f.Slot == "tab.label" && f.Mode == ResolutionMode.DashboardEmbed);
     }
@@ -63,15 +67,15 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Composition_warns_legacy_diagram_chrome_with_card_presentation()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "",
-            new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Presentation: new PresentationBlock(null, new Dictionary<string, string> { ["legend"] = "top" }));
-        var doc = Doc("x") with { Cards = [card] };
+        var doc = Doc("x").WithCards([card]);
         var findings = ResolutionLint.Analyze(doc);
         Assert.Contains(findings, f => f.Slot == "diagram.chart_chrome");
     }
@@ -79,20 +83,26 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Placement_information_when_place_and_board_both_set()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "",
-            new DiagramDefinition("bar", new Dictionary<string, string>()),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+            new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Placement: new PlacementDefinition(2, 1, 6));
         var board = LayoutBoardDefinition.FromCardRows([["c"]]);
-        var doc = Doc("x") with
-        {
-            Cards = [card],
-            Tabs = [new TabDefinition("t", null, ["c"], LayoutBoard: board)],
-        };
+        var doc = Doc("x")
+            .WithCards([card])
+            .WithTabs(
+            [
+                new TabDefinition(
+                    "t",
+                    Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    ["c"],
+                    Microsoft.FSharp.Core.FSharpOption<string>.None,
+                    Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.Some(board)),
+            ]);
 
         var findings = ResolutionLint.Analyze(doc);
         Assert.Contains(findings, f =>
@@ -103,7 +113,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void No_findings_when_single_source_per_slot()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec");
+        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec", null, null);
         var findings = ResolutionLint.Analyze(Doc(""), entry);
         Assert.DoesNotContain(findings, f => f.Slot == "report.header_title");
     }

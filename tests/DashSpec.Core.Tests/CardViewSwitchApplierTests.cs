@@ -1,5 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -10,11 +8,11 @@ public class CardViewSwitchApplierTests
     [Fact]
     public void Apply_swaps_diagram_preset_for_active_view()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "peak",
             "Peak",
             new DiagramDefinition(string.Empty, new Dictionary<string, string>(), "default_diagram"),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.v"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.v"),
             [],
             [],
             ExtensionBlocks:

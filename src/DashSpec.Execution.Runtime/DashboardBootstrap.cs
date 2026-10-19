@@ -1,5 +1,4 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -35,7 +34,7 @@ public static class DashboardBootstrap
                     state.SetField(filter.Name, FieldFilterDefaults.ResolveValues(defaultExpression));
                     break;
                 case FilterKind.Top:
-                    state.SetTop(filter.Name, TopLimitDefaults.Resolve(filter with { DefaultExpression = defaultExpression }, null));
+                    state.SetTop(filter.Name, TopLimitDefaults.Resolve(filter.WithDefaultExpression(Microsoft.FSharp.Core.FSharpOption<string>.Some(defaultExpression)), null));
                     break;
             }
         }
@@ -56,7 +55,7 @@ public static class DashboardBootstrap
             }
         }
 
-        return filter.DefaultExpression;
+        return filter.DefaultExpression?.Value;
     }
 
     private static string? ResolveInitialExpression(

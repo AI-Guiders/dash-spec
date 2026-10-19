@@ -1,6 +1,3 @@
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -18,12 +15,14 @@ public sealed class MatrixRenderLimitsTests
         Assert.Equal(expected, MatrixRenderLimits.IsOversized(x, y));
 
     [Fact]
-    public void DescribeOversize_axis_limit_is_distinct_from_cell_product()
+    public void Axis_limit_is_distinct_from_cell_product()
     {
         var limits = MatrixRenderLimitsDefinition.Default;
+
+        // Oversize verdict comes from the axis limit alone; the cell product stays within the cells limit.
         Assert.True(limits.IsOversized(120, 16));
-        Assert.Contains("столбцов X (120)", limits.DescribeOversize(120, 16));
-        Assert.DoesNotContain("ячеек", limits.DescribeOversize(120, 16));
+        Assert.True(120 * 16 <= limits.EffectiveMaxCells);
+        Assert.True(120 > limits.EffectiveMaxAxisLabels);
     }
 }
 
@@ -70,10 +69,13 @@ public sealed class DrillDownPhraseTests
             end tab
             """, specDirectory: null, options);
 
-        var invoke = Assert.IsType<InvokeHandlerEffect>(doc.Cards[0].ClickBehaviour!.Effects[0]);
-        Assert.Equal("drill_down", invoke.HandlerId);
-        Assert.Equal("detail", invoke.Args["tab"]);
-        Assert.Equal("user_name", invoke.Args["target"]);
-        Assert.Equal("y", invoke.Args["from"]);
+        var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
+        var fields = CardClickEffectTestData.Fields(effect);
+        Assert.Equal("InvokeHandler", CardClickEffectTestData.CaseName(effect));
+        Assert.Equal("drill_down", fields[0]!);
+        var args = (IReadOnlyDictionary<string, string>)fields[1]!;
+        Assert.Equal("detail", args["tab"]);
+        Assert.Equal("user_name", args["target"]);
+        Assert.Equal("y", args["from"]);
     }
 }

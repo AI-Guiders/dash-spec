@@ -38,8 +38,143 @@ type CardClickEffect =
     | GotoPage of string
     | GotoCatalogEntry of string * IReadOnlyList<string> option
 
+    member this.IsNavigationEffect =
+        match this with
+        | SetFilterFromField _
+        | DrillTableFromCell _
+        | GotoTab _
+        | FocusPhase _
+        | GotoPage _
+        | GotoCatalogEntry _ -> true
+        | InvokeHandler(handlerId, _) ->
+            System.String.Equals(handlerId, "drill_down", System.StringComparison.OrdinalIgnoreCase)
+        | ShowSelection _ -> false
+
+    member this.RequiresInteriorSlotRefresh =
+        match this with
+        | DrillTableFromCell _ -> true
+        | _ -> false
+
+    member this.TryGetFilterBind =
+        match this with
+        | SetFilterFromField(filterName, field) -> Some(filterName, field)
+        | _ -> None
+
+    member this.TryGetDrillBinds =
+        match this with
+        | DrillTableFromCell binds -> Some binds
+        | _ -> None
+
+    member this.TryGetShowSelection =
+        match this with
+        | ShowSelection(placement, format, source, copyFriendly, split) ->
+            Some(placement, format, source, copyFriendly, split)
+        | _ -> None
+
+    member this.TryGetGotoTabId =
+        match this with
+        | GotoTab tabId -> Some tabId
+        | _ -> None
+
+    member this.TryGetFocusPhaseId =
+        match this with
+        | FocusPhase phaseId -> Some phaseId
+        | _ -> None
+
+    member this.TryGetGotoPageId =
+        match this with
+        | GotoPage pageId -> Some pageId
+        | _ -> None
+
+    member this.TryGetGotoCatalogEntry =
+        match this with
+        | GotoCatalogEntry(entryId, preserveFilterNames) -> Some(entryId, preserveFilterNames)
+        | _ -> None
+
+    member this.TryGetInvokeHandler =
+        match this with
+        | InvokeHandler(handlerId, args) -> Some(handlerId, args)
+        | _ -> None
+
+    member this.Source =
+        match this with
+        | ShowSelection(_, _, source, _, _) -> source
+        | _ -> ShowSource.Tooltip
+
+    member this.Format =
+        match this with
+        | ShowSelection(_, format, _, _, _) -> format
+        | _ -> ShowFormat.List
+
+    member this.Placement =
+        match this with
+        | ShowSelection(placement, _, _, _, _) -> placement
+        | _ -> ShowPlacement.Below
+
+    member this.CopyFriendly =
+        match this with
+        | ShowSelection(_, _, _, copyFriendly, _) -> copyFriendly
+        | _ -> false
+
+    member this.Split =
+        match this with
+        | ShowSelection(_, _, _, _, split) -> split
+        | _ -> None
+
+    member this.FilterName =
+        match this with
+        | SetFilterFromField(filterName, _) -> filterName
+        | _ -> ""
+
+    member this.Field =
+        match this with
+        | SetFilterFromField(_, field) -> field
+        | _ -> ""
+
+    member this.TabId =
+        match this with
+        | GotoTab tabId -> tabId
+        | _ -> ""
+
+    member this.PhaseId =
+        match this with
+        | FocusPhase phaseId -> phaseId
+        | _ -> ""
+
+    member this.PageId =
+        match this with
+        | GotoPage pageId -> pageId
+        | _ -> ""
+
+    member this.EntryId =
+        match this with
+        | GotoCatalogEntry(entryId, _) -> entryId
+        | _ -> ""
+
+    member this.PreserveFilterNames =
+        match this with
+        | GotoCatalogEntry(_, preserveFilterNames) -> preserveFilterNames
+        | _ -> None
+
+    member this.HandlerId =
+        match this with
+        | InvokeHandler(handlerId, _) -> handlerId
+        | _ -> ""
+
+    member this.Args =
+        match this with
+        | InvokeHandler(_, args) -> args
+        | _ -> System.Collections.Generic.Dictionary<string, string>() :> IReadOnlyDictionary<string, string>
+
 [<CLIMutable>]
-type CardClickBehaviour = { Effects: IReadOnlyList<CardClickEffect> }
+type CardClickBehaviour =
+    { Effects: IReadOnlyList<CardClickEffect> }
+
+    member this.HasTooltipSelection =
+        this.Effects
+        |> Seq.exists (function
+            | ShowSelection(_, _, ShowSource.Tooltip, _, _) -> true
+            | _ -> false)
 
 type CardBoundFilterChrome =
     | Chips = 0
@@ -57,6 +192,8 @@ type CardsFoldPolicy =
 [<CLIMutable>]
 type CardsChromeDefinition =
     { FoldPolicy: CardsFoldPolicy }
+
+    static member Default = { FoldPolicy = CardsFoldPolicy.None }
 
 [<CLIMutable>]
 type CardChromeDefinition =
@@ -79,6 +216,19 @@ type MatrixRenderLimitsDefinition =
     { MaxCells: int option
       MaxAxisLabels: int option }
 
+    static member Default = { MaxCells = None; MaxAxisLabels = None }
+
+    member this.EffectiveMaxCells =
+        defaultArg this.MaxCells 2500
+
+    member this.EffectiveMaxAxisLabels =
+        defaultArg this.MaxAxisLabels 80
+
+    member this.IsOversized(xCount: int, yCount: int) =
+        xCount * yCount > this.EffectiveMaxCells
+        || xCount > this.EffectiveMaxAxisLabels
+        || yCount > this.EffectiveMaxAxisLabels
+
 [<CLIMutable>]
 type ExtensionBlockNode =
     { Keyword: string
@@ -92,6 +242,8 @@ type ModuleExtensionImport = { PluginId: string; AssemblyPath: string option }
 type ModuleExtensionsDefinition =
     { EnabledPluginIds: IReadOnlyList<string>
       Imports: IReadOnlyList<ModuleExtensionImport> }
+
+    static member Empty = { EnabledPluginIds = []; Imports = [] }
 
 [<CLIMutable>]
 type FilterDeriveDefinition =
@@ -119,6 +271,9 @@ type CardDiagramSlot =
       Presentation: PresentationBlock option
       SeriesTransform: SeriesTransformBlock option
       FlowInput: CardFlowInput option }
+
+    member this.WithDataSource(dataSource: DataSourceDefinition) =
+        { this with DataSource = dataSource }
 
 [<CLIMutable>]
 type CardDefinition =
@@ -156,6 +311,43 @@ type CardDefinition =
       FlowInput: CardFlowInput option
       CardInputs: IReadOnlyDictionary<string, CardFlowInput>
       InteriorFlow: CardInteriorFlowDefinition option }
+
+    member this.WithTitle(title: string) =
+        { this with Title = title }
+
+    member this.WithChrome(chrome: CardChromeDefinition option) =
+        { this with Chrome = chrome }
+
+    member this.WithDiagram(diagram: DiagramDefinition) =
+        { this with Diagram = diagram }
+
+    member this.WithDataSource(dataSource: DataSourceDefinition) =
+        { this with DataSource = dataSource }
+
+    member this.WithBoundFilters(boundFilters: IReadOnlyList<string>) =
+        { this with BoundFilters = boundFilters }
+
+    member this.WithDiagramSlots(diagramSlots: IReadOnlyDictionary<string, CardDiagramSlot>) =
+        { this with DiagramSlots = diagramSlots }
+
+    member this.WithLegend(legend: LegendDefinition option) =
+        { this with Legend = legend }
+
+    member this.WithPresentation(presentation: PresentationBlock option) =
+        { this with Presentation = presentation }
+
+    member this.WithSeriesTransform(seriesTransform: SeriesTransformBlock option) =
+        { this with SeriesTransform = seriesTransform }
+
+    member this.WithFlowInput(flowInput: CardFlowInput option) =
+        { this with FlowInput = flowInput }
+
+    member this.WithInspect(inspect: InspectPresentation option) =
+        { this with Inspect = inspect }
+
+    member this.WithTooltip(tooltip: TooltipDefinition option) =
+        { this with Tooltip = tooltip }
+
 
 module CardBindResolver =
     let dashboardToken = "dashboard"

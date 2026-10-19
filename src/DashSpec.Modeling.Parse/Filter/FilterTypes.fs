@@ -1,12 +1,15 @@
 namespace DashSpec.Modeling.Parse.Filter
 
+open System
 open System.Collections.Generic
 open DashSpec.Modeling.Parse.Layout
 
+[<RequireQualifiedAccess>]
 type FilterKind =
-    | Date
-    | Field
-    | Top
+    | Date = 0
+    | Field = 1
+    | Top = 2
+
 
 [<CLIMutable>]
 type FilterDefinition =
@@ -26,6 +29,37 @@ type FilterDefinition =
       ApplyMode: string
       Placement: PlacementDefinition option }
 
+    member this.IsDayWidget =
+        String.Equals(this.Widget |> Option.toObj, "day", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsComboboxWidget =
+        String.Equals(this.Widget |> Option.toObj, "combobox", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsSelectWidget =
+        String.Equals(this.Widget |> Option.toObj, "select", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsSingleSelectField =
+        this.SingleSelect || this.IsSelectWidget
+
+    member this.IsBindScopeInline =
+        String.Equals(this.BindScopeHint |> Option.toObj, "inline", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsBindScopeHidden =
+        String.Equals(this.BindScopeHint |> Option.toObj, "hidden", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsBindScopeTooltip =
+        match this.BindScopeHint with
+        | None -> true
+        | Some hint ->
+            String.IsNullOrWhiteSpace hint
+            || String.Equals(hint, "tooltip", StringComparison.OrdinalIgnoreCase)
+
+    member this.WithDefaultExpression(value: string option) =
+        { this with DefaultExpression = value }
+
+    member this.WithColumnReference(value: string option) =
+        { this with ColumnReference = value }
+
 [<CLIMutable>]
 type FiltersChromeDefinition =
     { Layout: string
@@ -35,6 +69,32 @@ type FiltersChromeDefinition =
       DebounceMs: int
       FormatGuide: string
       Cells: string }
+
+    member this.IsApplyIconControl =
+        String.Equals(this.ApplyControl, "icon", StringComparison.OrdinalIgnoreCase)
+
+    member this.ShowsFormatGuide =
+        String.Equals(this.FormatGuide, "show", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsAutoApply =
+        String.Equals(this.Apply, "auto", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsBarLayout =
+        String.Equals(this.Layout, "bar", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsSticky =
+        not (String.Equals(this.Sticky, "none", StringComparison.OrdinalIgnoreCase))
+
+    member this.IsStickyLine =
+        String.Equals(this.Sticky, "line", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsStickyCard =
+        String.Equals(this.Sticky, "card", StringComparison.OrdinalIgnoreCase)
+
+    /// <summary>Bar toolbar: label row + control row (ADR-0022 inline cells). Off when <c>cells = inline</c>.</summary>
+    member this.IsToolbarLabeledCells =
+        this.IsBarLayout
+        && not (String.Equals(this.Cells, "inline", StringComparison.OrdinalIgnoreCase))
 
 module FiltersChromeDefinition =
     let [<Literal>] StickyNone = "none"
@@ -51,3 +111,4 @@ module FiltersChromeDefinition =
           DebounceMs = 400
           FormatGuide = FormatGuideHidden
           Cells = "" }
+

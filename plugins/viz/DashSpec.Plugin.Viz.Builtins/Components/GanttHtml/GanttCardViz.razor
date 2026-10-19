@@ -1,5 +1,6 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.GanttHtml
 @using DashSpec.Execution.Runtime
+@inject IStringLocalizer<VizStrings> Loc
 @if (Context.EffectiveCard.Gantt is { Rows.Count: > 0 } gantt)
 {
     <div class="gantt-wrap" style="@($"max-height:{gantt.HeightPx}px")">
@@ -31,7 +32,7 @@
 }
 else
 {
-    <div class="gantt-empty muted">Нет данных для выбранного пользователя и периода.</div>
+    <div class="gantt-empty muted">@Loc["No data for the selected user and period."]</div>
 }
 
 @code {

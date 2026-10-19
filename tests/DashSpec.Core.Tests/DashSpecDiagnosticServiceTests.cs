@@ -1,5 +1,5 @@
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Validation;
+using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

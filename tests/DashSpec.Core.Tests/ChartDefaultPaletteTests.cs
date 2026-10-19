@@ -1,6 +1,4 @@
 using System.Text.RegularExpressions;
-using DashSpec.Core.Model;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using Xunit;
 
@@ -22,15 +20,15 @@ public sealed class ChartDefaultPaletteTests
     [Fact]
     public void ResolveLabelColors_uses_round_robin_for_category_labels()
     {
-        var card = new CardDefinition(
+        var card = CardTestData.Create(
             "c",
             "C",
             new DiagramDefinition("bar", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["x"] = "category",
-                ["y"] = "value",
-            }),
-            new DataSourceDefinition(DataSourceKind.View, "dbo.t"),
+                    ["y"] = "value",
+            }, null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,

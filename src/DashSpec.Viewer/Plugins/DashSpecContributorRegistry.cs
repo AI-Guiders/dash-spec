@@ -27,6 +27,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly List<DashSpecCommandDescriptor> _commands = [];
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Type> _PluginComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _filterWidgetComponents = new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
@@ -241,6 +243,55 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
     }
 
+    public void RegisterCardChromeComponent(string pluginId, Type componentType)
+    {
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            throw new ArgumentException("Plugin id is required.", nameof(pluginId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
+        {
+            throw new ArgumentException(
+                $"Type {componentType.FullName} must implement IComponent.",
+                nameof(componentType));
+        }
+
+        if (!_cardChromeComponents.TryAdd(pluginId, componentType))
+        {
+            throw new InvalidOperationException($"Duplicate card chrome component registration for '{pluginId}'.");
+        }
+    }
+
+    public void RegisterPluginComponent(string slotId, Type componentType)
+    {
+        if (string.IsNullOrWhiteSpace(slotId))
+        {
+            throw new ArgumentException("Slot id is required.", nameof(slotId));
+        }
+
+        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
+        {
+            throw new ArgumentException(
+                $"Type {componentType.FullName} must implement IComponent.",
+                nameof(componentType));
+        }
+
+        if (_PluginComponents.TryGetValue(slotId, out var existing))
+        {
+            // Several viz plugins share one slot component; identical re-registration is fine.
+            if (existing != componentType)
+            {
+                throw new InvalidOperationException(
+                    $"Slot '{slotId}' already has component '{existing.FullName}'; cannot register '{componentType.FullName}'.");
+            }
+
+            return;
+        }
+
+        _PluginComponents[slotId] = componentType;
+    }
+
     public CardVizComponentRegistry BuildCardVizComponentRegistry()
     {
         var registry = new CardVizComponentRegistry();
@@ -264,6 +315,10 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     }
 
     public IReadOnlyDictionary<string, CardChromeContributorDescriptor> CardChromeBlocks => _cardChrome;
+
+    public IReadOnlyDictionary<string, Type> CardChromeComponents => _cardChromeComponents;
+
+    public IReadOnlyDictionary<string, Type> PluginComponents => _PluginComponents;
 
     public IReadOnlyDictionary<string, FilterWidgetContributorDescriptor> FilterWidgets => _filterWidgets;
 

@@ -1,17 +1,12 @@
 using System.Globalization;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Execution.Compilation;
-using DashSpec.Core.Model;
-using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
 using DashSpec.Execution.Runtime;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz;
 using DashSpec.Viz.Platform;
 using DashSpec.Surface.Blazor.Services.Presentation;
-using DashSpec.Core.Layout;
-using DashSpec.Core.Resolution;
 
 namespace DashSpec.Surface.Blazor.Services.Rendering;
 
@@ -196,16 +191,16 @@ public sealed class CardRenderService(
                 Number: FormatNumber(rows, effective.Diagram),
                 NumberDelta: numberDelta,
                 NumberDeltaTone: numberDeltaTone,
-                Placement: card.Placement,
+                Placement: card.Placement?.Value,
                 InteriorPlacements: interiorPlacements,
                 BoundFilters: card.BoundFilters,
                 LocalFilters: card.LocalFilters,
-                ClickBehaviour: card.ClickBehaviour,
+                ClickBehaviour: card.ClickBehaviour?.Value,
                 ExtensionBlocks: card.ExtensionBlocks,
                 LocalFiltersManualApply: card.LocalFiltersManualApply,
-                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
-                MatrixLimits: card.MatrixLimits,
-                OversizeMessage: card.OversizeMessage));
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
+                MatrixLimits: card.MatrixLimits?.Value,
+                OversizeMessage: card.OversizeMessage?.Value));
         }
 
         return AttachSlots(kind.DataFamily switch
@@ -217,21 +212,21 @@ public sealed class CardRenderService(
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette),
+                    Chart: ChartDataBuilder.BuildChart(rows, effective.Diagram, seriesTransform, effective, library, document.ColorPalette?.Value),
                     DetailChart: seriesTransform is null
                         ? null
-                        : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette),
-                    Placement: card.Placement,
+                        : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette?.Value),
+                    Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
-                    ClickBehaviour: card.ClickBehaviour,
+                    ClickBehaviour: card.ClickBehaviour?.Value,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
-                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
-                    MatrixLimits: card.MatrixLimits,
-                    OversizeMessage: card.OversizeMessage,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
+                    MatrixLimits: card.MatrixLimits?.Value,
+                    OversizeMessage: card.OversizeMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -243,17 +238,17 @@ public sealed class CardRenderService(
                     kind.DataFamily,
                     renderPluginId,
                     Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
-                    Placement: card.Placement,
+                    Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     TablePresentation: tablePresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
-                    ClickBehaviour: card.ClickBehaviour,
+                    ClickBehaviour: card.ClickBehaviour?.Value,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
-                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
-                    MatrixLimits: card.MatrixLimits,
-                    OversizeMessage: card.OversizeMessage,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
+                    MatrixLimits: card.MatrixLimits?.Value,
+                    OversizeMessage: card.OversizeMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -264,21 +259,21 @@ public sealed class CardRenderService(
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip),
+                    Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip?.Value),
                     DetailMatrix: seriesTransform is null
                         ? null
-                        : ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, null, effective.Tooltip),
-                    Placement: card.Placement,
+                        : ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, null, effective.Tooltip?.Value),
+                    Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     MatrixPresentation: matrixPresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
-                    ClickBehaviour: card.ClickBehaviour,
+                    ClickBehaviour: card.ClickBehaviour?.Value,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
-                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
-                    MatrixLimits: card.MatrixLimits,
-                    OversizeMessage: card.OversizeMessage,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
+                    MatrixLimits: card.MatrixLimits?.Value,
+                    OversizeMessage: card.OversizeMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -293,16 +288,16 @@ public sealed class CardRenderService(
                         ChartDataBuilder.BuildGantt(rows, effective.Diagram),
                         effective,
                         library),
-                    Placement: card.Placement,
+                    Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
-                    ClickBehaviour: card.ClickBehaviour,
+                    ClickBehaviour: card.ClickBehaviour?.Value,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
-                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex,
-                    MatrixLimits: card.MatrixLimits,
-                    OversizeMessage: card.OversizeMessage,
+                LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
+                    MatrixLimits: card.MatrixLimits?.Value,
+                    OversizeMessage: card.OversizeMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -335,16 +330,14 @@ public sealed class CardRenderService(
                 continue;
             }
 
-            var slotCard = card with
-            {
-                Diagram = slot.Diagram,
-                DataSource = slot.DataSource,
-                BoundFilters = slot.BoundFilters,
-                Legend = slot.Legend,
-                Presentation = slot.Presentation,
-                SeriesTransform = slot.SeriesTransform,
-                FlowInput = slot.FlowInput ?? card.FlowInput,
-            };
+            var slotCard = card
+                .WithDiagram(slot.Diagram)
+                .WithDataSource(slot.DataSource)
+                .WithBoundFilters(slot.BoundFilters)
+                .WithLegend(slot.Legend)
+                .WithPresentation(slot.Presentation)
+                .WithSeriesTransform(slot.SeriesTransform)
+                .WithFlowInput(slot.FlowInput ?? card.FlowInput);
 
             var errorContext = slotCard;
             try
@@ -363,7 +356,7 @@ public sealed class CardRenderService(
                     drillOverlay,
                     ResolveReportTime(document));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
-                rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput, rows);
+                rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
                 var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
                 var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
@@ -390,7 +383,7 @@ public sealed class CardRenderService(
                         effective.Diagram.Kind,
                         kind.DataFamily,
                         renderPluginId,
-                        Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip),
+                        Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip?.Value),
                         MatrixPresentation: matrixPresentation),
                     DiagramDataFamily.Chart => new CardSlotRenderResult(
                         slotRef,
@@ -403,7 +396,7 @@ public sealed class CardRenderService(
                             seriesTransform,
                             effective,
                             library,
-                            document.ColorPalette)),
+                            document.ColorPalette?.Value)),
                     DiagramDataFamily.Gantt => new CardSlotRenderResult(
                         slotRef,
                         effective.Diagram.Kind,
@@ -519,7 +512,7 @@ public sealed class CardRenderService(
 
     private ReportTimePolicy ResolveReportTime(DashboardDocument document) =>
         ReportTimePolicyResolver.ResolveEffective(
-            document.TimePolicy,
+            document.TimePolicy?.Value,
             viewerContext.ReportTimeSettings,
             LabelFormat.DisplayTimeZone?.Id);
 }

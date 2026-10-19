@@ -1,10 +1,10 @@
-using DashSpec.Core.Authoring;
-using DashSpec.Core.Authoring.EditorConfig;
-using DashSpec.Core.Authoring.Formatting;
+using DashSpec.Execution.Authoring;
+using DashSpec.Execution.Authoring.EditorConfig;
+using DashSpec.Execution.Authoring.Formatting;
 using DashSpec.Execution.Parsing;
 using DashSpec.Modeling.Parse.Formatting;
 using Xunit;
-using CoreDashSpecParser = DashSpec.Core.Parsing.DashSpecParser;
+using CoreDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Core.Tests;
 
