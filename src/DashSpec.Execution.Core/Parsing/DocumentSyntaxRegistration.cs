@@ -1,5 +1,5 @@
 using DashSpecSyntaxKind = DashSpec.Modeling.Parse.Syntax.DashSpecSyntaxKind;
-using DashSpec.Core.Authoring;
+using DashSpec.Execution.Authoring;
 using FsharpSyntax = DashSpec.Modeling.Parse.Syntax;
 
 namespace DashSpec.Execution.Parsing;

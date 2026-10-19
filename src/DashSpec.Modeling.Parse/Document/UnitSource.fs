@@ -117,7 +117,7 @@ module UnitSource =
                         if Directory.Exists candidate then
                             found <- Some candidate
                         else
-                            let coreCandidate = Path.Combine(d.FullName, "src", "DashSpec.Core", "stdlib")
+                            let coreCandidate = Path.Combine(d.FullName, "src", "DashSpec.Execution.Core", "stdlib")
                             if Directory.Exists coreCandidate then
                                 found <- Some coreCandidate
                             else

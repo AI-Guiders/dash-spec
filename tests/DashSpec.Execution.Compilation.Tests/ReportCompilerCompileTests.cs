@@ -1,5 +1,5 @@
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using ExecutionDashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Xunit;

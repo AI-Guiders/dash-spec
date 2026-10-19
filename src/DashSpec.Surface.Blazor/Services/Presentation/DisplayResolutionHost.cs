@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz.Platform;
 using DashSpec.Viz;

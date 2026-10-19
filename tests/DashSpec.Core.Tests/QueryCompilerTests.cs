@@ -429,7 +429,7 @@ public class QueryCompilerTests
                 ["x"] = "app_name",
                 ["y"] = "peak_concurrent_proxy",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_concurrent_by_period", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_concurrent_by_period", rowsType: "FixtureRow"),
             ["period_grain", "period_start", "app_name"],
             []);
 
@@ -532,7 +532,7 @@ public class QueryCompilerTests
                 ["reference"] = "purchased_seats",
                 ["order_by"] = "utilization_pct DESC, app_name",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_over_limit", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_over_limit", rowsType: "FixtureRow"),
             ["chart_top"],
             []);
 
@@ -566,7 +566,7 @@ public class QueryCompilerTests
                 ["value"] = "launch_count",
                 ["order_by"] = "launch_count DESC, form",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_launches_by_form", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_launches_by_form", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
@@ -596,7 +596,7 @@ public class QueryCompilerTests
             {
                 ["value"] = "distinct_users",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_active_users", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_active_users", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 
@@ -625,7 +625,7 @@ public class QueryCompilerTests
                 ["value"] = "peak_concurrent_proxy",
                 ["aggregate"] = "max",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_daily_peak_concurrent_proxy", rowsType: "FixtureRow"),
             ["usage_date", "app_name"],
             []);
 
@@ -656,7 +656,7 @@ public class QueryCompilerTests
                 ["value"] = "kpi",
                 ["aggregate"] = "none",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_kpi", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_kpi", rowsType: "FixtureRow"),
             [],
             []);
 
@@ -680,7 +680,7 @@ public class QueryCompilerTests
                     ["x"] = "usage_date",
                     ["y"] = "peak_concurrent_proxy",
                 }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 

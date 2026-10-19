@@ -1,3 +1,3 @@
 namespace DashSpec.Surface.Blazor.Services.Loading;
 
-public class SpecLoadOptions : DashSpec.Core.Platform.ReportLoadOptions;
+public class SpecLoadOptions : DashSpec.Execution.Runtime.ReportLoadOptions;

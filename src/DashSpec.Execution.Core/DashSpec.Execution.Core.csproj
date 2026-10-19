@@ -26,4 +26,15 @@
     <InternalsVisibleTo Include="DashSpec.Execution.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="stdlib\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="stdlib" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="DashSpec.Modeling.Parse.Lexing" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DashSpec.Execution.Compilation" />
+    <InternalsVisibleTo Include="DashSpec.Core.Tests" />
+  </ItemGroup>
 </Project>

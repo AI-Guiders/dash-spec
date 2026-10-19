@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DashSpec.Abstractions.Session;
 using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using DashSpec.Execution.Resolution;
 using DashSpec.Execution.Runtime;

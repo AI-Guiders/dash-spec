@@ -2,6 +2,7 @@ using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Resolution;
 using Xunit;
 
@@ -96,7 +97,7 @@ public class SpecModulesTests
                 ["color_palette"] = "brand",
                 ["series_colors"] = "AVEVA:#2563eb",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,
@@ -154,7 +155,7 @@ public class SpecModulesTests
             {
                 ["color_palette"] = "brand",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 
@@ -183,7 +184,7 @@ public class SpecModulesTests
             {
                 ["series"] = "app_name",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             []);
 

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 
-using DashSpec.Core.Validation;
+using DashSpec.Execution.Runtime;
+
 namespace DashSpec.Execution.Compilation;
 
 public static partial class TextPositions

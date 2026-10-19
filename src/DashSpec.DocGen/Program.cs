@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
-using DashSpec.Core.Authoring;
+using DashSpec.Execution.Authoring;
 
 var repoRoot = ResolveRepoRoot(args);
 

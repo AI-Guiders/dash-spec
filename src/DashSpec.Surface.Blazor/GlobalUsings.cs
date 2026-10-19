@@ -1,5 +1,5 @@
 global using DashCatalog = DashSpec.Generated.DashCatalog;
-global using CatalogReader = DashSpec.Core.Parsing.CatalogReader;
+global using CatalogReader = DashSpec.Execution.Parsing.CatalogReader;
 global using InvocationLinePhase = AIGuiders.Platform.Modeling.Notations.Command.InvocationLinePhase;
 global using AIGuiders.Platform.IntermediateRepresentation.Command;
 global using AIGuiders.Platform.IntermediateRepresentation.Invocation;

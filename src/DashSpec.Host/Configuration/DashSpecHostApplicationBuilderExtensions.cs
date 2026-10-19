@@ -1,8 +1,7 @@
 using System.Globalization;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Viewer;
-using DashSpec.Core.Catalog;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Host.Data;
 using DashSpec.Host.Plugins;
