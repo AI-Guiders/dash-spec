@@ -7,7 +7,7 @@
 
 ### Changed
 
-- **W10 — растворение `DashSpec.Core` (ADR-0048):** Runtime-кодеки, layout-механика, resolution/analysis, parsing, authoring, компиляторный контракт и диагностика разъехались по `DashSpec.Execution.{Runtime,Compilation,Core}`; stdlib переехала с парсерами в `Execution.Core`. Проверено прод-smoke'ом на спеках SSCAD. Остаток Core — Parsing I/O-семья до разреза `SpecLibrary` (W10.8).
+- **W10 — растворение `DashSpec.Core` (ADR-0048), завершено:** Runtime-кодеки, layout-механика, resolution/analysis, parsing, authoring, компиляторный контракт и диагностика разъехались по `DashSpec.Execution.{Runtime,Compilation,Core}`; stdlib переехала с парсерами в `Execution.Core`; `SpecLibrary` разрезан по I/O-шву (`SpecLibraryLoader` + реестр). **Проект `DashSpec.Core` удалён.** Проверено smoke-хостом (validate + живой рендер отчётов).
 
 ### Added
 

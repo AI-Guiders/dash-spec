@@ -127,7 +127,7 @@ internal static class ModelOption
 
 ## W10 — растворение Core (2026-10-20, волны на ветке `refactor/model-fsharp-ssot`)
 
-Проверено боем: сборка 0/0 и тесты 558/0/4 после каждой волны; прод-smoke на спеках SSCAD (validate 7/9 OK, хост поднят с прод-БД, карточки живые).
+Проверено боем: сборка 0/0 и тесты 558/0/4 после каждой волны; smoke на закрытых отчётных спеках (validate 7/9 OK, хост с живой БД, карточки рендерятся; 2 остальных — контент спеки, не код).
 
 | Волна | Коммит | Что |
 |---|---|---|
@@ -136,6 +136,11 @@ internal static class ModelOption
 | W10.3+4 | `e7b2c01` | Resolution+Analysis → `Execution.Runtime`, Validation → `Execution.Compilation` (разрез по направлению циклов) |
 | W10.5+6 | `30e3efa` | Parsing (36) + Authoring (18) + stdlib → `Execution.Core`; компиляторный контракт + `DashSpecDiagnostic` → `Execution.Runtime`; заглушка `DashSpecParser` удалена |
 | W10.7 | `113955f` | `XlsxWorkbook` → `Execution.Compilation`; `FilterLargeListOptions` → `Execution.Runtime`; `HeatmapCellContext` физически → `Execution.Runtime` (namespace-шрам `DashSpec.Core.Model` оставлен ради 240 потребителей) |
+| W10.8 | `a957f3c` | **`DashSpec.Core` удалён.** `SpecLibrary` разрезан по I/O-шву: `SpecLibraryLoader` (TOML/File → `Execution.Core`) наполняет in-memory реестр `SpecLibrary` (→ `Execution.Runtime`, через internal-Register по IVT); I/O-семья без File (`SqlReadOnlyValidator`, `DashSpecParseException`, `DashSpecParseOptions`, `DiagramKindRegistry`) → `Execution.Runtime`; csproj + `ModelAliases` удалены, 17 ссылок снято, slnx почищен; Runtime ссылается на `Modeling.Parse` напрямую (раньше транзитивно через Core); слой-тест `Core_must_not_reference_AspNetCore` вышел на пенсию вместе со сборкой |
+
+**W10 закрыт целиком (2026-10-20): `DashSpec.Core` не существует.** Сборка 0/0; тесты **557 passed / 0 failed / 4 skipped** (558 − пенсионер-тест). Финальный smoke — зелёный (хост, живая БД, карточки).
+
+**Осталось (не W10, новые хвосты для следующих партий):** путь stdlib должен прийти из конфигурации (bootstrap/`.dashhost`-ключ), а не из хардкодов домов проектов (`UnitSource.fs`-кандидаты, `UnitBridgeHeaderTests`, `DashflowModuleParserTests` — последний уже переведён на `UnitSource.stdlibRoot()`); namespace-шрам `DashSpec.Core.Model` у `HeatmapCellContext` (240 потребителей, чистить отдельной волной); контент-баг одной закрытой спеки (блок `data flow` скопипащен дважды — ловится парсером как «more than one flow input», чинится в контенте спеки).
 
 **Осталось (W10.8):** в Core по дизайну осталась только Parsing I/O-семья (`SpecLibrary`, `SqlReadOnlyValidator`, `DashSpecParseException`, `DashSpecParseOptions`, `DiagramKindRegistry`) + csproj + ModelAliases. DSPEC021 запрещает File I/O в `Execution.Runtime`, а Runtime не может ссылаться на `Execution.Core` — значит финал требует **разреза `SpecLibrary`** (TOML-загрузчик на стороне Host/Compilation, in-memory реестр пресетов → Runtime), затем удаления `DashSpec.Core.csproj` и снятия ссылок. Это отдельная содержательная правка, не механика.
 
