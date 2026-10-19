@@ -28,14 +28,14 @@ public sealed class DisplayResolutionTests
                 "peak_by_app",
                 "",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
-                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+                DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 [],
                 []),
             CardTestData.Create(
                 "detail_card",
                 "Detail slice",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
-                DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+                DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                 [],
                 []),
         ]);

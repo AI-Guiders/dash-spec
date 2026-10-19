@@ -1,6 +1,6 @@
 using System.Linq;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using Microsoft.FSharp.Core;
 using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
 using FsharpCatalogEntry = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;

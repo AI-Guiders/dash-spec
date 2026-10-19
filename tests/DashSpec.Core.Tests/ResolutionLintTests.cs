@@ -29,7 +29,7 @@ public sealed class ResolutionLintTests
                     "c",
                     cardTitle ?? "",
                 new DiagramDefinition("bar", new Dictionary<string, string>(), null),
-                    DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+                    DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
                     [],
                     []),
             ]);
@@ -71,7 +71,7 @@ public sealed class ResolutionLintTests
             "c",
             "",
             new DiagramDefinition("bar", new Dictionary<string, string> { ["legend"] = "bottom" }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Presentation: new PresentationBlock(null, new Dictionary<string, string> { ["legend"] = "top" }));
@@ -87,7 +87,7 @@ public sealed class ResolutionLintTests
             "c",
             "",
             new DiagramDefinition("bar", new Dictionary<string, string>(), null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             Placement: new PlacementDefinition(2, 1, 6));

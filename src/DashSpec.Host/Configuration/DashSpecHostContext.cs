@@ -1,4 +1,4 @@
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 
 namespace DashSpec.Host.Configuration;
 

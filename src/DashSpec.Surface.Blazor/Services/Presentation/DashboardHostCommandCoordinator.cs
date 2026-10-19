@@ -1,6 +1,6 @@
 #nullable enable
 using DashSpec.Surface.Blazor.Commands;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;

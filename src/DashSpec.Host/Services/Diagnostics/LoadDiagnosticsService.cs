@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
-using DashSpec.Execution.Resolution;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Resolution;
 using DashSpec.Host.Configuration;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;

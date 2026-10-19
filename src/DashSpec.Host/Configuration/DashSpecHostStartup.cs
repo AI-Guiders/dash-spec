@@ -1,5 +1,5 @@
 using System.Globalization;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Security;
 

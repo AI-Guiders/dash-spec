@@ -7,13 +7,13 @@ type DiagnosticsTests() =
     [<Fact>]
     member _.``Round_trip_preserves_legacy_diagnostic_fields`` () =
         let legacy =
-            DashSpec.Core.Validation.DashSpecDiagnostic(
+            DashSpec.Execution.Runtime.DashSpecDiagnostic(
                 2,
                 4,
                 2,
                 10,
                 "unexpected token",
-                DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Warning)
+                DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Warning)
 
         let modeling = DiagnosticInterop.fromLegacy legacy
         let roundTrip = DiagnosticInterop.toLegacy modeling

@@ -122,7 +122,7 @@ internal static class DocumentParseRegistration
                 var diagnostics = result.Diagnostics
                     .Select(ToCoreDiagnostic)
                     .ToList();
-                return new DashSpec.Core.Platform.ReportCompileResult(document, diagnostics);
+                return new DashSpec.Execution.Runtime.ReportCompileResult(document, diagnostics);
             }
             catch (DashSpec.Modeling.Core.DashSpecParseException ex)
             {
@@ -180,20 +180,20 @@ internal static class DocumentParseRegistration
             Optional = slot.Optional,
         };
 
-    private static DashSpec.Core.Validation.DashSpecDiagnostic ToCoreDiagnostic(
+    private static DashSpec.Execution.Runtime.DashSpecDiagnostic ToCoreDiagnostic(
         DashSpec.Modeling.Core.DashSpecDiagnostic diagnostic)
     {
         var span = diagnostic.Span;
-        var severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Error;
+        var severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Error;
         if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Warning))
         {
-            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Warning;
+            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Warning;
         }
         else if (diagnostic.Severity.Equals(DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Information))
         {
-            severity = DashSpec.Core.Validation.DashSpecDiagnosticSeverity.Information;
+            severity = DashSpec.Execution.Runtime.DashSpecDiagnosticSeverity.Information;
         }
-        return new DashSpec.Core.Validation.DashSpecDiagnostic(
+        return new DashSpec.Execution.Runtime.DashSpecDiagnostic(
             span.Line,
             span.Character,
             span.EndLine,

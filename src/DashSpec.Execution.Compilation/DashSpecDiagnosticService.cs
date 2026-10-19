@@ -1,8 +1,9 @@
-using DashSpec.Core.Parsing;
+using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using FsharpDocument = DashSpec.Modeling.Parse.Document;
 
-using DashSpec.Core.Validation;
+using DashSpec.Core.Parsing;
+
 namespace DashSpec.Execution.Compilation;
 
 public static class DashSpecDiagnosticService

@@ -9,7 +9,7 @@ public sealed class LayoutPlacementResolutionTests
         "card_a",
         "",
             new DiagramDefinition("bar", new Dictionary<string, string>(), null),
-        DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+        DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
         [],
         [],
         Placement: new PlacementDefinition(2, 1, 6));

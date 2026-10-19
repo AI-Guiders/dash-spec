@@ -1,9 +1,8 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Surface.Blazor.Services.Loading;
@@ -120,10 +119,10 @@ public sealed class DashboardSessionService(
     }
 
 
-    Task IReportSession.LoadCatalogEntryAsync(string entryId, CancellationToken cancellationToken, DashSpec.Core.Platform.ReportLoadOptions? options) =>
+    Task IReportSession.LoadCatalogEntryAsync(string entryId, CancellationToken cancellationToken, DashSpec.Execution.Runtime.ReportLoadOptions? options) =>
         LoadCatalogEntryAsync(entryId, cancellationToken, options as SpecLoadOptions);
 
-    Task IReportSession.LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken, DashSpec.Core.Platform.ReportLoadOptions? options) =>
+    Task IReportSession.LoadFromUploadAsync(Stream stream, string fileName, CancellationToken cancellationToken, DashSpec.Execution.Runtime.ReportLoadOptions? options) =>
         LoadFromUploadAsync(stream, fileName, cancellationToken, options as SpecLoadOptions);
     public async Task RefreshFieldOptionsAsync(CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,4 @@
-using DashSpec.Core.Platform;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Services.Loading;
 
 namespace DashSpec.Host.Services.Platform;

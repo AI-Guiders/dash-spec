@@ -2,6 +2,8 @@ using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using DashSpec.Core.Parsing;
+using DashSpec.Modeling.Parse.Lexing;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -11,7 +13,7 @@ public class FilterParserTests
     [Fact]
     public void Tokenize_activity_slot_is_single_ident()
     {
-        var tokens = DashSpecParser.Tokenize("filter date activity_slot {");
+        var tokens = DashSpecLexer.tokenize("filter date activity_slot {");
         var idents = tokens.Where(t => t.Kind == TokenKind.Ident).Select(t => t.Value).ToList();
         Assert.Equal(["filter", "date", "activity_slot"], idents);
     }
@@ -586,7 +588,7 @@ public class FilterParserTests
                 ["x"] = "bucket_start_utc",
                 ["y"] = "event_count",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_hourly_activity", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_hourly_activity", rowsType: "FixtureRow"),
             ["activity_slot"],
             []);
 

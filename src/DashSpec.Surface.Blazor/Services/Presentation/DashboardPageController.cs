@@ -2,7 +2,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Interaction;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Viewer;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Surface.Blazor.Commands;

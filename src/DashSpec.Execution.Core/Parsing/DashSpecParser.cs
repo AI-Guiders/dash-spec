@@ -1,5 +1,5 @@
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Parsing;
 

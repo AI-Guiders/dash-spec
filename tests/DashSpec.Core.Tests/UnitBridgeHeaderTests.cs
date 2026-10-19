@@ -64,7 +64,7 @@ public sealed class UnitBridgeHeaderTests
     public void Presentation_unit_with_header_parses()
     {
         var (id, block) = PresentationModuleParser.ParsePresentationFileWithId(
-            ReadUnit("src/DashSpec.Core/stdlib/presentation/bar_stacked_360.ds"),
+            ReadUnit("src/DashSpec.Execution.Core/stdlib/presentation/bar_stacked_360.ds"),
             null);
 
         Assert.Equal("bar_stacked_360", id);

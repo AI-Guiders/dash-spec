@@ -1,6 +1,5 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Runtime.Platform;
 

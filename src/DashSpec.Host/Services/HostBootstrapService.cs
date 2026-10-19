@@ -1,7 +1,7 @@
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;

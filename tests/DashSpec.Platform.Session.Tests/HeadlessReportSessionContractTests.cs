@@ -2,7 +2,6 @@ using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Platform;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Bootstrap;
 using DashSpec.Execution.Compilation;
@@ -98,7 +97,7 @@ public sealed class HeadlessReportSessionContractTests
                 Id = "kpi",
                 Title = "KPI",
                 Diagram = new DiagramDefinition("number", new Dictionary<string, string>(), Microsoft.FSharp.Core.FSharpOption<string>.None),
-                DataSource = DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "v_kpi"),
+                DataSource = DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "v_kpi"),
                 BoundFilters = [],
                 LocalFilters = [],
                 Placement = Microsoft.FSharp.Core.FSharpOption<PlacementDefinition>.None,

@@ -1,5 +1,5 @@
-using DashSpec.Core.Authoring;
-using DashSpec.Core.Authoring.EditorConfig;
+using DashSpec.Execution.Authoring;
+using DashSpec.Execution.Authoring.EditorConfig;
 using DashSpec.Modeling.Parse.Formatting;
 
 namespace DashSpec.Execution.Parsing;

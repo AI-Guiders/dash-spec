@@ -5,7 +5,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open AIGuiders.Platform.Modeling.Language
-open DashSpec.Core.Validation
+open DashSpec.Execution.Runtime
 open DashSpec.Execution.Compilation
 open DashSpec.Execution.Parsing
 

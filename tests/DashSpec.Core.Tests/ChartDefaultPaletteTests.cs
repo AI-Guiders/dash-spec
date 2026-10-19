@@ -28,7 +28,7 @@ public sealed class ChartDefaultPaletteTests
                 ["x"] = "category",
                     ["y"] = "value",
             }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             [],
             [],
             null,

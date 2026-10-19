@@ -50,7 +50,7 @@ public sealed class VizAxisPresentationTests
                     ["axis_labels_x"] = "hide",
                     ["axis_labels_y"] = "show",
                 }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 
@@ -75,7 +75,7 @@ public sealed class VizAxisPresentationTests
                     ["toolbar_axis_labels_x"] = "Дни",
                     ["toolbar_axis_labels_y"] = "Пользователи",
                 }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 
@@ -94,7 +94,7 @@ public sealed class VizAxisPresentationTests
             new DiagramDefinition(
                 "heatmap",
                 new Dictionary<string, string> { ["value_labels_threshold"] = "18" }, null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: []);
 

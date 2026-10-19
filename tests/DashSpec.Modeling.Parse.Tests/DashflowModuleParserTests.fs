@@ -14,12 +14,7 @@ module DashflowModuleParserTests =
         let stdlibPath =
             Path.GetFullPath(
                 Path.Combine(
-                    __SOURCE_DIRECTORY__,
-                    "..",
-                    "..",
-                    "src",
-                    "DashSpec.Core",
-                    "stdlib",
+                    DashSpec.Modeling.Parse.Document.UnitSource.stdlibRoot (),
                     "types",
                     "time.ds"))
 

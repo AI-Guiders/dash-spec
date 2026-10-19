@@ -4,7 +4,7 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using DashSpec.Core.Interaction;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Parsing;
 using Xunit;
 
 namespace DashSpec.Core.Tests;
@@ -531,7 +531,7 @@ public class DashboardParseTests
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase), null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             Inspect: new InspectPresentation
@@ -616,7 +616,7 @@ public class DashboardParseTests
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             Legend: new LegendDefinition
@@ -637,7 +637,7 @@ public class DashboardParseTests
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             Presentation: new PresentationBlock(
@@ -653,7 +653,7 @@ public class DashboardParseTests
             "t",
             "T",
             new DiagramDefinition("heatmap", new Dictionary<string, string>(), null),
-            DashSpec.Core.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
             BoundFilters: [],
             LocalFilters: [],
             SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));

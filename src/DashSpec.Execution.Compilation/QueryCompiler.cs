@@ -5,6 +5,8 @@ using DashSpec.Core.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation.Dialects;
 
+using DashSpec.Execution.Parsing;
+
 namespace DashSpec.Execution.Compilation;
 
 public static class QueryCompiler
