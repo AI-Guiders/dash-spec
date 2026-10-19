@@ -181,9 +181,7 @@ public static class HeatmapCellFilterResolver
                 return raw;
             }
 
-            var storageBucket = LabelFormat.DisplayTimeZone is { } displayTz
-                ? DateValueCodec.CombineDisplayLocalToStorageUtc(anchor.Value, time, displayTz)
-                : DateValueCodec.NormalizeStorageUtc(anchor.Value.ToDateTime(time, DateTimeKind.Unspecified));
+            var storageBucket = DateValueCodec.NormalizeStorageUtc(anchor.Value.ToDateTime(time, DateTimeKind.Unspecified));
             return storageBucket.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         }
 
