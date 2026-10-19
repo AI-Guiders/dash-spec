@@ -243,7 +243,12 @@ internal static class MatrixPayloadBuilder
         List<DateTime> xKeys;
         List<string> xLabels;
         var axisWindow = TryParseAxisWindow(diagram);
-        if (buckets.Count > 0 && LabelFormat.DisplayTimeZone is { } displayTz)
+        if (buckets.Count > 0 && IsDisplayWallClockColumn(rows, xColumn))
+        {
+            // Значения уже гражданские (dashflow to_zone): подписи берём как есть, без перевода из UTC.
+            (xKeys, xLabels) = BuildCivilTimeAxis(buckets.Keys.Min(), xStep, axisWindow);
+        }
+        else if (buckets.Count > 0 && LabelFormat.DisplayTimeZone is { } displayTz)
         {
             (xKeys, xLabels) = BuildDisplayLocalTimeAxis(
                 buckets.Keys.Min(),
@@ -333,6 +338,54 @@ internal static class MatrixPayloadBuilder
     }
 
     private readonly record struct AxisWindow(TimeOnly From, TimeOnly To);
+
+    /// <summary>Колонка уже переведена dashflow-шагом <c>to_zone</c> в гражданское время.</summary>
+    private static bool IsDisplayWallClockColumn(TypedRowBatch rows, string column)
+    {
+        foreach (var row in rows.Rows)
+        {
+            var cell = row.Get(column);
+            return !cell.IsNull && cell.IsDisplayWallClockDateTime;
+        }
+
+        return false;
+    }
+
+    /// <summary>Сетка гражданского времени: подписи — как есть, без повторного перевода из UTC.</summary>
+    private static (List<DateTime> Keys, List<string> Labels) BuildCivilTimeAxis(
+        DateTime anchorCivil,
+        TimeSpan xStep,
+        AxisWindow? window)
+    {
+        var day = anchorCivil.Date;
+        DateTime start;
+        DateTime end;
+        if (window is { } w)
+        {
+            start = day.Add(w.From.ToTimeSpan());
+            end = day.Add(w.To.ToTimeSpan());
+        }
+        else
+        {
+            start = day;
+            end = start.AddDays(1);
+        }
+
+        if (end <= start)
+        {
+            end = start.Add(xStep);
+        }
+
+        var keys = new List<DateTime>();
+        var labels = new List<string>();
+        for (var slot = start; slot < end; slot = slot.Add(xStep))
+        {
+            keys.Add(TimeSeriesGrid.Floor(slot, xStep));
+            labels.Add(TimeOnly.FromDateTime(slot).ToString("HH:mm", CultureInfo.InvariantCulture));
+        }
+
+        return (keys, labels);
+    }
 
     private static AxisWindow? TryParseAxisWindow(DiagramDefinition diagram)
     {
