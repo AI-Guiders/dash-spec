@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// When a page derives a date filter, expose the source + grain controls on toolbar

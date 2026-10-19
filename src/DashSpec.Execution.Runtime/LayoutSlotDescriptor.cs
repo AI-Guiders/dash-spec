@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>One cell in a layout slot plane: token, placement, scope, and content kind.</summary>
 public sealed record LayoutSlotDescriptor(

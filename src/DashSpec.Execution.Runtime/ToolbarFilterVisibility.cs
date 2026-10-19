@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Which dashboard filters appear in the toolbar for the active tab/page.</summary>
 public static class ToolbarFilterVisibility

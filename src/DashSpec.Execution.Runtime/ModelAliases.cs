@@ -1,6 +1,10 @@
 // В этой ручной партии переведённые ниже имена ссылаются на F#-IR.
 // Остальные C#-типы модели пока остаются переходными и мигрируются отдельно.
 global using PlacementDefinition = DashSpec.Modeling.Parse.Layout.PlacementDefinition;
+global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;
+global using FilterDeriveDefinition = DashSpec.Modeling.Parse.Card.FilterDeriveDefinition;
+global using DiagramDataFamily = DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily;
+global using LayoutBoardEntry = DashSpec.Modeling.Parse.Layout.LayoutBoardEntry;
 global using TooltipDefinition = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 global using ExtensionBlockNode = DashSpec.Modeling.Parse.Card.ExtensionBlockNode;
 global using CardFlowInputDefinition = DashSpec.Modeling.Parse.Card.CardFlowInput;

@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Ordered chrome slot ids (filters + apply) for card-head grid rendering.</summary>
 public static class CardFilterChromeSlotOrder

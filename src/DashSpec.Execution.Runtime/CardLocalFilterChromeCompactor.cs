@@ -1,6 +1,7 @@
+using DashSpec.Core.Layout;
 using DashSpec.Core.Parsing;
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Weighted chrome row for card-local filters (ADR-0061, filters block layout).</summary>
 public static class CardLocalFilterChromeCompactor

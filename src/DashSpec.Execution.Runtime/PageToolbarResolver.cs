@@ -1,5 +1,5 @@
 
-namespace DashSpec.Core.Layout;
+namespace DashSpec.Execution.Runtime;
 
 public static class PageToolbarResolver
 {
