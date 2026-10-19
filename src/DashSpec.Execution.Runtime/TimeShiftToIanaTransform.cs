@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Transforms;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>
 /// Scalar builtin: TimeShift (minutes) → IANA id at the reference UTC instant passed to TryNormalizeParameters.

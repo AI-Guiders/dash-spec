@@ -2,9 +2,8 @@ using System.Text;
 using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
-using DashSpec.Execution.Compilation.Dialects;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation.Dialects;
 
 namespace DashSpec.Execution.Compilation;
 

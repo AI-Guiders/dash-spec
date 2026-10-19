@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 public readonly record struct DateRangeValue(DateOnly From, DateOnly To);
 

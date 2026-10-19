@@ -1,8 +1,7 @@
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Parsing;
-using DashSpec.Core.Runtime;
-using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
+using DashSpec.Execution.Compilation;
 using Xunit;
 
 namespace DashSpec.Core.Tests;

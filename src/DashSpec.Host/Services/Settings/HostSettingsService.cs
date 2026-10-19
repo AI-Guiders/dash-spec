@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using DashSpec.Core.Localization;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Data;
 using DashSpec.Surface.Blazor.Services.Presentation;

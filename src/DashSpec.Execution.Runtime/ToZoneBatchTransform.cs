@@ -1,6 +1,6 @@
 using DashSpec.Abstractions.Data;
 
-namespace DashSpec.Core.Transforms;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Apply <c>to_zone</c> on typed row batches (UTC DateTime cells → fixed-offset civil).</summary>
 public static class ToZoneBatchTransform

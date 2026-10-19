@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using DashSpec.Core.Localization;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Runtime;
 

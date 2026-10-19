@@ -1,6 +1,6 @@
 using System.Globalization;
 using DashSpec.Core.Interaction;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 
 namespace DashSpec.Execution.Runtime;
 

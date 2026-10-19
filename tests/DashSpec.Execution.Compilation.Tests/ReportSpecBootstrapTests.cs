@@ -3,7 +3,7 @@ using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Query;
 using DashSpec.Core.Parsing;
 using DashSpec.Core.Platform;
-using DashSpec.Core.Runtime;
+using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Bootstrap;
 using DashSpec.Execution.Runtime.Platform;
 using Xunit;

@@ -1,4 +1,4 @@
-namespace DashSpec.Core.Runtime;
+namespace DashSpec.Execution.Runtime;
 
 /// <summary>Per-card heatmap cell selection applied only to interior drill SQL (ADR-0064).</summary>
 public sealed class CardCellDrillOverlay
