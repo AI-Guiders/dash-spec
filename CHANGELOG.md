@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Table columns pipe-table (ADR-0104)** — `columns` as flat list or pipe table `| id | format | label | sorting |` inside `table`; desugars into `columns` / `column_formats` / `column_labels` / `order_by` (conflicts are parse errors). `TablePayload.HeaderTexts` + labeled table headers; column ids stay internal. First body form: pipe rows (contextual block grammar, GDL-table form).
+
 ### Changed
 
 - **W10 — растворение `DashSpec.Core` (ADR-0048), завершено:** Runtime-кодеки, layout-механика, resolution/analysis, parsing, authoring, компиляторный контракт и диагностика разъехались по `DashSpec.Execution.{Runtime,Compilation,Core}`; stdlib переехала с парсерами в `Execution.Core`; `SpecLibrary` разрезан по I/O-шву (`SpecLibraryLoader` + реестр). **Проект `DashSpec.Core` удалён.** Проверено smoke-хостом (validate + живой рендер отчётов).
