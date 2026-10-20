@@ -7,6 +7,7 @@
 
 ### Added
 
+- **Filters pipe-table (ADR-0105)** — `filters { | id | bind | column | label | widget | ref | single | grain_filter | min | max | bind_scope | range | limit | }` inside `filters … end filters`; rows desugar into the same `FilterDefinition` IR through the shared semantics path (date-range normalization, widget vocabulary, top rules); values use the platform words `range`/`limit`; nested `filter` blocks stay valid (legacy, file-by-file migration). `BlockGrammar` gains the reusable `TableRowRows` member; `parseFiltersBlock` consolidates onto the shared container.
 - **Table columns pipe-table (ADR-0104)** — `columns` as flat list or pipe table `| id | format | label | sorting |` inside `table`; desugars into `columns` / `column_formats` / `column_labels` / `order_by` (conflicts are parse errors). `TablePayload.HeaderTexts` + labeled table headers; column ids stay internal. First body form: pipe rows (contextual block grammar, GDL-table form).
 
 ### Changed

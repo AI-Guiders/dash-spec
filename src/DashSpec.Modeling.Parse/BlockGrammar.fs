@@ -23,6 +23,9 @@ module BlockGrammar =
             keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
         | RepeatingBracketRows of
             rows: ResizeArray<IReadOnlyList<string>> * parseRow: (TokenReader -> IReadOnlyList<string>)
+        /// Bare `| a | b |` table rows at container level (GDL-table body; ADR-0004 deferred step family).
+        /// Collected verbatim; header row + cell semantics are the consumer's (TableLiteral).
+        | TableRowRows of rows: ResizeArray<string>
 
     let serializeColumnFormatMap (map: IReadOnlyDictionary<string, string>) =
         let sb = StringBuilder()
@@ -66,11 +69,16 @@ module BlockGrammar =
         | RepeatingBracketRows(rows, parseRow) when reader.IsAt TokenKind.LBracket ->
             rows.Add(parseRow reader)
             true
+        | TableRowRows rows when reader.CurrentKind = TokenKind.TableRow ->
+            rows.Add(reader.CurrentTableRow())
+            reader.Advance()
+            true
         | _ -> tryParseChild reader memberDef values
 
     and private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
         | RepeatingBracketRows _ -> false
+        | TableRowRows _ -> false
         | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then
                 let map = MemberGrammar.parseStringMapBlock reader endKind blockName readValue
