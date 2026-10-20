@@ -1,5 +1,19 @@
 /* Card-head local filter chrome (ADR-0060/0061). Host owns grid shell; plugin owns widget fit. */
 
+/* Date inputs inside the card band match the toolbar grain inputs (same tokens, no raw browser chrome). */
+.card-head-toolbar-filters input[type="date"],
+.card-head-toolbar-filters input[type="month"],
+.card-head-toolbar-filters input.filter-grain-input,
+.card-head-toolbar-filters input.date-input-grain,
+.card-head-toolbar-filters input.date-input-year {
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0.25rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  color-scheme: dark;
+}
+
 .card-head-toolbar-filters--grid .filter-field,
 .card-filters-local.card-head-toolbar-filters--grid .filter-field {
   flex: unset;
