@@ -1016,7 +1016,7 @@ module rec DocumentModuleParser =
 
         let private allowedAttributes =
             HashSet<string>(
-                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain_filter"; "min"; "max"; "bind_scope"; "range"; "limit" ],
+                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit" ],
                 StringComparer.OrdinalIgnoreCase
             )
 
@@ -1050,7 +1050,7 @@ module rec DocumentModuleParser =
                 if not (allowedAttributes.Contains a) then
                     raise (
                         DashSpecParseException(
-                            $"filters table attribute '{a}' is not one of: id, bind, column, label, widget, ref, single, grain_filter, min, max, bind_scope, range, limit.")
+                            $"filters table attribute '{a}' is not one of: id, bind, column, label, widget, ref, single, grain, min, max, bind_scope, range, limit.")
                     )
 
             for m in maps do
@@ -1134,7 +1134,7 @@ module rec DocumentModuleParser =
                           Widget = widget
                           MinValue = minValue
                           MaxValue = maxValue
-                          GrainFilterName = strAttr "grain_filter"
+                          GrainFilterName = strAttr "grain"
                           SingleSelect = singleSelect
                           LayoutRef = strAttr "ref"
                           BindScopeHint = strAttr "bind_scope"

@@ -235,7 +235,7 @@ public class DashboardParseTests
               report
               title = "T"
               filters
-                | id           | bind | column       | label  | widget | min | max | bind_scope | grain_filter | range | limit |
+                | id           | bind | column       | label  | widget | min | max | bind_scope | grain        | range | limit |
                 | events_top   | top  | -            | Top    | -      | 0   | 500 | hidden     | -            | -     | 200  |
                 | period_start | date | period_start | Period | day    | -   | -   | -          | period_grain | -1d   | -    |
               end filters

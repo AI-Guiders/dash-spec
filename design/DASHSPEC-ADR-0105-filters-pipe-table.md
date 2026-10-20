@@ -24,7 +24,7 @@ end filters
 ```
 
 - Header row declares the attributes present; subset headers valid; `-`/empty = unset; separator rows skipped (ADR-0104 semantics).
-- Vocabulary: `id` (required, unique), `bind` (date/field/top, required), `column`, `label`, `widget`, `ref`, `single` (true/false), `grain_filter`, `min`, `max`, `bind_scope`, `range`, `limit`.
+- Vocabulary: `id` (required, unique), `bind` (date/field/top, required), `column`, `label`, `widget`, `ref`, `single` (true/false), `grain`, `min`, `max`, `bind_scope`, `range`, `limit`.
 - **Filter values ride the platform's own words**: `range` (date) and `limit` (top) — the same words the bind block and defaults blocks use. The word `default` stays rejected by design (ADR: "Filter value must be declared in defaults block"); the table columns use the platform vocabulary instead. Values resolve scope-defaults-first (same order as the nested form).
 - **One semantics path**: rows go through the shared `FilterParser.validateSemantics` — date range normalization (`today` → `today..today` for day widgets), widget vocabulary, top min/max/limit rules. No parallel validation.
 - The nested `filter <id>` block form stays valid (legacy during migration, file-by-file); both forms coexist in one `filters` container.
