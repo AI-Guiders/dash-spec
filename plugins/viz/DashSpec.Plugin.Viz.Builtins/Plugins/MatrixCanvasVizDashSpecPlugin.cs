@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Plugin.Viz.Builtins.Components.Matrix;
 using DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas;
@@ -19,4 +20,13 @@ public sealed class MatrixCanvasVizDashSpecPlugin : VizDashSpecPluginBase
     protected override Type? CardToolbarComponentType => typeof(MatrixLabelToolbar);
 
     protected override IVizPlugin CreateBackend() => new MatrixCanvasVizBackend();
+
+    public override void RegisterContributors(IDashSpecContributorRegistry registry)
+    {
+        base.RegisterContributors(registry);
+
+        // ADR-0107: the click-source vocabulary this diagram family renders.
+        registry.AddClickSource(new ClickSourceContributorDescriptor(Id, MatrixClickSources.Cell));
+        registry.AddClickSource(new ClickSourceContributorDescriptor(Id, MatrixClickSources.CategoryItem));
+    }
 }

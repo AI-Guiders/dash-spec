@@ -15,6 +15,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, VizRendererDescriptor> _vizRenderers =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, ClickSourceContributorDescriptor> _clickSources =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PhraseTemplateDescriptor> _phraseTemplates =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScopeContributorDescriptor> _scopeContributors =
@@ -107,6 +109,18 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
 
         TrackPlugin(descriptor.PluginId);
+    }
+
+    /// <summary>Declares a click source a plugin's diagram family renders (ADR-0107).</summary>
+    public void AddClickSource(ClickSourceContributorDescriptor descriptor)
+    {
+        if (!_clickSources.TryAdd(descriptor.SourceId, descriptor))
+        {
+            throw new InvalidOperationException(
+                $"Duplicate click source '{descriptor.SourceId}' from plugin '{descriptor.PluginId}'.");
+        }
+
+        TrackPlugin(descriptor.PluginId, clickSource: descriptor.SourceId);
     }
 
     public void AddPhraseTemplate(PhraseTemplateDescriptor descriptor)
@@ -334,6 +348,9 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 
     public IReadOnlyDictionary<string, InteractionHandlerDescriptor> InteractionHandlers => _interactionHandlers;
 
+    /// <summary>Click sources rendered by plugin diagram families (ADR-0107).</summary>
+    public IReadOnlyDictionary<string, ClickSourceContributorDescriptor> ClickSources => _clickSources;
+
     public IReadOnlyDictionary<string, ActionHandlerDescriptor> ActionHandlers => _actionHandlers;
 
     public DashSpecPluginCapabilities BuildCapabilities(string bundle) =>
@@ -389,7 +406,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         string? actionHandler = null,
         string? phraseTemplate = null,
         string? filterWidget = null,
-        string? cardChrome = null)
+        string? cardChrome = null,
+        string? clickSource = null)
     {
         var entry = _plugins.FirstOrDefault(x => string.Equals(x.Id, pluginId, StringComparison.OrdinalIgnoreCase));
         if (entry is null)
@@ -431,6 +449,11 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         {
             entry.CardChromeBlocks.Add(cardChrome);
         }
+
+        if (clickSource is not null)
+        {
+            entry.ClickSources.Add(clickSource);
+        }
     }
 
     private sealed class LoadedPluginEntry(string id, string displayName, PluginTier tier)
@@ -448,6 +471,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         public HashSet<string> InteractionHandlers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public HashSet<string> ActionHandlers { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public HashSet<string> ClickSources { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         public HashSet<string> PhraseTemplates { get; } = new(StringComparer.OrdinalIgnoreCase);
 

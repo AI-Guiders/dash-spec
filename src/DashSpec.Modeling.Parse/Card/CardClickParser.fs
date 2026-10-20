@@ -100,20 +100,103 @@ module CardClickParser =
 
     let private parseDrillTableFromCellEffect (reader: TokenReader) (cardId: string) =
         if not (reader.TryKeyword "table") then
-            raise (DashSpecParseException($"Card '{cardId}': drill requires 'table from cell'."))
-        if not (reader.TryKeyword "from") then
-            raise (DashSpecParseException($"Card '{cardId}': drill table requires 'from cell'."))
-        let source = reader.ReadIdent()
-        if not (String.Equals(source, "cell", StringComparison.OrdinalIgnoreCase)) then
-            raise (DashSpecParseException($"Card '{cardId}': drill table source must be 'cell'; got '{source}'."))
+            raise (DashSpecParseException($"Card '{cardId}': drill requires 'table <slot>' or legacy 'table from cell'."))
+
+        // ADR-0107: `drill table <slot>` names the target slot (the click source lives in
+        // the handler header); legacy `drill table from cell` stays valid (slot = "").
+        let targetSlot =
+            if reader.TryKeyword "from" then
+                let source = reader.ReadIdent()
+                if not (String.Equals(source, "cell", StringComparison.OrdinalIgnoreCase)) then
+                    raise (DashSpecParseException($"Card '{cardId}': drill table source must be 'cell'; got '{source}'."))
+                ""
+            else
+                let slot = reader.ReadIdent()
+                if String.IsNullOrWhiteSpace slot then
+                    raise (DashSpecParseException($"Card '{cardId}': drill table requires a slot ref or legacy 'from cell'."))
+                slot.Trim()
+
         let binds = ResizeArray<string * string>()
         reader.SkipNewlines()
         while reader.TryKeyword "set" do
             binds.Add(parseSetBinding reader cardId)
             reader.SkipNewlines()
         if binds.Count = 0 then
-            raise (DashSpecParseException($"Card '{cardId}': drill table from cell requires at least one 'set <filter> from x|y|value'."))
-        DrillTableFromCell(binds :> IReadOnlyList<_>)
+            raise (DashSpecParseException($"Card '{cardId}': drill table requires at least one 'set <filter> from x|y|value'."))
+        DrillTableFromCell(binds :> IReadOnlyList<_>, targetSlot)
+
+    // --- Sourced clicks (ADR-0107): the `on click` table form, via Construct (ADR-0106) ---
+
+    let private validateFieldWord (cardId: string) (raw: string) (field: string) =
+        if not (field.Equals("x", StringComparison.OrdinalIgnoreCase)
+                || field.Equals("y", StringComparison.OrdinalIgnoreCase)
+                || field.Equals("value", StringComparison.OrdinalIgnoreCase)) then
+            raise (DashSpecParseException($"Card '{cardId}': click table set field must be x, y, or value; got '{field}' in '{raw}'."))
+
+    /// One `set` cell — `filter=x|y|value` pairs: `activity_hour=x, app_name=y`.
+    let private parseSetCellBinds (cardId: string) (raw: string) : ResizeArray<string * string> =
+        let binds = ResizeArray<string * string>()
+
+        for pair in raw.Split(',') do
+            let parts = pair.Split('=')
+            if parts.Length <> 2 || String.IsNullOrWhiteSpace parts.[0] then
+                raise (DashSpecParseException($"Card '{cardId}': click table set cell expects 'filter=x|y|value' pairs; got '{pair.Trim()}' in '{raw}'."))
+
+            let filterName = parts.[0].Trim()
+            let field = parts.[1].Trim().ToLowerInvariant()
+            validateFieldWord cardId raw field
+            binds.Add((filterName, field))
+
+        binds
+
+    /// `on click { | source | drill | set | … }` rows → sourced handlers. One semantics
+    /// path with the block form: rows desugar into the same effects `on <source> click`
+    /// parses (`drill table <slot>` + its binds; `-`/empty drill = a set-only click).
+    let applyClickTableRows
+        (cardId: string)
+        (knownSources: IReadOnlySet<string>)
+        (addHandler: CardClickHandler -> unit)
+        (rows: string list)
+        =
+        let validateSource (source: string) =
+            if knownSources.Count > 0 && not (knownSources.Contains source) then
+                let declaredList = String.Join(", ", knownSources)
+                raise (DashSpecParseException($"Card '{cardId}': unknown click source '{source}' (declared: {declaredList})."))
+            source
+
+        let cellsToHandler (m: Map<string, string>) : CardClickHandler =
+            let source =
+                match Construct.tryCell m "source" with
+                | Some s -> validateSource (s.Trim())
+                | None -> raise (DashSpecParseException($"Card '{cardId}': click table row requires a 'source' cell."))
+
+            let binds =
+                match Construct.tryCell m "set" with
+                | Some raw -> parseSetCellBinds cardId raw
+                | None -> ResizeArray<string * string>()
+
+            let effects = ResizeArray<CardClickEffect>()
+
+            match Construct.tryCell m "drill" with
+            | Some slot ->
+                if binds.Count = 0 then
+                    raise (DashSpecParseException($"Card '{cardId}': click table row '{source}' with a drill cell requires a 'set' cell (filter=x|y|value pairs)."))
+
+                effects.Add(DrillTableFromCell(binds :> IReadOnlyList<_>, slot.Trim()))
+            | None ->
+                for filterName, field in binds do
+                    effects.Add(SetFilterFromField(filterName, field))
+
+            { Source = source
+              Effects = effects :> IReadOnlyList<_> }
+
+        let declaration : Construct.Declaration<CardClickHandler> =
+            { Name = "click"
+              Vocabulary = [ "source"; "drill"; "set" ]
+              CellsToRow = cellsToHandler
+              ConstructRow = addHandler }
+
+        Construct.applyTableRows declaration rows
 
     let private parsePreserveFilterList (reader: TokenReader) =
         reader.SkipNewlines()

@@ -30,6 +30,7 @@ else
     [Parameter] public double MatrixMin { get; set; }
     [Parameter] public double MatrixMax { get; set; }
     [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
+    [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; set; }
     [Parameter] public bool DetailView { get; set; }
 
     private Type? _componentType;
@@ -50,6 +51,7 @@ else
                 MatrixMin = MatrixMin,
                 MatrixMax = MatrixMax,
                 OnHeatmapCellSelected = OnHeatmapCellSelected,
+                OnHeatmapCategoryItemSelected = OnHeatmapCategoryItemSelected,
                 VizStateCardId = Slot is null ? null : Card.Id,
             },
         };

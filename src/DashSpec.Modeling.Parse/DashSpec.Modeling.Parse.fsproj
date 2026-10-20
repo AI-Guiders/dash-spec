@@ -27,6 +27,7 @@
     <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
     <Compile Include="Table\TableLiteral.fs" />
+    <Compile Include="Construct.fs" />
     <Compile Include="Alias\AliasBlockParser.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />
     <Compile Include="Formatting\BlockSurfaceLineClassifier.fs" />

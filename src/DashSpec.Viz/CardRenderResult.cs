@@ -40,7 +40,8 @@ public sealed record CardRenderResult(
     string? TopFilterScopeHint = null,
     bool ShowChromeTitle = true,
     CardFoldMode FoldMode = CardFoldMode.None,
-    IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null)
+    IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
+    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 

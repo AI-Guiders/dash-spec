@@ -368,17 +368,42 @@ public sealed class DashboardPageController : IDisposable
         Notify();
     }
 
+    private static IReadOnlyList<CardClickEffect>? ResolveClickEffects(CardRenderResult card, string? clickSource)
+    {
+        if (!string.IsNullOrEmpty(clickSource) && card.ClickHandlers is { Count: > 0 })
+        {
+            var handler = card.ClickHandlers.FirstOrDefault(h =>
+                string.Equals(h.Source, clickSource, StringComparison.OrdinalIgnoreCase));
+
+            if (handler is not null)
+            {
+                return handler.Effects;
+            }
+        }
+
+        return card.ClickBehaviour?.Effects;
+    }
+
     public async Task ApplyCardClickNavigationAsync(
         CardRenderResult card,
         HeatmapCellContext context,
         CancellationToken cancellationToken = default)
     {
-        if (card.ClickBehaviour is null)
+        if (card.ClickBehaviour is null && card.ClickHandlers is not { Count: > 0 })
         {
             return;
         }
 
-        var effects = _interactions.ExpandClickEffects(card.ClickBehaviour.Effects).ToList();
+        // ADR-0107: the source-specific handler first (from context.ClickSource),
+        // then the generic `on click` fallback.
+        var clickEffects = ResolveClickEffects(card, context.ClickSource);
+
+        if (clickEffects is null)
+        {
+            return;
+        }
+
+        var effects = _interactions.ExpandClickEffects(clickEffects).ToList();
         if (CardClickRefreshPlanner.Plan(effects) is CardInteractionRefresh.CardInteriorSlots)
         {
             _filters.SyncToSession(_session, PlacedFilterCollector.CollectSessionScoped(_session.Document));
@@ -395,7 +420,8 @@ public sealed class DashboardPageController : IDisposable
                 context,
                 _session.FilterIndex,
                 queryFilters,
-                anchorDates);
+                anchorDates,
+                HeatmapCellFilterResolver.ResolveDrillTarget(effects));
             _cellDrill.Set(card.Id, overlay);
             await _refresh.RefreshCardInteriorSlotsAsync(card.Id, cancellationToken).ConfigureAwait(false);
             return;

@@ -186,55 +186,30 @@ module DocumentWiringGraphBuilder =
         (edges: ResizeArray<WiringEdge>)
         (card: CardDefinition)
         =
-        match card.ClickBehaviour with
-        | None -> ()
-        | Some behaviour ->
+        // ADR-0107: the generic behaviour + the sourced handlers lower into the same wiring graph.
+        let behaviours =
+            seq {
+                match card.ClickBehaviour with
+                | Some behaviour -> yield behaviour
+                | None -> ()
+
+                for handler in card.ClickHandlers do
+                    yield { Effects = handler.Effects }
+            }
+
+        if Seq.isEmpty behaviours then
+            ()
+        else
             let scope = Some $"card:{card.Id}"
             let slotRef = card.DiagramSlotRef |> Option.defaultValue card.Id
             let slotNode = $"{card.Id}.{slotRef}"
             addNode nodes slotNode WiringNodeKind.Slot scope
             addNode nodes card.Id WiringNodeKind.Card scope
 
-            for effect in behaviour.Effects do
-                match effect with
-                | SetFilterFromField(filterName, field) ->
-                    addNode nodes filterName WiringNodeKind.Filter scope
-
-                    addEdge
-                        edges
-                        { From = slotNode
-                          FromPort = Some $"click.{field}"
-                          To = filterName
-                          ToPort = Some "value"
-                          Kind = WiringEdgeKind.Event
-                          Scope = scope }
-                | FocusPhase phaseId ->
-                    let pageKey = card.PageId |> Option.defaultValue "report"
-                    let phaseNode = $"phase.{pageKey}.{phaseId}"
-                    addNode nodes phaseNode WiringNodeKind.Phase scope
-
-                    addEdge
-                        edges
-                        { From = slotNode
-                          FromPort = Some "click"
-                          To = phaseNode
-                          ToPort = None
-                          Kind = WiringEdgeKind.Event
-                          Scope = scope }
-                | GotoPage pageId ->
-                    let pageNode = $"page.{pageId}"
-                    addNode nodes pageNode WiringNodeKind.Page scope
-
-                    addEdge
-                        edges
-                        { From = slotNode
-                          FromPort = Some "click"
-                          To = pageNode
-                          ToPort = None
-                          Kind = WiringEdgeKind.Event
-                          Scope = scope }
-                | DrillTableFromCell bindings ->
-                    for filterName, field in bindings do
+            for behaviour in behaviours do
+                for effect in behaviour.Effects do
+                    match effect with
+                    | SetFilterFromField(filterName, field) ->
                         addNode nodes filterName WiringNodeKind.Filter scope
 
                         addEdge
@@ -245,7 +220,44 @@ module DocumentWiringGraphBuilder =
                               ToPort = Some "value"
                               Kind = WiringEdgeKind.Event
                               Scope = scope }
-                | _ -> ()
+                    | FocusPhase phaseId ->
+                        let pageKey = card.PageId |> Option.defaultValue "report"
+                        let phaseNode = $"phase.{pageKey}.{phaseId}"
+                        addNode nodes phaseNode WiringNodeKind.Phase scope
+
+                        addEdge
+                            edges
+                            { From = slotNode
+                              FromPort = Some "click"
+                              To = phaseNode
+                              ToPort = None
+                              Kind = WiringEdgeKind.Event
+                              Scope = scope }
+                    | GotoPage pageId ->
+                        let pageNode = $"page.{pageId}"
+                        addNode nodes pageNode WiringNodeKind.Page scope
+
+                        addEdge
+                            edges
+                            { From = slotNode
+                              FromPort = Some "click"
+                              To = pageNode
+                              ToPort = None
+                              Kind = WiringEdgeKind.Event
+                              Scope = scope }
+                    | DrillTableFromCell(bindings, _) ->
+                        for filterName, field in bindings do
+                            addNode nodes filterName WiringNodeKind.Filter scope
+
+                            addEdge
+                                edges
+                                { From = slotNode
+                                  FromPort = Some $"click.{field}"
+                                  To = filterName
+                                  ToPort = Some "value"
+                                  Kind = WiringEdgeKind.Event
+                                  Scope = scope }
+                    | _ -> ()
 
     let private scopeRoutingLinks (sections: FlowGraphSections) =
         let merged = ResizeArray<FlowLinkDef>()

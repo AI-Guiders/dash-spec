@@ -58,9 +58,12 @@ else if (Owner is not null)
             ["Card"] = Owner.Card,
             ["MatrixMin"] = Owner.Card.Matrix?.Min ?? 0,
             ["MatrixMax"] = Owner.Card.Matrix?.Max ?? 0,
-            ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
+                    Owner.HandleHeatmapCellSelectedAsync),
+            ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
                 this,
-                Owner.HandleHeatmapCellSelectedAsync),
+                Owner.HandleHeatmapCategoryItemSelectedAsync),
         };
 
         if (Slot.ContentKind is LayoutSlotContentKind.SecondaryDiagram)

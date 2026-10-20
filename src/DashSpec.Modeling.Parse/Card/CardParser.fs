@@ -344,6 +344,8 @@ module CardParser =
         let interiorBoard = ref None
         let diagramSlotRef = ref None
         let clickBehaviour = ref None
+        let clickHandlers = ResizeArray<CardClickHandler>()
+        let genericClickDeclared = ref false
         let visibility = ref None
         let matrixLimits = ref None
         let oversizeMessage = ref (None: string option)
@@ -389,12 +391,60 @@ module CardParser =
             matrixLimits.Value <- Some(CardLimitsParser.parse reader id)
             reader.SkipNewlines()
 
+        let addClickHandler (handler: CardClickHandler) =
+            if
+                clickHandlers
+                |> Seq.exists (fun existing -> String.Equals(existing.Source, handler.Source, StringComparison.OrdinalIgnoreCase))
+            then
+                raise (DashSpecParseException($"Card '{id}': duplicate on {handler.Source} click handler."))
+
+            clickHandlers.Add(handler)
+
         let onOn () =
-            if not (reader.TryKeyword "click") then
-                raise (DashSpecParseException($"Card '{id}': only 'on click' is supported in v1."))
-            if clickBehaviour.Value.IsSome then
-                raise (DashSpecParseException($"Card '{id}': duplicate on click block."))
-            clickBehaviour.Value <- Some(CardClickParser.parseClickBlock reader id parseOptions)
+            // ADR-0107: `on click …` (generic: pipe-table form or legacy effect statements)
+            // or `on <source> click …` (a sourced handler; the source vocabulary is
+            // plugin-declared, validated like action handlers).
+            let sourceWords = ResizeArray<string>()
+            let mutable reachedClick = false
+
+            while not reachedClick do
+                if reader.TryKeyword "click" then
+                    reachedClick <- true
+                else
+                    match reader.TryPeekIdent() with
+                    | Some word ->
+                        sourceWords.Add(word.Trim())
+                        reader.ReadIdent() |> ignore
+                    | None ->
+                        raise (DashSpecParseException($"Card '{id}': 'on' requires 'click' or '<source> click'."))
+
+            if sourceWords.Count = 0 then
+                if genericClickDeclared.Value then
+                    raise (DashSpecParseException($"Card '{id}': duplicate on click block."))
+
+                genericClickDeclared.Value <- true
+
+                if reader.CurrentKind = TokenKind.TableRow then
+                    let rows = BlockGrammar.readPipeTableRows reader "click" $"Card '{id}': on click"
+                    CardClickParser.applyClickTableRows id parseOptions.KnownClickSources addClickHandler (List.ofSeq rows)
+                else
+                    clickBehaviour.Value <- Some(CardClickParser.parseClickBlock reader id parseOptions)
+            else
+                let source = (String.Join(" ", sourceWords)).Trim().ToLowerInvariant()
+
+                if
+                    parseOptions.KnownClickSources.Count > 0
+                    && not (parseOptions.KnownClickSources.Contains source)
+                then
+                    let declaredList = String.Join(", ", parseOptions.KnownClickSources)
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{id}': unknown click source '{source}' (declared: {declaredList}).")
+                    )
+
+                let behaviour = CardClickParser.parseClickBlock reader id parseOptions
+                addClickHandler { Source = source; Effects = behaviour.Effects }
+
             reader.SkipNewlines()
 
         let onUse () =
@@ -689,6 +739,28 @@ module CardParser =
                 else
                     None
 
+        // ADR-0107: a named drill target must be a declared slot of this card.
+        let allClickEffects =
+            seq {
+                match clickBehaviour.Value with
+                | Some behaviour -> yield! behaviour.Effects
+                | None -> ()
+
+                yield! clickHandlers |> Seq.collect (fun handler -> handler.Effects)
+            }
+
+        for effect in allClickEffects do
+            match effect.TryGetDrillTarget with
+            | Some targetSlot when
+                not (String.IsNullOrWhiteSpace targetSlot)
+                && not (diagramSlotsFinal.ContainsKey targetSlot)
+                ->
+                raise (
+                    DashSpecParseException(
+                        $"Card '{id}': drill table target slot '{targetSlot}' is not declared by this card (diagram ref {targetSlot} <name>).")
+                )
+            | _ -> ()
+
         { Id = id
           Title = title.Value
           Diagram = primaryDiagram
@@ -712,6 +784,7 @@ module CardParser =
                 Some primaryKey
           DiagramSlots = diagramSlotsFinal
           ClickBehaviour = clickBehaviour.Value
+          ClickHandlers = clickHandlers :> IReadOnlyList<_>
           ExtensionBlocks = extensionBlocks :> IReadOnlyList<_>
           LocalFiltersManualApply = localFiltersManualApply
           LocalFiltersApplySplitIndex = localFiltersApplySplitIndex

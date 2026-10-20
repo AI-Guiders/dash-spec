@@ -161,6 +161,7 @@ internal static class DocumentParseRegistration
             PhraseTemplates = options.PhraseTemplates.Select(ToFsharpPhraseTemplate).ToList(),
             KnownActionHandlers = options.KnownActionHandlers,
             KnownInteractionHandlers = options.KnownInteractionHandlers,
+            KnownClickSources = options.KnownClickSources,
         };
 
     private static DashSpec.Modeling.Parse.PhraseTemplateDescriptor ToFsharpPhraseTemplate(CorePhraseTemplate template) =>
