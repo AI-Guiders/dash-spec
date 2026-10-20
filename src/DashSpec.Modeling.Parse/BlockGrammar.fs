@@ -36,6 +36,31 @@ module BlockGrammar =
         { IrProperty = "column_formats"
           Serialize = serializeColumnFormatMap }
 
+    /// Column labels ride on newline-joined `id = label` lines so commas inside a label survive the IR round-trip.
+    let serializeColumnLabelMap (map: IReadOnlyDictionary<string, string>) =
+        let sb = StringBuilder()
+        for kv in map do
+            if sb.Length > 0 then
+                sb.Append('\n') |> ignore
+            sb.Append(kv.Key).Append(" = ").Append(kv.Value.Trim()) |> ignore
+        sb.ToString()
+
+    /// <summary>
+    /// <c>| a | b |</c> TableRow rows until <c>end endKind</c> — GDL-table block body (ADR-0004 deferred step).
+    /// Separator rows (<c>|---|---|</c>) are left for <see cref="TableLiteral"/> to skip.
+    /// </summary>
+    let readPipeTableRows (reader: TokenReader) (endKind: string) (blockName: string) : string list =
+        let rows = ResizeArray<string>()
+        while not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof do
+            reader.SkipNewlines()
+            if not (BlockSyntax.isBlockEnd reader endKind None) then
+                if reader.CurrentKind <> TokenKind.TableRow then
+                    raise (reader.Unexpected($"table row '| a | b |' inside {blockName}"))
+                rows.Add(reader.CurrentTableRow())
+                reader.Advance()
+        BlockSyntax.expectBlockEnd reader endKind None
+        List.ofSeq rows
+
     let rec private tryParseMember (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
         | RepeatingBracketRows(rows, parseRow) when reader.IsAt TokenKind.LBracket ->

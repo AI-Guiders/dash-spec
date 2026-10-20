@@ -12,16 +12,20 @@ else
         <table>
             <thead>
                 <tr>
-                    @foreach (var column in Context.Card.Table.Columns)
+                    @for (var i = 0; i < Context.Card.Table.Columns.Count; i++)
                     {
+                        var column = Context.Card.Table.Columns[i];
+                        var headerText = Context.Card.Table.HeaderTexts is { } texts && i < texts.Count
+                            ? texts[i]
+                            : column;
                         <th>
-                            <div class="table-col-head">@column</div>
+                            <div class="table-col-head">@headerText</div>
                             @if (ShowColumnFilters)
                             {
                                 <input type="search"
                                        class="table-col-filter"
                                        placeholder="@FilterPlaceholder"
-                                       aria-label="@ResolveFilterAria(column)"
+                                       aria-label="@ResolveFilterAria(headerText)"
                                        value="@GetFilter(column)"
                                        @oninput="e => SetFilter(column, e.Value?.ToString())" />
                             }

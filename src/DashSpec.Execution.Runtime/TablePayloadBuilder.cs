@@ -26,6 +26,11 @@ internal static class TablePayloadBuilder
                 .ToList())
             .ToList();
 
-        return new TablePayload(columns.ToList(), tableRows);
+        var labels = ColumnLabelMap.Parse(diagram.Properties.GetValueOrDefault("column_labels"));
+        var headerTexts = labels.Count > 0
+            ? columns.Select(column => labels.TryGetValue(column, out var label) ? label : column).ToList()
+            : null;
+
+        return new TablePayload(columns.ToList(), tableRows, headerTexts);
     }
 }
