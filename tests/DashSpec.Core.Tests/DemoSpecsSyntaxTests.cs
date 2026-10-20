@@ -166,6 +166,165 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_table_diagram_columns_pipe_table_desugars_all_attributes()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id                    | format         | label        | sorting |
+                | host_name             | -              | Хост         | ASC     |
+                | user_sam              |                | Пользователь | ASC     |
+                | peak_bucket_start_utc | datetime.short | Момент пика  | DESC    |
+              end columns
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var props = fragment.Diagram!.Properties;
+        Assert.Equal("host_name, user_sam, peak_bucket_start_utc", props["columns"]);
+        Assert.Equal("peak_bucket_start_utc:datetime.short", props["column_formats"]);
+        Assert.Equal("host_name = Хост\nuser_sam = Пользователь\npeak_bucket_start_utc = Момент пика", props["column_labels"]);
+        Assert.Equal("host_name ASC, user_sam ASC, peak_bucket_start_utc DESC", props["order_by"]);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_accepts_subset_header_and_skips_separator_rows()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id                | label |
+                |-------------------|-------|
+                | host_name         | Хост  |
+                | bucket_start_utc | |
+              end columns
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var props = fragment.Diagram!.Properties;
+        Assert.Equal("host_name, bucket_start_utc", props["columns"]);
+        Assert.Equal("host_name = Хост", props["column_labels"]);
+        Assert.False(props.ContainsKey("column_formats"));
+        Assert.False(props.ContainsKey("order_by"));
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_rejects_flat_columns_double_declaration()
+    {
+        var text = """
+            module diagram t
+            table
+              columns = host_name
+              columns
+                | id | label |
+                | host_name | Хост |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("columns", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_rejects_flat_order_by_with_sorting()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id | sorting |
+                | host_name | ASC |
+              end columns
+              order_by = host_name ASC
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("order_by", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_rejects_formats_block_with_format_attribute()
+    {
+        var text = """
+            module diagram t
+            table
+              formats
+                host_name = datetime.short
+              end formats
+              columns
+                | id | format |
+                | host_name | date.short |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("format", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_rejects_unknown_attribute()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id | width |
+                | host_name | 12 |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("width", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_rejects_bad_sorting_value()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id | sorting |
+                | host_name | RANDOM |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("ASC", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_pipe_table_requires_id_cell()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id | label |
+                |   | Хост |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("id", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_table_diagram_order_by_with_comma()
     {
         var text = """

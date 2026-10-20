@@ -240,6 +240,76 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildTable_applies_column_labels_to_header_texts()
+    {
+        var diagram = new DiagramDefinition("table", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["columns"] = "host_name, user_sam",
+            ["column_labels"] = "host_name = Хост\nuser_sam = Пользователь",
+        }, null);
+
+        var rows = TypedRowBatchTestKit.FromDictionaries(
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["host_name"] = "SPB-GM0B3HNR",
+                ["user_sam"] = "ilia.kiselev",
+            },
+        ]);
+
+        var table = ChartDataBuilder.BuildTable(rows, diagram);
+
+        Assert.Equal(["host_name", "user_sam"], table.Columns);
+        Assert.Equal(["Хост", "Пользователь"], table.HeaderTexts);
+    }
+
+    [Fact]
+    public void BuildTable_partial_labels_fall_back_to_column_names()
+    {
+        var diagram = new DiagramDefinition("table", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["columns"] = "host_name, user_sam",
+            ["column_labels"] = "host_name = Хост",
+        }, null);
+
+        var rows = TypedRowBatchTestKit.FromDictionaries(
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["host_name"] = "SPB-GM0B3HNR",
+                ["user_sam"] = "ilia.kiselev",
+            },
+        ]);
+
+        var table = ChartDataBuilder.BuildTable(rows, diagram);
+
+        Assert.Equal(["host_name", "user_sam"], table.Columns);
+        Assert.Equal(["Хост", "user_sam"], table.HeaderTexts);
+    }
+
+    [Fact]
+    public void BuildTable_without_labels_keeps_header_texts_null()
+    {
+        var diagram = new DiagramDefinition("table", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["columns"] = "host_name, user_sam",
+        }, null);
+
+        var rows = TypedRowBatchTestKit.FromDictionaries(
+        [
+            new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["host_name"] = "SPB-GM0B3HNR",
+                ["user_sam"] = "ilia.kiselev",
+            },
+        ]);
+
+        var table = ChartDataBuilder.BuildTable(rows, diagram);
+
+        Assert.Null(table.HeaderTexts);
+    }
+
+    [Fact]
     public void BuildHeatmap_sorts_date_short_axis_chronologically_not_lexically()
     {
         var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

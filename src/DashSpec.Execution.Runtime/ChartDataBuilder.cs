@@ -103,7 +103,10 @@ public sealed record TreemapTile(string Label, double Value);
 
 public sealed record GaugeReading(double Value, double Min, double Max, string? Label = null);
 
-public sealed record TablePayload(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
+public sealed record TablePayload(
+    IReadOnlyList<string> Columns,
+    IReadOnlyList<IReadOnlyList<string>> Rows,
+    IReadOnlyList<string>? HeaderTexts = null);
 
 public sealed record MatrixPayload(
     IReadOnlyList<string> XLabels,
