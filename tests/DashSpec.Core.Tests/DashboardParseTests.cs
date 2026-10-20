@@ -141,6 +141,339 @@ public class DashboardParseTests
     }
 
     [Fact]
+    public void Parse_filters_table_builds_filters_from_rows()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id        | bind  | column     | label | widget   | ref       | range |
+                | app_name  | field | app_name   | App   | combobox | app_name  | -     |
+                | usage_day | date  | usage_date | Usage | day      | usage_day | today |
+              end filters
+              filters dashboard
+              app_name
+              usage_day
+              end dashboard
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+""");
+
+        Assert.Equal(2, doc.Filters.Count);
+        var app = doc.Filters.Single(f => f.Name == "app_name");
+        Assert.Equal(FilterKind.Field, app.Kind);
+        Assert.Equal("app_name", app.ColumnReference?.Value);
+        Assert.Equal("App", app.Label?.Value);
+        Assert.Equal("combobox", app.Widget?.Value);
+        Assert.Equal("app_name", app.LayoutRef?.Value);
+
+        var day = doc.Filters.Single(f => f.Name == "usage_day");
+        Assert.Equal(FilterKind.Date, day.Kind);
+        Assert.Equal("usage_date", day.ColumnReference?.Value);
+        Assert.Equal("day", day.Widget?.Value);
+        Assert.Equal("today..today", day.DefaultExpression?.Value);
+    }
+
+    [Fact]
+    public void Parse_filters_table_accepts_subset_header_and_separator_rows()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id        | bind  | column     | label |
+                |-----------|-------|------------|-------|
+                | app_name  | field | app_name   | App   |
+                | usage_day | date  | usage_date | -     |
+                defaults
+                  filter.usage_day.range = -7d..today
+                end defaults
+              end filters
+              filters dashboard
+              app_name
+              end dashboard
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+""");
+
+        Assert.Equal(2, doc.Filters.Count);
+        var day = doc.Filters.Single(f => f.Name == "usage_day");
+        Assert.Equal(FilterKind.Date, day.Kind);
+        Assert.Equal("usage_date", day.ColumnReference?.Value);
+        Assert.Null(day.Label);
+        Assert.Null(day.Widget);
+    }
+
+    [Fact]
+    public void Parse_filters_table_builds_rare_attributes()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id           | bind | column       | label  | widget | min | max | bind_scope | grain_filter | range | limit |
+                | events_top   | top  | -            | Top    | -      | 0   | 500 | hidden     | -            | -     | 200  |
+                | period_start | date | period_start | Period | day    | -   | -   | -          | period_grain | -1d   | -    |
+              end filters
+              card a as "A"
+              show flow
+                events_top -> [toolbar] chrome.card.a
+              end show flow
+              bind
+                events_top
+              end bind
+              diagram table
+                columns = x
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+""");
+
+        var top = doc.Filters.Single(f => f.Name == "events_top");
+        Assert.Equal(FilterKind.Top, top.Kind);
+        Assert.Equal(0, top.MinValue?.Value);
+        Assert.Equal(500, top.MaxValue?.Value);
+        Assert.Equal("hidden", top.BindScopeHint?.Value);
+        Assert.Null(top.ColumnReference);
+        Assert.Equal("200", top.DefaultExpression?.Value);
+
+        var period = doc.Filters.Single(f => f.Name == "period_start");
+        Assert.Equal(FilterKind.Date, period.Kind);
+        Assert.Equal("period_start", period.ColumnReference?.Value);
+        Assert.Equal("period_grain", period.GrainFilterName?.Value);
+        Assert.Equal("-1d..-1d", period.DefaultExpression?.Value);
+    }
+
+    [Fact]
+    public void Parse_filters_table_coexists_with_nested_filter_blocks()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                defaults
+                  filter.usage_day.range = -7d..today
+                end defaults
+                | id       | bind  | column   |
+                | app_name | field | app_name |
+                filter usage_day
+                  bind date
+                    column = usage_date
+                  end bind
+                  show
+                    label = "Usage"
+                  end show
+                end filter
+              end filters
+              filters dashboard
+              app_name
+              usage_day
+              end dashboard
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+""");
+
+        Assert.Equal(2, doc.Filters.Count);
+        var app = doc.Filters.Single(f => f.Name == "app_name");
+        Assert.Equal(FilterKind.Field, app.Kind);
+        Assert.Equal("app_name", app.ColumnReference?.Value);
+
+        var day = doc.Filters.Single(f => f.Name == "usage_day");
+        Assert.Equal(FilterKind.Date, day.Kind);
+        Assert.Equal("Usage", day.Label?.Value);
+    }
+
+    [Fact]
+    public void Parse_filters_table_rejects_unknown_attribute()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id       | bind  | width |
+                | app_name | field | 12    |
+              end filters
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("width", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_filters_table_requires_bind_and_id_cells()
+    {
+        var missingBind = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id       | bind  |
+                | app_name |       |
+              end filters
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("bind", missingBind.Message, StringComparison.OrdinalIgnoreCase);
+
+        var missingId = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id  | bind  |
+                |     | field |
+              end filters
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("id", missingId.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_filters_table_rejects_bad_bind_single_and_max_values()
+    {
+        var badBind = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id       | bind   | column   |
+                | app_name | string | app_name |
+              end filters
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("date, field or top", badBind.Message, StringComparison.OrdinalIgnoreCase);
+
+        var badSingle = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id       | bind  | column   | single |
+                | app_name | field | app_name | maybe  |
+              end filters
+              card a as "A"
+              bind
+                app_name
+              end bind
+              diagram number
+              value = x
+              end number
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("true or false", badSingle.Message, StringComparison.OrdinalIgnoreCase);
+
+        var badMax = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+              report
+              title = "T"
+              filters
+                | id         | bind | label | limit | max |
+                | events_top | top  | Top   | 200   | abc |
+              end filters
+              card a as "A"
+              show flow
+                events_top -> [toolbar] chrome.card.a
+              end show flow
+              bind
+                events_top
+              end bind
+              diagram table
+                columns = x
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""));
+        Assert.Contains("positive integer", badMax.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_card_local_filters_placement()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""

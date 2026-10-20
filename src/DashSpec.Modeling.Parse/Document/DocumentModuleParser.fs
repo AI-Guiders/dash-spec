@@ -955,8 +955,6 @@ module rec DocumentModuleParser =
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
 
     let private parseFiltersBlock (reader: TokenReader) (shell: ReportCompileContext) (mode: ReportBodyMode) =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
         let blockFilterDefaults = FilterScopeDefaults.create ()
         FilterScopeDefaults.merge blockFilterDefaults shell.FilterDefaults
 
@@ -988,19 +986,164 @@ module rec DocumentModuleParser =
 
             reader.SkipNewlines()
 
+        let addFilter (filter: FilterDefinition) =
+            if mode = ReportBodyMode.TabEmbedded then
+                shell.TabLocalFilters.Add filter
+            else
+                let alreadyDeclared =
+                    shell.Filters
+                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
+
+                if not alreadyDeclared then
+                    shell.Filters.Add filter
+
+        let pipeRows = ResizeArray<string>()
+
         let members: BlockGrammar.ContainerMember list =
             [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
               BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
-              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ()) ]
+              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ())
+              BlockGrammar.TableRowRows(pipeRows) ]
 
-        while not (BlockSyntax.isBlockEnd reader "filters" None) && not reader.IsEof do
-            reader.SkipNewlines()
+        BlockGrammar.parseKeywordContainer reader "filters" "filters block" members None |> ignore
 
-            if BlockSyntax.isBlockEnd reader "filters" None then ()
-            elif not (BlockGrammar.tryDispatchChild reader members) then
-                raise (reader.Unexpected())
+        if pipeRows.Count > 0 then
+            FilterTableParser.applyFilterRows (List.ofSeq pipeRows) resolveFilterProperty addFilter
 
-        BlockSyntax.expectBlockEnd reader "filters" (None: string option)
+    /// GDL-table filter rows inside `filters` (ADR-0004 deferred step family, ADR-0104 grammar):
+    /// header row declares attributes, each row desugars into the same FilterDefinition IR.
+    module private FilterTableParser =
+
+        let private allowedAttributes =
+            HashSet<string>(
+                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain_filter"; "min"; "max"; "bind_scope"; "range"; "limit" ],
+                StringComparer.OrdinalIgnoreCase
+            )
+
+        let private isUnset (cell: string) =
+            String.IsNullOrWhiteSpace cell || cell = "-"
+
+        let private parseKind (id: string) (raw: string) =
+            match raw.Trim().ToLowerInvariant() with
+            | "date" -> FilterKind.Date
+            | "field" -> FilterKind.Field
+            | "top" -> FilterKind.Top
+            | other -> raise (DashSpecParseException($"filters table bind for '{id}' must be date, field or top, got '{other}'."))
+
+        let applyFilterRows
+            (rows: string list)
+            (resolveProperty: string -> string -> string option)
+            (addFilter: FilterDefinition -> unit)
+            =
+            let maps = TableLiteral.parseRows rows
+
+            if maps.IsEmpty then
+                raise (DashSpecParseException("filters table requires at least one filter row after the header."))
+
+            let attrs = HashSet<string>()
+
+            for m in maps do
+                for k in m.Keys do
+                    attrs.Add k |> ignore
+
+            for a in attrs do
+                if not (allowedAttributes.Contains a) then
+                    raise (
+                        DashSpecParseException(
+                            $"filters table attribute '{a}' is not one of: id, bind, column, label, widget, ref, single, grain_filter, min, max, bind_scope, range, limit.")
+                    )
+
+            for m in maps do
+                match m.TryFind "id" with
+                | Some id when not (isUnset id) ->
+                    let kindCell =
+                        match m.TryFind "bind" with
+                        | Some bind when not (isUnset bind) -> bind.Trim()
+                        | _ -> raise (DashSpecParseException($"filters table row '{id}' requires a 'bind' cell (date, field, top)."))
+
+                    let kind = parseKind id kindCell
+
+                    let strAttr (name: string) =
+                        match m.TryFind name with
+                        | Some v when not (isUnset v) -> Some(v.Trim())
+                        | _ -> None
+
+                    let columnReference = strAttr "column"
+                    let label = strAttr "label"
+                    let widget = strAttr "widget"
+
+                    let singleSelect =
+                        match m.TryFind "single" with
+                        | Some v when not (isUnset v) ->
+                            match v.Trim().ToLowerInvariant() with
+                            | "true" -> true
+                            | "false" -> false
+                            | other ->
+                                raise (
+                                    DashSpecParseException(
+                                        $"filters table 'single' for '{id}' must be true or false, got '{other}'."
+                                    )
+                                )
+                        | _ -> false
+
+                    // Filter values ride the platform's own vocabulary: scope defaults first (same as the
+                    // nested form), then the row cell — range (date), limit (top); 'default' is rejected by design.
+                    let defaultExpression =
+                        match FilterParser.resolveInitialExpression kind (id.Trim()) resolveProperty with
+                        | Some expr -> Some expr
+                        | None ->
+                            match kind with
+                            | FilterKind.Date ->
+                                match m.TryFind "range" with
+                                | Some v when not (isUnset v) -> Some(v.Trim())
+                                | _ -> None
+                            | FilterKind.Top ->
+                                match m.TryFind "limit" with
+                                | Some v when not (isUnset v) -> Some(v.Trim())
+                                | _ -> None
+                            | _ -> None
+
+                    let props =
+                        let d = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+                        for key in [ "min"; "max" ] do
+                            match m.TryFind key with
+                            | Some v when not (isUnset v) -> d.[key] <- v.Trim()
+                            | _ -> ()
+
+                        d :> IReadOnlyDictionary<string, string>
+
+                    // One shared semantics path with the nested form: date range normalization
+                    // (today → today..today for day widgets), widget vocabulary, top min/max/limit rules.
+                    let defaultExpression, minValue, maxValue =
+                        FilterParser.validateSemantics
+                            kind
+                            (id.Trim())
+                            defaultExpression
+                            widget
+                            columnReference
+                            props
+                            singleSelect
+
+                    let filter =
+                        { Kind = kind
+                          Name = id.Trim()
+                          DefaultExpression = defaultExpression
+                          ColumnReference = columnReference
+                          Label = label
+                          Widget = widget
+                          MinValue = minValue
+                          MaxValue = maxValue
+                          GrainFilterName = strAttr "grain_filter"
+                          SingleSelect = singleSelect
+                          LayoutRef = strAttr "ref"
+                          BindScopeHint = strAttr "bind_scope"
+                          GrainLabels = None
+                          ApplyMode = "auto"
+                          Placement = None }
+
+                    addFilter filter
+                | _ -> raise (DashSpecParseException("filters table row requires a non-empty 'id' cell."))
 
     let private skipTopLevelSection (reader: TokenReader) (endKind: string) =
         BlockSyntax.beginBlock reader

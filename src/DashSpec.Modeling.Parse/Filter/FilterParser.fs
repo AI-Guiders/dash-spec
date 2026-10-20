@@ -17,7 +17,7 @@ module FilterParser =
     let private rejectInlineDefault (filterName: string) =
         raise (DashSpecParseException($"Filter '{filterName}': declare in {defaultsHint filterName}."))
 
-    let private resolveInitialExpression
+    let resolveInitialExpression
         (kind: FilterKind)
         (name: string)
         (resolveProperty: string -> string -> string option)
@@ -101,7 +101,12 @@ module FilterParser =
                 || raw.Equals("yes", StringComparison.OrdinalIgnoreCase)
             | false, _ -> false
 
-    let private validateSemantics
+    /// <summary>
+    /// Post-parse semantic validation shared by every filter declaration path (structured blocks, legacy inline,
+    /// and the GDL filters table): date range normalization (today → today..today for day widgets), widget
+    /// vocabulary, top min/max/limit rules. Returns the normalized (default, min, max).
+    /// </summary>
+    let validateSemantics
         (kind: FilterKind)
         (name: string)
         (defaultExpression: string option)
