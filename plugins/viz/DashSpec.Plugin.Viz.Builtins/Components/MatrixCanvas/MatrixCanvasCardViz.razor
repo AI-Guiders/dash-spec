@@ -18,6 +18,8 @@
     var showAxisX = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsX, axisXOverride);
     var showAxisY = VizLabelDisplayResolver.ResolveAxisVisible(spec.AxisLabelsY, axisYOverride);
     var showLegend = VizLabelDisplayResolver.EffectiveLegendVisible(spec.ShowsGradientLegend, legendOverride);
+    var categoryClickEnabled = Context.EffectiveCard.ClickHandlers is { Count: > 0 } handlers
+        && handlers.Any(h => string.Equals(h.Source, MatrixClickSources.CategoryItem, System.StringComparison.OrdinalIgnoreCase));
 
     <MatrixCanvasView HostId="@DashboardVizDomIds.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
                       CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
@@ -40,7 +42,9 @@
                       LegendMaxText="@(showLegend ? presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null)"
                       Limits="Context.EffectiveCard.MatrixLimits"
                       OversizeMessage="Context.EffectiveCard.OversizeMessage"
-                      OnCellSelected="Context.OnHeatmapCellSelected" />
+                      OnCellSelected="Context.OnHeatmapCellSelected"
+                      OnCategoryItemSelected="Context.OnHeatmapCategoryItemSelected"
+                      CategoryItemClickEnabled="@categoryClickEnabled" />
 }
 
 @code {

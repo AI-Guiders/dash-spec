@@ -12,6 +12,9 @@ public interface IDashSpecContributorRegistry
 
     void AddVizRenderer(VizRendererDescriptor descriptor);
 
+    /// <summary>Declares a click source a plugin's diagram family renders (ADR-0107).</summary>
+    void AddClickSource(ClickSourceContributorDescriptor descriptor);
+
     void AddPhraseTemplate(PhraseTemplateDescriptor descriptor);
 
     void AddScopeContributor(ScopeContributorDescriptor descriptor);
@@ -77,6 +80,11 @@ public sealed record InteractionHandlerDescriptor(
     string PluginId,
     string HandlerId,
     string DisplayName);
+
+/// <summary>Click source rendered by a plugin's diagram family (ADR-0107): the `on &lt;source&gt; click` vocabulary.</summary>
+public sealed record ClickSourceContributorDescriptor(
+    string PluginId,
+    string SourceId);
 
 public sealed record ActionHandlerDescriptor(
     string PluginId,

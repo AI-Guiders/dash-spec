@@ -6,6 +6,14 @@ public sealed class CardCellDrillOverlay
     private readonly Dictionary<string, DateRangeValue> _dates = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, HashSet<string>> _fields = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Target slot ref of the drill this overlay came from (ADR-0107): the overlay applies
+    /// only to that interior slot. Empty = legacy apply-to-all-drill-slots behavior.
+    /// </summary>
+    public string TargetSlot { get; private set; } = string.Empty;
+
+    public void SetTargetSlot(string slotRef) => TargetSlot = slotRef;
+
     public void SetDate(string filterName, DateOnly from, DateOnly to) =>
         _dates[filterName] = new DateRangeValue(from, to);
 

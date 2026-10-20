@@ -26,7 +26,7 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
         services.AddSingleton(CreateBackend());
 
-    public void RegisterContributors(IDashSpecContributorRegistry registry)
+    public virtual void RegisterContributors(IDashSpecContributorRegistry registry)
     {
         registry.AddVizRenderer(new VizRendererDescriptor(Id, RendererId, RendererDisplayName));
         registry.RegisterCardVizComponent(RendererId, CardVizComponentType);

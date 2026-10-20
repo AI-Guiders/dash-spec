@@ -15,7 +15,8 @@ public class CardClickRefreshPlannerTests
                 {
                     System.Tuple.Create("usage_date", "x"),
                     System.Tuple.Create("app_name", "y"),
-                }),
+                },
+                ""),
         };
 
         Assert.Equal(CardInteractionRefresh.CardInteriorSlots, CardClickRefreshPlanner.Plan(effects));

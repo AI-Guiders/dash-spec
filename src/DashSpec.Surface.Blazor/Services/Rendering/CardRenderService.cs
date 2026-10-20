@@ -196,6 +196,7 @@ public sealed class CardRenderService(
                 BoundFilters: card.BoundFilters,
                 LocalFilters: card.LocalFilters,
                 ClickBehaviour: card.ClickBehaviour?.Value,
+                ClickHandlers: card.ClickHandlers,
                 ExtensionBlocks: card.ExtensionBlocks,
                 LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
@@ -222,6 +223,7 @@ public sealed class CardRenderService(
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour?.Value,
+                    ClickHandlers: card.ClickHandlers,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
@@ -244,6 +246,7 @@ public sealed class CardRenderService(
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour?.Value,
+                    ClickHandlers: card.ClickHandlers,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
@@ -269,6 +272,7 @@ public sealed class CardRenderService(
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour?.Value,
+                    ClickHandlers: card.ClickHandlers,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
@@ -293,6 +297,7 @@ public sealed class CardRenderService(
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour?.Value,
+                    ClickHandlers: card.ClickHandlers,
                     ExtensionBlocks: card.ExtensionBlocks,
                     LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
@@ -345,7 +350,14 @@ public sealed class CardRenderService(
                 var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
                 var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
                 errorContext = effective;
+                // ADR-0107: a targeted overlay applies only to its slot; untargeted = legacy all slots.
                 var drillOverlay = cellDrill.Get(card.Id);
+                var slotOverlay =
+                    drillOverlay is not null &&
+                    !string.IsNullOrEmpty(drillOverlay.TargetSlot) &&
+                    !string.Equals(drillOverlay.TargetSlot, slotRef, StringComparison.OrdinalIgnoreCase)
+                        ? null
+                        : drillOverlay;
                 var query = QueryCompiler.Compile(
                     effective,
                     filters,
@@ -353,7 +365,7 @@ public sealed class CardRenderService(
                     document,
                     document.SqlDialect,
                     specDirectory,
-                    drillOverlay,
+                    slotOverlay,
                     ResolveReportTime(document));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);

@@ -31,7 +31,8 @@ type ShowSource =
 type CardClickEffect =
     | ShowSelection of ShowPlacement * ShowFormat * ShowSource * bool * string option
     | SetFilterFromField of string * string
-    | DrillTableFromCell of IReadOnlyList<string * string>
+    /// Drill table with click binds; the target slot ("" = legacy apply-to-all-drill-slots, ADR-0107).
+    | DrillTableFromCell of IReadOnlyList<string * string> * string
     | InvokeHandler of string * IReadOnlyDictionary<string, string>
     | GotoTab of string
     | FocusPhase of string
@@ -62,7 +63,13 @@ type CardClickEffect =
 
     member this.TryGetDrillBinds =
         match this with
-        | DrillTableFromCell binds -> Some binds
+        | DrillTableFromCell(binds, _) -> Some binds
+        | _ -> None
+
+    /// Target slot of a drill ("" = legacy untargeted); None for non-drill effects.
+    member this.TryGetDrillTarget =
+        match this with
+        | DrillTableFromCell(_, targetSlot) -> Some targetSlot
         | _ -> None
 
     member this.TryGetShowSelection =
@@ -175,6 +182,13 @@ type CardClickBehaviour =
         |> Seq.exists (function
             | ShowSelection(_, _, ShowSource.Tooltip, _, _) -> true
             | _ -> false)
+
+/// One sourced click handler (ADR-0107): the dispatch source → its effects.
+/// The generic `on click` block (no source) stays the fallback via CardClickBehaviour.
+[<CLIMutable>]
+type CardClickHandler =
+    { Source: string
+      Effects: IReadOnlyList<CardClickEffect> }
 
 type CardBoundFilterChrome =
     | Chips = 0
@@ -295,7 +309,10 @@ type CardDefinition =
       InteriorBoard: LayoutBoardDefinition option
       DiagramSlotRef: string option
       DiagramSlots: IReadOnlyDictionary<string, CardDiagramSlot>
+      /// Generic fallback click behaviour (legacy `on click`, no source; ADR-0107).
       ClickBehaviour: CardClickBehaviour option
+      /// Sourced click handlers (`on <source> click` blocks + the `on click` table; ADR-0107).
+      ClickHandlers: IReadOnlyList<CardClickHandler>
       ExtensionBlocks: IReadOnlyList<ExtensionBlockNode>
       LocalFiltersManualApply: bool
       LocalFiltersApplySplitIndex: int option

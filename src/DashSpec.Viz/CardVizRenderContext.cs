@@ -18,6 +18,9 @@ public sealed class CardVizRenderContext
 
     public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; init; }
 
+    /// <summary>Category-item (axis label) clicks — ADR-0107; the context carries ClickSource.</summary>
+    public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; init; }
+
     public CardRenderResult EffectiveCard => Card.ForView(DetailView);
 
     public string ResolveVizStateCardId() =>

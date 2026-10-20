@@ -131,6 +131,18 @@
   text-overflow: ellipsis;
 }
 
+/* ADR-0107: Y-axis category items are clickable when the card declares a handler.
+   Dotted underline = the classic link affordance: clearly clickable without being loud. */
+.matrix-canvas-y-label--clickable {
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.matrix-canvas-y-label--clickable:hover {
+  color: var(--accent, #60a5fa);
+}
+
 .matrix-canvas {
   grid-column: 2;
   grid-row: 2;

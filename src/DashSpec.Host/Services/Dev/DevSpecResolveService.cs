@@ -70,6 +70,7 @@ public sealed class DevSpecResolveService(
             PhraseTemplates = runtime.PhraseTemplates,
             KnownActionHandlers = runtime.KnownActionHandlers,
             KnownInteractionHandlers = runtime.KnownInteractionHandlers,
+            KnownClickSources = runtime.KnownClickSources,
         };
     }
 }

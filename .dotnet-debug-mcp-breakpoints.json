@@ -1,0 +1,29 @@
+{
+  "targets": {
+    "D:\\Experiments\\Personal Cursor Folder\\open\\dash-spec\\DashSpec.slnx": [
+      {
+        "file": "D:\\cdp-service.staging\\20261019-102813_01b7120359534627b68261a15f85b2a0\\src\\DashSpec.Execution.Runtime\\HeatmapCellFilterResolver.cs",
+        "line": 145
+      },
+      {
+        "file": "D:\\cdp-mcp\\src\\DashSpec.Execution.Runtime\\HeatmapCellFilterResolver.cs",
+        "line": 35
+      },
+      {
+        "file": "D:\\cdp-mcp\\src\\DashSpec.Execution.Compilation\\QueryCompiler.cs",
+        "line": 531
+      }
+    ],
+    "D:\\Experiments\\Personal Cursor Folder\\open\\dash-spec\\src\\DashSpec.Host\\DashSpec.Host.csproj": [
+      {
+        "file": "D:\\Experiments\\Personal Cursor Folder\\open\\dash-spec\\connectors\\DashSpec.Connector.SqlServer\\SqlServerConnector.cs",
+        "line": 24
+      },
+      {
+        "file": "D:\\Experiments\\Personal Cursor Folder\\open\\dash-spec\\src\\DashSpec.Execution.Compilation\\QueryCompiler.cs",
+        "line": 518,
+        "condition": "filterName == \u0022app_name\u0022"
+      }
+    ]
+  }
+}

@@ -420,6 +420,9 @@
                 ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
                     this,
                     HandleHeatmapCellSelectedAsync),
+                ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
+                    HandleHeatmapCategoryItemSelectedAsync),
             };
 
         _cardChromeTypes = Card.IsVisibilityPlaceholder ||
@@ -502,6 +505,18 @@
 
         if (EffectiveShowSelection is not null)
         {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Category-item (axis label) click — ADR-0107: the sourced handler must exist.</summary>
+    internal async Task HandleHeatmapCategoryItemSelectedAsync(HeatmapCellContext context)
+    {
+        if (OnCellClickNavigate.HasDelegate &&
+            Card.ClickHandlers is { Count: > 0 } handlers &&
+            handlers.Any(h => string.Equals(h.Source, context.ClickSource, StringComparison.OrdinalIgnoreCase)))
+        {
+            await OnCellClickNavigate.InvokeAsync((Card, context));
             await InvokeAsync(StateHasChanged);
         }
     }

@@ -30,4 +30,8 @@ public sealed class DashSpecParseOptions
 
     public IReadOnlySet<string> KnownInteractionHandlers { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Click sources declared by viz plugins (ADR-0107): the `on &lt;source&gt; click` vocabulary.</summary>
+    public IReadOnlySet<string> KnownClickSources { get; init; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 }

@@ -9,13 +9,9 @@ open DashSpec.Modeling.Parse.Lexing
 /// Table diagram — `formats` child block via BlockGrammar (ADR-0070) plus
 /// `columns` as flat comma-list or GDL-style pipe table
 /// (<c>| id | format | label | sorting |</c>; ADR-0004 deferred step, ADR-0057 GDL-tables).
+/// ADR-0106: the `columns` table side rides the construct declaration — vocabulary,
+/// header/unset semantics and the row loop are kernel-shared.
 module TableDiagramParser =
-
-    let private allowedAttributes =
-        HashSet<string>([ "id"; "format"; "label"; "sorting" ], StringComparer.OrdinalIgnoreCase)
-
-    let private isUnset (cell: string) =
-        String.IsNullOrWhiteSpace cell || cell = "-"
 
     /// Desugars the `columns` pipe table into IR properties:
     /// `columns` (ids in row order), `column_formats`, `column_labels` (newline map), `order_by` (sorting cells in row order).
@@ -23,49 +19,43 @@ module TableDiagramParser =
         if rows.IsEmpty then
             ()
         else
-            let maps = TableLiteral.parseRows rows
-
-            if maps.IsEmpty then
-                raise (DashSpecParseException("diagram columns table requires at least one column row after the header."))
-
-            let attrs = HashSet<string>()
-            for m in maps do
-                for k in m.Keys do
-                    attrs.Add k |> ignore
-
-            for a in attrs do
-                if not (allowedAttributes.Contains a) then
-                    raise (DashSpecParseException($"diagram columns table attribute '{a}' is not one of: id, format, label, sorting."))
-
             let ids = ResizeArray<string>()
             let formats = Dictionary<string, string>()
             let labels = Dictionary<string, string>()
             let sorting = ResizeArray<string>()
 
-            for m in maps do
-                match m.TryFind "id" with
-                | Some id when not (isUnset id) ->
+            let cellsToColumn (m: Map<string, string>) =
+                match Construct.tryCell m "id" with
+                | Some id ->
                     if ids.Contains id then
                         raise (DashSpecParseException($"diagram columns table declares '{id}' more than once."))
 
                     ids.Add id
 
-                    (match m.TryFind "format" with
-                     | Some f when not (isUnset f) -> formats.[id] <- f.Trim()
-                     | _ -> ())
+                    (match Construct.tryCell m "format" with
+                     | Some f -> formats.[id] <- f
+                     | None -> ())
 
-                    (match m.TryFind "label" with
-                     | Some l when not (isUnset l) -> labels.[id] <- l.Trim()
-                     | _ -> ())
+                    (match Construct.tryCell m "label" with
+                     | Some l -> labels.[id] <- l
+                     | None -> ())
 
-                    (match m.TryFind "sorting" with
-                     | Some s when not (isUnset s) ->
-                         (match s.Trim().ToUpperInvariant() with
+                    (match Construct.tryCell m "sorting" with
+                     | Some s ->
+                         (match s.ToUpperInvariant() with
                           | "ASC"
                           | "DESC" as dir -> sorting.Add($"{id} {dir}")
                           | other -> raise (DashSpecParseException($"diagram columns table sorting for '{id}' must be ASC or DESC, got '{other}'.")))
-                     | _ -> ())
-                | _ -> raise (DashSpecParseException("diagram columns table row requires a non-empty 'id' cell."))
+                     | None -> ())
+                | None -> raise (DashSpecParseException("diagram columns table row requires a non-empty 'id' cell."))
+
+            let declaration : Construct.Declaration<unit> =
+                { Name = "diagram columns"
+                  Vocabulary = [ "id"; "format"; "label"; "sorting" ]
+                  CellsToRow = cellsToColumn
+                  ConstructRow = ignore }
+
+            Construct.applyTableRows declaration rows
 
             if values.ContainsKey "columns" then
                 raise (DashSpecParseException("diagram columns is declared both as a flat list and as a table; pick one."))

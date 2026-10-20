@@ -59,7 +59,10 @@ else
                         @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
                         {
                             var yLabel = Payload.YLabels[yi];
-                            <div class="matrix-canvas-y-label" title="@yLabel">@yLabel</div>
+                            var idx = yi;
+                            <div class="matrix-canvas-y-label @(CategoryItemClickEnabled ? "matrix-canvas-y-label--clickable" : null)"
+                                 title="@yLabel"
+                                 @onclick="() => HandleCategoryItemClickAsync(idx, yLabel)">@yLabel</div>
                         }
                     </div>
                 }
@@ -117,6 +120,10 @@ else
     [Parameter] public bool ShowGradientLegend { get; set; } = true;
 
     [Parameter] public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
+    [Parameter] public EventCallback<HeatmapCellContext> OnCategoryItemSelected { get; set; }
+
+    [Parameter] public bool CategoryItemClickEnabled { get; set; }
 
     [Parameter] public MatrixRenderLimitsDefinition? Limits { get; set; }
 
@@ -269,6 +276,27 @@ else
             xBucket);
 
         await OnCellSelected.InvokeAsync(context);
+    }
+
+    /// <summary>Y-axis category item click (ADR-0107): the row label of the category axis.</summary>
+    private async Task HandleCategoryItemClickAsync(int yi, string yLabel)
+    {
+        if (!CategoryItemClickEnabled || !OnCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        var context = new HeatmapCellContext(
+            yi,
+            -1,
+            string.Empty,
+            yLabel,
+            null,
+            null,
+            null,
+            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem);
+
+        await OnCategoryItemSelected.InvokeAsync(context);
     }
 
     private bool ShouldShowXLabel(int index)

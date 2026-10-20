@@ -1012,16 +1012,9 @@ module rec DocumentModuleParser =
 
     /// GDL-table filter rows inside `filters` (ADR-0004 deferred step family, ADR-0104 grammar):
     /// header row declares attributes, each row desugars into the same FilterDefinition IR.
+    /// ADR-0106: the table side rides the construct declaration — vocabulary, header/unset
+    /// semantics and the row loop are kernel-shared; cells→IR + validateSemantics stay here.
     module private FilterTableParser =
-
-        let private allowedAttributes =
-            HashSet<string>(
-                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit" ],
-                StringComparer.OrdinalIgnoreCase
-            )
-
-        let private isUnset (cell: string) =
-            String.IsNullOrWhiteSpace cell || cell = "-"
 
         let private parseKind (id: string) (raw: string) =
             match raw.Trim().ToLowerInvariant() with
@@ -1035,46 +1028,25 @@ module rec DocumentModuleParser =
             (resolveProperty: string -> string -> string option)
             (addFilter: FilterDefinition -> unit)
             =
-            let maps = TableLiteral.parseRows rows
-
-            if maps.IsEmpty then
-                raise (DashSpecParseException("filters table requires at least one filter row after the header."))
-
-            let attrs = HashSet<string>()
-
-            for m in maps do
-                for k in m.Keys do
-                    attrs.Add k |> ignore
-
-            for a in attrs do
-                if not (allowedAttributes.Contains a) then
-                    raise (
-                        DashSpecParseException(
-                            $"filters table attribute '{a}' is not one of: id, bind, column, label, widget, ref, single, grain, min, max, bind_scope, range, limit.")
-                    )
-
-            for m in maps do
-                match m.TryFind "id" with
-                | Some id when not (isUnset id) ->
+            let cellsToFilter (m: Map<string, string>) : FilterDefinition =
+                match Construct.tryCell m "id" with
+                | Some id ->
                     let kindCell =
-                        match m.TryFind "bind" with
-                        | Some bind when not (isUnset bind) -> bind.Trim()
-                        | _ -> raise (DashSpecParseException($"filters table row '{id}' requires a 'bind' cell (date, field, top)."))
+                        match Construct.tryCell m "bind" with
+                        | Some bind -> bind.Trim()
+                        | None -> raise (DashSpecParseException($"filters table row '{id}' requires a 'bind' cell (date, field, top)."))
 
                     let kind = parseKind id kindCell
 
-                    let strAttr (name: string) =
-                        match m.TryFind name with
-                        | Some v when not (isUnset v) -> Some(v.Trim())
-                        | _ -> None
+                    let strAttr (name: string) = Construct.tryCell m name
 
                     let columnReference = strAttr "column"
                     let label = strAttr "label"
                     let widget = strAttr "widget"
 
                     let singleSelect =
-                        match m.TryFind "single" with
-                        | Some v when not (isUnset v) ->
+                        match Construct.tryCell m "single" with
+                        | Some v ->
                             match v.Trim().ToLowerInvariant() with
                             | "true" -> true
                             | "false" -> false
@@ -1084,7 +1056,7 @@ module rec DocumentModuleParser =
                                         $"filters table 'single' for '{id}' must be true or false, got '{other}'."
                                     )
                                 )
-                        | _ -> false
+                        | None -> false
 
                     // Filter values ride the platform's own vocabulary: scope defaults first (same as the
                     // nested form), then the row cell — range (date), limit (top); 'default' is rejected by design.
@@ -1093,23 +1065,17 @@ module rec DocumentModuleParser =
                         | Some expr -> Some expr
                         | None ->
                             match kind with
-                            | FilterKind.Date ->
-                                match m.TryFind "range" with
-                                | Some v when not (isUnset v) -> Some(v.Trim())
-                                | _ -> None
-                            | FilterKind.Top ->
-                                match m.TryFind "limit" with
-                                | Some v when not (isUnset v) -> Some(v.Trim())
-                                | _ -> None
+                            | FilterKind.Date -> Construct.tryCell m "range"
+                            | FilterKind.Top -> Construct.tryCell m "limit"
                             | _ -> None
 
                     let props =
                         let d = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
                         for key in [ "min"; "max" ] do
-                            match m.TryFind key with
-                            | Some v when not (isUnset v) -> d.[key] <- v.Trim()
-                            | _ -> ()
+                            match Construct.tryCell m key with
+                            | Some v -> d.[key] <- v
+                            | None -> ()
 
                         d :> IReadOnlyDictionary<string, string>
 
@@ -1142,8 +1108,17 @@ module rec DocumentModuleParser =
                           ApplyMode = "auto"
                           Placement = None }
 
-                    addFilter filter
-                | _ -> raise (DashSpecParseException("filters table row requires a non-empty 'id' cell."))
+                    filter
+                | None -> raise (DashSpecParseException("filters table row requires a non-empty 'id' cell."))
+
+            let declaration : Construct.Declaration<FilterDefinition> =
+                { Name = "filters"
+                  Vocabulary =
+                    [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit" ]
+                  CellsToRow = cellsToFilter
+                  ConstructRow = addFilter }
+
+            Construct.applyTableRows declaration rows
 
     let private skipTopLevelSection (reader: TokenReader) (endKind: string) =
         BlockSyntax.beginBlock reader

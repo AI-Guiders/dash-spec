@@ -33,7 +33,10 @@ type DashSpecParseOptions =
       ExtensionBlockPluginIds: IReadOnlyDictionary<string, string>
       PhraseTemplates: IReadOnlyList<PhraseTemplateDescriptor>
       KnownActionHandlers: IReadOnlySet<string>
-      KnownInteractionHandlers: IReadOnlySet<string> }
+      KnownInteractionHandlers: IReadOnlySet<string>
+      /// Click sources declared by viz plugins (ADR-0107: matrix renders `cell`, `category item`).
+      /// Empty set skips source validation (dev/test convenience, same rule as action handlers).
+      KnownClickSources: IReadOnlySet<string> }
 
 module DashSpecParseOptions =
 
@@ -43,4 +46,5 @@ module DashSpecParseOptions =
           ExtensionBlockPluginIds = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
           PhraseTemplates = Array.empty
           KnownActionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
-          KnownInteractionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }
+          KnownInteractionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
+          KnownClickSources = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }

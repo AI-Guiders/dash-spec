@@ -12,9 +12,15 @@ public static class HeatmapCellFilterResolver
         HeatmapCellContext context,
         IReadOnlyDictionary<string, FilterDefinition> filterIndex,
         FilterState filters,
-        IEnumerable<string>? anchorDateFilterNames = null)
+        IEnumerable<string>? anchorDateFilterNames = null,
+        string? drillTarget = null)
     {
         var overlay = new CardCellDrillOverlay();
+        if (!string.IsNullOrWhiteSpace(drillTarget))
+        {
+            overlay.SetTargetSlot(drillTarget.Trim());
+        }
+
         foreach (var bind in binds)
         {
             var (filterName, field) = bind.TryGetFilterBind!.Value;
@@ -83,6 +89,13 @@ public static class HeatmapCellFilterResolver
 
                 break;
         }
+    }
+
+    /// <summary>Target slot of the drill effect (ADR-0107): "" = legacy apply-to-all.</summary>
+    public static string ResolveDrillTarget(IReadOnlyList<CardClickEffect> effects)
+    {
+        var drill = effects.FirstOrDefault(static effect => effect.TryGetDrillBinds?.Value is not null);
+        return drill?.TryGetDrillTarget?.Value ?? string.Empty;
     }
 
     public static IEnumerable<SetFilterFromFieldEffect> CollectDrillBinds(IReadOnlyList<CardClickEffect> effects)
