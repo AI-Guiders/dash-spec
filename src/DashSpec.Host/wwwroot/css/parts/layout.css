@@ -1,22 +1,30 @@
+/* [ADR-0111] §2: the shell grid — the host renders its own ds shell first
+   (host module board or the embedded default); chrome slots plus the content
+   slot, placed by row/col/span, same grid rules as the cards. */
 .page {
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  align-items: stretch;
 }
 
-.topbar {
+.shell-chrome {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1.5rem;
+  min-width: 0;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
-.topbar strong {
+.shell-brand {
   font-size: 0.95rem;
   letter-spacing: 0.02em;
 }
 
-.content {
+.shell-content {
+  min-width: 0;
   padding: 1rem clamp(1rem, 2.5vw, 1.75rem) 2rem;
   width: 100%;
   max-width: min(100%, 1680px);

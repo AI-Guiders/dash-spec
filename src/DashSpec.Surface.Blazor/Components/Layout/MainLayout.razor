@@ -8,6 +8,9 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
+@* Shell grid ([ADR-0111] §2): the host renders its own ds shell first — chrome slots plus the
+   content slot, placed as recorded in the host module board (or the embedded default). *@
+
 @code {
     private bool ShowCommandBar =>
         HostShell.ShowsSurface("command_bar") && IsDashboardRoute();
@@ -32,6 +35,9 @@
             ? "filter-large-expand"
             : string.Empty;
 
+    private static string SlotGridStyle(ViewerShellSlot slot) =>
+        $"grid-column:{slot.Col} / span {slot.Span};grid-row:{slot.Row};";
+
     protected override void OnInitialized() =>
         PresentationSignals.Changed += OnPresentationChanged;
 
@@ -41,17 +47,21 @@
 }
 
 <div class="page @Scheme @LargeFilterLayoutClass">
-    <header class="topbar">
-        <div>
-            <strong>@HostShell.ProductTitle</strong>
-        </div>
-        <TopbarNav />
-    </header>
-    @if (ShowCommandBar)
+    @foreach (var slot in HostShell.ShellSlots)
     {
-        <HostCommandBar />
+        @if (slot.SlotId == ViewerShellSlotIds.Content)
+        {
+            <main class="shell-content" style="@SlotGridStyle(slot)">
+                @if (ShowCommandBar)
+                {
+                    <HostCommandBar />
+                }
+                @Body
+            </main>
+        }
+        else
+        {
+            <HostShellSlot Slot="slot" />
+        }
     }
-    <main class="content">
-        @Body
-    </main>
 </div>
