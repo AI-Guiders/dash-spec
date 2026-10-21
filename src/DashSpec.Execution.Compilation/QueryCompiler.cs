@@ -477,7 +477,17 @@ public static class QueryCompiler
         RowTypeSchema rowSchema,
         IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives)
     {
-        foreach (var filterName in card.BoundFilters)
+        // ADR-0109 (click wiring SSOT): the overlay is scoped by its own click binds —
+        // it applies even when the filter is not flow-bound to this slot. A missing
+        // flow line used to silently drop the overlay and render the drill unfiltered.
+        var filterNames = cellDrillOverlay is null || cellDrillOverlay.IsEmpty
+            ? card.BoundFilters
+            : card.BoundFilters
+                .Concat(cellDrillOverlay.FilterNames.Where(name =>
+                    !card.BoundFilters.Contains(name, StringComparer.OrdinalIgnoreCase)))
+                .ToList();
+
+        foreach (var filterName in filterNames)
         {
             if (!filterDefinitions.TryGetValue(filterName, out var definition) ||
                 definition.Kind is not FilterKind.Date and not FilterKind.Field)

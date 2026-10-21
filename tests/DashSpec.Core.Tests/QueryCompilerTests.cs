@@ -127,6 +127,59 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_overlay_applies_even_without_flow_binding()
+    {
+        var document = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+                  connect
+                    use flow fixture_flow
+                  end connect
+              report
+              title = "T"
+              filter app_name
+                bind field
+                  column = demo.v_daily_active_users.app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
+              card c as "C"
+              diagram table
+              columns = app_name, user_sam
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""); var card = document.Cards[0];
+
+        // The click overlay is the bind's own scope (ADR-0109): no flow line, no card
+        // bind — the overlay must still reach the SQL.
+        Assert.DoesNotContain(card.BoundFilters, f => string.Equals(f, "app_name", StringComparison.OrdinalIgnoreCase));
+
+        var filters = new FilterState();
+        var index = new Dictionary<string, FilterDefinition>
+        {
+            ["app_name"] = FilterTestData.Create(FilterKind.Field, "app_name", null, "demo.v_daily_active_users.app_name"),
+        };
+        var overlay = new CardCellDrillOverlay();
+        overlay.SetField("app_name", "AVEVA E3D");
+
+        var query = QueryCompiler.Compile(
+            card,
+            filters,
+            index,
+            DashSpecTestRowTypes.Catalog,
+            SqlDialect.TSql,
+            null,
+            cellDrillOverlay: overlay);
+
+        Assert.Contains("app_name = @app_name_0", query.Sql);
+    }
+
+    [Fact]
     public void Compile_cell_drill_overlay_overrides_session_filters_for_bound_names()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
