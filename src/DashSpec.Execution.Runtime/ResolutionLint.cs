@@ -1,4 +1,5 @@
 
+using DashSpec.Modeling.Parse.Layout;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -197,7 +198,7 @@ public static class ResolutionLint
                     foreach (var token in cardRow.Item)
                     {
                         var target = LayoutBoardRefResolver.Resolve(
-                            LayoutBoardCellFormat.RefToken(token),
+                            LayoutBoardCellParser.refToken(token),
                             tabCards,
                             nests,
                             context);

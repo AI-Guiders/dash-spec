@@ -1,4 +1,5 @@
 
+using DashSpec.Modeling.Parse.Layout;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -71,14 +72,20 @@ public static class LayoutBoardRowPlacer
 
         if (row.Count == 1)
         {
-            var cell = ParseCell(row[0], context, gridRow);
-            var target = resolveTarget(cell.RefToken);
+            var (refToken, _) = LayoutBoardCellParser.parseCell(row[0], context, gridRow);
+            var target = resolveTarget(refToken);
             var placement = new PlacementDefinition(gridRow, 1, columns);
             assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
             return;
         }
 
-        var cells = row.Select(token => ParseCell(token, context, gridRow)).ToList();
+        var cells = row
+            .Select(token =>
+            {
+                var (refToken, weight) = LayoutBoardCellParser.parseCell(token, context, gridRow);
+                return (RefToken: refToken, Weight: weight);
+            })
+            .ToList();
         var totalWeight = cells.Sum(cell => cell.Weight);
         if (totalWeight <= 0)
         {
@@ -105,36 +112,4 @@ public static class LayoutBoardRowPlacer
             allocated += span;
         }
     }
-
-    internal static BoardCell ParseCell(string token, string context, int gridRow)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new DashSpecParseException($"{context}: row {gridRow} has an empty cell.");
-        }
-
-        var separator = token.IndexOf(':');
-        if (separator < 0)
-        {
-            return new BoardCell(token, 1);
-        }
-
-        if (separator == 0 || separator == token.Length - 1)
-        {
-            throw new DashSpecParseException(
-                $"{context}: row {gridRow} cell '{token}' must use form ref:weight.");
-        }
-
-        var refToken = token[..separator];
-        var weightText = token[(separator + 1)..];
-        if (!int.TryParse(weightText, out var weight) || weight <= 0)
-        {
-            throw new DashSpecParseException(
-                $"{context}: row {gridRow} cell '{token}' requires a positive integer weight.");
-        }
-
-        return new BoardCell(refToken, weight);
-    }
-
-    internal readonly record struct BoardCell(string RefToken, int Weight);
 }
