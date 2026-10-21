@@ -35,5 +35,22 @@ public sealed class CardCellDrillOverlay
         return false;
     }
 
+    /// <summary>Filter names this overlay carries (ADR-0109: the click bind is the overlay's own scope).</summary>
+    public IEnumerable<string> FilterNames
+    {
+        get
+        {
+            foreach (var name in _dates.Keys)
+            {
+                yield return name;
+            }
+
+            foreach (var name in _fields.Keys)
+            {
+                yield return name;
+            }
+        }
+    }
+
     public bool IsEmpty => _dates.Count == 0 && _fields.Count == 0;
 }

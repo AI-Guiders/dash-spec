@@ -14,6 +14,7 @@ public static class DashboardValidationCollector
         Try(() => PageAnalyzer.Validate(document), errors);
         Try(() => TabAnalyzer.Validate(document), errors);
         Try(() => RowTypeAnalyzer.Validate(document), errors);
+        Try(() => ClickBindingAnalyzer.Validate(document), errors);
         return errors;
     }
 

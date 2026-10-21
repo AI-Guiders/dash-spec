@@ -136,6 +136,14 @@ public sealed class CardVisibilityAndPhaseTests
             module tab t
               report
               title = "T"
+              filter user_name
+                bind field
+                  column = user_name
+                end bind
+                show
+                  label = "User"
+                end show
+              end filter
               phase browse
               card browse as "B" ref Eb
               when user_name empty

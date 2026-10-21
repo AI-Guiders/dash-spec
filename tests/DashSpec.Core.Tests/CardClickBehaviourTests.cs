@@ -125,6 +125,25 @@ public class CardClickBehaviourTests
             module tab t
               report
               title = "T"
+              defaults
+                filter.usage_date.range = -7d..today
+              end defaults
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card peak as "Peak"
               on click
               drill table from cell
@@ -209,6 +228,14 @@ public class CardClickBehaviourTests
             module tab t
               report
               title = "T"
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card peak as "Peak"
               on click
               | source        | drill     | set        |
@@ -248,6 +275,25 @@ public class CardClickBehaviourTests
             module tab t
               report
               title = "T"
+              defaults
+                filter.usage_date.range = -7d..today
+              end defaults
+              filter usage_date
+                bind date
+                  column = usage_date
+                end bind
+                show
+                  label = "Date"
+                end show
+              end filter
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card peak as "Peak"
               on click
               drill table from cell
@@ -278,6 +324,14 @@ public class CardClickBehaviourTests
             module tab t
               report
               title = "T"
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
               card app_users as "Apps"
               on click
               | source | drill | set        |
@@ -303,5 +357,34 @@ public class CardClickBehaviourTests
         var targets = CardDrillSlotTargets.Resolve(card);
         Assert.True(targets.IsTarget("users"));
         Assert.Equal("row", targets.SourceOf("users"));
+    }
+
+    [Fact]
+    public void Parse_on_click_unknown_bind_filter_fails_validation_loudly()
+    {
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
+            module tab t
+              report
+              title = "T"
+              card c as "C"
+              on click
+              | source | drill | set     |
+              | row    | users | ghost=y |
+              end click
+              diagram table
+              columns = a
+              end table
+              diagram ref users user_table
+              data flow
+              fixture_src [rows] -> [rows] __diagram__
+              fixture_src [rows] -> [rows] users
+              end data flow
+              end card
+              end report
+            end tab
+            """));
+
+        Assert.Contains("ghost", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("unknown filter", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
