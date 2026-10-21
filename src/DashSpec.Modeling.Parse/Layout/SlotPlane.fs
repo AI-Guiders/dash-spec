@@ -12,6 +12,7 @@ type LayoutSlotScope =
     | HostPageToolbar = 1
     | CardInterior = 2
     | CardFilterChrome = 3
+    | HostShell = 4
 
 /// <summary>
 /// Slot provenance ([ADR-0109] spirit / [ADR-0111]): the assembly records substituted defaults
@@ -60,4 +61,5 @@ type SlotPlane =
       Toolbars: IReadOnlyDictionary<BoardRoute, IReadOnlyList<Slot>>
       CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<Slot>>
       CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<Slot>>
+      Shell: IReadOnlyList<Slot>
       InitialRoute: VisualRoute }

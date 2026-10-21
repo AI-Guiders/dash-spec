@@ -45,6 +45,7 @@ public sealed class DisplayResolutionTests
         "Peak by app (catalog)",
         "demo-peak-by-app.dashspec",
         null,
+        null,
         null);
 
     [Fact]
@@ -163,7 +164,7 @@ public sealed class DisplayResolutionTests
     [Fact]
     public void Catalog_entry_title_falls_back_to_id()
     {
-        var entry = new CatalogEntryDefinition("overview", "", "overview.dashspec", null, null);
+        var entry = new CatalogEntryDefinition("overview", "", "overview.dashspec", null, null, null);
         Assert.Equal("overview", DisplayResolution.ResolveCatalogEntryTitle(entry));
     }
 
@@ -183,7 +184,7 @@ public sealed class DisplayResolutionTests
             new TabDefinition("detail", Microsoft.FSharp.Core.FSharpOption<string>.Some("Детализация"), [], Microsoft.FSharp.Core.FSharpOption<string>.None, Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None),
         ];
         var soakDoc = SampleCatalogDoc.WithTabs(soakTabs);
-        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds", null, null);
+        var soakEntry = new CatalogEntryDefinition("soak", "Demo", "demo-soak.ds", null, null, null);
         var context = ResolutionContext.ForCatalog(soakDoc, soakEntry, soakTabs[0]);
         Assert.Equal("Обзор", DisplayResolution.ResolveTabLabel(context));
     }

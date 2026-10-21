@@ -37,7 +37,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void CatalogProd_warns_when_report_and_entry_titles_both_set()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -48,7 +48,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void DashboardEmbed_warns_entry_title_over_report_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null, null);
         var findings = ResolutionLint.Analyze(Doc("Report Title"), entry);
         Assert.Contains(findings, f =>
             f.Slot == "report.header_title"
@@ -59,7 +59,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void Embed_warns_tab_title_shadowed_by_entry_title()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null);
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null, null);
         var findings = ResolutionLint.Analyze(Doc("Report", tabLabel: "Tab Title"), entry);
         Assert.Contains(findings, f => f.Slot == "tab.label" && f.Mode == ResolutionMode.DashboardEmbed);
     }
@@ -113,7 +113,7 @@ public sealed class ResolutionLintTests
     [Fact]
     public void No_findings_when_single_source_per_slot()
     {
-        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec", null, null);
+        var entry = new CatalogEntryDefinition("c", "Entry only", "c.dashspec", null, null, null);
         var findings = ResolutionLint.Analyze(Doc(""), entry);
         Assert.DoesNotContain(findings, f => f.Slot == "report.header_title");
     }

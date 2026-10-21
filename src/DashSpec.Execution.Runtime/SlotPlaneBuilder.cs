@@ -16,7 +16,8 @@ public static class SlotPlaneBuilder
         DashboardDocument document,
         SpecLibrary? library = null,
         string? entryId = null,
-        string? initialTabId = null)
+        string? initialTabId = null,
+        string? initialPageId = null)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -62,6 +63,11 @@ public static class SlotPlaneBuilder
             chrome[card.Id] = PlanChrome(document, card, nodes);
         }
 
+        // 4. Shell grid ([ADR-0111] P2): the shell is another grid — the host board
+        // (layout module with scope host) if declared, or the synthesized default
+        // (topbar row + content row). Sidebar = a nav slot in column 1, no zones.
+        var shell = PlanShell(document, nodes);
+
         return new SlotPlane
         {
             Boards = boards,
@@ -69,7 +75,8 @@ public static class SlotPlaneBuilder
             Toolbars = toolbars,
             CardInteriors = interiors,
             CardFilterChrome = chrome,
-            InitialRoute = PlanInitialRoute(document, entryId, initialTabId),
+            Shell = shell,
+            InitialRoute = PlanInitialRoute(document, entryId, initialTabId, initialPageId),
         };
     }
 
@@ -336,19 +343,105 @@ public static class SlotPlaneBuilder
             .ToList();
     }
 
-    static VisualRoute PlanInitialRoute(DashboardDocument document, string? entryId, string? initialTabId)
+    /// <summary>
+    /// Shell grid ([ADR-0111] P2: the shell is another grid — no zones): the host board
+    /// (layout module with scope host) if declared, or the synthesized default (topbar row +
+    /// content row). The sidebar is just a nav slot in column 1 — same grid, same rules.
+    /// </summary>
+    static IReadOnlyList<Slot> PlanShell(
+        DashboardDocument document,
+        IReadOnlyDictionary<string, WiringNode> nodes)
+    {
+        var columns = document.Layout.Columns;
+        var shellSlots = new List<Slot>();
+
+        // Shell chrome node lookup: "shell.<slot>" (added by the wiring graph builder).
+        Slot ShellSlot(string slotId, PlacementDefinition placement, PlacementProvenance provenance)
+        {
+            if (!nodes.TryGetValue($"shell.{slotId}", out var node))
+            {
+                throw new DashSpecParseException(
+                    $"Slot plane correspondence failed: no shell node for '{slotId}'.");
+            }
+
+            return new Slot
+            {
+                Node = node,
+                Placement = placement,
+                Scope = LayoutSlotScope.HostShell,
+                Provenance = provenance,
+            };
+        }
+
+        // The host board (from a layout module with scope host) if declared.
+        var hostBoard = document.ToolbarBoard?.Value;
+        if (hostBoard is not null)
+        {
+            var declaredIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in hostBoard.Rows)
+            {
+                var rowIdx = 0;
+                foreach (var cell in row)
+                {
+                    rowIdx++;
+                    var (refToken, weight) = LayoutBoardCellParser.parseCell(cell, "Shell board", 1);
+                    declaredIds.Add(refToken);
+                    shellSlots.Add(ShellSlot(
+                        refToken,
+                        new PlacementDefinition(0, rowIdx, weight),
+                        PlacementProvenance.Declared));
+                }
+            }
+
+            // Content slot: implicit — takes the remaining space if not declared.
+            if (!declaredIds.Contains("content"))
+            {
+                var maxRow = shellSlots.Count == 0 ? 0 : shellSlots.Max(s => s.Placement.Row);
+                shellSlots.Add(ShellSlot(
+                    "content",
+                    new PlacementDefinition(maxRow + 1, 1, columns),
+                    PlacementProvenance.RecordedDefault));
+            }
+
+            return shellSlots;
+        }
+
+        // No host board: synthesized default — topbar (brand + nav) + content, full width.
+        shellSlots.Add(ShellSlot(
+            "brand",
+            new PlacementDefinition(1, 1, columns / 4),
+            PlacementProvenance.RecordedDefault));
+        shellSlots.Add(ShellSlot(
+            "nav",
+            new PlacementDefinition(1, columns / 4 + 1, columns - columns / 4),
+            PlacementProvenance.RecordedDefault));
+        shellSlots.Add(ShellSlot(
+            "content",
+            new PlacementDefinition(2, 1, columns),
+            PlacementProvenance.RecordedDefault));
+
+        return shellSlots;
+    }
+
+    static VisualRoute PlanInitialRoute(
+        DashboardDocument document,
+        string? entryId,
+        string? initialTabId,
+        string? initialPageId = null)
     {
         // Tabless documents are legitimate (the demo corpus): the implicit route, recorded.
         var tabId = initialTabId is { Length: > 0 }
             ? initialTabId
             : document.Tabs.FirstOrDefault()?.Id ?? "";
 
-        var pageId = tabId.Length == 0
-            ? ""
-            : PageTabScope
-                .FilterForTab(document.Pages?.Value, tabId)
-                .FirstOrDefault()
-                ?.Id ?? "";
+        var pageId = initialPageId is { Length: > 0 }
+            ? initialPageId
+            : tabId.Length == 0
+                ? ""
+                : PageTabScope
+                    .FilterForTab(document.Pages?.Value, tabId)
+                    .FirstOrDefault()
+                    ?.Id ?? "";
 
         return new VisualRoute
         {
