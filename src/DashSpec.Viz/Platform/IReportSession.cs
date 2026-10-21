@@ -1,4 +1,5 @@
 using DashSpec.Execution.Runtime;
+using DashSpec.Modeling.Parse.Layout;
 
 namespace DashSpec.Viz.Platform;
 
@@ -13,6 +14,9 @@ public interface IReportSession
     string? ActiveCatalogEntryId { get; }
     string? CurrentSpecReference { get; }
     IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; }
+
+    /// <summary>Assembled slot plane ([ADR-0111]): the render reads it and places.</summary>
+    SlotPlane? SlotPlane { get; }
 
     Task LoadAsync(
         string? specRelativePath = null,

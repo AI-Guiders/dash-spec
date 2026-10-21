@@ -3,45 +3,55 @@
 @using DashSpec.Core.Interaction
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Viewer.Plugins
+@using DashSpec.Modeling.Core
+@using DashSpec.Modeling.Parse.Layout
 @using DashSpec.Surface.Blazor.Services.Presentation
 @inject ILayoutSlotRendererRegistry SlotRegistry
 @inject DashSpecContributorRegistry Contributors
 
-@if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.ContentKind))
+@if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.Node.Kind))
 {
-    <span class="layout-slot-unsupported muted">@Slot.Scope / @Slot.ContentKind</span>
+    <span class="layout-slot-unsupported muted">@Slot.Scope / @Slot.Node.Kind</span>
 }
 else if (Owner is not null)
 {
-    @if (Slot.ContentKind is LayoutSlotContentKind.Filter)
+    @if (Slot.Node.Kind == WiringNodeKind.Filter)
     {
         <div class="card-interior-filter-slot">
-            @Owner.RenderLocalFilter(Slot.Token, Owner.InteriorSlotStyle(Slot.Token))
+            @Owner.RenderLocalFilter(Slot.Node.Id, Owner.InteriorSlotStyle(Slot.Node.Id))
         </div>
     }
     else if (_diagramType is not null)
     {
-        // Any diagram is one plugin component; it draws what it is given (the card, plus a slot payload when there is one).
-        @if (Slot.ContentKind is LayoutSlotContentKind.PrimaryDiagram)
+        // [ADR-0111] P1: a diagram is a diagram — no primary/secondary in the plane.
+        // The render checks its own payload: if a pre-rendered slot payload exists,
+        // the component receives it; otherwise the card's own chart is the payload.
+        @if (HasSlotPayload)
+        {
+            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+        }
+        else
         {
             <div class="card-viz-stack">
                 <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
                 @Owner.RenderSelectionDetail()
             </div>
         }
-        else
-        {
-            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
-        }
     }
 }
 
 @code {
-    [Parameter, EditorRequired] public LayoutSlotDescriptor Slot { get; set; } = default!;
+    [Parameter, EditorRequired] public Slot Slot { get; set; } = default!;
     [CascadingParameter] public DashboardCardView? Owner { get; set; }
 
     private Type? _diagramType;
     private Dictionary<string, object?> _diagramParameters = new();
+
+    /// <summary>A pre-rendered slot payload exists for this slot — the render's own fact.</summary>
+    private bool HasSlotPayload =>
+        Slot.Node.Kind == WiringNodeKind.Slot
+        && Owner?.Card.InteriorSlotRenders is not null
+        && Owner.Card.InteriorSlotRenders.ContainsKey(Slot.Node.Id);
 
     protected override void OnParametersSet()
     {
@@ -59,16 +69,16 @@ else if (Owner is not null)
             ["MatrixMin"] = Owner.Card.Matrix?.Min ?? 0,
             ["MatrixMax"] = Owner.Card.Matrix?.Max ?? 0,
                 ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                    this,
+                this,
                     Owner.HandleHeatmapCellSelectedAsync),
             ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
                 this,
-                Owner.HandleHeatmapCategoryItemSelectedAsync),
+                    Owner.HandleHeatmapCategoryItemSelectedAsync),
         };
 
-        if (Slot.ContentKind is LayoutSlotContentKind.SecondaryDiagram)
+        if (HasSlotPayload)
         {
-            parameters["Slot"] = Owner.Card.InteriorSlotRenders![Slot.Token];
+            parameters["Slot"] = Owner.Card.InteriorSlotRenders![Slot.Node.Id];
         }
 
         _diagramParameters = parameters;

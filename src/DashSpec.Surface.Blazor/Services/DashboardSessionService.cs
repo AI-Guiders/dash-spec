@@ -4,6 +4,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Modeling.Parse.Layout;
 using DashSpec.Surface.Blazor.Services.Loading;
 using IDashboardSpecLoader = DashSpec.Surface.Blazor.Services.Loading.IDashboardSpecLoader;
 using DashSpec.Surface.Blazor.Services.Presentation;
@@ -32,6 +33,9 @@ public sealed class DashboardSessionService(
     private string? _activeCatalogEntryId;
     private string? _currentSpecReference;
     private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Assembled slot plane ([ADR-0111]): the render reads it and places.</summary>
+    public SlotPlane? SlotPlane { get; private set; }
 
     public SpecLibrary? SpecLibrary => _specLibrary;
 
@@ -214,6 +218,7 @@ public sealed class DashboardSessionService(
         _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         _specDirectory = loaded.SpecDirectory;
         _runtimeConfigPath = loaded.RuntimeConfigPath;
+        SlotPlane = loaded.SlotPlane;
         LoadedSpecSource = loaded.SourceLabel;
     }
 }

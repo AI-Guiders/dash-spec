@@ -1,10 +1,13 @@
 using DashSpec.Abstractions.Plugins;
+using System.Diagnostics.CodeAnalysis;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using DashSpec.Core.Interaction;
 using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Viewer;
 using DashSpec.Viewer.Plugins;
+using DashSpec.Modeling.Core;
+using DashSpec.Modeling.Parse.Layout;
 using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Surface.Blazor.Services.Diagnostics;
 using DashSpec.Surface.Blazor.Services.Loading;
@@ -128,7 +131,6 @@ public sealed class DashboardPageController : IDisposable
     public Dictionary<string, PlacementDefinition> TabPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public TabLayoutPlan? TabLayoutPlan { get; private set; }
     public Dictionary<string, PlacementDefinition> ToolbarPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
@@ -685,6 +687,10 @@ public sealed class DashboardPageController : IDisposable
         VisibleCards().FirstOrDefault(card =>
             string.Equals(card.Id, cardId, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>The assembled interior slice for a card ([ADR-0111] P1); render reads it, no planning.</summary>
+    public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? InteriorSlotsFor(string cardId) =>
+        _session.SlotPlane?.CardInteriors.TryGetValue(cardId, out var slots) == true ? slots : null;
+
     public string ResolveLayoutCardRef(string token)
     {
         if (string.IsNullOrWhiteSpace(ActiveTabId))
@@ -696,100 +702,98 @@ public sealed class DashboardPageController : IDisposable
         return TabLayoutCompactor.ResolveCardRef(context, token);
     }
 
-    public bool TryGetNestPlacement(string cellToken, out LayoutNestPlacement? placement)
+    /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
+    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNest(string nestId) =>
+        CardsForNested(nestId);
+
+    /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
+    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForGroup(string groupId) =>
+        CardsForNested(groupId);
+
+    IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNested(string containerId)
     {
-        placement = null;
-        if (TabLayoutPlan is null)
-        {
-            return false;
-        }
-
-        var nestId = LayoutBoardCellFormat.RefToken(cellToken);
-        if (!TabLayoutPlan.Nests.TryGetValue(nestId, out var found))
-        {
-            return false;
-        }
-
-        placement = found;
-        return true;
-    }
-
-    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNest(
-        LayoutNestPlacement nestPlacement)
-    {
-        foreach (var row in nestPlacement.Rows)
-        {
-            foreach (var token in row)
-            {
-                var cardId = ResolveLayoutCardRef(token);
-                if (!nestPlacement.InnerPlacements.TryGetValue(cardId, out var placement))
-                {
-                    continue;
-                }
-
-                var card = FindVisibleCard(cardId);
-                if (card is not null)
-                {
-                    yield return (card, placement);
-                }
-            }
-        }
-    }
-
-    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForGroup(
-        LayoutBoardGroupDefinition group)
-    {
-        if (TabLayoutPlan is null ||
-            !TabLayoutPlan.Groups.TryGetValue(group.Id, out var groupPlacement))
+        if (_session.SlotPlane?.NestedBoards.TryGetValue(containerId, out var slots) != true || slots is null)
         {
             yield break;
         }
 
-        foreach (var row in group.Rows)
+        foreach (var slot in slots)
         {
-            foreach (var token in row)
+            var card = FindVisibleCard(slot.Node.Id);
+            if (card is not null)
             {
-                var cardId = ResolveLayoutCardRef(token);
-                if (!groupPlacement.InnerPlacements.TryGetValue(cardId, out var placement))
-                {
-                    continue;
-                }
-
-                var card = FindVisibleCard(cardId);
-                if (card is not null)
-                {
-                    yield return (card, placement);
-                }
+                yield return (card, slot.Placement);
             }
         }
     }
 
     public LayoutBoardGroupDefinition? FindLayoutGroup(string groupId)
     {
-        if (TabLayoutPlan is null || string.IsNullOrWhiteSpace(groupId))
+        if (string.IsNullOrWhiteSpace(groupId))
         {
             return null;
         }
 
-        return TabLayoutPlan.Entries
+        return ActiveRouteBoard()?.Entries
             .OfType<LayoutBoardEntry.GroupRow>()
             .Select(static row => row.Item)
             .FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.OrdinalIgnoreCase));
     }
 
-    public IReadOnlyList<LayoutSlotDescriptor> HostTabBoardSlots()
+    /// <summary>The active route's board: the page board overrides the tab board ([ADR-0111]).</summary>
+    LayoutBoardDefinition? ActiveRouteBoard()
     {
-        var columns = _session.Document.Layout.Columns;
-        if (TabLayoutPlan is { } plan)
+        if (string.IsNullOrWhiteSpace(ActiveTabId))
         {
-            return LayoutSlotEngine.PlanHostTabBoard(plan, columns, ResolveLayoutCardRef);
+            return null;
         }
 
-        var cards = VisibleCards()
-            .Select(card => (card.Id, card.DataFamily))
-            .ToList();
-        return LayoutSlotEngine.PlanHostTabBoardCards(cards, TabPlacements, columns);
+        var tab = _session.Document.Tabs.FirstOrDefault(t =>
+            string.Equals(t.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase));
+        if (tab is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ActivePageId))
+        {
+            var page = PageTabScope
+                .FilterForTab(_session.Document.Pages?.Value, tab.Id)
+                .FirstOrDefault(p => string.Equals(p.Id, ActivePageId, StringComparison.OrdinalIgnoreCase));
+            if (page?.LayoutBoard?.Value is { } pageBoard)
+            {
+                return pageBoard;
+            }
+        }
+
+        return tab.LayoutBoard?.Value;
     }
+
+    public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot> HostTabBoardSlots()
+    {
+        // [ADR-0111] P1: the render reads the assembled plane — no per-render planning.
+        // The board slice for the active route is precomputed at the bootstrap;
+        // the visibility overlay (FindVisibleCard) stays session-side.
+        var plane = _session.SlotPlane;
+        if (plane is null)
+        {
+            return [];
+        }
+
+        return plane.Boards.TryGetValue(PlaneRoute(ActiveTabId, ActivePageId), out var slots) ? slots : [];
+    }
+
+    /// <summary>Route of the active board slice ([ADR-0111]): pages own boards and filter cards.</summary>
+    static DashSpec.Modeling.Parse.Layout.BoardRoute PlaneRoute(string? tabId, string? pageId = null) =>
+        new()
+        {
+            TabId = ToOption(tabId),
+            PageId = ToOption(pageId),
+        };
+
+    [return: NotNullIfNotNull(nameof(value))]
+    static Microsoft.FSharp.Core.FSharpOption<string>? ToOption(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : Microsoft.FSharp.Core.FSharpOption<string>.Some(value);
 
     public IEnumerable<CardRenderResult> VisibleCards()
     {
@@ -1177,7 +1181,9 @@ public sealed class DashboardPageController : IDisposable
 
     private async Task InitializeDashboardStateAsync()
     {
-        ActiveTabId = _session.Document.Tabs.FirstOrDefault()?.Id;
+        // [ADR-0111] P1: the initial route is the recorded default from the plane.
+        ActiveTabId = _session.SlotPlane?.InitialRoute.TabId
+            ?? _session.Document.Tabs.FirstOrDefault()?.Id;
         ActivePhaseId = "browse";
         _refresh.ActivePhaseId = ActivePhaseId;
         ResetActivePageForTab();
@@ -1296,31 +1302,22 @@ public sealed class DashboardPageController : IDisposable
 
     private void RecomputeToolbarPlacements()
     {
-        var visible = VisibleToolbarFilterNames();
-        var visibleSet = visible.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var activeToolbarBoard = PageToolbarResolver.ResolveActiveToolbarBoard(
-            _session.Document,
-            ActiveTabId,
-            ActivePageId);
-        var placements = new Dictionary<string, PlacementDefinition>(
-            ToolbarLayoutCompactor.CompactVisible(_session.Document, visibleSet, activeToolbarBoard),
-            StringComparer.OrdinalIgnoreCase);
-
-        var unplaced = visible.Where(name => !placements.ContainsKey(name)).ToList();
-        if (unplaced.Count > 0)
+        // [ADR-0111] P1: the toolbar slice is precomputed — the fallback row was recorded
+        // at assembly (RecordedDefault), not recomputed here. The visibility overlay
+        // (which filters are rendered) stays session-side until the Bound flag (P2).
+        ToolbarPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        if (_session.SlotPlane is not { } plane)
         {
-            var columns = _session.Document.Layout.Columns;
-            var row = placements.Count == 0
-                ? 1
-                : placements.Values.Max(placement => placement.Row) + 1;
-            var span = unplaced.Count == 1 ? columns : columns / unplaced.Count;
-            for (var i = 0; i < unplaced.Count; i++)
-            {
-                placements[unplaced[i]] = new PlacementDefinition(row, 1 + i * span, span);
-            }
+            return;
         }
 
-        ToolbarPlacements = placements;
+        if (plane.Toolbars.TryGetValue(PlaneRoute(ActiveTabId, ActivePageId), out var slots))
+        {
+            foreach (var slot in slots)
+            {
+                ToolbarPlacements[slot.Node.Id] = slot.Placement;
+            }
+        }
     }
 
     private IReadOnlyList<string> VisibleToolbarFilterNames()
@@ -1397,30 +1394,32 @@ public sealed class DashboardPageController : IDisposable
     private void RecomputeTabPlacements()
     {
         SyncDisplayContext();
+        // [ADR-0111] P1: the plane carries the board slice — no per-render planning.
         TabPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
-        TabLayoutPlan = null;
-        if (_session.Document.Tabs.Count == 0 || string.IsNullOrWhiteSpace(ActiveTabId))
+        if (_session.SlotPlane is not { } plane)
         {
             return;
         }
 
-        var context = TabLayoutCompactor.ResolveContext(_session.Document, ActiveTabId, ActivePageId);
-        TabLayoutPlan = TabLayoutCompactor.TryBuildLayoutPlan(context);
-
-        foreach (var (title, placement) in TabLayoutCompactor.Compact(
-                     _session.Document,
-                     ActiveTabId,
-                     _session.SpecLibrary,
-                     ActivePageId))
+        if (plane.Boards.TryGetValue(PlaneRoute(ActiveTabId, ActivePageId), out var slots))
         {
-            TabPlacements[title] = placement;
+            foreach (var slot in slots)
+            {
+                TabPlacements[slot.Node.Id] = slot.Placement;
+            }
         }
     }
 
     private void ResetActivePageForTab()
     {
-        var pages = ResolveActiveTabPages();
-        ActivePageId = pages.FirstOrDefault()?.Id;
+        // [ADR-0111] P1: the recorded initial page for the initial tab; other tabs keep
+        // the first-page default until the nav bands carry per-tab routes (P2).
+        var recorded = _session.SlotPlane?.InitialRoute;
+        ActivePageId = recorded is not null
+            && string.Equals(recorded.TabId, ActiveTabId, StringComparison.OrdinalIgnoreCase)
+            && recorded.PageId is { Length: > 0 }
+            ? recorded.PageId
+            : ResolveActiveTabPages().FirstOrDefault()?.Id;
         SyncUsageDateFromActivePage();
     }
 

@@ -6,6 +6,7 @@
                        Card="Card"
                        PlacementStyle="@PlacementStyle"
                        GridColumns="@Page.Session.Document.Layout.Columns"
+                       InteriorSlotPlan="@Page.InteriorSlotsFor(Card.Id)"
                        DashboardBoundFilters="Page.DashboardBoundForCard(Card)"
                        FilterIndex="Page.Session.FilterIndex"
                        DateFrom="Page.DateFrom"
