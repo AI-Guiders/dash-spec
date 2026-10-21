@@ -51,7 +51,8 @@ public sealed class HostShellBootstrap
         using var stream = typeof(HostShellBootstrap).Assembly
             .GetManifestResourceStream(EmbeddedResourceName)
             ?? throw new InvalidOperationException(
-                $"Embedded default shell board not found: '{EmbeddedResourceName}'.");
+                $"Embedded default shell board not found: '{EmbeddedResourceName}'. Available: " +
+                string.Join(", ", typeof(HostShellBootstrap).Assembly.GetManifestResourceNames()));
 
         using var reader = new StreamReader(stream);
         return _embeddedDefaultBoard = ExecutionLayoutModuleParser.ParseLayoutFile(reader.ReadToEnd());

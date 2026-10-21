@@ -23,7 +23,7 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
 
     protected abstract IVizPlugin CreateBackend();
 
-    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
+    public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
         services.AddSingleton(CreateBackend());
 
     public virtual void RegisterContributors(IDashSpecContributorRegistry registry)

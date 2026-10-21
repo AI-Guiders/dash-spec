@@ -1,0 +1,46 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Abstractions.Viz
+
+@* Radzen visual layer pilot ([ADR-0111]): the line chart family rendered by RadzenChart —
+   100% native C#, no JS interop of our own. The pilot proves the taste; the remaining
+   families (bar/pie/scatter/heatmap/…) follow the same component path. *@
+
+@if (Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart))
+{
+    <p class="empty-state">Нет данных за выбранный период</p>
+}
+else
+{
+    <div class="chart-wrap" style="height:320px">
+        <RadzenChart Style="height:100%" TItem="RadzenPoint">
+            @foreach (var series in Context.EffectiveCard.Chart.Series)
+            {
+                <RadzenLineSeries TItem="RadzenPoint"
+                                  Data="PointsOf(series)"
+                                  CategoryProperty="Label"
+                                  ValueProperty="Value"
+                                  Title="@series.Name" />
+            }
+            <RadzenCategoryAxis />
+            <RadzenValueAxis />
+        </RadzenChart>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CardVizRenderContext Context { get; set; } = default!;
+
+    private static bool IsEmpty(ChartPayload chart) =>
+        chart.Points is { Count: > 0 }
+            ? false
+            : chart.Labels.Count == 0;
+
+    private IReadOnlyList<RadzenPoint> PointsOf(ChartSeries series) =>
+        Context.EffectiveCard.Chart!.Labels
+            .Select((label, index) => new RadzenPoint(label, series.Values[index]))
+            .ToList();
+
+    /// <summary>One chart point as Radzen sees it: category label + value.</summary>
+    public sealed record RadzenPoint(string Label, double? Value);
+}
