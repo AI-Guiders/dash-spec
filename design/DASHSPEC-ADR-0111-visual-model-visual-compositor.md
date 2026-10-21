@@ -36,7 +36,7 @@ public sealed record VisualModel(
     IReadOnlyList<NavBand> NavBands,             // portal | section | page; Items[] id/label/order
     ShellModel Shell,                            // слоты host-доски: brand/catalog/nav/links/help/settings/spec_dev/content (ADR-0110)
     ChromeModel Chrome,                          // Toolbars[] по scope (spec-слоты!) + FiltersChrome (sticky/apply/…)
-    IReadOnlyDictionary<VisualPlaneKey, VisualPlane> Planes,  // per (tab, page): слоты карточек по placement (LayoutSlotEngine)
+    PlacementGraph Placements,                   // собранный граф размещения: слоты × (Scope, placement) + recorded defaults (§2a)
     IReadOnlyList<VisualCard> Cards);            // членство карточек по (tab, page) — definition-level, без сессии
 
 public enum NavBandKind { Portal, Section, Page }
@@ -48,6 +48,16 @@ public sealed record NavBand(NavBandKind Kind, string Id, string Label, NavBandI
 - `ShowMode` присутствует в контракте, дефолт = явный `Bar` в артефакте; Host никогда не скрывает по Count. Грамматика `show = hidden` для полос — позже ([ADR-0073] §5), по реальному инстансу.
 - Карточки: membership-уровень (`VisualCard { CardId, TabId, PageId }`). Динамическую видимость (`when`/phase/selection — «visibility state» по [ADR-0108]) исполняет детерминированная политика в Runtime; Host её не содержит.
 - Взаимодействия не зашиваются в модель: карточки несут ссылки на spec-сущности; dispatch/эффекты — подсистема взаимодействий ([ADR-0108]).
+
+### 2a. Граф размещения — явный артефакт (как граф документа)
+
+Граф данных собран и экспортируется (`DocumentWiringGraphBuilder.build`, [ADR-0091]: узлы/рёбра, edgeKind flow|route|event) — у размещения аналогичного собранного артефакта нет: математика placement`а размазана (`TabLayoutCompactor` TabLayoutBoardResolver, fallback-ряды в контроллере, `DashboardLayoutHelper.ResolveInteriorPlacements`, `CardLocalFilterChromeCompactor`, `PlacementGridCss`). Решение: **`PlacementGraphBuilder`** — чистая сборка графы размещения (вход: `DashboardDocument`, `SpecLibrary?`):
+
+- узлы — slot-инстансы `(Scope, placement)`: оболочка (ADR-0110), карточки на досках tab/page, тулбар-виджеты, view-слоты интерьеров;
+- рёбра — вложенность (plane → slot, nest/group → inner) и **склейки с графом документа по id** (карточка ↔ data-slot; фильтр ↔ цель `placement flow`, [ADR-0096]);
+- все умолчания записи в граф (family-defaults `PlacementDefaults.ForFamily`, fallback-ряды) — записаны, не «тихие».
+
+`VisualModel` не держит собственных Plane-структур: композитор нарезает собранный граф по маршруту (shell | tab | page | interior). Это доводит до конца инвариант ADR-0072 «одна слотовая плоскость» — одна собранная структура вместо повторных выводов. `PlacementGridCss` остаётся проекцией на CSS и граф не дублирует.
 
 ### 3. Языковая добавка (минимальная, по духу ADR-0109 «умолчание — явно»)
 
@@ -62,8 +72,8 @@ Catalog entry получает `page <pageId>` симметрично `tab <tabI
 | Скрытие nav при `Count > 1` (6 мест, §Context) | Банды без эвристик; дерево/бар рисует то, что объявлено |
 | Label-эвристика `Tabs.Count > 1` в `DisplayResolution.ResolveTabLabel` | Label в `NavBands[].Items`, Host читает готовое |
 | `ToolbarFilterVisibility.ResolveVisibleFilters` (пересечение с картами активной страницы) | **Не переносится как есть** (нарушала бы ADR-0074 §4): композитор выдаёт **спек-объявленные** тулбар-слоты; привязка `filtersToCards` идёт в артефакт как инфо-флаг `Bound` — рендер рисует disabled-состояние вместо скрытия |
-| Fallback-ряд тулбара (L1297–1321) | Placement-политика композитора (та же математика строк, записана в артефакт) |
-| План слотов страницы (`RecomputeTabPlacements` + `TabLayoutCompactor`) | VisualCompositor::Planes — вызывает те же `TabLayoutPlanner/LayoutSlotEngine`, но живёт в Composition; Host = проекция |
+| Fallback-ряд тулбара (L1297–1321) | Умолчание, записывается в `PlacementGraph` при сборке (та же математика строк) |
+| План слотов страницы (`RecomputeTabPlacements` + `TabLayoutCompactor`) | `PlacementGraphBuilder` собирает граф размещения; Host берёт слайсы — проекция |
 
 ### 5. Тесты без Blazor
 
@@ -91,7 +101,7 @@ Catalog entry получает `page <pageId>` симметрично `tab <tabI
 
 | Phase | Deliverable |
 |-------|-------------|
-| **P0** | Проект `DashSpec.Execution.Composition`: типы `VisualModel`, `VisualCompositor` (bands + initial route + labels), JSON-артефакт, `VisualCompositorTests` |
+| **P0** | Проект `DashSpec.Execution.Composition`: **`PlacementGraphBuilder`** (сборка графа размещения с записью умолчаний), типы `VisualModel`, `VisualCompositor` (bands + initial route + labels, слайсы графа), JSON-артефакт, тесты без Blazor |
 | **P1** | Catalog grammar `page <id>` + валидация; запись умолчаний (default entry, first tab/page) в артефакт |
 | **P2** | `Shell`-секция из host-доски (ADR-0110 P1); ретрофит Host: bands из артефакта, удаление гейтов/эвристик §4; `nav_tree`-плагин |
 | **P3** | Chrome: спек-тулбары + `Bound`-флаг вместо пересечения; placements-политика в композиторе |
