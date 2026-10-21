@@ -40,9 +40,6 @@ module PropertySchemas =
           spec "density" Scalar
           spec "column_filters" Scalar ]
 
-    let layoutGrid =
-        [ spec "gap" Scalar ]
-
     let layoutGroup = [ spec "title" String ]
 
     let placement =

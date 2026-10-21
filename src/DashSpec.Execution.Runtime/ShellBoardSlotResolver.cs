@@ -12,9 +12,6 @@ namespace DashSpec.Execution.Runtime;
 /// </summary>
 public static class ShellBoardSlotResolver
 {
-    /// <summary>Shell grid columns — the same default as <see cref="LayoutDefinition.Default"/>.</summary>
-    public const int GridColumns = 12;
-
     private static readonly HashSet<string> KnownSlotIds = new(StringComparer.OrdinalIgnoreCase)
     {
         ViewerShellSlotIds.Brand,

@@ -19,10 +19,7 @@ type PlacementDefinition =
 
 [<CLIMutable>]
 type LayoutDefinition =
-    { Columns: int
-      GapPx: int }
-
-    static member Default = { Columns = 12; GapPx = 16 }
+    { Columns: int }
 
 /// <summary>GroupBox-style card group inside a tab/page layout board (ADR-0056).</summary>
 [<CLIMutable>]

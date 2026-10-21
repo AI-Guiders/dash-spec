@@ -13,7 +13,7 @@ public sealed class DisplayResolutionTests
         null,
         null,
         null,
-        LayoutDefinition.Default,
+        new LayoutDefinition { Columns = 12 },
         TestModelDefaults.FiltersChrome,
         [],
         [],

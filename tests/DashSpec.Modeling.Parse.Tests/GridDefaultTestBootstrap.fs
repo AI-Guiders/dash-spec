@@ -10,5 +10,4 @@ module GridDefaultTestBootstrap =
     /// </summary>
     let ensure () =
         DashSpec.Modeling.Parse.Layout.GridDefaultBridge.Default <-
-            Some { DashSpec.Modeling.Parse.Layout.LayoutDefinition.Columns = 12
-                   GapPx = 16 }
+            Some { DashSpec.Modeling.Parse.Layout.LayoutDefinition.Columns = 12 }

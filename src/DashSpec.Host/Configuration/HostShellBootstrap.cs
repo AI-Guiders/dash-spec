@@ -70,7 +70,7 @@ public sealed class HostShellBootstrap
                 "Embedded default host.ds must carry a grid drawing: a 'grid [] [] …' block is required.");
         }
 
-        return new LayoutDefinition { Columns = board.GridColumns, GapPx = LayoutDefinition.Default.GapPx };
+        return new LayoutDefinition { Columns = board.GridColumns };
     }
 
     private string? GetPresentation(string key) =>
