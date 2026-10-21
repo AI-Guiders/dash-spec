@@ -15,7 +15,7 @@
 - `PlacementSlotGrid`/`PlacementSlot` (Presentation) + `ILayoutSlotRendererRegistry` — рендер диспетчится по `(Scope, ContentKind)`, не по Razor-веткам;
 - ментальная модель автора — **две вложенные сетки** (host → card), те же правила слотов.
 
-Чего нет — **собранной разом плоскости**: планировщики зовутся **на каждом рендере каждым потребителем** (Surface.Blazor: `DashboardPageController` fallback-ряд тулбара L1297–1321 и `RecomputeToolbarPlacements`, per-render `DashboardLayoutHelper.ResolveInteriorPlacements`, presentation/rendering-сервисы) — каждый вызов пересчитывает свой срез геометрии под свой контекст, целое нигде не собирается. Отсюда же эвристики хоста: «первая вкладка/страница» (`ResetActivePageForTab` L1420, дубль `TabLayoutCompactor` L40–43), скрытие nav по `Count > 1` (6 мест), label-эвристики, видимость тулбар-фильтров пересечением с картами (`ToolbarFilterVisibility` — то, что §4 ADR-0074 запрещает Host'у).
+Чего нет — **собранной разом плоскости**: код планировщиков лежит в C# `Execution.Runtime`, но **вызывается из Surface по-рендерно** — `DashboardFiltersSection.razor:161` планирует тулбар прямо в Razor-компоненте при отрисовке; `DashboardPageController.cs:785/791` планирует доску вкладки на каждый запрос; интерьеры — `PlanCardInterior` через Viz-расширение (`CardInteriorSlotPlanExtensions`) при отрисовке карточки; плюс fallback-ряд тулбара L1297–1321 и `RecomputeToolbarPlacements`, per-render `DashboardLayoutHelper.ResolveInteriorPlacements`. Каждый вызов пересчитывает свой срез геометрии под свой контекст, целое нигде не собирается. Отсюда же эвристики хоста: «первая вкладка/страница» (`ResetActivePageForTab` L1420, дубль `TabLayoutCompactor` L40–43), скрытие nav по `Count > 1` (6 мест), label-эвристики, видимость тулбар-фильтров пересечением с картами (`ToolbarFilterVisibility` — то, что §4 ADR-0074 запрещает Host'у).
 
 Оператор (2026-10-21, постановка): отделить структуру от рендера — **сборка слотов предварительная, хосту остаётся только отрисовать**. Форма уже принята каноном [ADR-0072]; этот ADR доводит её инвариант до конца: **одна собранная плоскость вместо повторных планирований на рендере**.
 
@@ -87,17 +87,19 @@ Fold (`fold = independent` уже в спеках), занятость, акти
 
 ### 4. Рендер — тупая диспетчеризация по готовому: потребители переключаются по одному месту вызова
 
-Рендер уже диспетчит по `(Scope, ContentKind)` ([ADR-0072] M5) — меняется только вход: вместо вызова планировщика на рендере — чтение собранного среза. Потребители переключаются **по одному месту вызова**, видимое поведение сохранено на каждом шаге:
+Рендер уже диспетчит по `(Scope, ContentKind)` ([ADR-0072] M5) — меняется только **точка вызова планировщиков**: сегодня Surface зовёт их при каждой отрисовке, после ADR их зовёт один раз сборка, а рендер читает готовые срезы. Код планировщиков не переезжает — переезжает вызов. Потребители переключаются **по одному месту вызова**, видимое поведение сохранено на каждом шаге:
 
-| Эвристика/вызов сегодня | Становится |
+| Вызов/эвристика сегодня | Становится |
 |-------------------|------------|
+| `DashboardFiltersSection.razor:161` → `PlanHostPageToolbar` на отрисовке | Чтение среза `PageToolbars[pageId]` |
+| `DashboardPageController.cs:785/791` → `PlanHostTabBoard*` на каждый запрос | Чтение среза `TabBoards[tabId]` |
+| Per-render `PlanCardInterior` (Viz-расширение) / `ResolveInteriorPlacements` | Чтение среза `CardInteriors[cardId]` |
 | «Первая вкладка» (`DashboardPageController` L1180) | `InitialRoute.TabId` — записанное умолчание |
 | «Первая страница» (`ResetActivePageForTab` L1420, дубль `TabLayoutCompactor` L40–43) | `InitialRoute.PageId` — записанное умолчание |
 | Скрытие nav при `Count > 1` (6 мест) | Рисуется объявленное; умолчание — записано |
 | Label-эвристика `Tabs.Count > 1` (`DisplayResolution.ResolveTabLabel`) | Label в артефакте, Host читает готовое |
 | `ToolbarFilterVisibility` (пересечение с картами) | Спек-объявленные слоты + флаг `Bound`; рендер рисует disabled, не прячет (§4 ADR-0074) |
-| Fallback-ряд тулбара (L1297–1321) / `RecomputeToolbarPlacements` | Умолчание, записанное при сборке; чтение среза `PageToolbars` |
-| Per-render `ResolveInteriorPlacements` / вызовы `LayoutSlotEngine` в Surface | Чтение среза `CardInteriors[cardId]` |
+| Fallback-ряд тулбара (L1297–1321) / `RecomputeToolbarPlacements` | Умолчание, записанное при сборке |
 
 ### 5. Языковая добавка (минимальная, по духу ADR-0109)
 
