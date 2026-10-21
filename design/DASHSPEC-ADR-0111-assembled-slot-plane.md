@@ -28,48 +28,43 @@
 ```fsharp
 // Modeling.Parse/Layout — рядом с PlacementDefinition/LayoutDefinition (LayoutTypes.fs)
 
-[<RequireQualifiedAccess>]
-type LayoutSlotScope =
-    | HostTabBoard
-    | HostPageToolbar
-    | CardInterior
-    | CardFilterChrome
-
-[<RequireQualifiedAccess>]
-type LayoutSlotContentKind =
-    | Card
-    | Nest
-    | Group
-    | Filter
-    | PrimaryDiagram
-    | SecondaryDiagram
+// Слот собранной плоскости: жилец — БУКВАЛЬНО узел графа документа ([ADR-0091]:
+// WiringNode { Id; Kind; Scope }), кладётся как есть; никаких DU-копий объектов —
+// сущности остаются в документе, рендер получает их как сегодня.
 
 [<CLIMutable>]
-type LayoutSlotDescriptor =
-    { Token: string                      // токен ячейки из доски ('usage_date:2', 'main', ид карточки)
-      Placement: PlacementDefinition     // row/col/span — существующая запись
-      Scope: LayoutSlotScope
-      ContentKind: LayoutSlotContentKind }
+type Slot =
+    { Node: WiringNode                     // жилец: узел графа документа, как есть
+      Placement: PlacementDefinition      // row/col/span — существующая запись
+      Scope: LayoutSlotScope               // существующий (HostTabBoard | HostPageToolbar | CardInterior | CardFilterChrome)
+      Provenance: PlacementProvenance }     // объявлено | умолчание записано ([ADR-0109])
 
 [<CLIMutable>]
 type SlotPlane =
-    { TabBoards: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>>      // ключ — TabId
-      PageToolbars: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>>  // ключ — PageId
-      CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> // ключ — CardId
-      CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> // ключ — CardId
-      InitialRoute: VisualRoute                              // записанное умолчание (EntryId/TabId/PageId)
-      RecordedDefaults: IReadOnlySet<string> }               // подставленные умолчания ([ADR-0109])
+    { TabBoards: IReadOnlyDictionary<string, IReadOnlyList<Slot>>         // ключ — TabId
+      PageToolbars: IReadOnlyDictionary<string, IReadOnlyList<Slot>>       // ключ — PageId
+      CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<Slot>>     // ключ — CardId
+      CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<Slot>>   // ключ — CardId
+      InitialRoute: VisualRoute }                                           // записанное умолчание
 
 [<CLIMutable>]
 type VisualRoute =
     { EntryId: string
       TabId: string
       PageId: string }
+
+[<RequireQualifiedAccess>]
+type PlacementProvenance =
+    | Declared            // автор объявил ячейку в спеке
+    | RecordedDefault     // сборка подставила умолчание и ЗАПИСАЛА его ([ADR-0109])
 ```
 
-- **Слоты, размещения, содержания — всё существующее** ([ADR-0072]): `LayoutSlotDescriptor`, `PlacementDefinition`, `ContentKind`, `Scope` — те же записи, в модельном F#-слое; новые content kinds растут по живым инстансам.
-- **Вложенность — существующая**: две сетки (host → card) + nest/group — слот `Card` на доске вкладки и плоскость `CardInterior` этой карточки — ключом `CardId`; никаких новых узлов-«строк/столбцов доски» (placement — метка на дескрипторе, как `Grid.Row`).
-- **Умолчания записаны** (`RecordedDefaults`): fallback-ряды, family-defaults, first-tab/first-page — подставлены при сборке и записаны, а не тихо применены на рендере ([ADR-0109]).
+- **Жилец — узел графа документа**: билдер разрешает выходы планировщиков (токены) в `WiringNode` по `Id` (поиск по графу документа, громкая ошибка если узла нет) и кладёт узел в слот как есть. Ни одной строки-идентичности, ни одной копии объекта: сущности — у документа, их рендер получает как сегодня; плоскость — **структура**, а не контейнер сущностей.
+- **Диспетчеризация рендера** — по `(Scope, Node.Kind)` (кейс из узла): реестры [ADR-0072] адаптируются при переключении потребителей (P1).
+- **Вложенность — существующая**: две сетки (host → card) + nest/group; слот карточки на доске вкладки и `CardInteriors[cardId]` — ключом `CardId`; placement — метка на слоте, как `Grid.Row`.
+- **Грамматика ячеек — существующая** (`LayoutBoardCellParser`: `ref` | `ref:weight`): парс уже даёт типизированную пару; рантаймный строковый ре-парс (`LayoutBoardCellFormat`) умирает вместе с токенами — билдер соединяется с грамматикой/AST, а не переделывает стринги.
+- **Умолчания — `Provenance` на слоте** (объявлено | записано), не множество стрингов.
+- **Открытое ребро (честно)**: у графа документа нет узлов `Nest`/`Group` — это структурные контейнеры; их слот-рамки решаются при P0 по живому инстансу (либо структурные узлы входят в граф, либо рамка группы держит ссылку на свою декларацию) — не предрешается здесь.
 
 ### 2. Сборка — одна точка, один раз на ревизию; математика потребляется как есть
 
