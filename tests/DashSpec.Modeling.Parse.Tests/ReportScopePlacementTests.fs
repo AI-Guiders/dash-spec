@@ -8,6 +8,8 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopePlacementTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     [<Fact>]
     let ``placement flow wires filters to report and card`` () =
         let dir = Path.Combine(Path.GetTempPath(), "placement-flow-" + Guid.NewGuid().ToString("N"))

@@ -232,7 +232,9 @@ module DashSpecLexer =
                     tokens.Add tok; atLineStart <- false
                 | '#' -> tokens.Add(readHexColor text &i start); atLineStart <- false
                 | '[' ->
-                    if i + 1 < text.Length && text.[i + 1] = '[' then
+                    if i + 1 < text.Length && text.[i + 1] = ']' then
+                        tokens.Add({ Kind = TokenKind.EmptyCell; Value = "[]"; Start = start; Length = 2 }); i <- i + 2; atLineStart <- false
+                    elif i + 1 < text.Length && text.[i + 1] = '[' then
                         let mutable j = i + 2
                         let mutable foundEnd = false
                         while j < text.Length && not foundEnd do

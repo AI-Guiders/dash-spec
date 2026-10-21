@@ -77,31 +77,59 @@ module LayoutParser =
             reader.SkipNewlines()
         if entries.Count = 0 then
             raise (DashSpecParseException("Layout board requires at least one row [ … ], group { … }, or nest { … }."))
-        { Entries = entries :> IReadOnlyList<_>; ModuleScope = None }
+        { Entries = entries :> IReadOnlyList<_>; ModuleScope = None; GridColumns = 0 }
+
+    /// <summary>
+    /// Parse the <c>grid … end grid</c> body after the <c>grid</c> keyword is consumed — the grid
+    /// is drawn with <c>[]</c> empty cells ([ADR-0111] §2): how many rows are drawn — that many grid
+    /// rows, how many <c>[]</c> in a row — that many columns (the widest row wins). The
+    /// <c>columns = N</c> number is dead — loud if used. The drawing is required.
+    /// </summary>
+    let parseGridBody (reader: TokenReader) =
+        let gridRows = ResizeArray<int>()
+        let props =
+            BlockGrammar.parseKeywordContainer
+                reader
+                "grid"
+                "layout grid"
+                [ BlockGrammar.SchemaProperties(PropertySchemas.layoutGrid, false, false)
+                  BlockGrammar.RepeatingEmptyCellRows gridRows ]
+                None
+
+        if gridRows.Count = 0 then
+            raise (DashSpecParseException("Layout grid requires the drawing: draw it with [] cells — columns = N is dead."))
+
+        let columns = gridRows |> Seq.max
+
+        let gapPx =
+            match props.TryGetValue "gap" with
+            | true, raw ->
+                let mutable parsed = 0
+                if System.Int32.TryParse(raw, &parsed) && parsed >= 0 then
+                    parsed
+                else
+                    raise (DashSpecParseException($"Layout grid gap '{raw}' must be a non-negative integer."))
+            | false, _ -> LayoutDefinition.Default.GapPx
+
+        { Columns = columns; GapPx = gapPx }
 
     let parseGrid (reader: TokenReader) =
         match reader.ReadIdent() with
         | "grid" -> ()
         | _ -> raise (reader.Unexpected("grid"))
 
-        let props = PropertyBlockParser.parse reader PropertySchemas.layoutGrid "layout grid" false false
-        let columns =
-            match props.TryGetValue "columns" with
-            | true, raw ->
-                let mutable parsed = 0
-                if System.Int32.TryParse(raw, &parsed) && parsed > 0 && parsed <= 24 then parsed
-                else LayoutDefinition.Default.Columns
-            | false, _ -> LayoutDefinition.Default.Columns
+        parseGridBody reader
 
-        let gapPx =
-            match props.TryGetValue "gap" with
-            | true, raw ->
-                let mutable parsed = 0
-                if System.Int32.TryParse(raw, &parsed) && parsed >= 0 then parsed
-                else LayoutDefinition.Default.GapPx
-            | false, _ -> LayoutDefinition.Default.GapPx
-
-        { Columns = columns; GapPx = gapPx }
+    /// <summary>
+    /// Grid not drawn ([ADR-0111] §2): the registered host default serves (the embedded
+    /// <c>host.ds</c> drawing); nowhere — loud. No silent code default: the grid is either
+    /// drawn in the spec or comes from the host's ds.
+    /// </summary>
+    let defaultGrid () =
+        match GridDefaultBridge.Default with
+        | Some grid -> grid
+        | None ->
+            raise (DashSpecParseException("Grid not drawn: layout grid with [] cells is required, and no host default is registered."))
 
     let parseBoard (reader: TokenReader) =
         BlockSyntax.beginBlock reader

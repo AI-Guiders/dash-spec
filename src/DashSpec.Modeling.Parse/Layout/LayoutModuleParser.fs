@@ -45,6 +45,17 @@ module LayoutModuleParser =
         reader.SkipNewlines()
         let scope = parseMandatoryScope reader
         reader.SkipNewlines()
+
+        // The grid drawing block ([ADR-0111] §2): `grid [] [] … end grid` before the board —
+        // the module's own grid, drawn and visible; optional here, the host default serves documents.
+        let mutable gridColumns = 0
+        while reader.TryKeyword "grid" do
+            if gridColumns > 0 then
+                raise (DashSpec.Modeling.Core.DashSpecParseException("Layout module allows a single grid block."))
+            let grid = LayoutParser.parseGridBody reader
+            gridColumns <- grid.Columns
+            reader.SkipNewlines()
+
         let board = LayoutParser.parseBoardRows reader None None
-        { board with ModuleScope = Some scope }
+        { board with ModuleScope = Some scope; GridColumns = gridColumns }
 

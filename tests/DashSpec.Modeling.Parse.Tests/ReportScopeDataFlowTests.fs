@@ -7,6 +7,8 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopeDataFlowTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     [<Fact>]
     let ``report data flow wires module node to card slot`` () =
         let dir = Path.Combine(Path.GetTempPath(), "report-data-flow-" + Guid.NewGuid().ToString("N"))

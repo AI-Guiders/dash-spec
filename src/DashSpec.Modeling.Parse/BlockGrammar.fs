@@ -23,6 +23,9 @@ module BlockGrammar =
             keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
         | RepeatingBracketRows of
             rows: ResizeArray<IReadOnlyList<string>> * parseRow: (TokenReader -> IReadOnlyList<string>)
+        /// Bare `[] [] []` empty-cell rows at container level ([ADR-0111] §2: the grid is drawn with empty cells).
+        /// Each row collects its length — how many `[]` tokens before the line ends.
+        | RepeatingEmptyCellRows of rows: ResizeArray<int>
         /// Bare `| a | b |` table rows at container level (GDL-table body; ADR-0004 deferred step family).
         /// Collected verbatim; header row + cell semantics are the consumer's (TableLiteral).
         | TableRowRows of rows: ResizeArray<string>
@@ -69,6 +72,13 @@ module BlockGrammar =
         | RepeatingBracketRows(rows, parseRow) when reader.IsAt TokenKind.LBracket ->
             rows.Add(parseRow reader)
             true
+        | RepeatingEmptyCellRows rows when reader.IsAt TokenKind.EmptyCell ->
+            let mutable count = 0
+            while reader.IsAt TokenKind.EmptyCell do
+                reader.Advance()
+                count <- count + 1
+            rows.Add(count)
+            true
         | TableRowRows rows when reader.CurrentKind = TokenKind.TableRow ->
             rows.Add(reader.CurrentTableRow())
             reader.Advance()
@@ -78,6 +88,7 @@ module BlockGrammar =
     and private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
         | RepeatingBracketRows _ -> false
+        | RepeatingEmptyCellRows _ -> false
         | TableRowRows _ -> false
         | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then

@@ -39,7 +39,7 @@ public sealed class HostShellBootstrap
 
     /// <summary>
     /// The embedded default shell board (<c>host.ds</c>): a regular ds layout module —
-    /// brand + nav topbar row, content below — not code.
+    /// a <c>grid</c> drawing plus the shell board — not code.
     /// </summary>
     private LayoutBoardDefinition EmbeddedDefaultBoard()
     {
@@ -55,6 +55,22 @@ public sealed class HostShellBootstrap
 
         using var reader = new StreamReader(stream);
         return _embeddedDefaultBoard = ExecutionLayoutModuleParser.ParseLayoutFile(reader.ReadToEnd());
+    }
+
+    /// <summary>
+    /// The host default grid ([ADR-0111] §2): the embedded <c>host.ds</c> grid drawing serves
+    /// every document that draws no grid of its own — no silent code default.
+    /// </summary>
+    public LayoutDefinition DefaultGrid()
+    {
+        var board = EmbeddedDefaultBoard();
+        if (board.GridColumns <= 0)
+        {
+            throw new InvalidOperationException(
+                "Embedded default host.ds must carry a grid drawing: a 'grid [] [] …' block is required.");
+        }
+
+        return new LayoutDefinition { Columns = board.GridColumns, GapPx = LayoutDefinition.Default.GapPx };
     }
 
     private string? GetPresentation(string key) =>

@@ -9,6 +9,8 @@ open DashSpec.Modeling.Parse.Document
 
 module CardInteriorFlowParseTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     let internal flowTextForReuse =
         """
 module flow peak

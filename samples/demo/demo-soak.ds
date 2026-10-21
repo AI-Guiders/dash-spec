@@ -19,10 +19,6 @@ module dashboard demo_soak
     connect
         use palette demo_apps
         use flow demo_report_flow
-        layout grid
-            columns = 12
-            gap = 16
-        end grid
     end connect
 
     report

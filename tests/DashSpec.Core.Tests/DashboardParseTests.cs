@@ -82,7 +82,7 @@ public class DashboardParseTests
               report
               title = "T"
               layout grid
-              columns = 12
+              [] [] [] [] [] [] [] [] [] [] [] []
               gap = 8
               end grid
               card a as "A"

@@ -7,6 +7,8 @@ open DashSpec.Modeling.Parse.Document
 
 module SourcedClickParseTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     let private specText =
         """
 module tab sourced_click

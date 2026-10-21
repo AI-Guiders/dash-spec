@@ -7,6 +7,8 @@ open DashSpec.Modeling.Parse.Document
 
 module MultiSlotFlowInputParseTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     let private flowText =
         """
 module flow peak

@@ -8,6 +8,8 @@ open DashSpec.Modeling.Parse.Document
 
 module TabEmbeddedDashboardMergeTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     let private flowText =
         """
 module flow embed_flow

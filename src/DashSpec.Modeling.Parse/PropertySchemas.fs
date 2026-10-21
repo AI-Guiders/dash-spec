@@ -41,8 +41,7 @@ module PropertySchemas =
           spec "column_filters" Scalar ]
 
     let layoutGrid =
-        [ spec "columns" Scalar
-          spec "gap" Scalar ]
+        [ spec "gap" Scalar ]
 
     let layoutGroup = [ spec "title" String ]
 

@@ -60,6 +60,7 @@ module SyntaxTokenClassifier =
         | TokenKind.Ident -> classifyIdent tokens index
         | TokenKind.LBrace | TokenKind.RBrace | TokenKind.Comma | TokenKind.Colon | TokenKind.FlowArrow | TokenKind.DotDot | TokenKind.Dot | TokenKind.Slash
         | TokenKind.LBracket | TokenKind.RBracket | TokenKind.LParen | TokenKind.RParen -> DashSpecSyntaxKind.Punctuation
+        | TokenKind.EmptyCell -> DashSpecSyntaxKind.Keyword
         | TokenKind.Newline | TokenKind.Eof -> failwith "trivia token passed to classifyToken"
 
     let tokenText (source: string) (token: Token) =

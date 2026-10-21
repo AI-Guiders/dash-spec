@@ -47,15 +47,16 @@
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
+    <Compile Include="Layout\LayoutModuleScopeValidator.fs" />
     <Compile Include="Layout\LayoutBoardCellParser.fs" />
     <Compile Include="Layout\LayoutBracketRowParser.fs" />
+    <Compile Include="Layout\GridDefaultBridge.fs" />
     <Compile Include="Layout\LayoutParser.fs" />
     <Compile Include="Layout\LayoutModuleParser.fs" />
     <Compile Include="Layout\SlotPlane.fs" />
     <Compile Include="Document\UnitSource.fs" />
     <Compile Include="Project\DashSpecProjectConfig.fs" />
     <Compile Include="Document\UnitIndex.fs" />
-    <Compile Include="Layout\LayoutModuleScopeValidator.fs" />
     <Compile Include="Tooltip\TooltipTypes.fs" />
     <Compile Include="Tooltip\TooltipModuleParser.fs" />
     <Compile Include="Catalog\CatalogTypes.fs" />
