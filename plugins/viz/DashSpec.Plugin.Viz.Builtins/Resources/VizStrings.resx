@@ -93,4 +93,13 @@
   <data name="unit: days" xml:space="preserve">
     <value>d</value>
   </data>
+  <data name="Click an axis label to load this table" xml:space="preserve">
+    <value>Click an axis label to load this table</value>
+  </data>
+  <data name="Click a heatmap cell to load this table" xml:space="preserve">
+    <value>Click a heatmap cell to load this table</value>
+  </data>
+  <data name="Click the diagram to load this table" xml:space="preserve">
+    <value>Click the diagram to load this table</value>
+  </data>
 </root>

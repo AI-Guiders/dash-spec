@@ -496,9 +496,12 @@
             _selection = context;
         }
 
-        if (Card.ClickBehaviour is not null &&
-            Interactions.HasNavigationEffects(Card.ClickBehaviour) &&
-            OnCellClickNavigate.HasDelegate)
+        // ADR-0107: legacy generic behaviour, or the sourced handler for this click's source
+        // (an `on click` table card keeps its cell effects in the "cell"-sourced handler).
+        if (OnCellClickNavigate.HasDelegate &&
+            ((Card.ClickBehaviour is not null && Interactions.HasNavigationEffects(Card.ClickBehaviour)) ||
+             (Card.ClickHandlers is { Count: > 0 } handlers &&
+              handlers.Any(h => string.Equals(h.Source, context.ClickSource, StringComparison.OrdinalIgnoreCase)))))
         {
             await OnCellClickNavigate.InvokeAsync((Card, context));
         }

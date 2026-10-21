@@ -201,4 +201,73 @@ public class CardClickBehaviourTests
         Assert.Equal("ShowSelection", CardClickEffectTestData.CaseName(effect));
         Assert.Equal("; ", ((Microsoft.FSharp.Core.FSharpOption<string>)CardClickEffectTestData.Fields(effect)[4]!)?.Value);
     }
+
+    [Fact]
+    public void CardDrillSlotTargets_resolves_sourced_drill_slots()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module tab t
+              report
+              title = "T"
+              card peak as "Peak"
+              on click
+              | source        | drill     | set        |
+              | cell          | drill     | app_name=y |
+              | category item | app_drill | app_name=y |
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              diagram ref drill cell_table
+              diagram ref app_drill app_table
+              data flow
+              fixture_src [rows] -> [rows] __diagram__
+              fixture_src [rows] -> [rows] drill
+              fixture_src [rows] -> [rows] app_drill
+              end data flow
+              end card
+              end report
+            end tab
+            """);
+
+        var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
+        Assert.False(targets.LegacyAllSlots);
+        Assert.True(targets.IsTarget("drill"));
+        Assert.True(targets.IsTarget("app_drill"));
+        Assert.False(targets.IsTarget("__diagram__"));
+        Assert.Equal("cell", targets.SourceOf("drill"));
+        Assert.Equal("category item", targets.SourceOf("app_drill"));
+        Assert.Null(targets.SourceOf("__diagram__"));
+    }
+
+    [Fact]
+    public void CardDrillSlotTargets_legacy_drill_targets_all_slots()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module tab t
+              report
+              title = "T"
+              card peak as "Peak"
+              on click
+              drill table from cell
+              set usage_date from x
+              set app_name from y
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end tab
+            """);
+
+        var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
+        Assert.True(targets.LegacyAllSlots);
+        Assert.True(targets.IsTarget("drill"));
+        Assert.True(targets.IsTarget("app_drill"));
+        Assert.Equal("cell", targets.SourceOf("drill"));
+    }
 }
