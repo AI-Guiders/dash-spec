@@ -344,9 +344,10 @@ public static class SlotPlaneBuilder
     }
 
     /// <summary>
-    /// Shell grid ([ADR-0111] P2: the shell is another grid — no zones): the host board
-    /// (layout module with scope host) if declared, or the synthesized default (topbar row +
-    /// content row). The sidebar is just a nav slot in column 1 — same grid, same rules.
+    /// Shell grid ([ADR-0111] P2: the shell is another grid — no zones): the synthesized
+    /// default (brand + nav topbar row, content below). The sidebar is just a nav slot in
+    /// column 1 — same grid, same rules. Custom shell boards (layout modules with scope host)
+    /// join when the document carries them; the default serves until then.
     /// </summary>
     static IReadOnlyList<Slot> PlanShell(
         DashboardDocument document,
@@ -355,8 +356,7 @@ public static class SlotPlaneBuilder
         var columns = document.Layout.Columns;
         var shellSlots = new List<Slot>();
 
-        // Shell chrome node lookup: "shell.<slot>" (added by the wiring graph builder).
-        Slot ShellSlot(string slotId, PlacementDefinition placement, PlacementProvenance provenance)
+        Slot ShellSlot(string slotId, int row, int col, int span)
         {
             if (!nodes.TryGetValue($"shell.{slotId}", out var node))
             {
@@ -367,58 +367,16 @@ public static class SlotPlaneBuilder
             return new Slot
             {
                 Node = node,
-                Placement = placement,
+                Placement = new PlacementDefinition(row, col, span),
                 Scope = LayoutSlotScope.HostShell,
-                Provenance = provenance,
+                Provenance = PlacementProvenance.RecordedDefault,
             };
         }
 
-        // The host board (from a layout module with scope host) if declared.
-        var hostBoard = document.ToolbarBoard?.Value;
-        if (hostBoard is not null)
-        {
-            var declaredIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var row in hostBoard.Rows)
-            {
-                var rowIdx = 0;
-                foreach (var cell in row)
-                {
-                    rowIdx++;
-                    var (refToken, weight) = LayoutBoardCellParser.parseCell(cell, "Shell board", 1);
-                    declaredIds.Add(refToken);
-                    shellSlots.Add(ShellSlot(
-                        refToken,
-                        new PlacementDefinition(0, rowIdx, weight),
-                        PlacementProvenance.Declared));
-                }
-            }
-
-            // Content slot: implicit — takes the remaining space if not declared.
-            if (!declaredIds.Contains("content"))
-            {
-                var maxRow = shellSlots.Count == 0 ? 0 : shellSlots.Max(s => s.Placement.Row);
-                shellSlots.Add(ShellSlot(
-                    "content",
-                    new PlacementDefinition(maxRow + 1, 1, columns),
-                    PlacementProvenance.RecordedDefault));
-            }
-
-            return shellSlots;
-        }
-
-        // No host board: synthesized default — topbar (brand + nav) + content, full width.
-        shellSlots.Add(ShellSlot(
-            "brand",
-            new PlacementDefinition(1, 1, columns / 4),
-            PlacementProvenance.RecordedDefault));
-        shellSlots.Add(ShellSlot(
-            "nav",
-            new PlacementDefinition(1, columns / 4 + 1, columns - columns / 4),
-            PlacementProvenance.RecordedDefault));
-        shellSlots.Add(ShellSlot(
-            "content",
-            new PlacementDefinition(2, 1, columns),
-            PlacementProvenance.RecordedDefault));
+        // Synthesized default: topbar (brand + nav) + content, full width.
+        shellSlots.Add(ShellSlot("brand", 1, 1, columns / 4));
+        shellSlots.Add(ShellSlot("nav", 1, columns / 4 + 1, columns - columns / 4));
+        shellSlots.Add(ShellSlot("content", 2, 1, columns));
 
         return shellSlots;
     }
