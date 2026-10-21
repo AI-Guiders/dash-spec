@@ -19,4 +19,5 @@ type HostDocument =
       Presentation: IReadOnlyDictionary<string, string>
       Links: IReadOnlyList<HostLinkDefinition>
       Surfaces: IReadOnlyList<string>
-      TopbarLayout: DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition option }
+      /// <summary>Shell grid board (scope host): chrome slots + the content slot — rendered by the host itself ([ADR-0111] §2).</summary>
+      ShellLayout: DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition option }

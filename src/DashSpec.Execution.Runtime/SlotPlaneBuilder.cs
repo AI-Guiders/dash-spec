@@ -63,10 +63,9 @@ public static class SlotPlaneBuilder
             chrome[card.Id] = PlanChrome(document, card, nodes);
         }
 
-        // 4. Shell grid ([ADR-0111] P2): the shell is another grid — the host board
-        // (layout module with scope host) if declared, or the synthesized default
-        // (topbar row + content row). Sidebar = a nav slot in column 1, no zones.
-        var shell = PlanShell(document, nodes);
+        // 4. Shell ([ADR-0111] §2 revision): the shell grid is NOT part of the dashboard plane —
+        // it comes from the host module (scope-host layout board, [ADR-0054]) and is rendered
+        // by the host itself before the dashboard; the dashboard plane starts at its content slot.
 
         return new SlotPlane
         {
@@ -75,7 +74,6 @@ public static class SlotPlaneBuilder
             Toolbars = toolbars,
             CardInteriors = interiors,
             CardFilterChrome = chrome,
-            Shell = shell,
             InitialRoute = PlanInitialRoute(document, entryId, initialTabId, initialPageId),
         };
     }
@@ -341,44 +339,6 @@ public static class SlotPlaneBuilder
                     ? PlacementProvenance.RecordedDefault
                     : PlacementProvenance.Declared))
             .ToList();
-    }
-
-    /// <summary>
-    /// Shell grid ([ADR-0111] P2: the shell is another grid — no zones): the synthesized
-    /// default (brand + nav topbar row, content below). The sidebar is just a nav slot in
-    /// column 1 — same grid, same rules. Custom shell boards (layout modules with scope host)
-    /// join when the document carries them; the default serves until then.
-    /// </summary>
-    static IReadOnlyList<Slot> PlanShell(
-        DashboardDocument document,
-        IReadOnlyDictionary<string, WiringNode> nodes)
-    {
-        var columns = document.Layout.Columns;
-        var shellSlots = new List<Slot>();
-
-        Slot ShellSlot(string slotId, int row, int col, int span)
-        {
-            if (!nodes.TryGetValue($"shell.{slotId}", out var node))
-            {
-                throw new DashSpecParseException(
-                    $"Slot plane correspondence failed: no shell node for '{slotId}'.");
-            }
-
-            return new Slot
-            {
-                Node = node,
-                Placement = new PlacementDefinition(row, col, span),
-                Scope = LayoutSlotScope.HostShell,
-                Provenance = PlacementProvenance.RecordedDefault,
-            };
-        }
-
-        // Synthesized default: topbar (brand + nav) + content, full width.
-        shellSlots.Add(ShellSlot("brand", 1, 1, columns / 4));
-        shellSlots.Add(ShellSlot("nav", 1, columns / 4 + 1, columns - columns / 4));
-        shellSlots.Add(ShellSlot("content", 2, 1, columns));
-
-        return shellSlots;
     }
 
     static VisualRoute PlanInitialRoute(

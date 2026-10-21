@@ -1,0 +1,96 @@
+@using DashSpec.Abstractions.Viewer
+@using DashSpec.Surface.Blazor.Components.Dashboard
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using DashSpec.Modeling.Parse.Layout
+@inject IWebHostEnvironment Environment
+@inject DashboardHostCommandCoordinator Coordinator
+@inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
+@inject HostPresentationSignals PresentationSignals
+@inject IViewerExternalLinksProvider ExternalLinks
+@inject IViewerShellChrome HostShell
+@implements IDisposable
+
+@* One shell chrome slot ([ADR-0111] §2): placement from the host module board (row/col/span),
+   content by slot id — the host renders its own ds shell grid, content slot included. *@
+
+<div class="shell-chrome" style="@SlotGridStyle(Slot)">
+    <nav class="topbar-nav">
+        @if (Slot.SlotId == ViewerShellSlotIds.Brand)
+        {
+            <strong class="shell-brand">@HostShell.ProductTitle</strong>
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.Catalog && Coordinator.HasCatalog)
+        {
+            <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
+                                    Groups="Coordinator.CatalogGroups"
+                                    ActiveEntryId="Coordinator.ActiveCatalogEntryId"
+                                    DefaultEntryId="Coordinator.DefaultCatalogEntryId"
+                                    Busy="Coordinator.CatalogBusy"
+                                    OnSelect="Coordinator.SelectCatalogEntryAsync"
+                                    Inline="true"
+                                    ShowLabel="true"
+                                    CatalogLabel="@HostShell.CatalogLabel" />
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.Nav)
+        {
+            <a href="/">@Loc.T("Dashboard")</a>
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.ExternalLinks)
+        {
+            @foreach (var link in _topbarLinks)
+            {
+                <a href="@link.Url" target="@link.Target" rel="noopener noreferrer" class="external-link">@link.Label</a>
+            }
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.Help && ShowsSurface("help"))
+        {
+            <a href="/help" class="help-link" title="@Loc.T("Help")">?</a>
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.Settings && ShowsSurface("settings"))
+        {
+            <a href="/admin/access">@Loc.T("Settings")</a>
+        }
+        else if (Slot.SlotId == ViewerShellSlotIds.SpecDev && Environment.IsDevelopment() && ShowsSurface("spec_dev"))
+        {
+            <a href="/dev/spec">@Loc.T("Spec")</a>
+        }
+    </nav>
+</div>
+
+@code {
+    [Parameter]
+    public required ViewerShellSlot Slot { get; set; }
+
+    IReadOnlyList<ViewerExternalLink> _topbarLinks = [];
+
+    protected override void OnInitialized()
+    {
+        Coordinator.Changed += OnCoordinatorChanged;
+        PresentationSignals.Changed += OnPresentationChanged;
+        RefreshLinks();
+    }
+
+    void RefreshLinks() =>
+        _topbarLinks = ExternalLinks.ForStartupRuntime()
+            .Where(static link => link.Topbar)
+            .ToList();
+
+    void OnCoordinatorChanged() => _ = InvokeAsync(() =>
+    {
+        RefreshLinks();
+        StateHasChanged();
+    });
+
+    void OnPresentationChanged() => _ = InvokeAsync(StateHasChanged);
+
+    bool ShowsSurface(string surface) => HostShell.ShowsSurface(surface);
+
+    static string SlotGridStyle(ViewerShellSlot slot) =>
+        $"grid-column:{slot.Col} / span {slot.Span};grid-row:{slot.Row};";
+
+    public void Dispose()
+    {
+        Coordinator.Changed -= OnCoordinatorChanged;
+        PresentationSignals.Changed -= OnPresentationChanged;
+    }
+}

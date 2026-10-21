@@ -1,0 +1,6 @@
+module layout dashspec_default_shell
+namespace DashSpec.Default.Shell
+scope host
+
+[ brand nav ]
+[ content ]

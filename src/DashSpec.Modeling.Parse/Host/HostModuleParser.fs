@@ -10,7 +10,7 @@ open DashSpec.Modeling.Parse.Lexing
 
 module HostModuleParser =
 
-    let private importTopbarLayout (specDirectory: string option) (sourceOffset: int) (namespaceName: string) =
+    let private importShellLayout (specDirectory: string option) (sourceOffset: int) (namespaceName: string) =
         match specDirectory with
         | None
         | Some "" ->
@@ -137,7 +137,7 @@ module HostModuleParser =
         let presentation = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let links = ResizeArray<HostLinkDefinition>()
         let surfaces = ResizeArray<string>()
-        let mutable topbarLayout = None
+        let mutable shellLayout = None
 
         while not (BlockSyntax.isBlockEnd reader "host" (Some hostId)) && not reader.IsEof do
             reader.SkipNewlines()
@@ -180,7 +180,7 @@ module HostModuleParser =
                 if not (String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase)) then
                     raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}.", sourceOffset))
 
-                topbarLayout <- Some(importTopbarLayout specDirectory sourceOffset namespaceName)
+                shellLayout <- Some(importShellLayout specDirectory sourceOffset namespaceName)
                 reader.SkipNewlines()
             else
                 raise (reader.Unexpected())
@@ -196,7 +196,7 @@ module HostModuleParser =
           Presentation = presentation
           Links = links :> IReadOnlyList<_>
           Surfaces = surfaces :> IReadOnlyList<_>
-          TopbarLayout = topbarLayout }
+          ShellLayout = shellLayout }
 
     let parseFile (path: string) : HostDocument =
         if String.IsNullOrWhiteSpace path then invalidArg "path" "Host file path is required."

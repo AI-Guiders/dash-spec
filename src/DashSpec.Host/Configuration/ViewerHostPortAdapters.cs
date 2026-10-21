@@ -38,7 +38,7 @@ internal sealed class ViewerShellChromeAdapter(HostShellBootstrap shell) : IView
 
     public string CatalogLabel => shell.CatalogLabel;
 
-    public IReadOnlyList<string> TopbarSlots => shell.TopbarSlots;
+    public IReadOnlyList<ViewerShellSlot> ShellSlots => shell.ShellSlots;
 
     public bool ShowsSurface(string surface) => shell.ShowsSurface(surface);
 }

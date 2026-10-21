@@ -77,6 +77,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Embedded default shell board ([ADR-0111] §2): a regular ds file — no synthesized shell in code. -->
+    <EmbeddedResource Include="Resources\host.ds" />
     <None Update="Catalog\dash.catalog.gdl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
