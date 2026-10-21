@@ -21,6 +21,7 @@ else
                             ? texts[i]
                             : column;
                         var copied = _copiedColumn == i;
+                        var colIndex = i;
                         <th style="@HeaderAlignStyle(i)">
                             <div class="table-col-head">
                                 @headerText
@@ -28,7 +29,7 @@ else
                                         class="table-col-copy @(copied ? "table-col-copy--done" : null)"
                                         title="@(copied ? Loc["Copied"] : Loc["Copy column"])"
                                         aria-label="@(copied ? Loc["Copied"] : Loc["Copy column"])"
-                                        @onclick="() => CopyColumnAsync(i)"></button>
+                                        @onclick="() => CopyColumnAsync(colIndex)"></button>
                             </div>
                             @if (ShowColumnFilters)
                             {
