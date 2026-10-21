@@ -56,6 +56,7 @@ type VisualRoute =
 [<CLIMutable>]
 type SlotPlane =
     { Boards: IReadOnlyDictionary<BoardRoute, IReadOnlyList<Slot>>
+      NestedBoards: IReadOnlyDictionary<string, IReadOnlyList<Slot>>
       Toolbars: IReadOnlyDictionary<BoardRoute, IReadOnlyList<Slot>>
       CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<Slot>>
       CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<Slot>>

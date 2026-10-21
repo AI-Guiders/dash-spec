@@ -1,76 +1,69 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Execution.Runtime
+@using DashSpec.Modeling.Core
+@using DashSpec.Modeling.Parse.Layout
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Presentation.Components
 @inject ILayoutSlotRendererRegistry SlotRegistry
 
-@if (!SlotRegistry.Supports(Slot.Scope, Slot.ContentKind))
+@if (!SlotRegistry.Supports(Slot.Scope, Slot.Node.Kind))
 {
-    <div class="layout-slot-unsupported muted" role="status">@Slot.Scope / @Slot.ContentKind</div>
+    <div class="layout-slot-unsupported muted" role="status">@Slot.Scope / @Slot.Node.Kind</div>
 }
-else
+else if (Slot.Node.Kind == WiringNodeKind.Card)
 {
-    @switch (Slot.ContentKind)
+    if (Page.FindVisibleCard(Slot.Node.Id) is { } card)
     {
-        case LayoutSlotContentKind.Card:
-            if (Page.FindVisibleCard(Slot.Token) is { } card)
+        <PlacementSlot Placement="Slot.Placement" GridColumns="Layout.Columns">
+            <DashboardCardSlot Card="card"
+                               Page="Page"
+                               AutoApply="AutoApply"
+                               PlacementStyle="" />
+        </PlacementSlot>
+    }
+}
+else if (Slot.Node.Kind == WiringNodeKind.Nest)
+{
+    @* [ADR-0111] P1: the nested board slice — precomputed at assembly, read here. *@
+    <PlacementSlot Placement="Slot.Placement"
+                   GridColumns="Layout.Columns"
+                   CssClass="card-nest">
+        <div class="card-nest-cards" style="@PlacementGridCss.HostGridVariables(Layout)">
+            @foreach (var (innerCard, innerPlacement) in Page.CardsForNest(Slot.Node.Id))
             {
-                <PlacementSlot Placement="Slot.Placement" GridColumns="Layout.Columns">
-                    <DashboardCardSlot Card="card"
+                <PlacementSlot Placement="innerPlacement" GridColumns="Layout.Columns">
+                    <DashboardCardSlot Card="innerCard"
                                        Page="Page"
                                        AutoApply="AutoApply"
                                        PlacementStyle="" />
                 </PlacementSlot>
             }
-            break;
-        case LayoutSlotContentKind.Nest:
-            if (Page.TabLayoutPlan?.Nests.TryGetValue(Slot.Token, out var nest) == true)
+        </div>
+    </PlacementSlot>
+}
+else if (Slot.Node.Kind == WiringNodeKind.Group && Page.FindLayoutGroup(Slot.Node.Id) is { } group)
+{
+    <section class="card-group" style="@PlacementGridCss.GroupOuterStyle(Slot.Placement.Row)">
+        @if (group.Title?.Value is { } groupTitle && !string.IsNullOrWhiteSpace(groupTitle))
+        {
+            <h3 class="card-group-title">@Page.ResolveDisplayTitle(groupTitle)</h3>
+        }
+        <div class="card-group-cards" style="@PlacementGridCss.HostGridVariables(Layout)">
+            @foreach (var (innerCard, innerPlacement) in Page.CardsForGroup(group.Id))
             {
-                <PlacementSlot Placement="Slot.Placement"
-                               GridColumns="Layout.Columns"
-                               CssClass="card-nest">
-                    <div class="card-nest-cards" style="@PlacementGridCss.HostGridVariables(Layout)">
-                        @foreach (var (innerCard, innerPlacement) in Page.CardsForNest(nest))
-                        {
-                            <PlacementSlot Placement="innerPlacement" GridColumns="Layout.Columns">
-                                <DashboardCardSlot Card="innerCard"
-                                                   Page="Page"
-                                                   AutoApply="AutoApply"
-                                                   PlacementStyle="" />
-                            </PlacementSlot>
-                        }
-                    </div>
+                <PlacementSlot Placement="innerPlacement" GridColumns="Layout.Columns">
+                    <DashboardCardSlot Card="innerCard"
+                                       Page="Page"
+                                       AutoApply="AutoApply"
+                                       PlacementStyle="" />
                 </PlacementSlot>
             }
-            break;
-        case LayoutSlotContentKind.Group:
-            if (Page.FindLayoutGroup(Slot.Token) is { } group &&
-                Page.TabLayoutPlan?.Groups.TryGetValue(group.Id, out var groupPlacement) == true)
-            {
-                <section class="card-group" style="@PlacementGridCss.GroupOuterStyle(groupPlacement.OuterRow)">
-                    @if (!string.IsNullOrWhiteSpace(groupPlacement.Title))
-                    {
-                        <h3 class="card-group-title">@Page.ResolveDisplayTitle(groupPlacement.Title)</h3>
-                    }
-                    <div class="card-group-cards" style="@PlacementGridCss.HostGridVariables(Layout)">
-                        @foreach (var (innerCard, innerPlacement) in Page.CardsForGroup(group))
-                        {
-                            <PlacementSlot Placement="innerPlacement" GridColumns="Layout.Columns">
-                                <DashboardCardSlot Card="innerCard"
-                                                   Page="Page"
-                                                   AutoApply="AutoApply"
-                                                   PlacementStyle="" />
-                            </PlacementSlot>
-                        }
-                    </div>
-                </section>
-            }
-            break;
-    }
+        </div>
+    </section>
 }
 
 @code {
-    [Parameter, EditorRequired] public LayoutSlotDescriptor Slot { get; set; } = default!;
+    [Parameter, EditorRequired] public Slot Slot { get; set; } = default!;
     [Parameter, EditorRequired] public DashboardPageController Page { get; set; } = default!;
     [Parameter, EditorRequired] public LayoutDefinition Layout { get; set; } = default!;
     [Parameter] public bool AutoApply { get; set; }

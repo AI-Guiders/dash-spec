@@ -1,6 +1,7 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Modeling.Parse.Layout;
 
 namespace DashSpec.Viz.Platform;
 
@@ -17,6 +18,9 @@ public sealed class HeadlessReportSession(
     private string? _specDirectory;
     private string? _runtimeConfigPath;
     private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Assembled slot plane ([ADR-0111]): the render reads it and places.</summary>
+    public SlotPlane? SlotPlane { get; private set; }
 
     public SpecLibrary? SpecLibrary => _specLibrary;
     public DashboardDocument Document => _document ?? throw new InvalidOperationException("Report not loaded.");
@@ -152,6 +156,7 @@ public sealed class HeadlessReportSession(
         _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
         _specDirectory = loaded.SpecDirectory;
         _runtimeConfigPath = loaded.RuntimeConfigPath;
+        SlotPlane = loaded.SlotPlane;
         LoadedSpecSource = loaded.SourceLabel;
         CurrentSpecReference = specFullPath;
     }

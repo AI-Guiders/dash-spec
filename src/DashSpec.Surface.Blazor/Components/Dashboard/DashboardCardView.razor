@@ -146,11 +146,12 @@
     {
         <CascadingValue Value="this" IsFixed="true">
             <CardInteriorGrid GridColumns="GridColumns">
-                @foreach (var slot in Card.PlanInteriorSlots())
+                @* [ADR-0111] P1: the render reads the assembled interior slice — no per-render planning. *@
+                @foreach (var slot in InteriorSlots)
                 {
                     <PlacementSlot Placement="slot.Placement"
                                    GridColumns="GridColumns"
-                                   CssClass="@InteriorSlotClass(slot.ContentKind)">
+                                   CssClass="@InteriorSlotClass(slot.Node.Kind)">
                         <CardInteriorSlotContent Slot="slot" />
                     </PlacementSlot>
                 }
@@ -214,6 +215,8 @@
     [Parameter] public int FieldOptionsRevision { get; set; }
     [Parameter] public bool AutoApply { get; set; }
     [Parameter] public string? ActiveViewId { get; set; }
+    /// <summary>[ADR-0111] P1: the assembled interior slice from the plane's CardInteriors.</summary>
+    [Parameter] public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? InteriorSlotPlan { get; set; }
     [Parameter] public EventCallback<string> OnApplyCard { get; set; }
     [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
@@ -536,8 +539,15 @@
                              Presentation="Card.MatrixPresentation" />;
     };
 
-    private static string InteriorSlotClass(LayoutSlotContentKind kind) =>
-        kind is LayoutSlotContentKind.Filter
+    /// <summary>
+    /// [ADR-0111] P1: the interior slice comes from the assembled plane — passed down
+    /// as a parameter; no per-render planning.
+    /// </summary>
+    private IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot> InteriorSlots =>
+        InteriorSlotPlan ?? [];
+
+    private static string InteriorSlotClass(DashSpec.Modeling.Core.WiringNodeKind kind) =>
+        kind == DashSpec.Modeling.Core.WiringNodeKind.Filter
             ? "card-interior-slot card-filter-slot"
             : "card-interior-slot card-diagram-slot";
 

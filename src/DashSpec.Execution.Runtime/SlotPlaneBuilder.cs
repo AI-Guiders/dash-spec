@@ -22,6 +22,7 @@ public static class SlotPlaneBuilder
 
         var nodes = document.WiringGraph.Nodes;
         var boards = new Dictionary<BoardRoute, IReadOnlyList<Slot>>(BoardRouteComparer.Instance);
+        var nestedBoards = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
         var toolbars = new Dictionary<BoardRoute, IReadOnlyList<Slot>>(BoardRouteComparer.Instance);
 
         if (document.Tabs.Count == 0)
@@ -39,7 +40,7 @@ public static class SlotPlaneBuilder
                 if (pages.Count == 0)
                 {
                     var route = new BoardRoute { TabId = Some(tab.Id), PageId = null };
-                    boards[route] = PlanBoard(document, library, tab.Id, pageId: null, nodes);
+                    boards[route] = PlanBoard(document, library, tab.Id, pageId: null, nodes, nestedBoards);
                     toolbars[route] = PlanToolbar(document, tab.Id, pageId: null, nodes);
                     continue;
                 }
@@ -47,7 +48,7 @@ public static class SlotPlaneBuilder
                 foreach (var page in pages)
                 {
                     var route = new BoardRoute { TabId = Some(tab.Id), PageId = Some(page.Id) };
-                    boards[route] = PlanBoard(document, library, tab.Id, page.Id, nodes);
+                    boards[route] = PlanBoard(document, library, tab.Id, page.Id, nodes, nestedBoards);
                     toolbars[route] = PlanToolbar(document, tab.Id, page.Id, nodes);
                 }
             }
@@ -64,11 +65,86 @@ public static class SlotPlaneBuilder
         return new SlotPlane
         {
             Boards = boards,
+            NestedBoards = nestedBoards,
             Toolbars = toolbars,
             CardInteriors = interiors,
             CardFilterChrome = chrome,
             InitialRoute = PlanInitialRoute(document, entryId, initialTabId),
         };
+    }
+
+    /// <summary>
+    /// Nested boards ([ADR-0111]): a nest/group slot's inner grid, assembled from the
+    /// declared board rows — the same math the render ran per request (TabLayoutPlanner's
+    /// inner resolution), consumed here at assembly. The inner cards are Card slots of the
+    /// same HostTabBoard scope; the inner placements are the resolved row cells.
+    /// </summary>
+    static void PlanNestedBoards(
+        DashboardDocument document,
+        TabLayoutContext context,
+        IReadOnlyDictionary<string, WiringNode> nodes,
+        Dictionary<string, IReadOnlyList<Slot>> nestedBoards)
+    {
+        var board = context.Board;
+        if (board is null)
+        {
+            return;
+        }
+
+        foreach (var entry in board.Entries)
+        {
+            switch (entry)
+            {
+                case LayoutBoardEntry.NestRow nest:
+                    nestedBoards[nest.Item.Id] = PlanInnerBoard(
+                        document, context, nest.Item.Id, nest.Item.Rows, nodes);
+                    break;
+                case LayoutBoardEntry.GroupRow group:
+                    nestedBoards[group.Item.Id] = PlanInnerBoard(
+                        document, context, group.Item.Id, group.Item.Rows, nodes);
+                    break;
+            }
+        }
+    }
+
+    static IReadOnlyList<Slot> PlanInnerBoard(
+        DashboardDocument document,
+        TabLayoutContext context,
+        string containerId,
+        IReadOnlyList<IReadOnlyList<string>> rows,
+        IReadOnlyDictionary<string, WiringNode> nodes)
+    {
+        var slots = new List<Slot>();
+        var row = 0;
+        foreach (var cells in rows)
+        {
+            row++;
+            var col = 0;
+            foreach (var cell in cells)
+            {
+                col++;
+                var (refToken, weight) = LayoutBoardCellParser.parseCell(
+                    cell, $"Board '{containerId}' inner", row);
+                var cardId = CardLayoutRefBridge.Resolve(
+                    refToken, context.TabCards, $"Board '{containerId}' inner");
+                if (!nodes.TryGetValue(cardId, out var node))
+                {
+                    throw new DashSpecParseException(
+                        $"Slot plane correspondence failed: no document-graph node for '{cardId}' " +
+                        $"(nested board '{containerId}').");
+                }
+
+                slots.Add(new Slot
+                {
+                    Node = node,
+                    Placement = new PlacementDefinition(row, col, weight),
+                    Scope = LayoutSlotScope.HostTabBoard,
+                    Provenance = PlacementProvenance.Declared,
+                });
+            }
+        }
+
+        return slots;
     }
 
     /// <summary>Effective board per route: the page board overrides the tab board ([ADR-0111] §1).</summary>
@@ -77,12 +153,16 @@ public static class SlotPlaneBuilder
         SpecLibrary? library,
         string tabId,
         string? pageId,
-        IReadOnlyDictionary<string, WiringNode> nodes)
+        IReadOnlyDictionary<string, WiringNode> nodes,
+        Dictionary<string, IReadOnlyList<Slot>> nestedBoards)
     {
         var columns = document.Layout.Columns;
         var context = TabLayoutCompactor.ResolveContext(document, tabId, pageId);
         var compact = TabLayoutCompactor.Compact(document, tabId, library, pageId);
         var declared = new HashSet<string>(compact.Keys, StringComparer.OrdinalIgnoreCase);
+
+        // The nested boards of this route's board ([ADR-0111]): nests/groups inner grids.
+        PlanNestedBoards(document, context, nodes, nestedBoards);
 
         IReadOnlyList<LayoutSlotDescriptor> descriptors;
         if (TabLayoutCompactor.TryBuildLayoutPlan(context) is { } plan)

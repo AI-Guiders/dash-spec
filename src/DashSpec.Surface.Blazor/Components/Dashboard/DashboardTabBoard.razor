@@ -1,5 +1,6 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Execution.Runtime
+@using DashSpec.Modeling.Parse.Layout
 <section class="cards" style="@PlacementGridCss.HostGridVariables(Layout)" aria-live="polite">
     @foreach (var slot in Slots)
     {
@@ -8,7 +9,7 @@
 </section>
 
 @code {
-    [Parameter] public IReadOnlyList<LayoutSlotDescriptor> Slots { get; set; } = [];
+    [Parameter] public IReadOnlyList<Slot> Slots { get; set; } = [];
     [Parameter, EditorRequired] public DashboardPageController Page { get; set; } = default!;
     [Parameter, EditorRequired] public LayoutDefinition Layout { get; set; } = default!;
     [Parameter] public bool AutoApply { get; set; }
