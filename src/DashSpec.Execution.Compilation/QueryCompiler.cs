@@ -507,6 +507,16 @@ public static class QueryCompiler
                 }
             }
 
+            // The row type declares this slot's shape (the typed flows): a filter whose
+            // column the type does not carry — and no derive maps onto it — does not
+            // apply to this query. The list views (WhitelistAppRow: app_name) stay
+            // untouched by the period filter; the metric slots (AppUsersMonthRow) filter.
+            var effectiveColumn = ResolveColumnName(sqlDefinition.ColumnReference?.Value, sqlDefinition.Name);
+            if (!derived && !SchemaContainsColumn(rowSchema, effectiveColumn))
+            {
+                continue;
+            }
+
             var clause = derived
                 ? BuildDerivedClause(definition, sqlDefinition, filters, parameters, dialect, cellDrillOverlay)
                 : BuildClause(definition, filters, parameters, dialect, cellDrillOverlay);

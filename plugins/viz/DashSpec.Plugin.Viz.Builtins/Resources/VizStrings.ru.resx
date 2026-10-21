@@ -102,4 +102,10 @@
   <data name="Click the diagram to load this table" xml:space="preserve">
     <value>Кликните по диаграмме, чтобы загрузить таблицу</value>
   </data>
+  <data name="Copy column" xml:space="preserve">
+    <value>Скопировать колонку</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Скопировано</value>
+  </data>
 </root>

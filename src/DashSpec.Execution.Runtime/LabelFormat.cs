@@ -17,6 +17,7 @@ public static partial class LabelFormat
         "time.short",
         "datetime.short",
         "datetime.iso",
+        "month.short",
         "user.short",
         "raw",
         "system",

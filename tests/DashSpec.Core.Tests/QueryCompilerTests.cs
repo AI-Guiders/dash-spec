@@ -74,6 +74,59 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_skips_filter_whose_column_is_absent_from_the_row_type()
+    {
+        var document = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+                  connect
+                    use flow fixture_flow
+                  end connect
+              report
+              title = "T"
+              defaults
+                filter.region.range = -60d..today
+              end defaults
+              filter region
+                bind date
+                  column = vendor_region
+                end bind
+                show
+                  label = "Region"
+                end show
+              end filter
+              filters dashboard
+              region
+              end dashboard
+              card list as "List"
+              bind
+                region
+              end bind
+              diagram table
+              columns = app_name
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""); var card = document.Cards[0];
+
+        var filters = new FilterState();
+        filters.SetDate("region", new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 31));
+
+        var index = new Dictionary<string, FilterDefinition>
+        {
+            ["region"] = FilterTestData.Create(FilterKind.Date, "region", "-60d..today", "vendor_region"),
+        };
+
+        var query = QueryCompiler.Compile(card, filters, index, document);
+
+        // The row type (FixtureRow) does not carry vendor_region — the filter does not apply.
+        Assert.DoesNotContain("vendor_region", query.Sql);
+        Assert.Empty(query.Parameters);
+    }
+
+    [Fact]
     public void Compile_cell_drill_overlay_overrides_session_filters_for_bound_names()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""

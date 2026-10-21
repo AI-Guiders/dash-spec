@@ -270,4 +270,38 @@ public class CardClickBehaviourTests
         Assert.True(targets.IsTarget("app_drill"));
         Assert.Equal("cell", targets.SourceOf("drill"));
     }
+
+    [Fact]
+    public void Parse_on_click_row_source_targets_drill_slot()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module tab t
+              report
+              title = "T"
+              card app_users as "Apps"
+              on click
+              | source | drill | set        |
+              | row    | users | app_name=y |
+              end click
+              diagram table
+              columns = app_name
+              end table
+              diagram ref users user_table
+              data flow
+              fixture_src [rows] -> [rows] __diagram__
+              fixture_src [rows] -> [rows] users
+              end data flow
+              end card
+              end report
+            end tab
+            """);
+
+        var card = doc.Cards[0];
+        var handler = Assert.Single(card.ClickHandlers);
+        Assert.Equal("row", handler.Source);
+        Assert.Equal("users", handler.Effects[0].TryGetDrillTarget?.Value);
+        var targets = CardDrillSlotTargets.Resolve(card);
+        Assert.True(targets.IsTarget("users"));
+        Assert.Equal("row", targets.SourceOf("users"));
+    }
 }
