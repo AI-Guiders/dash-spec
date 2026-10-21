@@ -1,4 +1,5 @@
 
+using DashSpec.Modeling.Parse.Layout;
 
 namespace DashSpec.Execution.Runtime;
 
@@ -66,7 +67,7 @@ public static class CardLocalFilterChromeCompactor
         }
 
         return row
-            .Select(token => LayoutBoardRowPlacer.ParseCell(token, context, 1))
-            .Sum(cell => cell.Weight);
+            .Select(token => LayoutBoardCellParser.parseCell(token, context, 1))
+            .Sum(cell => cell.Item2);
     }
 }

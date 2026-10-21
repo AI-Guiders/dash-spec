@@ -1,4 +1,6 @@
 
+using DashSpec.Modeling.Parse.Layout;
+
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>Toolbar grid placement from board or legacy flat filter list.</summary>
@@ -100,8 +102,8 @@ public static class ToolbarLayoutCompactor
             var visibleInRow = new List<string>();
             foreach (var token in row)
             {
-                var cell = LayoutBoardRowPlacer.ParseCell(token, "Toolbar", compactedRow + 1);
-                var filterName = FilterLayoutRefBridge.Resolve(cell.RefToken, filters, "Toolbar");
+                var (refToken, _) = LayoutBoardCellParser.parseCell(token, "Toolbar", compactedRow + 1);
+                var filterName = FilterLayoutRefBridge.Resolve(refToken, filters, "Toolbar");
                 if (visibleFilterNames.Contains(filterName))
                 {
                     visibleInRow.Add(filterName);

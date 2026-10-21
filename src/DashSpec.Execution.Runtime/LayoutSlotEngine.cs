@@ -62,7 +62,7 @@ public static class LayoutSlotEngine
                 case LayoutBoardEntry.CardRow cardRow:
                     foreach (var token in cardRow.Item)
                     {
-                        var refId = LayoutBoardCellFormat.RefToken(token);
+                        var refId = LayoutBoardCellParser.refToken(token);
                         if (plan.Nests.TryGetValue(refId, out var nest))
                         {
                             slots.Add(new LayoutSlotDescriptor(
