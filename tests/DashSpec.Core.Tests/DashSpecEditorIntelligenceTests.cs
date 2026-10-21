@@ -49,6 +49,61 @@ public sealed class DashSpecEditorIntelligenceTests
     }
 
     [Fact]
+    public void GetCompletions_diagram_ref_slot_form_completes_diagram_ids()
+    {
+        var index = new DashSpecWorkspaceIndex();
+        index.RegisterDiagram("lus_users_app_list", Path.Combine(Path.GetTempPath(), "app-list.ds"));
+
+        var text = """
+            module tab users
+            report
+              card app_users as "Apps"
+                diagram ref products lus_us
+              end card
+            end report
+            end tab
+            """;
+
+        // The living slot-ref form: `diagram ref <slot> <id prefix…>`.
+        var items = DashSpecEditorIntelligence.GetCompletions(
+            "users.ds",
+            text,
+            line: 4,
+            column: 44,
+            index);
+
+        Assert.Contains(items, item => item.Label.Equals("lus_users_app_list", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void GetCompletions_use_flow_completes_flow_ids()
+    {
+        var index = new DashSpecWorkspaceIndex();
+        index.RegisterUnit(new DashSpecUnitDeclaration("flow", "LicenseUsageReport", Path.Combine(Path.GetTempPath(), "lus-report.ds"), 1));
+
+        var text = """
+            module tab users
+            report
+              card app_users as "Apps"
+                connect
+                  use flow Lic
+                end connect
+              end card
+            end report
+            end tab
+            """;
+
+        var items = DashSpecEditorIntelligence.GetCompletions(
+            "users.ds",
+            text,
+            line: 5,
+            column: 31,
+            index);
+
+        Assert.Contains(items, item => item.Label.Equals("LicenseUsageReport", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void GetCompletions_keyword_prefix_filters_dashboard_tokens()
     {
         var text = "module dashboard demo\nend dashboard\n";

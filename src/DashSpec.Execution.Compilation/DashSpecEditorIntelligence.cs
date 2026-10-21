@@ -50,6 +50,11 @@ public static class DashSpecEditorIntelligence
                 workspaceIndex?.Presentations.Keys ?? [],
                 context.Value.Prefix,
                 "presentation"),
+            CompletionKind.Flow => BuildIdItems(
+                workspaceIndex?.Units.Where(u => u.Kind.Equals("flow", StringComparison.OrdinalIgnoreCase))
+                    .Select(u => u.Id) ?? [],
+                context.Value.Prefix,
+                "flow"),
             CompletionKind.Palette => BuildIdItems(
                 ListPaletteIds(GetSpecDirectory(filePath)),
                 context.Value.Prefix,
@@ -251,9 +256,24 @@ public static class DashSpecEditorIntelligence
     {
         var before = line[..Math.Clamp(character, 0, line.Length)];
 
-        if (TryMatchKeywordPrefix(before, "diagram", out var diagramPrefix))
+        // Living diagram form: `diagram <id>` and `diagram ref <slot> <id>`.
+        var diagramMatch = Regex.Match(
+            before,
+            @"\bdiagram\s+(?:ref\s+\w+\s+)?([\w.-]*)$",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (diagramMatch.Success)
         {
-            return (diagramPrefix, CompletionKind.Diagram);
+            return (diagramMatch.Groups[1].Value, CompletionKind.Diagram);
+        }
+
+        // `use flow <id>` → flow module ids.
+        var flowMatch = Regex.Match(
+            before,
+            @"\buse\s+flow\s+([\w.-]*)$",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (flowMatch.Success)
+        {
+            return (flowMatch.Groups[1].Value, CompletionKind.Flow);
         }
 
         if (TryMatchKeywordPrefix(before, "use", out var usePrefix) &&
@@ -378,6 +398,7 @@ public static class DashSpecEditorIntelligence
     {
         Diagram,
         Presentation,
+        Flow,
         Palette,
     }
 
