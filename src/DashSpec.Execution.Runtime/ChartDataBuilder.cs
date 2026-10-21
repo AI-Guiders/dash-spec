@@ -106,7 +106,9 @@ public sealed record GaugeReading(double Value, double Min, double Max, string? 
 public sealed record TablePayload(
     IReadOnlyList<string> Columns,
     IReadOnlyList<IReadOnlyList<string>> Rows,
-    IReadOnlyList<string>? HeaderTexts = null);
+    IReadOnlyList<string>? HeaderTexts = null,
+    IReadOnlyList<string?>? ColumnAlignments = null,
+    IReadOnlyList<string?>? HeaderAlignments = null);
 
 public sealed record MatrixPayload(
     IReadOnlyList<string> XLabels,

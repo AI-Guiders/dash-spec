@@ -167,9 +167,30 @@ else
 
     private string? _mountedPayloadKey;
     private string? _activeCategoryLabel;
+    private (int Yi, int Xi)? _activeCell;
     private const int TargetVisibleXLabels = 14;
 
     private string HostStyle => $"--matrix-max-height:{HeightPx}px";
+
+    private MatrixPayload? _lastSeenPayload;
+
+    protected override void OnParametersSet()
+    {
+        if (_lastSeenPayload is not null &&
+            !ReferenceEquals(_lastSeenPayload, Payload) &&
+            !SameAxes(_lastSeenPayload, Payload))
+        {
+            // Axes changed (filters/scope): the active markers point at stale positions.
+            _activeCell = null;
+            _activeCategoryLabel = null;
+        }
+
+        _lastSeenPayload = Payload;
+    }
+
+    private static bool SameAxes(MatrixPayload left, MatrixPayload right) =>
+        left.YLabels.SequenceEqual(right.YLabels) &&
+        left.XLabels.SequenceEqual(right.XLabels);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -206,6 +227,7 @@ else
             valueLabelsThreshold = ValueLabelsThresholdPx,
             showAxisLabelsX = ShowAxisLabelsX,
             showAxisLabelsY = ShowAxisLabelsY,
+            activeCell = _activeCell is { } active ? new { yi = active.Yi, xi = active.Xi } : (object?)null,
         };
 
         if (_mountedPayloadKey is not null &&
@@ -232,7 +254,9 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}:{ActiveCellKey()}";
+
+    private string ActiveCellKey() => _activeCell is { } cell ? $"{cell.Yi},{cell.Xi}" : "-";
 
     private int ComputeCellHash()
     {
@@ -263,6 +287,11 @@ else
         {
             return;
         }
+
+        // Active state: the clicked cell stays outlined until the next click
+        // (instant repaint; the slot refresh lands later, ADR-0066).
+        _activeCell = (hit.Yi, hit.Xi);
+        await InvokeAsync(StateHasChanged);
 
         var xBucket = Payload.XBucketStarts is { Count: > 0 } buckets && hit.Xi >= 0 && hit.Xi < buckets.Count
             ? buckets[hit.Xi]

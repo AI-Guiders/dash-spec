@@ -23,6 +23,17 @@ module TableDiagramParser =
             let formats = Dictionary<string, string>()
             let labels = Dictionary<string, string>()
             let sorting = ResizeArray<string>()
+            let alignments = Dictionary<string, string>()
+            let headerAlignments = Dictionary<string, string>()
+
+            let validateAlignment (raw: string) (column: string) =
+                match raw.Trim().ToLowerInvariant() with
+                | "left" | "center" | "right" | "justify" as ok -> ok
+                | other ->
+                    raise (
+                        DashSpecParseException(
+                            $"diagram columns table alignment for '{column}' must be left, center, right, or justify; got '{other}'.")
+                    )
 
             let cellsToColumn (m: Map<string, string>) =
                 match Construct.tryCell m "id" with
@@ -40,6 +51,14 @@ module TableDiagramParser =
                      | Some l -> labels.[id] <- l
                      | None -> ())
 
+                    (match Construct.tryCell m "alignment" with
+                     | Some a -> alignments.[id] <- validateAlignment a id
+                     | None -> ())
+
+                    (match Construct.tryCell m "header_alignment" with
+                     | Some a -> headerAlignments.[id] <- validateAlignment a id
+                     | None -> ())
+
                     (match Construct.tryCell m "sorting" with
                      | Some s ->
                          (match s.ToUpperInvariant() with
@@ -51,7 +70,7 @@ module TableDiagramParser =
 
             let declaration : Construct.Declaration<unit> =
                 { Name = "diagram columns"
-                  Vocabulary = [ "id"; "format"; "label"; "sorting" ]
+                  Vocabulary = [ "id"; "format"; "label"; "sorting"; "alignment"; "header_alignment" ]
                   CellsToRow = cellsToColumn
                   ConstructRow = ignore }
 
@@ -76,6 +95,12 @@ module TableDiagramParser =
                     raise (DashSpecParseException("diagram order_by is declared both as a flat property and as sorting in the columns table; pick one."))
 
                 values.["order_by"] <- String.Join(", ", sorting)
+
+            if alignments.Count > 0 then
+                values.["column_alignments"] <- BlockGrammar.serializeColumnFormatMap alignments
+
+            if headerAlignments.Count > 0 then
+                values.["column_header_alignments"] <- BlockGrammar.serializeColumnFormatMap headerAlignments
 
     let parse (reader: TokenReader) =
         let schema = DiagramKindRegistry.getProperties "table"

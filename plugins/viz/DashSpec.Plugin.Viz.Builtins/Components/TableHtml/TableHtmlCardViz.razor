@@ -18,11 +18,12 @@ else
                         var headerText = Context.Card.Table.HeaderTexts is { } texts && i < texts.Count
                             ? texts[i]
                             : column;
-                        <th>
+                        <th style="@HeaderAlignStyle(i)">
                             <div class="table-col-head">@headerText</div>
                             @if (ShowColumnFilters)
                             {
                                 <input type="search"
+                                       size="2"
                                        class="table-col-filter"
                                        placeholder="@FilterPlaceholder"
                                        aria-label="@ResolveFilterAria(headerText)"
@@ -37,9 +38,9 @@ else
                 @foreach (var row in FilteredRows)
                 {
                     <tr>
-                        @foreach (var cell in row)
+                        @for (var i = 0; i < row.Count; i++)
                         {
-                            <td>@cell</td>
+                            <td style="@CellAlignStyle(i)">@row[i]</td>
                         }
                     </tr>
                 }
@@ -88,6 +89,29 @@ else
     }
 
     private string WrapStyle => $"max-height: {Presentation.MaxHeightPx}px;";
+
+    // Spec-driven per-column text-align (`alignment`); the header follows its column
+    // unless `header_alignment` is set explicitly.
+    private string? CellAlign(int i)
+    {
+        var list = Context.Card.Table?.ColumnAlignments;
+        return list is not null && i < list.Count ? list[i] : null;
+    }
+
+    private string? HeaderAlign(int i)
+    {
+        var list = Context.Card.Table?.HeaderAlignments;
+        if (list is not null && i < list.Count && list[i] is { } header)
+        {
+            return header;
+        }
+
+        return CellAlign(i);
+    }
+
+    private string? CellAlignStyle(int i) => CellAlign(i) is { } a ? $"text-align: {a};" : null;
+
+    private string? HeaderAlignStyle(int i) => HeaderAlign(i) is { } a ? $"text-align: {a};" : null;
 
     private readonly Dictionary<string, string> _columnFilters = new(StringComparer.OrdinalIgnoreCase);
 

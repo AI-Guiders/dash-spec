@@ -25,6 +25,14 @@ window.dashSpecMatrix = {
     return t >= 0.45 ? "#0f172a" : "#f8fafc";
   },
 
+  accentColor() {
+    const css = typeof document !== "undefined" && document.documentElement
+      ? getComputedStyle(document.documentElement).getPropertyValue("--accent")
+      : "";
+    const value = (css || "").trim();
+    return value || "#60a5fa";
+  },
+
   measureLabelTextWidth(el) {
     if (!el) {
       return 0;
@@ -200,6 +208,21 @@ window.dashSpecMatrix = {
           ctx.fillText(String(Math.round(value)), x + cellW / 2, y + cellH / 2);
         }
       }
+    }
+
+    // Active cell (ADR-0107): outline the clicked cell until the next click.
+    const active = payload.activeCell;
+    if (
+      active &&
+      Number.isInteger(active.yi) && Number.isInteger(active.xi) &&
+      active.yi >= 0 && active.yi < yCount &&
+      active.xi >= 0 && active.xi < xCount
+    ) {
+      const ax = gapPx + active.xi * (cellW + gapPx);
+      const ay = gapPx + active.yi * (cellH + gapPx);
+      ctx.strokeStyle = this.accentColor();
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ax - 1, ay - 1, cellW + 2, cellH + 2);
     }
 
     return { cellW, cellH, width, height };
