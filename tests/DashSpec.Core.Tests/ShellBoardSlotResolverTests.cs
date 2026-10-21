@@ -39,11 +39,30 @@ public sealed class ShellBoardSlotResolverTests
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
-        Assert.Equal(4, slots.Count);
-        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 3), slots[0]);
-        Assert.Equal(new ViewerShellSlot("catalog", 1, 2, 1), slots[1]);
-        Assert.Equal(new ViewerShellSlot("nav", 1, 3, 2), slots[2]);
-        Assert.Equal(new ViewerShellSlot("content", 2, 1, 1), slots[3]);
+        // Row 1: weights 3/1/2 of 6 on 12 columns → spans 6/2/remainder 4.
+        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 6), Find(slots, "brand"));
+        Assert.Equal(new ViewerShellSlot("catalog", 1, 7, 2), Find(slots, "catalog"));
+        Assert.Equal(new ViewerShellSlot("nav", 1, 9, 4), Find(slots, "nav"));
+
+        // Row 2: single cell — the whole width.
+        Assert.Equal(new ViewerShellSlot("content", 2, 1, 12), Find(slots, "content"));
+    }
+
+    [Fact]
+    public void Equal_weight_row_shares_the_full_width()
+    {
+        // The LUS corpus row: six chrome slots, weight 1 each — the row fills
+        // the whole width (2 columns each), never a squeezed left slice.
+        var board = ParseBoard("[ brand catalog nav external_links help settings ]");
+
+        var slots = ShellBoardSlotResolver.Resolve(board);
+
+        var chromeRow = slots.Where(slot => slot.Row == 1).OrderBy(slot => slot.Col).ToList();
+        Assert.Equal(6, chromeRow.Count);
+        Assert.All(chromeRow, slot => Assert.Equal(2, slot.Span));
+        Assert.Equal(1, chromeRow[0].Col);
+        Assert.Equal(11, chromeRow[^1].Col);
+        Assert.Equal(12, chromeRow[^1].Col + chromeRow[^1].Span - 1);
     }
 
     [Fact]
@@ -58,6 +77,9 @@ public sealed class ShellBoardSlotResolverTests
         Assert.Equal(1, content.Col);
         Assert.Equal(ShellBoardSlotResolver.GridColumns, content.Span);
     }
+
+    static ViewerShellSlot Find(IReadOnlyList<ViewerShellSlot> slots, string slotId) =>
+        Assert.Single(slots, slot => slot.SlotId == slotId);
 
     [Fact]
     public void Unknown_slot_fails_loud_with_token_and_row()
@@ -106,8 +128,8 @@ public sealed class ShellBoardSlotResolverTests
 
         var slots = ShellBoardSlotResolver.Resolve(board);
         Assert.Equal(3, slots.Count);
-        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 1), slots[0]);
-        Assert.Equal(new ViewerShellSlot("nav", 1, 2, 1), slots[1]);
-        Assert.Equal(new ViewerShellSlot("content", 2, 1, 1), slots[2]);
+        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 6), Find(slots, "brand"));
+        Assert.Equal(new ViewerShellSlot("nav", 1, 7, 6), Find(slots, "nav"));
+        Assert.Equal(new ViewerShellSlot("content", 2, 1, 12), Find(slots, "content"));
     }
 }
