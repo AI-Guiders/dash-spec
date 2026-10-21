@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0111**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0112**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -115,3 +115,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0108](DASHSPEC-ADR-0108-eventsource-handler.md) | EventSource + Handler — the interaction subsystem | Accepted (direction) |
 | [0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) | SSOT проводки фильтров клика | Accepted |
 | [0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) | Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты | Accepted |
+| [0111](DASHSPEC-ADR-0111-visual-model-visual-compositor.md) | VisualModel и VisualCompositor — одна картина UI, Host = проекция | Accepted |
