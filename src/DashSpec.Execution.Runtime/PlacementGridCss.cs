@@ -5,8 +5,12 @@ namespace DashSpec.Execution.Runtime;
 
 public static class PlacementGridCss
 {
+    /// <summary>
+    /// Grid CSS variables for host/toolbar grids ([ADR-0111] §7: the gap is fluid in CSS —
+    /// <c>clamp()</c> — not a fixed pixel here; only the column count is structural).
+    /// </summary>
     public static string HostGridVariables(LayoutDefinition layout) =>
-        $"--grid-columns:{layout.Columns};--grid-gap:{layout.GapPx}px;";
+        $"--grid-columns:{layout.Columns};";
 
     public static string InteriorGridVariables(int columns) =>
         $"--card-grid-columns:{columns};";

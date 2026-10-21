@@ -382,6 +382,12 @@ module DocumentWiringGraphBuilder =
         for card in document.Cards do
             addNode nodes card.Id WiringNodeKind.Card (Some $"card:{card.Id}")
 
+        // Shell chrome nodes ([ADR-0111] P2: the shell is another grid — its slots are Chrome
+        // nodes so plane slots correspond to graph nodes; no wiring edges, pure composition).
+        let shellSlotIds = [ "brand"; "nav"; "catalog"; "external_links"; "help"; "settings"; "spec_dev"; "content" ]
+        for slotId in shellSlotIds do
+            addNode nodes $"shell.{slotId}" WiringNodeKind.Chrome (Some "shell")
+
         // Structural nodes ([ADR-0111]): nests/groups are document entities — the graph covers
         // them so assembled-plane slots correspond to nodes (the same graph, the same ids).
         let lowerLayoutStructuralNodes (board: LayoutBoardDefinition) (scope: string option) =

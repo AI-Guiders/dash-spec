@@ -26,12 +26,19 @@ module CatalogParser =
             if String.IsNullOrWhiteSpace tabId then
                 raise (DashSpecParseException($"Catalog entry '{id}': tab requires an id."))
             initialTab <- Some tabId
+        let mutable initialPage: string option = None
+        if reader.TryKeyword "page" then
+            let pageId = reader.ReadIdent()
+            if String.IsNullOrWhiteSpace pageId then
+                raise (DashSpecParseException($"Catalog entry '{id}': page requires an id."))
+            initialPage <- Some pageId
         reader.SkipNewlines()
         { Id = id
           Title = title
           DashspecPath = dashspecPath
           GroupId = groupId
-          InitialTabId = initialTab }
+          InitialTabId = initialTab
+          InitialPageId = initialPage }
 
     let private parseGroup (reader: TokenReader) (entries: ResizeArray<CatalogEntryDefinition>) (groups: ResizeArray<CatalogGroupDefinition>) =
         let groupId = reader.ReadIdent()
