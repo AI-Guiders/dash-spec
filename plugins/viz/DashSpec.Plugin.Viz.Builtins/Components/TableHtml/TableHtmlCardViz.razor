@@ -48,7 +48,10 @@ else
                 @for (var ri = 0; ri < FilteredRows.Count; ri++)
                 {
                     var row = FilteredRows[ri];
-                    <tr @onclick="() => HandleRowClickAsync(ri)">
+                    var rowValue = row.Count > 0 ? row[0] ?? string.Empty : string.Empty;
+                    var activeRow = RowClickEnabled && string.Equals(rowValue, _activeRowValue, StringComparison.Ordinal);
+                    <tr class="@(activeRow ? "table-row--active" : null)"
+                        @onclick="() => HandleRowClickAsync(rowValue)">
                         @for (var i = 0; i < row.Count; i++)
                         {
                             <td style="@CellAlignStyle(i)">@row[i]</td>
@@ -196,18 +199,26 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>Body row click (ADR-0107): the first column's value rides YLabel, source is "row".</summary>
-    private async Task HandleRowClickAsync(int rowIndex)
+    /// <summary>
+    /// Body row click (ADR-0107): the first column's value rides YLabel, source is "row".
+    /// Value-based (not index-based): a re-render may change the visible rows between the
+    /// click and the handler — a captured index would go stale, a captured value cannot.
+    /// </summary>
+    private async Task HandleRowClickAsync(string value)
     {
         if (!RowClickEnabled || !Context.OnHeatmapCategoryItemSelected.HasDelegate)
         {
             return;
         }
 
-        var row = FilteredRows[rowIndex];
-        var value = row.Count > 0 ? row[0] ?? string.Empty : string.Empty;
+        // Active row (standard row-click feedback, like the heatmap cell outline):
+        // instant highlight; the slot refresh lands later. Value-based, so a data
+        // change simply stops matching the stale value — no explicit reset needed.
+        _activeRowValue = value;
+        await InvokeAsync(StateHasChanged);
+
         var context = new HeatmapCellContext(
-            rowIndex,
+            -1,
             -1,
             string.Empty,
             value,
@@ -218,6 +229,8 @@ else
 
         await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
     }
+
+    private string? _activeRowValue;
 
     private bool MatchesFilters(IReadOnlyList<string> row)
     {
