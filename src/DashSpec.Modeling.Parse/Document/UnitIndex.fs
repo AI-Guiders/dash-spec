@@ -45,17 +45,24 @@ module UnitIndex =
             []
 
     /// Project membership when the project declares files, its source roots otherwise, the spec directory as fallback.
-    let private candidateFiles (specDirectory: string) =
-        let projectFiles =
-            match DashSpecProjectLocator.tryFindConfig (Some specDirectory) with
-            | Some cfg when cfg.Files.Count > 0 -> DashSpecProjectMembership.expand cfg |> List.ofSeq
-            | Some cfg ->
-                cfg.SourceRoots
-                |> Seq.collect (fun root -> enumerateUnitFiles (Path.GetFullPath(Path.Combine(cfg.ProjectRoot, root))))
-                |> Seq.toList
-            | None -> enumerateUnitFiles (Path.GetFullPath specDirectory)
+    let private projectFiles (specDirectory: string) =
+        match DashSpecProjectLocator.tryFindConfig (Some specDirectory) with
+        | Some cfg when cfg.Files.Count > 0 -> DashSpecProjectMembership.expand cfg |> List.ofSeq
+        | Some cfg ->
+            cfg.SourceRoots
+            |> Seq.collect (fun root -> enumerateUnitFiles (Path.GetFullPath(Path.Combine(cfg.ProjectRoot, root))))
+            |> Seq.toList
+        | None -> enumerateUnitFiles (Path.GetFullPath specDirectory)
 
-        projectFiles @ enumerateUnitFiles (UnitSource.stdlibRoot ())
+    let private candidateFiles (specDirectory: string) =
+        projectFiles specDirectory @ enumerateUnitFiles (UnitSource.stdlibRoot ())
+
+    /// Corpus member files — dsproj membership when declared, its source roots
+    /// otherwise, the spec directory scan as fallback. No stdlib: the assembled
+    /// corpus stamps its own members (the stdlib is product-shipped static content;
+    /// a changed stdlib rides a product restart, not a mid-process mtime).
+    let corpusFiles (specDirectory: string) : string[] =
+        projectFiles specDirectory |> List.toArray
 
     let private readEntry (path: string) =
         try
