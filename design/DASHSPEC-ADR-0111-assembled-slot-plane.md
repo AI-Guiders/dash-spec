@@ -40,11 +40,16 @@ type Slot =
       Provenance: PlacementProvenance }     // объявлено | умолчание записано ([ADR-0109])
 
 [<CLIMutable>]
+type BoardRoute =
+    { TabId: string
+      PageId: string option }                 // None — вкладка без страниц
+
+[<CLIMutable>]
 type SlotPlane =
-    { TabBoards: IReadOnlyDictionary<string, IReadOnlyList<Slot>>         // ключ — TabId
-      PageToolbars: IReadOnlyDictionary<string, IReadOnlyList<Slot>>       // ключ — PageId
-      CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<Slot>>     // ключ — CardId
-      CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<Slot>>   // ключ — CardId
+    { Boards: IReadOnlyDictionary<BoardRoute, IReadOnlyList<Slot>>        // эффективная доска на маршрут
+      PageToolbars: IReadOnlyDictionary<string, IReadOnlyList<Slot>>      // ключ — PageId
+      CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<Slot>>   // ключ — CardId
+      CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<Slot>> // ключ — CardId
       InitialRoute: VisualRoute }                                           // записанное умолчание
 
 [<CLIMutable>]
@@ -59,6 +64,7 @@ type PlacementProvenance =
     | RecordedDefault     // сборка подставила умолчание и ЗАПИСАЛА его ([ADR-0109])
 ```
 
+- **Доска — на маршрут (вкладка, страница)**: страницы владеют досками (page-board перекрывает tab-board) и фильтруют карточки (`ResolveContext`: карточки по `PageId`) — плоскость предвычисляет **эффективную доску на каждый маршрут** (все вкладки × их страницы + безстраничные вкладки), хост — один lookup по активному маршруту, без веток.
 - **Жилец — узел графа документа, по соответствию**: скомпилированная штука ↔ её визуальная запись — та же связь, по которой к документу добавляли вещи при компиляции (`ResolvedModuleDiagrams`, wiring-граф [ADR-0091]), только теперь визуальный слой. Узел кладётся в слот как есть — ничего не «резолвится»: всё уже отпарсено и скомпилировано. Ни одной строки-идентичности, ни одной копии объекта: сущности — у документа, их рендер получает как сегодня; плоскость — **структура**, а не контейнер сущностей.
 - **Диспетчеризация рендера** — по `(Scope, Node.Kind)` (кейс из узла): реестры [ADR-0072] адаптируются при переключении потребителей (P1).
 - **Вложенность — существующая**: две сетки (host → card) + nest/group; слот карточки на доске вкладки и `CardInteriors[cardId]` — ключом `CardId`; placement — метка на слоте, как `Grid.Row`.
