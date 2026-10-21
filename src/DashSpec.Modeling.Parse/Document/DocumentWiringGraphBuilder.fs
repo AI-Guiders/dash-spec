@@ -382,6 +382,28 @@ module DocumentWiringGraphBuilder =
         for card in document.Cards do
             addNode nodes card.Id WiringNodeKind.Card (Some $"card:{card.Id}")
 
+        // Structural nodes ([ADR-0111]): nests/groups are document entities — the graph covers
+        // them so assembled-plane slots correspond to nodes (the same graph, the same ids).
+        let lowerLayoutStructuralNodes (board: LayoutBoardDefinition) (scope: string option) =
+            for entry in board.Entries do
+                match entry with
+                | LayoutBoardEntry.NestRow nest -> addNode nodes nest.Id WiringNodeKind.Nest scope
+                | LayoutBoardEntry.GroupRow group -> addNode nodes group.Id WiringNodeKind.Group scope
+                | _ -> ()
+
+        for tab in document.Tabs do
+            match tab.LayoutBoard with
+            | Some board -> lowerLayoutStructuralNodes board (Some $"tab:{tab.Id}")
+            | None -> ()
+
+        match document.Pages with
+        | None -> ()
+        | Some pages ->
+            for page in pages do
+                match page.LayoutBoard with
+                | Some board -> lowerLayoutStructuralNodes board (Some $"page:{page.Id}")
+                | None -> ()
+
         lowerDashboardToolbar nodes edges document.Filters document.DashboardFilters
         lowerModuleDashflow nodes edges document.Dashflow
 

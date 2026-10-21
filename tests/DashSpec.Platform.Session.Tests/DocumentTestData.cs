@@ -17,8 +17,9 @@ internal static class DocumentTestData
         IReadOnlyList<FilterDefinition> filters,
         IReadOnlyList<string> dashboardFilters,
         IReadOnlyList<TabDefinition> tabs,
-        IReadOnlyList<CardDefinition> cards) =>
-        new()
+        IReadOnlyList<CardDefinition> cards)
+    {
+        var document = new DashboardDocument
         {
             Id = id,
             Title = title,
@@ -49,6 +50,12 @@ internal static class DocumentTestData
             ReportScopeFlow = FSharpOption<DashSpec.Modeling.Parse.Document.ScopeFlowDefinition>.None,
             WiringGraph = DashSpec.Modeling.Core.WiringGraphModule.empty,
         };
+
+        // The correspondence source ([ADR-0111]): the document carries its real wiring graph,
+        // exactly like the compile pipeline builds it — not an empty one.
+        document.WiringGraph = DashSpec.Modeling.Parse.Document.DocumentWiringGraphBuilder.build(document);
+        return document;
+    }
 
     private static FSharpOption<T> ToOption<T>(T? value) where T : class =>
         value is null ? FSharpOption<T>.None : FSharpOption<T>.Some(value);

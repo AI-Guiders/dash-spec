@@ -113,7 +113,24 @@ public sealed class HeadlessReportSessionContractTests
                 InteriorBoard = Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None,
                 DiagramSlotRef = Microsoft.FSharp.Core.FSharpOption<string>.None,
                 DiagramSlots = new Dictionary<string, CardDiagramSlotDefinition>(),
+                // A realistic card wires its diagram slot: one data flow link to the implicit
+                // slot — the real parse always produces it (the correspondence needs the node).
+                InteriorFlow = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Card.CardInteriorFlowDefinition>.Some(
+                    new DashSpec.Modeling.Parse.Card.CardInteriorFlowDefinition(
+                        new DashSpec.Modeling.Parse.DataFlow.FlowGraphSections(
+                            new Dictionary<DashSpec.Modeling.Core.FlowGraphKind, IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.FlowLinkDef>>
+                            {
+                                [DashSpec.Modeling.Core.FlowGraphKind.Data] =
+                                [
+                                    new DashSpec.Modeling.Parse.DataFlow.FlowLinkDef(
+                                        "kpi_src",
+                                        Microsoft.FSharp.Core.FSharpOption<string>.Some("rows"),
+                                        "__diagram__",
+                                        Microsoft.FSharp.Core.FSharpOption<string>.Some("rows")),
+                                ],
+                            }))),
                 ClickBehaviour = Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Card.CardClickBehaviour>.None,
+                ClickHandlers = [],
                 ExtensionBlocks = [],
                 LocalFiltersManualApply = false,
                 LocalFiltersApplySplitIndex = Microsoft.FSharp.Core.FSharpOption<int>.None,
@@ -128,7 +145,6 @@ public sealed class HeadlessReportSessionContractTests
                 Tooltip = Microsoft.FSharp.Core.FSharpOption<TooltipDefinition>.None,
                 FlowInput = Microsoft.FSharp.Core.FSharpOption<CardFlowInputDefinition>.None,
                 CardInputs = new Dictionary<string, CardFlowInputDefinition>(),
-                InteriorFlow = Microsoft.FSharp.Core.FSharpOption<CardInteriorFlowDefinition>.None,
             };
             var doc = DocumentTestData.Create(
                 "demo",

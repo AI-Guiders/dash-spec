@@ -3,6 +3,7 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Resolution;
 using DashSpec.Execution.Runtime.Platform;
+using DashSpec.Modeling.Parse.Layout;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 using DashSpec.Compiler.Contract;
@@ -47,6 +48,12 @@ public sealed class ReportSpecBootstrap(
             environment.DefaultSpecDirectory,
             document);
         _ = SpecResolver.Resolve(document, library);
+
+        // Assembled slot plane ([ADR-0111]): every visual slice precomputed once per document
+        // revision — the render reads it and places. Correspondence failures are loud ([ADR-0109]):
+        // a slot whose occupant has no document-graph node fails the load with the exact node id.
+        var slotPlane = SlotPlaneBuilder.Build(document, library);
+
         var connector = connectorResolver.Resolve(configPath, document.ConnectorId?.Value);
         var filterIndex = DashboardBootstrap.IndexFilters(document);
         var filters = DashboardBootstrap.CreateInitialFilters(document, DateOnly.FromDateTime(DateTime.UtcNow));
@@ -65,7 +72,8 @@ public sealed class ReportSpecBootstrap(
             fieldOptions,
             sourceLabel,
             specDirectory,
-            configPath);
+            configPath,
+            slotPlane);
     }
 
     public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(

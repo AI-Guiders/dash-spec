@@ -13,6 +13,8 @@ type WiringNodeKind =
     | Card
     | Phase
     | Page
+    | Nest
+    | Group
 
 [<RequireQualifiedAccess>]
 type WiringEdgeKind =

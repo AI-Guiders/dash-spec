@@ -1,4 +1,6 @@
 
+using DashSpec.Modeling.Parse.Layout;
+
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>One cell in a layout slot plane: token, placement, scope, and content kind.</summary>
