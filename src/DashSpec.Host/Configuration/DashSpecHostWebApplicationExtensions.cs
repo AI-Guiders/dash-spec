@@ -36,6 +36,7 @@ public static class DashSpecHostWebApplicationExtensions
         app.MapDashSpecBlazorViewer<App>(
             typeof(SurfaceAssemblyMarker).Assembly,
             typeof(VizBuiltinsPluginCatalog).Assembly,
+            typeof(DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin).Assembly,
             typeof(FilterBuiltinsPluginCatalog).Assembly);
 
         app.MapDevEndpoints();

@@ -33,6 +33,10 @@ public static class ViewerPluginBootstrap
             Register(vizPlugin);
         }
 
+        // Radzen visual layer pilot ([ADR-0111]): registered alongside the builtin viz plugins —
+        // the bundle id (viz_radzen) activates it, diagrams pick it via render = "radzen".
+        Register(new DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin());
+
         foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
         {
             Register(filterPlugin);
