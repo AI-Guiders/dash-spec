@@ -13,6 +13,21 @@ open DashSpec.Modeling.Parse.Tooltip
 
 module rec DashboardComposer =
 
+    /// SSOT (ADR-0109): tabs may declare the same filter (same kind + same bound
+    /// column) — one filter, not a conflict. Display chrome (widget/ref) stays the
+    /// first declaration's; conflicting binds (different kind or column) still raise.
+    let private filterDeclarationEquivalent (left: FilterDefinition) (right: FilterDefinition) =
+        let resolvedColumn (filter: FilterDefinition) =
+            match filter.ColumnReference with
+            | Some column when not (String.IsNullOrWhiteSpace column) ->
+                let raw = column.Trim()
+                let idx = raw.LastIndexOf('.')
+                if idx >= 0 && idx < raw.Length - 1 then raw.Substring(idx + 1) else raw
+            | _ -> filter.Name
+
+        left.Kind = right.Kind
+        && String.Equals(resolvedColumn left, resolvedColumn right, StringComparison.OrdinalIgnoreCase)
+
     let private isTabBlockRoot (text: string) =
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
@@ -117,10 +132,11 @@ module rec DashboardComposer =
                 timePolicy <- ReportTimePolicyParser.mergePolicyOptions timePolicy tabModule.TimePolicy
 
                 for filter in tabModule.Filters do
-                    if filters |> Seq.exists (fun f -> String.Equals(f.Name, filter.Name, StringComparison.OrdinalIgnoreCase)) then
+                    match filters |> Seq.tryFind (fun f -> String.Equals(f.Name, filter.Name, StringComparison.OrdinalIgnoreCase)) with
+                    | Some existing when filterDeclarationEquivalent existing filter -> ()
+                    | Some existing ->
                         raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares filter '{filter.Name}' already on parent dashboard."))
-
-                    filters.Add filter
+                    | None -> filters.Add filter
 
                 for card in tabModule.Cards do
                     if cards |> Seq.exists (fun c -> String.Equals(c.Id, card.Id, StringComparison.OrdinalIgnoreCase)) then
