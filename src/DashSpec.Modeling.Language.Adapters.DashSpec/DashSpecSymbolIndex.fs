@@ -125,6 +125,16 @@ module DashSpecSymbolIndex =
                         | None -> ()
                     | _ -> ()
                 | None -> ()
+            | _ when isIdentToken token && identEquals token.Value "module" ->
+                // Living header form: `module <kind> <id>` (tab / dashboard / diagram /
+                // flow / presentation / layout / types / palette …).
+                match tryReadIdent tokens (i + 1) with
+                | Some(kindTok, next) ->
+                    match tryReadIdent tokens next with
+                    | Some(idTok, _) ->
+                        addDefinition defs path lineStarts (kindTok.Value.ToLowerInvariant()) idTok.Value idTok
+                    | None -> ()
+                | None -> ()
             | _ when isIdentToken token && identEquals token.Value "card" && not (isEndKeyword tokens i "card") ->
                 match tryReadIdent tokens (i + 1) with
                 | Some(idTok, _) when idTok.Kind = TokenKind.Ident ->

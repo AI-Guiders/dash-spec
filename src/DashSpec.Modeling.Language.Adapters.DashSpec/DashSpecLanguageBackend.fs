@@ -26,6 +26,12 @@ type DashSpecLanguageBackend() =
         else
             ""
 
+    static let workspaceIndex (req: LanguageRequest) =
+        DashSpecEditorIntelligence.ResolveWorkspaceIndex(
+            (if String.IsNullOrWhiteSpace req.SolutionOrProjectPath then null else req.SolutionOrProjectPath),
+            req.FilePath
+        )
+
     static let specDirectory (req: LanguageRequest) =
         let dir = Path.GetDirectoryName req.FilePath
 
@@ -72,6 +78,31 @@ type DashSpecLanguageBackend() =
           Container = container
           Children = [||] }
 
+    /// Token-level outline for non-dashboard unit files (diagram / flow / presentation / …):
+    /// block-level definitions from the shared token index, grouped by kind.
+    static let tokenOutline (path: string) (text: string) =
+        let defs = DashSpecSymbolIndex.collectDefinitions path text
+
+        let children =
+            defs
+            |> Seq.distinctBy (fun d -> $"""{d.Kind}:{d.Name}""")
+            |> Seq.groupBy (fun d -> d.Kind)
+            |> Seq.collect (fun (kind, group) ->
+                group
+                |> Seq.map (fun d ->
+                    { Name = d.Name
+                      Kind = kind
+                      Span = d.Span
+                      Container = ""
+                      Children = [||] }))
+            |> Array.ofSeq
+
+        { Name = Path.GetFileName path
+          Kind = "file"
+          Span = toSpan path 1 1 1 1
+          Container = ""
+          Children = children }
+
     do ensureRegistered ()
 
     interface ILanguageBackend with
@@ -110,7 +141,7 @@ type DashSpecLanguageBackend() =
                 let diags = DashSpecDiagnosticService.ValidateText(text, path, specDir)
 
                 if diags.Count > 0 then
-                    Task.FromResult { Root = fileRoot path }
+                    Task.FromResult { Root = tokenOutline path text }
                 elif String.Equals(Path.GetExtension path, ".ds", StringComparison.OrdinalIgnoreCase) then
                     try
                         let doc =
@@ -149,39 +180,91 @@ type DashSpecLanguageBackend() =
                                   Container = ""
                                   Children = [| dashboardChild |] } }
                     with _ ->
-                        Task.FromResult { Root = fileRoot path }
+                        Task.FromResult { Root = tokenOutline path text }
                 else
-                    Task.FromResult { Root = fileRoot path }
+                    // Diagram / flow / presentation / … module files: token-level outline
+                    // (module header + block-level definitions) — DashboardComposer is dashboard-only.
+                    Task.FromResult { Root = tokenOutline path text }
 
         member _.GoToDefinitionAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<LanguageNavigation>(ct)
-            elif not (isDashSpecPath req.FilePath)
-                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
+            elif not (isDashSpecPath req.FilePath) then
                 Task.FromResult(emptyNavigation ())
             else
                 let path = req.FilePath
                 let text = readSource req
 
-                match DashSpecSymbolIndex.goToDefinition path text req.Line req.Column with
-                | None -> Task.FromResult(emptyNavigation ())
-                | Some definition ->
-                    Task.FromResult
-                        { Definition = definition
-                          Declarations = [| definition |] }
+                // Workspace-first (ADR-0101 agent authoring): `diagram ref <slot> <id>`,
+                // `use flow <id>`, `import <kind> from <Ns>` resolve across the corpus
+                // to the declaring module file; single-file token index as fallback.
+                // F# view of the C# `DefinitionTarget?`: null-checked, not Option.
+                let workspaceTarget =
+                    match
+                        DashSpecEditorIntelligence.TryGetDefinition(
+                            path,
+                            text,
+                            req.Line,
+                            req.Column,
+                            workspaceIndex req
+                        )
+                    with
+                    | null -> None
+                    | t when File.Exists t.FilePath -> Some t
+                    | _ -> None
+
+                match workspaceTarget with
+                | Some target ->
+                    let span =
+                        toSpan target.FilePath target.Line target.Column target.Line target.Column
+
+                    Task.FromResult { Definition = span; Declarations = [| span |] }
+                | _ ->
+                    match DashSpecSymbolIndex.goToDefinition path text req.Line req.Column with
+                    | None -> Task.FromResult(emptyNavigation ())
+                    | Some definition ->
+                        Task.FromResult
+                            { Definition = definition
+                              Declarations = [| definition |] }
 
         member _.FindUsagesAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<FindUsagesResult>(ct)
-            elif not (isDashSpecPath req.FilePath)
-                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
+            elif not (isDashSpecPath req.FilePath) then
                 Task.FromResult { References = [||] }
             else
                 let path = req.FilePath
                 let text = readSource req
-                let references = DashSpecSymbolIndex.findReferences path text req.Line req.Column
 
-                Task.FromResult { References = references }
+                // Workspace-first: a module id (diagram / flow / presentation / …)
+                // finds its isolated-word usages across the corpus; single-file
+                // token references as fallback (cards / filters / tabs stay local).
+                match DashSpecSymbolIndex.resolveSymbolAt path text req.Line req.Column with
+                | Some symbol ->
+                    let index = workspaceIndex req
+                    let usages = DashSpecEditorIntelligence.FindWorkspaceUsages(symbol.Name, index)
+
+                    if usages.Count > 0 then
+                        let kind =
+                            match index.UnitsById.TryGetValue symbol.Name with
+                            | true, unit -> $"module {unit.Kind}"
+                            | false, _ -> symbol.Kind
+
+                        let references =
+                            usages
+                            |> Seq.map (fun u ->
+                                { Span = toSpan u.Path u.Line u.Column u.EndLine u.EndColumn
+                                  Target = toSpan path symbol.Span.Line symbol.Span.Column symbol.Span.Line symbol.Span.Column
+                                  Kind = kind })
+                            |> Array.ofSeq
+
+                        Task.FromResult { References = references }
+                    else
+                        let references = DashSpecSymbolIndex.findReferences path text req.Line req.Column
+                        Task.FromResult { References = references }
+                | None ->
+                    let references = DashSpecSymbolIndex.findReferences path text req.Line req.Column
+                    Task.FromResult { References = references }
 
         member _.GetCompletionsAsync(req, ct) =
             if ct.IsCancellationRequested then
@@ -211,8 +294,7 @@ type DashSpecLanguageBackend() =
         member _.GetSymbolAtPositionAsync(req, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<SymbolAtPositionResult>(ct)
-            elif not (isDashSpecPath req.FilePath)
-                 || not (String.Equals(Path.GetExtension req.FilePath, ".dashspec", StringComparison.OrdinalIgnoreCase)) then
+            elif not (isDashSpecPath req.FilePath) then
                 Task.FromResult(Unchecked.defaultof<SymbolAtPositionResult>)
             else
                 let path = req.FilePath
@@ -230,14 +312,7 @@ type DashSpecLanguageBackend() =
         member _.RenameSymbolAsync(renameReq, ct) =
             if ct.IsCancellationRequested then
                 Task.FromCanceled<RenameSymbolResult>(ct)
-            elif not (isDashSpecPath renameReq.Request.FilePath)
-                 || not (
-                     String.Equals(
-                         Path.GetExtension renameReq.Request.FilePath,
-                         ".dashspec",
-                         StringComparison.OrdinalIgnoreCase
-                     )
-                 ) then
+            elif not (isDashSpecPath renameReq.Request.FilePath) then
                 Task.FromResult
                     { OldName = ""
                       NewName = renameReq.NewName
