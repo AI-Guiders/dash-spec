@@ -6,9 +6,9 @@ open Xunit
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module ReportScopeWiringGraphTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     [<Fact>]
     let ``parse exposes wiring graph with report scope flow and card interior links`` () =

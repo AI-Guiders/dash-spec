@@ -6,9 +6,9 @@ open Xunit
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module TabEmbeddedDashboardMergeTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     let private flowText =
         """

@@ -5,9 +5,9 @@ open System.IO
 open Xunit
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module ReportScopeDataFlowTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     [<Fact>]
     let ``report data flow wires module node to card slot`` () =
