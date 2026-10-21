@@ -95,19 +95,91 @@ public static class DashSpecEditorIntelligence
         }
 
         var kind = GetDefinitionKind(currentLine, word);
-        var targetPath = kind switch
+        var target = kind switch
         {
-            DefinitionKind.Diagram when workspaceIndex?.Diagrams.TryGetValue(word, out var diagramPath) == true
-                => diagramPath,
-            DefinitionKind.Presentation when workspaceIndex?.Presentations.TryGetValue(word, out var presentationPath) == true
-                => presentationPath,
-            _ => null,
+            DefinitionKind.Diagram when workspaceIndex?.UnitsById.TryGetValue(word, out var diagram) == true
+                => (diagram.Path, diagram.Line),
+            DefinitionKind.Presentation when workspaceIndex?.UnitsById.TryGetValue(word, out var presentation) == true
+                => (presentation.Path, presentation.Line),
+            DefinitionKind.Flow when workspaceIndex?.UnitsById.TryGetValue(word, out var flow) == true
+                => (flow.Path, flow.Line),
+            DefinitionKind.Namespace when workspaceIndex?.UnitsByNamespace.TryGetValue(word, out var units) == true
+                && units.Count > 0
+                => (units[0].Path, units[0].Line),
+            _ => ((string?)null, 0),
         };
 
-        return string.IsNullOrWhiteSpace(targetPath) || !File.Exists(targetPath)
+        return string.IsNullOrWhiteSpace(target.Item1) || !File.Exists(target.Item1)
             ? null
-            : new DefinitionTarget(targetPath, 1, 1);
+            : new DefinitionTarget(target.Item1, target.Item2, 1);
     }
+
+    /// <summary>
+    /// Cross-file find-usages for a workspace unit id (diagram / flow / presentation / …):
+    /// isolated-word occurrences across the corpus `.ds` files, target = the module declaration.
+    /// </summary>
+    public static IReadOnlyList<WorkspaceUsage> FindWorkspaceUsages(
+        string symbolName,
+        DashSpecWorkspaceIndex? workspaceIndex)
+    {
+        if (string.IsNullOrWhiteSpace(symbolName) || workspaceIndex is null)
+        {
+            return [];
+        }
+
+        if (!workspaceIndex.UnitsById.TryGetValue(symbolName, out var unit))
+        {
+            return [];
+        }
+
+        var wordRegex = new Regex(
+            $@"(?<![A-Za-z0-9_]){Regex.Escape(symbolName)}(?![A-Za-z0-9_])",
+            RegexOptions.None);
+        var usages = new List<WorkspaceUsage>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in workspaceIndex.Units.Select(u => u.Path)
+                     .Concat(workspaceIndex.UnitsByNamespace.Values.SelectMany(v => v.Select(u => u.Path)))
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            string text;
+            try
+            {
+                text = File.ReadAllText(path);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var lines = text.Split('\n');
+            for (var i = 0; i < lines.Length; i++)
+            {
+                foreach (Match match in wordRegex.Matches(lines[i].TrimEnd('\r')))
+                {
+                    var key = $"{path}:{i + 1}:{match.Index + 1}";
+                    if (seen.Add(key))
+                    {
+                        usages.Add(new WorkspaceUsage(
+                            path,
+                            i + 1,
+                            match.Index + 1,
+                            i + 1,
+                            match.Index + 1 + match.Length));
+                    }
+                }
+            }
+        }
+
+        return usages;
+    }
+
+    public sealed record WorkspaceUsage(string Path, int Line, int Column, int EndLine, int EndColumn);
 
     public static DashSpecWorkspaceIndex ResolveWorkspaceIndex(string? projectRoot, string filePath)
     {
@@ -212,7 +284,12 @@ public static class DashSpecEditorIntelligence
             return null;
         }
 
-        if (RegexIsolatedWord(line, "diagram", word))
+        // `diagram <id>` / `diagram ref <slot> <id>` — the id is the diagram module id
+        // (anywhere later on the line, after the optional slot ref).
+        if (Regex.IsMatch(
+                line,
+                $@"\bdiagram\b.*\b{Regex.Escape(word)}\b",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             return DefinitionKind.Diagram;
         }
@@ -222,6 +299,22 @@ public static class DashSpecEditorIntelligence
              line.Contains("presentation", StringComparison.OrdinalIgnoreCase)))
         {
             return DefinitionKind.Presentation;
+        }
+
+        // `use flow <id>` → the flow module (`module flow <id>`).
+        if (RegexIsolatedWord(line, "flow", word) ||
+            RegexIsolatedWord(line, "flows", word))
+        {
+            return DefinitionKind.Flow;
+        }
+
+        // `import <kind> from <Namespace>` → the unit file declaring `namespace <Namespace>`.
+        if (Regex.IsMatch(
+                line,
+                $@"\bimport\s+\w+\s+from\s+{Regex.Escape(word)}\b",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            return DefinitionKind.Namespace;
         }
 
         return null;
@@ -292,5 +385,7 @@ public static class DashSpecEditorIntelligence
     {
         Diagram,
         Presentation,
+        Flow,
+        Namespace,
     }
 }

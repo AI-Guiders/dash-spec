@@ -4,7 +4,28 @@ using Xunit;
 namespace DashSpec.Core.Tests;
 
 public sealed class DashSpecEditorIntelligenceTests
+    : IDisposable
 {
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "dashspec-lrc-" + Guid.NewGuid().ToString("N"));
+
+    public DashSpecEditorIntelligenceTests()
+    {
+        Directory.CreateDirectory(_dir);
+    }
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_dir, recursive: true); } catch { }
+    }
+
+    private string Write(string name, string text)
+    {
+        var path = Path.Combine(_dir, name);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, text);
+        return path;
+    }
+
     [Fact]
     public void GetCompletions_diagram_context_uses_workspace_index()
     {
@@ -34,4 +55,141 @@ public sealed class DashSpecEditorIntelligenceTests
         var items = DashSpecEditorIntelligence.GetCompletions("demo.dashspec", text, line: 1, column: 2);
         Assert.Contains(items, item => item.Label.Equals("module dashboard", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Scan_registers_every_module_kind_with_line_and_namespace()
+    {
+        Write("flows/lus-report.ds", """
+            module flow LicenseUsageReport
+            namespace LicenseUsageReport
+
+            source fixture_src {
+              from view dbo.t
+            }
+            """);
+        Write("diagrams/overview/app-list.ds", """
+            module diagram lus_users_app_list
+            namespace Luf.Users.Diagrams
+
+            table
+              columns = app_name
+            end table
+            """);
+        var dashboard = Write("lus-dev-users.ds", """
+            module tab users
+            namespace Luf.Users
+
+            report
+              title = "Пользователи"
+            end report
+            """);
+
+        var index = DashSpecWorkspaceIndex.Scan(_dir);
+
+        Assert.Equal(3, index.Units.Count);
+        var flow = index.UnitsById["LicenseUsageReport"];
+        Assert.Equal("flow", flow.Kind);
+        Assert.Equal(1, flow.Line);
+        Assert.Contains(index.UnitsByNamespace["LicenseUsageReport"], u => u.Path == flow.Path);
+
+        var diagram = index.UnitsById["lus_users_app_list"];
+        Assert.Equal("diagram", diagram.Kind);
+        Assert.Equal("Luf.Users.Diagrams", diagram.Namespace);
+        Assert.EndsWith("app-list.ds", diagram.Path.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
+
+        var tab = index.UnitsById["users"];
+        Assert.Equal("tab", tab.Kind);
+        Assert.True(File.Exists(tab.Path));
+        Assert.Equal(dashboard, tab.Path, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void TryGetDefinition_resolves_diagram_flow_and_namespace_across_files()
+    {
+        var flowPath = Write("flows/lus-report.ds", """
+            module flow LicenseUsageReport
+            namespace LicenseUsageReport
+            """);
+        var diagramPath = Write("diagrams/app-list.ds", """
+            module diagram lus_users_app_list
+            namespace Luf.Users.Diagrams
+            """);
+        Write("lus-dev-users.ds", """
+            module tab users
+            namespace Luf.Users
+
+            import diagrams from Luf.Users.Diagrams
+            import flows from LicenseUsageReport
+
+            report
+              card app_users as "Apps"
+                connect
+                  use flow LicenseUsageReport
+                end connect
+                diagram ref products lus_users_app_list
+              end card
+            end report
+            """);
+
+        var index = DashSpecWorkspaceIndex.Scan(_dir);
+        var path = Path.Combine(_dir, "lus-dev-users.ds");
+        var text = File.ReadAllText(path);
+
+        // `diagram ref <slot> <id>` → the diagram module file.
+        var diagramDef = DashSpecEditorIntelligence.TryGetDefinition(
+            path, text, line: 12, column: 30, index);
+        Assert.NotNull(diagramDef);
+        Assert.Equal(
+            diagramPath.Replace('\\', '/'),
+            diagramDef.FilePath.Replace('\\', '/'),
+            StringComparer.OrdinalIgnoreCase);
+
+        // `use flow <id>` → the flow module file.
+        var flowDef = DashSpecEditorIntelligence.TryGetDefinition(
+            path, text, line: 10, column: 18, index);
+        Assert.NotNull(flowDef);
+        Assert.Equal(
+            flowPath.Replace('\\', '/'),
+            flowDef.FilePath.Replace('\\', '/'),
+            StringComparer.OrdinalIgnoreCase);
+
+        // `import flows from <Namespace>` → the unit file declaring the namespace.
+        var nsDef = DashSpecEditorIntelligence.TryGetDefinition(
+            path, text, line: 5, column: 24, index);
+        Assert.NotNull(nsDef);
+        Assert.Equal(
+            flowPath.Replace('\\', '/'),
+            nsDef.FilePath.Replace('\\', '/'),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void FindWorkspaceUsages_finds_diagram_usages_across_files()
+    {
+        Write("diagrams/app-list.ds", """
+            module diagram lus_users_app_list
+            namespace Luf.Users.Diagrams
+            """);
+        Write("lus-dev-users.ds", """
+            module tab users
+
+            report
+              card app_users as "Apps"
+                diagram ref products lus_users_app_list
+              end card
+              card vendor_users as "Vendors"
+                diagram ref vendors lus_users_vendor_list
+              end card
+            end report
+            """);
+
+        var index = DashSpecWorkspaceIndex.Scan(_dir);
+
+        var usages = DashSpecEditorIntelligence.FindWorkspaceUsages("lus_users_app_list", index);
+
+        Assert.Equal(2, usages.Count);
+        Assert.Contains(usages, u => u.Path.Replace('\\', '/').EndsWith("diagrams/app-list.ds", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(usages, u => u.Path.Replace('\\', '/').EndsWith("lus-dev-users.ds", StringComparison.OrdinalIgnoreCase));
+    }
 }
+
