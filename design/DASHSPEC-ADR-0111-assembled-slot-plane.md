@@ -1,0 +1,116 @@
+# DASHSPEC-ADR-0111: Собранная слотовая плоскость — SSOT визуальной композиции
+
+| | |
+|---|---|
+| **Status** | Accepted (пере-рамка того же дня; отменённое — §Rejected: `be18e71`/`4e490a4` «VisualModel / VisualCompositor» и все правки этого же дня, включая самую большую ошибку — выдуманное параллельное дерево поверх готовой слотовой плоскости [ADR-0072]) |
+| **Date** | 2026-10-21 |
+| **Relates to** | [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md) (слотовая плоскость — канон, **уже сделана M1–M5**), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) (сверка ниже), [ADR-0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) (плоскость оболочки), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) / [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md) (конвейер компиляции), [ADR-0091](DASHSPEC-ADR-0091-document-wiring-graph.md) (граф данных), [ADR-0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) (SSOT фильтров), [ADR-0108](DASHSPEC-ADR-0108-eventsource-handler.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md) / [ADR-0102](DASHSPEC-ADR-0102-one-language.md) |
+
+## Context
+
+**Каноническая модель уже существует и развёрнута** — [ADR-0072] «Unified layout slot plane» (2026-10-01, миграции M1–M5 **done**): одна идея — «грид слотов, слот держит типизированный компонент»:
+
+- `LayoutSlotDescriptor(Token, Placement, Scope, ContentKind)` — ячейка: токен, размещение (`PlacementDefinition { Row; Col; Span }`), scope (`HostTabBoard | HostPageToolbar | CardInterior | CardFilterChrome`), содержание (`Card | Nest | Group | Filter | PrimaryDiagram | SecondaryDiagram`);
+- `LayoutSlotEngine.PlanCardInterior / PlanHostPageToolbar / PlanHostTabBoard / PlanHostTabBoardCards` — планировщики (математика одна, рекурсивная);
+- `PlacementSlotGrid`/`PlacementSlot` (Presentation) + `ILayoutSlotRendererRegistry` — рендер диспетчится по `(Scope, ContentKind)`, не по Razor-веткам;
+- ментальная модель автора — **две вложенные сетки** (host → card), те же правила слотов.
+
+Чего нет — **собранной разом плоскости**: планировщики зовутся **на каждом рендере каждым потребителем** (Surface.Blazor: `DashboardPageController` fallback-ряд тулбара L1297–1321 и `RecomputeToolbarPlacements`, per-render `DashboardLayoutHelper.ResolveInteriorPlacements`, presentation/rendering-сервисы) — каждый вызов пересчитывает свой срез геометрии под свой контекст, целое нигде не собирается. Отсюда же эвристики хоста: «первая вкладка/страница» (`ResetActivePageForTab` L1420, дубль `TabLayoutCompactor` L40–43), скрытие nav по `Count > 1` (6 мест), label-эвристики, видимость тулбар-фильтров пересечением с картами (`ToolbarFilterVisibility` — то, что §4 ADR-0074 запрещает Host'у).
+
+Оператор (2026-10-21, постановка): отделить структуру от рендера — **сборка слотов предварительная, хосту остаётся только отрисовать**. Форма уже принята каноном [ADR-0072]; этот ADR доводит её инвариант до конца: **одна собранная плоскость вместо повторных планирований на рендере**.
+
+## Decision
+
+### 1. Артефакт — `SlotPlane`: собранная плоскость, только существующие типы
+
+Ни одного нового узла. Артефакт — контейнер **существующих** планов, все scope разом:
+
+```csharp
+// DashSpec.Execution.Runtime (рядом с LayoutSlotEngine)
+
+public sealed record SlotPlane(
+    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> TabBoards,     // ключ — TabId
+    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> PageToolbars,  // ключ — PageId
+    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> CardInteriors, // ключ — CardId
+    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> CardFilterChrome, // ключ — CardId
+    VisualRoute InitialRoute,          // записанное умолчание (EntryId/TabId/PageId)
+    IReadOnlySet<string> RecordedDefaults); // токены/слоты, подставленные умолчанием ([ADR-0109])
+```
+
+- **Слоты, размещения, содержания — всё существующее**: `LayoutSlotDescriptor`, `PlacementDefinition`, `ContentKind`, `Scope` из [ADR-0072] без изменений; новые content kinds растут по живым инстансам.
+- **Вложенность — существующая**: две сетки (host → card) + nest/group — слот `Card` на доске вкладки и плоскость `CardInterior` этой карточки — ключом `CardId`; никаких новых узлов-«строк/столбцов доски» (placement — метка на дескрипторе, как `Grid.Row`).
+- **Умолчания записаны** (`RecordedDefaults`): fallback-ряды, family-defaults, first-tab/first-page — подставлены при сборке и записаны, а не тихо применены на рендере ([ADR-0109]).
+
+### 2. Сборка — одна точка, один раз на ревизию; математика потребляется как есть
+
+`SlotPlaneBuilder` — в `Execution.Runtime`, **рядом с `LayoutSlotEngine`, которого он вызывает**: (`DashboardDocument` + `CatalogDocument`) → `SlotPlane`. Все существующие планировщики (`PlanHostTabBoard*`, `PlanHostPageToolbar`, `PlanCardInterior`, компакторы/резолверы) **остаются на своих местах — их вывод ложится в плоскость**. Никакого порта: переписывание работающей математики без второго инстанса — churn ([ADR-0108]).
+
+Точка сборки — **bootstrap загрузки отчёта** (`ReportSpecBootstrap`): один вызов на загрузку/ревизию документа, артефакт едет в bootstrap-результате рядом с документом и wiring-графом ([ADR-0091]). Параллель имён: `DocumentWiringGraphBuilder` (данные) + `SlotPlaneBuilder` (структура).
+
+Плоскость **маршруто-независима**: все вкладки, страницы, интерьеры и хромы сразу. Никакой «нарезки по маршруту»: смена вкладки в хосте — выбор среза, не пересборка.
+
+**Громкая семантика** ([ADR-0109]): два предмета в один слот — ошибка сборки; неизвестный токен — ошибка сборки; умолчания — записаны в `RecordedDefaults`.
+
+### 3. Сессия — оверлей, не мутация
+
+Fold (`fold = independent` уже в спеках), занятость, активная `(tab, page)`, выбор — состояние сессии в хосте, **наложенное** поверх иммутабельной плоскости при рендере. Плоскость не мутирует от взаимодействия; «активный выбор, busy — это сессия, а не композер» (§4 ADR-0074).
+
+### 4. Рендер — тупая диспетчеризация по готовому: потребители переключаются по одному месту вызова
+
+Рендер уже диспетчит по `(Scope, ContentKind)` ([ADR-0072] M5) — меняется только вход: вместо вызова планировщика на рендере — чтение собранного среза. Потребители переключаются **по одному месту вызова**, видимое поведение сохранено на каждом шаге:
+
+| Эвристика/вызов сегодня | Становится |
+|-------------------|------------|
+| «Первая вкладка» (`DashboardPageController` L1180) | `InitialRoute.TabId` — записанное умолчание |
+| «Первая страница» (`ResetActivePageForTab` L1420, дубль `TabLayoutCompactor` L40–43) | `InitialRoute.PageId` — записанное умолчание |
+| Скрытие nav при `Count > 1` (6 мест) | Рисуется объявленное; умолчание — записано |
+| Label-эвристика `Tabs.Count > 1` (`DisplayResolution.ResolveTabLabel`) | Label в артефакте, Host читает готовое |
+| `ToolbarFilterVisibility` (пересечение с картами) | Спек-объявленные слоты + флаг `Bound`; рендер рисует disabled, не прячет (§4 ADR-0074) |
+| Fallback-ряд тулбара (L1297–1321) / `RecomputeToolbarPlacements` | Умолчание, записанное при сборке; чтение среза `PageToolbars` |
+| Per-render `ResolveInteriorPlacements` / вызовы `LayoutSlotEngine` в Surface | Чтение среза `CardInteriors[cardId]` |
+
+### 5. Языковая добавка (минимальная, по духу ADR-0109)
+
+Catalog entry получает `page <pageId>` симметрично `tab <tabId>`: `InitialPageId: string option`. Сборка валидирует громко; fallback «первая запись» — заменяется записанным умолчанием.
+
+### 6. Приёмка фундамента — визуальная
+
+Плоскость считается готовой по срезу, когда тупая диспетчеризация этого среза даёт задуманный вид (conformance-цели — экраны образца «взрослого BI», HTML-образец Сергея). Фундамент не уезжает в абстракцию, потому что его проверяют глаза.
+
+## Rejected
+
+| Идея | Почему |
+|------|--------|
+| **Выдуманное параллельное дерево (`VisualNode`/`VGrid`/`VRow`/`VSlot`/`VCard`/`VisualChild`…)** (правки этого же дня, несколько итераций) | Каноническая модель уже есть и развёрнута — [ADR-0072] слотовая плоскость, M1–M5 done: дескрипторы, планировщики, реестры, «две вложенные сетки». Изобретать поверх неё второе дерево — параллельная истина; нужно было **прочитать канон до проектирования**. Остальное этого дня — подвиды той же ошибки: scope-строки, листья `of string`, узлы-«строки доски», порты математики, новые проекты |
+| `VisualModel` + `VisualCompositor` (`be18e71`/`4e490a4`) | Композитор с «нарезкой по маршруту» — сессия, не слой; артефакт маршруто-независим |
+| Перенос merge таб-модулей в рантайм | Merge — конвейер компиляции ([ADR-0097]) |
+| Скрывать тулбар-фильтры эвристикой пересечения | Нарушает §4 ADR-0074; честный путь — слоты + `Bound` + disabled-состояние |
+| Новый проект для P0 | Артефакт — `Execution.Runtime`, рядом с `LayoutSlotEngine` |
+
+## Migration (ломающая, авторы — только мы)
+
+| Сегодня | Цель |
+|---------|------|
+| Планировщики зовутся на каждом рендере каждым потребителем | `SlotPlaneBuilder` собирает все срезы раз на ревизию; планировщики на своих местах, потребляются сборкой |
+| `DashboardPageController`: first-tab/first-page/count-гейты/labels/fallback-ряд | Читает плоскость + сессию; гейты удаляются по одному |
+| `Home.razor` TabBar/PagePicker с `Count > 1` | Полосы — срезы плоскости (далее `nav_tree`-плагин [ADR-0110]) |
+| `ToolbarFilterVisibility` в цепочке | Спек-слоты + `Bound`; тесты флага вместо видимости |
+| Каталог: «первая запись» по умолчанию | Ошибка с записанным умолчанием |
+
+## Implementation phases
+
+| Phase | Deliverable |
+|-------|-------------|
+| **P0** | `SlotPlane` + `SlotPlaneBuilder` (потребляет `LayoutSlotEngine.Plan*` по всем scope/владельцам) + сборка в bootstrap + дамп (conformance-fixture) + headless-тесты без Blazor. Рендер пока не трогаем |
+| **P1** | Потребители Surface переключаются по одному месту вызова (§4): per-render резолвы → чтение срезов; fallback-ряды → `RecordedDefaults`; каждый шаг — видимое поведение сохранено |
+| **P2** | Срезы, требующие языковых добавок: зоны оболочки (грамматика [ADR-0110]), полосы навигации, `InitialRoute` + `page <id>` в каталоге |
+| **P3** | Экспорт для Studio (wiring-граф + плоскость, одним полотном) + визуальные conformance-экраны |
+
+## Consequences
+
+- Одна собранная плоскость = один источник для Blazor, плагинов, Studio и headless-экспорта; воспроизводимость из артефакта.
+- Ничего нового в модели слотов: дескрипторы/планировщики/реестры [ADR-0072] — как были; новое — точка сборки, артефакт-контейнер и записанные умолчания.
+- Surface перестаёт быть «вторым автором»: гейты и fallback-пересчёты умирают по одному.
+- Визуальная итерация — правка декларации + дамп плоскости: собрал, посмотрел композицию целиком.
+- Два SSOT — данные (wiring-граф, [ADR-0091]) и структура (SlotPlane) — собираются рядом в одном bootstrap-результате.
+- [ADR-0110] обновлена на термин `SlotPlane`.
