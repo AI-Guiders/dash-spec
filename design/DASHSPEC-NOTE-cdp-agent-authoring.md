@@ -25,12 +25,26 @@
   идентичных фильтров во встроенном парсе) → чисто.
 - Автодополнение ид диаграмм на `diagram ref products <…>` ✓.
 
+**Хвост 2-й заход (2026-10-21, тот же день) — закрыто:**
+
+- GoToAll (Ctrl+T / `cdp_graphql goto`): FTS-дефолты индексируют `.ds`
+  (guiders-core c99f396) — goto приземляется на объявление модуля
+  диаграммы (топ-хит `app-list-table.ds:1` на запрос
+  `lus_users_app_list_table`). Индекс пересобран, `.hybrid-codebase-index/`
+  добавлен в .gitignore SSCAD.
+- Кэш-инвалидация диагностики буфера (cdp-mcp c1fdc69b): чистый буфер
+  с дрейфом диска перечитывает диск перед read/diagnostics (VS Reload);
+  dirty держит память, `keep_disk` уважается. Проверено живьём:
+  внешняя правка → диагностика без close+open приносит свежую ошибку.
+
 **Хвосты (следующие шаги):**
 
-- Ремонт моста MCP (CDP_RELOAD_NUDGE) — `cdp_goto` и свежий список тулов
-  в сеансе после рестарта моста; LRC go_to_definition/find_usages уже в
-  сервисе, наружу — после ремонта.
-- Диагностика буфера: `force/refresh` не перечитывает изменённый на диске
-  файл (лечится close+open) — починить кэш-инвалидацию.
-- cdp_goto (GoToAll): FTS-индекс должен увидеть `.ds`-символы (модули)
-  как полноценные якоря.
+- Ремонт моста MCP (CDP_RELOAD_NUDGE): мост (CdpMcpBridge) остаётся
+  тонким транспортом, инструменты работают; свежий мост ставится когда
+  мосты не запущены (apply при погашенных сессиях). LRC-глаголы
+  go_to_definition/find_usages остаются вне tools/list (ADR-0233
+  collapse) — CallTool-диспетчеризация в сервисе, из opencode-места
+  доступна через `cdp_graphql goto`/`symbol`.
+- Автодополнение словарей: views/columns-таблицы, click-table
+  vocabulary — сейчас keywords + module ids.
+
