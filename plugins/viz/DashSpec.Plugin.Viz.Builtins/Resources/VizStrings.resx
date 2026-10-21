@@ -102,4 +102,10 @@
   <data name="Click the diagram to load this table" xml:space="preserve">
     <value>Click the diagram to load this table</value>
   </data>
+  <data name="Copy column" xml:space="preserve">
+    <value>Copy column</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Copied</value>
+  </data>
 </root>

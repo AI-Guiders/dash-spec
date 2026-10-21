@@ -1,5 +1,7 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.TableHtml
 @using DashSpec.Execution.Runtime
+@using Microsoft.JSInterop
+@inject IJSRuntime Js
 @inject IStringLocalizer<VizStrings> Loc
 
 @if (Context.Card.Table is null || Context.Card.Table.Rows.Count == 0)
@@ -18,8 +20,16 @@ else
                         var headerText = Context.Card.Table.HeaderTexts is { } texts && i < texts.Count
                             ? texts[i]
                             : column;
+                        var copied = _copiedColumn == i;
                         <th style="@HeaderAlignStyle(i)">
-                            <div class="table-col-head">@headerText</div>
+                            <div class="table-col-head">
+                                @headerText
+                                <button type="button"
+                                        class="table-col-copy @(copied ? "table-col-copy--done" : null)"
+                                        title="@(copied ? Loc["Copied"] : Loc["Copy column"])"
+                                        aria-label="@(copied ? Loc["Copied"] : Loc["Copy column"])"
+                                        @onclick="() => CopyColumnAsync(i)"></button>
+                            </div>
                             @if (ShowColumnFilters)
                             {
                                 <input type="search"
@@ -35,9 +45,10 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var row in FilteredRows)
+                @for (var ri = 0; ri < FilteredRows.Count; ri++)
                 {
-                    <tr>
+                    var row = FilteredRows[ri];
+                    <tr @onclick="() => HandleRowClickAsync(ri)">
                         @for (var i = 0; i < row.Count; i++)
                         {
                             <td style="@CellAlignStyle(i)">@row[i]</td>
@@ -71,6 +82,11 @@ else
 
     private bool ShowColumnFilters => Presentation.ColumnFilters;
 
+    /// <summary>ADR-0107: the card declares a `row`-sourced handler → rows are clickable.</summary>
+    private bool RowClickEnabled =>
+        Context.EffectiveCard.ClickHandlers is { Count: > 0 } handlers &&
+        handlers.Any(h => string.Equals(h.Source, TableClickSources.Row, StringComparison.OrdinalIgnoreCase));
+
     private string WrapClass
     {
         get
@@ -82,6 +98,11 @@ else
             if (Presentation.Density is TableDensity.Compact)
             {
                 parts.Add("table-wrap--density-compact");
+            }
+
+            if (RowClickEnabled)
+            {
+                parts.Add("table-wrap--row-click");
             }
 
             return string.Join(' ', parts);
@@ -112,6 +133,8 @@ else
     private string? CellAlignStyle(int i) => CellAlign(i) is { } a ? $"text-align: {a};" : null;
 
     private string? HeaderAlignStyle(int i) => HeaderAlign(i) is { } a ? $"text-align: {a};" : null;
+
+    private int? _copiedColumn;
 
     private readonly Dictionary<string, string> _columnFilters = new(StringComparer.OrdinalIgnoreCase);
 
@@ -144,6 +167,57 @@ else
     }
 
     private void ClearFilters() => _columnFilters.Clear();
+
+    /// <summary>Copy one column's visible values to the clipboard (newline-joined).</summary>
+    private async Task CopyColumnAsync(int columnIndex)
+    {
+        var text = string.Join(
+            Environment.NewLine,
+            FilteredRows.Select(row => columnIndex < row.Count ? row[columnIndex] ?? string.Empty : string.Empty));
+        try
+        {
+            await Js.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            _copiedColumn = columnIndex;
+            await InvokeAsync(StateHasChanged);
+            _ = ResetCopiedAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private async Task ResetCopiedAsync()
+    {
+        await Task.Delay(900);
+        _copiedColumn = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Body row click (ADR-0107): the first column's value rides YLabel, source is "row".</summary>
+    private async Task HandleRowClickAsync(int rowIndex)
+    {
+        if (!RowClickEnabled || !Context.OnHeatmapCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        var row = FilteredRows[rowIndex];
+        var value = row.Count > 0 ? row[0] ?? string.Empty : string.Empty;
+        var context = new HeatmapCellContext(
+            rowIndex,
+            -1,
+            string.Empty,
+            value,
+            null,
+            null,
+            null,
+            TableClickSources.Row);
+
+        await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
+    }
 
     private bool MatchesFilters(IReadOnlyList<string> row)
     {

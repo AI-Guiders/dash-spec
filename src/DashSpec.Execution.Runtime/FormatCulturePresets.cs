@@ -34,6 +34,7 @@ public static partial class FormatCulturePresets
             "time.short" => dtf.ShortTimePattern,
             "datetime.short" => $"{StripYearFromDatePattern(dtf.ShortDatePattern)} {dtf.ShortTimePattern}",
             "datetime.iso" => "yyyy-MM-dd HH:mm",
+            "month.short" => "MMM",
             _ => preset,
         };
     }
@@ -44,7 +45,8 @@ public static partial class FormatCulturePresets
         || format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
         || format.Equals("time.short", StringComparison.OrdinalIgnoreCase)
         || format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
-        || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase);
+        || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
+        || format.Equals("month.short", StringComparison.OrdinalIgnoreCase);
 
     internal static string StripYearFromDatePattern(string pattern)
     {

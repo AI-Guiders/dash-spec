@@ -5,6 +5,11 @@ namespace Fixtures.QueryRowTypes
 type FixtureRow
   optional date usage_date
   optional string app_name
+  optional string user_sam
+  optional string host_name
+  optional datetime bucket_start_utc
+  optional date period_start
+  optional string period_grain
   optional string x
   optional string y
   optional string category

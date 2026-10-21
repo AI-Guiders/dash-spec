@@ -64,6 +64,47 @@
   margin-bottom: 0.2rem;
 }
 
+/* Copy-to-clipboard per column: a quiet glyph button next to the header text. */
+.table-col-copy {
+  margin-left: 0.3rem;
+  padding: 0 0.15rem;
+  border: 0;
+  background: none;
+  color: var(--muted, #8fa3b8);
+  cursor: pointer;
+  font-size: 0.72rem;
+  line-height: 1;
+  vertical-align: middle;
+  opacity: 0.55;
+}
+
+.table-col-copy::before {
+  content: "⧉";
+}
+
+.table-col-copy:hover {
+  color: var(--accent, #60a5fa);
+  opacity: 1;
+}
+
+.table-col-copy--done {
+  color: var(--accent, #60a5fa);
+  opacity: 1;
+}
+
+.table-col-copy--done::before {
+  content: "✓";
+}
+
+/* ADR-0107: rows are clickable when the card declares a `row`-sourced handler. */
+.table-wrap--row-click tbody tr {
+  cursor: pointer;
+}
+
+.table-wrap--row-click tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent, #60a5fa) 12%, transparent);
+}
+
 .table-col-filter {
   width: 100%;
   min-width: 3rem;

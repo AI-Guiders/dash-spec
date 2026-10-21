@@ -1083,6 +1083,15 @@ public class DashboardParseTests
         Assert.Equal("Запуски: AutoCAD", DrillSlotTitleResolver.Resolve("Запуски: {app_name}", overlay));
     }
 
+    [Fact]
+    public void LabelFormat_month_short_formats_month_name()
+    {
+        LabelFormat.DisplayTimeZone = null;
+        Assert.Equal(
+            "окт.",
+            LabelFormat.FormatObject(new DateTime(2026, 10, 1), "month.short"));
+    }
+
     [Theory]
     [InlineData("sticky", MatrixAxisScrollMode.Sticky)]
     [InlineData("none", MatrixAxisScrollMode.None)]
