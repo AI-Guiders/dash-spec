@@ -14,6 +14,6 @@ internal static class ModuleParseTestBootstrap
         // default lives in ds (host.ds in the host, this stand-in in tests), never in engine code.
         DashSpec.Modeling.Parse.Layout.GridDefaultBridge.Default =
             Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Layout.LayoutDefinition>.Some(
-                new DashSpec.Modeling.Parse.Layout.LayoutDefinition { Columns = 12, GapPx = 16 });
+                new DashSpec.Modeling.Parse.Layout.LayoutDefinition { Columns = 12 });
     }
 }

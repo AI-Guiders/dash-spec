@@ -93,7 +93,7 @@
     [Parameter] public Dictionary<string, int> TopLimits { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public int FieldOptionsRevision { get; set; }
-    [Parameter] public LayoutDefinition Layout { get; set; } = LayoutDefinition.Default;
+    [Parameter] public LayoutDefinition Layout { get; set; } = new LayoutDefinition { Columns = 12 };
     [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
         new Dictionary<string, PlacementDefinition>();
     [Parameter] public bool BarLayout { get; set; }

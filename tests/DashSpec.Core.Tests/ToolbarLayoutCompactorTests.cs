@@ -23,7 +23,7 @@ public class ToolbarLayoutCompactorTests
             diagramLibraryPath: null,
             palette: null,
             colorPalette: null,
-            layout: new LayoutDefinition(12, 8),
+            layout: new LayoutDefinition(12),
             filtersChrome: TestModelDefaults.FiltersChrome,
             filters:
             [

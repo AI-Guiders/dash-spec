@@ -154,7 +154,7 @@ public sealed class HeadlessReportSessionContractTests
                 null,
                 null,
                 null,
-                LayoutDefinition.Default,
+                new LayoutDefinition { Columns = 12 },
                 new FiltersChromeDefinition(),
                 [],
                 [],

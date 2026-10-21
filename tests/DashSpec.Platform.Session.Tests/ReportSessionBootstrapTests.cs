@@ -73,7 +73,7 @@ public sealed class ReportSessionBootstrapTests
                 null,
                 null,
                 null,
-                LayoutDefinition.Default,
+                new LayoutDefinition { Columns = 12 },
                 new FiltersChromeDefinition(),
                 filters,
                 ["usage_date"],

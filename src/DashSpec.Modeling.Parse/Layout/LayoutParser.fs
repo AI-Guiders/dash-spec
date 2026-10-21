@@ -82,36 +82,24 @@ module LayoutParser =
     /// <summary>
     /// Parse the <c>grid … end grid</c> body after the <c>grid</c> keyword is consumed — the grid
     /// is drawn with <c>[]</c> empty cells ([ADR-0111] §2): how many rows are drawn — that many grid
-    /// rows, how many <c>[]</c> in a row — that many columns (the widest row wins). The
-    /// <c>columns = N</c> number is dead — loud if used. The drawing is required.
+    /// rows, how many <c>[]</c> in a row — that many columns (the widest row wins). The drawing is
+    /// the block's whole grammar: <c>columns</c> and <c>gap</c> are dead — loud if used; gaps are the
+    /// visual layer (CSS), not the spec.
     /// </summary>
     let parseGridBody (reader: TokenReader) =
         let gridRows = ResizeArray<int>()
-        let props =
-            BlockGrammar.parseKeywordContainer
-                reader
-                "grid"
-                "layout grid"
-                [ BlockGrammar.SchemaProperties(PropertySchemas.layoutGrid, false, false)
-                  BlockGrammar.RepeatingEmptyCellRows gridRows ]
-                None
+        BlockGrammar.parseKeywordContainer
+            reader
+            "grid"
+            "layout grid"
+            [ BlockGrammar.RepeatingEmptyCellRows gridRows ]
+            None
+        |> ignore
 
         if gridRows.Count = 0 then
             raise (DashSpecParseException("Layout grid requires the drawing: draw it with [] cells — columns = N is dead."))
 
-        let columns = gridRows |> Seq.max
-
-        let gapPx =
-            match props.TryGetValue "gap" with
-            | true, raw ->
-                let mutable parsed = 0
-                if System.Int32.TryParse(raw, &parsed) && parsed >= 0 then
-                    parsed
-                else
-                    raise (DashSpecParseException($"Layout grid gap '{raw}' must be a non-negative integer."))
-            | false, _ -> LayoutDefinition.Default.GapPx
-
-        { Columns = columns; GapPx = gapPx }
+        { Columns = gridRows |> Seq.max }
 
     let parseGrid (reader: TokenReader) =
         match reader.ReadIdent() with

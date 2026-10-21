@@ -14,7 +14,7 @@ public sealed class ResolutionLintTests
             null,
             null,
             null,
-            LayoutDefinition.Default,
+            new LayoutDefinition { Columns = 12 },
             TestModelDefaults.FiltersChrome,
             [],
             [],

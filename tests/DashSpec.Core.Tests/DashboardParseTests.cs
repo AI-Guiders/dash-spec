@@ -83,7 +83,6 @@ public class DashboardParseTests
               title = "T"
               layout grid
               [] [] [] [] [] [] [] [] [] [] [] []
-              gap = 8
               end grid
               card a as "A"
               place
@@ -100,7 +99,7 @@ public class DashboardParseTests
             end dashboard
 """);
 
-        Assert.Equal(8, doc.Layout.GapPx);
+        Assert.Equal(12, doc.Layout.Columns);
         Assert.Equal(6, doc.Cards[0].Placement?.Value.Span);
         Assert.Equal(1, doc.Cards[0].Placement?.Value.Row);
     }
