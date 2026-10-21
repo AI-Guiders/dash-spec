@@ -10,7 +10,8 @@ module ToolbarPlacementResolver =
 
     let private boardFromCardRows (rows: IReadOnlyList<IReadOnlyList<string>>) =
         { Entries = rows |> Seq.map LayoutBoardEntry.CardRow |> Seq.toList :> IReadOnlyList<_>
-          ModuleScope = None }
+          ModuleScope = None
+          GridColumns = 0 }
 
     let resolveFilterNames
         (filters: IReadOnlyList<FilterDefinition>)

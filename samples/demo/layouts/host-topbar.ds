@@ -2,7 +2,4 @@ module layout demo_host_topbar
 namespace Demo.Layouts
 scope host
 
-[ catalog ]
-[ nav ]
-[ external_links ]
-[ help settings spec_dev ]
+[ brand [] catalog nav external_links help settings ]

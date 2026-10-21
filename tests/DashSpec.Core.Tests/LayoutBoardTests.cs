@@ -390,9 +390,6 @@ end tab
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              layout grid
-              columns = 12
-              end grid
               defaults
                 filter.d1.range = -7d..today
               end defaults
@@ -457,9 +454,6 @@ end tab
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              layout grid
-              columns = 12
-              end grid
               defaults
                 filter.d1.range = -7d..today
               end defaults
@@ -513,9 +507,6 @@ end tab
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              layout grid
-              columns = 12
-              end grid
               defaults
                 filter.d1.range = -7d..today
               end defaults

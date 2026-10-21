@@ -20,6 +20,8 @@ type TokenKind =
     | FlowArrow
     | LBracket
     | RBracket
+    /// <summary>Empty grid cell — <c>[]</c> as a whole token ([ADR-0111] §2: the grid is drawn with empty cells).</summary>
+    | EmptyCell
     | LParen
     | RParen
     | Ident

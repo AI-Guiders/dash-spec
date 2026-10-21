@@ -18,9 +18,9 @@ module LayoutBoardCellParser =
             cell.Substring(0, separator)
 
     /// <summary>
-    /// Parse <c>ref</c>, <c>ref:weight</c>, <c>.</c> or <c>.:weight</c> ([ADR-0061], [ADR-0111] §2) —
+    /// Parse <c>ref</c>, <c>ref:weight</c>, <c>[]</c> or <c>[]:weight</c> ([ADR-0061], [ADR-0111] §2) —
     /// the single cell parser: one notation, the consumer reads the default
-    /// (card rows share free space by weight, chrome rows fit content, `.` is the empty star).
+    /// (card rows share free space by weight, chrome rows fit content, <c>[]</c> is the empty cell).
     /// </summary>
     let parseCell (token: string) (context: string) (gridRow: int) =
         if String.IsNullOrWhiteSpace token then

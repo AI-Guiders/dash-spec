@@ -9,6 +9,8 @@ open DashSpec.Modeling.Parse.Document
 
 module DemoSampleParseTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     let private samplesDemoDir =
         Path.GetFullPath(
             Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "samples", "demo"))

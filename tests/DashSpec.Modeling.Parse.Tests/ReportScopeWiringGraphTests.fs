@@ -8,6 +8,8 @@ open DashSpec.Modeling.Parse.Document
 
 module ReportScopeWiringGraphTests =
 
+    do GridDefaultTestBootstrap.ensure ()
+
     [<Fact>]
     let ``parse exposes wiring graph with report scope flow and card interior links`` () =
         let dir = Path.Combine(Path.GetTempPath(), "report-scope-flow-" + Guid.NewGuid().ToString("N"))

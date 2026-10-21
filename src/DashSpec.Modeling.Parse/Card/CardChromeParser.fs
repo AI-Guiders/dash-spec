@@ -92,4 +92,4 @@ module ToolbarBoardFactory =
     let fromFilterNames (names: System.Collections.Generic.IReadOnlyList<string>) =
         if names.Count = 0 then
             raise (DashSpecParseException("toolbar requires at least one filter name."))
-        { Entries = [| CardRow names |] :> System.Collections.Generic.IReadOnlyList<_>; ModuleScope = None }
+        { Entries = [| CardRow names |] :> System.Collections.Generic.IReadOnlyList<_>; ModuleScope = None; GridColumns = 0 }

@@ -32,9 +32,9 @@ public static class ShellBoardSlotResolver
     /// <summary>
     /// Resolve the shell grid slots from the host module board; null/empty board is the
     /// caller's fallback to resolve (the embedded default in the host). Shell rows read as
-    /// cells ([ADR-0111] §2 experiment): chrome slots fit their content (Span 0), a `.` dot
-    /// cell is a rubber spacer sharing the row's free space by weight, and the content slot
-    /// is greedy (Span 1) — it takes the cell entirely, as recorded.
+    /// cells ([ADR-0111] §2): chrome slots fit their content (Span 0), a `[]` empty cell is
+    /// a rubber spacer sharing the row's free space by weight, and the content slot is
+    /// greedy (Span 1) — it takes the cell entirely, as recorded.
     /// </summary>
     public static IReadOnlyList<ViewerShellSlot> Resolve(LayoutBoardDefinition? board)
     {
@@ -61,9 +61,9 @@ public static class ShellBoardSlotResolver
                 var (cellId, weight) = LayoutBoardCellParser.parseCell(token, "Shell board", rowIdx);
                 colIdx++;
 
-                if (cellId == ".")
+                if (cellId == "[]")
                 {
-                    slots.Add(new ViewerShellSlot(".", rowIdx, colIdx, weight));
+                    slots.Add(new ViewerShellSlot("[]", rowIdx, colIdx, weight));
                     continue;
                 }
 

@@ -134,7 +134,7 @@ public sealed class DashSpecBlockFormatterTests
             !include "diagrams/*.dashdiagram"
             connect
             layout grid
-            columns = 12
+            [] [] [] [] [] [] [] [] [] [] [] []
             end grid
             end connect
             end dashboard

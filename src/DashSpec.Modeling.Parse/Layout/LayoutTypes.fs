@@ -47,7 +47,9 @@ type LayoutBoardEntry =
 [<CLIMutable>]
 type LayoutBoardDefinition =
     { Entries: IReadOnlyList<LayoutBoardEntry>
-      ModuleScope: LayoutScope option }
+      ModuleScope: LayoutScope option
+      /// <summary>Grid drawing columns ([ADR-0111] §2): the <c>grid [] [] …</c> block of a layout module — 0 = not drawn.</summary>
+      GridColumns: int }
 
     /// <summary>Top-level card rows only (toolbar/host compat).</summary>
     member this.Rows =
@@ -72,8 +74,10 @@ type LayoutBoardDefinition =
 
     static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>) =
         { Entries = rows |> Seq.map CardRow |> Seq.toList
-          ModuleScope = None }
+          ModuleScope = None
+          GridColumns = 0 }
 
     static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>, moduleScope: LayoutScope) =
         { Entries = rows |> Seq.map CardRow |> Seq.toList
-          ModuleScope = Some moduleScope }
+          ModuleScope = Some moduleScope
+          GridColumns = 0 }

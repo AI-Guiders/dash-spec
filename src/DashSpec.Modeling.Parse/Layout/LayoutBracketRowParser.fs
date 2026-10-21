@@ -5,14 +5,15 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Lexing
 
 /// Layout board bracket row `[ ref … ]` only — `ref:weight` is **not** generic colon syntax (ADR-0071).
-/// An empty cell is a `.` dot (optionally `.:weight`) — a rubber spacer, [ADR-0111] §2 experiment.
+/// An empty cell is `[]` (optionally `[]:weight`) — the same empty grid cell the grid drawing
+/// uses, one token as a whole ([ADR-0111] §2).
 module LayoutBracketRowParser =
 
     let private readCell (reader: TokenReader) =
         let id =
-            if reader.IsAt TokenKind.Dot then
+            if reader.IsAt TokenKind.EmptyCell then
                 reader.Advance()
-                "."
+                "[]"
             else
                 reader.ReadIdent()
         if reader.IsAt TokenKind.Colon then

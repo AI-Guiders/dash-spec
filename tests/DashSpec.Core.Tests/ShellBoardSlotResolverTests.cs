@@ -34,7 +34,7 @@ public sealed class ShellBoardSlotResolverTests
     [Fact]
     public void Chrome_slots_fit_content_and_spacers_share_free_space_by_weight()
     {
-        var board = ParseBoard("[ brand . catalog nav .:2 help settings ]");
+        var board = ParseBoard("[ brand [] catalog nav []:2 help settings ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
@@ -47,17 +47,17 @@ public sealed class ShellBoardSlotResolverTests
         Assert.Equal(new ViewerShellSlot("help", 1, 6, 0), Find(row1, "help"));
         Assert.Equal(new ViewerShellSlot("settings", 1, 7, 0), Find(row1, "settings"));
         // Spacers: rubber cells with weight (default 1, .:2 → 2).
-        Assert.Equal(new ViewerShellSlot(".", 1, 2, 1),
-            row1.Single(slot => slot.SlotId == "." && slot.Col == 2));
-        Assert.Equal(new ViewerShellSlot(".", 1, 5, 2),
-            row1.Single(slot => slot.SlotId == "." && slot.Col == 5));
+        Assert.Equal(new ViewerShellSlot("[]", 1, 2, 1),
+            row1.Single(slot => slot.SlotId == "[]" && slot.Col == 2));
+        Assert.Equal(new ViewerShellSlot("[]", 1, 5, 2),
+            row1.Single(slot => slot.SlotId == "[]" && slot.Col == 5));
     }
 
     [Fact]
     public void Content_slot_is_greedy_takes_the_cell_entirely()
     {
         var board = ParseBoard(
-            "[ brand . catalog nav help settings ]",
+            "[ brand [] catalog nav help settings ]",
             "[ content ]");
 
         var content = Find(ShellBoardSlotResolver.Resolve(board), "content");
@@ -69,7 +69,7 @@ public sealed class ShellBoardSlotResolverTests
     [Fact]
     public void Content_slot_is_implicit_full_width_tail_when_not_declared()
     {
-        var board = ParseBoard("[ brand . nav ]");
+        var board = ParseBoard("[ brand [] nav ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
@@ -83,7 +83,7 @@ public sealed class ShellBoardSlotResolverTests
     public void Spacer_only_row_fails_loud()
     {
         var board = ParseBoard(
-            "[ . . ]",
+            "[ [] [] ]",
             "[ content ]");
 
         var ex = Assert.Throws<DashSpecParseException>(() => ShellBoardSlotResolver.Resolve(board));
@@ -94,7 +94,7 @@ public sealed class ShellBoardSlotResolverTests
     [Fact]
     public void Unknown_slot_fails_loud_with_token_and_row()
     {
-        var board = ParseBoard("[ brand . mystery ]");
+        var board = ParseBoard("[ brand [] mystery ]");
 
         var ex = Assert.Throws<DashSpecParseException>(() => ShellBoardSlotResolver.Resolve(board));
         Assert.Contains("mystery", ex.Message);
@@ -104,7 +104,7 @@ public sealed class ShellBoardSlotResolverTests
     [Fact]
     public void Legacy_aliases_normalize_to_current_slot_ids()
     {
-        var board = ParseBoard("[ report_picker . dashboard ]");
+        var board = ParseBoard("[ report_picker [] dashboard ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
@@ -130,7 +130,7 @@ public sealed class ShellBoardSlotResolverTests
             namespace DashSpec.Default.Shell
             scope host
 
-            [ brand . nav ]
+            [ brand [] nav ]
             [ content ]
             """);
 
@@ -139,7 +139,7 @@ public sealed class ShellBoardSlotResolverTests
         var slots = ShellBoardSlotResolver.Resolve(board);
         Assert.Equal(4, slots.Count);
         Assert.Equal(new ViewerShellSlot("brand", 1, 1, 0), Find(slots, "brand"));
-        Assert.Equal(new ViewerShellSlot(".", 1, 2, 1), Find(slots, "."));
+        Assert.Equal(new ViewerShellSlot("[]", 1, 2, 1), Find(slots, "[]"));
         Assert.Equal(new ViewerShellSlot("nav", 1, 3, 0), Find(slots, "nav"));
         Assert.Equal(new ViewerShellSlot("content", 2, 1, 1), Find(slots, "content"));
     }

@@ -2,5 +2,9 @@ module layout dashspec_default_shell
 namespace DashSpec.Default.Shell
 scope host
 
-[ brand . nav ]
+grid
+[] [] [] [] [] [] [] [] [] [] [] []
+end grid
+
+[ brand [] nav ]
 [ content ]

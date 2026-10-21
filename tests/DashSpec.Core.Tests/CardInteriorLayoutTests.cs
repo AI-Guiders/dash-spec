@@ -312,9 +312,6 @@ public class CardInteriorLayoutTests
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              layout grid
-              columns = 12
-              end grid
               defaults
                 filter.usage_date.range = -7d..today
               end defaults
