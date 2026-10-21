@@ -127,6 +127,67 @@ public class QueryCompilerTests
     }
 
     [Fact]
+    public void Compile_table_aggregate_sums_measure_grouped_by_remaining_columns()
+    {
+        var document = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+                  connect
+                    use flow fixture_flow
+                  end connect
+              report
+              title = "T"
+              card users as "Users"
+              diagram table
+              columns = user_sam, launches
+              order_by = launches DESC
+              value = launches
+              aggregate = sum
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""); var card = document.Cards[0];
+
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), document);
+
+        Assert.Contains("SUM(launches) AS launches", query.Sql);
+        Assert.Contains("GROUP BY user_sam", query.Sql);
+        Assert.DoesNotContain("GROUP BY user_sam, launches", query.Sql);
+        Assert.Contains("launches DESC", query.Sql);
+    }
+
+    [Fact]
+    public void Compile_table_without_aggregate_stays_row_level()
+    {
+        var document = DashSpecTestRowTypes.ParseDashboard("""
+            module dashboard t
+                  import types from Fixtures.QueryRowTypes
+                  connect
+                    use flow fixture_flow
+                  end connect
+              report
+              title = "T"
+              card users as "Users"
+              diagram table
+              columns = user_sam, launches
+              order_by = launches DESC
+              value = launches
+              end table
+              data flow { fixture_src [rows] -> [rows] __diagram__ }
+              end card
+              end report
+            end dashboard
+"""); var card = document.Cards[0];
+
+        var query = QueryCompiler.Compile(card, new FilterState(), new Dictionary<string, FilterDefinition>(), document);
+
+        Assert.DoesNotContain("SUM(", query.Sql);
+        Assert.DoesNotContain("GROUP BY", query.Sql);
+    }
+
+    [Fact]
     public void Compile_overlay_applies_even_without_flow_binding()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""

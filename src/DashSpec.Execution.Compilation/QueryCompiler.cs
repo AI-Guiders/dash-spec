@@ -109,6 +109,22 @@ public static class QueryCompiler
                 rowSchema);
         }
 
+        if (TryBuildTableAggregateSelect(card.Diagram, out var tableSelect, out var tableGroupBy))
+        {
+            tableSelect = AppendOrderByAggregates(tableSelect, card.Diagram, tableGroupBy);
+            return new CompiledQuery(
+                BuildSelectSql(
+                    tableSelect,
+                    fromClause,
+                    whereBuilder.ToString(),
+                    tableGroupBy,
+                    ResolveOrderBy(card),
+                    tableLimit,
+                    dialect),
+                parameters,
+                rowSchema);
+        }
+
         return new CompiledQuery(
             BuildSelectSql(
                 ResolveSelectColumns(card),
@@ -139,6 +155,59 @@ public static class QueryCompiler
     }
 
     /// <summary>
+    /// Tables with an explicit measure (<c>value</c>) and <c>aggregate</c>: filter first, then
+    /// <c>SUM(value) GROUP BY</c> the remaining columns, so period-grain views roll up over
+    /// the bound period (one row per group — e.g. per user over the whole date range).
+    /// </summary>
+    private static bool TryBuildTableAggregateSelect(
+        DiagramDefinition diagram,
+        out string selectList,
+        out string groupBy)
+    {
+        selectList = string.Empty;
+        groupBy = string.Empty;
+
+        if (!string.Equals(diagram.Kind, "table", StringComparison.OrdinalIgnoreCase) ||
+            !DiagramBindings.TryGetColumn(diagram, "value", out var measure))
+        {
+            return false;
+        }
+
+        // Tables are row-level by default: aggregate only when explicitly declared.
+        if (!diagram.Properties.TryGetValue("aggregate", out var aggregateRaw) ||
+            string.IsNullOrWhiteSpace(aggregateRaw) ||
+            !TryResolveAggregateFn(diagram, "SUM", out var aggregate))
+        {
+            return false;
+        }
+
+        var columns = diagram.Properties.TryGetValue("columns", out var raw)
+            ? raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            : [];
+        if (columns.Length == 0)
+        {
+            return false;
+        }
+
+        var groupColumns = columns
+            .Where(c => !string.Equals(c, measure, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (groupColumns.Count == 0)
+        {
+            // Nothing to group by (the measure is the only column) — row level is meaningless.
+            return false;
+        }
+
+        var parts = groupColumns
+            .Select(c => c)
+            .Append($"{aggregate}({measure}) AS {measure}")
+            .ToList();
+        selectList = string.Join(", ", parts);
+        groupBy = "GROUP BY " + string.Join(", ", groupColumns);
+        return true;
+    }
+
+    /// <summary>
     /// Scalar KPI (<c>number</c>): filter first, then <c>SUM|MAX|MIN|AVG(value)</c>
     /// (no GROUP BY) so day-grain views roll up over the bound period.
     /// <c>aggregate = none</c> keeps row-level select (first-row display).
@@ -153,7 +222,7 @@ public static class QueryCompiler
             return false;
         }
 
-        if (!TryResolveScalarAggregate(diagram, out var aggregate))
+        if (!TryResolveAggregateFn(diagram, "SUM", out var aggregate))
         {
             return false;
         }
@@ -167,9 +236,9 @@ public static class QueryCompiler
     /// <summary>
     /// Returns false when aggregation is explicitly disabled (<c>none</c>/<c>raw</c>).
     /// </summary>
-    private static bool TryResolveScalarAggregate(DiagramDefinition diagram, out string sqlFn)
+    private static bool TryResolveAggregateFn(DiagramDefinition diagram, string defaultFn, out string sqlFn)
     {
-        sqlFn = "SUM";
+        sqlFn = defaultFn;
         if (!diagram.Properties.TryGetValue("aggregate", out var raw) ||
             string.IsNullOrWhiteSpace(raw))
         {

@@ -179,7 +179,14 @@ else
             FilteredRows.Select(row => columnIndex < row.Count ? row[columnIndex] ?? string.Empty : string.Empty));
         try
         {
-            await Js.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            // dashSpecTableCopy (table-html.js): clipboard API with an execCommand
+            // fallback; the checkmark flashes only on a confirmed copy.
+            var copied = await Js.InvokeAsync<bool>("dashSpecTableCopy", text);
+            if (!copied)
+            {
+                return;
+            }
+
             _copiedColumn = columnIndex;
             await InvokeAsync(StateHasChanged);
             _ = ResetCopiedAsync();
