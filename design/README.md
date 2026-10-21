@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0100**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0111**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -108,3 +108,10 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0101](DASHSPEC-ADR-0101-single-unit-file-type.md) | Single compilation-unit file type (`.ds`) and `module <kind> <id>` | Accepted |
 | [0102](DASHSPEC-ADR-0102-one-language.md) | One language — legacy forms removed | Accepted |
 | [0103](DASHSPEC-ADR-0103-surfaces-read-ir-must-not-parse.md) | Surfaces read the F# IR, must not parse | Accepted |
+| [0104](DASHSPEC-ADR-0104-table-columns-pipe-table.md) | Table columns pipe-table — `id \| format \| label \| sorting` | Accepted |
+| [0105](DASHSPEC-ADR-0105-filters-pipe-table.md) | Filters pipe-table — `filters { \| id \| bind \| … \| }` | Accepted |
+| [0106](DASHSPEC-ADR-0106-multi-form-constructs.md) | Multi-form constructs — `Construct.declare` | Accepted |
+| [0107](DASHSPEC-ADR-0107-sourced-clicks.md) | Sourced clicks — `on <source> click` + the click table | Accepted |
+| [0108](DASHSPEC-ADR-0108-eventsource-handler.md) | EventSource + Handler — the interaction subsystem | Accepted (direction) |
+| [0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) | SSOT проводки фильтров клика | Accepted |
+| [0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) | Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты | Accepted |
