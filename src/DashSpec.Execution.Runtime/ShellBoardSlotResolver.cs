@@ -31,7 +31,10 @@ public static class ShellBoardSlotResolver
 
     /// <summary>
     /// Resolve the shell grid slots from the host module board; null/empty board is the
-    /// caller's fallback to resolve (the embedded default in the host).
+    /// caller's fallback to resolve (the embedded default in the host). Rows share the
+    /// full width by weight — the same math as the cards' boards (<see cref="LayoutBoardRowPlacer"/>,
+    /// ADR-0020/0061): single-cell rows span all columns, multi-cell rows split proportionally
+    /// with the last cell taking the remainder — a shell row never leaves the width unused.
     /// </summary>
     public static IReadOnlyList<ViewerShellSlot> Resolve(LayoutBoardDefinition? board)
     {
@@ -41,36 +44,34 @@ public static class ShellBoardSlotResolver
                 "Shell board is required: pass the host module board or the embedded default.");
         }
 
-        var slots = new List<ViewerShellSlot>();
+        var placements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
         var rowIdx = 0;
         foreach (var row in board.Rows)
         {
             rowIdx++;
-            var colIdx = 0;
-            foreach (var token in row)
-            {
-                if (string.IsNullOrWhiteSpace(token))
+            LayoutBoardRowPlacer.PlaceRow(
+                row,
+                rowIdx,
+                GridColumns,
+                "Shell board",
+                token =>
                 {
-                    continue;
-                }
+                    var (slotId, _) = LayoutBoardCellParser.parseCell(token, "Shell board", rowIdx);
+                    var normalized = Normalize(slotId);
+                    if (!KnownSlotIds.Contains(normalized))
+                    {
+                        throw new DashSpecParseException(
+                            $"Shell board slot '{token}' is not a known shell slot (row {rowIdx}).");
+                    }
 
-                var (slotId, weight) = LayoutBoardCellParser.parseCell(token, "Shell board", rowIdx);
-                var normalized = Normalize(slotId);
-                if (!KnownSlotIds.Contains(normalized))
-                {
-                    throw new DashSpecParseException(
-                        $"Shell board slot '{token}' is not a known shell slot (row {rowIdx}).");
-                }
-
-                colIdx++;
-                slots.Add(new ViewerShellSlot(normalized, rowIdx, colIdx, weight));
-            }
+                    return normalized;
+                },
+                placements);
         }
 
-        if (slots.Count == 0)
-        {
-            throw new DashSpecParseException("Shell board is empty: no slots declared.");
-        }
+        var slots = placements
+            .Select(pair => new ViewerShellSlot(pair.Key, pair.Value.Row, pair.Value.Col, pair.Value.Span))
+            .ToList();
 
         if (!slots.Any(slot => slot.SlotId == ViewerShellSlotIds.Content))
         {
