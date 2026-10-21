@@ -31,10 +31,10 @@ public static class ShellBoardSlotResolver
 
     /// <summary>
     /// Resolve the shell grid slots from the host module board; null/empty board is the
-    /// caller's fallback to resolve (the embedded default in the host). Rows share the
-    /// full width by weight — the same math as the cards' boards (<see cref="LayoutBoardRowPlacer"/>,
-    /// ADR-0020/0061): single-cell rows span all columns, multi-cell rows split proportionally
-    /// with the last cell taking the remainder — a shell row never leaves the width unused.
+    /// caller's fallback to resolve (the embedded default in the host). Shell rows read as
+    /// cells ([ADR-0111] §2 experiment): chrome slots fit their content (Span 0), a `.` dot
+    /// cell is a rubber spacer sharing the row's free space by weight, and the content slot
+    /// is greedy (Span 1) — it takes the cell entirely, as recorded.
     /// </summary>
     public static IReadOnlyList<ViewerShellSlot> Resolve(LayoutBoardDefinition? board)
     {
@@ -44,42 +44,58 @@ public static class ShellBoardSlotResolver
                 "Shell board is required: pass the host module board or the embedded default.");
         }
 
-        var placements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        var slots = new List<ViewerShellSlot>();
         var rowIdx = 0;
         foreach (var row in board.Rows)
         {
             rowIdx++;
-            LayoutBoardRowPlacer.PlaceRow(
-                row,
-                rowIdx,
-                GridColumns,
-                "Shell board",
-                token =>
+            var colIdx = 0;
+            var rowHasSlots = false;
+            foreach (var token in row)
+            {
+                if (string.IsNullOrWhiteSpace(token))
                 {
-                    var (slotId, _) = LayoutBoardCellParser.parseCell(token, "Shell board", rowIdx);
-                    var normalized = Normalize(slotId);
-                    if (!KnownSlotIds.Contains(normalized))
-                    {
-                        throw new DashSpecParseException(
-                            $"Shell board slot '{token}' is not a known shell slot (row {rowIdx}).");
-                    }
+                    continue;
+                }
 
-                    return normalized;
-                },
-                placements);
+                var (cellId, weight) = LayoutBoardCellParser.parseCell(token, "Shell board", rowIdx);
+                colIdx++;
+
+                if (cellId == ".")
+                {
+                    slots.Add(new ViewerShellSlot(".", rowIdx, colIdx, weight));
+                    continue;
+                }
+
+                var normalized = Normalize(cellId);
+                if (!KnownSlotIds.Contains(normalized))
+                {
+                    throw new DashSpecParseException(
+                        $"Shell board slot '{token}' is not a known shell slot (row {rowIdx}).");
+                }
+
+                rowHasSlots = true;
+                slots.Add(new ViewerShellSlot(normalized, rowIdx, colIdx, SpanFor(normalized)));
+            }
+
+            if (!rowHasSlots)
+            {
+                throw new DashSpecParseException(
+                    $"Shell board row {rowIdx} declares no slots: spacers alone carry no chrome.");
+            }
         }
-
-        var slots = placements
-            .Select(pair => new ViewerShellSlot(pair.Key, pair.Value.Row, pair.Value.Col, pair.Value.Span))
-            .ToList();
 
         if (!slots.Any(slot => slot.SlotId == ViewerShellSlotIds.Content))
         {
-            slots.Add(new ViewerShellSlot(ViewerShellSlotIds.Content, rowIdx + 1, 1, GridColumns));
+            slots.Add(new ViewerShellSlot(ViewerShellSlotIds.Content, rowIdx + 1, 1, 1));
         }
 
         return slots;
     }
+
+    /// <summary>Span semantics: 0 — fit content (chrome); 1 — greedy, shares free space (content slot).</summary>
+    static int SpanFor(string slotId) =>
+        slotId == ViewerShellSlotIds.Content ? 1 : 0;
 
     /// <summary>Legacy aliases: report_picker → catalog, dashboard → nav (ADR-0054 compat).</summary>
     public static string Normalize(string token)

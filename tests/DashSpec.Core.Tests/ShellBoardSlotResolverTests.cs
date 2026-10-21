@@ -9,9 +9,10 @@ using ExecutionLayoutModuleParser = DashSpec.Execution.Parsing.LayoutModuleParse
 namespace DashSpec.Core.Tests;
 
 /// <summary>
-/// Shell board slots ([ADR-0111] §2): the scope-host layout board from the host module is the
-/// shell grid — chrome slots plus the content slot, placed as recorded in ds; unknown slots
-/// fail loud; the implicit content slot is a recorded default, not a synthesized grid.
+/// Shell board slots ([ADR-0111] §2 experiment): shell rows read as cells — chrome slots fit
+/// their content (Span 0), a `.` dot is a rubber spacer sharing the row's free space by
+/// weight, the content slot is greedy (Span 1) and takes the cell entirely; unknown slots
+/// fail loud; the implicit content slot is a recorded default.
 /// </summary>
 public sealed class ShellBoardSlotResolverTests
 {
@@ -31,60 +32,69 @@ public sealed class ShellBoardSlotResolverTests
     }
 
     [Fact]
-    public void Declared_board_places_slots_as_recorded()
+    public void Chrome_slots_fit_content_and_spacers_share_free_space_by_weight()
     {
-        var board = ParseBoard(
-            "[ brand:3 catalog nav:2 ]",
-            "[ content ]");
+        var board = ParseBoard("[ brand . catalog nav .:2 help settings ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
-        // Row 1: weights 3/1/2 of 6 on 12 columns → spans 6/2/remainder 4.
-        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 6), Find(slots, "brand"));
-        Assert.Equal(new ViewerShellSlot("catalog", 1, 7, 2), Find(slots, "catalog"));
-        Assert.Equal(new ViewerShellSlot("nav", 1, 9, 4), Find(slots, "nav"));
-
-        // Row 2: single cell — the whole width.
-        Assert.Equal(new ViewerShellSlot("content", 2, 1, 12), Find(slots, "content"));
+        var row1 = slots.Where(slot => slot.Row == 1).ToList();
+        Assert.Equal(7, row1.Count);
+        // Chrome slots: content-fit (Span 0), placed in cell order.
+        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 0), Find(row1, "brand"));
+        Assert.Equal(new ViewerShellSlot("catalog", 1, 3, 0), Find(row1, "catalog"));
+        Assert.Equal(new ViewerShellSlot("nav", 1, 4, 0), Find(row1, "nav"));
+        Assert.Equal(new ViewerShellSlot("help", 1, 6, 0), Find(row1, "help"));
+        Assert.Equal(new ViewerShellSlot("settings", 1, 7, 0), Find(row1, "settings"));
+        // Spacers: rubber cells with weight (default 1, .:2 → 2).
+        Assert.Equal(new ViewerShellSlot(".", 1, 2, 1),
+            row1.Single(slot => slot.SlotId == "." && slot.Col == 2));
+        Assert.Equal(new ViewerShellSlot(".", 1, 5, 2),
+            row1.Single(slot => slot.SlotId == "." && slot.Col == 5));
     }
 
     [Fact]
-    public void Equal_weight_row_shares_the_full_width()
+    public void Content_slot_is_greedy_takes_the_cell_entirely()
     {
-        // The LUS corpus row: six chrome slots, weight 1 each — the row fills
-        // the whole width (2 columns each), never a squeezed left slice.
-        var board = ParseBoard("[ brand catalog nav external_links help settings ]");
+        var board = ParseBoard(
+            "[ brand . catalog nav help settings ]",
+            "[ content ]");
 
-        var slots = ShellBoardSlotResolver.Resolve(board);
-
-        var chromeRow = slots.Where(slot => slot.Row == 1).OrderBy(slot => slot.Col).ToList();
-        Assert.Equal(6, chromeRow.Count);
-        Assert.All(chromeRow, slot => Assert.Equal(2, slot.Span));
-        Assert.Equal(1, chromeRow[0].Col);
-        Assert.Equal(11, chromeRow[^1].Col);
-        Assert.Equal(12, chromeRow[^1].Col + chromeRow[^1].Span - 1);
+        var content = Find(ShellBoardSlotResolver.Resolve(board), "content");
+        Assert.Equal(2, content.Row);
+        Assert.Equal(1, content.Col);
+        Assert.Equal(1, content.Span);
     }
 
     [Fact]
     public void Content_slot_is_implicit_full_width_tail_when_not_declared()
     {
-        var board = ParseBoard("[ brand nav ]");
+        var board = ParseBoard("[ brand . nav ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
         var content = Assert.Single(slots, slot => slot.SlotId == ViewerShellSlotIds.Content);
         Assert.Equal(2, content.Row);
         Assert.Equal(1, content.Col);
-        Assert.Equal(ShellBoardSlotResolver.GridColumns, content.Span);
+        Assert.Equal(1, content.Span);
     }
 
-    static ViewerShellSlot Find(IReadOnlyList<ViewerShellSlot> slots, string slotId) =>
-        Assert.Single(slots, slot => slot.SlotId == slotId);
+    [Fact]
+    public void Spacer_only_row_fails_loud()
+    {
+        var board = ParseBoard(
+            "[ . . ]",
+            "[ content ]");
+
+        var ex = Assert.Throws<DashSpecParseException>(() => ShellBoardSlotResolver.Resolve(board));
+        Assert.Contains("row 1", ex.Message);
+        Assert.Contains("no slots", ex.Message);
+    }
 
     [Fact]
     public void Unknown_slot_fails_loud_with_token_and_row()
     {
-        var board = ParseBoard("[ brand mystery ]");
+        var board = ParseBoard("[ brand . mystery ]");
 
         var ex = Assert.Throws<DashSpecParseException>(() => ShellBoardSlotResolver.Resolve(board));
         Assert.Contains("mystery", ex.Message);
@@ -94,7 +104,7 @@ public sealed class ShellBoardSlotResolverTests
     [Fact]
     public void Legacy_aliases_normalize_to_current_slot_ids()
     {
-        var board = ParseBoard("[ report_picker dashboard ]");
+        var board = ParseBoard("[ report_picker . dashboard ]");
 
         var slots = ShellBoardSlotResolver.Resolve(board);
 
@@ -114,22 +124,26 @@ public sealed class ShellBoardSlotResolverTests
     public void Embedded_default_board_text_parses_as_regular_ds()
     {
         // The shipped default (host.ds as EmbeddedResource in DashSpec.Host) is a regular
-        // ds layout module — this pins its shape: brand + nav topbar row, content below.
+        // ds layout module — this pins its shape: brand + spacer + nav topbar, content below.
         var board = ExecutionLayoutModuleParser.ParseLayoutFile("""
             module layout dashspec_default_shell
             namespace DashSpec.Default.Shell
             scope host
 
-            [ brand nav ]
+            [ brand . nav ]
             [ content ]
             """);
 
         Assert.Equal(LayoutScope.Host, board.ModuleScope.Value);
 
         var slots = ShellBoardSlotResolver.Resolve(board);
-        Assert.Equal(3, slots.Count);
-        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 6), Find(slots, "brand"));
-        Assert.Equal(new ViewerShellSlot("nav", 1, 7, 6), Find(slots, "nav"));
-        Assert.Equal(new ViewerShellSlot("content", 2, 1, 12), Find(slots, "content"));
+        Assert.Equal(4, slots.Count);
+        Assert.Equal(new ViewerShellSlot("brand", 1, 1, 0), Find(slots, "brand"));
+        Assert.Equal(new ViewerShellSlot(".", 1, 2, 1), Find(slots, "."));
+        Assert.Equal(new ViewerShellSlot("nav", 1, 3, 0), Find(slots, "nav"));
+        Assert.Equal(new ViewerShellSlot("content", 2, 1, 1), Find(slots, "content"));
     }
+
+    static ViewerShellSlot Find(IReadOnlyList<ViewerShellSlot> slots, string slotId) =>
+        Assert.Single(slots, slot => slot.SlotId == slotId);
 }
