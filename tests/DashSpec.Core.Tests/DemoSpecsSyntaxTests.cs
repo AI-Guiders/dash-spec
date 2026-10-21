@@ -214,6 +214,46 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_table_diagram_columns_alignment_desugars_maps()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id         | format     | label        | sorting | alignment | header_alignment |
+                | usage_date | date.short | Дата         | DESC    | center    | left             |
+                | launches   | -          | Запуски      | DESC    | right     |                  |
+              end columns
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var props = fragment.Diagram!.Properties;
+        Assert.Equal("usage_date, launches", props["columns"]);
+        Assert.Equal("usage_date:center, launches:right", props["column_alignments"]);
+        Assert.Equal("usage_date:left", props["column_header_alignments"]);
+    }
+
+    [Fact]
+    public void Parse_table_diagram_columns_rejects_unknown_alignment()
+    {
+        var text = """
+            module diagram t
+            table
+              columns
+                | id       | format | label   | sorting | alignment |
+                | launches | -      | Запуски | DESC    | middle    |
+              end columns
+            end table
+            """;
+
+        var ex = Assert.Throws<DashSpecParseException>(() =>
+            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+        Assert.Contains("alignment", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("middle", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_table_diagram_columns_pipe_table_accepts_subset_header_and_skips_separator_rows()
     {
         var text = """

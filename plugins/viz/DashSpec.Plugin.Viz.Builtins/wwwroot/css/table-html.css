@@ -67,7 +67,6 @@
 .table-col-filter {
   width: 100%;
   min-width: 3rem;
-  max-width: 12rem;
   padding: 0.2rem 0.35rem;
   border: 1px solid var(--border);
   border-radius: 4px;

@@ -31,6 +31,18 @@ internal static class TablePayloadBuilder
             ? columns.Select(column => labels.TryGetValue(column, out var label) ? label : column).ToList()
             : null;
 
-        return new TablePayload(columns.ToList(), tableRows, headerTexts);
+        // Per-column text-align (spec `alignment` / `header_alignment`); null entries keep the CSS default.
+        var columnAlignments = ColumnFormatMap.Parse(
+            diagram.Properties.GetValueOrDefault("column_alignments"));
+        var headerAlignments = ColumnFormatMap.Parse(
+            diagram.Properties.GetValueOrDefault("column_header_alignments"));
+        var alignments = columnAlignments.Count > 0
+            ? columns.Select(c => columnAlignments.TryGetValue(c, out var a) ? a : null).ToList()
+            : null;
+        var headers = headerAlignments.Count > 0
+            ? columns.Select(c => headerAlignments.TryGetValue(c, out var a) ? a : null).ToList()
+            : null;
+
+        return new TablePayload(columns.ToList(), tableRows, headerTexts, alignments, headers);
     }
 }
