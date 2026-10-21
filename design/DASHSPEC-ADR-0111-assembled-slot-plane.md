@@ -21,23 +21,53 @@
 
 ## Decision
 
-### 1. Артефакт — `SlotPlane`: собранная плоскость, только существующие типы
+### 1. Артефакт — `SlotPlane`: собранная плоскость; слот-модель — в F#-модельном слое, у своих сиблингов
 
-Ни одного нового узла. Артефакт — контейнер **существующих** планов, все scope разом:
+Ни одного нового узла. Сначала — переезд чистых модельных записей домой: `LayoutSlotDescriptor`/`LayoutSlotScope`/`LayoutSlotContentKind` (чистые данные, ноль поведения; [ADR-0072] писала «DashSpec.Core.Layout») сегодня сидят в C# `Execution.Runtime`, тогда как их сиблинги `PlacementDefinition`/`LayoutDefinition` живут в F# `Modeling.Parse.Layout` — записи переезжают туда же, **рядом с `PlacementDefinition`** (механический переезд чистых записей, **не** порт: `LayoutSlotEngine` и планировщики остаются в C# `Execution.Runtime` и просто производят F#-записи — как уже всё потребляет F#-документ).
 
-```csharp
-// DashSpec.Execution.Runtime (рядом с LayoutSlotEngine)
+```fsharp
+// Modeling.Parse/Layout — рядом с PlacementDefinition/LayoutDefinition (LayoutTypes.fs)
 
-public sealed record SlotPlane(
-    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> TabBoards,     // ключ — TabId
-    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> PageToolbars,  // ключ — PageId
-    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> CardInteriors, // ключ — CardId
-    IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> CardFilterChrome, // ключ — CardId
-    VisualRoute InitialRoute,          // записанное умолчание (EntryId/TabId/PageId)
-    IReadOnlySet<string> RecordedDefaults); // токены/слоты, подставленные умолчанием ([ADR-0109])
+[<RequireQualifiedAccess>]
+type LayoutSlotScope =
+    | HostTabBoard
+    | HostPageToolbar
+    | CardInterior
+    | CardFilterChrome
+
+[<RequireQualifiedAccess>]
+type LayoutSlotContentKind =
+    | Card
+    | Nest
+    | Group
+    | Filter
+    | PrimaryDiagram
+    | SecondaryDiagram
+
+[<CLIMutable>]
+type LayoutSlotDescriptor =
+    { Token: string                      // токен ячейки из доски ('usage_date:2', 'main', ид карточки)
+      Placement: PlacementDefinition     // row/col/span — существующая запись
+      Scope: LayoutSlotScope
+      ContentKind: LayoutSlotContentKind }
+
+[<CLIMutable>]
+type SlotPlane =
+    { TabBoards: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>>      // ключ — TabId
+      PageToolbars: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>>  // ключ — PageId
+      CardInteriors: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> // ключ — CardId
+      CardFilterChrome: IReadOnlyDictionary<string, IReadOnlyList<LayoutSlotDescriptor>> // ключ — CardId
+      InitialRoute: VisualRoute                              // записанное умолчание (EntryId/TabId/PageId)
+      RecordedDefaults: IReadOnlySet<string> }               // подставленные умолчания ([ADR-0109])
+
+[<CLIMutable>]
+type VisualRoute =
+    { EntryId: string
+      TabId: string
+      PageId: string }
 ```
 
-- **Слоты, размещения, содержания — всё существующее**: `LayoutSlotDescriptor`, `PlacementDefinition`, `ContentKind`, `Scope` из [ADR-0072] без изменений; новые content kinds растут по живым инстансам.
+- **Слоты, размещения, содержания — всё существующее** ([ADR-0072]): `LayoutSlotDescriptor`, `PlacementDefinition`, `ContentKind`, `Scope` — те же записи, в модельном F#-слое; новые content kinds растут по живым инстансам.
 - **Вложенность — существующая**: две сетки (host → card) + nest/group — слот `Card` на доске вкладки и плоскость `CardInterior` этой карточки — ключом `CardId`; никаких новых узлов-«строк/столбцов доски» (placement — метка на дескрипторе, как `Grid.Row`).
 - **Умолчания записаны** (`RecordedDefaults`): fallback-ряды, family-defaults, first-tab/first-page — подставлены при сборке и записаны, а не тихо применены на рендере ([ADR-0109]).
 
@@ -82,6 +112,7 @@ Catalog entry получает `page <pageId>` симметрично `tab <tabI
 | Идея | Почему |
 |------|--------|
 | **Выдуманное параллельное дерево (`VisualNode`/`VGrid`/`VRow`/`VSlot`/`VCard`/`VisualChild`…)** (правки этого же дня, несколько итераций) | Каноническая модель уже есть и развёрнута — [ADR-0072] слотовая плоскость, M1–M5 done: дескрипторы, планировщики, реестры, «две вложенные сетки». Изобретать поверх неё второе дерево — параллельная истина; нужно было **прочитать канон до проектирования**. Остальное этого дня — подвиды той же ошибки: scope-строки, листья `of string`, узлы-«строки доски», порты математики, новые проекты |
+| **C#-артефакт, привязанный к месту посадки слот-типов** (правка этого же дня) | Модель — на F# у сиблингов: чистые записи (`LayoutSlotDescriptor`/`Scope`/`ContentKind`) переезжают в `Modeling.Parse/Layout` рядом с `PlacementDefinition`; переезд механический, не порт — `LayoutSlotEngine` остаётся в C# `Execution.Runtime` и производит F#-записи; артефакт `SlotPlane` — с ними в модельном слое |
 | `VisualModel` + `VisualCompositor` (`be18e71`/`4e490a4`) | Композитор с «нарезкой по маршруту» — сессия, не слой; артефакт маршруто-независим |
 | Перенос merge таб-модулей в рантайм | Merge — конвейер компиляции ([ADR-0097]) |
 | Скрывать тулбар-фильтры эвристикой пересечения | Нарушает §4 ADR-0074; честный путь — слоты + `Bound` + disabled-состояние |
