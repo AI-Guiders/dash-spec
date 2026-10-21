@@ -167,7 +167,9 @@ module PropertySchemas =
         [ spec "columns" CommaList
           spec "order_by" RestOfLine
           spec "limit" Scalar
-          spec "title" String ]
+          spec "title" String
+          spec "value" ColumnBinding
+          spec "aggregate" Scalar ]
 
     let numberDiagram =
         [ spec "value" ColumnBinding
