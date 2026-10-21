@@ -7,9 +7,9 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module DemoSampleParseTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     let private samplesDemoDir =
         Path.GetFullPath(

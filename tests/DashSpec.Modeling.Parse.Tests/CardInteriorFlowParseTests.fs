@@ -7,9 +7,9 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module CardInteriorFlowParseTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     let internal flowTextForReuse =
         """

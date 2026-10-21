@@ -6,9 +6,9 @@ open Xunit
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module ReportScopePlacementTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     [<Fact>]
     let ``placement flow wires filters to report and card`` () =

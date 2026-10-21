@@ -5,9 +5,9 @@ open System.IO
 open Xunit
 open DashSpec.Modeling.Parse.Document
 
+[<Xunit.Collection("GridDefault")>]
 module MultiSlotFlowInputParseTests =
 
-    do GridDefaultTestBootstrap.ensure ()
 
     let private flowText =
         """
