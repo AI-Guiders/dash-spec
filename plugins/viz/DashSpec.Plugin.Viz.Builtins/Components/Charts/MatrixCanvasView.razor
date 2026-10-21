@@ -60,7 +60,7 @@ else
                         {
                             var yLabel = Payload.YLabels[yi];
                             var idx = yi;
-                            <div class="matrix-canvas-y-label @(CategoryItemClickEnabled ? "matrix-canvas-y-label--clickable" : null)"
+                            <div class="matrix-canvas-y-label @YLabelCssClass(yLabel)"
                                  title="@yLabel"
                                  @onclick="() => HandleCategoryItemClickAsync(idx, yLabel)">@yLabel</div>
                         }
@@ -70,7 +70,7 @@ else
                         class="matrix-canvas"
                         width="1"
                         height="1"
-                        @onclick="HandleCanvasClickAsync"></canvas>
+                        @onclick="@(async args => await HandleCanvasClickAsync(args))"></canvas>
             </div>
         </div>
         @if (ShowGradientLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText)))
@@ -166,6 +166,7 @@ else
     }
 
     private string? _mountedPayloadKey;
+    private string? _activeCategoryLabel;
     private const int TargetVisibleXLabels = 14;
 
     private string HostStyle => $"--matrix-max-height:{HeightPx}px";
@@ -273,7 +274,10 @@ else
             Payload.YLabels[hit.Yi],
             hit.Value,
             Payload.Tooltips?[hit.Yi][hit.Xi],
-            xBucket);
+            xBucket,
+            // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
+            // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
+            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell);
 
         await OnCellSelected.InvokeAsync(context);
     }
@@ -286,6 +290,10 @@ else
             return;
         }
 
+        // Instant active-state feedback; the slot refresh lands later (ADR-0066 interior refresh).
+        _activeCategoryLabel = yLabel;
+        await InvokeAsync(StateHasChanged);
+
         var context = new HeatmapCellContext(
             yi,
             -1,
@@ -297,6 +305,23 @@ else
             DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem);
 
         await OnCategoryItemSelected.InvokeAsync(context);
+    }
+
+    /// <summary>The clicked category item stays highlighted (ADR-0107 active state).</summary>
+    private string? YLabelCssClass(string yLabel)
+    {
+        var parts = new List<string>();
+        if (CategoryItemClickEnabled)
+        {
+            parts.Add("matrix-canvas-y-label--clickable");
+        }
+
+        if (string.Equals(yLabel, _activeCategoryLabel, StringComparison.Ordinal))
+        {
+            parts.Add("matrix-canvas-y-label--active");
+        }
+
+        return parts.Count == 0 ? null : string.Join(' ', parts);
     }
 
     private bool ShouldShowXLabel(int index)

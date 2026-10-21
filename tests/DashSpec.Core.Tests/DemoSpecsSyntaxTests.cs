@@ -189,6 +189,31 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
+    public void Parse_table_diagram_title_with_placeholders_keeps_columns_desugaring()
+    {
+        var text = """
+            module diagram t
+            table
+              title = "Запуски: {app_name}"
+              columns
+                | id         | format     | label        | sorting |
+                | usage_date | date.short | Дата         | DESC    |
+                | user_sam   | -          | Пользователь | -       |
+                | launches   | -          | Запуски      | DESC    |
+              end columns
+            end table
+            """;
+
+        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var props = fragment.Diagram!.Properties;
+        Assert.Equal("table", fragment.Diagram.Kind);
+        Assert.Equal("Запуски: {app_name}", props["title"]);
+        Assert.Equal("usage_date, user_sam, launches", props["columns"]);
+        Assert.Equal("usage_date:date.short", props["column_formats"]);
+        Assert.Equal("usage_date DESC, launches DESC", props["order_by"]);
+    }
+
+    [Fact]
     public void Parse_table_diagram_columns_pipe_table_accepts_subset_header_and_skips_separator_rows()
     {
         var text = """

@@ -93,4 +93,13 @@
   <data name="unit: days" xml:space="preserve">
     <value>д</value>
   </data>
+  <data name="Click an axis label to load this table" xml:space="preserve">
+    <value>Кликните по метке оси, чтобы загрузить таблицу</value>
+  </data>
+  <data name="Click a heatmap cell to load this table" xml:space="preserve">
+    <value>Кликните по ячейке тепловой карты, чтобы загрузить таблицу</value>
+  </data>
+  <data name="Click the diagram to load this table" xml:space="preserve">
+    <value>Кликните по диаграмме, чтобы загрузить таблицу</value>
+  </data>
 </root>

@@ -1,0 +1,26 @@
+/* Slot chrome (CardVizHost): spec-driven slot title + drill-awaiting hint (ADR-0107 drill UX). */
+
+.card-slot-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text, #e8eef5);
+}
+
+.card-slot-awaiting {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px dashed var(--border, #2d3a4d);
+  border-radius: 8px;
+  background: var(--surface, #1a2332);
+}
+
+.card-slot-awaiting .card-slot-title {
+  margin: 0;
+}
+
+.card-slot-awaiting .empty-state {
+  margin: 0;
+  font-size: 0.78rem;
+}

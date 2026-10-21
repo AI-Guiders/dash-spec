@@ -327,6 +327,7 @@ public sealed class CardRenderService(
             return new Dictionary<string, CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase);
         }
 
+        var drillTargets = CardDrillSlotTargets.Resolve(card);
         var renders = new Dictionary<string, CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase);
         foreach (var (slotRef, slot) in slots)
         {
@@ -340,16 +341,15 @@ public sealed class CardRenderService(
                 .WithDataSource(slot.DataSource)
                 .WithBoundFilters(slot.BoundFilters)
                 .WithLegend(slot.Legend)
-                .WithPresentation(slot.Presentation)
+                // A slot without its own presentation inherits the card's — the diagram modules'
+                // chrome presets (e.g. table_drill_compact: width/density/column_filters) ride it.
+                .WithPresentation(slot.Presentation ?? card.Presentation)
                 .WithSeriesTransform(slot.SeriesTransform)
                 .WithFlowInput(slot.FlowInput ?? card.FlowInput);
 
             var errorContext = slotCard;
             try
             {
-                var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
-                var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
-                errorContext = effective;
                 // ADR-0107: a targeted overlay applies only to its slot; untargeted = legacy all slots.
                 var drillOverlay = cellDrill.Get(card.Id);
                 var slotOverlay =
@@ -358,6 +358,28 @@ public sealed class CardRenderService(
                     !string.Equals(drillOverlay.TargetSlot, slotRef, StringComparison.OrdinalIgnoreCase)
                         ? null
                         : drillOverlay;
+
+                // Drill UX: a drill-target slot renders empty (with a hint) until its own click
+                // fills it; the title template fills only when the overlay carries the values.
+                if (drillTargets.IsTarget(slotRef) && slotOverlay is null)
+                {
+                    var awaitingKind = DiagramKindRegistry.Resolve(slot.Diagram.Kind);
+                    renders[slotRef] = new CardSlotRenderResult(
+                        slotRef,
+                        slot.Diagram.Kind,
+                        awaitingKind.DataFamily,
+                        string.Empty,
+                        SlotTitle: DrillSlotTitleResolver.Resolve(
+                            slot.Diagram.Properties.GetValueOrDefault("title"),
+                            null),
+                        AwaitingClick: true,
+                        AwaitingSource: drillTargets.SourceOf(slotRef));
+                    continue;
+                }
+
+                var resolved = CardResolver.Resolve(slotCard, library, document.DashboardFilters);
+                var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
+                errorContext = effective;
                 var query = QueryCompiler.Compile(
                     effective,
                     filters,
@@ -381,7 +403,7 @@ public sealed class CardRenderService(
                     ? CompositionResolution.ResolveSeriesTransform(effective, library)
                     : null;
 
-                renders[slotRef] = kind.DataFamily switch
+                var slotResult = kind.DataFamily switch
                 {
                     DiagramDataFamily.Table => new CardSlotRenderResult(
                         slotRef,
@@ -424,6 +446,12 @@ public sealed class CardRenderService(
                         kind.DataFamily,
                         renderPluginId,
                         Error: $"Unsupported interior slot family '{kind.DataFamily}'."),
+                };
+                renders[slotRef] = slotResult with
+                {
+                    SlotTitle = DrillSlotTitleResolver.Resolve(
+                        effective.Diagram.Properties.GetValueOrDefault("title"),
+                        slotOverlay),
                 };
             }
             catch (Exception ex)

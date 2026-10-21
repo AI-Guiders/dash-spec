@@ -143,6 +143,14 @@
   color: var(--accent, #60a5fa);
 }
 
+/* ADR-0107 active state: the clicked category item stays highlighted — which row drives the drill table. */
+.matrix-canvas-y-label--clickable.matrix-canvas-y-label--active {
+  color: var(--accent, #60a5fa);
+  font-weight: 600;
+  text-decoration: underline solid;
+  text-underline-offset: 3px;
+}
+
 .matrix-canvas {
   grid-column: 2;
   grid-row: 2;

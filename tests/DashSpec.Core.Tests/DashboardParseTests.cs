@@ -1057,6 +1057,32 @@ public class DashboardParseTests
         }
     }
 
+    [Fact]
+    public void DrillSlotTitleResolver_fills_field_and_date_placeholders()
+    {
+        var overlay = new CardCellDrillOverlay();
+        overlay.SetField("app_name", "AVEVA E3D");
+        overlay.SetDate("usage_date", new DateOnly(2026, 10, 16), new DateOnly(2026, 10, 16));
+
+        var title = DrillSlotTitleResolver.Resolve("Запуски: {app_name} · {usage_date}", overlay);
+
+        Assert.Equal("Запуски: AVEVA E3D · 16.10", title);
+    }
+
+    [Fact]
+    public void DrillSlotTitleResolver_null_when_placeholder_unfillable_and_static_title_passes()
+    {
+        Assert.Null(DrillSlotTitleResolver.Resolve("Запуски: {app_name}", null));
+        Assert.Null(DrillSlotTitleResolver.Resolve("Запуски: {app_name}", new CardCellDrillOverlay()));
+        Assert.Null(DrillSlotTitleResolver.Resolve(null, null));
+        Assert.Null(DrillSlotTitleResolver.Resolve("   ", null));
+
+        var overlay = new CardCellDrillOverlay();
+        overlay.SetField("app_name", "AutoCAD");
+        Assert.Equal("Запуски за период", DrillSlotTitleResolver.Resolve("Запуски за период", overlay));
+        Assert.Equal("Запуски: AutoCAD", DrillSlotTitleResolver.Resolve("Запуски: {app_name}", overlay));
+    }
+
     [Theory]
     [InlineData("sticky", MatrixAxisScrollMode.Sticky)]
     [InlineData("none", MatrixAxisScrollMode.None)]

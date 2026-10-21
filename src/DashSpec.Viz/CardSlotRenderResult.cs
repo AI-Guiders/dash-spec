@@ -13,4 +13,7 @@ public sealed record CardSlotRenderResult(
     GanttPayload? Gantt = null,
     MatrixPresentation? MatrixPresentation = null,
     TablePresentation? TablePresentation = null,
+    string? SlotTitle = null,
+    bool AwaitingClick = false,
+    string? AwaitingSource = null,
     string? Error = null);

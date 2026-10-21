@@ -255,7 +255,8 @@ else
             Payload.XLabels[xi],
             Payload.YLabels[yi],
             value,
-            Payload.Tooltips?[yi][xi]);
+            Payload.Tooltips?[yi][xi],
+            ClickSource: DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell);
 
         await OnCellSelected.InvokeAsync(context);
     }

@@ -12,12 +12,26 @@ else if (!string.IsNullOrEmpty(EffectiveCard.Error))
 {
     <div class="card-error">@EffectiveCard.Error</div>
 }
+else if (Slot is not null && Slot.AwaitingClick)
+{
+    <div class="card-slot-awaiting">
+        @if (!string.IsNullOrWhiteSpace(Slot.SlotTitle))
+        {
+            <div class="card-slot-title">@Slot.SlotTitle</div>
+        }
+        <p class="empty-state">@AwaitingHint</p>
+    </div>
+}
 else if (_componentType is null)
 {
     <div class="card-error">@(Loc["Unknown viz plugin: {0}", EffectiveCard.RenderPluginId])</div>
 }
 else
 {
+    @if (Slot is not null && !string.IsNullOrWhiteSpace(Slot.SlotTitle))
+    {
+        <div class="card-slot-title">@Slot.SlotTitle</div>
+    }
     <DynamicComponent Type="_componentType" Parameters="_parameters" />
 }
 
@@ -37,6 +51,14 @@ else
     private Dictionary<string, object?> _parameters = new();
 
     private CardRenderResult EffectiveCard => Slot is null ? Card : FromSlot(Slot);
+
+    /// <summary>Drill UX hint: what to click to fill this slot (ADR-0107).</summary>
+    private string AwaitingHint => Slot?.AwaitingSource switch
+    {
+        "category item" => Loc["Click an axis label to load this table"],
+        "cell" => Loc["Click a heatmap cell to load this table"],
+        _ => Loc["Click the diagram to load this table"],
+    };
 
     protected override void OnParametersSet()
     {
