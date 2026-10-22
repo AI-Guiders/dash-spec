@@ -222,7 +222,7 @@ else
 
     private IReadOnlyList<RadzenPoint> PointsOf(ChartSeries series) =>
         Chart.Labels
-            .Select((label, index) => new RadzenPoint(label, series.Values[index]))
+            .Select((label, index) => new RadzenPoint(label, series.Values[index] ?? 0))
             .ToList();
 
     /// <summary>
@@ -238,8 +238,15 @@ else
     private static string? SeriesColor(ChartSeries series) =>
         string.IsNullOrWhiteSpace(series.Color) ? null : series.Color;
 
-    /// <summary>One chart point as Radzen sees it: category label + value.</summary>
-    public sealed record RadzenPoint(string Label, double? Value);
+    /// <summary>
+    /// One chart point as Radzen sees it: category label + value.
+    /// Value must stay non-nullable: Radzen compiles ValueProperty into a getter
+    /// that unwraps Nullable&lt;double&gt;.Value — the first null point kills the circuit
+    /// on a legend/tooltip hit (FindClosestSeries: "Nullable object must have a value").
+    /// A payload null (empty bucket) maps to 0, same as the builtin canvas value axis
+    /// (charts.js counts null as 0).
+    /// </summary>
+    public sealed record RadzenPoint(string Label, double Value);
 
     /// <summary>One table row as Radzen sees it: the raw cell values by column order.</summary>
     public sealed record RadzenRow(IReadOnlyList<string> Values);
