@@ -1,0 +1,22 @@
+/* Radzen viz plugin — its own render surface (ADR-0111 render layer).
+   Every class this plugin renders lives here, not in the host css hub.
+   Selectors carry the rviz- prefix: the host parts and sibling plugins never
+   share authority over the same selector. */
+
+.rviz-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Radzen heatmap/gantt measure their container on first render — a zero-height
+   host bakes a zero viewBox (squashed card). The fixed height rides this
+   class instead of inline styles scattered through the razor. */
+.rviz-chart-wrap--fixed {
+  height: 320px;
+}
+
+.rviz-empty-state {
+  margin: 2rem 0;
+  text-align: center;
+  color: var(--muted, #8fa0b3);
+}
