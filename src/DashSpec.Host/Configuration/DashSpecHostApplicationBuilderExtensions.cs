@@ -1,8 +1,11 @@
 using System.Globalization;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Viewer;
+using DashSpec.Abstractions.Viz;
 using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
+using DashSpec.Stack.Radzen;
+using DashSpec.Stack.SelfMade;
 using DashSpec.Host.Data;
 using DashSpec.Host.Plugins;
 using DashSpec.Host.Security;
@@ -72,6 +75,22 @@ public static class DashSpecHostApplicationBuilderExtensions
 
         var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };
         builder.Configuration.AddInMemoryCollection(tomlLoader.Flatten(dashSpecToml));
+
+        // Render stacks (ADR-0112): the chosen stack routes families; the color_scheme
+        // token flows to the stacks as-is — each stack reads it its own way.
+        var renderStackSettings = new RenderStackSettings
+        {
+            HostStack = string.IsNullOrWhiteSpace(bootstrap.Presentation.RenderStack)
+                ? "selfmade"
+                : bootstrap.Presentation.RenderStack.Trim(),
+            ColorScheme = string.IsNullOrWhiteSpace(bootstrap.Presentation.ColorScheme)
+                ? "dark"
+                : bootstrap.Presentation.ColorScheme.Trim(),
+        };
+        builder.Services.AddSingleton(renderStackSettings);
+        builder.Services.AddSingleton<IRenderStackSettings>(renderStackSettings);
+        builder.Services.AddSelfMadeRenderStack();
+        builder.Services.AddRadzenRenderStack();
 
         var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
         var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);

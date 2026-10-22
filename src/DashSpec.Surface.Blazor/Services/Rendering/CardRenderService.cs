@@ -125,7 +125,7 @@ public sealed class CardRenderService(
         var tablePresentation = kind.DataFamily is DiagramDataFamily.Table
             ? CompositionResolution.ResolveTablePresentation(effective, library)
             : null;
-        var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+        var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
         var interiorPlacements = DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
         var localFilterChromePlacements = CardLocalFilterChromeCompactor.Compact(
             card,
@@ -392,7 +392,7 @@ public sealed class CardRenderService(
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
-                var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+                var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
                 var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
                     ? MatrixPresentation.FromCard(effective, library)
                     : null;

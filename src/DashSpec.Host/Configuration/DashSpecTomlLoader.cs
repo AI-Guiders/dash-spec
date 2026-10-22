@@ -111,33 +111,6 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
             yield return new KeyValuePair<string, string?>("Dashboard:CatalogPath", root.Dashboard.CatalogPath);
         }
 
-        // Visual layer ([ADR-0111] visual pilot): the renderer is a host decision —
-        // the viz keys ride the configuration so VizPluginRegistry reads its family defaults.
-        if (!string.IsNullOrWhiteSpace(root.Viz.Chart))
-        {
-            yield return new KeyValuePair<string, string?>("Viz:Chart", root.Viz.Chart);
-        }
-
-        if (!string.IsNullOrWhiteSpace(root.Viz.Table))
-        {
-            yield return new KeyValuePair<string, string?>("Viz:Table", root.Viz.Table);
-        }
-
-        if (!string.IsNullOrWhiteSpace(root.Viz.Matrix))
-        {
-            yield return new KeyValuePair<string, string?>("Viz:Matrix", root.Viz.Matrix);
-        }
-
-        if (!string.IsNullOrWhiteSpace(root.Viz.Gantt))
-        {
-            yield return new KeyValuePair<string, string?>("Viz:Gantt", root.Viz.Gantt);
-        }
-
-        if (!string.IsNullOrWhiteSpace(root.Viz.Scalar))
-        {
-            yield return new KeyValuePair<string, string?>("Viz:Scalar", root.Viz.Scalar);
-        }
-
         foreach (var (providerId, section) in root.Providers)
         {
             if (!string.IsNullOrWhiteSpace(section.ConnectionString))

@@ -13,13 +13,6 @@ public sealed class DashSpecTomlRoot
 
     public ReportTimeTomlSection ReportTime { get; set; } = new();
 
-    /// <summary>
-    /// Visual layer ([ADR-0111] visual pilot, operator 2026-10-22): the renderer is a host
-    /// decision, not a spec one — picked once here per data family, diagrams carry no
-    /// <c>render =</c>. Falls back to the built-in family default when empty.
-    /// </summary>
-    public VizTomlSection Viz { get; set; } = new();
-
     public Dictionary<string, ProviderTomlSection> Providers { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -72,33 +65,18 @@ public sealed class PresentationTomlSection
 
     /// <summary>Long field filter layout (remark 7): scroll | expand. Empty = scroll.</summary>
     public string LargeFieldFilterLayout { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Render stack (ADR-0112): the visual language of the surface — <c>selfmade</c> | <c>radzen</c>.
+    /// The stack routes families internally and may delegate a kind to a guest renderer.
+    /// Empty = selfmade (the pre-Radzen visual, exactly as it was).
+    /// </summary>
+    public string RenderStack { get; set; } = string.Empty;
 }
 
 public sealed class AccessTomlSection
 {
     public string ApiKey { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Renderer ids per data family ([ADR-0111] visual pilot): the host picks the visual layer
-/// once — spec diagrams never say who renders them. Empty keys keep the built-in defaults.
-/// </summary>
-public sealed class VizTomlSection
-{
-    /// <summary>Chart family (line, bar, pie, donut, scatter, area). Empty = chartjs.</summary>
-    public string Chart { get; set; } = string.Empty;
-
-    /// <summary>Table family. Empty = table-html.</summary>
-    public string Table { get; set; } = string.Empty;
-
-    /// <summary>Matrix family (heatmap). Empty = matrix-canvas.</summary>
-    public string Matrix { get; set; } = string.Empty;
-
-    /// <summary>Gantt family. Empty = gantt-html.</summary>
-    public string Gantt { get; set; } = string.Empty;
-
-    /// <summary>Scalar family (numbers). Empty = scalar-html.</summary>
-    public string Scalar { get; set; } = string.Empty;
 }
 
 public sealed class DashboardTomlSection

@@ -12,6 +12,7 @@ presentation
   product_title = "DashSpec Demo"
   catalog_label = "Отчёт"
   color_scheme = dark
+  render = selfmade
 end presentation
 
 
