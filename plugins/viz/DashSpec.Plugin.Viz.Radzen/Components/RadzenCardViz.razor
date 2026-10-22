@@ -97,18 +97,18 @@ else if (IsChartFamily)
 }
 else
 {
-    <div class="chart-wrap">
+    <div class="chart-wrap" style="@(NeedsFixedHeight ? "height:320px" : null)">
         @switch (DiagramKind)
         {
             case "heatmap":
                 <RadzenHeatmap TItem="MatrixCell" Data="@MatrixCells"
-                               XProperty="X" YProperty="Y" ValueProperty="V" Style="width:100%" />
+                               XProperty="X" YProperty="Y" ValueProperty="V" Style="width:100%;height:100%" />
                 break;
             case "gantt":
             case "gantt_timeline":
                 <RadzenGantt TItem="GanttTask" Data="@GanttTasks"
                              TextProperty="Text" StartProperty="Start" EndProperty="End"
-                             Style="width:100%" />
+                             Style="width:100%;height:100%" />
                 break;
             case "table":
             case "browse":
@@ -136,6 +136,11 @@ else
 
     private bool IsChartFamily =>
         DiagramKind is not ("heatmap" or "table" or "browse" or "gantt" or "gantt_timeline");
+
+    /// <summary>Heatmap and gantt measure their container at first render — a zero-height host
+    /// bakes a zero viewBox (SVG cells flat, the card looks empty). Tables size themselves.</summary>
+    private bool NeedsFixedHeight =>
+        DiagramKind is "heatmap" or "gantt" or "gantt_timeline";
 
     /// <summary>Emptiness per family: a heatmap card has no Chart, a chart card has no Matrix.</summary>
     private bool IsEmptyForFamily => DiagramKind switch
