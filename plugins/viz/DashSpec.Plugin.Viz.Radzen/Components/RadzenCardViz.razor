@@ -1,18 +1,22 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using DashSpec.Abstractions.Viz
+@using DashSpec.Plugin.Viz.RadzenUI.Resources
+@inject IStringLocalizer<RadzenVizStrings> Loc
 
 @* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
    no JS interop of our own. One component for the whole family set: charts (line/area/bar/
    pie/donut/scatter) inside RadzenChart, heatmap/tables/gantt as standalone Radzen pieces.
-   Emptiness is per family — a heatmap card has no Chart payload, a chart card has no Matrix. *@
+   Emptiness is per family — a heatmap card has no Chart payload, a chart card has no Matrix.
+   The render is a vertical slice (ADR-0077): rviz-* classes live in this plugin's css,
+   the copy rides RadzenVizStrings — the renderer owns the whole render. *@
 
 @if (IsEmptyForFamily)
 {
-    <p class="empty-state">Нет данных за выбранный период</p>
+    <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
 }
 else if (IsChartFamily)
 {
-    <div class="chart-wrap" style="height:320px">
+    <div class="rviz-chart-wrap rviz-chart-wrap--fixed">
         <RadzenChart Style="height:100%" TItem="RadzenPoint">
             @switch (DiagramKind)
             {
@@ -101,7 +105,7 @@ else if (IsChartFamily)
 }
 else
 {
-    <div class="chart-wrap" style="@(NeedsFixedHeight ? "height:320px" : null)">
+    <div class="rviz-chart-wrap @(NeedsFixedHeight ? "rviz-chart-wrap--fixed" : null)">
         @switch (DiagramKind)
         {
             case "heatmap":
