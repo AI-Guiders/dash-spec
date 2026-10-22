@@ -26,7 +26,8 @@ else if (IsChartFamily)
                                              Data="PointsOf(series)"
                                              CategoryProperty="Label"
                                              ValueProperty="Value"
-                                             Title="@series.Name" />
+                                             Title="@SeriesTitle(series)"
+                                             Fill="@SeriesColor(series)" />
                         }
                     }
                     else
@@ -37,7 +38,8 @@ else if (IsChartFamily)
                                                 Data="PointsOf(series)"
                                                 CategoryProperty="Label"
                                                 ValueProperty="Value"
-                                                Title="@series.Name" />
+                                                Title="@SeriesTitle(series)"
+                                                Fill="@SeriesColor(series)" />
                         }
                     }
                     <RadzenCategoryAxis />
@@ -74,7 +76,8 @@ else if (IsChartFamily)
                                           Data="PointsOf(series)"
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
-                                          Title="@series.Name" />
+                                          Title="@SeriesTitle(series)"
+                                          Fill="@SeriesColor(series)" />
                     }
                     <RadzenCategoryAxis />
                     <RadzenValueAxis />
@@ -86,7 +89,8 @@ else if (IsChartFamily)
                                           Data="PointsOf(series)"
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
-                                          Title="@series.Name" />
+                                          Title="@SeriesTitle(series)"
+                                          Stroke="@SeriesColor(series)" />
                     }
                     <RadzenCategoryAxis />
                     <RadzenValueAxis />
@@ -220,6 +224,19 @@ else
         Chart.Labels
             .Select((label, index) => new RadzenPoint(label, series.Values[index]))
             .ToList();
+
+    /// <summary>
+    /// Legend title: the payload builder names an unnamed series "default" — a single-series
+    /// bar carries no legend entry, a real series split carries its name.
+    /// </summary>
+    private static string? SeriesTitle(ChartSeries series) =>
+        string.IsNullOrWhiteSpace(series.Name) || series.Name.Equals("default", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : series.Name;
+
+    /// <summary>The series color from our palette (ChartSeries.Color) — Radzen never picks for us.</summary>
+    private static string? SeriesColor(ChartSeries series) =>
+        string.IsNullOrWhiteSpace(series.Color) ? null : series.Color;
 
     /// <summary>One chart point as Radzen sees it: category label + value.</summary>
     public sealed record RadzenPoint(string Label, double? Value);
