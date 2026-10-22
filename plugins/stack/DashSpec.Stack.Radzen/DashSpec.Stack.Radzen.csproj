@@ -21,4 +21,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

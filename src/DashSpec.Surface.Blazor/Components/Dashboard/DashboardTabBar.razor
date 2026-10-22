@@ -1,24 +1,43 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
+@using DashSpec.Abstractions.Viz
 @using Radzen
 @using Radzen.Blazor
+@inject IRenderStackSettings RenderStackSettings
 
-@* Tab bar on RadzenTabs ([ADR-0111] visual layer): the dashboard board lives below the
-   bar, so tab items carry no content. SelectedIndex is ours (from ActiveTabId), the ride
-   back is SelectedIndexChanged — awaited, so the controller switch lands before the
-   re-render (the old bind-setter fired OnSelect unawaited: the tab highlight moved,
-   the board stayed). *@
+@* Tab chrome belongs to the stack (ADR-0112 §5): the Radzen stack speaks RadzenTabs
+   (board lives below the bar, so items carry no content; SelectedIndexChanged is
+   awaited so the controller switch lands before the re-render); the SelfMade stack
+   renders the pre-Radzen dash-tabs exactly as they were. *@
 
 @if (Tabs is { Count: > 0 })
 {
-    <RadzenTabs SelectedIndex="@SelectedTabIndex"
-                SelectedIndexChanged="@HandleTabIndexChanged">
-        <Tabs>
+    if (IsRadzenStack)
+    {
+        <RadzenTabs SelectedIndex="@SelectedTabIndex"
+                    SelectedIndexChanged="@HandleTabIndexChanged">
+            <Tabs>
+                @foreach (var tab in Tabs)
+                {
+                    <RadzenTabsItem Text="@(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)" />
+                }
+            </Tabs>
+        </RadzenTabs>
+    }
+    else
+    {
+        <nav class="dash-tabs @(Sticky ? "dash-tabs-sticky" : null)" aria-label="Вкладки дашборда">
             @foreach (var tab in Tabs)
             {
-                <RadzenTabsItem Text="@(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)" />
+                var active = string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase);
+                <button type="button"
+                        class="dash-tab @(active ? "dash-tab-active" : null)"
+                        aria-selected="@active"
+                        @onclick="() => OnSelect.InvokeAsync(tab.Id)">
+                    @(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)
+                </button>
             }
-        </Tabs>
-    </RadzenTabs>
+        </nav>
+    }
 }
 
 @code {
@@ -27,6 +46,9 @@
     [Parameter] public string? ActiveTabId { get; set; }
     [Parameter] public bool Sticky { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private bool IsRadzenStack =>
+        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
 
     private int SelectedTabIndex
     {

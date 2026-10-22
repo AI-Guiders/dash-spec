@@ -17,7 +17,7 @@ public static class CardRenderSkeletonFactory
         var resolved = CardResolver.Resolve(card, library, dashboardFilters);
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
-        var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+        var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
         var interiorPlacements = document is not null
             ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
             : null;
@@ -80,7 +80,7 @@ public static class CardRenderSkeletonFactory
         var resolved = CardResolver.Resolve(card, library, dashboardFilters);
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
-        var renderPluginId = vizPlugins.Resolve(resolved.RenderPluginId, kind.DataFamily);
+        var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
         var interiorPlacements = document is not null
             ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
             : null;

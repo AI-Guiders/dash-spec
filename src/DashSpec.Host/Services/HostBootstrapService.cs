@@ -95,9 +95,6 @@ public sealed class HostBootstrapService(
         var configPath = pathResolver.ResolveRuntimeConfigPath(specPath, specText);
         var runtime = tomlLoader.LoadFile(configPath);
         runtime.Dashboard.CatalogPath = bootstrap.Dashboard.CatalogPath;
-        // The visual layer ([ADR-0111] visual pilot) is a host decision: the host toml [viz]
-        // pick rides the runtime config — corpus runtime files never carry it.
-        runtime.Viz = bootstrap.Viz;
         ValidateRuntimeConfig(runtime, configPath);
         return runtime;
     }
@@ -146,6 +143,12 @@ public sealed class HostBootstrapService(
             && !string.IsNullOrWhiteSpace(filterLayout))
         {
             bootstrap.Presentation.LargeFieldFilterLayout = filterLayout.Trim();
+        }
+
+        if (host.Presentation.TryGetValue("render", out var renderStack)
+            && !string.IsNullOrWhiteSpace(renderStack))
+        {
+            bootstrap.Presentation.RenderStack = renderStack.Trim();
         }
     }
 

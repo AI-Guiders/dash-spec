@@ -111,6 +111,7 @@ module PropertySchemas =
     let configuration =
         [ spec "sqldialect" Scalar
           spec "diagramlibrary" String
+          spec "render" Scalar
           spec "time_basis" Scalar
           spec "time_apply" Scalar
           spec "work_time_column" ColumnBinding
@@ -127,7 +128,8 @@ module PropertySchemas =
         [ spec "product_title" String
           spec "catalog_label" String
           spec "color_scheme" Scalar
-          spec "large_field_filter_layout" Scalar ]
+          spec "large_field_filter_layout" Scalar
+          spec "render" Scalar ]
 
     let hostLink =
         [ spec "url" String

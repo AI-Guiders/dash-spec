@@ -1,3 +1,4 @@
+@inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -9,15 +10,17 @@
     @* ADR-0112 render stacks: the host links nothing itself — stacks and
        plugins mount their own assets. There is no "own css" of anyone — a
        stack IS the visual language of the surface. SelfMade mounts its head
-       links and scripts; Radzen reads the theme token and links its own
-       reading (RadzenStackHead); plugins mount their vertical css/js
-       (ADR-0059/0060). The Radzen-theme-last position is the transitional
-       mixed-chrome state (ADR-0112 §4). *@
+       links and scripts; plugins mount their vertical css/js (ADR-0059/0060).
+       The Radzen stack mounts only when it is the chosen stack (render = radzen);
+       its theme reads the color_scheme token — its own reading of it. *@
     <SelfMadeStackHead />
     <FilterBuiltinsHead />
     <VizBuiltinsHead />
-    <RadzenVizHead />
-    <RadzenStackHead Theme="dark" />
+    @if (IsRadzenStack)
+    {
+        <RadzenVizHead />
+        <RadzenStackHead Theme="@RenderStackSettings.ColorScheme" />
+    }
     <HeadOutlet />
 </head>
 
@@ -25,10 +28,20 @@
     <Routes />
     <SelfMadeStackScripts />
     <VizBuiltinsScripts />
-    <RadzenStackScripts />
+    @if (IsRadzenStack)
+    {
+        <RadzenStackScripts />
+    }
     <script src="/js/aiguiders-input.js?v=4"></script>
     <script src="js/dashspec-download.js?v=2"></script>
-    <script src="_framework/blazor.web.js"></script>
-</body>
-
-</html>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    // ADR-0112: the Radzen stack mounts itself only when chosen (render = radzen);
+    // selfmade is the default — the surface looks exactly as it did before Radzen.
+    private bool IsRadzenStack =>
+        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
+}
