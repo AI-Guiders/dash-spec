@@ -1,0 +1,14 @@
+/* Surface.Blazor css hub ([ADR-0111] render layer): the surface owns its own
+   chrome — layout, tokens, cards, filters section, spec inspector, command
+   palette — and nothing else. Plugin css is NOT imported here: the host
+   (Components/App.razor) is the assembly point and links every plugin's css
+   itself. The surface never learns which viz plugins exist. */
+@import url("parts/tokens.css");
+@import url("parts/layout.css");
+@import url("parts/filters.css");
+@import url("parts/cards.css");
+@import url("parts/charts.css");
+@import url("parts/viz-misc.css");
+@import url("parts/gantt-timeline.css");
+@import url("parts/spec-inspector.css");
+@import url("parts/command-palette.css");

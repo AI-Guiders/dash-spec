@@ -6,11 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>DashSpec</title>
-    @* Cascade contract: app.css first — it is our hub (imports css/parts + plugin css).
-       The Radzen theme stays LAST: it must paint over our chrome (their card/tab look
-       wins — the reverse order once grayed every Radzen surface). Flatpickr is
-       widget-scoped, its place after the theme is not load-bearing. *@
-    <link rel="stylesheet" href="css/app.css?v=2026102201" />
+    @* Cascade contract (ADR-0111 render layer): the host owns NO css — it renders
+       the plane and wires visuals as the assembly point. The surface hub carries
+       the chrome; every plugin links its own css; the Radzen theme stays LAST so
+       it paints over our chrome (the reverse order once grayed every Radzen
+       surface); flatpickr is widget-scoped, its place after the theme is not
+       load-bearing. *@
+    <link rel="stylesheet" href="_content/DashSpec.Surface.Blazor/css/app.css?v=2026102202" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/heatmap.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/matrix-canvas.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/table-html.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/slot-chrome.css" />
+    <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Radzen/css/card-viz.css" />
     <link rel="stylesheet" href="_content/Radzen.Blazor/css/dark.css?v=12.1.5-4" />
     <link rel="stylesheet" href="lib/flatpickr/flatpickr.min.css?v=4.6.13" />
     <link rel="stylesheet" href="lib/flatpickr/plugins/monthSelect/style.css?v=4.6.13" />
