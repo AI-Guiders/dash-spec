@@ -1,29 +1,129 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using DashSpec.Abstractions.Viz
 
-@* Radzen visual layer pilot ([ADR-0111]): the line chart family rendered by RadzenChart —
-   100% native C#, no JS interop of our own. The pilot proves the taste; the remaining
-   families (bar/pie/scatter/heatmap/…) follow the same component path. *@
+@* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
+   no JS interop of our own. One component for the whole family set: charts (line/area/bar/
+   pie/donut/scatter) inside RadzenChart, heatmap/tables/gantt as standalone Radzen pieces.
+   Emptiness is per family — a heatmap card has no Chart payload, a chart card has no Matrix. *@
 
-@if (Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart))
+@if (IsEmptyForFamily)
 {
     <p class="empty-state">Нет данных за выбранный период</p>
 }
-else
+else if (IsChartFamily)
 {
     <div class="chart-wrap" style="height:320px">
         <RadzenChart Style="height:100%" TItem="RadzenPoint">
-            @foreach (var series in Context.EffectiveCard.Chart.Series)
+            @switch (DiagramKind)
             {
-                <RadzenLineSeries TItem="RadzenPoint"
-                                  Data="PointsOf(series)"
-                                  CategoryProperty="Label"
-                                  ValueProperty="Value"
-                                  Title="@series.Name" />
+                case "bar":
+                case "histogram":
+                    @if (IsHorizontal)
+                    {
+                        @foreach (var series in Chart.Series)
+                        {
+                            <RadzenBarSeries TItem="RadzenPoint"
+                                             Data="PointsOf(series)"
+                                             CategoryProperty="Label"
+                                             ValueProperty="Value"
+                                             Title="@series.Name" />
+                        }
+                    }
+                    else
+                    {
+                        @foreach (var series in Chart.Series)
+                        {
+                            <RadzenColumnSeries TItem="RadzenPoint"
+                                                Data="PointsOf(series)"
+                                                CategoryProperty="Label"
+                                                ValueProperty="Value"
+                                                Title="@series.Name" />
+                        }
+                    }
+                    <RadzenCategoryAxis />
+                    <RadzenValueAxis />
+                    break;
+                case "pie":
+                    <RadzenPieSeries TItem="RadzenPoint"
+                                     Data="PointsOf(FirstSeries)"
+                                     CategoryProperty="Label"
+                                     ValueProperty="Value"
+                                     Title="@FirstSeries.Name" />
+                    break;
+                case "donut":
+                case "doughnut":
+                    <RadzenDonutSeries TItem="RadzenPoint"
+                                       Data="PointsOf(FirstSeries)"
+                                       CategoryProperty="Label"
+                                       ValueProperty="Value"
+                                       Title="@FirstSeries.Name" />
+                    break;
+                case "scatter":
+                    <RadzenScatterSeries TItem="RadzenPoint"
+                                          Data="PointsOf(FirstSeries)"
+                                          CategoryProperty="Label"
+                                          ValueProperty="Value"
+                                          Title="@FirstSeries.Name" />
+                    <RadzenCategoryAxis />
+                    <RadzenValueAxis />
+                    break;
+                case "area":
+                    @foreach (var series in Chart.Series)
+                    {
+                        <RadzenAreaSeries TItem="RadzenPoint"
+                                          Data="PointsOf(series)"
+                                          CategoryProperty="Label"
+                                          ValueProperty="Value"
+                                          Title="@series.Name" />
+                    }
+                    <RadzenCategoryAxis />
+                    <RadzenValueAxis />
+                    break;
+                default:
+                    @foreach (var series in Chart.Series)
+                    {
+                        <RadzenLineSeries TItem="RadzenPoint"
+                                          Data="PointsOf(series)"
+                                          CategoryProperty="Label"
+                                          ValueProperty="Value"
+                                          Title="@series.Name" />
+                    }
+                    <RadzenCategoryAxis />
+                    <RadzenValueAxis />
+                    break;
             }
-            <RadzenCategoryAxis />
-            <RadzenValueAxis />
         </RadzenChart>
+    </div>
+}
+else
+{
+    <div class="chart-wrap">
+        @switch (DiagramKind)
+        {
+            case "heatmap":
+                <RadzenHeatmap TItem="MatrixCell" Data="@MatrixCells"
+                               XProperty="X" YProperty="Y" ValueProperty="V" Style="width:100%" />
+                break;
+            case "gantt":
+            case "gantt_timeline":
+                <RadzenGantt TItem="GanttTask" Data="@GanttTasks"
+                             TextProperty="Text" StartProperty="Start" EndProperty="End"
+                             Style="width:100%" />
+                break;
+            case "table":
+            case "browse":
+                <RadzenDataGrid TItem="RadzenRow" Data="@TableRows" Style="width:100%"
+                                AllowColumnResize="true" Wrap="true" Density="Density.Compact">
+                    @for (var c = 0; c < Table.Columns.Count; c++)
+                    {
+                        var index = c;
+                        <RadzenDataGridColumn TItem="RadzenRow" Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)" Width="auto">
+                            <Template Context="row">@row.Values[index]</Template>
+                        </RadzenDataGridColumn>
+                    }
+                </RadzenDataGrid>
+                break;
+        }
     </div>
 }
 
@@ -31,16 +131,100 @@ else
     [Parameter, EditorRequired]
     public CardVizRenderContext Context { get; set; } = default!;
 
+    private string DiagramKind =>
+        (Context.EffectiveCard.DiagramKind ?? "line").ToLowerInvariant();
+
+    private bool IsChartFamily =>
+        DiagramKind is not ("heatmap" or "table" or "browse" or "gantt" or "gantt_timeline");
+
+    /// <summary>Emptiness per family: a heatmap card has no Chart, a chart card has no Matrix.</summary>
+    private bool IsEmptyForFamily => DiagramKind switch
+    {
+        "heatmap" => Context.EffectiveCard.Matrix is null || MatrixCells.Count == 0,
+        "table" or "browse" => Context.EffectiveCard.Table is null || Table.Rows.Count == 0,
+        "gantt" or "gantt_timeline" => Context.EffectiveCard.Gantt is null || Gantt.Rows.Count == 0,
+        _ => Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart),
+    };
+
+    /// <summary>Horizontal bars (bar/histogram): RadzenBarSeries vs the default vertical columns.</summary>
+    private bool IsHorizontal =>
+        Context.EffectiveCard.ChartPresentation?.Orientation == ChartOrientation.Horizontal;
+
+    private ChartSeries FirstSeries => Chart.Series[0];
+
+    private ChartPayload Chart => Context.EffectiveCard.Chart!;
+
+    private TablePayload Table => Context.EffectiveCard.Table!;
+
+    private MatrixPayload Matrix => Context.EffectiveCard.Matrix!;
+
+    private GanttPayload Gantt => Context.EffectiveCard.Gantt!;
+
+    /// <summary>Gantt segments as flat Radzen tasks: one task per segment (Text = the row label).</summary>
+    private IReadOnlyList<GanttTask> GanttTasks =>
+        Gantt.Rows
+            .SelectMany(row => row.Segments.Select(segment => new GanttTask(row.Label, segment.Start, segment.End)))
+            .ToList();
+
+    /// <summary>Matrix cells as Radzen heatmap sees them: one item per cell (X/Y category + value).</summary>
+    private IReadOnlyList<MatrixCell> MatrixCells
+    {
+        get
+        {
+            var cells = new List<MatrixCell>();
+            for (var y = 0; y < Matrix.YLabels.Count; y++)
+            {
+                for (var x = 0; x < Matrix.XLabels.Count; x++)
+                {
+                    var value = Matrix.Cells[y][x];
+                    if (value is not null)
+                    {
+                        cells.Add(new MatrixCell(Matrix.XLabels[x], Matrix.YLabels[y], value.Value));
+                    }
+                }
+            }
+
+            return cells;
+        }
+    }
+
+    private IReadOnlyList<RadzenRow> TableRows =>
+        Table.Rows.Select(row => new RadzenRow(row)).ToList();
+
+    private string HeaderText(int index) =>
+        Table.HeaderTexts is { } headers && index < headers.Count && !string.IsNullOrWhiteSpace(headers[index])
+            ? headers[index]!
+            : Table.Columns[index];
+
+    private TextAlign ColumnTextAlign(int index) =>
+        Table.ColumnAlignments is { } alignments && index < alignments.Count
+            ? alignments[index] switch
+            {
+                "right" => TextAlign.Right,
+                "center" => TextAlign.Center,
+                _ => TextAlign.Left,
+            }
+            : TextAlign.Left;
+
     private static bool IsEmpty(ChartPayload chart) =>
         chart.Points is { Count: > 0 }
             ? false
             : chart.Labels.Count == 0;
 
     private IReadOnlyList<RadzenPoint> PointsOf(ChartSeries series) =>
-        Context.EffectiveCard.Chart!.Labels
+        Chart.Labels
             .Select((label, index) => new RadzenPoint(label, series.Values[index]))
             .ToList();
 
     /// <summary>One chart point as Radzen sees it: category label + value.</summary>
     public sealed record RadzenPoint(string Label, double? Value);
+
+    /// <summary>One table row as Radzen sees it: the raw cell values by column order.</summary>
+    public sealed record RadzenRow(IReadOnlyList<string> Values);
+
+    /// <summary>One heatmap cell as Radzen sees it: X/Y categories + the value.</summary>
+    public sealed record MatrixCell(string X, string Y, double V);
+
+    /// <summary>One gantt task as Radzen sees it: text + start/end.</summary>
+    public sealed record GanttTask(string Text, DateTime Start, DateTime End);
 }

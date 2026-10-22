@@ -6,6 +6,12 @@ dashhost = "../../samples/demo/demo.ds"
 [presentation]
 language = "ru-RU"
 
+[viz]
+chart = "radzen"
+table = "radzen"
+matrix = "radzen"
+gantt = "radzen"
+
 [plugins]
 default_provider_id = "sqlserver"
 active_bundle = "standard"
