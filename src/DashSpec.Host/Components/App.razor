@@ -6,15 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>DashSpec</title>
-    @* ADR-0112 render stacks: the host owns no css and links stack bundles only.
-       There is no "own css" of anyone — a stack IS the visual language of the
-       surface. SelfMade = the pre-Radzen visual (chrome parts hub, chartjs/
-       flatpickr libs, datepicker glue) gathered in one stack. Radzen = the
-       Radzen stack's visual language (components + theme: its reading of the
-       theme token). The Radzen-theme-last order is a TRANSITIONAL state while
-       chrome is still mixed; it dies when the assembly point moves into the
-       stacks (ADR-0112 §4). Plugin css stays per-plugin (ADR-0059/0060). *@
-    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/css/app.css?v=2026102203" />
+    @* ADR-0112 render stacks: the host links nothing itself — stacks mount
+       their own assets. There is no "own css" of anyone — a stack IS the
+       visual language of the surface. SelfMade mounts its head links and
+       scripts (chrome parts hub, chartjs/flatpickr, datepicker glue). Radzen
+       reads the theme token and links its own reading (RadzenStackHead); its
+       late position is the transitional mixed-chrome state (ADR-0112 §4).
+       Plugin css stays per-plugin (ADR-0059/0060) — linked by the host until
+       plugins/stacks take that over too. *@
+    <SelfMadeStackHead />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/heatmap.css" />
@@ -22,27 +22,20 @@
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/table-html.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/slot-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Radzen/css/card-viz.css" />
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/dark.css?v=12.1.5-4" />
-    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/lib/flatpickr/flatpickr.min.css?v=4.6.13" />
-    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/lib/flatpickr/plugins/monthSelect/style.css?v=4.6.13" />
+    <RadzenStackHead Theme="dark" />
     <HeadOutlet />
 </head>
 
 <body>
-    <Routes />
-    <script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chart.umd.min.js?v=4.5.1"></script>
-    <script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chartjs-chart-boxplot.umd.min.js?v=4.4.4"></script>
+    <Routes />
+    <SelfMadeStackScripts />
     <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/charts.js?v=6"></script>
 
     <script src="/_content/Radzen.Blazor/Radzen.Blazor.js?v=12.1.5"></script>
     <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/matrix-canvas.js?v=18"></script>
-    <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/table-html.js?v=1"></script>
-    <script src="/js/aiguiders-input.js?v=4"></script>
+    <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/table-html.js?v=1"></script>
+    <script src="/js/aiguiders-input.js?v=4"></script>
     <script src="js/dashspec-download.js?v=2"></script>
-    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/flatpickr.min.js?v=4.6.13"></script>
-    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/l10n/ru.js?v=4.6.13"></script>
-    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/plugins/monthSelect/index.js?v=4.6.13"></script>
-    <script src="_content/DashSpec.Stack.SelfMade/js/dashspec-datepicker.js?v=1"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 

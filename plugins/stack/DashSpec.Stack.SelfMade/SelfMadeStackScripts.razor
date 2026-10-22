@@ -1,0 +1,10 @@
+@* SelfMade stack scripts (ADR-0112): the stack mounts its own libraries —
+   chartjs (the stack's chart engine) and flatpickr (the stack's date widget)
+   with its glue. Rendered after <Routes/> so the DOM exists for widget glue;
+   synchronous scripts finish before blazor.web.js starts the runtime. *@
+<script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chart.umd.min.js?v=4.5.1"></script>
+<script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chartjs-chart-boxplot.umd.min.js?v=4.4.4"></script>
+<script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/flatpickr.min.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/l10n/ru.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/plugins/monthSelect/index.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Stack.SelfMade/js/dashspec-datepicker.js?v=1"></script>
