@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>DashSpec</title>
-    @* Cascade contract (ADR-0111 render layer): the host owns NO css — it renders
-       the plane and wires visuals as the assembly point. The surface hub carries
-       the chrome; every plugin links its own css; the Radzen theme stays LAST so
-       it paints over our chrome (the reverse order once grayed every Radzen
-       surface); flatpickr is widget-scoped, its place after the theme is not
-       load-bearing. *@
-    <link rel="stylesheet" href="_content/DashSpec.Surface.Blazor/css/app.css?v=2026102202" />
+    @* ADR-0112 render stacks: the host owns no css and links stack bundles only.
+       SelfMade = everything visual that predates Radzen (chrome parts hub,
+       chartjs/flatpickr libs, datepicker glue) — one stack-owned place.
+       Radzen = its own css + theme LAST (paints over chrome; the reverse order
+       once grayed every Radzen surface). Plugin css stays per-plugin (vertical
+       slices, ADR-0059/0060). *@
+    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/css/app.css?v=2026102203" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/heatmap.css" />
@@ -21,15 +21,15 @@
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Builtins/css/slot-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Viz.Radzen/css/card-viz.css" />
     <link rel="stylesheet" href="_content/Radzen.Blazor/css/dark.css?v=12.1.5-4" />
-    <link rel="stylesheet" href="lib/flatpickr/flatpickr.min.css?v=4.6.13" />
-    <link rel="stylesheet" href="lib/flatpickr/plugins/monthSelect/style.css?v=4.6.13" />
+    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/lib/flatpickr/flatpickr.min.css?v=4.6.13" />
+    <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/lib/flatpickr/plugins/monthSelect/style.css?v=4.6.13" />
     <HeadOutlet />
 </head>
 
 <body>
     <Routes />
-    <script src="/lib/chartjs/chart.umd.min.js?v=4.5.1"></script>
-    <script src="/lib/chartjs/chartjs-chart-boxplot.umd.min.js?v=4.4.4"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chart.umd.min.js?v=4.5.1"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/lib/chartjs/chartjs-chart-boxplot.umd.min.js?v=4.4.4"></script>
     <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/charts.js?v=6"></script>
 
     <script src="/_content/Radzen.Blazor/Radzen.Blazor.js?v=12.1.5"></script>
@@ -37,10 +37,10 @@
     <script src="/_content/DashSpec.Plugin.Viz.Builtins/js/table-html.js?v=1"></script>
     <script src="/js/aiguiders-input.js?v=4"></script>
     <script src="js/dashspec-download.js?v=2"></script>
-    <script src="lib/flatpickr/flatpickr.min.js?v=4.6.13"></script>
-    <script src="lib/flatpickr/l10n/ru.js?v=4.6.13"></script>
-    <script src="lib/flatpickr/plugins/monthSelect/index.js?v=4.6.13"></script>
-    <script src="js/dashspec-datepicker.js?v=1"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/flatpickr.min.js?v=4.6.13"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/l10n/ru.js?v=4.6.13"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/lib/flatpickr/plugins/monthSelect/index.js?v=4.6.13"></script>
+    <script src="_content/DashSpec.Stack.SelfMade/js/dashspec-datepicker.js?v=1"></script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 
