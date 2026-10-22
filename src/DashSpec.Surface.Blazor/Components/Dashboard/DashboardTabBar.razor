@@ -3,14 +3,15 @@
 @using Radzen.Blazor
 
 @* Tab bar on RadzenTabs ([ADR-0111] visual layer): the dashboard board lives below the
-   bar, so tab items carry no content — Selected rides our ActiveTabId, clicks ride
-   SelectedIndexChanged. The old hand-rolled nav dies. *@
+   bar, so tab items carry no content. SelectedIndex is ours (from ActiveTabId), the ride
+   back is SelectedIndexChanged — awaited, so the controller switch lands before the
+   re-render (the old bind-setter fired OnSelect unawaited: the tab highlight moved,
+   the board stayed). *@
 
 @if (Tabs is { Count: > 0 })
 {
-    var selectedIndex = SelectedTabIndex;
-    var cssClass = "dash-tabs" + (Sticky ? " dash-tabs-sticky" : string.Empty);
-    <RadzenTabs @bind-SelectedIndex="@selectedIndex" Class="@cssClass">
+    <RadzenTabs SelectedIndex="@SelectedTabIndex"
+                SelectedIndexChanged="@HandleTabIndexChanged">
         <Tabs>
             @foreach (var tab in Tabs)
             {
@@ -41,12 +42,13 @@
 
             return 0;
         }
-        set
+    }
+
+    private async Task HandleTabIndexChanged(int index)
+    {
+        if (index >= 0 && index < Tabs.Count)
         {
-            if (value >= 0 && value < Tabs.Count)
-            {
-                _ = OnSelect.InvokeAsync(Tabs[value].Id);
-            }
+            await OnSelect.InvokeAsync(Tabs[index].Id);
         }
     }
 }
