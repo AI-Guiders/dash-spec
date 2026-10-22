@@ -7,11 +7,13 @@
     <base href="/" />
     <title>DashSpec</title>
     @* ADR-0112 render stacks: the host owns no css and links stack bundles only.
-       SelfMade = everything visual that predates Radzen (chrome parts hub,
-       chartjs/flatpickr libs, datepicker glue) — one stack-owned place.
-       Radzen = its own css + theme LAST (paints over chrome; the reverse order
-       once grayed every Radzen surface). Plugin css stays per-plugin (vertical
-       slices, ADR-0059/0060). *@
+       There is no "own css" of anyone — a stack IS the visual language of the
+       surface. SelfMade = the pre-Radzen visual (chrome parts hub, chartjs/
+       flatpickr libs, datepicker glue) gathered in one stack. Radzen = the
+       Radzen stack's visual language (components + theme: its reading of the
+       theme token). The Radzen-theme-last order is a TRANSITIONAL state while
+       chrome is still mixed; it dies when the assembly point moves into the
+       stacks (ADR-0112 §4). Plugin css stays per-plugin (ADR-0059/0060). *@
     <link rel="stylesheet" href="_content/DashSpec.Stack.SelfMade/css/app.css?v=2026102203" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css" />
     <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css" />
