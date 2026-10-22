@@ -9,10 +9,12 @@
 @using DashSpec.Surface.Blazor.Services.Localization
 @using DashSpec.Plugin.Filter.Builtins.Components
 @using DashSpec.Presentation.Components
+@using Radzen
+@using Radzen.Blazor
 @inject DashboardLocalizer Loc
 @implements IDisposable
 
-<article class="@CardCssClass" style="@PlacementStyle">
+<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle">
     <div class="card-head">
         @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
         {
@@ -158,7 +160,7 @@
             </CardInteriorGrid>
         </CascadingValue>
     }
-</article>
+</RadzenCard>
 
 @if (_fullscreen && CanFullscreen)
 {

@@ -1,19 +1,23 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
+@using Radzen
+@using Radzen.Blazor
+
+@* Tab bar on RadzenTabs ([ADR-0111] visual layer): the dashboard board lives below the
+   bar, so tab items carry no content — Selected rides our ActiveTabId, clicks ride
+   SelectedIndexChanged. The old hand-rolled nav dies. *@
 
 @if (Tabs is { Count: > 0 })
 {
-    <nav class="dash-tabs @(Sticky ? "dash-tabs-sticky" : null)" aria-label="Вкладки дашборда">
-        @foreach (var tab in Tabs)
-        {
-            var active = string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase);
-            <button type="button"
-                    class="dash-tab @(active ? "dash-tab-active" : null)"
-                    aria-selected="@active"
-                    @onclick="() => OnSelect.InvokeAsync(tab.Id)">
-                @(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)
-            </button>
-        }
-    </nav>
+    var selectedIndex = SelectedTabIndex;
+    var cssClass = "dash-tabs" + (Sticky ? " dash-tabs-sticky" : string.Empty);
+    <RadzenTabs @bind-SelectedIndex="@selectedIndex" Class="@cssClass">
+        <Tabs>
+            @foreach (var tab in Tabs)
+            {
+                <RadzenTabsItem Text="@(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)" />
+            }
+        </Tabs>
+    </RadzenTabs>
 }
 
 @code {
@@ -22,4 +26,27 @@
     [Parameter] public string? ActiveTabId { get; set; }
     [Parameter] public bool Sticky { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private int SelectedTabIndex
+    {
+        get
+        {
+            for (var i = 0; i < Tabs.Count; i++)
+            {
+                if (string.Equals(Tabs[i].Id, ActiveTabId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return 0;
+        }
+        set
+        {
+            if (value >= 0 && value < Tabs.Count)
+            {
+                _ = OnSelect.InvokeAsync(Tabs[value].Id);
+            }
+        }
+    }
 }
