@@ -3,7 +3,8 @@
   <!-- SelfMade render stack (ADR-0112): everything visual that predates Radzen —
        chrome css parts hub, chartjs/flatpickr libs, datepicker glue — in one
        stack-owned place, so it keeps building and stays out of the Radzen
-       stack's way. Asset-only assembly: no code. -->
+       stack's way. Stack assets + mount components (SelfMadeStackHead/Scripts):
+       the stack mounts itself, the host links nothing of it. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
