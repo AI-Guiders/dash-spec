@@ -121,34 +121,48 @@ public sealed class HostBootstrapService(
             dashhostCatalog,
             tomlCatalog);
 
-        if (host.Configuration.TryGetValue("language", out var language)
-            && !string.IsNullOrWhiteSpace(language))
+        // ADR-0112 §6: the `host` block is the settings home; the legacy configuration/
+        // presentation blocks keep serving un-migrated host modules — host block wins per key.
+        string? Pick(string key, IReadOnlyDictionary<string, string> legacy)
         {
-            bootstrap.Presentation.Language = DashSpecCultures.Parse(language.Trim()).Name;
+            if (host.Host.TryGetValue(key, out var fromHost) && !string.IsNullOrWhiteSpace(fromHost))
+            {
+                return fromHost.Trim();
+            }
+
+            return legacy.TryGetValue(key, out var fromLegacy) && !string.IsNullOrWhiteSpace(fromLegacy)
+                ? fromLegacy.Trim()
+                : null;
         }
 
-        if (host.Configuration.TryGetValue("display_timezone", out var timeZone)
-            && !string.IsNullOrWhiteSpace(timeZone))
+        if (Pick("language", host.Configuration) is { } language)
         {
-            bootstrap.Presentation.DisplayTimeZone = timeZone.Trim();
+            bootstrap.Presentation.Language = DashSpecCultures.Parse(language).Name;
         }
 
-        if (host.Presentation.TryGetValue("color_scheme", out var colorScheme)
-            && !string.IsNullOrWhiteSpace(colorScheme))
+        if (Pick("display_timezone", host.Configuration) is { } timeZone)
         {
-            bootstrap.Presentation.ColorScheme = colorScheme.Trim();
+            bootstrap.Presentation.DisplayTimeZone = timeZone;
         }
 
-        if (host.Presentation.TryGetValue("large_field_filter_layout", out var filterLayout)
-            && !string.IsNullOrWhiteSpace(filterLayout))
+        if (Pick("color_scheme", host.Presentation) is { } colorScheme)
         {
-            bootstrap.Presentation.LargeFieldFilterLayout = filterLayout.Trim();
+            bootstrap.Presentation.ColorScheme = colorScheme;
         }
 
-        if (host.Presentation.TryGetValue("render", out var renderStack)
-            && !string.IsNullOrWhiteSpace(renderStack))
+        if (Pick("large_field_filter_layout", host.Presentation) is { } filterLayout)
         {
-            bootstrap.Presentation.RenderStack = renderStack.Trim();
+            bootstrap.Presentation.LargeFieldFilterLayout = filterLayout;
+        }
+
+        if (Pick("render", host.Presentation) is { } renderStack)
+        {
+            bootstrap.Presentation.RenderStack = renderStack;
+        }
+
+        if (Pick("provider_default", host.Presentation) is { } providerDefault)
+        {
+            bootstrap.Plugins.DefaultProviderId = providerDefault;
         }
     }
 

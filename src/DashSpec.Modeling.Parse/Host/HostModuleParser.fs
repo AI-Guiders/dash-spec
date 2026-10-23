@@ -135,6 +135,7 @@ module HostModuleParser =
         let mutable catalogPath = ""
         let configuration = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let presentation = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let hostSettings = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let links = ResizeArray<HostLinkDefinition>()
         let surfaces = ResizeArray<string>()
         let mutable shellLayout = None
@@ -167,6 +168,19 @@ module HostModuleParser =
                 for kv in props do
                     presentation.[kv.Key] <- kv.Value
                 reader.SkipNewlines()
+            elif reader.TryKeyword "host" then
+                // Settings home block (ADR-0112 §6): nested `host … end host` — the first
+                // `end host` closes the block, the module's own one closes the module.
+                let props =
+                    PropertyBlockParser.parse
+                        reader
+                        PropertySchemas.hostSettings
+                        "host"
+                        false
+                        false
+                for kv in props do
+                    hostSettings.[kv.Key] <- kv.Value
+                reader.SkipNewlines()
             elif reader.TryKeyword "links" then
                 parseLinksBlock reader links
             elif reader.TryKeyword "surfaces" then
@@ -194,6 +208,7 @@ module HostModuleParser =
           CatalogPath = catalogPath
           Configuration = configuration
           Presentation = presentation
+          Host = hostSettings :> IReadOnlyDictionary<string, string>
           Links = links :> IReadOnlyList<_>
           Surfaces = surfaces :> IReadOnlyList<_>
           ShellLayout = shellLayout }
