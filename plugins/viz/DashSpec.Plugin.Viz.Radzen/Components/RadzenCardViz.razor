@@ -109,8 +109,11 @@ else
         @switch (DiagramKind)
         {
             case "heatmap":
-                <RadzenHeatmap TItem="MatrixCell" Data="@MatrixCells"
-                               XProperty="X" YProperty="Y" ValueProperty="V" Style="width:100%;height:100%" />
+                <RadzenSquareHeatmap TItem="MatrixCell" Data="@MatrixCells"
+                                     XProperty="x => x.X"
+                                     YProperty="y => y.Y"
+                                     ValueProperty="v => v.V"
+                                     Style="width:100%;height:100%" />
                 break;
             case "gantt":
             case "gantt_timeline":
@@ -120,15 +123,19 @@ else
                 break;
             case "table":
             case "browse":
+                @* Radzen.Blazor v12 defines grid columns via the <Columns> template — the
+                   default ChildContent is never rendered, so columns must live here. *@
                 <RadzenDataGrid TItem="RadzenRow" Data="@TableRows" Style="width:100%"
                                 AllowColumnResize="true" Wrap="true" Density="Density.Compact">
-                    @for (var c = 0; c < Table.Columns.Count; c++)
-                    {
-                        var index = c;
-                        <RadzenDataGridColumn TItem="RadzenRow" Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)" Width="auto">
-                            <Template Context="row">@row.Values[index]</Template>
-                        </RadzenDataGridColumn>
-                    }
+                    <Columns>
+                        @for (var c = 0; c < Table.Columns.Count; c++)
+                        {
+                            var index = c;
+                            <RadzenDataGridColumn TItem="RadzenRow" Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)" Width="auto">
+                                <Template Context="row">@row.Values[index]</Template>
+                            </RadzenDataGridColumn>
+                        }
+                    </Columns>
                 </RadzenDataGrid>
                 break;
         }
