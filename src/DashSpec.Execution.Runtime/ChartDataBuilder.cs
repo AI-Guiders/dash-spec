@@ -103,12 +103,24 @@ public sealed record TreemapTile(string Label, double Value);
 
 public sealed record GaugeReading(double Value, double Min, double Max, string? Label = null);
 
+/// <summary>One column of the table payload: the wire key plus the spec's present intent
+/// (header/format/alignment). Kind rides the row schema — types live on the wire (ADR-0079 §3),
+/// the builder consumes them; the vocabulary stays in Modeling.</summary>
+public sealed record TableField(
+    string Name,
+    string Header,
+    DashPrimitiveKind Kind,
+    bool IsOptional,
+    string? Format = null,
+    string? Alignment = null,
+    string? HeaderAlignment = null);
+
+/// <summary>Typed table dataset (ADR-0079/0087): DashValue cells + field descriptors. The present
+/// layer formats via LabelFormat with the report defaults carried on the render result — display
+/// strings no longer cross the payload boundary (ADR-0064: tabular rows, not strings).</summary>
 public sealed record TablePayload(
-    IReadOnlyList<string> Columns,
-    IReadOnlyList<IReadOnlyList<string>> Rows,
-    IReadOnlyList<string>? HeaderTexts = null,
-    IReadOnlyList<string?>? ColumnAlignments = null,
-    IReadOnlyList<string?>? HeaderAlignments = null);
+    IReadOnlyList<TableField> Fields,
+    IReadOnlyList<DashValue[]> Rows);
 
 public sealed record MatrixPayload(
     IReadOnlyList<string> XLabels,

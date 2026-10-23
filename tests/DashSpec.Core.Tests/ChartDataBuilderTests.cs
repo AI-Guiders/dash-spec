@@ -259,8 +259,8 @@ public class ChartDataBuilderTests
 
         var table = ChartDataBuilder.BuildTable(rows, diagram);
 
-        Assert.Equal(["host_name", "user_sam"], table.Columns);
-        Assert.Equal(["Хост", "Пользователь"], table.HeaderTexts);
+        Assert.Equal(["host_name", "user_sam"], table.Fields.Select(f => f.Name).ToList());
+        Assert.Equal(["Хост", "Пользователь"], table.Fields.Select(f => f.Header).ToList());
     }
 
     [Fact]
@@ -283,12 +283,12 @@ public class ChartDataBuilderTests
 
         var table = ChartDataBuilder.BuildTable(rows, diagram);
 
-        Assert.Equal(["host_name", "user_sam"], table.Columns);
-        Assert.Equal(["Хост", "user_sam"], table.HeaderTexts);
+        Assert.Equal(["host_name", "user_sam"], table.Fields.Select(f => f.Name).ToList());
+        Assert.Equal(["Хост", "user_sam"], table.Fields.Select(f => f.Header).ToList());
     }
 
     [Fact]
-    public void BuildTable_without_labels_keeps_header_texts_null()
+    public void BuildTable_without_labels_headers_fall_back_to_column_names()
     {
         var diagram = new DiagramDefinition("table", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -306,7 +306,7 @@ public class ChartDataBuilderTests
 
         var table = ChartDataBuilder.BuildTable(rows, diagram);
 
-        Assert.Null(table.HeaderTexts);
+        Assert.Equal(["host_name", "user_sam"], table.Fields.Select(f => f.Header).ToList());
     }
 
     [Fact]

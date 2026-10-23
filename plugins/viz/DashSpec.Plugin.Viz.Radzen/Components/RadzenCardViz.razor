@@ -129,20 +129,20 @@ else
             case "browse":
                 @* Radzen v12: columns live in the <Columns> template (the default ChildContent
                    is never rendered). Sort/filter/pager are Radzen's own — LoadData mode maps
-                   them onto the positional payload rows without reflection properties. *@
+                   them onto the typed dataset; columns bind by the field's wire Name. *@
                 <RadzenDataGrid TItem="RadzenRow" Data="@GridRows" Count="@GridCount"
                                 LoadData="@OnGridLoadData"
                                 AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
                                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
                                 Wrap="true" Density="Density.Compact" Style="width:100%">
                     <Columns>
-                        @for (var c = 0; c < Table.Columns.Count; c++)
+                        @for (var c = 0; c < Table.Fields.Count; c++)
                         {
                             var index = c;
-                            <RadzenDataGridColumn TItem="RadzenRow" Property="@ColId(index)"
-                                                  Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)"
+                            <RadzenDataGridColumn TItem="RadzenRow" Property="@Table.Fields[index].Name"
+                                                  Title="@Table.Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
                                                   Width="auto" Sortable="true" Filterable="@ColumnFilters">
-                                <Template Context="row">@row.Values[index]</Template>
+                                <Template Context="row">@FormatCell(row.Cells[index], index)</Template>
                             </RadzenDataGridColumn>
                         }
                     </Columns>
@@ -197,11 +197,9 @@ else
             .SelectMany(row => row.Segments.Select(segment => new GanttTask(row.Label, segment.Start, segment.End)))
             .ToList();
 
-    private IReadOnlyList<RadzenRow> TableRows =>
-        Table.Rows.Select(row => new RadzenRow(row)).ToList();
-
-    /// <summary>Radzen's own sort/filter/pager over the positional payload rows (LoadData mode):
-    /// the grid supplies the UX, this maps its args onto string rows — no reflection properties.</summary>
+    /// <summary>Radzen's own sort/filter/pager over the typed dataset (LoadData mode):
+    /// the grid supplies the UX; sorting keys off the wire kind, display text comes from
+    /// LabelFormat with the report defaults carried on the render result (ADR-0079 §3).</summary>
     private const int GridPageSize = 15;
 
     private IReadOnlyList<RadzenRow> _gridRows = [];
@@ -214,7 +212,13 @@ else
 
     private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
 
-    private static string ColId(int index) => $"c{index}";
+    private ReportFormatDefaults? FormatDefaults => Context.Card.FormatDefaults;
+
+    private string FormatCell(DashValue cell, int fieldIndex)
+    {
+        var field = Table.Fields[fieldIndex];
+        return LabelFormat.FormatObject(cell.ToClr(), field.Format, FormatDefaults);
+    }
 
     protected override void OnParametersSet()
     {
@@ -224,8 +228,16 @@ else
 
     private void SeedGrid()
     {
-        _gridCount = Table.Rows.Count;
-        _gridRows = Table.Rows
+        // OnParametersSet runs during the Loading phase too — the table payload arrives later.
+        if (Context.EffectiveCard.Table is not { } table)
+        {
+            _gridRows = [];
+            _gridCount = 0;
+            return;
+        }
+
+        _gridCount = table.Rows.Count;
+        _gridRows = table.Rows
             .Take(GridPageSize)
             .Select(row => new RadzenRow(row))
             .ToList();
@@ -233,21 +245,21 @@ else
 
     private void OnGridLoadData(LoadDataArgs args)
     {
-        IEnumerable<IReadOnlyList<string>> rows = Table.Rows;
+        IEnumerable<DashValue[]> rows = Table.Rows;
 
         if (args.Filters is { } filters)
         {
             foreach (var filter in filters)
             {
-                var index = ColumnIndexOf(filter.Property);
+                var index = FieldIndexOf(filter.Property);
                 var needle = filter.FilterValue?.ToString();
-                if (index < 0 || index >= Table.Columns.Count || string.IsNullOrWhiteSpace(needle))
+                if (index < 0 || string.IsNullOrWhiteSpace(needle))
                 {
                     continue;
                 }
 
                 rows = rows.Where(row =>
-                    row[index]?.Contains(needle, StringComparison.OrdinalIgnoreCase) == true);
+                    DisplayCell(row, index).Contains(needle, StringComparison.OrdinalIgnoreCase));
             }
         }
 
@@ -256,14 +268,15 @@ else
         if (!string.IsNullOrWhiteSpace(args.OrderBy))
         {
             var sort = args.OrderBy.Trim().Split(' ');
-            var index = ColumnIndexOf(sort[0]);
-            if (index >= 0 && index < Table.Columns.Count)
+            var index = FieldIndexOf(sort[0]);
+            if (index >= 0)
             {
                 var descending = sort.Length > 1 &&
                     sort[1].StartsWith("desc", StringComparison.OrdinalIgnoreCase);
+                var kind = Table.Fields[index].Kind;
                 rows = descending
-                    ? rows.OrderByDescending(row => row[index], StringComparer.OrdinalIgnoreCase)
-                    : rows.OrderBy(row => row[index], StringComparer.OrdinalIgnoreCase);
+                    ? rows.OrderByDescending(row => SortKey(row[index], kind), NullsFirst)
+                    : rows.OrderBy(row => SortKey(row[index], kind), NullsFirst);
             }
         }
 
@@ -274,30 +287,49 @@ else
             .ToList();
     }
 
-    private static int ColumnIndexOf(string? property)
+    private int FieldIndexOf(string? name)
     {
-        if (string.IsNullOrEmpty(property) || property[0] != 'c')
+        for (var i = 0; i < Table.Fields.Count; i++)
         {
-            return -1;
+            if (string.Equals(Table.Fields[i].Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
         }
 
-        return int.TryParse(property[1..], out var index) ? index : -1;
+        return -1;
     }
 
-    private string HeaderText(int index) =>
-        Table.HeaderTexts is { } headers && index < headers.Count && !string.IsNullOrWhiteSpace(headers[index])
-            ? headers[index]!
-            : Table.Columns[index];
+    /// <summary>Display text for filter matching — the same string the cell renders,
+    /// so what the user sees is what the filter matches.</summary>
+    private string DisplayCell(DashValue[] row, int index) => FormatCell(row[index], index);
+
+    /// <summary>Typed sort keys (ADR-0079 §3): numbers order numerically, dates
+    /// chronologically — the wire kind, not the display string, decides the order.</summary>
+    private static IComparable? SortKey(DashValue cell, DashPrimitiveKind kind) => cell.IsNull
+        ? null
+        : kind switch
+        {
+            DashPrimitiveKind.Int => cell.AsInt32(),
+            DashPrimitiveKind.Decimal => cell.AsDecimal(),
+            DashPrimitiveKind.Date => cell.AsDate(),
+            DashPrimitiveKind.DateTime => cell.AsDateTimeUtc(),
+            DashPrimitiveKind.Duration => cell.AsDuration(),
+            DashPrimitiveKind.Time => cell.AsTime(),
+            DashPrimitiveKind.Bool => cell.AsBool(),
+            _ => cell.AsString(),
+        };
+
+    private static readonly Comparer<object?> NullsFirst = Comparer<object?>.Create((a, b) =>
+        a is null ? (b is null ? 0 : -1) : b is null ? 1 : ((IComparable)a).CompareTo(b));
 
     private TextAlign ColumnTextAlign(int index) =>
-        Table.ColumnAlignments is { } alignments && index < alignments.Count
-            ? alignments[index] switch
-            {
-                "right" => TextAlign.Right,
-                "center" => TextAlign.Center,
-                _ => TextAlign.Left,
-            }
-            : TextAlign.Left;
+        Table.Fields[index].Alignment switch
+        {
+            "right" => TextAlign.Right,
+            "center" => TextAlign.Center,
+            _ => TextAlign.Left,
+        };
 
     private static bool IsEmpty(ChartPayload chart) =>
         chart.Points is { Count: > 0 }
@@ -332,8 +364,8 @@ else
     /// </summary>
     public sealed record RadzenPoint(string Label, double Value);
 
-    /// <summary>One table row as Radzen sees it: the raw cell values by column order.</summary>
-    public sealed record RadzenRow(IReadOnlyList<string> Values);
+    /// <summary>One table row as Radzen sees it: the typed cells by field order.</summary>
+    public sealed record RadzenRow(DashValue[] Cells);
 
     /// <summary>One gantt task as Radzen sees it: text + start/end.</summary>
     public sealed record GanttTask(string Text, DateTime Start, DateTime End);

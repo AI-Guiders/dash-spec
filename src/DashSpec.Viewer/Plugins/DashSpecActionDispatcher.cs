@@ -1,6 +1,8 @@
 using System.Globalization;
+using DashSpec.Abstractions.Data;
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Core.Interaction;
+using DashSpec.Execution.Runtime;
 using DashSpec.Viz;
 using Microsoft.JSInterop;
 
@@ -70,12 +72,26 @@ public sealed class DashSpecActionDispatcher
     {
         card = card.HasExpandedPayload ? card.ForView(detailView: true) : card;
 
-        if (card.Table is { Columns.Count: > 0 } table)
+        if (card.Table is { Fields.Count: > 0 } table)
         {
+            // Present-layer formatting (ADR-0079 §3): display strings are built here from the
+            // typed cells; TypedRows/ColumnKinds ride parallel for typed exports (xlsx).
+            var defaults = card.FormatDefaults;
+            var columns = table.Fields.Select(field => field.Header).ToList();
+            var kinds = table.Fields.Select(field => field.Kind).ToList();
+            var displayRows = new List<IReadOnlyList<string>>(table.Rows.Count);
+            var typedRows = new List<IReadOnlyList<DashValue>>(table.Rows.Count);
+            foreach (var row in table.Rows)
+            {
+                typedRows.Add(row);
+                displayRows.Add(row.Select((cell, i) =>
+                    LabelFormat.FormatObject(cell.ToClr(), table.Fields[i].Format, defaults)).ToList());
+            }
+
             return new DashSpecActionContext(
                 card.Id,
                 card.Title,
-                new DashSpecTableData(table.Columns, table.Rows));
+                new DashSpecTableData(columns, displayRows, typedRows, kinds));
         }
 
         if (card.Matrix is { } matrix)

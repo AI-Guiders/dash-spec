@@ -1,4 +1,5 @@
 @namespace DashSpec.Plugin.Viz.Builtins.Components.TableHtml
+@using DashSpec.Abstractions.Data
 @using DashSpec.Execution.Runtime
 @using Microsoft.JSInterop
 @inject IJSRuntime Js
@@ -14,17 +15,14 @@ else
         <table>
             <thead>
                 <tr>
-                    @for (var i = 0; i < Context.Card.Table.Columns.Count; i++)
+                    @for (var i = 0; i < Fields.Count; i++)
                     {
-                        var column = Context.Card.Table.Columns[i];
-                        var headerText = Context.Card.Table.HeaderTexts is { } texts && i < texts.Count
-                            ? texts[i]
-                            : column;
+                        var column = Fields[i];
                         var copied = _copiedColumn == i;
                         var colIndex = i;
                         <th style="@HeaderAlignStyle(i)">
                             <div class="table-col-head">
-                                @headerText
+                                @column.Header
                                 <button type="button"
                                         class="table-col-copy @(copied ? "table-col-copy--done" : null)"
                                         title="@(copied ? Loc["Copied"] : Loc["Copy column"])"
@@ -37,9 +35,9 @@ else
                                        size="2"
                                        class="table-col-filter"
                                        placeholder="@FilterPlaceholder"
-                                       aria-label="@ResolveFilterAria(headerText)"
-                                       value="@GetFilter(column)"
-                                       @oninput="e => SetFilter(column, e.Value?.ToString())" />
+                                       aria-label="@ResolveFilterAria(column.Header)"
+                                       value="@GetFilter(column.Name)"
+                                       @oninput="e => SetFilter(column.Name, e.Value?.ToString())" />
                             }
                         </th>
                     }
@@ -48,14 +46,15 @@ else
             <tbody>
                 @for (var ri = 0; ri < FilteredRows.Count; ri++)
                 {
-                    var row = FilteredRows[ri];
-                    var rowValue = row.Count > 0 ? row[0] ?? string.Empty : string.Empty;
+                    var rowIndex = ri;
+                    var row = FilteredRows[rowIndex];
+                    var rowValue = DisplayCell(row, 0);
                     var activeRow = RowClickEnabled && string.Equals(rowValue, _activeRowValue, StringComparison.Ordinal);
                     <tr class="@(activeRow ? "table-row--active" : null)"
                         @onclick="() => HandleRowClickAsync(rowValue)">
-                        @for (var i = 0; i < row.Count; i++)
+                        @for (var i = 0; i < row.Length; i++)
                         {
-                            <td style="@CellAlignStyle(i)">@row[i]</td>
+                            <td style="@CellAlignStyle(i)">@DisplayCell(row, i)</td>
                         }
                     </tr>
                 }
@@ -80,6 +79,20 @@ else
 
     private string RowsSummary =>
         Loc["Showing {0} of {1} rows", FilteredRowCount, Context.Card.Table!.Rows.Count];
+
+    private TablePayload Table => Context.Card.Table!;
+
+    private IReadOnlyList<TableField> Fields => Table.Fields;
+
+    /// <summary>Present-layer formatting (ADR-0079 §3): display strings are made here, from the
+    /// typed cells, with the report defaults carried on the render result.</summary>
+    private ReportFormatDefaults? FormatDefaults => Context.Card.FormatDefaults;
+
+    private string DisplayCell(DashValue[] row, int fieldIndex)
+    {
+        var field = Fields[fieldIndex];
+        return LabelFormat.FormatObject(row[fieldIndex].ToClr(), field.Format, FormatDefaults);
+    }
 
     private TablePresentation Presentation =>
         Context.Card.TablePresentation ?? TablePresentation.FromProperties(new Dictionary<string, string>());
@@ -117,22 +130,9 @@ else
 
     // Spec-driven per-column text-align (`alignment`); the header follows its column
     // unless `header_alignment` is set explicitly.
-    private string? CellAlign(int i)
-    {
-        var list = Context.Card.Table?.ColumnAlignments;
-        return list is not null && i < list.Count ? list[i] : null;
-    }
+    private string? CellAlign(int i) => Fields[i].Alignment;
 
-    private string? HeaderAlign(int i)
-    {
-        var list = Context.Card.Table?.HeaderAlignments;
-        if (list is not null && i < list.Count && list[i] is { } header)
-        {
-            return header;
-        }
-
-        return CellAlign(i);
-    }
+    private string? HeaderAlign(int i) => Fields[i].HeaderAlignment ?? CellAlign(i);
 
     private string? CellAlignStyle(int i) => CellAlign(i) is { } a ? $"text-align: {a};" : null;
 
@@ -142,17 +142,16 @@ else
 
     private readonly Dictionary<string, string> _columnFilters = new(StringComparer.OrdinalIgnoreCase);
 
-    private IReadOnlyList<IReadOnlyList<string>> FilteredRows
+    private IReadOnlyList<DashValue[]> FilteredRows
     {
         get
         {
-            var table = Context.Card.Table!;
             if (!HasActiveFilters)
             {
-                return table.Rows;
+                return Table.Rows;
             }
 
-            return table.Rows.Where(MatchesFilters).ToList();
+            return Table.Rows.Where(MatchesFilters).ToList();
         }
     }
 
@@ -177,7 +176,7 @@ else
     {
         var text = string.Join(
             Environment.NewLine,
-            FilteredRows.Select(row => columnIndex < row.Count ? row[columnIndex] ?? string.Empty : string.Empty));
+            FilteredRows.Select(row => columnIndex < row.Length ? DisplayCell(row, columnIndex) : string.Empty));
         try
         {
             // dashSpecTableCopy (table-html.js): clipboard API with an execCommand
@@ -208,7 +207,7 @@ else
     }
 
     /// <summary>
-    /// Body row click (ADR-0107): the first column's value rides YLabel, source is "row".
+    /// Body row click (ADR-0107): the first column's formatted value rides YLabel, source is "row".
     /// Value-based (not index-based): a re-render may change the visible rows between the
     /// click and the handler — a captured index would go stale, a captured value cannot.
     /// </summary>
@@ -240,18 +239,17 @@ else
 
     private string? _activeRowValue;
 
-    private bool MatchesFilters(IReadOnlyList<string> row)
+    private bool MatchesFilters(DashValue[] row)
     {
-        var columns = Context.Card.Table!.Columns;
-        for (var i = 0; i < columns.Count; i++)
+        for (var i = 0; i < Fields.Count; i++)
         {
-            if (!_columnFilters.TryGetValue(columns[i], out var needle) || string.IsNullOrWhiteSpace(needle))
+            if (!_columnFilters.TryGetValue(Fields[i].Name, out var needle) || string.IsNullOrWhiteSpace(needle))
             {
                 continue;
             }
 
-            var cell = i < row.Count ? row[i] : string.Empty;
-            if (cell is null || !cell.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            var cell = i < row.Length ? DisplayCell(row, i) : string.Empty;
+            if (!cell.Contains(needle, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

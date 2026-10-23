@@ -42,7 +42,7 @@
         !Card.Loading &&
         string.IsNullOrEmpty(Card.Error) &&
         Card.DataFamily is not DiagramDataFamily.Scalar &&
-        (Card.Table is { Columns.Count: > 0 } ||
+        (Card.Table is { Fields.Count: > 0 } ||
          Card.Matrix is not null ||
          Card.Chart is { Labels.Count: > 0 });
 

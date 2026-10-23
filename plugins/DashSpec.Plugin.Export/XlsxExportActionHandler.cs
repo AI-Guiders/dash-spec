@@ -17,7 +17,7 @@ public sealed class XlsxExportActionHandler : IDashSpecActionHandler
             return ValueTask.FromResult(new DashSpecActionOutcome());
         }
 
-        var bytes = XlsxWorkbook.Write(context.Table.Columns, context.Table.Rows);
+        var bytes = XlsxWorkbook.Write(context.Table);
         var fileName = args.GetValueOrDefault("filename") ?? $"{SanitizeFileName(context.CardId)}.xlsx";
         if (!fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
         {
