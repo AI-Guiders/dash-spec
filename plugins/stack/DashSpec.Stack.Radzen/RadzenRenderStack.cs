@@ -5,7 +5,8 @@ namespace DashSpec.Stack.Radzen;
 /// <summary>
 /// Radzen render stack (ADR-0112): the surface speaks Radzen — chart, table, scalar and
 /// gantt families render through the Radzen plugin; what Radzen cannot express well is
-/// delegated to guest renderers (matrix → matrix-canvas, classic heatmap → builtin chartjs).
+/// delegated to a guest renderer (matrix → matrix-canvas). Heatmap is native: the plugin's
+/// square heatmap draws it (matrix payload + drill-down).
 /// </summary>
 public sealed class RadzenRenderStack : IRenderStack
 {
@@ -26,6 +27,8 @@ public sealed class RadzenRenderStack : IRenderStack
     public IReadOnlyDictionary<string, string> KindPlugins { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["heatmap"] = VizPluginIds.ChartJs, // guest: classic heatmap is builtin chartjs, not Radzen rects
+            // The Matrix family is the canvas guest, but kind heatmap is ours: the square
+            // heatmap draws the matrix payload (ADR-0112 §1 — the stack routes kinds).
+            ["heatmap"] = RendererId,
         };
 }

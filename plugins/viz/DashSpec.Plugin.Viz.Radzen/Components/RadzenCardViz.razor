@@ -109,10 +109,14 @@ else
         @switch (DiagramKind)
         {
             case "heatmap":
-                <RadzenSquareHeatmap TItem="MatrixCell" Data="@MatrixCells"
-                                     XProperty="x => x.X"
-                                     YProperty="y => y.Y"
-                                     ValueProperty="v => v.V"
+                @* Kind heatmap is native to the Radzen stack (ADR-0112): the square
+                   heatmap draws the matrix payload — row-normalized colors, tooltips,
+                   cell drill-down ride the same contracts as the builtin heatmap. *@
+                <RadzenSquareHeatmap Matrix="@Matrix"
+                                     Presentation="@Context.Card.MatrixPresentation"
+                                     Limits="@Context.Card.MatrixLimits"
+                                     OnCellSelected="@Context.OnHeatmapCellSelected"
+                                     OnCategoryItemSelected="@Context.OnHeatmapCategoryItemSelected"
                                      Style="width:100%;height:100%" />
                 break;
             case "gantt":
@@ -123,15 +127,21 @@ else
                 break;
             case "table":
             case "browse":
-                @* Radzen.Blazor v12 defines grid columns via the <Columns> template — the
-                   default ChildContent is never rendered, so columns must live here. *@
-                <RadzenDataGrid TItem="RadzenRow" Data="@TableRows" Style="width:100%"
-                                AllowColumnResize="true" Wrap="true" Density="Density.Compact">
+                @* Radzen v12: columns live in the <Columns> template (the default ChildContent
+                   is never rendered). Sort/filter/pager are Radzen's own — LoadData mode maps
+                   them onto the positional payload rows without reflection properties. *@
+                <RadzenDataGrid TItem="RadzenRow" Data="@GridRows" Count="@GridCount"
+                                LoadData="@OnGridLoadData"
+                                AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
+                                AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
+                                Wrap="true" Density="Density.Compact" Style="width:100%">
                     <Columns>
                         @for (var c = 0; c < Table.Columns.Count; c++)
                         {
                             var index = c;
-                            <RadzenDataGridColumn TItem="RadzenRow" Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)" Width="auto">
+                            <RadzenDataGridColumn TItem="RadzenRow" Property="@ColId(index)"
+                                                  Title="@HeaderText(index)" TextAlign="@ColumnTextAlign(index)"
+                                                  Width="auto" Sortable="true" Filterable="@ColumnFilters">
                                 <Template Context="row">@row.Values[index]</Template>
                             </RadzenDataGridColumn>
                         }
@@ -157,10 +167,11 @@ else
     private bool NeedsFixedHeight =>
         DiagramKind is "heatmap" or "gantt" or "gantt_timeline";
 
-    /// <summary>Emptiness per family: a heatmap card has no Chart, a chart card has no Matrix.</summary>
+    /// <summary>Emptiness per family: a heatmap card has no Chart, a chart card has no Matrix.
+    /// The square heatmap handles its own all-empty-cells and oversize states.</summary>
     private bool IsEmptyForFamily => DiagramKind switch
     {
-        "heatmap" => Context.EffectiveCard.Matrix is null || MatrixCells.Count == 0,
+        "heatmap" => Context.EffectiveCard.Matrix is null,
         "table" or "browse" => Context.EffectiveCard.Table is null || Table.Rows.Count == 0,
         "gantt" or "gantt_timeline" => Context.EffectiveCard.Gantt is null || Gantt.Rows.Count == 0,
         _ => Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart),
@@ -186,30 +197,92 @@ else
             .SelectMany(row => row.Segments.Select(segment => new GanttTask(row.Label, segment.Start, segment.End)))
             .ToList();
 
-    /// <summary>Matrix cells as Radzen heatmap sees them: one item per cell (X/Y category + value).</summary>
-    private IReadOnlyList<MatrixCell> MatrixCells
-    {
-        get
-        {
-            var cells = new List<MatrixCell>();
-            for (var y = 0; y < Matrix.YLabels.Count; y++)
-            {
-                for (var x = 0; x < Matrix.XLabels.Count; x++)
-                {
-                    var value = Matrix.Cells[y][x];
-                    if (value is not null)
-                    {
-                        cells.Add(new MatrixCell(Matrix.XLabels[x], Matrix.YLabels[y], value.Value));
-                    }
-                }
-            }
-
-            return cells;
-        }
-    }
-
     private IReadOnlyList<RadzenRow> TableRows =>
         Table.Rows.Select(row => new RadzenRow(row)).ToList();
+
+    /// <summary>Radzen's own sort/filter/pager over the positional payload rows (LoadData mode):
+    /// the grid supplies the UX, this maps its args onto string rows — no reflection properties.</summary>
+    private const int GridPageSize = 15;
+
+    private IReadOnlyList<RadzenRow> _gridRows = [];
+
+    private int _gridCount;
+
+    private IReadOnlyList<RadzenRow> GridRows => _gridRows;
+
+    private int GridCount => _gridCount;
+
+    private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
+
+    private static string ColId(int index) => $"c{index}";
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        SeedGrid();
+    }
+
+    private void SeedGrid()
+    {
+        _gridCount = Table.Rows.Count;
+        _gridRows = Table.Rows
+            .Take(GridPageSize)
+            .Select(row => new RadzenRow(row))
+            .ToList();
+    }
+
+    private void OnGridLoadData(LoadDataArgs args)
+    {
+        IEnumerable<IReadOnlyList<string>> rows = Table.Rows;
+
+        if (args.Filters is { } filters)
+        {
+            foreach (var filter in filters)
+            {
+                var index = ColumnIndexOf(filter.Property);
+                var needle = filter.FilterValue?.ToString();
+                if (index < 0 || index >= Table.Columns.Count || string.IsNullOrWhiteSpace(needle))
+                {
+                    continue;
+                }
+
+                rows = rows.Where(row =>
+                    row[index]?.Contains(needle, StringComparison.OrdinalIgnoreCase) == true);
+            }
+        }
+
+        _gridCount = rows.Count();
+
+        if (!string.IsNullOrWhiteSpace(args.OrderBy))
+        {
+            var sort = args.OrderBy.Trim().Split(' ');
+            var index = ColumnIndexOf(sort[0]);
+            if (index >= 0 && index < Table.Columns.Count)
+            {
+                var descending = sort.Length > 1 &&
+                    sort[1].StartsWith("desc", StringComparison.OrdinalIgnoreCase);
+                rows = descending
+                    ? rows.OrderByDescending(row => row[index], StringComparer.OrdinalIgnoreCase)
+                    : rows.OrderBy(row => row[index], StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        _gridRows = rows
+            .Skip(args.Skip ?? 0)
+            .Take(args.Top ?? GridPageSize)
+            .Select(row => new RadzenRow(row))
+            .ToList();
+    }
+
+    private static int ColumnIndexOf(string? property)
+    {
+        if (string.IsNullOrEmpty(property) || property[0] != 'c')
+        {
+            return -1;
+        }
+
+        return int.TryParse(property[1..], out var index) ? index : -1;
+    }
 
     private string HeaderText(int index) =>
         Table.HeaderTexts is { } headers && index < headers.Count && !string.IsNullOrWhiteSpace(headers[index])
@@ -261,9 +334,6 @@ else
 
     /// <summary>One table row as Radzen sees it: the raw cell values by column order.</summary>
     public sealed record RadzenRow(IReadOnlyList<string> Values);
-
-    /// <summary>One heatmap cell as Radzen sees it: X/Y categories + the value.</summary>
-    public sealed record MatrixCell(string X, string Y, double V);
 
     /// <summary>One gantt task as Radzen sees it: text + start/end.</summary>
     public sealed record GanttTask(string Text, DateTime Start, DateTime End);

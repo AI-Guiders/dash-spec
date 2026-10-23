@@ -15,4 +15,7 @@
   <data name="No data for the selected period" xml:space="preserve">
     <value>Нет данных за выбранный период</value>
   </data>
+  <data name="Heatmap not shown (protection limit)" xml:space="preserve">
+    <value>Тепловая карта не показана (защитный предел)</value>
+  </data>
 </root>
