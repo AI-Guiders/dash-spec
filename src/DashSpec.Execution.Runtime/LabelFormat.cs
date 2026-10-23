@@ -35,6 +35,28 @@ public static partial class LabelFormat
     public static void ClearReportDefaults() =>
         ReportDefaults.Value = null;
 
+    /// <summary>Present-layer formatting with explicitly carried report defaults (ADR-0079 §3):
+    /// the render result delivers them, so components format outside the payload-building
+    /// async flow without gambling on the ambient. The ambient is restored afterwards.</summary>
+    public static string FormatObject(object? value, string? format, ReportFormatDefaults? defaults)
+    {
+        if (defaults is null || ReferenceEquals(defaults, ReportDefaults.Value))
+        {
+            return FormatObject(value, format);
+        }
+
+        var previous = ReportDefaults.Value;
+        ReportDefaults.Value = defaults;
+        try
+        {
+            return FormatObject(value, format);
+        }
+        finally
+        {
+            ReportDefaults.Value = previous;
+        }
+    }
+
     /// <summary>Effective BCL culture for the active report (defaults.culture → host UI → <see cref="CultureInfo.CurrentCulture"/>).</summary>
     public static CultureInfo ResolveReportCulture() => ReportCulture;
 

@@ -1,13 +1,20 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Xml.Linq;
+using DashSpec.Abstractions.Data;
 
 namespace DashSpec.Execution.Compilation;
 
 /// <summary>Writes a one-sheet xlsx for card export. Reading xlsx is SQL Server OPENROWSET.</summary>
 public static class XlsxWorkbook
 {
-    public static byte[] Write(IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyList<string>> rows)
+    public static byte[] Write(IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyList<string>> rows) =>
+        Write(new DashSpec.Abstractions.Plugins.DashSpecTableData(columns, rows));
+
+    /// <summary>Typed export (ADR-0079 §3): numeric wire cells (int/decimal) land as native
+    /// number cells; everything else rides the display string. Dates stay text until a
+    /// numFmt styles part lands.</summary>
+    public static byte[] Write(DashSpec.Abstractions.Plugins.DashSpecTableData table)
     {
         var shared = new List<string>();
         var index = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -25,17 +32,36 @@ public static class XlsxWorkbook
         }
 
         var sheet = new XElement(Ns + "sheetData");
-        sheet.Add(BuildRow(1, columns.Select(column => (object)Share(column)).ToList(), sharedString: true));
-        for (var r = 0; r < rows.Count; r++)
+        sheet.Add(BuildRow(1, table.Columns.Select(column => (object)Share(column)).ToList(), sharedString: true));
+        for (var r = 0; r < table.Rows.Count; r++)
         {
-            var values = new List<object>();
-            var source = rows[r];
-            for (var c = 0; c < columns.Count; c++)
+            var display = table.Rows[r];
+            var typed = table.TypedRows is { } typedRows && r < typedRows.Count ? typedRows[r] : null;
+            var row = new XElement(Ns + "row", new XAttribute("r", r + 2));
+            for (var c = 0; c < table.Columns.Count; c++)
             {
-                values.Add(Share(c < source.Count ? source[c] : null));
+                var reference = ColumnName(c) + (r + 2).ToString(CultureInfo.InvariantCulture);
+                var cell = new XElement(Ns + "c", new XAttribute("r", reference));
+                var kind = table.ColumnKinds is { } kinds && c < kinds.Count ? kinds[c] : DashPrimitiveKind.String;
+                var wire = typed is not null && c < typed.Count ? typed[c] : default(DashValue?);
+                decimal? number = wire is { } value && !value.IsNull &&
+                    kind is DashPrimitiveKind.Int or DashPrimitiveKind.Decimal
+                        ? kind == DashPrimitiveKind.Int ? value.AsInt32() : value.AsDecimal()
+                        : null;
+                if (number is { } n)
+                {
+                    cell.Add(new XElement(Ns + "v", n.ToString(CultureInfo.InvariantCulture)));
+                }
+                else
+                {
+                    cell.Add(new XAttribute("t", "s"));
+                    cell.Add(new XElement(Ns + "v", Share(c < display.Count ? display[c] : null)));
+                }
+
+                row.Add(cell);
             }
 
-            sheet.Add(BuildRow(r + 2, values, sharedString: true));
+            sheet.Add(row);
         }
 
         var worksheet = new XDocument(

@@ -11,3 +11,4 @@ global using ShowSelectionEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
 global using CardClickBehaviour = DashSpec.Modeling.Parse.Card.CardClickBehaviour;
 global using CardClickEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
 global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
+global using ReportFormatDefaults = DashSpec.Modeling.Parse.Document.ReportFormatDefaults;

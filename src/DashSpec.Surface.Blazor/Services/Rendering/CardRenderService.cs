@@ -148,7 +148,13 @@ public sealed class CardRenderService(
 
         CardRenderResult AttachSlots(CardRenderResult result)
         {
-            result = result with { LocalFilterChromePlacements = localFilterChromePlacements };
+            // Present-layer formatting (ADR-0079 §3): the report defaults ride the render
+            // result — components format outside the payload-building async flow.
+            result = result with
+            {
+                LocalFilterChromePlacements = localFilterChromePlacements,
+                FormatDefaults = document.ResolvedFormatDefaults,
+            };
             return interiorSlotRenders.Count == 0
                 ? result
                 : result with { InteriorSlotRenders = interiorSlotRenders };
@@ -452,6 +458,7 @@ public sealed class CardRenderService(
                     SlotTitle = DrillSlotTitleResolver.Resolve(
                         effective.Diagram.Properties.GetValueOrDefault("title"),
                         slotOverlay),
+                    FormatDefaults = document.ResolvedFormatDefaults,
                 };
             }
             catch (Exception ex)
@@ -461,7 +468,8 @@ public sealed class CardRenderService(
                     slot.Diagram.Kind,
                     DiagramDataFamily.Table,
                     string.Empty,
-                    Error: RenderErrorFormatter.ForCard(ex, errorContext, slotRef));
+                    Error: RenderErrorFormatter.ForCard(ex, errorContext, slotRef),
+                    FormatDefaults: document.ResolvedFormatDefaults);
             }
         }
 

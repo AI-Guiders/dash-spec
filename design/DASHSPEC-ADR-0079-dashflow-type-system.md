@@ -334,3 +334,4 @@ Channel may declare **param surface** (names + filter **types** compatible with 
 - Data Flow Graph / Designer becomes feasible: ports are typed; n8n-style wiring is **validation**, not decoration.
 - `object?` row bags shrink to connector adapter boundary; payload builders consume **typed rows**.
 - demo / view drift detected when locked UDT ≠ inferred SQL schema.
+- Табличный present-контракт завершён (2026-10-24): `TablePayload` несёт `DashValue`-ячейки + `TableField` (wire-ключ, вид из схемы строк, header/format/alignment из спеки); display-строки делает present-слой через `LabelFormat.FormatObject(value, format, ReportFormatDefaults)` с дефолтами, которые едут на `CardRenderResult.FormatDefaults` (рендер компонентов — другой async-флоу, ambient не гарантирован). Экспорт XLSX пишет числа из wire-ячеек. Сортировка/фильтрация рендеров идут по wire-виду, показ — по formatted (ADR-0064 «tabular rows, not strings» — закрыто для таблиц).

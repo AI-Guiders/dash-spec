@@ -16,4 +16,5 @@ public sealed record CardSlotRenderResult(
     string? SlotTitle = null,
     bool AwaitingClick = false,
     string? AwaitingSource = null,
-    string? Error = null);
+    string? Error = null,
+    ReportFormatDefaults? FormatDefaults = null);
