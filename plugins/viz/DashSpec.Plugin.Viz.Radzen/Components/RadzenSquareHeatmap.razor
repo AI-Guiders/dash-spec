@@ -1,0 +1,227 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Execution.Runtime
+@using DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas
+@using DashSpec.Plugin.Viz.RadzenUI.Resources
+
+@* Square-cell heatmap over the matrix payload (ADR-0112: kind heatmap is native to the
+   Radzen stack). Cells stay square via CSS aspect-ratio — the grid fills the card width
+   and scrolls when the rows outrun the card height. The payload features — row/column
+   color normalization, per-cell tooltips, X bucket instants, drill-down clicks — ride the
+   same contracts as the builtin heatmap (ADR-0107). Colors come from HeatmapColorScale,
+   chrome text/borders from rviz-* CSS variables — the stack owns the look. *@
+
+<div class="rviz-shm @WrapCssClass" style="@Style">
+    @if (Matrix is null || Empty)
+    {
+        <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
+    }
+    else if (Oversized)
+    {
+        <p class="rviz-empty-state">@Loc["Heatmap not shown (protection limit)"]</p>
+    }
+    else
+    {
+        <div class="rviz-shm-scroll" style="@($"max-height:{HeightPx}px")">
+            <div class="rviz-shm-grid" style="@GridStyle()">
+                <div class="rviz-shm-corner" style="grid-row:1;grid-column:1">
+                    @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(Presentation?.YLabel))
+                    {
+                        <span class="rviz-shm-axis-y">@Presentation!.YLabel</span>
+                    }
+                    @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(Presentation?.XLabel))
+                    {
+                        <span class="rviz-shm-axis-x">@Presentation!.XLabel →</span>
+                    }
+                </div>
+                @for (var xi = 0; xi < Cols; xi++)
+                {
+                    var xIndex = xi;
+                    var showXLabel = ShowAxisLabelsX && ShouldShowXLabel(xi);
+                    <div class="rviz-shm-x-label @(showXLabel ? null : "rviz-shm-x-label-sparse")"
+                         style="grid-row:1;grid-column:@(xi + 2)"
+                         title="@(ShowAxisLabelsX ? FormatXLabel(XLabel(xIndex)) : null)">
+                        @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
+                    </div>
+                }
+                @for (var yi = 0; yi < Rows; yi++)
+                {
+                    var rowIndex = yi;
+                    @if (ShowAxisLabelsY)
+                    {
+                        <button type="button" class="rviz-shm-y-label" style="grid-row:@(yi + 2);grid-column:1"
+                                title="@FormatYLabel(YLabel(rowIndex))"
+                                @onclick="() => SelectCategory(rowIndex)"
+                                @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
+                    }
+                    else
+                    {
+                        <div class="rviz-shm-y-label rviz-shm-y-label-spacer"
+                             style="grid-row:@(yi + 2);grid-column:1" aria-hidden="true"></div>
+                    }
+                    @for (var xi = 0; xi < Cols; xi++)
+                    {
+                        var colIndex = xi;
+                        var value = Matrix.Cells[rowIndex][colIndex];
+                        var filled = value is not null;
+                        var (cellMin, cellMax) = Matrix.ColorRangeForCell(rowIndex, colIndex);
+                        <button type="button"
+                                class="rviz-shm-cell @(filled ? "rviz-shm-cell-filled" : "rviz-shm-cell-empty")"
+                                style="grid-row:@(yi + 2);grid-column:@(xi + 2);@CellStyle(value, cellMin, cellMax)"
+                                title="@CellTooltip(rowIndex, colIndex, value)"
+                                tabindex="@(filled ? 0 : -1)"
+                                @onclick="() => SelectCell(rowIndex, colIndex)"
+                                @onclick:stopPropagation="true">
+                            @if (filled && value is { } labeled && ShowCellValues)
+                            {
+                                <span class="rviz-shm-cell-value">@FormatValue(labeled)</span>
+                            }
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject]
+    private IStringLocalizer<RadzenVizStrings> Loc { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public MatrixPayload Matrix { get; set; } = default!;
+
+    [Parameter]
+    public MatrixPresentation? Presentation { get; set; }
+
+    [Parameter]
+    public MatrixRenderLimitsDefinition? Limits { get; set; }
+
+    /// <summary>Cell click — the generic drill source (ADR-0107).</summary>
+    [Parameter]
+    public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
+
+    /// <summary>Y-axis category item click (ADR-0107: "category item").</summary>
+    [Parameter]
+    public EventCallback<HeatmapCellContext> OnCategoryItemSelected { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; } = "width:100%";
+
+    private int Rows => Matrix.YLabels.Count;
+
+    private int Cols => Matrix.XLabels.Count;
+
+    private bool Empty => Rows == 0 || Cols == 0;
+
+    private bool Oversized => MatrixRenderLimits.IsOversized(Cols, Rows, Limits);
+
+    private string ColorScale => HeatmapColorScale.Normalize(Presentation?.ColorScale);
+
+    private bool ShowAxisLabelsX => Presentation?.AxisLabelsX ?? true;
+
+    private bool ShowAxisLabelsY => Presentation?.AxisLabelsY ?? true;
+
+    private int HeightPx => Presentation?.HeightPx ?? 320;
+
+    /// <summary>Auto value labels: readable while cells have room — past ~14 columns the
+    /// squares get too small for text. Show/Hide from the presentation always win.</summary>
+    private bool ShowCellValues =>
+        (Presentation?.ValueLabels ?? VizValueLabelMode.Auto) switch
+        {
+            VizValueLabelMode.Show => true,
+            VizValueLabelMode.Hide => false,
+            _ => Cols <= 14,
+        };
+
+    private string WrapCssClass =>
+        $"{(ShowAxisLabelsX ? null : "rviz-shm--hide-x")} {(ShowAxisLabelsY ? null : "rviz-shm--hide-y")}".Trim();
+
+    /// <summary>Square cells: fixed-width columns (builtin density, ~2.6rem) + aspect-ratio:1
+    /// on cells (css) — the grid scrolls when columns/rows outrun the card.</summary>
+    private string GridStyle()
+    {
+        var yColumn = ShowAxisLabelsY ? "minmax(8rem, max-content)" : "0";
+        return $"grid-template-columns:{yColumn} repeat({Cols}, 2.6rem);";
+    }
+
+    private string CellStyle(double? value, double cellMin, double cellMax)
+    {
+        if (value is null)
+        {
+            return string.Empty;
+        }
+
+        return $"background:{HeatmapColorScale.CellBackground(ColorScale, value.Value, cellMin, cellMax)};" +
+               $"color:{HeatmapColorScale.CellText(ColorScale, value.Value, cellMin, cellMax)};";
+    }
+
+    private bool ShouldShowXLabel(int index)
+    {
+        if (Cols <= 14)
+        {
+            return true;
+        }
+
+        var step = (int)Math.Ceiling(Cols / 14.0);
+        return index == 0 || index == Cols - 1 || index % step == 0;
+    }
+
+    private string YLabel(int index) => Matrix.YLabels[index];
+
+    private string XLabel(int index) => Matrix.XLabels[index];
+
+    private string FormatValue(double value) => value.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string FormatXLabel(string label) =>
+        LabelFormat.Format(label, Presentation?.XFormat ?? "date.short");
+
+    private string FormatYLabel(string label) =>
+        LabelFormat.Format(label, Presentation?.YFormat ?? "user.short");
+
+    private string CellTooltip(int yi, int xi, double? value)
+    {
+        var head = $"{FormatYLabel(YLabel(yi))} · {FormatXLabel(XLabel(xi))}: {(value is { } v ? FormatValue(v) : "—")}";
+        var tip = Matrix.Tooltips?[yi][xi];
+        if (string.IsNullOrWhiteSpace(tip))
+        {
+            return head;
+        }
+
+        return string.IsNullOrWhiteSpace(Presentation?.TooltipLabel)
+            ? $"{head} — {tip}"
+            : $"{head} — {Presentation!.TooltipLabel}: {tip}";
+    }
+
+    private async Task SelectCell(int yi, int xi)
+    {
+        var value = Matrix.Cells[yi][xi];
+        if (value is null)
+        {
+            return;
+        }
+
+        await OnCellSelected.InvokeAsync(Context(yi, xi, value, MatrixClickSources.Cell));
+    }
+
+    private async Task SelectCategory(int yi)
+    {
+        if (!OnCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        await OnCategoryItemSelected.InvokeAsync(
+            Context(yi, 0, Matrix.Cells[yi][0], MatrixClickSources.CategoryItem));
+    }
+
+    private HeatmapCellContext Context(int yi, int xi, double? value, string clickSource) =>
+        new(
+            yi,
+            xi,
+            Matrix.XLabels[xi],
+            Matrix.YLabels[yi],
+            value,
+            Matrix.Tooltips?[yi][xi],
+            Matrix.XBucketStarts is { } buckets && xi < buckets.Count ? buckets[xi] : null,
+            ClickSource: clickSource);
+}

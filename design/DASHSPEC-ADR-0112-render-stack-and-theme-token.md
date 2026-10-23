@@ -85,7 +85,7 @@ end host
 1. embedded host.ds — дефолт планеты DashSpec (блок host: shell, stack, theme, language, plugins)
 2. host.ds развёртывания (опц.) — оверрайд конкретной установки
 3. спека отчёта — render stack / theme / defaults.culture
-4. внутри стека — маппинг семья/kind → рендер (делегаты гостям: Radzen-стек отдаёт heatmap builtin'у); per-diagram render в спеке умирает — автор рендер не выбирает (оператор, 2026-10-23)
+4. внутри стека — маппинг семья/kind → рендер (гость: matrix → matrix-canvas; kind heatmap — родной квадратный heatmap Radzen-плагина); per-diagram render в спеке умирает — автор рендер не выбирает (оператор, 2026-10-23)
 ```
 
 - **Plugins-активация — только планетарный слой**: отчёт не решает, какие DLL грузить, — это не его намерение.

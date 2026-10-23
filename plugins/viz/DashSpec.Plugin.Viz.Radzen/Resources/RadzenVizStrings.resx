@@ -15,4 +15,7 @@
   <data name="No data for the selected period" xml:space="preserve">
     <value>No data for the selected period</value>
   </data>
+  <data name="Heatmap not shown (protection limit)" xml:space="preserve">
+    <value>Heatmap not shown (protection limit)</value>
+  </data>
 </root>
