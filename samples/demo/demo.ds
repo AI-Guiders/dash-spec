@@ -3,18 +3,14 @@ import layouts from Demo.Layouts
 
 catalog "demo-catalog.ds"
 
-configuration
+host
   language = "ru-RU"
   display_timezone = "Europe/Moscow"
-end configuration
-
-presentation
   product_title = "DashSpec Demo"
   catalog_label = "Отчёт"
   color_scheme = dark
   render = selfmade
-end presentation
-
+end host
 
 surfaces
   show help, settings, spec_dev

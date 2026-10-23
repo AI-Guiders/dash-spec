@@ -74,8 +74,16 @@ public sealed class HostShellBootstrap
         return new LayoutDefinition { Columns = board.GridColumns };
     }
 
-    private string? GetPresentation(string key) =>
-        Document.Presentation.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+    private string? GetPresentation(string key)
+    {
+        // ADR-0112 §6: the `host` block is the settings home — it wins over the legacy blocks.
+        if (Document.Host.TryGetValue(key, out var fromHost) && !string.IsNullOrWhiteSpace(fromHost))
+        {
+            return fromHost.Trim();
+        }
+
+        return Document.Presentation.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value.Trim()
             : null;
+    }
 }

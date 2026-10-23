@@ -131,6 +131,18 @@ module PropertySchemas =
           spec "large_field_filter_layout" Scalar
           spec "render" Scalar ]
 
+    /// <summary>Settings home block (`host … end host`, ADR-0112 §6): single-token keys of the block
+    /// grammar (`render`, `color_scheme` — established names), folded over the legacy blocks at bootstrap.</summary>
+    let hostSettings =
+        [ spec "language" Scalar
+          spec "display_timezone" Scalar
+          spec "product_title" String
+          spec "catalog_label" String
+          spec "large_field_filter_layout" Scalar
+          spec "color_scheme" Scalar
+          spec "render" Scalar
+          spec "provider_default" Scalar ]
+
     let hostLink =
         [ spec "url" String
           spec "target" String
