@@ -2,16 +2,22 @@
    links its own reading of it. No stack has "own css" — the stack IS the visual
    language; this is how the Radzen stack expresses the theme intent. The host
    passes the token, never the link. Unknown token → stack default (loud later,
-   ADR-0112 Open). Rendered in place — the cascade position is the stack's call. *@
-<link rel="stylesheet" href="@ThemeHref" />
+   ADR-0112 Open). Rendered in place — the cascade position is the stack's call.
+   Dark = the stock dark.css base + this stack's palette override (theme-dark.css):
+   deep navy + cyan, the BI surface — not the stock gray. Light = stock light. *@
+@if (IsDark)
+{
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/dark.css?v=12.1.5-4" />
+    <link rel="stylesheet" href="_content/DashSpec.Stack.Radzen/css/theme-dark.css?v=0.1.0" />
+}
+else
+{
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/light.css?v=12.1.5-4" />
+}
 
 @code {
     /// <summary>Theme token (ADR-0112 §2): the author's intent, not a palette.</summary>
     [Parameter] public string Theme { get; set; } = "dark";
 
-    private string ThemeHref => (Theme ?? "dark").Trim().ToLowerInvariant() switch
-    {
-        "light" => "_content/Radzen.Blazor/css/light.css?v=12.1.5-4",
-        _ => "_content/Radzen.Blazor/css/dark.css?v=12.1.5-4",
-    };
+    private bool IsDark => !string.Equals((Theme ?? "dark").Trim(), "light", StringComparison.OrdinalIgnoreCase);
 }
