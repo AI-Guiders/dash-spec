@@ -27,3 +27,51 @@
 .dash-sidebar .rzi-chevron-right {
   color: var(--rz-text-tertiary-color, var(--rz-base-400));
 }
+
+/* Dashboard filter toolbar (radzen stack): a real panel row — surface, wrap,
+   themed inputs inside. The placement grid keeps spec-driven cell order. */
+.dash-toolbar-radzen {
+  background: var(--rz-base-background-color, var(--rz-base-800));
+  border: 1px solid var(--rz-base-700);
+  border-radius: var(--rz-border-radius, 6px);
+  padding: 0.6rem 0.75rem;
+}
+
+.dash-toolbar-radzen .filter-cell,
+.dash-toolbar-radzen [class*=filter] {
+  min-width: 0;
+}
+
+/* Responsive: screens narrower than 1100px fold the sidebar above the board;
+   narrower than 800px the toolbar wraps under the board header. */
+@media (max-width: 1100px) {
+  .dash-home-flow-radzen {
+    flex-direction: column;
+  }
+
+  .dash-sidebar {
+    position: static;
+    max-height: none;
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .dash-sidebar .rz-menu {
+    columns: 2;
+    column-gap: 1rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .dash-sidebar .rz-menu {
+    columns: 1;
+  }
+
+  .dash-home-column {
+    min-width: 0;
+  }
+
+  .dash-toolbar-radzen {
+    overflow-x: auto;
+  }
+}
