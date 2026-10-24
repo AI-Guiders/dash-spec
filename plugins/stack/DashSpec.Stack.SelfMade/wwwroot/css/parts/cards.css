@@ -7,10 +7,16 @@
   align-items: stretch;
 }
 
-/* [ADR-0111] §7: viewport classes — mid screens compress spans, narrow goes full width */
+/* [ADR-0111] §7: viewport classes — mid screens compress spans, narrow goes full width.
+   The span rewrite drops the declared column start, so a declared grid-row left
+   fixed pushes cards past the last track into implicit slivers — reflow the rows
+   together with the columns (the same reset the ≤768px class already applies). */
 @media (max-width: 1200px) {
   .cards {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .cards > * {
+    grid-row: auto !important;
   }
   .cards > [style*="span 12"],
   .cards > [style*="span 11"],

@@ -7,6 +7,13 @@
   gap: 0.75rem;
 }
 
+/* The board column takes the rest of the row — as a default flex item it
+   shrink-to-fits the grid's content width and the spec'd spans never fill. */
+.dash-home-column {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .dash-sidebar {
   flex: 0 0 16rem;
   position: sticky;
@@ -65,10 +72,6 @@
 @media (max-width: 800px) {
   .dash-sidebar .rz-menu {
     columns: 1;
-  }
-
-  .dash-home-column {
-    min-width: 0;
   }
 
   .dash-toolbar-radzen {
