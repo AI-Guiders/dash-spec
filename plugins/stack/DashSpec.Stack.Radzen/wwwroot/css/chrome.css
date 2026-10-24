@@ -1,0 +1,29 @@
+/* Radzen stack chrome (ADR-0112 §5): the left menu + the board column. Colors ride
+   the --rz-* theme variables — the theme file owns the palette, this file the shape. */
+
+.dash-home-flow-radzen {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.dash-sidebar {
+  flex: 0 0 16rem;
+  position: sticky;
+  top: 0.75rem;
+  max-height: calc(100vh - 1.5rem);
+  overflow: auto;
+  background: var(--rz-base-background-color, var(--rz-base-800));
+  border: 1px solid var(--rz-base-700);
+  border-radius: var(--rz-border-radius, 6px);
+  padding: 0.25rem 0 0.5rem;
+}
+
+.dash-sidebar .rz-menu {
+  background: transparent;
+}
+
+.dash-sidebar .rzi-chevron-down,
+.dash-sidebar .rzi-chevron-right {
+  color: var(--rz-text-tertiary-color, var(--rz-base-400));
+}

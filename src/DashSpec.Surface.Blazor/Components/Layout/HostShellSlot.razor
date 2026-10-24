@@ -21,15 +21,20 @@
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Catalog && Coordinator.HasCatalog)
 {
-    <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
-                            Groups="Coordinator.CatalogGroups"
-                            ActiveEntryId="Coordinator.ActiveCatalogEntryId"
-                            DefaultEntryId="Coordinator.DefaultCatalogEntryId"
-                            Busy="Coordinator.CatalogBusy"
-                            OnSelect="Coordinator.SelectCatalogEntryAsync"
-                            Inline="true"
-                            ShowLabel="true"
-                            CatalogLabel="@HostShell.CatalogLabel" />
+    // ADR-0112 §5: on the Radzen stack the left menu (DashboardSidebar) carries every
+    // report — the topbar combobox would duplicate it.
+    if (!IsRadzenStack)
+    {
+        <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
+                                Groups="Coordinator.CatalogGroups"
+                                ActiveEntryId="Coordinator.ActiveCatalogEntryId"
+                                DefaultEntryId="Coordinator.DefaultCatalogEntryId"
+                                Busy="Coordinator.CatalogBusy"
+                                OnSelect="Coordinator.SelectCatalogEntryAsync"
+                                Inline="true"
+                                ShowLabel="true"
+                                CatalogLabel="@HostShell.CatalogLabel" />
+    }
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Nav)
 {

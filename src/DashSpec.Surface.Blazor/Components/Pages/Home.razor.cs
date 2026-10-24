@@ -9,6 +9,10 @@ public partial class Home : IDisposable
     [Inject] private DashboardPageController Page { get; set; } = default!;
     [Inject] private DashboardHostCommandCoordinator CommandCoordinator { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings { get; set; } = default!;
+
+    private bool IsRadzenStack =>
+        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
