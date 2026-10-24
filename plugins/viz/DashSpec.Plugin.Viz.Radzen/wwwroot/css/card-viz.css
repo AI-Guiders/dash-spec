@@ -18,7 +18,7 @@
 .rviz-empty-state {
   margin: 2rem 0;
   text-align: center;
-  color: var(--muted, #8fa0b3);
+  color: var(--rz-text-secondary-color, var(--muted, #8fa0b3));
 }
 
 /* Square heatmap (rviz-shm): the grid fills the card width, cells stay square via

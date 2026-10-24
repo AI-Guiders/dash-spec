@@ -1,0 +1,101 @@
+/* Radzen stack — the stack's own reading of the `dark` theme token (ADR-0112 §2).
+   Loaded after the stock dark.css: only the variable scales are overridden, every
+   derived component variable (--rz-base-background-color, text colors, shadows…)
+   cascades from them. The palette is the BI surface: deep navy, cyan accent —
+   not the stock gray. Light token keeps the stock light.css. */
+
+:root {
+  /* Base scale — deep navy ramp */
+  --rz-base-50: #f4f7fd;
+  --rz-base-100: #e6edf7;
+  --rz-base-200: #c7d3e8;
+  --rz-base-300: #8fa0bf;
+  --rz-base-400: #5a6c92;
+  --rz-base-500: #3b4d74;
+  --rz-base-600: #2a3a5e;
+  --rz-base-700: #202e4d;
+  --rz-base-800: #131e37;
+  --rz-base-900: #0b1322;
+  --rz-base: #3b4d74;
+  --rz-base-light: #8fa0bf;
+  --rz-base-lighter: #e6edf7;
+  --rz-base-dark: #202e4d;
+  --rz-base-darker: #0b1322;
+  --rz-on-base: #f4f7fd;
+  --rz-on-base-light: #0b1322;
+  --rz-on-base-lighter: #0b1322;
+  --rz-on-base-dark: #e6edf7;
+  --rz-on-base-darker: #e6edf7;
+
+  /* Primary — cyan; secondary — blue */
+  --rz-primary: #0891b2;
+  --rz-primary-light: #22c9e8;
+  --rz-primary-lighter: rgba(34, 201, 232, 0.16);
+  --rz-primary-dark: #0b7fa0;
+  --rz-primary-darker: #096680;
+  --rz-on-primary: #ffffff;
+  --rz-on-primary-light: #062a33;
+  --rz-on-primary-lighter: #22c9e8;
+  --rz-on-primary-dark: #ffffff;
+  --rz-on-primary-darker: #ffffff;
+
+  --rz-secondary: #3b82f6;
+  --rz-secondary-light: #60a5fa;
+  --rz-secondary-lighter: rgba(59, 130, 246, 0.2);
+  --rz-secondary-dark: #2563eb;
+  --rz-secondary-darker: #1d4ed8;
+
+  /* Accents */
+  --rz-info: #2dd4bf;
+  --rz-info-light: #50dfcb;
+  --rz-info-lighter: rgba(45, 212, 191, 0.2);
+  --rz-info-dark: #14b8a6;
+  --rz-info-darker: #0f9d8d;
+
+  --rz-success: #34d399;
+  --rz-success-light: #6ee7b7;
+  --rz-success-lighter: rgba(52, 211, 153, 0.16);
+  --rz-success-dark: #10b981;
+  --rz-success-darker: #0d9668;
+
+  --rz-warning: #fbbf24;
+  --rz-warning-light: #fcd34d;
+  --rz-warning-lighter: rgba(251, 191, 36, 0.2);
+  --rz-warning-dark: #d97706;
+  --rz-warning-darker: #b45309;
+
+  --rz-danger: #fb7185;
+  --rz-danger-light: #fda4af;
+  --rz-danger-lighter: rgba(251, 113, 133, 0.2);
+  --rz-danger-dark: #f43f5e;
+  --rz-danger-darker: #be123c;
+
+  /* Chart series — BI palette: cyan → teal → blue → violet → amber → rose … */
+  --rz-series-1: #22d3ee;
+  --rz-series-2: #2dd4bf;
+  --rz-series-3: #3b82f6;
+  --rz-series-4: #a78bfa;
+  --rz-series-5: #fbbf24;
+  --rz-series-6: #fb7185;
+  --rz-series-7: #4ade80;
+  --rz-series-8: #60a5fa;
+  --rz-series-9: #38bdf8;
+  --rz-series-10: #67e8f9;
+  --rz-series-11: #fda4af;
+  --rz-series-12: #c4b5fd;
+  --rz-series-13: #fcd34d;
+  --rz-series-14: #5eead4;
+  --rz-series-15: #93c5fd;
+  --rz-series-16: #d8b4fe;
+  --rz-series-17: #0ea5e9;
+  --rz-series-18: #14b8a6;
+  --rz-series-19: #f97316;
+  --rz-series-20: #8b5cf6;
+  --rz-series-21: #a3e635;
+  --rz-series-22: #f472b6;
+  --rz-series-23: #22c55e;
+  --rz-series-24: #94a3b8;
+
+  /* Shape */
+  --rz-border-radius: 6px;
+}
