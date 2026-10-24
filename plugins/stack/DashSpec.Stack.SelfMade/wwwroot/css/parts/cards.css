@@ -1,54 +1,49 @@
+/* [ADR-0111] §7: viewport classes — the plane carries track counts and placements
+   per class as custom properties (--tracks/--card-tracks × wide|mid|narrow,
+   --gc/--gr × wide|mid|narrow on each slot); the media queries below are the only
+   class switch — no per-style attribute matching. The gap is fluid in CSS. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
-  /* [ADR-0111] §7: fluid gap — scales with viewport, no fixed pixels */
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
   gap: clamp(0.5rem, 1.2vw, 1.5rem);
   grid-auto-flow: dense;
   align-items: stretch;
 }
 
-/* [ADR-0111] §7: viewport classes — mid screens compress spans, narrow goes full width.
-   The span rewrite drops the declared column start, so a declared grid-row left
-   fixed pushes cards past the last track into implicit slivers — reflow the rows
-   together with the columns (the same reset the ≤768px class already applies). */
+.cards > *,
+.card-nest-cards > *,
+.card-group-cards > *,
+.card-interior-grid > *,
+.card-head-toolbar-filters--grid > * {
+  grid-column: var(--gc, auto);
+  grid-row: var(--gr, auto);
+}
+
 @media (max-width: 1200px) {
   .cards {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: var(--tracks-mid, repeat(6, minmax(0, 1fr)));
   }
-  .cards > * {
-    grid-row: auto !important;
-  }
-  .cards > [style*="span 12"],
-  .cards > [style*="span 11"],
-  .cards > [style*="span 10"],
-  .cards > [style*="span 9"],
-  .cards > [style*="span 8"] {
-    grid-column: 1 / -1 !important;
-  }
-  .cards > [style*="span 7"],
-  .cards > [style*="span 6"],
-  .cards > [style*="span 5"] {
-    grid-column: span 3 !important;
-  }
-  .cards > [style*="span 4"],
-  .cards > [style*="span 3"] {
-    grid-column: span 2 !important;
+  .cards > *,
+  .card-nest-cards > *,
+  .card-group-cards > *,
+  .card-interior-grid > *,
+  .card-head-toolbar-filters--grid > * {
+    grid-column: var(--gc-mid, auto);
+    grid-row: var(--gr-mid, auto);
   }
 }
 
 @media (max-width: 768px) {
   .cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: var(--tracks-narrow, repeat(1, minmax(0, 1fr)));
   }
-  .cards > * {
-    grid-column: 1 / -1 !important;
-    grid-row: auto !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .cards {
-    grid-template-columns: 1fr;
+  .cards > *,
+  .card-nest-cards > *,
+  .card-group-cards > *,
+  .card-interior-grid > *,
+  .card-head-toolbar-filters--grid > * {
+    grid-column: var(--gc-narrow, auto);
+    grid-row: var(--gr-narrow, auto);
   }
 }
 
@@ -73,7 +68,7 @@
 
 .card-group-cards {
   display: grid;
-  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
   /* [ADR-0111] §7: fluid gap — same as .cards */
   gap: clamp(0.5rem, 1.2vw, 1.5rem);
   grid-auto-flow: dense;
@@ -90,21 +85,13 @@
 
 .card-nest-cards {
   display: grid;
-  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
   /* [ADR-0111] §7: fluid gap — same as .cards */
   gap: clamp(0.5rem, 1.2vw, 1.5rem);
   grid-auto-flow: dense;
   align-items: stretch;
   flex: 1;
   min-width: 0;
-}
-
-@media (max-width: 768px) {
-  .card-group-cards .card,
-  .card-nest-cards .card {
-    grid-column: 1 / -1 !important;
-    grid-row: auto !important;
-  }
 }
 
 .card {
@@ -240,7 +227,9 @@
   margin-left: 0;
   margin-right: auto;
   overflow: visible;
-  grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, 1fr));
+  /* [ADR-0111] §7: chrome keeps its declared one-row tracks through mid
+     (max-content apply column), stacks at narrow — the vars carry that. */
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
 }
 
 .card-head-filter-slot {

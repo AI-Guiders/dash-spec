@@ -32,13 +32,34 @@ type BoardRoute =
       PageId: string option }
 
 /// <summary>
+/// Viewport class ([ADR-0111] §7): the plane is assembled as variants per class —
+/// the same planner math run once per class; the browser switches variants by media
+/// query (pure CSS, zero runtime computation). The set is the starter trio.
+/// </summary>
+type ViewportClass =
+    | Wide = 0
+    | Mid = 1
+    | Narrow = 2
+
+/// <summary>
+/// Placement of a slot per viewport class ([ADR-0111] §7): the author's grid is the
+/// wide class; mid/narrow are planned at assembly under the class's available space.
+/// </summary>
+[<CLIMutable>]
+type PlacementVariants =
+    { Wide: PlacementDefinition
+      Mid: PlacementDefinition
+      Narrow: PlacementDefinition }
+
+/// <summary>
 /// One assembled slot ([ADR-0111]): the occupant is literally a node of the document wiring graph
-/// ([ADR-0091]) — placed as is, nothing resolved, no copies; placement/scope are the existing records.
+/// ([ADR-0091]) — placed as is, nothing resolved, no copies; placement variants/scope are the
+/// existing records.
 /// </summary>
 [<CLIMutable>]
 type Slot =
     { Node: WiringNode
-      Placement: PlacementDefinition
+      Placement: PlacementVariants
       Scope: LayoutSlotScope
       Provenance: PlacementProvenance }
 

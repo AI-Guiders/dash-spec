@@ -1,0 +1,18 @@
+<Project>
+
+  <!-- [ADR-0113]: central pins start with the PBT infrastructure (FsCheck 3.6.0).
+       Projects adopt ManagePackageVersionsCentrally one at a time; versioned
+       references elsewhere keep building until they migrate. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="FsCheck" Version="3.6.0" />
+    <PackageVersion Include="FsCheck.Xunit" Version="3.6.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+
+</Project>

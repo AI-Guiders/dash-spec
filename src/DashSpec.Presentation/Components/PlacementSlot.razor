@@ -1,16 +1,18 @@
 @namespace DashSpec.Presentation.Components
+@using DashSpec.Modeling.Parse.Layout
 @using DashSpec.Execution.Runtime
 <div class="@CssClass" style="@ResolvedStyle">
     @ChildContent
 </div>
 
 @code {
-    [Parameter, EditorRequired] public PlacementDefinition Placement { get; set; } = default!;
-    [Parameter] public int GridColumns { get; set; } = 12;
+    /// <summary>Placement per viewport class ([ADR-0111] §7) — the variants ride to the
+    /// DOM as custom properties; the stacks' CSS resolves them per media query.</summary>
+    [Parameter, EditorRequired] public PlacementVariants Placement { get; set; } = default!;
     [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public string? ExtraStyle { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private string ResolvedStyle =>
-        PlacementGridCss.SlotStyle(Placement, GridColumns) + (ExtraStyle ?? string.Empty);
+        PlacementGridCss.SlotStyle(Placement) + (ExtraStyle ?? string.Empty);
 }
