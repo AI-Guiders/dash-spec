@@ -5,10 +5,12 @@
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
 @using DashSpec.Presentation.Components
+@using DashSpec.Abstractions.Viz
+@inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
 
 @if (ShowDashboardFilters)
 {
-<section class="@SectionClass"
+<section class="@(IsRadzenStack ? "dash-toolbar-radzen" : SectionClass)"
          data-toolbar-layout="@(BarLayout ? "bar" : null)"
          data-toolbar-cells="@(ToolbarLabeledCells ? "labeled" : null)"
          aria-label="Фильтры дашборда">
@@ -76,6 +78,9 @@
 }
 
 @code {
+    private bool IsRadzenStack =>
+        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
+
     private bool ShowDashboardFilters =>
         FilterNames.Count > 0 || (AutoApply && Busy);
 
