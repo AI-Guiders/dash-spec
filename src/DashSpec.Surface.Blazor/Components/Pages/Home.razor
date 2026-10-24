@@ -48,22 +48,41 @@ else
 {
     var chrome = Page.Session.Document.FiltersChrome;
 
-    @if (Page.Session.Document.Tabs.Count > 1)
-    {
-        <DashboardTabBar Tabs="Page.Session.Document.Tabs"
-                         ActiveTabId="Page.ActiveTabId"
-                         ResolveLabel="Page.ResolveTabLabel"
-                         Sticky="chrome.IsSticky"
-                         OnSelect="Page.SelectTab" />
-    }
+    <div class="dash-home-flow @(IsRadzenStack ? "dash-home-flow-radzen" : null)">
+        @if (IsRadzenStack)
+        {
+            @* Radzen-stack chrome (ADR-0112 §5): the left menu carries every report and the
+               active report's sections — the top strip and the catalog combobox go away. *@
+            <DashboardSidebar Entries="Page.CatalogEntries"
+                              Groups="Page.CatalogGroups"
+                              ActiveEntryId="Page.ActiveCatalogEntryId"
+                              Busy="Page.Switching"
+                              Tabs="Page.Session.Document.Tabs"
+                              ResolveTabLabel="Page.ResolveTabLabel"
+                              ActiveTabId="Page.ActiveTabId"
+                              OnSelectEntry="Page.SelectCatalogEntryAsync"
+                              OnSelectTab="Page.SelectTab" />
+        }
+        else
+        {
+            @if (Page.Session.Document.Tabs.Count > 1)
+            {
+                <DashboardTabBar Tabs="Page.Session.Document.Tabs"
+                                 ActiveTabId="Page.ActiveTabId"
+                                 ResolveLabel="Page.ResolveTabLabel"
+                                 Sticky="chrome.IsSticky"
+                                 OnSelect="Page.SelectTab" />
+            }
 
-    @if (Page.HasPages)
-    {
-        <DashboardPagePicker Pages="Page.ActiveTabPages()"
-                             ActivePageId="Page.ActivePageId"
-                             ResolveLabel="Page.ResolvePageNavTitle"
-                             OnSelect="Page.SelectPageAsync" />
-    }
+            @if (Page.HasPages)
+            {
+                <DashboardPagePicker Pages="Page.ActiveTabPages()"
+                                     ActivePageId="Page.ActivePageId"
+                                     ResolveLabel="Page.ResolvePageNavTitle"
+                                     OnSelect="Page.SelectPageAsync" />
+            }
+        }
+        <div class="dash-home-column">
 
     @if (!string.IsNullOrEmpty(Page.CommandError))
     {
@@ -128,5 +147,7 @@ else
                        Page="Page"
                        Layout="Page.Session.Document.Layout"
                        AutoApply="chrome.IsAutoApply" />
+        </div>
+    </div>
 }
 </div>

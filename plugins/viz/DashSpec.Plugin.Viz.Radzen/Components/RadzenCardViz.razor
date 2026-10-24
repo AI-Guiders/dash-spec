@@ -134,6 +134,7 @@ else
                                 LoadData="@OnGridLoadData"
                                 AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
                                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
+                                RowClick="@OnRowClicked"
                                 Wrap="true" Density="Density.Compact" Style="width:100%">
                     <Columns>
                         @for (var c = 0; c < Table.Fields.Count; c++)
@@ -298,6 +299,33 @@ else
         }
 
         return -1;
+    }
+
+    /// <summary>ADR-0107 row click: the card declares a `row`-sourced handler → rows are
+    /// clickable; the first column's formatted value rides YLabel — the same contract as
+    /// the builtin table (value-based, a re-render can't make it stale).</summary>
+    private bool RowClickEnabled =>
+        Context.EffectiveCard.ClickHandlers is { Count: > 0 } handlers &&
+        handlers.Any(h => string.Equals(h.Source, TableClickSources.Row, StringComparison.OrdinalIgnoreCase));
+
+    private async Task OnRowClicked(DataGridRowMouseEventArgs<RadzenRow> args)
+    {
+        if (!RowClickEnabled || args.Data is not { } row || !Context.OnHeatmapCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        var context = new HeatmapCellContext(
+            -1,
+            -1,
+            string.Empty,
+            FormatCell(row.Cells[0], 0),
+            null,
+            null,
+            null,
+            TableClickSources.Row);
+
+        await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
     }
 
     /// <summary>Display text for filter matching — the same string the cell renders,

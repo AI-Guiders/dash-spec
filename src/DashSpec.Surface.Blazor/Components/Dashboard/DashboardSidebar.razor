@@ -1,0 +1,86 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+
+@using DashSpec.Abstractions.Viewer
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using Radzen
+@using Radzen.Blazor
+
+@* Radzen-stack chrome (ADR-0112 §5): one left menu instead of the top strip + the
+   catalog combobox — every report is visible in place, grouped by catalog group;
+   the active report's sections (tabs) ride beneath. Styles: the Radzen stack's
+   chrome.css (the stack owns its chrome look). SelfMade keeps its top strip. *@
+
+<aside class="dash-sidebar" aria-label="@SidebarLabel">
+    <RadzenPanelMenu>
+        <RadzenPanelMenuItem Text="@CatalogLabel" Icon="library_books" Expanded="true">
+            @foreach (var group in Groups)
+            {
+                <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)" Expanded="true">
+                    @foreach (var entry in EntriesOf(group))
+                    {
+                        var entryId = entry.Id;
+                        <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)"
+                                             Selected="@IsEntryActive(entry)"
+                                             Disabled="@Busy"
+                                             Click="@(() => OnSelectEntry.InvokeAsync(entryId))" />
+                    }
+                </RadzenPanelMenuItem>
+            }
+            @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId?.Value)))
+            {
+                var entryId = entry.Id;
+                <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)"
+                                     Selected="@IsEntryActive(entry)"
+                                     Disabled="@Busy"
+                                     Click="@(() => OnSelectEntry.InvokeAsync(entryId))" />
+            }
+        </RadzenPanelMenuItem>
+        @if (Tabs is { Count: > 1 })
+        {
+            <RadzenPanelMenuItem Text="@SectionsLabel" Icon="dashboard" Expanded="true">
+                @foreach (var tab in Tabs)
+                {
+                    var tabId = tab.Id;
+                    <RadzenPanelMenuItem Text="@(ResolveTabLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)"
+                                         Selected="@string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase)"
+                                         Click="@(() => OnSelectTab.InvokeAsync(tabId))" />
+                }
+            </RadzenPanelMenuItem>
+        }
+    </RadzenPanelMenu>
+</aside>
+
+@code {
+    [Parameter] public IReadOnlyList<CatalogEntryDefinition> Entries { get; set; } = [];
+
+    [Parameter] public IReadOnlyList<CatalogGroupDefinition> Groups { get; set; } = [];
+
+    [Parameter] public string? ActiveEntryId { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public string CatalogLabel { get; set; } = "Отчёты";
+
+    [Parameter] public string SectionsLabel { get; set; } = "Разделы";
+
+    [Parameter] public string SidebarLabel { get; set; } = "Навигация";
+
+    [Parameter] public IReadOnlyList<TabDefinition> Tabs { get; set; } = [];
+
+    [Parameter] public Func<TabDefinition, string>? ResolveTabLabel { get; set; }
+
+    [Parameter] public string? ActiveTabId { get; set; }
+
+    [Parameter] public EventCallback<string> OnSelectEntry { get; set; }
+
+    [Parameter] public EventCallback<string> OnSelectTab { get; set; }
+
+    private bool IsEntryActive(CatalogEntryDefinition entry)
+    {
+        var active = ActiveEntryId ?? Entries.FirstOrDefault()?.Id;
+        return string.Equals(entry.Id, active, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<CatalogEntryDefinition> EntriesOf(CatalogGroupDefinition group) =>
+        Entries.Where(entry => string.Equals(entry.GroupId?.Value, group.Id, StringComparison.OrdinalIgnoreCase));
+}
