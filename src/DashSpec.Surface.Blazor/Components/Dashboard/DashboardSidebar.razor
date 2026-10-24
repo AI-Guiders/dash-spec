@@ -1,18 +1,20 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 
 @using DashSpec.Abstractions.Viewer
+@using DashSpec.Surface.Blazor.Services.Localization
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using Radzen
 @using Radzen.Blazor
+@inject DashboardLocalizer Loc
 
 @* Radzen-stack chrome (ADR-0112 §5): one left menu instead of the top strip + the
    catalog combobox — every report is visible in place, grouped by catalog group;
    the active report's sections (tabs) ride beneath. Styles: the Radzen stack's
    chrome.css (the stack owns its chrome look). SelfMade keeps its top strip. *@
 
-<aside class="dash-sidebar" aria-label="@SidebarLabel">
+<aside class="dash-sidebar" aria-label="@SidebarText">
     <RadzenPanelMenu>
-        <RadzenPanelMenuItem Text="@CatalogLabel" Icon="library_books" Expanded="true">
+        <RadzenPanelMenuItem Text="@CatalogText" Icon="library_books" Expanded="true">
             @foreach (var group in Groups)
             {
                 <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)" Expanded="true">
@@ -37,7 +39,7 @@
         </RadzenPanelMenuItem>
         @if (Tabs is { Count: > 1 })
         {
-            <RadzenPanelMenuItem Text="@SectionsLabel" Icon="dashboard" Expanded="true">
+            <RadzenPanelMenuItem Text="@SectionsText" Icon="dashboard" Expanded="true">
                 @foreach (var tab in Tabs)
                 {
                     var tabId = tab.Id;
@@ -59,11 +61,18 @@
 
     [Parameter] public bool Busy { get; set; }
 
-    [Parameter] public string CatalogLabel { get; set; } = "Отчёты";
+    [Parameter] public string? CatalogLabel { get; set; }
 
-    [Parameter] public string SectionsLabel { get; set; } = "Разделы";
+    [Parameter] public string? SectionsLabel { get; set; }
 
-    [Parameter] public string SidebarLabel { get; set; } = "Навигация";
+    [Parameter] public string? SidebarLabel { get; set; }
+
+    /// <summary>UI copy SSOT (ADR-0077): labels come from the localizer, parameters override.</summary>
+    private string CatalogText => CatalogLabel ?? Loc.T("Reports");
+
+    private string SectionsText => SectionsLabel ?? Loc.T("Sections");
+
+    private string SidebarText => SidebarLabel ?? Loc.T("Navigation");
 
     [Parameter] public IReadOnlyList<TabDefinition> Tabs { get; set; } = [];
 

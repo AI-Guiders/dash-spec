@@ -21,6 +21,12 @@
   <data name="Spec" xml:space="preserve">
     <value>Spec</value>
   </data>
+  <data name="Sections" xml:space="preserve">
+    <value>Sections</value>
+  </data>
+  <data name="Navigation" xml:space="preserve">
+    <value>Navigation</value>
+  </data>
   <data name="Reports" xml:space="preserve">
     <value>Reports</value>
   </data>
