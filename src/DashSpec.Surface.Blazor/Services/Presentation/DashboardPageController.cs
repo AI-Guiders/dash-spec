@@ -703,14 +703,14 @@ public sealed class DashboardPageController : IDisposable
     }
 
     /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
-    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNest(string nestId) =>
+    public IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForNest(string nestId) =>
         CardsForNested(nestId);
 
     /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
-    public IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForGroup(string groupId) =>
+    public IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForGroup(string groupId) =>
         CardsForNested(groupId);
 
-    IEnumerable<(CardRenderResult Card, PlacementDefinition Placement)> CardsForNested(string containerId)
+    IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForNested(string containerId)
     {
         if (_session.SlotPlane?.NestedBoards.TryGetValue(containerId, out var slots) != true || slots is null)
         {
@@ -1315,7 +1315,7 @@ public sealed class DashboardPageController : IDisposable
         {
             foreach (var slot in slots)
             {
-                ToolbarPlacements[slot.Node.Id] = slot.Placement;
+                ToolbarPlacements[slot.Node.Id] = slot.Placement.Wide;
             }
         }
     }
@@ -1405,7 +1405,7 @@ public sealed class DashboardPageController : IDisposable
         {
             foreach (var slot in slots)
             {
-                TabPlacements[slot.Node.Id] = slot.Placement;
+                TabPlacements[slot.Node.Id] = slot.Placement.Wide;
             }
         }
     }

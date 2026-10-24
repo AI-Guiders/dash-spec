@@ -212,7 +212,8 @@
 
 .filters-grid-layout {
   display: grid;
-  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  /* [ADR-0111] §7: track counts per viewport class ride as custom properties. */
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
   gap: 0.55rem 0.85rem;
   align-items: stretch;
 }
@@ -223,9 +224,34 @@
 
 .filters-toolbar-row.filters-grid-layout {
   display: grid;
-  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  grid-template-columns: var(--tracks, repeat(12, minmax(0, 1fr)));
   gap: 0;
   align-items: stretch;
+}
+
+.filters-grid-layout > * {
+  grid-column: var(--gc, auto);
+  grid-row: var(--gr, auto);
+}
+
+@media (max-width: 1200px) {
+  .filters-grid-layout {
+    grid-template-columns: var(--tracks-mid, repeat(6, minmax(0, 1fr)));
+  }
+  .filters-grid-layout > * {
+    grid-column: var(--gc-mid, auto);
+    grid-row: var(--gr-mid, auto);
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-grid-layout {
+    grid-template-columns: var(--tracks-narrow, repeat(1, minmax(0, 1fr)));
+  }
+  .filters-grid-layout > * {
+    grid-column: var(--gc-narrow, auto);
+    grid-row: var(--gr-narrow, auto);
+  }
 }
 
 .filters-toolbar-row.filters-grid-layout .toolbar-filter-row-break {
@@ -389,7 +415,8 @@
 
 .card-interior-grid {
   display: grid;
-  grid-template-columns: repeat(var(--card-grid-columns, 12), minmax(0, 1fr));
+  /* [ADR-0111] §7: track counts per viewport class ride as custom properties. */
+  grid-template-columns: var(--card-tracks, repeat(12, minmax(0, 1fr)));
   gap: 0.75rem;
   margin-top: 0.5rem;
 }

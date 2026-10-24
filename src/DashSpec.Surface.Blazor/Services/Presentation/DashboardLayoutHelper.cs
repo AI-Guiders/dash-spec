@@ -15,7 +15,7 @@ internal static class DashboardLayoutHelper
         PlacementGridStyle(ResolvePlacement(card, layout.Columns, tabPlacements), layout.Columns);
 
     public static string PlacementGridStyle(PlacementDefinition placement, int layoutColumns) =>
-        PlacementGridCss.SlotStyle(placement, layoutColumns);
+        PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement, layoutColumns));
 
     public static string GroupOuterStyle(int outerRow) =>
         PlacementGridCss.GroupOuterStyle(outerRow);
@@ -40,7 +40,7 @@ internal static class DashboardLayoutHelper
         PlacementGridCss.InteriorGridVariables(layout.Columns);
 
     public static string CardInteriorSlotStyle(PlacementDefinition placement, int columns) =>
-        PlacementGridCss.SlotStyle(placement, columns);
+        PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement, columns));
 
     public static IReadOnlyDictionary<string, PlacementDefinition> ResolveInteriorPlacements(
         CardDefinition card,

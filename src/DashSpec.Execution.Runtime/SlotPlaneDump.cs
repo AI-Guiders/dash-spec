@@ -54,9 +54,10 @@ public static class SlotPlaneDump
         builder.AppendLine(label);
         foreach (var slot in slots)
         {
-            var placement = slot.Placement;
+            var variants = slot.Placement;
             builder.AppendLine(
-                $"    {slot.Node.Kind} '{slot.Node.Id}' @ (row {placement.Row}, col {placement.Col}, span {placement.Span}) " +
+                $"    {slot.Node.Kind} '{slot.Node.Id}' @ (row {variants.Wide.Row}, col {variants.Wide.Col}, span {variants.Wide.Span}" +
+                $" | mid span {variants.Mid.Span} | narrow span {variants.Narrow.Span}) " +
                 $"scope {slot.Scope} {ProvenanceLabel(slot.Provenance)}");
         }
     }

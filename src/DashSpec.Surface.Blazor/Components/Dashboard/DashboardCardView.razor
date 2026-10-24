@@ -152,7 +152,6 @@
                 @foreach (var slot in InteriorSlots)
                 {
                     <PlacementSlot Placement="slot.Placement"
-                                   GridColumns="GridColumns"
                                    CssClass="@InteriorSlotClass(slot.Node.Kind)">
                         <CardInteriorSlotContent Slot="slot" />
                     </PlacementSlot>
@@ -555,7 +554,7 @@
 
     internal string InteriorSlotStyle(string slotKey) =>
         Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
-            ? PlacementGridCss.SlotStyle(placement!, GridColumns)
+            ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement!, GridColumns))
             : string.Empty;
 
     private bool LocalFiltersAutoApply =>

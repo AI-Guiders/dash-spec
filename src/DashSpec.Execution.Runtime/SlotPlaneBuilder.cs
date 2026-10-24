@@ -87,6 +87,7 @@ public static class SlotPlaneBuilder
     static void PlanNestedBoards(
         DashboardDocument document,
         TabLayoutContext context,
+        int columns,
         IReadOnlyDictionary<string, WiringNode> nodes,
         Dictionary<string, IReadOnlyList<Slot>> nestedBoards)
     {
@@ -102,11 +103,11 @@ public static class SlotPlaneBuilder
             {
                 case LayoutBoardEntry.NestRow nest:
                     nestedBoards[nest.Item.Id] = PlanInnerBoard(
-                        document, context, nest.Item.Id, nest.Item.Rows, nodes);
+                        document, context, columns, nest.Item.Id, nest.Item.Rows, nodes);
                     break;
                 case LayoutBoardEntry.GroupRow group:
                     nestedBoards[group.Item.Id] = PlanInnerBoard(
-                        document, context, group.Item.Id, group.Item.Rows, nodes);
+                        document, context, columns, group.Item.Id, group.Item.Rows, nodes);
                     break;
             }
         }
@@ -115,6 +116,7 @@ public static class SlotPlaneBuilder
     static IReadOnlyList<Slot> PlanInnerBoard(
         DashboardDocument document,
         TabLayoutContext context,
+        int columns,
         string containerId,
         IReadOnlyList<IReadOnlyList<string>> rows,
         IReadOnlyDictionary<string, WiringNode> nodes)
@@ -142,7 +144,7 @@ public static class SlotPlaneBuilder
                 slots.Add(new Slot
                 {
                     Node = node,
-                    Placement = new PlacementDefinition(row, col, weight),
+                    Placement = PlacementVariantsPlanning.For(new PlacementDefinition(row, col, weight), columns),
                     Scope = LayoutSlotScope.HostTabBoard,
                     Provenance = PlacementProvenance.Declared,
                 });
@@ -167,7 +169,7 @@ public static class SlotPlaneBuilder
         var declared = new HashSet<string>(compact.Keys, StringComparer.OrdinalIgnoreCase);
 
         // The nested boards of this route's board ([ADR-0111]): nests/groups inner grids.
-        PlanNestedBoards(document, context, nodes, nestedBoards);
+        PlanNestedBoards(document, context, columns, nodes, nestedBoards);
 
         IReadOnlyList<LayoutSlotDescriptor> descriptors;
         if (TabLayoutCompactor.TryBuildLayoutPlan(context) is { } plan)
@@ -188,6 +190,7 @@ public static class SlotPlaneBuilder
         return descriptors
             .Select(descriptor => ToSlot(
                 descriptor,
+                columns,
                 nodes,
                 provenance: declared.Contains(descriptor.Token)
                     ? PlacementProvenance.Declared
@@ -218,6 +221,7 @@ public static class SlotPlaneBuilder
         return descriptors
             .Select(descriptor => ToSlot(
                 descriptor,
+                columns,
                 nodes,
                 provenance: declared.Contains(descriptor.Token)
                     ? PlacementProvenance.Declared
@@ -276,6 +280,7 @@ public static class SlotPlaneBuilder
         return LayoutSlotEngine.PlanHostPageToolbar(names, placements)
             .Select(descriptor => ToSlot(
                 descriptor,
+                columns,
                 nodes,
                 provenance: recorded.Contains(descriptor.Token)
                     ? PlacementProvenance.RecordedDefault
@@ -311,7 +316,7 @@ public static class SlotPlaneBuilder
                 var provenance = synthesized || !declaredTokens.Contains(descriptor.Token)
                     ? PlacementProvenance.RecordedDefault
                     : PlacementProvenance.Declared;
-                return ToSlot(descriptor, nodes, provenance, nodeId);
+                return ToSlot(descriptor, columns, nodes, provenance, nodeId);
             })
             .ToList();
     }
@@ -334,10 +339,12 @@ public static class SlotPlaneBuilder
                 token => LayoutSlotContentKind.Filter)
             .Select(descriptor => ToSlot(
                 descriptor,
+                document.Layout.Columns,
                 nodes,
                 provenance: recorded.Contains(descriptor.Token)
                     ? PlacementProvenance.RecordedDefault
-                    : PlacementProvenance.Declared))
+                    : PlacementProvenance.Declared,
+                fixedMid: true))
             .ToList();
     }
 
@@ -392,9 +399,11 @@ public static class SlotPlaneBuilder
 
     static Slot ToSlot(
         LayoutSlotDescriptor descriptor,
+        int wideColumns,
         IReadOnlyDictionary<string, WiringNode> nodes,
         PlacementProvenance provenance,
-        string? nodeId = null)
+        string? nodeId = null,
+        bool fixedMid = false)
     {
         var id = nodeId ?? descriptor.Token;
         if (!nodes.TryGetValue(id, out var node))
@@ -407,7 +416,9 @@ public static class SlotPlaneBuilder
         return new Slot
         {
             Node = node,
-            Placement = descriptor.Placement,
+            Placement = fixedMid
+                ? PlacementVariantsPlanning.ForFixedMid(descriptor.Placement)
+                : PlacementVariantsPlanning.For(descriptor.Placement, wideColumns),
             Scope = descriptor.Scope,
             Provenance = provenance,
         };

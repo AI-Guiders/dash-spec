@@ -87,7 +87,7 @@
     private string SlotStyle(string slotId) =>
         UsesChromeGrid &&
         Card.LocalFilterChromePlacements!.TryGetValue(slotId, out var placement)
-            ? PlacementGridCss.SlotStyle(placement, ChromeGridColumns)
+            ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.ForFixedMid(placement))
             : string.Empty;
 
     private RenderFragment RenderFilter(string filterName) => __builder =>
