@@ -1,4 +1,8 @@
 @* Filter.Builtins plugin head (ADR-0060/0112): the plugin mounts its own css —
-   the host links nothing of it. Rendered in place, cascade position preserved. *@
+   the host links nothing of it. Rendered in place, cascade position preserved.
+   Flatpickr css rides here: the date widgets (CultureAwareDateInput) are this
+   plugin's, in both stacks — the asset belongs to its owner, not to a stack. *@
 <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/card-filter-chrome.css" />
 <link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/css/toolbar-chrome.css" />
+<link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/lib/flatpickr/flatpickr.min.css?v=4.6.13" />
+<link rel="stylesheet" href="_content/DashSpec.Plugin.Filter.Builtins/lib/flatpickr/plugins/monthSelect/style.css?v=4.6.13" />

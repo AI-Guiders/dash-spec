@@ -1,0 +1,9 @@
+@* Filter.Builtins plugin scripts (ADR-0060/0112): flatpickr with the plugin's
+   glue (dashspecDatepicker — the thin adapter CultureAwareDateInput drives).
+   Rendered after <Routes/> so the DOM exists for widget glue; synchronous
+   scripts finish before blazor.web.js starts the runtime. Both stacks get
+   these through the plugin — the widgets are the plugin's in either stack. *@
+<script src="_content/DashSpec.Plugin.Filter.Builtins/lib/flatpickr/flatpickr.min.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Plugin.Filter.Builtins/lib/flatpickr/l10n/ru.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Plugin.Filter.Builtins/lib/flatpickr/plugins/monthSelect/index.js?v=4.6.13"></script>
+<script src="_content/DashSpec.Plugin.Filter.Builtins/js/dashspec-datepicker.js?v=1"></script>

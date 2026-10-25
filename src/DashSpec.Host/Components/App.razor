@@ -1,37 +1,45 @@
 @inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
-<!DOCTYPE html>
-<html lang="ru">
-
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
-    <title>DashSpec</title>
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>DashSpec</title>
     @* ADR-0112 render stacks: the host links nothing itself — stacks and
-       plugins mount their own assets. There is no "own css" of anyone — a
-       stack IS the visual language of the surface. SelfMade mounts its head
-       links and scripts; plugins mount their vertical css/js (ADR-0059/0060).
-       The Radzen stack mounts only when it is the chosen stack (render = radzen);
-       its theme reads the color_scheme token — its own reading of it. *@
-    <SelfMadeStackHead />
-    <FilterBuiltinsHead />
-    <VizBuiltinsHead />
+       plugins mount their own assets, and the chosen stack mounts ONLY its
+       own (§4/§5: the stack is the surface's visual language; no other
+       stack's css loads beside it). Plugin css is mounted by the plugins
+       themselves (ADR-0059/0060); flatpickr rides the Filter.Builtins head.
+       The Radzen stack mounts only when it is the chosen stack (render =
+       radzen); its theme reads the color_scheme token — its own reading. *@
     @if (IsRadzenStack)
     {
         <RadzenVizHead />
         <RadzenStackHead Theme="@RenderStackSettings.ColorScheme" />
     }
-    <HeadOutlet />
-</head>
-
-<body>
+    else
+    {
+        <SelfMadeStackHead />
+    }
+    <FilterBuiltinsHead />
+    <VizBuiltinsHead />
+    <HeadOutlet />
+</head>
+
+<body>
     <Routes />
-    <SelfMadeStackScripts />
-    <VizBuiltinsScripts />
     @if (IsRadzenStack)
     {
         <RadzenStackScripts />
     }
+    else
+    {
+        <SelfMadeStackScripts />
+    }
+    <FilterBuiltinsScripts />
+    <VizBuiltinsScripts />
     <script src="/js/aiguiders-input.js?v=4"></script>
     <script src="js/dashspec-download.js?v=2"></script>
     <script src="_framework/blazor.web.js"></script>
@@ -44,4 +52,4 @@
     // selfmade is the default — the surface looks exactly as it did before Radzen.
     private bool IsRadzenStack =>
         string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
-}
+}
