@@ -1,5 +1,16 @@
-/* Radzen stack chrome (ADR-0112 §5): the left menu + the board column. Colors ride
-   the --rz-* theme variables — the theme file owns the palette, this file the shape. */
+/* Radzen stack chrome (ADR-0112 §4/§5): the stack mounts its own surface css —
+   the parts are this stack's copy of the plane projection (tokens read --rz-*),
+   the rules below are the stack's own chrome (left menu + board column). Colors
+   ride the --rz-* theme variables — the theme file owns the palette. */
+@import url("parts/tokens.css");
+@import url("parts/layout.css");
+@import url("parts/filters.css");
+@import url("parts/cards.css");
+@import url("parts/charts.css");
+@import url("parts/viz-misc.css");
+@import url("parts/gantt-timeline.css");
+@import url("parts/spec-inspector.css");
+@import url("parts/command-palette.css");
 
 .dash-home-flow-radzen {
   display: flex;

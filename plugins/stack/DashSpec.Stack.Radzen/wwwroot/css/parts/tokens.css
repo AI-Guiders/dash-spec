@@ -1,0 +1,30 @@
+/* Radzen stack tokens (ADR-0112 §2): the surface's flat token names read from the
+   stack's own theme scales (--rz-*) — the theme file owns the palette, this file the
+   vocabulary. Plugin guests (Filter.Builtins css, Viz.Builtins css) keep speaking the
+   flat names and get the stack's reading of them. */
+
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --bg: var(--rz-base-900);
+  --surface: var(--rz-base-800);
+  --surface-2: var(--rz-base-700);
+  --border: var(--rz-base-700);
+  --text: var(--rz-base-50);
+  --muted: var(--rz-base-300);
+  --accent: var(--rz-primary);
+  --accent-hover: var(--rz-primary-dark);
+  --danger: var(--rz-danger);
+  --radius: var(--rz-border-radius, 6px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--rz-base-background-color, var(--rz-base-900));
+  color: var(--rz-text-primary-color, var(--rz-base-50));
+  line-height: 1.45;
+}
