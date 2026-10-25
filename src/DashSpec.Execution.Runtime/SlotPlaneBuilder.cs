@@ -126,12 +126,27 @@ public static class SlotPlaneBuilder
         foreach (var cells in rows)
         {
             row++;
-            var col = 0;
-            foreach (var cell in cells)
+            // The row's cells share the board width by weight (ADR-0111 §2, the same
+            // distribution LayoutBoardRowPlacer.PlaceRow applies to top-level rows) —
+            // a bare span per cell squeezed group cards into single tracks.
+            var weights = cells
+                .Select(cell => LayoutBoardCellParser.parseCell(cell, $"Board '{containerId}' inner", row).Item2)
+                .ToList();
+            var totalWeight = weights.Sum();
+            if (totalWeight <= 0)
             {
-                col++;
-                var (refToken, weight) = LayoutBoardCellParser.parseCell(
-                    cell, $"Board '{containerId}' inner", row);
+                throw new DashSpecParseException(
+                    $"Board '{containerId}' inner: row {row} has invalid weights.");
+            }
+
+            var col = 1;
+            var allocated = 0;
+            for (var i = 0; i < cells.Count; i++)
+            {
+                var (refToken, _) = LayoutBoardCellParser.parseCell(cells[i], $"Board '{containerId}' inner", row);
+                var span = i == cells.Count - 1
+                    ? columns - allocated
+                    : Math.Max(columns * weights[i] / totalWeight, 1);
                 var cardId = CardLayoutRefBridge.Resolve(
                     refToken, context.TabCards, $"Board '{containerId}' inner");
                 if (!nodes.TryGetValue(cardId, out var node))
@@ -144,10 +159,12 @@ public static class SlotPlaneBuilder
                 slots.Add(new Slot
                 {
                     Node = node,
-                    Placement = PlacementVariantsPlanning.For(new PlacementDefinition(row, col, weight), columns),
+                    Placement = PlacementVariantsPlanning.For(new PlacementDefinition(row, col, span), columns),
                     Scope = LayoutSlotScope.HostTabBoard,
                     Provenance = PlacementProvenance.Declared,
                 });
+                col += span;
+                allocated += span;
             }
         }
 
