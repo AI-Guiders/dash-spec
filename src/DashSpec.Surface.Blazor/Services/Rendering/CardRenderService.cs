@@ -2,6 +2,7 @@ using System.Globalization;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
+using DashSpec.Modeling.Parse.Card;
 using DashSpec.Viewer.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz;
@@ -342,16 +343,55 @@ public sealed class CardRenderService(
                 continue;
             }
 
+            // ADR-0113 switch slot: the overlay's TargetPayload picks the active payload; before
+            // the first click a drill switch slot renders its awaiting hint (no query executes).
+            var effectiveSlot = slot;
+            var switchSlotAwaiting = false;
+            if (slot.Payloads.Count > 0)
+            {
+                var overlayProbe = cellDrill.Get(card.Id);
+                var payloadName = overlayProbe?.TargetPayload;
+                var active = string.IsNullOrWhiteSpace(payloadName)
+                    ? null
+                    : slot.Payloads.FirstOrDefault(p =>
+                        string.Equals(p.Name, payloadName, StringComparison.OrdinalIgnoreCase));
+                if (active is null)
+                {
+                    if (drillTargets.IsTarget(slotRef))
+                    {
+                        switchSlotAwaiting = true;
+                        active = slot.Payloads[0];
+                    }
+                    else
+                    {
+                        active = slot.Payloads[0];
+                    }
+                }
+
+                effectiveSlot = new CardDiagramSlot
+                {
+                    SlotRef = slot.SlotRef,
+                    Diagram = active.Diagram,
+                    DataSource = slot.DataSource,
+                    BoundFilters = slot.BoundFilters,
+                    Legend = slot.Legend,
+                    Presentation = slot.Presentation,
+                    SeriesTransform = slot.SeriesTransform,
+                    FlowInput = active.FlowInput ?? slot.FlowInput,
+                    Payloads = slot.Payloads,
+                };
+            }
+
             var slotCard = card
-                .WithDiagram(slot.Diagram)
-                .WithDataSource(slot.DataSource)
-                .WithBoundFilters(slot.BoundFilters)
-                .WithLegend(slot.Legend)
+                .WithDiagram(effectiveSlot.Diagram)
+                .WithDataSource(effectiveSlot.DataSource)
+                .WithBoundFilters(effectiveSlot.BoundFilters)
+                .WithLegend(effectiveSlot.Legend)
                 // A slot without its own presentation inherits the card's — the diagram modules'
                 // chrome presets (e.g. table_drill_compact: width/density/column_filters) ride it.
-                .WithPresentation(slot.Presentation ?? card.Presentation)
-                .WithSeriesTransform(slot.SeriesTransform)
-                .WithFlowInput(slot.FlowInput ?? card.FlowInput);
+                .WithPresentation(effectiveSlot.Presentation ?? card.Presentation)
+                .WithSeriesTransform(effectiveSlot.SeriesTransform)
+                .WithFlowInput(effectiveSlot.FlowInput ?? card.FlowInput);
 
             var errorContext = slotCard;
             try
@@ -367,19 +407,22 @@ public sealed class CardRenderService(
 
                 // Drill UX: a drill-target slot renders empty (with a hint) until its own click
                 // fills it; the title template fills only when the overlay carries the values.
-                if (drillTargets.IsTarget(slotRef) && slotOverlay is null)
+                var legacyAwaiting = drillTargets.IsTarget(slotRef) && slotOverlay is null;
+                if (switchSlotAwaiting || legacyAwaiting)
                 {
-                    var awaitingKind = DiagramKindRegistry.Resolve(slot.Diagram.Kind);
+                    var awaitingKind = DiagramKindRegistry.Resolve(effectiveSlot.Diagram.Kind);
+                    var awaitingSources = drillTargets.SourcesOf(slotRef);
                     renders[slotRef] = new CardSlotRenderResult(
                         slotRef,
-                        slot.Diagram.Kind,
+                        effectiveSlot.Diagram.Kind,
                         awaitingKind.DataFamily,
                         string.Empty,
                         SlotTitle: DrillSlotTitleResolver.Resolve(
-                            slot.Diagram.Properties.GetValueOrDefault("title"),
+                            effectiveSlot.Diagram.Properties.GetValueOrDefault("title"),
                             null),
                         AwaitingClick: true,
-                        AwaitingSource: drillTargets.SourceOf(slotRef));
+                        // Several sources fill one switch slot — the generic hint covers them all.
+                        AwaitingSource: awaitingSources.Count == 1 ? awaitingSources[0] : "switch");
                     continue;
                 }
 

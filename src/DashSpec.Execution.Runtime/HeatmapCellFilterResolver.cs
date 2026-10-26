@@ -18,7 +18,18 @@ public static class HeatmapCellFilterResolver
         var overlay = new CardCellDrillOverlay();
         if (!string.IsNullOrWhiteSpace(drillTarget))
         {
-            overlay.SetTargetSlot(drillTarget.Trim());
+            // ADR-0113: "slot.payload" targets one payload of a switch slot.
+            var target = drillTarget.Trim();
+            var dot = target.IndexOf('.');
+            if (dot > 0)
+            {
+                overlay.SetTargetSlot(target[..dot]);
+                overlay.SetTargetPayload(target[(dot + 1)..]);
+            }
+            else
+            {
+                overlay.SetTargetSlot(target);
+            }
         }
 
         foreach (var bind in binds)

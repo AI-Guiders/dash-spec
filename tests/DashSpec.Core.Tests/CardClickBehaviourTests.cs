@@ -269,6 +269,55 @@ public class CardClickBehaviourTests
     }
 
     [Fact]
+    public void CardDrillSlotTargets_switch_slot_collects_sources_from_dotted_targets()
+    {
+        var doc = DashSpecTestRowTypes.ParseDashboard("""
+            module tab t
+              report
+              title = "T"
+              filter app_name
+                bind field
+                  column = app_name
+                end bind
+                show
+                  label = "App"
+                end show
+              end filter
+              card peak as "Peak"
+              on click
+              | source        | drill             | set        |
+              | cell          | drill.peak_table  | app_name=y |
+              | category item | drill.users_table | app_name=y |
+              end click
+              diagram heatmap
+              x = a y
+              value = c
+              end heatmap
+              diagram ref drill
+                payload peak_table cell_table
+                payload users_table app_table
+              data flow
+              fixture_src [rows] -> [rows] __diagram__
+              fixture_src [rows] -> [rows] drill.peak_table
+              fixture_src [rows] -> [rows] drill.users_table
+              end data flow
+              end card
+              end report
+            end tab
+            """);
+
+        var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
+        Assert.False(targets.LegacyAllSlots);
+        Assert.True(targets.IsTarget("drill"));
+        Assert.False(targets.IsTarget("__diagram__"));
+        // ADR-0113: both click sources fill the same switch slot.
+        Assert.Equal(2, targets.SourcesOf("drill").Count);
+        Assert.Contains("cell", targets.SourcesOf("drill"));
+        Assert.Contains("category item", targets.SourcesOf("drill"));
+        Assert.Equal("cell", targets.SourceOf("drill"));
+    }
+
+    [Fact]
     public void CardDrillSlotTargets_legacy_drill_targets_all_slots()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""

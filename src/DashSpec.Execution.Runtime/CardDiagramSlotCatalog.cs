@@ -1,4 +1,6 @@
 
+using DashSpec.Modeling.Parse.Card;
+
 namespace DashSpec.Execution.Runtime;
 
 public static class CardDiagramSlotCatalog
@@ -22,7 +24,8 @@ public static class CardDiagramSlotCatalog
                 card.Legend,
                 card.Presentation,
                 card.SeriesTransform,
-                card.FlowInput),
+                card.FlowInput,
+                Array.Empty<CardSlotPayload>()),
         };
     }
 

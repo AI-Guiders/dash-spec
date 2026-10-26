@@ -99,6 +99,9 @@
   <data name="Click a heatmap cell to load this table" xml:space="preserve">
     <value>Кликните по ячейке тепловой карты, чтобы загрузить таблицу</value>
   </data>
+  <data name="Click a heatmap cell or an axis label to load this table" xml:space="preserve">
+    <value>Кликните по ячейке или метке оси, чтобы загрузить таблицу</value>
+  </data>
   <data name="Click the diagram to load this table" xml:space="preserve">
     <value>Кликните по диаграмме, чтобы загрузить таблицу</value>
   </data>

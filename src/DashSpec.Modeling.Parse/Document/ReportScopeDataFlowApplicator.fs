@@ -147,7 +147,15 @@ module ReportScopeDataFlowApplicator =
             cards.[i] <- card
 
             for KeyValue(slotRef, slot) in card.DiagramSlots do
-                if slot.FlowInput.IsNone && String.IsNullOrWhiteSpace slot.DataSource.Value then
+                // ADR-0113: a switch slot is wired when the slot itself or every payload has a flow input.
+                let switchWired =
+                    slot.Payloads.Count > 0
+                    && slot.Payloads
+                       |> Seq.forall (fun p -> p.FlowInput.IsSome || not (String.IsNullOrWhiteSpace slot.DataSource.Value))
+
+                if slot.FlowInput.IsNone
+                   && String.IsNullOrWhiteSpace slot.DataSource.Value
+                   && not switchWired then
                     raise (
                         DashSpecParseException(
                             $"Card '{card.Id}' slot '{slotRef}': no module data flow (report/page/card data flow -> card.{card.Id}.{slotRef})."

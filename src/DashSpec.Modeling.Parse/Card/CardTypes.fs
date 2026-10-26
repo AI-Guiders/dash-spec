@@ -271,6 +271,14 @@ type CardFlowInput =
       NodeId: string
       PortName: string }
 
+/// One payload of a switch slot (ADR-0113): `diagram ref <slot>` + `payload <name> <diagram>`.
+/// The switch slot renders as one cell; the click that fills it picks the active payload.
+[<CLIMutable>]
+type CardSlotPayload =
+    { Name: string
+      Diagram: DiagramDefinition
+      FlowInput: CardFlowInput option }
+
 [<CLIMutable>]
 type CardInteriorFlowDefinition =
     { Sections: DashSpec.Modeling.Parse.DataFlow.FlowGraphSections }
@@ -284,7 +292,9 @@ type CardDiagramSlot =
       Legend: LegendDefinition option
       Presentation: PresentationBlock option
       SeriesTransform: SeriesTransformBlock option
-      FlowInput: CardFlowInput option }
+      FlowInput: CardFlowInput option
+      /// Switch-slot payloads (ADR-0113); empty = classic single-diagram slot.
+      Payloads: IReadOnlyList<CardSlotPayload> }
 
     member this.WithDataSource(dataSource: DataSourceDefinition) =
         { this with DataSource = dataSource }
