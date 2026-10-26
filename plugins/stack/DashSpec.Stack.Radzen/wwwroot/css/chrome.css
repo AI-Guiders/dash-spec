@@ -60,14 +60,6 @@
   min-width: 0;
 }
 
-/* The labeled date range must stay on one line: toolbar-chrome allows wrapping
-   (flex leftovers), but a 1px shortfall drops the second input — ugly mid-value.
-   Nowrap + the already-min-width-0 inputs shrink to the cell instead. The attr
-   rides the selector: toolbar-chrome.css loads later at equal specificity. */
-.dash-toolbar-radzen[data-toolbar-cells="labeled"] .toolbar-filter-date .date-range {
-  flex-wrap: nowrap;
-}
-
 /* Responsive: screens narrower than 1100px fold the sidebar above the board;
    narrower than 800px the toolbar wraps under the board header. */
 @media (max-width: 1100px) {

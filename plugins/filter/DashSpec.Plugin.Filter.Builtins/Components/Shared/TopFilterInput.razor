@@ -2,13 +2,16 @@
 @using DashSpec.Execution.Runtime
 
 <div class="@RootClass" style="@Style">
-    <div class="filter-top-head">
-        <span class="filter-label">@Label</span>
-        @if (!ScopeHintInline)
-        {
-            <FilterScopeHintTrigger Text="@ScopeHint" AriaLabel="@ScopeHintAriaLabel" />
-        }
-    </div>
+    @if (ShowLabel)
+    {
+        <div class="filter-top-head">
+            <span class="filter-label">@Label</span>
+            @if (!ScopeHintInline)
+            {
+                <FilterScopeHintTrigger Text="@ScopeHint" AriaLabel="@ScopeHintAriaLabel" />
+            }
+        </div>
+    }
     <input type="number"
            class="filter-number"
            aria-label="@Label"
@@ -25,6 +28,10 @@
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Visual label switch — the labeled toolbar's section owns the label row;
+    /// the hint trigger rides it there, so it is suppressed with the label.</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
 
     [Parameter] public string? ScopeHint { get; set; }
 
