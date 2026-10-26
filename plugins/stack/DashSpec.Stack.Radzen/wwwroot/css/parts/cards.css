@@ -157,24 +157,43 @@
   min-width: 0;
 }
 
+/* The card panel is one row: title left, controls right; the head wraps as a
+   whole on narrow slots (the filter chrome then sits under the title, aligned). */
 .card-head {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
   margin-bottom: 0.75rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border);
   overflow: visible;
 }
 
 .card-head-title {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.35rem;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+
+.card-head-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  margin-left: auto;
+  overflow: visible;
 }
 
 .card--folded .card-head {
   margin-bottom: 0;
+}
+
+.card--folded .card-head {
+  border-bottom: none;
 }
 
 .card--folded .card-head-title {
@@ -196,24 +215,19 @@
   transform: rotate(-90deg);
 }
 
-.card-head-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
-  overflow: visible;
-}
-
 .card-head-toolbar-filters {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem 0.75rem;
   margin-left: auto;
   min-width: 0;
+}
+
+/* The card-panel row keeps one line: each chrome cell takes its natural width
+   instead of stretching (a stretching «Все» pushed the row into wraps). */
+.card-head-toolbar-filters > * {
+  flex: 0 0 auto;
 }
 
 .card-head-toolbar-filters--grid,
