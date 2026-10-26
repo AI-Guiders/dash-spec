@@ -260,12 +260,17 @@ public static class SlotPlaneBuilder
         List<string> names;
         Dictionary<string, PlacementDefinition> placements;
 
-        var board = PageToolbarResolver.ResolveActiveToolbarBoard(document, tabId, pageId);
+        var board = PageToolbarResolver.ResolveActiveToolbarBoard(document, tabId, pageId)
+                    ?? document.ToolbarBoard?.Value;
         if (board is not null)
         {
+            // The scope module's own grid drawing sets the tracks for its placements
+            // ([ADR-0111] §2 recursion); the document grid is the default.
+            columns = board.GridColumns > 0 ? board.GridColumns : columns;
             names = board.Rows
                 .SelectMany(row => row)
                 .Select(cell => LayoutBoardCellParser.parseCell(cell, "Toolbar board", 1).Item1)
+                .Where(token => token != "[]")
                 .ToList();
             placements = new Dictionary<string, PlacementDefinition>(
                 ToolbarLayoutCompactor.CompactVisible(document, names.ToHashSet(StringComparer.OrdinalIgnoreCase), board),
@@ -286,10 +291,11 @@ public static class SlotPlaneBuilder
             var row = placements.Count == 0
                 ? 1
                 : placements.Values.Max(placement => placement.Row) + 1;
-            var span = unplaced.Count == 1 ? columns : columns / unplaced.Count;
-            for (var i = 0; i < unplaced.Count; i++)
+            var column = 1;
+            foreach (var (name, span) in ToolbarLayoutCompactor.FallbackSpans(document, unplaced, columns))
             {
-                placements[unplaced[i]] = new PlacementDefinition(row, 1 + i * span, span);
+                placements[name] = new PlacementDefinition(row, column, span);
+                column += span;
             }
         }
 

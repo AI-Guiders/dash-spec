@@ -31,12 +31,15 @@ module ToolbarPlacementResolver =
             for row in b.Rows do
                 for token in row do
                     let boardRef, _ = LayoutBoardCellParser.parseCell token context gridRow
-                    let name = FilterLayoutRefResolver.resolve boardRef filters context
 
-                    if names |> Seq.exists (fun n -> String.Equals(n, name, StringComparison.OrdinalIgnoreCase)) then
-                        raise (DashSpecParseException($"{context}: filter '{name}' appears more than once in the toolbar board."))
+                    // Rubber cell (shell semantics): a gap in the row, never a filter.
+                    if boardRef <> "[]" then
+                        let name = FilterLayoutRefResolver.resolve boardRef filters context
 
-                    names.Add name
+                        if names |> Seq.exists (fun n -> String.Equals(n, name, StringComparison.OrdinalIgnoreCase)) then
+                            raise (DashSpecParseException($"{context}: filter '{name}' appears more than once in the toolbar board."))
+
+                        names.Add name
 
             if names.Count = 0 then
                 raise (DashSpecParseException($"{context} layout board requires at least one filter."))
