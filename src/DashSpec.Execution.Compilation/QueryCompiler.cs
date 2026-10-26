@@ -532,7 +532,12 @@ public static class QueryCompiler
             return limit;
         }
 
-        return 500;
+        // Tables carry their full set: the grid pages in memory over the payload and the
+        // connector's max_rows stays the hard guard — the 500 default is for charts' tops.
+        return DiagramKindRegistry.TryResolve(card.Diagram.Kind, out var kindInfo) &&
+               kindInfo.DataFamily is DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.DiagramDataFamily.Table
+            ? 0
+            : 500;
     }
 
     private static void AppendBoundFilters(
