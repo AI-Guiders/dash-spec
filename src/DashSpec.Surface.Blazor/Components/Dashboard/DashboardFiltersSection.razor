@@ -41,6 +41,19 @@
                 <CommandTargetShell TargetId="@slot.Token"
                                     Kind="CommandTargetKind.Filter"
                                     CssClass="@FilterCellClass(filter)">
+                    @if (ToolbarLabeledCells)
+                    {
+                        @* The section owns the label row ([ADR-0060]): one place for the
+                           label typography and alignment; the widget renders control-only
+                           and keeps its own aria-labels. Top's scope hint rides the row. *@
+                        <span class="filter-label-row">
+                            <span class="filter-inline-label">@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)</span>
+                            @if (ScopeHintFor(filter) is { } hint)
+                            {
+                                <FilterScopeHintTrigger Text="@hint" AriaLabel="@ScopeHintAriaFor(filter)" />
+                            }
+                        </span>
+                    }
                     <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
                                       Filter="filter"
                                       Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"

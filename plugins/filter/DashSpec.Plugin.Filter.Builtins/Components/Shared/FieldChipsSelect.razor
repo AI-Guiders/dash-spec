@@ -2,7 +2,7 @@
 @using DashSpec.Presentation.Filters
 
 <div class="filter filter-chips @(Compact ? "filter-chips-compact" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
-    @if (!string.IsNullOrWhiteSpace(Label))
+    @if (ShowLabel && !string.IsNullOrWhiteSpace(Label))
     {
         <span class="filter-label">@Label</span>
     }
@@ -25,6 +25,9 @@
 
 @code {
     [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Visual label switch — aria-labels ride Label regardless.</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
 
     [Parameter] public string? Hint { get; set; }
 

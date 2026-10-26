@@ -61,48 +61,44 @@
   text-overflow: ellipsis;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline {
+/* The CELL is the two-row grid ([ADR-0060]): row 1 — the section-owned label
+   (top's scope hint rides it), row 2 — the widget's control-only markup. The
+   widgets render no label of their own in this mode; their aria-labels stay. */
+[data-toolbar-cells="labeled"] .toolbar-filter-cell {
   display: grid;
   grid-template-rows: minmax(1.05rem, auto) minmax(1.65rem, auto);
   grid-template-columns: minmax(0, 1fr);
   gap: 0.22rem 0;
-  width: 100%;
-  min-width: 0;
   align-content: end;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .filter-inline-label,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-top-head {
+[data-toolbar-cells="labeled"] .toolbar-filter-cell > .filter-label-row {
   grid-row: 1;
   align-self: end;
   margin: 0;
+  min-width: 0;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .date-range,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .field-combobox,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .field-select,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-inline > .filter-search,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-number,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-top.filter-inline > .filter-scope-hint {
+[data-toolbar-cells="labeled"] .toolbar-filter-cell > :not(.filter-label-row) {
   grid-row: 2;
   align-self: center;
+  min-width: 0;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline > .field-combobox:only-child,
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline > .field-select:only-child {
-  grid-row: 2;
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-field.filter-inline {
+  padding: 0;
+  border: none;
+  background: transparent;
+  gap: 0;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .filter-date.filter-inline {
-  gap: 0.28rem;
-}
-
-[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range {
-  display: flex;
+/* Range date: the control row is its own three tracks — from | — | to; the label
+   above spans the group by owning the full-width row 1. */
+[data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range:not(.date-range-day) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 0.3rem 0.4rem;
+  gap: 0 0.4rem;
   padding: 0;
   border: none;
   background: transparent;
@@ -112,7 +108,7 @@
 [data-toolbar-cells="labeled"] .toolbar-filter-cell .date-range input[type="month"],
 [data-toolbar-cells="labeled"] .toolbar-filter-cell .date-input-grain {
   min-width: 0;
-  flex: 1 1 6.5rem;
+  width: 100%;
   max-width: 9rem;
   padding: 0.1rem 0.15rem;
 }
@@ -121,12 +117,7 @@
   max-width: 5.5rem;
 }
 
-[data-toolbar-cells="labeled"] .toolbar-filter-date .date-range {
-  flex-wrap: wrap;
-}
-
 [data-toolbar-cells="labeled"] .toolbar-filter-cell .date-sep {
-  flex-shrink: 0;
   font-size: 0.8rem;
 }
 

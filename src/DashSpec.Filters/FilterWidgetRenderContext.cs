@@ -23,9 +23,11 @@ public sealed class FilterWidgetRenderContext
 
     public string? PlacementStyle { get; init; }
 
-    public bool ShowDateLabel { get; init; }
+    /// <summary>Visual label switch: false in the labeled toolbar (the section owns the
+    /// label row); controls keep their own aria-labels either way.</summary>
+    public bool ShowLabel { get; init; } = true;
 
-    public string DateLabelClass { get; init; } = "filter-label";
+    public bool ShowDateLabel { get; init; }
 
     public IReadOnlyList<string> Options { get; init; } = [];
 
