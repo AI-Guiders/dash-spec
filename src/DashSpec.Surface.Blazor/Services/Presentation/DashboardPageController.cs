@@ -131,6 +131,11 @@ public sealed class DashboardPageController : IDisposable
     public Dictionary<string, PlacementDefinition> TabPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Effective toolbar grid: a scope module's own grid drawing wins over the
+    /// document grid ([ADR-0111] §2 recursion) — the section plans variants and renders
+    /// tracks against this count.</summary>
+    public LayoutDefinition ToolbarLayout { get; private set; } = new(12);
+
     public Dictionary<string, PlacementDefinition> ToolbarPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
@@ -1306,6 +1311,7 @@ public sealed class DashboardPageController : IDisposable
         // at assembly (RecordedDefault), not recomputed here. The visibility overlay
         // (which filters are rendered) stays session-side until the Bound flag (P2).
         ToolbarPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        ToolbarLayout = ResolveToolbarLayout();
         if (_session.SlotPlane is not { } plane)
         {
             return;
@@ -1318,6 +1324,15 @@ public sealed class DashboardPageController : IDisposable
                 ToolbarPlacements[slot.Node.Id] = slot.Placement.Wide;
             }
         }
+    }
+
+    private LayoutDefinition ResolveToolbarLayout()
+    {
+        var document = _session.Document;
+        var board = PageToolbarResolver.ResolveActiveToolbarBoard(document, ActiveTabId, ActivePageId)
+                    ?? document.ToolbarBoard?.Value;
+        var columns = board is { GridColumns: > 0 } ? board.GridColumns : document.Layout.Columns;
+        return new LayoutDefinition(columns);
     }
 
     private IReadOnlyList<string> VisibleToolbarFilterNames()

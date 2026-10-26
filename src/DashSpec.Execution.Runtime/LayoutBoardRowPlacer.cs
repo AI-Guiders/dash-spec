@@ -73,6 +73,12 @@ public static class LayoutBoardRowPlacer
         if (row.Count == 1)
         {
             var (refToken, _) = LayoutBoardCellParser.parseCell(row[0], context, gridRow);
+            if (refToken == "[]")
+            {
+                // A lone rubber cell is a full-width gap — nothing to place.
+                return;
+            }
+
             var target = resolveTarget(refToken);
             var placement = new PlacementDefinition(gridRow, 1, columns);
             assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
@@ -105,9 +111,15 @@ public static class LayoutBoardRowPlacer
                     $"{context}: row {gridRow} weight distribution yields zero-width cell.");
             }
 
-            var target = resolveTarget(cells[cellIndex].RefToken);
-            var placement = new PlacementDefinition(gridRow, col, span);
-            assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
+            // Rubber cell (shell semantics, [ADR-0111] §2): consumes its weight's share of
+            // the row, places nothing — the gap between the placed neighbours.
+            if (cells[cellIndex].RefToken != "[]")
+            {
+                var target = resolveTarget(cells[cellIndex].RefToken);
+                var placement = new PlacementDefinition(gridRow, col, span);
+                assignCell(target, placement, cardPlacements, nestPlacements, nestDefinitions);
+            }
+
             col += span;
             allocated += span;
         }
