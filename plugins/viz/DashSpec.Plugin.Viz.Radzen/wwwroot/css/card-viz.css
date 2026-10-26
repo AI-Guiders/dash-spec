@@ -8,6 +8,22 @@
   width: 100%;
 }
 
+/* Chart legend: compact chartjs-parity items. A donut legend lists category
+   labels (dozens on the users split) — small type, tight rows. Radzen anchors
+   the bottom legend to the container's bottom edge: an over-tall list would
+   bleed upward over the page, so it caps and scrolls inside the card instead. */
+.rviz-chart-wrap .rz-legend {
+  font-size: 0.72rem;
+  line-height: 1.3;
+  row-gap: 0;
+  max-height: 45%;
+  overflow-y: auto;
+}
+
+.rviz-chart-wrap .rz-legend-item {
+  padding: 0.05rem 0.5rem 0.05rem 0;
+}
+
 /* Radzen heatmap/gantt measure their container on first render — a zero-height
    host bakes a zero viewBox (squashed card). The fixed height rides this
    class instead of inline styles scattered through the razor. */
