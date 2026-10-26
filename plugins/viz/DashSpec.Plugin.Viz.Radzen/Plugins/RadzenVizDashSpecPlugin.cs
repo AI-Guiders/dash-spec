@@ -1,4 +1,5 @@
 using DashSpec.Abstractions.Viz;
+using DashSpec.Plugin.Viz.Builtins.Components.Matrix;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Plugin.Viz.RadzenUI.Components;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,11 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
     protected override string RendererDisplayName => "Radzen";
 
     protected override Type CardVizComponentType => typeof(RadzenCardViz);
+
+    /// <summary>The matrix display toolbar (D/X/Y label glyphs) — widget semantics live in
+    /// the builtins plugin and are stack-agnostic; the Radzen consumers read the same
+    /// ICardVizDisplayState overrides.</summary>
+    protected override Type? CardToolbarComponentType => typeof(MatrixLabelToolbar);
 
     protected override IVizPlugin CreateBackend() => new RadzenVizBackend();
 

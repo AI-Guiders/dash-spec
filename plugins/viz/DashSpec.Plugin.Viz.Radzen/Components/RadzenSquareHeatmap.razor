@@ -1,7 +1,9 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Execution.Runtime
 @using DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas
 @using DashSpec.Plugin.Viz.RadzenUI.Resources
+@using DashSpec.Viz
 
 @* Square-cell heatmap over the matrix payload (ADR-0112: kind heatmap is native to the
    Radzen stack). Cells stay square via CSS aspect-ratio — the grid fills the card width
@@ -107,6 +109,13 @@
     [Parameter]
     public string? Style { get; set; } = "width:100%";
 
+    /// <summary>The viz-state key (ADR-0062): the display toolbar's toggles land here.</summary>
+    [Parameter]
+    public string? VizStateCardId { get; set; }
+
+    [Inject]
+    private ICardVizDisplayState VizDisplayState { get; set; } = default!;
+
     private int Rows => Matrix.YLabels.Count;
 
     private int Cols => Matrix.XLabels.Count;
@@ -117,16 +126,26 @@
 
     private string ColorScale => HeatmapColorScale.Normalize(Presentation?.ColorScale);
 
-    private bool ShowAxisLabelsX => Presentation?.AxisLabelsX ?? true;
+    private bool ShowAxisLabelsX =>
+        VizLabelDisplayResolver.EffectiveAxisVisible(
+            Presentation?.AxisLabelsX ?? true,
+            VizDisplayState.GetAxisLabelsXOverride(VizStateCardId ?? string.Empty));
 
-    private bool ShowAxisLabelsY => Presentation?.AxisLabelsY ?? true;
+    private bool ShowAxisLabelsY =>
+        VizLabelDisplayResolver.EffectiveAxisVisible(
+            Presentation?.AxisLabelsY ?? true,
+            VizDisplayState.GetAxisLabelsYOverride(VizStateCardId ?? string.Empty));
 
     private int HeightPx => Presentation?.HeightPx ?? 320;
 
     /// <summary>Auto value labels: readable while cells have room — past ~14 columns the
-    /// squares get too small for text. Show/Hide from the presentation always win.</summary>
+    /// squares get too small for text. Show/Hide from the presentation and the display
+    /// toolbar's toggle always win over the auto heuristic.</summary>
     private bool ShowCellValues =>
-        (Presentation?.ValueLabels ?? VizValueLabelMode.Auto) switch
+        VizLabelDisplayResolver.EffectiveValueLabelsVisible(
+            Presentation?.ValueLabels ?? VizValueLabelMode.Auto,
+            VizDisplayState.GetValueLabelsOverride(VizStateCardId ?? string.Empty))
+        && (Presentation?.ValueLabels ?? VizValueLabelMode.Auto) switch
         {
             VizValueLabelMode.Show => true,
             VizValueLabelMode.Hide => false,

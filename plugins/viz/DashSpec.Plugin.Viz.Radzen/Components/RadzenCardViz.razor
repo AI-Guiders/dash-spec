@@ -1,9 +1,11 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using DashSpec.Abstractions.Viz
 @using DashSpec.Core.Interaction
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Plugin.Viz.RadzenUI.Resources
 @inject DashSpec.Viz.IOnClickInteractionService Interactions
 @inject IStringLocalizer<RadzenVizStrings> Loc
+@inject ICardVizDisplayState VizDisplayState
 
 @* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
    no JS interop of our own. One component for the whole family set: charts (line/area/bar/
@@ -126,6 +128,7 @@ else
                 <RadzenSquareHeatmap Matrix="@Matrix"
                                      Presentation="@Context.Card.MatrixPresentation"
                                      Limits="@Context.Card.MatrixLimits"
+                                     VizStateCardId="@Context.ResolveVizStateCardId()"
                                      OnCellSelected="@Context.OnHeatmapCellSelected"
                                      OnCategoryItemSelected="@Context.OnHeatmapCategoryItemSelected"
                                      Style="width:100%;height:100%" />
@@ -195,8 +198,14 @@ else
 
     /// <summary>Pie/donut: the bottom legend carries the category labels — the only label
     /// surface Radzen gives a pie series. Other families: real multi-series splits only.</summary>
-    private bool LegendVisible =>
-        DiagramKind is "pie" or "donut" or "doughnut" || Chart.Series.Count > 1;
+    private bool LegendVisible
+    {
+        get
+        {
+            var legendOverride = VizDisplayState.GetLegendOverride(Context.ResolveVizStateCardId());
+            return legendOverride ?? (DiagramKind is "pie" or "donut" or "doughnut" || Chart.Series.Count > 1);
+        }
+    }
 
     /// <summary>Card-authored chart height (chartjs parity): the presentation height on the
     /// board, expanded in the detail view so rotated axis labels keep their room.</summary>
