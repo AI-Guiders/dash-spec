@@ -18,6 +18,14 @@
   gap: 0.75rem;
 }
 
+/* [ADR-0112 §5] Radzen chrome: the nav hugs the left edge and the board takes the
+   rest of the window — the centered 1680px shell was the selfmade layout. */
+.shell-content {
+  max-width: none;
+  margin: 0;
+  padding: 1rem 1.25rem 2rem 0.75rem;
+}
+
 /* The board column takes the rest of the row — as a default flex item it
    shrink-to-fits the grid's content width and the spec'd spans never fill. */
 .dash-home-column {
@@ -29,6 +37,7 @@
   flex: 0 0 16rem;
   position: sticky;
   top: 0.75rem;
+  min-height: calc(100vh - 3.5rem);
   max-height: calc(100vh - 1.5rem);
   overflow: auto;
   background: var(--rz-base-background-color, var(--rz-base-800));
