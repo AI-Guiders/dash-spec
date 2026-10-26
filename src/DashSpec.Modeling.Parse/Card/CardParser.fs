@@ -204,6 +204,62 @@ module CardParser =
                                     { UnitFragmentResolver.emptyFragment with SeriesTransform = Some current }
                                     { UnitFragmentResolver.emptyFragment with SeriesTransform = inlineDelta.SeriesTransform }).SeriesTransform
 
+    /// ADR-0113: diagram for a switch-slot payload — imported diagram or preset id only
+    /// (inline kind blocks and inline overrides stay a classic-slot feature).
+    let private resolvePayloadDiagram
+        (cardId: string)
+        (includes: ModuleImportState option)
+        (payloadName: string)
+        (diagramName: string)
+        =
+        let mutable registered = UnitFragmentResolver.emptyFragment
+        match includes with
+        | Some state when state.TryGetDiagram(diagramName, &registered) ->
+            match registered.Diagram with
+            | Some diagram -> diagram
+            | None ->
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': payload '{payloadName}' diagram '{diagramName}' resolves to a fragment without a diagram.")
+                )
+        | _ ->
+            if DiagramKindRegistry.tryResolve diagramName |> fst then
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': payload '{payloadName}' must reference an imported diagram or preset id; got kind '{diagramName}'.")
+                )
+            else
+                { Kind = ""
+                  Properties = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
+                  UsePreset = Some diagramName }
+
+    /// ADR-0113: `diagram ref <slot>` followed by `payload <name> <diagram>` lines —
+    /// a switch slot rendering as one cell with one active payload.
+    let private parsePayloadBlock
+        (reader: TokenReader)
+        (cardId: string)
+        (includes: ModuleImportState option)
+        (slotBuilder: CardDiagramSlotBuilder.Builder)
+        (slotRef: string)
+        =
+        let mutable count = 0
+        while reader.TryKeyword "payload" do
+            let payloadName = reader.ReadIdentSameLine()
+            if String.IsNullOrWhiteSpace payloadName then
+                raise (reader.Unexpected("payload name"))
+            let diagramName = reader.ReadIdentSameLine()
+            if String.IsNullOrWhiteSpace diagramName then
+                raise (reader.Unexpected("payload diagram id"))
+            let diagram = resolvePayloadDiagram cardId includes payloadName diagramName
+            CardDiagramSlotBuilder.addPayload slotBuilder slotRef payloadName diagram cardId
+            count <- count + 1
+            reader.SkipNewlines()
+        if count = 0 then
+            raise (
+                DashSpecParseException(
+                    $"Card '{cardId}': diagram ref {slotRef} requires a diagram name on the same line or at least one 'payload <name> <diagram>' line.")
+            )
+
     let private parseViewBlock
         (reader: TokenReader)
         (cardId: string)
@@ -498,11 +554,16 @@ module CardParser =
                     if diagramSlotRef.Value.IsNone then diagramSlotRef.Value <- Some r
                     r
                 | None -> CardDiagramSlotBuilder.DiagramSlotId
-            parseDiagramStatement reader id includes "card" diagramSlotRef diagram legend presentation seriesTransform includeFragment
-            match diagram.Value with
-            | Some d ->
-                CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
-            | None -> ()
+            // ADR-0113: `payload` on the following lines declares a switch slot.
+            match reader.TryPeekIdent() with
+            | Some next when String.Equals(next, "payload", StringComparison.OrdinalIgnoreCase) ->
+                parsePayloadBlock reader id includes slotBuilder slotRef
+            | _ ->
+                parseDiagramStatement reader id includes "card" diagramSlotRef diagram legend presentation seriesTransform includeFragment
+                match diagram.Value with
+                | Some d ->
+                    CardDiagramSlotBuilder.touchDiagram slotBuilder slotRef d legend.Value presentation.Value seriesTransform.Value
+                | None -> ()
             reader.SkipNewlines()
 
         let onPlace () =
@@ -740,6 +801,8 @@ module CardParser =
                     None
 
         // ADR-0107: a named drill target must be a declared slot of this card.
+        // ADR-0113: a switch-slot target addresses a payload — `drill <slot>.<payload>`;
+        // a bare slot name is ambiguous when the slot carries payloads.
         let allClickEffects =
             seq {
                 match clickBehaviour.Value with
@@ -751,14 +814,42 @@ module CardParser =
 
         for effect in allClickEffects do
             match effect.TryGetDrillTarget with
-            | Some targetSlot when
-                not (String.IsNullOrWhiteSpace targetSlot)
-                && not (diagramSlotsFinal.ContainsKey targetSlot)
-                ->
-                raise (
-                    DashSpecParseException(
-                        $"Card '{id}': drill table target slot '{targetSlot}' is not declared by this card (diagram ref {targetSlot} <name>).")
-                )
+            | Some target when not (String.IsNullOrWhiteSpace target) ->
+                let parts = target.Split('.')
+                let slotPart = parts.[0].Trim()
+                if not (diagramSlotsFinal.ContainsKey slotPart) then
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{id}': drill table target slot '{target}' is not declared by this card (diagram ref {slotPart} <name>).")
+                    )
+                elif parts.Length > 2 then
+                    raise (
+                        DashSpecParseException($"Card '{id}': drill target '{target}' must be '<slot>' or '<slot>.<payload>'.")
+                    )
+                elif parts.Length = 2 then
+                    let payloadPart = parts.[1].Trim()
+                    let payloads = diagramSlotsFinal.[slotPart].Payloads
+                    if payloads.Count = 0 then
+                        raise (
+                            DashSpecParseException(
+                                $"Card '{id}': drill target '{target}' names payload '{payloadPart}' but slot '{slotPart}' has no payloads.")
+                        )
+                    elif
+                        not (
+                            payloads
+                            |> Seq.exists (fun p -> String.Equals(p.Name, payloadPart, StringComparison.OrdinalIgnoreCase))
+                        )
+                    then
+                        let declared = String.Join(", ", payloads |> Seq.map (fun p -> p.Name))
+                        raise (
+                            DashSpecParseException(
+                                $"Card '{id}': drill target '{target}' names an unknown payload (declared: {declared}).")
+                        )
+                elif diagramSlotsFinal.[slotPart].Payloads.Count > 0 then
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{id}': drill target '{slotPart}' is a switch slot — address a payload: '{slotPart}.<payload>'.")
+                    )
             | _ -> ()
 
         { Id = id

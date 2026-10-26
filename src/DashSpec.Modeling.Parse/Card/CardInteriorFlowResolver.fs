@@ -56,24 +56,49 @@ module CardInteriorFlowResolver =
         (cardId: string)
         (link: FlowLinkDef)
         =
-        if not (builder.Slots.ContainsKey link.ToNode) then
-            raise (
-                DashSpecParseException(
-                    $"Card '{cardId}': flow link target '{link.ToNode}' is not a diagram slot on this card."
+        // ADR-0113: `-> [rows] slot.payload` binds one payload of a switch slot.
+        let dotIndex = link.ToNode.IndexOf('.')
+
+        if dotIndex > 0 then
+            let slotRef = link.ToNode.Substring(0, dotIndex)
+
+            if not (builder.Slots.ContainsKey slotRef) then
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': flow link target '{link.ToNode}' is not a diagram slot on this card."
+                    )
                 )
-            )
 
-        let portName =
-            match link.FromPort with
-            | Some port when not (String.IsNullOrWhiteSpace port) -> port
-            | _ -> "rows"
+            let portName =
+                match link.FromPort with
+                | Some port when not (String.IsNullOrWhiteSpace port) -> port
+                | _ -> "rows"
 
-        let flowInput =
-            { Alias = link.ToNode
-              NodeId = link.FromNode
-              PortName = portName }
+            let flowInput =
+                { Alias = link.ToNode
+                  NodeId = link.FromNode
+                  PortName = portName }
 
-        CardDiagramSlotBuilder.applyFlowInput builder link.ToNode flowInput cardId
+            CardDiagramSlotBuilder.applyPayloadFlowInput builder slotRef (link.ToNode.Substring(dotIndex + 1)) flowInput cardId
+        else
+            if not (builder.Slots.ContainsKey link.ToNode) then
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': flow link target '{link.ToNode}' is not a diagram slot on this card."
+                    )
+                )
+
+            let portName =
+                match link.FromPort with
+                | Some port when not (String.IsNullOrWhiteSpace port) -> port
+                | _ -> "rows"
+
+            let flowInput =
+                { Alias = link.ToNode
+                  NodeId = link.FromNode
+                  PortName = portName }
+
+            CardDiagramSlotBuilder.applyFlowInput builder link.ToNode flowInput cardId
 
     let private applyCardInputLink
         (builder: CardDiagramSlotBuilder.Builder)

@@ -52,11 +52,12 @@ else
 
     private CardRenderResult EffectiveCard => Slot is null ? Card : FromSlot(Slot);
 
-    /// <summary>Drill UX hint: what to click to fill this slot (ADR-0107).</summary>
+    /// <summary>Drill UX hint: what to click to fill this slot (ADR-0107; "switch" = ADR-0113 switch slot).</summary>
     private string AwaitingHint => Slot?.AwaitingSource switch
     {
         "category item" => Loc["Click an axis label to load this table"],
         "cell" => Loc["Click a heatmap cell to load this table"],
+        "switch" => Loc["Click a heatmap cell or an axis label to load this table"],
         _ => Loc["Click the diagram to load this table"],
     };
 

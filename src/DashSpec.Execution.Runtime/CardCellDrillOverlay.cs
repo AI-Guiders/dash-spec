@@ -14,6 +14,11 @@ public sealed class CardCellDrillOverlay
 
     public void SetTargetSlot(string slotRef) => TargetSlot = slotRef;
 
+    /// <summary>Active payload of the target slot when the drill addresses a switch slot (ADR-0113).</summary>
+    public string TargetPayload { get; private set; } = string.Empty;
+
+    public void SetTargetPayload(string payloadName) => TargetPayload = payloadName;
+
     public void SetDate(string filterName, DateOnly from, DateOnly to) =>
         _dates[filterName] = new DateRangeValue(from, to);
 

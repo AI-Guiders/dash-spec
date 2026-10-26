@@ -116,3 +116,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) | SSOT проводки фильтров клика | Accepted |
 | [0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) | Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты | Accepted |
 | [0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) | Собранная слотовая плоскость — SSOT визуальной композиции, Host = диспетчеризация по готовому | Accepted |
+| [0114](DASHSPEC-ADR-0114-switch-slot-payloads.md) | Switch slot — мультипейлоадный слот (`payload` + адресация `slot.payload`) | Accepted |

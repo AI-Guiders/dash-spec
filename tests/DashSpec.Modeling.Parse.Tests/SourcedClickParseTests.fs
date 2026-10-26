@@ -117,3 +117,80 @@ end heatmap
                 Directory.Delete(dir, true)
             with _ ->
                 ()
+
+    /// ADR-0113: `diagram ref <slot>` + `payload` lines, dotted click targets and dotted flow links.
+    let private switchSlotSpec =
+        """
+module tab switch_slot
+  import diagrams from Test.Diagrams
+
+report "Switch slot"
+  filters
+    | id       | bind  | column   | label | widget | ref | range  |
+    | app_name | field | app_name | App   | -      | -   | -      |
+    | the_day  | date  | the_day  | Day   | -      | -   | -7d..today |
+  end filters
+
+  card act ref act
+    title = "Act"
+    on click
+      | source        | drill             | set        |
+      | cell          | drill.peak_table  | app_name=y |
+      | category item | drill.users_table | app_name=y |
+    end click
+    view
+      diagram ref heatmap hm
+    end view
+    diagram ref drill
+      payload peak_table  cell_drill
+      payload users_table app_drill
+    data flow
+      hm_flow [rows] -> [rows] heatmap
+      cell_flow [rows] -> [rows] drill.peak_table
+      app_flow [rows] -> [rows] drill.users_table
+      app_name -> [app_name] heatmap
+      app_name -> [app_name] drill
+      the_day -> [the_day] heatmap
+      the_day -> [the_day] drill
+    end data flow
+    layout
+      [ heatmap drill ]
+    end layout
+  end card
+end report
+
+end tab switch_slot
+"""
+
+    [<Fact>]
+    let ``switch slot parses payloads with dotted click and flow targets`` () =
+        let dir = Path.Combine(Path.GetTempPath(), "switch-slot-" + Guid.NewGuid().ToString("N"))
+        Directory.CreateDirectory dir |> ignore
+        try
+            writeTempDiagram dir
+            let document = DocumentModuleParser.parseDocumentDefault switchSlotSpec (Some dir)
+            let card = document.Cards.[0]
+
+            Assert.True(card.DiagramSlots.ContainsKey("drill"))
+            Assert.False(card.DiagramSlots.ContainsKey("app_drill"))
+            let slot = card.DiagramSlots.["drill"]
+            Assert.Equal(2, slot.Payloads.Count)
+            Assert.Equal("peak_table", slot.Payloads.[0].Name)
+            Assert.Equal("users_table", slot.Payloads.[1].Name)
+            Assert.Equal("cell_drill", slot.Payloads.[0].Diagram.UsePreset.Value)
+            Assert.Equal("app_drill", slot.Payloads.[1].Diagram.UsePreset.Value)
+            // The head payload feeds the classic Diagram field (kind resolution, awaiting state).
+            Assert.Equal("cell_drill", slot.Diagram.UsePreset.Value)
+            // Per-payload flow inputs; slot-level routes land in BoundFilters for both.
+            Assert.Equal("cell_flow", slot.Payloads.[0].FlowInput.Value.NodeId)
+            Assert.Equal("app_flow", slot.Payloads.[1].FlowInput.Value.NodeId)
+            Assert.Contains("app_name", slot.BoundFilters)
+            Assert.Contains("the_day", slot.BoundFilters)
+            // Dotted click targets keep slot.payload addressing.
+            Assert.Equal("drill.peak_table", card.ClickHandlers.[0].Effects.[0].TryGetDrillTarget.Value)
+            Assert.Equal("drill.users_table", card.ClickHandlers.[1].Effects.[0].TryGetDrillTarget.Value)
+        finally
+            try
+                Directory.Delete(dir, true)
+            with _ ->
+                ()

@@ -13,6 +13,11 @@ module CardDiagramSlotBuilder =
 
     let internal DiagramSlotId = "__diagram__"
 
+    type PayloadScratch =
+        { Name: string
+          Diagram: DiagramDefinition
+          mutable FlowInput: CardFlowInput option }
+
     type SlotScratch =
         { mutable Diagram: DiagramDefinition option
           mutable DataSource: DataSourceDefinition option
@@ -20,7 +25,8 @@ module CardDiagramSlotBuilder =
           mutable Legend: LegendDefinition option
           mutable Presentation: PresentationBlock option
           mutable SeriesTransform: SeriesTransformBlock option
-          mutable FlowInput: CardFlowInput option }
+          mutable FlowInput: CardFlowInput option
+          Payloads: ResizeArray<PayloadScratch> }
 
     type Builder =
         { Slots: Dictionary<string, SlotScratch>
@@ -41,7 +47,8 @@ module CardDiagramSlotBuilder =
                   Legend = None
                   Presentation = None
                   SeriesTransform = None
-                  FlowInput = None }
+                  FlowInput = None
+                  Payloads = ResizeArray<PayloadScratch>() }
             builder.Order.Add slotRef
 
         if builder.PrimarySlotRef.IsNone then
@@ -86,6 +93,47 @@ module CardDiagramSlotBuilder =
         if slot.FlowInput.IsSome then
             raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' declares more than one flow input."))
         slot.FlowInput <- Some input
+
+    /// ADR-0113: `payload <name> <diagram>` line on a switch slot. A slot is either
+    /// classic (one `diagram ref <slot> <name>`) or a switch slot (payload lines) — not both.
+    let addPayload (builder: Builder) (slotRef: string) (payloadName: string) (diagram: DiagramDefinition) (cardId: string) =
+        let slot = ensure builder slotRef
+        if slot.Diagram.IsSome then
+            raise (
+                DashSpecParseException(
+                    $"Card '{cardId}': diagram slot '{slotRef}' mixes a diagram name and payload lines; use one form.")
+            )
+        if slot.Payloads.Exists (fun p -> String.Equals(p.Name, payloadName, StringComparison.OrdinalIgnoreCase)) then
+            raise (
+                DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' declares payload '{payloadName}' twice.")
+            )
+        slot.Payloads.Add { Name = payloadName; Diagram = diagram; FlowInput = None }
+
+    /// ADR-0113: `data flow … -> [rows] <slot>.<payload>` binds one payload of a switch slot.
+    let applyPayloadFlowInput
+        (builder: Builder)
+        (slotRef: string)
+        (payloadName: string)
+        (input: CardFlowInput)
+        (cardId: string)
+        =
+        let slot = ensure builder slotRef
+        match slot.Payloads |> Seq.tryFind (fun p -> String.Equals(p.Name, payloadName, StringComparison.OrdinalIgnoreCase)) with
+        | Some payload ->
+            if payload.FlowInput.IsSome then
+                raise (
+                    DashSpecParseException(
+                        $"Card '{cardId}': diagram slot '{slotRef}' payload '{payloadName}' declares more than one flow input.")
+                )
+            payload.FlowInput <- Some input
+        | None ->
+            let declared =
+                if slot.Payloads.Count = 0 then "slot is not a switch slot"
+                else String.Join(", ", slot.Payloads |> Seq.map (fun p -> p.Name))
+            raise (
+                DashSpecParseException(
+                    $"Card '{cardId}': flow link target '{slotRef}.{payloadName}' names an unknown payload ({declared}).")
+            )
 
     let pruneDataOnlyDiagramSlot (builder: Builder) =
         let diagramSlotCount =
@@ -134,40 +182,66 @@ module CardDiagramSlotBuilder =
             for slotRef in builder.Order do
                 let scratch = builder.Slots.[slotRef]
                 let slotFlowInput = resolveSlotFlowInput scratch flowInput
-                let flowBacked = Option.isSome slotFlowInput
-                match scratch.Diagram, scratch.DataSource with
-                | Some diagram, Some dataSource ->
+                if scratch.Payloads.Count > 0 then
+                    // ADR-0113 switch slot: the head payload supplies the classic Diagram field
+                    // (kind resolution, awaiting state); per-payload flow inputs inherit the
+                    // slot-level one when they have none of their own.
+                    let payloads =
+                        [
+                            for p in scratch.Payloads ->
+                                { Name = p.Name
+                                  Diagram = p.Diagram
+                                  FlowInput = match p.FlowInput with Some fi -> Some fi | None -> slotFlowInput } : CardSlotPayload
+                        ]
+                        :> IReadOnlyList<CardSlotPayload>
                     built.[slotRef] <-
                         { SlotRef = slotRef
-                          Diagram = diagram
-                          DataSource = dataSource
-                          BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
-                          Legend = scratch.Legend
-                          Presentation = scratch.Presentation
-                          SeriesTransform = scratch.SeriesTransform
-                          FlowInput = slotFlowInput }
-                | Some diagram, None when flowBacked ->
-                    built.[slotRef] <-
-                        { SlotRef = slotRef
-                          Diagram = diagram
+                          Diagram = scratch.Payloads.[0].Diagram
                           DataSource = unboundFlowDataSource
                           BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
                           Legend = scratch.Legend
                           Presentation = scratch.Presentation
                           SeriesTransform = scratch.SeriesTransform
-                          FlowInput = slotFlowInput }
-                | None, _ ->
-                    raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a diagram."))
-                | Some diagram, None ->
-                    built.[slotRef] <-
-                        { SlotRef = slotRef
-                          Diagram = diagram
-                          DataSource = unboundFlowDataSource
-                          BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
-                          Legend = scratch.Legend
-                          Presentation = scratch.Presentation
-                          SeriesTransform = scratch.SeriesTransform
-                          FlowInput = slotFlowInput }
+                          FlowInput = slotFlowInput
+                          Payloads = payloads }
+                else
+                    let flowBacked = Option.isSome slotFlowInput
+                    match scratch.Diagram, scratch.DataSource with
+                    | Some diagram, Some dataSource ->
+                        built.[slotRef] <-
+                            { SlotRef = slotRef
+                              Diagram = diagram
+                              DataSource = dataSource
+                              BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
+                              Legend = scratch.Legend
+                              Presentation = scratch.Presentation
+                              SeriesTransform = scratch.SeriesTransform
+                              FlowInput = slotFlowInput
+                              Payloads = [] }
+                    | Some diagram, None when flowBacked ->
+                        built.[slotRef] <-
+                            { SlotRef = slotRef
+                              Diagram = diagram
+                              DataSource = unboundFlowDataSource
+                              BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
+                              Legend = scratch.Legend
+                              Presentation = scratch.Presentation
+                              SeriesTransform = scratch.SeriesTransform
+                              FlowInput = slotFlowInput
+                              Payloads = [] }
+                    | None, _ ->
+                        raise (DashSpecParseException($"Card '{cardId}': diagram slot '{slotRef}' requires a diagram."))
+                    | Some diagram, None ->
+                        built.[slotRef] <-
+                            { SlotRef = slotRef
+                              Diagram = diagram
+                              DataSource = unboundFlowDataSource
+                              BoundFilters = scratch.BoundFilters :> IReadOnlyList<_>
+                              Legend = scratch.Legend
+                              Presentation = scratch.Presentation
+                              SeriesTransform = scratch.SeriesTransform
+                              FlowInput = slotFlowInput
+                              Payloads = [] }
 
             Some(built :> IReadOnlyDictionary<_, _>)
 
