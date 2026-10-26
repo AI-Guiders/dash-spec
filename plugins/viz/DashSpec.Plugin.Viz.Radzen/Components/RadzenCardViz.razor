@@ -1,6 +1,8 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using DashSpec.Abstractions.Viz
+@using DashSpec.Core.Interaction
 @using DashSpec.Plugin.Viz.RadzenUI.Resources
+@inject DashSpec.Viz.IOnClickInteractionService Interactions
 @inject IStringLocalizer<RadzenVizStrings> Loc
 
 @* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
@@ -16,8 +18,13 @@
 }
 else if (IsChartFamily)
 {
-    <div class="rviz-chart-wrap rviz-chart-wrap--fixed">
-        <RadzenChart Style="height:100%" TItem="RadzenPoint">
+    <div class="rviz-chart-wrap rviz-chart-wrap--fixed" style="@ChartWrapStyle">
+        @* The legend is a pie's only label surface (Radzen lists category labels for a pie
+           series there — chartjs parity: slices are named in the legend, never on the chart).
+           Categorical charts show it for real multi-series splits only — a single-series
+           legend would just restate the axis labels, the chartjs renderer hid it too. *@
+        <RadzenChart Style="height:100%" TItem="RadzenPoint" SeriesClick="OnSeriesClick">
+            <RadzenLegend Visible="@LegendVisible" Position="LegendPosition.Bottom" />
             @switch (DiagramKind)
             {
                 case "bar":
@@ -31,7 +38,8 @@ else if (IsChartFamily)
                                              CategoryProperty="Label"
                                              ValueProperty="Value"
                                              Title="@SeriesTitle(series)"
-                                             Fill="@SeriesColor(series)" />
+                                             Fill="@SeriesColor(series)"
+                                             Fills="@series.PointColors" />
                         }
                     }
                     else
@@ -43,10 +51,11 @@ else if (IsChartFamily)
                                                 CategoryProperty="Label"
                                                 ValueProperty="Value"
                                                 Title="@SeriesTitle(series)"
-                                                Fill="@SeriesColor(series)" />
+                                                Fill="@SeriesColor(series)"
+                                                Fills="@series.PointColors" />
                         }
                     }
-                    <RadzenCategoryAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
                     <RadzenValueAxis />
                     break;
                 case "pie":
@@ -54,7 +63,8 @@ else if (IsChartFamily)
                                      Data="PointsOf(FirstSeries)"
                                      CategoryProperty="Label"
                                      ValueProperty="Value"
-                                     Title="@FirstSeries.Name" />
+                                     Fills="@FirstSeries.PointColors"
+                                     Title="@SeriesTitle(FirstSeries)" />
                     break;
                 case "donut":
                 case "doughnut":
@@ -62,7 +72,8 @@ else if (IsChartFamily)
                                        Data="PointsOf(FirstSeries)"
                                        CategoryProperty="Label"
                                        ValueProperty="Value"
-                                       Title="@FirstSeries.Name" />
+                                       Fills="@FirstSeries.PointColors"
+                                       Title="@SeriesTitle(FirstSeries)" />
                     break;
                 case "scatter":
                     <RadzenScatterSeries TItem="RadzenPoint"
@@ -70,7 +81,7 @@ else if (IsChartFamily)
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
                                           Title="@FirstSeries.Name" />
-                    <RadzenCategoryAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
                     <RadzenValueAxis />
                     break;
                 case "area":
@@ -83,7 +94,7 @@ else if (IsChartFamily)
                                           Title="@SeriesTitle(series)"
                                           Fill="@SeriesColor(series)" />
                     }
-                    <RadzenCategoryAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
                     <RadzenValueAxis />
                     break;
                 default:
@@ -96,7 +107,7 @@ else if (IsChartFamily)
                                           Title="@SeriesTitle(series)"
                                           Stroke="@SeriesColor(series)" />
                     }
-                    <RadzenCategoryAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
                     <RadzenValueAxis />
                     break;
             }
@@ -181,6 +192,52 @@ else
     /// <summary>Horizontal bars (bar/histogram): RadzenBarSeries vs the default vertical columns.</summary>
     private bool IsHorizontal =>
         Context.EffectiveCard.ChartPresentation?.Orientation == ChartOrientation.Horizontal;
+
+    /// <summary>Pie/donut: the bottom legend carries the category labels — the only label
+    /// surface Radzen gives a pie series. Other families: real multi-series splits only.</summary>
+    private bool LegendVisible =>
+        DiagramKind is "pie" or "donut" or "doughnut" || Chart.Series.Count > 1;
+
+    /// <summary>Card-authored chart height (chartjs parity): the presentation height on the
+    /// board, expanded in the detail view so rotated axis labels keep their room.</summary>
+    private string ChartWrapStyle => ChartHeightStyle.Resolve(Context.Card, Context.DetailView);
+
+    /// <summary>ADR-0107 category click: a series point click rides the same contract as the
+    /// builtin chartjs renderer — gated on the card declaring effects for its click.</summary>
+    private bool CategoryClickEnabled =>
+        Context.OnHeatmapCellSelected.HasDelegate &&
+        Context.EffectiveCard.ClickBehaviour is not null &&
+        (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
+         Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null);
+
+    private async Task OnSeriesClick(SeriesClickEventArgs args)
+    {
+        if (!CategoryClickEnabled || args.Data is not RadzenPoint point)
+        {
+            return;
+        }
+
+        var index = -1;
+        for (var i = 0; i < Chart.Labels.Count; i++)
+        {
+            if (string.Equals(Chart.Labels[i], point.Label, StringComparison.Ordinal))
+            {
+                index = i;
+                break;
+            }
+        }
+
+        // Category label satisfies both `from x` and `from y` (horizontal bar vs vertical/donut).
+        var context = new HeatmapCellContext(
+            index,
+            index,
+            point.Label,
+            point.Label,
+            null,
+            null);
+
+        await Context.OnHeatmapCellSelected.InvokeAsync(context);
+    }
 
     private ChartSeries FirstSeries => Chart.Series[0];
 
