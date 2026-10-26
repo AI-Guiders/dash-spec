@@ -42,3 +42,4 @@ scripts/migrate_file.py
 
 .dotnet-debug-mcp-breakpoints.json
 src/DashSpec.Host/dash-spec.local.host.ds
+.zcode/
