@@ -10,7 +10,7 @@
 
 A heatmap card with two drill tables needed **two interior slots** (`drill`, `app_drill`) because the
 model allowed one diagram per slot. Side by side with the map, both cells sat empty most of the time,
-each with its own awaiting hint (live pain: the SSCAD `peak_concurrent_proxy` card, 2026-10-26). The
+each with its own awaiting hint (live pain: the `peak_concurrent_proxy` heatmap card, 2026-10-26). The
 tables are not two independent facts — they are **one drill zone** whose content depends on what was
 clicked (a cell → the at-peak table; an axis label → the users-by-app table).
 
@@ -90,5 +90,5 @@ end data flow
   building the slot card.
 - Editor intelligence (completion / go-to-def for `slot.payload`) — not in this slice.
 - Report-scope dotted flow targets — not in this slice.
-- Pilot: SSCAD `peak_concurrent_proxy` — `[ heatmap:3 drill:1 ]`, one switch slot, both tables in
+- Pilot: the `peak_concurrent_proxy` card — `[ heatmap:3 drill:1 ]`, one switch slot, both tables in
   one cell; verified live (awaiting → `Запуски: AVEVA E3D` → cell click → `AspenTech · 21.10`).

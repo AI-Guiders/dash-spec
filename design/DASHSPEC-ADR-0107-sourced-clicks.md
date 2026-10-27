@@ -78,7 +78,7 @@ end click
 ## Consequences
 
 - The Activity card gets the app drill: users × launches per application for the
-  selected day (SSCAD view + flow; the drill table chrome).
+  selected day (the dashboard view + flow; the drill table chrome).
 - `when` gets both forms free via ADR-0106.
 - Chart.js category clicks migrate onto the same registry later — the seam's second
   instance.
