@@ -46,7 +46,7 @@
 
 .rviz-shm-grid {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   width: max-content;
   min-width: 100%;
 }
@@ -57,6 +57,12 @@
   justify-content: space-between;
   gap: 0.5rem;
   min-height: 1.6rem;
+  /* sticky axis chrome (ADR-0084 parity): the corner pins both ways */
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  background: var(--rz-base-background-color, #141d2c);
 }
 
 .rviz-shm-axis-y,
@@ -70,11 +76,16 @@
   font-size: 0.72rem;
   text-align: center;
   color: var(--rz-text-secondary-color, #8fa0b3);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   align-self: end;
   padding-bottom: 0.15rem;
+  /* sticky axis chrome: the day row pins to the top while rows scroll under it;
+     no overflow clipping here — the column sizes from the label's own width
+     (auto track minimum), a wider date format widens the column by itself */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--rz-base-background-color, #141d2c);
 }
 
 .rviz-shm-x-label-sparse {
@@ -86,13 +97,18 @@
   text-align: right;
   padding: 0 0.4rem 0 0;
   border: 0;
-  background: none;
   color: var(--rz-text-secondary-color, #8fa0b3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   align-self: center;
-  min-height: 1.4rem;
+  justify-self: stretch;
+  min-height: 1.7rem;
+  /* sticky axis chrome: the product column pins left while columns scroll under it */
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--rz-base-background-color, #141d2c);
 }
 
 button.rviz-shm-y-label {
@@ -108,16 +124,53 @@ button.rviz-shm-y-label:hover {
 }
 
 .rviz-shm-cell {
-  aspect-ratio: 1 / 1;
+  height: 1.7rem;
   width: 100%;
+  min-width: 1.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 3px;
+  border-radius: 2px;
   padding: 0;
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* Table header copy island (ADR-0115 §4): a quiet glyph next to the header text —
+   the same affordance the builtin table renders. */
+.rviz-grid-head {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.rviz-grid-copy {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  opacity: 0.65;
+}
+
+.rviz-grid-copy svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rviz-grid-copy:hover {
+  opacity: 1;
+}
+
+.rviz-grid-copy--done {
+  color: var(--rz-success, #4caf50);
+  opacity: 1;
 }
 
 .rviz-shm-cell-filled {
@@ -127,6 +180,19 @@ button.rviz-shm-y-label:hover {
 .rviz-shm-cell-filled:hover {
   outline: 2px solid var(--rz-base-200, #4a5568);
   outline-offset: -2px;
+}
+
+/* Viewer selection (ADR-0116): the clicked cell keeps an accent outline until the
+   payload changes; a selected category row highlights its Y label the same way. */
+.rviz-shm-cell-selected {
+  outline: 2px solid var(--rz-primary, #f0a30a);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.rviz-shm-y-label-selected {
+  color: var(--rz-text-color, #e6ecf3);
+  font-weight: 600;
 }
 
 .rviz-shm-cell-empty {

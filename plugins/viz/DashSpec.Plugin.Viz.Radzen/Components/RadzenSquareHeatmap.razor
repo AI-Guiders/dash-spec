@@ -17,10 +17,6 @@
     {
         <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
     }
-    else if (Oversized)
-    {
-        <p class="rviz-empty-state">@Loc["Heatmap not shown (protection limit)"]</p>
-    }
     else
     {
         <div class="rviz-shm-scroll" style="@($"max-height:{HeightPx}px")">
@@ -50,7 +46,9 @@
                     var rowIndex = yi;
                     @if (ShowAxisLabelsY)
                     {
-                        <button type="button" class="rviz-shm-y-label" style="grid-row:@(yi + 2);grid-column:1"
+                        <button type="button"
+                                class="rviz-shm-y-label @(_selectedRow == rowIndex ? "rviz-shm-y-label-selected" : null)"
+                                style="grid-row:@(yi + 2);grid-column:1"
                                 title="@FormatYLabel(YLabel(rowIndex))"
                                 @onclick="() => SelectCategory(rowIndex)"
                                 @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
@@ -67,8 +65,8 @@
                         var filled = value is not null;
                         var (cellMin, cellMax) = Matrix.ColorRangeForCell(rowIndex, colIndex);
                         <button type="button"
-                                class="rviz-shm-cell @(filled ? "rviz-shm-cell-filled" : "rviz-shm-cell-empty")"
-                                style="grid-row:@(yi + 2);grid-column:@(xi + 2);@CellStyle(value, cellMin, cellMax)"
+                                class="rviz-shm-cell @(filled ? "rviz-shm-cell-filled" : "rviz-shm-cell-empty") @(_selectedYi == rowIndex && _selectedXi == colIndex ? "rviz-shm-cell-selected" : null)"
+                                style="@CellAttributes(rowIndex, xi, value, cellMin, cellMax)"
                                 title="@CellTooltip(rowIndex, colIndex, value)"
                                 tabindex="@(filled ? 0 : -1)"
                                 @onclick="() => SelectCell(rowIndex, colIndex)"
@@ -95,9 +93,6 @@
     [Parameter]
     public MatrixPresentation? Presentation { get; set; }
 
-    [Parameter]
-    public MatrixRenderLimitsDefinition? Limits { get; set; }
-
     /// <summary>Cell click — the generic drill source (ADR-0107).</summary>
     [Parameter]
     public EventCallback<HeatmapCellContext> OnCellSelected { get; set; }
@@ -122,8 +117,6 @@
 
     private bool Empty => Rows == 0 || Cols == 0;
 
-    private bool Oversized => MatrixRenderLimits.IsOversized(Cols, Rows, Limits);
-
     private string ColorScale => HeatmapColorScale.Normalize(Presentation?.ColorScale);
 
     private bool ShowAxisLabelsX =>
@@ -138,29 +131,52 @@
 
     private int HeightPx => Presentation?.HeightPx ?? 320;
 
-    /// <summary>Auto value labels: readable while cells have room — past ~14 columns the
-    /// squares get too small for text. Show/Hide from the presentation and the display
-    /// toolbar's toggle always win over the auto heuristic.</summary>
+    /// <summary>Value labels: no heuristic — visible unless the author (<c>value_labels = hide</c>)
+    /// or the viewer's display toolbar says otherwise (ADR-0116: the toolbar buttons are the
+    /// control; the shared resolver already behaves exactly that way).</summary>
     private bool ShowCellValues =>
         VizLabelDisplayResolver.EffectiveValueLabelsVisible(
             Presentation?.ValueLabels ?? VizValueLabelMode.Auto,
-            VizDisplayState.GetValueLabelsOverride(VizStateCardId ?? string.Empty))
-        && (Presentation?.ValueLabels ?? VizValueLabelMode.Auto) switch
-        {
-            VizValueLabelMode.Show => true,
-            VizValueLabelMode.Hide => false,
-            _ => Cols <= 14,
-        };
+            VizDisplayState.GetValueLabelsOverride(VizStateCardId ?? string.Empty));
 
     private string WrapCssClass =>
         $"{(ShowAxisLabelsX ? null : "rviz-shm--hide-x")} {(ShowAxisLabelsY ? null : "rviz-shm--hide-y")}".Trim();
 
-    /// <summary>Square cells: fixed-width columns (builtin density, ~2.6rem) + aspect-ratio:1
-    /// on cells (css) — the grid scrolls when columns/rows outrun the card.</summary>
+    /// <summary>Data columns size from their content (ADR-0116): each column is at least as
+    /// wide as its X label — a wider date format widens the columns by itself — and spare
+    /// card width is shared equally. When the mins outrun the card, the grid scrolls.
+    /// Rows keep a fixed compact height regardless of width.</summary>
     private string GridStyle()
     {
         var yColumn = ShowAxisLabelsY ? "minmax(8rem, max-content)" : "0";
-        return $"grid-template-columns:{yColumn} repeat({Cols}, 2.6rem);";
+        return $"grid-template-columns:{yColumn} repeat({Cols}, minmax(auto, 1fr));";
+    }
+
+    /// <summary>One cell's full inline style: grid placement, then the color scale fill.</summary>
+    private string CellAttributes(int yi, int xi, double? value, double cellMin, double cellMax) =>
+        $"grid-row:{yi + 2};grid-column:{xi + 2};{CellStyle(value, cellMin, cellMax)}";
+
+    /// <summary>Viewer-facing selection state (ADR-0116): the clicked cell keeps a highlight
+    /// until the payload changes — the same feedback the builtin canvas gives.</summary>
+    private int? _selectedYi;
+
+    private int? _selectedXi;
+
+    private int? _selectedRow;
+
+    private MatrixPayload? _lastMatrix;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (!ReferenceEquals(Matrix, _lastMatrix))
+        {
+            _selectedYi = null;
+            _selectedXi = null;
+            _selectedRow = null;
+            _lastMatrix = Matrix;
+        }
     }
 
     private string CellStyle(double? value, double cellMin, double cellMax)
@@ -219,6 +235,10 @@
             return;
         }
 
+        _selectedYi = yi;
+        _selectedXi = xi;
+        _selectedRow = null;
+
         await OnCellSelected.InvokeAsync(Context(yi, xi, value, MatrixClickSources.Cell));
     }
 
@@ -228,6 +248,10 @@
         {
             return;
         }
+
+        _selectedRow = yi;
+        _selectedYi = null;
+        _selectedXi = null;
 
         await OnCategoryItemSelected.InvokeAsync(
             Context(yi, 0, Matrix.Cells[yi][0], MatrixClickSources.CategoryItem));

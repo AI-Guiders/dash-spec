@@ -2,6 +2,7 @@ using DashSpec.Abstractions.Viz;
 using DashSpec.Plugin.Viz.Builtins.Components.Matrix;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Plugin.Viz.RadzenUI.Components;
+using DashSpec.Plugin.Viz.RadzenUI.Resources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Radzen;
@@ -43,6 +44,8 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
     {
         base.ConfigureServices(services, configuration);
         services.AddRadzenComponents();
+        // Russian chrome for Radzen's built-in strings (ADR-0115 §3): no ru satellites upstream.
+        services.AddSingleton<ILocalizer, RadzenRuLocalizer>();
     }
 
     private sealed class RadzenVizBackend : IVizPlugin
