@@ -18,7 +18,8 @@ public sealed record TablePresentation(
     TableWidthMode Width = TableWidthMode.Content,
     TableDensity Density = TableDensity.Comfortable,
     int MaxHeightPx = 420,
-    bool ColumnFilters = true)
+    bool ColumnFilters = true,
+    int FrozenColumns = 0)
 {
     public static TablePresentation FromProperties(IReadOnlyDictionary<string, string> properties)
     {
@@ -59,7 +60,16 @@ public sealed record TablePresentation(
             columnFilters = rawFilters is "true" or "yes" or "1";
         }
 
-        return new TablePresentation(width, density, maxHeight, columnFilters);
+        // Frozen columns (ADR-0115 §2): author intent — keep the first N columns pinned
+        // during horizontal scroll. Radzen honors it; the self-made table ignores it.
+        var frozenColumns = 0;
+        if (properties.TryGetValue("frozen_columns", out var rawFrozen) &&
+            int.TryParse(rawFrozen.Trim(), out var parsedFrozen))
+        {
+            frozenColumns = Math.Clamp(parsedFrozen, 0, 8);
+        }
+
+        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns);
     }
 
     public static TablePresentation Resolve(CardDefinition card, SpecLibrary? library) =>

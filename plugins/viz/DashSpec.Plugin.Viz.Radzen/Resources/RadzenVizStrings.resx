@@ -18,4 +18,10 @@
   <data name="Heatmap not shown (protection limit)" xml:space="preserve">
     <value>Heatmap not shown (protection limit)</value>
   </data>
+  <data name="Copy column" xml:space="preserve">
+    <value>Copy column</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Copied</value>
+  </data>
 </root>

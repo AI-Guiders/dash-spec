@@ -3,9 +3,11 @@
 @using DashSpec.Core.Interaction
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Plugin.Viz.RadzenUI.Resources
+@using Microsoft.JSInterop
 @inject DashSpec.Viz.IOnClickInteractionService Interactions
 @inject IStringLocalizer<RadzenVizStrings> Loc
 @inject ICardVizDisplayState VizDisplayState
+@inject IJSRuntime Js
 
 @* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
    no JS interop of our own. One component for the whole family set: charts (line/area/bar/
@@ -127,7 +129,6 @@ else
                    cell drill-down ride the same contracts as the builtin heatmap. *@
                 <RadzenSquareHeatmap Matrix="@Matrix"
                                      Presentation="@Context.Card.MatrixPresentation"
-                                     Limits="@Context.Card.MatrixLimits"
                                      VizStateCardId="@Context.ResolveVizStateCardId()"
                                      OnCellSelected="@Context.OnHeatmapCellSelected"
                                      OnCategoryItemSelected="@Context.OnHeatmapCategoryItemSelected"
@@ -142,12 +143,14 @@ else
             case "table":
             case "browse":
                 @* Radzen v12: columns live in the <Columns> template (the default ChildContent
-                   is never rendered). Sort/filter/pager are Radzen's own — LoadData mode maps
-                   them onto the typed dataset; columns bind by the field's wire Name. *@
+                   is never rendered). Sort/filter/pager/picking/reorder are Radzen's own —
+                   LoadData mode maps them onto the typed dataset; columns bind by the field's
+                   wire Name. Copy-per-column rides our header island (ADR-0115 §4). *@
                 <RadzenDataGrid TItem="RadzenRow" Data="@GridRows" Count="@GridCount"
                                 LoadData="@OnGridLoadData"
                                 AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
                                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
+                                AllowColumnPicking="true" AllowColumnReorder="true"
                                 RowClick="@OnRowClicked"
                                 Wrap="true" Density="Density.Compact" Style="width:100%">
                     <Columns>
@@ -156,7 +159,24 @@ else
                             var index = c;
                             <RadzenDataGridColumn TItem="RadzenRow" Property="@Table.Fields[index].Name"
                                                   Title="@Table.Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
-                                                  Width="auto" Sortable="true" Filterable="@ColumnFilters">
+                                                  Width="auto" Sortable="true" Filterable="@ColumnFilters"
+                                                  Frozen="@(index < FrozenColumns)">
+                                <HeaderTemplate>
+                                    <div class="rviz-grid-head">
+                                        <span>@Table.Fields[index].Header</span>
+                                        <button type="button"
+                                                class="rviz-grid-copy @(_copiedColumn == index ? "rviz-grid-copy--done" : null)"
+                                                title="@(_copiedColumn == index ? Loc["Copied"] : Loc["Copy column"])"
+                                                aria-label="@(_copiedColumn == index ? Loc["Copied"] : Loc["Copy column"])"
+                                                @onclick="() => CopyColumnAsync(index)"
+                                                @onclick:stopPropagation="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </HeaderTemplate>
                                 <Template Context="row">@FormatCell(row.Cells[index], index)</Template>
                             </RadzenDataGridColumn>
                         }
@@ -277,6 +297,51 @@ else
 
     private int GridCount => _gridCount;
 
+    /// <summary>Author intent (ADR-0115 §2): keep the first N columns pinned during
+    /// horizontal scroll — <c>frozen_columns</c> in the presentation block. The self-made
+    /// table ignores the key; the Radzen grid honors it per column.</summary>
+    private int FrozenColumns => Context.Card.TablePresentation?.FrozenColumns ?? 0;
+
+    private int? _copiedColumn;
+
+    /// <summary>The filtered+sorted set as of the last LoadData — the copy source
+    /// (builtins parity: the visible column, all its rows), not the current page.</summary>
+    private IReadOnlyList<DashValue[]> _lastFilteredRows = [];
+
+    /// <summary>Copy one column's visible values to the clipboard (newline-joined) —
+    /// the same file as the builtin table's copy (ADR-0115 §4).</summary>
+    private async Task CopyColumnAsync(int columnIndex)
+    {
+        try
+        {
+            var text = string.Join(
+                Environment.NewLine,
+                _lastFilteredRows.Select(row =>
+                    columnIndex < row.Length ? FormatCell(row[columnIndex], columnIndex) : string.Empty));
+            var copied = await Js.InvokeAsync<bool>("dashSpecRadzenTableCopy", text);
+            if (!copied)
+            {
+                return;
+            }
+
+            _copiedColumn = columnIndex;
+            _ = ResetCopiedAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private async Task ResetCopiedAsync()
+    {
+        await Task.Delay(900);
+        _copiedColumn = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
     private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
 
     private ReportFormatDefaults? FormatDefaults => Context.Card.FormatDefaults;
@@ -300,6 +365,7 @@ else
         {
             _gridRows = [];
             _gridCount = 0;
+            _lastFilteredRows = [];
             return;
         }
 
@@ -308,6 +374,8 @@ else
             .Take(GridPageSize)
             .Select(row => new RadzenRow(row))
             .ToList();
+        // No filters yet — copy sees the whole column, builtins parity.
+        _lastFilteredRows = table.Rows;
     }
 
     private void OnGridLoadData(LoadDataArgs args)
@@ -347,7 +415,12 @@ else
             }
         }
 
-        _gridRows = rows
+        // Copy-per-column rides the filtered+sorted set (builtins parity: the visible
+        // column, all its rows) — not the current page the grid holds.
+        var filteredRows = rows.ToList();
+        _lastFilteredRows = filteredRows;
+
+        _gridRows = filteredRows
             .Skip(args.Skip ?? 0)
             .Take(args.Top ?? GridPageSize)
             .Select(row => new RadzenRow(row))

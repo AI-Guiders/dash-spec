@@ -270,6 +270,7 @@ Each `PropertySchemas` value is the set of `key = value` properties one block ac
 | `width` | `Scalar` |
 | `density` | `Scalar` |
 | `column_filters` | `Scalar` |
+| `frozen_columns` | `Scalar` |
 
 ### `runtime`
 

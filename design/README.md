@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0112**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0116**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -117,3 +117,5 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) | Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты | Accepted |
 | [0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) | Собранная слотовая плоскость — SSOT визуальной композиции, Host = диспетчеризация по готовому | Accepted |
 | [0114](DASHSPEC-ADR-0114-switch-slot-payloads.md) | Switch slot — мультипейлоадный слот (`payload` + адресация `slot.payload`) | Accepted |
+| [0115](DASHSPEC-ADR-0115-radzen-table-grid-extras.md) | Radzen-таблица — фичи грида: picking, reorder, frozen, copy | Accepted |
+| [0116](DASHSPEC-ADR-0116-radzen-heatmap-feedback.md) | Radzen-тепловая карта — выделение, цифры без эвристик, `cell_size` | Accepted |

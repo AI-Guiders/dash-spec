@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft.resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="DataGrid_AllColumnsText" xml:space="preserve">
+    <value>Все столбцы</value>
+  </data>
+  <data name="DataGrid_AndOperatorText" xml:space="preserve">
+    <value>И</value>
+  </data>
+  <data name="DataGrid_ApplyFilterText" xml:space="preserve">
+    <value>Применить</value>
+  </data>
+  <data name="DataGrid_ClearFilterText" xml:space="preserve">
+    <value>Сбросить</value>
+  </data>
+  <data name="DataGrid_CollapseAllTitle" xml:space="preserve">
+    <value>Свернуть все</value>
+  </data>
+  <data name="DataGrid_ColumnsShowingText" xml:space="preserve">
+    <value>показано столбцов</value>
+  </data>
+  <data name="DataGrid_ColumnsText" xml:space="preserve">
+    <value>Столбцы</value>
+  </data>
+  <data name="DataGrid_ContainsText" xml:space="preserve">
+    <value>содержит</value>
+  </data>
+  <data name="DataGrid_CustomText" xml:space="preserve">
+    <value>настраиваемое</value>
+  </data>
+  <data name="DataGrid_DoesNotContainText" xml:space="preserve">
+    <value>не содержит</value>
+  </data>
+  <data name="DataGrid_EmptyText" xml:space="preserve">
+    <value>Нет данных</value>
+  </data>
+  <data name="DataGrid_EndsWithText" xml:space="preserve">
+    <value>заканчивается на</value>
+  </data>
+  <data name="DataGrid_EnumFilterSelectText" xml:space="preserve">
+    <value>Выбрать…</value>
+  </data>
+  <data name="DataGrid_EnumNullFilterText" xml:space="preserve">
+    <value>(не задано)</value>
+  </data>
+  <data name="DataGrid_EqualsText" xml:space="preserve">
+    <value>равно</value>
+  </data>
+  <data name="DataGrid_ExpandAllTitle" xml:space="preserve">
+    <value>Развернуть все</value>
+  </data>
+  <data name="DataGrid_ExpandChildItemAriaLabel" xml:space="preserve">
+    <value>Развернуть вложенный элемент</value>
+  </data>
+  <data name="DataGrid_ExpandGroupAriaLabel" xml:space="preserve">
+    <value>Развернуть группу</value>
+  </data>
+  <data name="DataGrid_FilterOperatorAriaLabel" xml:space="preserve">
+    <value>Оператор фильтра</value>
+  </data>
+  <data name="DataGrid_FilterText" xml:space="preserve">
+    <value>Фильтр</value>
+  </data>
+  <data name="DataGrid_FilterToggleAriaLabel" xml:space="preserve">
+    <value>Показать или скрыть фильтр</value>
+  </data>
+  <data name="DataGrid_FilterValueAriaLabel" xml:space="preserve">
+    <value>Значение фильтра</value>
+  </data>
+  <data name="DataGrid_GreaterThanOrEqualsText" xml:space="preserve">
+    <value>больше или равно</value>
+  </data>
+  <data name="DataGrid_GreaterThanText" xml:space="preserve">
+    <value>больше</value>
+  </data>
+  <data name="DataGrid_GroupPanelText" xml:space="preserve">
+    <value>Перетащите сюда заголовок столбца, чтобы сгруппировать</value>
+  </data>
+  <data name="DataGrid_InText" xml:space="preserve">
+    <value>в списке</value>
+  </data>
+  <data name="DataGrid_IsEmptyText" xml:space="preserve">
+    <value>пусто</value>
+  </data>
+  <data name="DataGrid_IsNotEmptyText" xml:space="preserve">
+    <value>не пусто</value>
+  </data>
+  <data name="DataGrid_IsNotNullText" xml:space="preserve">
+    <value>заполнено</value>
+  </data>
+  <data name="DataGrid_IsNullText" xml:space="preserve">
+    <value>не заполнено</value>
+  </data>
+  <data name="DataGrid_LessThanOrEqualsText" xml:space="preserve">
+    <value>меньше или равно</value>
+  </data>
+  <data name="DataGrid_LessThanText" xml:space="preserve">
+    <value>меньше</value>
+  </data>
+  <data name="DataGrid_LogicalOperatorAriaLabel" xml:space="preserve">
+    <value>Логический оператор</value>
+  </data>
+  <data name="DataGrid_NotEqualsText" xml:space="preserve">
+    <value>не равно</value>
+  </data>
+  <data name="DataGrid_NotInText" xml:space="preserve">
+    <value>не в списке</value>
+  </data>
+  <data name="DataGrid_OrOperatorText" xml:space="preserve">
+    <value>ИЛИ</value>
+  </data>
+  <data name="DataGrid_RemoveGroupAriaLabel" xml:space="preserve">
+    <value>Убрать группировку</value>
+  </data>
+  <data name="DataGrid_SecondFilterOperatorAriaLabel" xml:space="preserve">
+    <value>Оператор второго условия</value>
+  </data>
+  <data name="DataGrid_SecondFilterValueAriaLabel" xml:space="preserve">
+    <value>Значение второго условия</value>
+  </data>
+  <data name="DataGrid_SelectVisibleColumnsAriaLabel" xml:space="preserve">
+    <value>Выбрать видимые столбцы</value>
+  </data>
+  <data name="DataGrid_StartsWithText" xml:space="preserve">
+    <value>начинается с</value>
+  </data>
+</root>
