@@ -31,7 +31,7 @@
   (guiders-core c99f396) — goto приземляется на объявление модуля
   диаграммы (топ-хит `app-list-table.ds:1` на запрос
   `lus_users_app_list_table`). Индекс пересобран, `.hybrid-codebase-index/`
-  добавлен в .gitignore SSCAD.
+  добавлен в .gitignore.
 - Кэш-инвалидация диагностики буфера (cdp-mcp c1fdc69b): чистый буфер
   с дрейфом диска перечитывает диск перед read/diagnostics (VS Reload);
   dirty держит память, `keep_disk` уважается. Проверено живьём:
