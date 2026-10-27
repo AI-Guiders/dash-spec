@@ -98,6 +98,12 @@ public static class DashSpecHostApplicationBuilderExtensions
         LabelFormat.UiCulture = uiCulture;
         TooltipTemplate.CellValueFormatter = static value => LabelFormat.FormatObject(value);
 
+        // SQL dialects register lazily inside Execution.Compilation — but row-source plugins
+        // may resolve a dialect before anything compiled a query (fresh process, file-watcher
+        // reparse). Register the built-ins eagerly so the registry is never observed empty.
+        DashSpec.Execution.Compilation.SqlDialectResolver.Resolve(
+            DashSpec.Modeling.Parse.Document.SqlDialect.TSql);
+
         // UI copy SSOT is resx (ADR-0077): IStringLocalizer reads CurrentUICulture.
         // RequestLocalization middleware covers HTTP; Blazor Server circuits render on pool threads,
         // so the process-wide default UI culture must match the host language too.
