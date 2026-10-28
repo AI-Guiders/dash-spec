@@ -43,7 +43,7 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
                     $"SQL result exceeded max_rows ({maxRows}). Narrow filters or raise [providers.postgres] max_rows.");
             }
 
-            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
+            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals, query.DateTimeFrame));
         }
 
         return TypedRowBatch.Create(schema, rowValues);

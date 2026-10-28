@@ -23,6 +23,8 @@ type DashflowSourceDef =
     { Id: string
       Provider: DashflowProviderBinding
       From: SourceFrom
+      /// <summary>Хранение времени в источнике: "utc" | "local". Пусто — не заявлено (по умолчанию UTC).</summary>
+      TimeZone: string
       OutputPort: string
       OutputRowType: string
       DefaultOutputPort: string option }

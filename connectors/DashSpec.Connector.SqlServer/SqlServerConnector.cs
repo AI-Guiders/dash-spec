@@ -43,7 +43,7 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
                     $"SQL result exceeded max_rows ({maxRows}). Narrow date/product filters or raise [providers.sqlserver] max_rows.");
             }
 
-            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals));
+            rowValues.Add(SqlRowMaterializer.ReadRow(reader, schema, columnOrdinals, query.DateTimeFrame));
         }
 
         return TypedRowBatch.Create(schema, rowValues);

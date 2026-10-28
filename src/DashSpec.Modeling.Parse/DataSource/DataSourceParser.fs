@@ -34,6 +34,7 @@ module DataSourceParser =
           SqlCarrier = sqlCarrier
           Sheet = sheet
           RowsType = ""
+          TimeZone = ""
           ProviderInfer = true
           ProviderId = None }
 

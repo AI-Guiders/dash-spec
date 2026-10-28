@@ -42,6 +42,7 @@ module DocumentFlowMaterializer =
               SqlCarrier = None
               Sheet = None
               RowsType = rowsType
+              TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
         | SourceFromKind.SqlQuery ->
@@ -50,6 +51,7 @@ module DocumentFlowMaterializer =
               SqlCarrier = Some DataSourceSqlCarrier.Query
               Sheet = None
               RowsType = rowsType
+              TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
         | SourceFromKind.SqlFile ->
@@ -58,6 +60,7 @@ module DocumentFlowMaterializer =
               SqlCarrier = Some DataSourceSqlCarrier.File
               Sheet = None
               RowsType = rowsType
+              TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
         | SourceFromKind.Xlsx ->
@@ -66,6 +69,7 @@ module DocumentFlowMaterializer =
               SqlCarrier = None
               Sheet = source.From.Sheet
               RowsType = rowsType
+              TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
 

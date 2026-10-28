@@ -760,6 +760,7 @@ module CardParser =
               SqlCarrier = None
               Sheet = None
               RowsType = ""
+              TimeZone = ""
               ProviderInfer = true
               ProviderId = None }
 
