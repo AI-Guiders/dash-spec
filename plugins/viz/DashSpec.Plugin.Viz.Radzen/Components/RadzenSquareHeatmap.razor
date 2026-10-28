@@ -261,15 +261,30 @@
             Context(yi, 0, Matrix.Cells[yi][0], MatrixClickSources.CategoryItem));
     }
 
-    private HeatmapCellContext Context(int yi, int xi, double? value, string clickSource) =>
-        new(
+    private HeatmapCellContext Context(int yi, int xi, double? value, string clickSource)
+    {
+        DateTime? bucketStart = null;
+        DateTime? bucketEnd = null;
+        if (Matrix.XBucketStarts is { } buckets && xi < buckets.Count)
+        {
+            bucketStart = buckets[xi];
+            bucketEnd = xi + 1 < buckets.Count
+                ? buckets[xi + 1]
+                : buckets.Count > 1
+                    ? buckets[xi] + (buckets[xi] - buckets[xi - 1])
+                    : null;
+        }
+
+        return new HeatmapCellContext(
             yi,
             xi,
             Matrix.XLabels[xi],
             Matrix.YLabels[yi],
             value,
             Matrix.Tooltips?[yi][xi],
-            Matrix.XBucketStarts is { } buckets && xi < buckets.Count ? buckets[xi] : null,
+            bucketStart,
+            bucketEnd,
             ClickSource: clickSource,
             FlowPath: FlowPath);
+    }
 }
