@@ -59,6 +59,7 @@ public static class QueryCompiler
         ArgumentNullException.ThrowIfNull(dialect);
 
         var rowSchema = rowTypes.GetRequired(card.DataSource.RowsType);
+        var dateTimeFrame = string.IsNullOrWhiteSpace(card.DataSource.TimeZone) ? null : card.DataSource.TimeZone;
 
         var fromClause = card.DataSource.Kind switch
         {
@@ -90,7 +91,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         if (TryBuildCategoryAggregateSelect(card.Diagram, out var aggregateSelect, out var groupBy))
@@ -106,7 +108,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         if (TryBuildTableAggregateSelect(card.Diagram, out var tableSelect, out var tableGroupBy))
@@ -122,7 +125,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         return new CompiledQuery(
@@ -135,7 +139,8 @@ public static class QueryCompiler
                 tableLimit,
                 dialect),
             parameters,
-            rowSchema);
+            rowSchema,
+                dateTimeFrame);
     }
 
     private static string BuildSelectSql(

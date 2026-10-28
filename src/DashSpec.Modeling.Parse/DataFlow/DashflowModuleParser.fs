@@ -30,6 +30,7 @@ module DashflowModuleParser =
         reader.SkipNewlines()
         let mutable providerBinding = None
         let mutable from: SourceFrom option = None
+        let mutable timeZone = ""
         let mutable outputPort = ""
         let mutable outputRowType = ""
         let mutable defaultOutputPort = None
@@ -38,6 +39,26 @@ module DashflowModuleParser =
             reader.SkipNewlines()
 
             if reader.IsAt TokenKind.RBrace then ()
+            elif reader.TryKeyword "time_zone" then
+                reader.Expect TokenKind.Eq
+
+                // `utc` лексер отдаёт как TimeShift-литерал (та же форма, что UTC+3), поэтому
+                // кроме идентификатора принимаем и TimeShift-токен.
+                let raw =
+                    match reader.CurrentKind with
+                    | TokenKind.Ident -> reader.ReadIdent()
+                    | TokenKind.TimeShift -> reader.ReadTimeShift()
+                    | TokenKind.String -> reader.ReadString()
+                    | _ -> raise (reader.Unexpected "time_zone value utc or local")
+
+                let value = raw.Trim().ToLowerInvariant()
+
+                if value <> "utc" && value <> "local" then
+                    raise (
+                        DashSpecParseException(
+                            $"source '{sourceId}': time_zone supports utc or local (got '{raw}')."))
+
+                timeZone <- value
             elif reader.TryKeyword "use" then
                 let useKind = reader.ReadIdent()
 
@@ -111,6 +132,7 @@ module DashflowModuleParser =
                 { Id = sourceId
                   Provider = binding
                   From = value
+                  TimeZone = timeZone
                   OutputPort = outputPort
                   OutputRowType = outputRowType
                   DefaultOutputPort = defaultOutputPort }
