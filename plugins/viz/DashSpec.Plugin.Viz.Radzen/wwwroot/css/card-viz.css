@@ -92,6 +92,15 @@
   color: transparent;
 }
 
+/* X-axis labels are click targets: the whole column drills (ADR-0107, "cell" source). */
+.rviz-shm-x-label--clickable {
+  cursor: pointer;
+}
+
+.rviz-shm-x-label--clickable:hover {
+  color: var(--rz-text-color, #e2e8f0);
+}
+
 .rviz-shm-y-label {
   font-size: 0.75rem;
   text-align: right;
