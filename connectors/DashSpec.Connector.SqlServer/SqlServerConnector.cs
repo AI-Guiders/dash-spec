@@ -25,7 +25,6 @@ public sealed class SqlServerConnector(IOptions<SqlServerConnectorOptions> optio
         {
             CommandTimeout = ResolveCommandTimeout(),
         };
-        Console.WriteLine($"[sql-debug] {query.Sql.Replace("\n", " ").Replace("\r", " ").Trim().Substring(0, Math.Min(400, query.Sql.Trim().Length))}");
         foreach (var parameter in query.Parameters)
         {
             command.Parameters.AddWithValue(NormalizeParameterName(parameter.Name), CoerceValue(parameter.Value));
