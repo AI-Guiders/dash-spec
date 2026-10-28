@@ -32,6 +32,43 @@ public static class HeatmapCellFilterResolver
             }
         }
 
+        // Ячейка heatmap несёт точный интервал: Date-фильтр drill-карточки по той же datetime-колонке
+        // (bucket_start_utc) связывается с интервалом ячейки — grain таблицы следует за видом.
+        if (context.XBucketUtc is { } bucketStart && context.XBucketEndUtc is { } bucketEnd)
+        {
+            foreach (var filter in filterIndex.Values)
+            {
+                if (filter.Kind != FilterKind.Date)
+                {
+                    continue;
+                }
+
+                var filterColumn = filter.ColumnReference?.Value ?? filter.Name;
+                if (!filterColumn.Contains("bucket_start_utc", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var storageFrom = bucketStart;
+                var storageTo = bucketEnd;
+                if (context.FlowPath is { } flow)
+                {
+                    try
+                    {
+                        var inverse = flow.Invert();
+                        storageFrom = inverse.ApplyToDateTime(storageFrom);
+                        storageTo = inverse.ApplyToDateTime(storageTo);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // Граф необратим — фильтр по интервалу не накладываем.
+                    }
+                }
+
+                overlay.SetDateTimeRange(filter.Name, storageFrom, storageTo);
+            }
+        }
+
         foreach (var bind in binds)
         {
             var (filterName, field) = bind.TryGetFilterBind!.Value;

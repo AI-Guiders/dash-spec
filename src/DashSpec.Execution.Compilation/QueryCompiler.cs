@@ -129,9 +129,17 @@ public static class QueryCompiler
                 dateTimeFrame);
         }
 
+        // Таблица: опциональный distinct — дедупликация строк (например, drill по ячейке
+        // heatmap: одна строка на пользака, не на каждую 5-минутку).
+        var tableSelectColumns = ResolveSelectColumns(card);
+        if (string.Equals(card.Diagram.Properties.GetValueOrDefault("distinct"), "true", StringComparison.OrdinalIgnoreCase))
+        {
+            tableSelectColumns = "DISTINCT " + tableSelectColumns;
+        }
+
         return new CompiledQuery(
             BuildSelectSql(
-                ResolveSelectColumns(card),
+                tableSelectColumns,
                 fromClause,
                 whereBuilder.ToString(),
                 groupBy: null,
