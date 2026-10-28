@@ -34,9 +34,7 @@ public class PlacementVariantsPlanningTests
                 .Label("wide is the declared placement")
                 .And(variants.Mid.Span >= 1).Label("mid span at least one")
                 .And(variants.Mid.Span <= PlacementVariantsPlanning.MidColumns(columns)).Label("mid span within mid grid")
-                .And(variants.Mid.Row == row).Label("mid keeps the declared row")
-                .And((col == 0 || (variants.Mid.Col >= 1 && variants.Mid.Col <= PlacementVariantsPlanning.MidColumns(columns))))
-                    .Label("mid keeps declared columns rescaled, auto cells stay auto")
+                .And(variants.Mid.Row == 0 && variants.Mid.Col == 0).Label("mid auto-flows")
                 .And(variants.Narrow.Equals(new PlacementDefinition(0, 0, 1))).Label("narrow stacks full width");
         });
     }
@@ -116,9 +114,8 @@ public class PlacementVariantsPlanningTests
 
         Assert.Contains("--gc:3 / span 4;", declared);
         Assert.Contains("--gr:2;", declared);
-        // mid keeps the declared cell, rescaled into half the grid: col 3→2, span 4→2
-        Assert.Contains("--gc-mid:2 / span 2;", declared);
-        Assert.Contains("--gr-mid:2;", declared);
+        Assert.Contains("--gc-mid:auto / span 2;", declared);
+        Assert.Contains("--gr-mid:auto;", declared);
         Assert.Contains("--gc-narrow:auto / span 1;", declared);
 
         var defaulted = PlacementGridCss.SlotStyle(
