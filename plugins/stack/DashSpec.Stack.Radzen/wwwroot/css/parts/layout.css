@@ -165,10 +165,6 @@
   margin-bottom: 1rem;
 }
 
-.dash-catalog-row {
-  margin: -0.5rem 0 0.75rem;
-}
-
 .dash-catalog {
   display: flex;
   flex-direction: column;
