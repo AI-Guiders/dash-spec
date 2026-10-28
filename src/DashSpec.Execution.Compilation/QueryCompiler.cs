@@ -687,7 +687,7 @@ public static class QueryCompiler
         return definition.Kind switch
         {
             FilterKind.Date when cellDrillOverlay?.TryGetDateTimeRange(definition.Name, out var drillRange) == true =>
-                BuildDateTimeRangeClause(definition, drillRange, parameters, dialect),
+                BuildDateTimeRangeClause(definition, drillRange, parameters),
             FilterKind.Date when cellDrillOverlay?.TryGetDate(definition.Name, out var drillDate) == true =>
                 BuildDateClause(drillDate, definition, filters, parameters, dialect),
             FilterKind.Field when cellDrillOverlay?.TryGetField(definition.Name, out var drillField) == true =>
@@ -712,8 +712,7 @@ public static class QueryCompiler
     private static string BuildDateTimeRangeClause(
         FilterDefinition definition,
         (DateTime From, DateTime To) range,
-        List<QueryParameter> parameters,
-        ISqlDialectBackend dialect)
+        List<QueryParameter> parameters)
     {
         var variable = definition.Name;
         var column = ResolveColumnName(definition.ColumnReference?.Value, variable);
@@ -723,9 +722,10 @@ public static class QueryCompiler
         parameters.Add(new QueryParameter(fromParam, range.From));
         parameters.Add(new QueryParameter(toParam, range.To));
 
-        var upperExclusive = dialect.FormatDateRangeUpperExclusive(toParam);
-
-        return $"{column} >= {fromParam} AND {column} < {upperExclusive}";
+        // Диапазон ячейки heatmap — точный полуинтервал [from, to): верхняя граница — уже
+        // эксклюзивный инстант (следующий бакет вида). Суточный сдвиг диалекта
+        // (FormatDateRangeUpperExclusive) здесь не нужен — тот смысл для DateOnly-дней.
+        return $"{column} >= {fromParam} AND {column} < {toParam}";
     }
 
     private static string? BuildDateClause(
