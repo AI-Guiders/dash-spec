@@ -209,9 +209,14 @@ public static class HeatmapCellFilterResolver
             return storageBucket.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         }
 
-        if (column.Contains("bucket_hour_hhmm", StringComparison.OrdinalIgnoreCase))
+        if (column.Contains("bucket_hour", StringComparison.OrdinalIgnoreCase))
         {
-            var hourFloor = new TimeOnly(time.Hour, 0);
+            // Метка оси — в display-кадре графа (to_zone), колонка в базе — в storage-кадре.
+            // G⁻¹ возвращает значение в кадр базы (08:00 МСК → 05:00 UTC).
+            var storage = context.FlowPath is { } flow
+                ? flow.Invert().ApplyToTime(time)
+                : time;
+            var hourFloor = new TimeOnly(storage.Hour, 0);
             return hourFloor.ToString("HH:mm", CultureInfo.InvariantCulture);
         }
 

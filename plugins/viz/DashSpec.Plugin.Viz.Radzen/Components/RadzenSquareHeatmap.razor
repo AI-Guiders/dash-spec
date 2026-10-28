@@ -104,6 +104,10 @@
     [Parameter]
     public string? Style { get; set; } = "width:100%";
 
+    /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹ в storage-кадр.</summary>
+    [Parameter]
+    public DashflowExecutionPath? FlowPath { get; set; }
+
     /// <summary>The viz-state key (ADR-0062): the display toolbar's toggles land here.</summary>
     [Parameter]
     public string? VizStateCardId { get; set; }
@@ -266,5 +270,6 @@
             value,
             Matrix.Tooltips?[yi][xi],
             Matrix.XBucketStarts is { } buckets && xi < buckets.Count ? buckets[xi] : null,
-            ClickSource: clickSource);
+            ClickSource: clickSource,
+            FlowPath: FlowPath);
 }

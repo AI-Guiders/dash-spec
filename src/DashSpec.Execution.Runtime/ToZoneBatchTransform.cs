@@ -2,7 +2,7 @@ using DashSpec.Abstractions.Data;
 
 namespace DashSpec.Execution.Runtime;
 
-/// <summary>Apply <c>to_zone</c> on typed row batches (UTC DateTime cells → fixed-offset civil).</summary>
+/// <summary>Apply <c>to_zone</c> on typed row batches (UTC DateTime/Time cells → fixed-offset civil).</summary>
 public static class ToZoneBatchTransform
 {
     public static TypedRowBatch Apply(TypedRowBatch batch, IReadOnlyList<DashflowTransformParameterDefinition> parameters)
@@ -20,13 +20,13 @@ public static class ToZoneBatchTransform
             return batch;
         }
 
-        var dateTimeFieldIndexes = batch.Schema.Fields
+        var shiftableFieldIndexes = batch.Schema.Fields
             .Select((field, index) => (field, index))
-            .Where(t => t.field.Kind == DashPrimitiveKind.DateTime)
+            .Where(t => t.field.Kind is DashPrimitiveKind.DateTime or DashPrimitiveKind.Time)
             .Select(t => t.index)
             .ToArray();
 
-        if (dateTimeFieldIndexes.Length == 0)
+        if (shiftableFieldIndexes.Length == 0)
         {
             return batch;
         }
@@ -40,17 +40,25 @@ public static class ToZoneBatchTransform
                 cells[i] = row.Get(batch.Schema.Fields[i].Name);
             }
 
-            foreach (var index in dateTimeFieldIndexes)
+            foreach (var index in shiftableFieldIndexes)
             {
                 var cell = cells[index];
-                if (cell.IsNull || cell.Kind != DashPrimitiveKind.DateTime)
+                if (cell.IsNull)
                 {
                     continue;
                 }
 
-                cells[index] = DashValue.FromDateTimeWithUtcOffset(
-                    ConvertUtcToOffset(cell.AsDateTimeUtc(), offsetMinutes),
-                    offsetMinutes);
+                cells[index] = cell.Kind switch
+                {
+                    // datetime: UTC → гражданское, офсет едет вместе со значением.
+                    DashPrimitiveKind.DateTime => DashValue.FromDateTimeWithUtcOffset(
+                        ConvertUtcToOffset(cell.AsDateTimeUtc(), offsetMinutes),
+                        offsetMinutes),
+                    // time суток едет в тот же гражданский кадр, что и datetime рядом
+                    // (05:00 UTC + 3 = 08:00; переход через сутки заворачивается в 00:00).
+                    DashPrimitiveKind.Time => DashValue.FromTime(cell.AsTime().AddMinutes(offsetMinutes)),
+                    _ => cell,
+                };
             }
 
             rowValues.Add(cells);

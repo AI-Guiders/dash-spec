@@ -31,6 +31,7 @@
                       ValueLabel="@presentation?.ValueLabel"
                       XFormat="@(presentation?.XFormat ?? "date.short")"
                       YFormat="@(presentation?.YFormat ?? "user.short")"
+                      FlowPath="@(Context.Card.FlowPath)"
                       ColorScale="@(presentation?.ColorScale ?? "heat")"
                       ValueLabelsWire="@valueLabelsWire"
                       ValueLabelsThresholdPx="@spec.ValueLabelsThresholdPx"
