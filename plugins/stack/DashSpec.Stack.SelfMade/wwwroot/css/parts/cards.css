@@ -13,7 +13,6 @@
 .cards > *,
 .card-nest-cards > *,
 .card-group-cards > *,
-.card-interior-grid > *,
 .card-head-toolbar-filters--grid > * {
   grid-column: var(--gc, auto);
   grid-row: var(--gr, auto);
@@ -26,7 +25,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-mid, auto);
     grid-row: var(--gr-mid, auto);
@@ -40,7 +38,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-narrow, auto);
     grid-row: var(--gr-narrow, auto);

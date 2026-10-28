@@ -13,7 +13,6 @@
 .cards > *,
 .card-nest-cards > *,
 .card-group-cards > *,
-.card-interior-grid > *,
 .card-head-toolbar-filters--grid > * {
   grid-column: var(--gc, auto);
   grid-row: var(--gr, auto);
@@ -26,7 +25,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-mid, auto);
     grid-row: var(--gr-mid, auto);
@@ -40,7 +38,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-narrow, auto);
     grid-row: var(--gr-narrow, auto);
@@ -125,10 +122,6 @@
   .card-diagram-slot {
     min-height: min(360px, 45vh);
   }
-}
-
-.card-wide {
-  /* placement via grid-column in spec */
 }
 
 .card-kpi {
@@ -333,13 +326,11 @@
   overflow: auto;
 }
 
-.card-fullscreen-body .chart-wrap,
-.card-fullscreen-body .matrix-wrap {
+.card-fullscreen-body .chart-wrap {
   min-height: min(72vh, 720px);
 }
 
-.card-fullscreen-body .chart-wrap-detail,
-.card-fullscreen-body .matrix-wrap-detail {
+.card-fullscreen-body .chart-wrap-detail {
   min-height: 0;
 }
 
