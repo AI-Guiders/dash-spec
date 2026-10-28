@@ -686,6 +686,8 @@ public static class QueryCompiler
     {
         return definition.Kind switch
         {
+            FilterKind.Date when cellDrillOverlay?.TryGetDateTimeRange(definition.Name, out var drillRange) == true =>
+                BuildDateTimeRangeClause(definition, drillRange, parameters, dialect),
             FilterKind.Date when cellDrillOverlay?.TryGetDate(definition.Name, out var drillDate) == true =>
                 BuildDateClause(drillDate, definition, filters, parameters, dialect),
             FilterKind.Field when cellDrillOverlay?.TryGetField(definition.Name, out var drillField) == true =>
@@ -705,6 +707,25 @@ public static class QueryCompiler
 
         var lastDot = columnReference.LastIndexOf('.');
         return lastDot >= 0 ? columnReference[(lastDot + 1)..] : columnReference;
+    }
+
+    private static string BuildDateTimeRangeClause(
+        FilterDefinition definition,
+        (DateTime From, DateTime To) range,
+        List<QueryParameter> parameters,
+        ISqlDialectBackend dialect)
+    {
+        var variable = definition.Name;
+        var column = ResolveColumnName(definition.ColumnReference?.Value, variable);
+
+        var fromParam = $"@{variable}_from";
+        var toParam = $"@{variable}_to";
+        parameters.Add(new QueryParameter(fromParam, range.From));
+        parameters.Add(new QueryParameter(toParam, range.To));
+
+        var upperExclusive = dialect.FormatDateRangeUpperExclusive(toParam);
+
+        return $"{column} >= {fromParam} AND {column} < {upperExclusive}";
     }
 
     private static string? BuildDateClause(

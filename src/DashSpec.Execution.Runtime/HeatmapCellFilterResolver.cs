@@ -48,6 +48,8 @@ public static class HeatmapCellFilterResolver
 
             switch (filter.Kind)
             {
+                case FilterKind.Date when TryOverlayBucketRange(filter, context, overlay, filterName):
+                    break;
                 case FilterKind.Date when TryParseHeatmapDateFilter(raw, filterName, filters, out var day):
                     overlay.SetDate(filterName, day, day);
                     break;
@@ -222,6 +224,44 @@ public static class HeatmapCellFilterResolver
         }
 
         return raw;
+    }
+
+    /// <summary>
+    /// Клик по ячейке с datetime-осью превращается в точный диапазон storage-времени
+    /// [бакет, бакет + шаг вида): данные drill-таблицы совпадают с ячейкой на любом grain.
+    /// </summary>
+    private static bool TryOverlayBucketRange(
+        FilterDefinition filter,
+        HeatmapCellContext context,
+        CardCellDrillOverlay overlay,
+        string filterName)
+    {
+        var column = filter.ColumnReference?.Value ?? filter.Name;
+        if (!column.Contains("bucket_start_utc", StringComparison.OrdinalIgnoreCase) ||
+            context.XBucketUtc is not { } start ||
+            context.XBucketEndUtc is not { } end)
+        {
+            return false;
+        }
+
+        var storageFrom = start;
+        var storageTo = end;
+        if (context.FlowPath is { } flow)
+        {
+            try
+            {
+                var inverse = flow.Invert();
+                storageFrom = inverse.ApplyToDateTime(storageFrom);
+                storageTo = inverse.ApplyToDateTime(storageTo);
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+        }
+
+        overlay.SetDateTimeRange(filterName, storageFrom, storageTo);
+        return true;
     }
 
     private static DateOnly? ResolveAnchorDay(IEnumerable<string>? anchorDateFilterNames, FilterState filters)

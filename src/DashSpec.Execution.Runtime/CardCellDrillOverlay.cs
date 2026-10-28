@@ -31,6 +31,24 @@ public sealed class CardCellDrillOverlay
     public void SetFieldDisplay(string filterName, string value) =>
         _fieldDisplay[filterName] = value;
 
+    private readonly Dictionary<string, (DateTime From, DateTime To)> _dateTimeRanges = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Диапазон storage-времени для drill-фильтра по datetime-колонке (точный интервал ячейки).</summary>
+    public void SetDateTimeRange(string filterName, DateTime from, DateTime to) =>
+        _dateTimeRanges[filterName] = (from, to);
+
+    public bool TryGetDateTimeRange(string filterName, out (DateTime From, DateTime To) range)
+    {
+        if (_dateTimeRanges.TryGetValue(filterName, out var value))
+        {
+            range = value;
+            return true;
+        }
+
+        range = default;
+        return false;
+    }
+
     public bool TryGetDate(string filterName, out DateRangeValue range) =>
         _dates.TryGetValue(filterName, out range);
 
@@ -59,6 +77,11 @@ public sealed class CardCellDrillOverlay
                 yield return name;
             }
 
+            foreach (var name in _dateTimeRanges.Keys)
+            {
+                yield return name;
+            }
+
             foreach (var name in _fields.Keys)
             {
                 yield return name;
@@ -66,5 +89,5 @@ public sealed class CardCellDrillOverlay
         }
     }
 
-    public bool IsEmpty => _dates.Count == 0 && _fields.Count == 0;
+    public bool IsEmpty => _dates.Count == 0 && _fields.Count == 0 && _dateTimeRanges.Count == 0;
 }

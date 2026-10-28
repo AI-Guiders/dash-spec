@@ -12,6 +12,7 @@ public sealed record HeatmapCellContext(
     double? Value,
     string? TooltipRaw,
     DateTime? XBucketUtc = null,
+    DateTime? XBucketEndUtc = null,
     // ADR-0107: click source — the plugin-declared surface that was clicked
     // (e.g. matrix "category item"); null = the generic click (cells, chart categories).
     string? ClickSource = null,

@@ -299,6 +299,9 @@ else
         var xBucket = Payload.XBucketStarts is { Count: > 0 } buckets && hit.Xi >= 0 && hit.Xi < buckets.Count
             ? buckets[hit.Xi]
             : (DateTime?)null;
+        DateTime? xBucketEnd = xBucket is { } start && hit.Xi + 1 < buckets.Count
+            ? buckets[hit.Xi + 1]
+            : null;
         var context = new HeatmapCellContext(
             hit.Yi,
             hit.Xi,
@@ -307,6 +310,7 @@ else
             hit.Value,
             Payload.Tooltips?[hit.Yi][hit.Xi],
             xBucket,
+            xBucketEnd,
             // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
             // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
             DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell,

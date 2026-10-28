@@ -55,6 +55,24 @@ public sealed record DashflowExecutionPath(
         return value.AddMinutes(minutes);
     }
 
+    /// <summary>Применить путь к полному моменту времени (для диапазонов drill-фильтров).</summary>
+    public DateTime ApplyToDateTime(DateTime value)
+    {
+        var minutes = 0.0;
+        foreach (var transformer in Transformers)
+        {
+            foreach (var step in transformer.Steps)
+            {
+                if (step.PluginId.Equals(BuiltinScalarTransformIds.ToZone, StringComparison.OrdinalIgnoreCase))
+                {
+                    minutes += ToZoneOffsetMinutes(step);
+                }
+            }
+        }
+
+        return value.AddMinutes(minutes);
+    }
+
     private static DashflowTransformStepDefinition InvertStep(DashflowTransformStepDefinition step)
     {
         if (!step.PluginId.Equals(BuiltinScalarTransformIds.ToZone, StringComparison.OrdinalIgnoreCase))
