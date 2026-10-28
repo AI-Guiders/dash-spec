@@ -508,6 +508,59 @@ public class ChartDataBuilderTests
     }
 
     [Fact]
+    public void BuildHeatmap_after_to_zone_transform_shows_civil_hours()
+    {
+        var previous = LabelFormat.DisplayTimeZone;
+        LabelFormat.DisplayTimeZone = TimeZoneInfo.CreateCustomTimeZone(
+            "UTC+03-test", TimeSpan.FromHours(3), "UTC+03", "UTC+03");
+        try
+        {
+            var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["x"] = "bucket_start_utc",
+                ["y"] = "app_name",
+                ["value"] = "event_count",
+                ["x_format"] = "time.short",
+                ["x_step"] = "1h",
+                ["y_format"] = "raw",
+            }, null);
+
+            var schema = new RowTypeSchema("ActivityBucketRow",
+            [
+                new RowFieldSchema("bucket_start_utc", DashPrimitiveKind.DateTime),
+                new RowFieldSchema("app_name", DashPrimitiveKind.String),
+                new RowFieldSchema("event_count", DashPrimitiveKind.Int),
+            ]);
+            // Ровно рантайм-последовательность: коннектор отдал сырые UTC-строки, дальше to_zone +3.
+            // 2026-10-27 21:00 UTC = 2026-10-28 00:00 МСК → первая метка 00:00, не 21:00.
+            var raw = TypedRowBatch.Create(schema, new List<DashValue[]>
+            {
+                new[]
+                {
+                    DashValue.FromDateTimeUtc(new DateTime(2026, 10, 27, 21, 0, 0, DateTimeKind.Utc)),
+                    DashValue.FromString("ANSYS"),
+                    DashValue.FromInt(7),
+                },
+            });
+            var transformed = ToZoneBatchTransform.Apply(
+                raw,
+                [
+                    new DashflowTransformParameterDefinition("zone", "UTC+3"),
+                    new DashflowTransformParameterDefinition("offset_minutes", "180"),
+                ]);
+
+            var matrix = ChartDataBuilder.BuildHeatmap(transformed, diagram);
+
+            Assert.Equal("00:00", matrix.XLabels[0]);
+            Assert.Equal(7, matrix.Cells[0][0]);
+        }
+        finally
+        {
+            LabelFormat.DisplayTimeZone = previous;
+        }
+    }
+
+    [Fact]
     public void BuildHeatmap_series_max_keeps_all_y_rows_for_viewport_scroll()
     {
         var diagram = new DiagramDefinition("heatmap", new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
