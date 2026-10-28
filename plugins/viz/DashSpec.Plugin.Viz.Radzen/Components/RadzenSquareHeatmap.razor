@@ -35,9 +35,13 @@
                 {
                     var xIndex = xi;
                     var showXLabel = ShowAxisLabelsX && ShouldShowXLabel(xi);
-                    <div class="rviz-shm-x-label @(showXLabel ? null : "rviz-shm-x-label-sparse")"
+                    <div class="rviz-shm-x-label rviz-shm-x-label--clickable @(showXLabel ? null : "rviz-shm-x-label-sparse")"
                          style="grid-row:1;grid-column:@(xi + 2)"
-                         title="@(ShowAxisLabelsX ? FormatXLabel(XLabel(xIndex)) : null)">
+                         role="button"
+                         tabindex="0"
+                         title="@(ShowAxisLabelsX ? FormatXLabel(XLabel(xIndex)) : null)"
+                         @onclick="() => SelectXLabel(xIndex)"
+                         @onclick:stopPropagation="true">
                         @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
                     </div>
                 }
@@ -257,23 +261,24 @@
         _selectedYi = null;
         _selectedXi = null;
 
-        await OnCategoryItemSelected.InvokeAsync(
-            Context(yi, 0, Matrix.Cells[yi][0], MatrixClickSources.CategoryItem));
+        // Canvas-parity: a category click carries no bucket instants — otherwise the
+        // resolver's auto bucket-range overlay pins the drill to the axis's first bucket.
+        await OnCategoryItemSelected.InvokeAsync(new HeatmapCellContext(
+            yi,
+            -1,
+            string.Empty,
+            Matrix.YLabels[yi],
+            null,
+            null,
+            null,
+            null,
+            ClickSource: MatrixClickSources.CategoryItem,
+            FlowPath: FlowPath));
     }
 
     private HeatmapCellContext Context(int yi, int xi, double? value, string clickSource)
     {
-        DateTime? bucketStart = null;
-        DateTime? bucketEnd = null;
-        if (Matrix.XBucketStarts is { } buckets && xi < buckets.Count)
-        {
-            bucketStart = buckets[xi];
-            bucketEnd = xi + 1 < buckets.Count
-                ? buckets[xi + 1]
-                : buckets.Count > 1
-                    ? buckets[xi] + (buckets[xi] - buckets[xi - 1])
-                    : null;
-        }
+        var (bucketStart, bucketEnd) = BucketInterval(xi);
 
         return new HeatmapCellContext(
             yi,
@@ -286,5 +291,44 @@
             bucketEnd,
             ClickSource: clickSource,
             FlowPath: FlowPath);
+    }
+
+    /// <summary>Полуинтервал бакета колонки [start, end): конец следующего бакета, для
+    /// последнего — шаг сетки (разница соседних starts).</summary>
+    private (DateTime? Start, DateTime? End) BucketInterval(int xi)
+    {
+        if (Matrix.XBucketStarts is not { } buckets || xi >= buckets.Count)
+        {
+            return (null, null);
+        }
+
+        var start = buckets[xi];
+        var end = xi + 1 < buckets.Count
+            ? buckets[xi + 1]
+            : buckets.Count > 1
+                ? start + (start - buckets[xi - 1])
+                : (DateTime?)null;
+        return (start, end);
+    }
+
+    /// <summary>X-axis label click: the whole column — one time bucket, all categories.
+    /// Fires through the "cell" source: the <c>on click</c> | cell | row binds the bucket
+    /// interval via <c>activity_slot=x</c>; the <c>y</c> bind stays empty and the resolver
+    /// skips it — so the drill shows the hour across every product.</summary>
+    private async Task SelectXLabel(int xi)
+    {
+        var (bucketStart, bucketEnd) = BucketInterval(xi);
+
+        await OnCellSelected.InvokeAsync(new HeatmapCellContext(
+            -1,
+            xi,
+            Matrix.XLabels[xi],
+            string.Empty,
+            null,
+            null,
+            bucketStart,
+            bucketEnd,
+            ClickSource: MatrixClickSources.Cell,
+            FlowPath: FlowPath));
     }
 }
