@@ -5,6 +5,8 @@ public sealed class CardCellDrillOverlay
 {
     private readonly Dictionary<string, DateRangeValue> _dates = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, HashSet<string>> _fields = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Display-кадр (как на оси) для заголовков; query-значения живут в _fields.</summary>
+    private readonly Dictionary<string, string> _fieldDisplay = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Target slot ref of the drill this overlay came from (ADR-0107): the overlay applies
@@ -25,6 +27,10 @@ public sealed class CardCellDrillOverlay
     public void SetField(string filterName, string value) =>
         _fields[filterName] = new HashSet<string>([value], StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Значение в display-кадре (метка оси) для заголовков; query читает SetField.</summary>
+    public void SetFieldDisplay(string filterName, string value) =>
+        _fieldDisplay[filterName] = value;
+
     public bool TryGetDate(string filterName, out DateRangeValue range) =>
         _dates.TryGetValue(filterName, out range);
 
@@ -39,6 +45,9 @@ public sealed class CardCellDrillOverlay
         values = null!;
         return false;
     }
+
+    public bool TryGetFieldDisplay(string filterName, out string value) =>
+        _fieldDisplay.TryGetValue(filterName, out value!);
 
     /// <summary>Filter names this overlay carries (ADR-0109: the click bind is the overlay's own scope).</summary>
     public IEnumerable<string> FilterNames

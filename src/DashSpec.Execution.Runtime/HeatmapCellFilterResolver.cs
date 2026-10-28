@@ -56,6 +56,7 @@ public static class HeatmapCellFilterResolver
                     if (!string.IsNullOrWhiteSpace(wire))
                     {
                         overlay.SetField(filterName, wire);
+                        overlay.SetFieldDisplay(filterName, raw);
                     }
 
                     break;

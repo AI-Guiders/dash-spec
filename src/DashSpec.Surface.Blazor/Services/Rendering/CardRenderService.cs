@@ -537,8 +537,6 @@ public sealed class CardRenderService(
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[drill-debug] slot '{slotRef}' render failed: {ex}");
-
                 renders[slotRef] = new CardSlotRenderResult(
                     slotRef,
                     slot.Diagram.Kind,

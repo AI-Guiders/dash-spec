@@ -30,6 +30,13 @@ public static class DrillSlotTitleResolver
                     return LabelFormat.FormatObject(range.From, LabelFormat.ResolveDateFormat("date.short"));
                 }
 
+                // Заголовок — для человека: display-кадр (метка оси), не storage-значение запроса.
+                if (overlay.TryGetFieldDisplay(name, out var display) &&
+                    !string.IsNullOrWhiteSpace(display))
+                {
+                    return display;
+                }
+
                 if (overlay.TryGetField(name, out var values))
                 {
                     var value = values.FirstOrDefault();
