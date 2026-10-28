@@ -4,11 +4,12 @@ using DashSpec.Modeling.Parse.Layout;
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>
-/// Viewport-class variant planning ([ADR-0111] §7): the same placement under each viewport
-/// class, derived once at assembly. The wide class keeps the author's grid as declared;
-/// mid re-scales columns and spans proportionally into half the grid — slots keep their
-/// declared order and relative width (no dense-flow reshuffles); narrow stacks full width.
-/// The browser switches variants by media query — pure CSS, zero runtime computation.
+/// Viewport-class variant planning ([ADR-0111] §7) for **declared boards** (page/tab grids
+/// with explicit cells): the wide class keeps the author's grid as declared; mid re-scales
+/// spans into half the columns and lets the grid auto-flow (dense) — dense never overlaps,
+/// so declared boards need no packing; narrow stacks everything full width. Card interiors
+/// are not this path — auto interiors are a flex flow ([ADR-0116]). The browser switches
+/// variants by media query — pure CSS, zero runtime computation.
 /// </summary>
 public static class PlacementVariantsPlanning
 {
@@ -31,23 +32,9 @@ public static class PlacementVariantsPlanning
         return new PlacementVariants
         {
             Wide = wide,
-            // Mid keeps the slot's declared column (rescaled) — auto-flow dense reordered
-            // slots and stranded wide-content slots (heatmap right, dead space left).
-            Mid = new PlacementDefinition(
-                wide.Row,
-                ScaleColumn(wide.Col, wideColumns, midColumns),
-                ScaleSpan(wide.Span, wideColumns, midColumns)),
+            Mid = new PlacementDefinition(0, 0, ScaleSpan(wide.Span, wideColumns, midColumns)),
             Narrow = new PlacementDefinition(0, 0, 1),
         };
-    }
-
-    /// <summary>Proportional column re-scaling (1-based), never zero, never past the class grid.</summary>
-    public static int ScaleColumn(int wideColumn, int wideColumns, int classColumns)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(wideColumns, 1);
-        ArgumentOutOfRangeException.ThrowIfLessThan(classColumns, 1);
-        var scaled = (int)Math.Round(wideColumn * (double)classColumns / wideColumns, MidpointRounding.AwayFromZero);
-        return Math.Clamp(scaled, 1, classColumns);
     }
 
     /// <summary>Proportional span re-scaling, never zero, never past the class grid.</summary>
