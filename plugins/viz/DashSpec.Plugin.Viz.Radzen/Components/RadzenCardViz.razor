@@ -130,6 +130,7 @@ else
                 <RadzenSquareHeatmap Matrix="@Matrix"
                                      Presentation="@Context.Card.MatrixPresentation"
                                      VizStateCardId="@Context.ResolveVizStateCardId()"
+                                     FlowPath="@Context.Card.FlowPath"
                                      OnCellSelected="@Context.OnHeatmapCellSelected"
                                      OnCategoryItemSelected="@Context.OnHeatmapCategoryItemSelected"
                                      Style="width:100%;height:100%" />

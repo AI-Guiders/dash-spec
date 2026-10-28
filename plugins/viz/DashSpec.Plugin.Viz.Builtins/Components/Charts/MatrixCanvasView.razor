@@ -109,6 +109,9 @@ else
 
     [Parameter] public string XFormat { get; set; } = "date.short";
 
+    /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹ в storage-кадр.</summary>
+    [Parameter] public DashSpec.Execution.Runtime.DashflowExecutionPath? FlowPath { get; set; }
+
     [Parameter] public string YFormat { get; set; } = "user.short";
 
     [Parameter] public string ColorScale { get; set; } = "heat";
@@ -306,7 +309,8 @@ else
             xBucket,
             // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
             // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
-            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell);
+            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell,
+            FlowPath);
 
         await OnCellSelected.InvokeAsync(context);
     }
@@ -331,7 +335,8 @@ else
             null,
             null,
             null,
-            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem);
+            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem,
+            FlowPath);
 
         await OnCategoryItemSelected.InvokeAsync(context);
     }

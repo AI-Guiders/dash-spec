@@ -76,6 +76,7 @@ else
                 OnHeatmapCellSelected = OnHeatmapCellSelected,
                 OnHeatmapCategoryItemSelected = OnHeatmapCategoryItemSelected,
                 VizStateCardId = Slot is null ? null : Card.Id,
+                FlowPath = Slot?.FlowPath ?? Card.FlowPath,
             },
         };
     }

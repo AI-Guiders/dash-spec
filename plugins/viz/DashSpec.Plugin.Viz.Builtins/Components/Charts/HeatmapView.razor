@@ -153,6 +153,10 @@ else
     [Parameter]
     public string XFormat { get; set; } = "date.short";
 
+    /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹ в storage-кадр.</summary>
+    [Parameter]
+    public DashSpec.Execution.Runtime.DashflowExecutionPath? FlowPath { get; set; }
+
     [Parameter]
     public string YFormat { get; set; } = "user.short";
 
@@ -256,7 +260,8 @@ else
             Payload.YLabels[yi],
             value,
             Payload.Tooltips?[yi][xi],
-            ClickSource: DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell);
+            ClickSource: DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell,
+            FlowPath: FlowPath);
 
         await OnCellSelected.InvokeAsync(context);
     }

@@ -42,7 +42,9 @@ public sealed record CardRenderResult(
     bool ShowChromeTitle = true,
     CardFoldMode FoldMode = CardFoldMode.None,
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
-    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null)
+    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null,
+    /// <summary>Граф (G), которым получены данные карточки: клик-значения конвертируются его инверсией.</summary>
+    DashflowExecutionPath? FlowPath = null)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 

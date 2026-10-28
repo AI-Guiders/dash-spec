@@ -73,6 +73,7 @@ public sealed class CardRenderService(
             var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
             var effective = resolved.Card;
             var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(effective);
+            var flowPath = ResolveFlowPath(document, effective);
             return await RenderSecondarySlotsAsync(
                 effective,
                 document,
@@ -82,11 +83,34 @@ public sealed class CardRenderService(
                 connector,
                 specDirectory,
                 primarySlotRef,
+                flowPath,
                 cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    /// <summary>Граф (G) получения данных карточки, если у неё есть flow-вход; иначе null.</summary>
+    private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition effective)
+    {
+        if (document.Dashflow is null || effective.FlowInput?.Value is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return FlowCardExecution.ResolvePath(document, effective.FlowInput.Value);
+        }
+        catch (DashSpecParseException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
         }
     }
 
@@ -113,6 +137,7 @@ public sealed class CardRenderService(
             reportTimePolicy: reportTime);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
+        var flowPath = ResolveFlowPath(document, effective);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
             ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -145,6 +170,7 @@ public sealed class CardRenderService(
             connector,
             specDirectory,
             primarySlotRef,
+            flowPath,
             cancellationToken).ConfigureAwait(false);
 
         CardRenderResult AttachSlots(CardRenderResult result)
@@ -155,6 +181,7 @@ public sealed class CardRenderService(
             {
                 LocalFilterChromePlacements = localFilterChromePlacements,
                 FormatDefaults = document.ResolvedFormatDefaults,
+                FlowPath = flowPath,
             };
             return interiorSlotRenders.Count == 0
                 ? result
@@ -326,6 +353,7 @@ public sealed class CardRenderService(
         IDataSourceConnector connector,
         string? specDirectory,
         string primarySlotRef,
+        DashflowExecutionPath? flowPath,
         CancellationToken cancellationToken)
     {
         var slots = CardDiagramSlotCatalog.ResolveSlots(card);
@@ -502,15 +530,20 @@ public sealed class CardRenderService(
                         effective.Diagram.Properties.GetValueOrDefault("title"),
                         slotOverlay),
                     FormatDefaults = document.ResolvedFormatDefaults,
+                    // Клик-значения слота живут в display-кадре родительской оси (to_zone):
+                    // для фильтров по storage-колонкам они конвертируются инверсией графа.
+                    FlowPath = flowPath,
                 };
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[drill-debug] slot '{slotRef}' render failed: {ex}");
+
                 renders[slotRef] = new CardSlotRenderResult(
                     slotRef,
                     slot.Diagram.Kind,
                     DiagramDataFamily.Table,
-                    string.Empty,
+                    vizPlugins.Resolve(DiagramDataFamily.Table, slot.Diagram.Kind),
                     Error: RenderErrorFormatter.ForCard(ex, errorContext, slotRef),
                     FormatDefaults: document.ResolvedFormatDefaults);
             }
