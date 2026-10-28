@@ -14,5 +14,5 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private string ResolvedStyle =>
-        PlacementGridCss.SlotStyle(Placement) + (ExtraStyle ?? string.Empty);
+        PlacementGridCss.SlotStyle(Placement) + $"--fx-grow:{Placement.Wide.Span};" + (ExtraStyle ?? string.Empty);
 }

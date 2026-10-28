@@ -554,7 +554,7 @@
 
     internal string InteriorSlotStyle(string slotKey) =>
         Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
-            ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement!, GridColumns))
+            ? Services.Presentation.DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns)
             : string.Empty;
 
     private bool LocalFiltersAutoApply =>
