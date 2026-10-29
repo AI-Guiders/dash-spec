@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0111
 title: "Собранная слотовая плоскость — SSOT визуальной композиции"
-status: "Accepted (пере"
+status: "Accepted"
 date: 2026-10-21
 tags: [dashspec, adr]
 language: ru

@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0011
 title: "`@tab` modules and `tab … dashspec`"
-status: "Accepted (updated surface"
+status: "Accepted"
 date: 2026-06-24
 tags: [dashspec, adr]
 language: ru
