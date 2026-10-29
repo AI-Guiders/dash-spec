@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0004: Column binding — `column as "Label"`
+---
+type: ADR
+id: DASHSPEC-ADR-0004
+title: "Column binding — `column as "Label"`"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0003
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), PlantUML `as` |
+# DASHSPEC-ADR-0004: Column binding — `column as "Label"`
 
 ## Контекст
 

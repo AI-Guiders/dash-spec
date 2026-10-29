@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0053: EditorConfig floor + DashSpec document formatter (MLP)
+---
+type: ADR
+id: DASHSPEC-ADR-0053
+title: "EditorConfig floor + DashSpec document formatter (MLP)"
+status: "Accepted"
+date: 2026-09-16
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0036
+---
 
-| Field | Value |
-|-------|-------|
-| **Status** | Accepted |
-| **Date** | 2026-09-16 |
-| **Relates to** | [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [STUDIO-ADR-0004](https://github.com/AI-Guiders/dash-spec-studio/blob/main/design/STUDIO-ADR-0004-editorconfig-studio-wire.md) |
+# DASHSPEC-ADR-0053: EditorConfig floor + DashSpec document formatter (MLP)
 
 ## Context
 

@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0049: Git catalog source
+---
+type: ADR
+id: DASHSPEC-ADR-0049
+title: "Git catalog source"
+status: "Accepted"
+date: 2026-08-17
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0023
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-17 |
-| **Relates to** | [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md) |
+# DASHSPEC-ADR-0049: Git catalog source
 
 ## Context
 

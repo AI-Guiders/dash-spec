@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0021: `.dashlayout` and `include layout`
+---
+type: ADR
+id: DASHSPEC-ADR-0021
+title: "`.dashlayout` and `include layout`"
+status: "Accepted"
+date: 2026-07-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0020
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · **superseded in part** — `include layout "…"` was removed; a board is an imported layout unit (`import layouts from <NS>`, unit with `scope tab`) or an inline `layout … end layout` ([ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md)) |
-| **Date** | 2026-07-02 |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md) |
+# DASHSPEC-ADR-0021: `.dashlayout` and `include layout`
 
 ## Context
 

@@ -1,12 +1,19 @@
+---
+type: ADR
+id: DASHSPEC-ADR-0083
+title: "Dashflow — federation **DataFlow** (separate from Cockpit)"
+status: "Accepted (architecture; implementation phased)"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0048
+  - DASHSPEC-ADR-0080
+  - DASHSPEC-ADR-0082
+---
+
 # DASHSPEC-ADR-0083: Dashflow — federation **DataFlow** (separate from Cockpit)
-
-| | |
-|---|---|
-| **Status** | Accepted (architecture; implementation phased) |
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
-
-> Legacy filename `…cockpit-transport`. **DataFlow** ≠ **Cockpit**. **MCP** out of scope.
 
 ## Context
 

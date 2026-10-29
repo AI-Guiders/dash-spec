@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0008: Diagram library presets and viz render plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0008
+title: "Diagram library presets and viz render plugins"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0001
+  - DASHSPEC-ADR-0003
+  - DASHSPEC-ADR-0007
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · diagram presets **implemented**; built-in `IVizPlugin` registry **implemented**; external `[[viz.load]]` DLL **proposed** |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) |
+# DASHSPEC-ADR-0008: Diagram library presets and viz render plugins
 
 ## Context
 

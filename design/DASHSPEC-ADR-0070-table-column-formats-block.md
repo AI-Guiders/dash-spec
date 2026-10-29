@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0070: Table column formats — `formats` block
+---
+type: ADR
+id: DASHSPEC-ADR-0070
+title: "Table column formats — `formats` block"
+status: "Accepted"
+date: 2026-09-30
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+  - DASHSPEC-ADR-0064
+  - DASHSPEC-ADR-0048
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-30 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
+# DASHSPEC-ADR-0070: Table column formats — `formats` block
 
 ## Context
 

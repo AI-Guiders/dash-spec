@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0030: Report scale — `page`, `gate`, `phase`, catalog `group`
+---
+type: ADR
+id: DASHSPEC-ADR-0030
+title: "Report scale — `page`, `gate`, `phase`, catalog `group`"
+status: "Accepted (partial"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0023
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0028
+  - DASHSPEC-ADR-0029
+  - DASHSPEC-ADR-0031
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (partial — P0–P2 implemented; P3 viewport pending) |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md) |
+# DASHSPEC-ADR-0030: Report scale — `page`, `gate`, `phase`, catalog `group`
 
 ## Context
 

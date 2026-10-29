@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0115: Radzen-рендер — паритет фич с self-made
+---
+type: ADR
+id: DASHSPEC-ADR-0115
+title: "Radzen-рендер — паритет фич с self-made"
+status: "Accepted"
+date: 2026-10-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0112
+  - DASHSPEC-ADR-0111
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0077
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-27 |
-| **Relates to** | [ADR-0112](DASHSPEC-ADR-0112-render-stack-and-theme-token.md), [ADR-0111](DASHSPEC-ADR-0111-assembled-slot-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0077](DASHSPEC-ADR-0077-host-ui-copy-ssot.md) |
+# DASHSPEC-ADR-0115: Radzen-рендер — паритет фич с self-made
 
 ## Decision
 

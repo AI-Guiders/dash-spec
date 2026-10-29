@@ -1,8 +1,14 @@
-# DASHSPEC-ADR-0058: Display bindings (`bind display`)
+---
+type: ADR
+id: DASHSPEC-ADR-0058
+title: "Display bindings (`bind display`)"
+status: "Unknown"
+date: unknown
+tags: [dashspec, adr]
+language: ru
+---
 
-**Status:** Accepted  
-**Date:** 2026-09-25  
-**Relates to:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md), [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md)
+# DASHSPEC-ADR-0058: Display bindings (`bind display`)
 
 ## Context
 

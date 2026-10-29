@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0059: Vertical viz render plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0059
+title: "Vertical viz render plugins"
+status: "Accepted"
+date: 2026-09-28
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0008
+  - DASHSPEC-ADR-0013
+  - DASHSPEC-ADR-0033
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-28 |
-| **Relates to** | [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) |
+# DASHSPEC-ADR-0059: Vertical viz render plugins
 
 ## Context
 

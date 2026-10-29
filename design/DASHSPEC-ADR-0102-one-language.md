@@ -1,9 +1,18 @@
-# DASHSPEC-ADR-0102: One language
+---
+type: ADR
+id: DASHSPEC-ADR-0102
+title: "One language"
+status: "Accepted"
+date: unknown
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0098
+  - DASHSPEC-ADR-0101
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Relates to** | [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md) |
+# DASHSPEC-ADR-0102: One language
 
 ## Decision
 

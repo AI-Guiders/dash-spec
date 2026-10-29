@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0005: Rich text — Creole-subset (не PlantUML engine)
+---
+type: ADR
+id: DASHSPEC-ADR-0005
+title: "Rich text — Creole-subset (не PlantUML engine)"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), PlantUML Creole |
+# DASHSPEC-ADR-0005: Rich text — Creole-subset (не PlantUML engine)
 
 ## Контекст
 

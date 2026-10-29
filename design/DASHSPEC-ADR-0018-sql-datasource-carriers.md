@@ -1,11 +1,17 @@
-# DASHSPEC-ADR-0018: `datasource sql` — query и file (без legacy)
+---
+type: ADR
+id: DASHSPEC-ADR-0018
+title: "`datasource sql` — query и file (без legacy)"
+status: "Accepted"
+date: 2026-07-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0009
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · v0.6 |
-| **Date** | 2026-07-02 |
-| **Supersedes** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md) § «`datasource sql "…"`» |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) |
+# DASHSPEC-ADR-0018: `datasource sql` — query и file (без legacy)
 
 ## Context
 

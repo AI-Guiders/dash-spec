@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0061: Layout board weights and filter `place`
+---
+type: ADR
+id: DASHSPEC-ADR-0061
+title: "Layout board weights and filter `place`"
+status: "Accepted"
+date: 2026-09-28
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0022
+  - DASHSPEC-ADR-0002
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-28 |
-| **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md) |
+# DASHSPEC-ADR-0061: Layout board weights and filter `place`
 
 ## Context
 

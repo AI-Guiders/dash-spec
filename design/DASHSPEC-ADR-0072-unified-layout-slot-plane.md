@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0072: Unified layout slot plane (host grid = card grid)
+---
+type: ADR
+id: DASHSPEC-ADR-0072
+title: "Unified layout slot plane (host grid = card grid)"
+status: "Accepted"
+date: 2026-10-01
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0022
+  - DASHSPEC-ADR-0025
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0065
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-01 |
-| **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0025](DASHSPEC-ADR-0025-card-interior-layout-board.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) |
+# DASHSPEC-ADR-0072: Unified layout slot plane (host grid = card grid)
 
 ## Context
 

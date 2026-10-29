@@ -1,6 +1,14 @@
-# DASHSPEC-ADR-0002: Layout и presentation в spec
+---
+type: ADR
+id: DASHSPEC-ADR-0002
+title: "Layout и presentation в spec"
+status: "Unknown"
+date: unknown
+tags: [dashspec, adr]
+language: ru
+---
 
-**Status:** Accepted
+# DASHSPEC-ADR-0002: Layout и presentation в spec
 
 ## Контекст
 

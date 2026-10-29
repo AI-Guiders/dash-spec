@@ -1,6 +1,14 @@
-# DASHSPEC-ADR-0020: Card `ref` and tab layout board
+---
+type: ADR
+id: DASHSPEC-ADR-0020
+title: "Card `ref` and tab layout board"
+status: "Unknown"
+date: unknown
+tags: [dashspec, adr]
+language: ru
+---
 
-**Status:** Accepted
+# DASHSPEC-ADR-0020: Card `ref` and tab layout board
 
 ## Контекст
 

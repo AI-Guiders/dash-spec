@@ -1,10 +1,22 @@
-# DASHSPEC-ADR-0032: Extension blocks and plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0032
+title: "Extension blocks and plugins"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0028
+  - DASHSPEC-ADR-0001
+  - DASHSPEC-ADR-0008
+  - DASHSPEC-ADR-0013
+  - DASHSPEC-ADR-0031
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md) |
+# DASHSPEC-ADR-0032: Extension blocks and plugins
 
 ## Context
 

@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0116: Radzen-тепловая карта — паритет и размеры от контента
+---
+type: ADR
+id: DASHSPEC-ADR-0116
+title: "Radzen-тепловая карта — паритет и размеры от контента"
+status: "Accepted"
+date: 2026-10-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0112
+  - DASHSPEC-ADR-0115
+  - DASHSPEC-ADR-0062
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-27 |
-| **Relates to** | [ADR-0112](DASHSPEC-ADR-0112-render-stack-and-theme-token.md), [ADR-0115](DASHSPEC-ADR-0115-radzen-table-grid-extras.md), [ADR-0062](DASHSPEC-ADR-0062-viz-axis-presentation.md) |
+# DASHSPEC-ADR-0116: Radzen-тепловая карта — паритет и размеры от контента
 
 ## Decision
 

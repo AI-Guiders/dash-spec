@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0114: Switch slot — multi-payload diagram slot
+---
+type: ADR
+id: DASHSPEC-ADR-0114
+title: "Switch slot — multi-payload diagram slot"
+status: "Accepted"
+date: 2026-10-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0064
+  - DASHSPEC-ADR-0065
+  - DASHSPEC-ADR-0107
+  - DASHSPEC-ADR-0111
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-27 |
-| **Relates to** | [ADR-0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md) (cell drill payload), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) (card interior multi-slot), [ADR-0107](DASHSPEC-ADR-0107-sourced-clicks.md) (sourced clicks + drill slot targeting), [ADR-0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) (assembled slot plane; interaction = session state) |
+# DASHSPEC-ADR-0114: Switch slot — multi-payload diagram slot
 
 ## Context
 

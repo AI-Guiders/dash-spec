@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0037: Фильтры — bind, show, видимость и раскладка
+---
+type: ADR
+id: DASHSPEC-ADR-0037
+title: "Фильтры — bind, show, видимость и раскладка"
+status: "Accepted"
+date: 2026-07-08
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0010
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0022
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0031
+  - DASHSPEC-ADR-0036
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-08 |
-| **Relates to** | [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md), [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md), [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) |
+# DASHSPEC-ADR-0037: Фильтры — bind, show, видимость и раскладка
 
 ## Контекст
 

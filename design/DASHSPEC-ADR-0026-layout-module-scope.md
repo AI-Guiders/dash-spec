@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0026: mandatory `scope` in `.dashlayout`
+---
+type: ADR
+id: DASHSPEC-ADR-0026
+title: "mandatory `scope` in `.dashlayout`"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0021
+  - DASHSPEC-ADR-0022
+  - DASHSPEC-ADR-0025
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md), [ADR-0025](DASHSPEC-ADR-0025-card-interior-layout-board.md) |
+# DASHSPEC-ADR-0026: mandatory `scope` in `.dashlayout`
 
 ## Context
 

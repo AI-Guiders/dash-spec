@@ -1,11 +1,18 @@
-# DASHSPEC-ADR-0065: Card interior multi-slot (no legacy host stack)
+---
+type: ADR
+id: DASHSPEC-ADR-0065
+title: "Card interior multi-slot (no legacy host stack)"
+status: "Accepted"
+date: 2026-09-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0063
+  - DASHSPEC-ADR-0064
+  - DASHSPEC-ADR-0038
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-29 |
-| **Supersedes** | [ADR-0025](DASHSPEC-ADR-0025-card-interior-layout-board.md) §«Без layout» |
-| **Relates to** | [ADR-0063](DASHSPEC-ADR-0063-layout-board-nest.md), [ADR-0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md), [ADR-0038](DASHSPEC-ADR-0038-structured-card-and-report-composition.md) |
+# DASHSPEC-ADR-0065: Card interior multi-slot (no legacy host stack)
 
 ## Context
 

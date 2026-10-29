@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0064: Cell drill via table + tabular payload sources
+---
+type: ADR
+id: DASHSPEC-ADR-0064
+title: "Cell drill via table + tabular payload sources"
+status: "Accepted (pilot track); structured carrier **Proposed**"
+date: 2026-09-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0028
+  - DASHSPEC-ADR-0029
+  - DASHSPEC-ADR-0030
+  - DASHSPEC-ADR-0012
+  - DASHSPEC-ADR-0018
+  - DASHSPEC-ADR-0063
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (pilot track); structured carrier **Proposed** |
-| **Date** | 2026-09-29 |
-| **Relates to** | [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md), [ADR-0030](DASHSPEC-ADR-0030-report-scale-pages-gates-and-suites.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0063](DASHSPEC-ADR-0063-layout-board-nest.md) |
+# DASHSPEC-ADR-0064: Cell drill via table + tabular payload sources
 
 ## Context
 

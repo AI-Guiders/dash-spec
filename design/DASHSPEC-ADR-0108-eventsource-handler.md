@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0108: EventSource + Handler — the interaction subsystem
+---
+type: ADR
+id: DASHSPEC-ADR-0108
+title: "EventSource + Handler — the interaction subsystem"
+status: "Accepted (direction)"
+date: 2026-10-20
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0106
+  - DASHSPEC-ADR-0107
+  - DASHSPEC-ADR-0033
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (direction) |
-| **Date** | 2026-10-20 |
-| **Relates to** | [ADR-0106](DASHSPEC-ADR-0106-multi-form-constructs.md), [ADR-0107](DASHSPEC-ADR-0107-sourced-clicks.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) |
+# DASHSPEC-ADR-0108: EventSource + Handler — the interaction subsystem
 
 ## Context
 

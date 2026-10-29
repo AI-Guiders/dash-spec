@@ -1,11 +1,22 @@
-# DASHSPEC-ADR-0033: Plugin families and microkernel host
+---
+type: ADR
+id: DASHSPEC-ADR-0033
+title: "Plugin families and microkernel host"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0001
+  - DASHSPEC-ADR-0003
+  - DASHSPEC-ADR-0008
+  - DASHSPEC-ADR-0013
+  - DASHSPEC-ADR-0028
+  - DASHSPEC-ADR-0086
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Extends** | [ADR-0032](DASHSPEC-ADR-0032-extension-blocks-and-plugins.md) |
-| **Relates to** | [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md) |
+# DASHSPEC-ADR-0033: Plugin families and microkernel host
 
 ## Context
 

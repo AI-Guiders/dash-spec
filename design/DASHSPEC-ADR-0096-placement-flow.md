@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0096: Placement flow (filter surfaces)
+---
+type: ADR
+id: DASHSPEC-ADR-0096
+title: "Placement flow (filter surfaces)"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0093
+  - DASHSPEC-ADR-0095
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md), [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md) |
+# DASHSPEC-ADR-0096: Placement flow (filter surfaces)
 
 ## Decision
 

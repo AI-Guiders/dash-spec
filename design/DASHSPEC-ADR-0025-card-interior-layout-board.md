@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0025: Card interior layout board
+---
+type: ADR
+id: DASHSPEC-ADR-0025
+title: "Card interior layout board"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0022
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md) |
+# DASHSPEC-ADR-0025: Card interior layout board
 
 ## Context
 

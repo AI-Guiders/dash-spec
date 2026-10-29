@@ -1,10 +1,25 @@
-# DASHSPEC-ADR-0111: Собранная слотовая плоскость — SSOT визуальной композиции
+---
+type: ADR
+id: DASHSPEC-ADR-0111
+title: "Собранная слотовая плоскость — SSOT визуальной композиции"
+status: "Accepted (пере"
+date: 2026-10-21
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0072
+  - DASHSPEC-ADR-0074
+  - DASHSPEC-ADR-0110
+  - DASHSPEC-ADR-0097
+  - DASHSPEC-ADR-0095
+  - DASHSPEC-ADR-0091
+  - DASHSPEC-ADR-0109
+  - DASHSPEC-ADR-0108
+  - DASHSPEC-ADR-0101
+  - DASHSPEC-ADR-0102
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (пере-рамка того же дня; отменённое — §Rejected: `be18e71`/`4e490a4` «VisualModel / VisualCompositor» и все правки этого же дня, включая самую большую ошибку — выдуманное параллельное дерево поверх готовой слотовой плоскости [ADR-0072]) |
-| **Date** | 2026-10-21 |
-| **Relates to** | [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md) (слотовая плоскость — канон, **уже сделана M1–M5**), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) (сверка ниже), [ADR-0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) (плоскость оболочки), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) / [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md) (конвейер компиляции), [ADR-0091](DASHSPEC-ADR-0091-document-wiring-graph.md) (граф данных), [ADR-0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) (SSOT фильтров), [ADR-0108](DASHSPEC-ADR-0108-eventsource-handler.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md) / [ADR-0102](DASHSPEC-ADR-0102-one-language.md) |
+# DASHSPEC-ADR-0111: Собранная слотовая плоскость — SSOT визуальной композиции
 
 ## Context
 
