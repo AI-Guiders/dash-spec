@@ -1,4 +1,4 @@
-module tab import_demo
+module section import_demo
 namespace Demo.ImportTab
 
 
@@ -22,4 +22,4 @@ report "Charts"
   end card
 end report
 
-end tab import_demo
+end section import_demo

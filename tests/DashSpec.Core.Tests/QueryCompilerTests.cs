@@ -914,7 +914,7 @@ public class QueryCompilerTests
     public void Parse_tab_configuration_accepts_work_time_column()
     {
         var document = DashSpecTestRowTypes.ParseDashboard("""
-            module tab overview
+            module section overview
               configuration
                 sqldialect = tsql
                 work_time_column = bucket_start_utc
@@ -928,7 +928,7 @@ public class QueryCompilerTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         Assert.Equal("bucket_start_utc", document.TimePolicy!.Value.WorkTimeColumn?.Value);

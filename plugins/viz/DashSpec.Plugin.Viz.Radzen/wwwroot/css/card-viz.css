@@ -31,6 +31,41 @@
   height: 320px;
 }
 
+/* stretch_mode = fill (WPF Stretch vocabulary): the wrap takes the slot instead of
+   the fixed px cap; the heatmap owns its floor/cap via its own scroll style. */
+.rviz-chart-wrap--fill {
+  min-height: 0;
+}
+
+.rviz-shm--fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rviz-shm--fill .rviz-shm-scroll {
+  flex: 1 1 auto;
+}
+
+/* fill rows grow into the slot (the compact height stays the floor) */
+.rviz-shm--fill .rviz-shm-grid {
+  height: 100%;
+  grid-auto-rows: minmax(1.7rem, 1fr);
+}
+
+.rviz-shm--fill .rviz-shm-cell {
+  height: auto;
+}
+
+/* the stack wrapper around a filling diagram must pass the height through */
+.card-viz-stack:has(> .rviz-chart-wrap--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .rviz-empty-state {
   margin: 2rem 0;
   text-align: center;

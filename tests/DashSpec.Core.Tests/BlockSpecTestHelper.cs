@@ -42,7 +42,7 @@ internal static class BlockSpecTestHelper
         string? title = null,
         string? connectExtra = null)
     {
-        var lines = new List<string> { $"module tab {id}" };
+        var lines = new List<string> { $"module section {id}" };
         if (connectExtra is not null)
         {
             lines.Add("  connect");

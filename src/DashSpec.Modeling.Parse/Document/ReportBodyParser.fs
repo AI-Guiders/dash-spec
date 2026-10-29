@@ -63,16 +63,16 @@ module ReportBodyParser =
         | ReportCompileMode.TabEmbedded -> ctx.TabLocalFilters.AddRange moduleFilters
         | _ -> ()
 
-    let private parseTabStatement (reader: TokenReader) (ctx: ReportCompileContext) =
+    let private parseTabStatement (reader: TokenReader) (ctx: ReportCompileContext) (moduleWord: string) =
         match ctx.Mode with
-        | ReportCompileMode.Dashboard -> ctx.Tabs.Add(TabParser.parse reader)
+        | ReportCompileMode.Dashboard -> ctx.Tabs.Add(TabParser.parse reader moduleWord)
         | ReportCompileMode.TabStandalone
         | ReportCompileMode.TabEmbedded ->
             match ctx.TabModuleId with
             | None | Some "" -> raise (DashSpecParseException("Tab module shell requires @tab id before tab block."))
             | Some tabModuleId ->
                 let moduleLabel, moduleFilters, moduleLayout =
-                    TabParser.parseModuleLocalBlock reader tabModuleId true
+                    TabParser.parseModuleLocalBlock reader tabModuleId moduleWord true
                 applyTabModuleBlock ctx moduleLabel moduleFilters moduleLayout
 
     let rec tryParseStatement (reader: TokenReader) (ctx: ReportCompileContext) =
@@ -128,8 +128,8 @@ module ReportBodyParser =
                 ctx.Filters.Add filter
             reader.SkipNewlines()
             true
-        elif reader.TryKeyword "tab" then
-            parseTabStatement reader ctx
+        elif reader.TryKeyword "section" then
+            parseTabStatement reader ctx "section"
             reader.SkipNewlines()
             true
         elif reader.TryKeyword "phase" then

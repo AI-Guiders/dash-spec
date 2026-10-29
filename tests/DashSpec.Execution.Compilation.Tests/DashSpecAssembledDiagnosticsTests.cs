@@ -241,7 +241,7 @@ public sealed class DashSpecAssembledDiagnosticsTests
             end table
             """);
         File.WriteAllText(Path.Combine(dir, "borrowed.ds"), $"""
-            module tab borrowed
+            module section borrowed
             namespace Test.Tabs
 
             import types from Test.Types
@@ -253,13 +253,13 @@ public sealed class DashSpecAssembledDiagnosticsTests
             end runtime
 
             {tabBody}
-            end tab
+            end section
             """);
         File.WriteAllText(Path.Combine(dir, "root.ds"), """
             module dashboard test_root
             namespace Test.Root
 
-            import tabs from Test.Tabs
+            import sections from Test.Tabs
 
             runtime
               manifest = "test.toml"
@@ -273,7 +273,7 @@ public sealed class DashSpecAssembledDiagnosticsTests
                 | shared | field | shared | Shared | -      | -   | -     |
               end filters
 
-              tab borrowed as "Borrowed"
+              section borrowed as "Borrowed"
             end report
             end dashboard
             """);

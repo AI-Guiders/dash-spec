@@ -25,7 +25,7 @@ else
 {
     <div class="heatmap-wrap @WrapCssClass"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
-        <div class="heatmap-scroll" style="@($"max-height:{HeightPx}px")">
+        <div class="heatmap-scroll" style="@ScrollStyle">
         <div class="heatmap-grid" style="@GridStyle()">
             <div class="heatmap-corner" style="grid-row:1;grid-column:1">
                 @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
@@ -132,6 +132,13 @@ else
     [Parameter]
     public int HeightPx { get; set; } = 320;
 
+    /// <summary>stretch_mode = fill: the heatmap takes the slot height (WPF Stretch vocabulary).</summary>
+    [Parameter]
+    public VizStretchMode StretchMode { get; set; } = VizStretchMode.None;
+
+    [Parameter]
+    public VizStretchDirection StretchDirection { get; set; } = VizStretchDirection.UpOnly;
+
     [Parameter]
     public string? XAxisLabel { get; set; }
 
@@ -193,7 +200,15 @@ else
     private MatrixRenderLimitsDefinition EffectiveLimits => Limits ?? MatrixRenderLimitsDefinition.Default;
 
     private string WrapCssClass =>
+        $"{(StretchMode is VizStretchMode.Fill ? "heatmap-wrap--fill" : null)} " +
         $"{(ShowAxisLabelsX ? null : "heatmap-wrap--hide-x-labels")} {(ShowAxisLabelsY ? null : "heatmap-wrap--hide-y-labels")}".Trim();
+
+    /// <summary>none: content-sized with the px cap; fill: the slot sizes the box,
+    /// the px height rides as the floor (up_only) / cap (down_only).</summary>
+    private string ScrollStyle =>
+        StretchMode is VizStretchMode.Fill
+            ? VizStretch.ContainerStyle(StretchMode, StretchDirection, HeightPx)
+            : $"max-height:{HeightPx}px;";
 
     private (int Yi, int Xi)? _activeCell;
 
@@ -205,9 +220,14 @@ else
     {
         var columns = Payload.XLabels.Count;
         var yColumn = ShowAxisLabelsY ? "minmax(9rem, max-content)" : "0";
+        // fill: rows grow into the slot (floor keeps the readable row height);
+        // none: fixed rows, the scroll box caps at the px height.
+        var rows = StretchMode is VizStretchMode.Fill
+            ? $"auto repeat({Payload.YLabels.Count}, minmax({RowHeightRem.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}rem, 1fr))"
+            : $"auto repeat({Payload.YLabels.Count}, {RowHeightRem.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}rem)";
         return
-            $"grid-template-columns:{yColumn} repeat({columns}, {ColumnWidthRem}rem);" +
-            $"grid-template-rows:auto repeat({Payload.YLabels.Count}, {RowHeightRem}rem);";
+            $"grid-template-columns:{yColumn} repeat({columns}, {ColumnWidthRem.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}rem);" +
+            $"grid-template-rows:{rows};";
     }
 
     private string CellStyle(int yi, int xi, bool filled, double? value, double cellMin, double cellMax)

@@ -6,8 +6,10 @@
 @using DashSpec.Modeling.Core
 @using DashSpec.Modeling.Parse.Layout
 @using DashSpec.Surface.Blazor.Services.Presentation
+@using DashSpec.Surface.Blazor.Services.Localization
 @inject ILayoutSlotRendererRegistry SlotRegistry
 @inject DashSpecContributorRegistry Contributors
+@inject DashboardLocalizer Loc
 
 @if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.Node.Kind))
 {
@@ -21,22 +23,42 @@ else if (Owner is not null)
             @Owner.RenderLocalFilter(Slot.Node.Id, Owner.InteriorSlotStyle(Slot.Node.Id))
         </div>
     }
-    else if (_diagramType is not null)
+    else
     {
-        // [ADR-0111] P1: a diagram is a diagram — no primary/secondary in the plane.
-        // The render checks its own payload: if a pre-rendered slot payload exists,
-        // the component receives it; otherwise the card's own chart is the payload.
-        @if (HasSlotPayload)
-        {
-            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
-        }
-        else
-        {
-            <div class="card-viz-stack">
-                <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
-                @Owner.RenderSelectionDetail()
-            </div>
-        }
+        @* Per-slot maximize (diagram/table slots): hover button in the corner opens this
+           slot alone in the card's fullscreen panel. *@
+        <div class="card-slot-shell">
+            <button type="button"
+                    class="secondary card-icon-btn slot-maximize-btn"
+                    title="@Loc.T("Expand diagram")"
+                    aria-label="@(Loc.T("Expand diagram") + ": " + Slot.Node.Id)"
+                    @onclick="() => Owner.OpenSlotFullscreen(Slot.Node.Id)"
+                    @onclick:stopPropagation="true">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                    <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                    <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                </svg>
+            </button>
+            @if (_diagramType is not null)
+            {
+                // [ADR-0111] P1: a diagram is a diagram — no primary/secondary in the plane.
+                // The render checks its own payload: if a pre-rendered slot payload exists,
+                // the component receives it; otherwise the card's own chart is the payload.
+                @if (HasSlotPayload)
+                {
+                    <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                }
+                else
+                {
+                    <div class="card-viz-stack">
+                        <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                        @Owner.RenderSelectionDetail()
+                    </div>
+                }
+            }
+        </div>
     }
 }
 

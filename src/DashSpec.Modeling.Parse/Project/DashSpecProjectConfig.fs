@@ -12,7 +12,10 @@ type DashSpecProjectConfig =
       RootNamespace: string option
       SourceRoots: IReadOnlyList<string>
       Files: IReadOnlyList<string>
-      Exclude: IReadOnlyList<string> }
+      Exclude: IReadOnlyList<string>
+      /// <summary>Implicit imports (DSL block, raw strings like "presentations from DashSpec.Std"):
+      /// every module in the project sees these namespaces without a per-module import.</summary>
+      ImplicitImports: IReadOnlyList<string> }
 
 module DashSpecProjectConfig =
 
@@ -38,7 +41,7 @@ module DashSpecProjectConfig =
         |> Array.map (fun part -> trimQuotes (part.Trim()))
         |> Array.toList
 
-    /// <summary>Minimal TOML reader for <c>root_namespace</c>, <c>source_roots</c>, <c>files</c> and <c>exclude</c>.</summary>
+    /// <summary>Reads TOML keys + <c>global import</c> DSL lines (project-level implicit imports).</summary>
     let load (path: string) =
         if String.IsNullOrWhiteSpace path then invalidArg "path" "Path is required."
         if not (File.Exists path) then raise (FileNotFoundException($"dashspec.toml not found: '{path}'.", path))
@@ -49,10 +52,14 @@ module DashSpecProjectConfig =
         let mutable sourceRoots = [ "." ]
         let files = ResizeArray<string>()
         let exclude = ResizeArray<string>()
+        let implicitImports = ResizeArray<string>()
+
         for line in File.ReadAllLines path do
             let trimmed = line.Trim()
 
             if trimmed.StartsWith("#") || trimmed.Length = 0 then ()
+            elif trimmed.StartsWith("global import ", StringComparison.OrdinalIgnoreCase) then
+                implicitImports.Add(trimmed.["global import ".Length..])
             elif trimmed.Contains('=') then
                 let parts = trimmed.Split('=', 2)
                 let key = parts.[0].Trim().ToLowerInvariant()
@@ -69,7 +76,8 @@ module DashSpecProjectConfig =
           RootNamespace = rootNamespace
           SourceRoots = sourceRoots :> IReadOnlyList<_>
           Files = files :> IReadOnlyList<_>
-          Exclude = exclude :> IReadOnlyList<_> }
+          Exclude = exclude :> IReadOnlyList<_>
+          ImplicitImports = implicitImports :> IReadOnlyList<_> }
 
 module DashSpecProjectLocator =
 

@@ -64,6 +64,8 @@ public static class SpecResolveExporter
                 ["height_px"] = presentation.HeightPx.ToString(),
                 ["stacked"] = presentation.Stacked.ToString().ToLowerInvariant(),
                 ["orientation"] = presentation.Orientation.ToString().ToLowerInvariant(),
+                ["stretch_mode"] = presentation.StretchMode.ToString().ToLowerInvariant(),
+                ["stretch_direction"] = StretchDirectionWire(presentation.StretchDirection),
             };
         }
         else if (kind.DataFamily is DiagramDataFamily.Matrix)
@@ -78,6 +80,8 @@ public static class SpecResolveExporter
                 ["color_scale"] = matrix.ColorScale,
                 ["tooltip_format"] = matrix.TooltipFormat.ToString().ToLowerInvariant(),
                 ["tooltip_split"] = matrix.TooltipSplit,
+                ["stretch_mode"] = matrix.StretchMode.ToString().ToLowerInvariant(),
+                ["stretch_direction"] = StretchDirectionWire(matrix.StretchDirection),
             };
         }
 
@@ -108,6 +112,14 @@ public static class SpecResolveExporter
             seriesTransform,
             effectivePalette);
     }
+
+    private static string StretchDirectionWire(VizStretchDirection direction) =>
+        direction switch
+        {
+            VizStretchDirection.DownOnly => "down_only",
+            VizStretchDirection.Both => "both",
+            _ => "up_only",
+        };
 
     private static string FormatDataSource(DataSourceDefinition source) =>
         source.Kind switch

@@ -49,7 +49,7 @@ module rec DashboardParser =
         reader.SkipNewlines()
         reader.ExpectKeyword "module"
 
-        if reader.TryKeyword "tab" then
+        if reader.TryKeyword "section" then
             let id = reader.ReadIdent()
             id, id
         else

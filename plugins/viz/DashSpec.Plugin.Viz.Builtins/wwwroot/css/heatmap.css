@@ -16,6 +16,29 @@
   padding-bottom: 0.15rem;
 }
 
+/* stretch_mode = fill (WPF Stretch vocabulary): the slot sizes the heatmap;
+   the px height rides as the floor (up_only) / cap (down_only) via inline style. */
+.heatmap-wrap--fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.heatmap-wrap--fill .heatmap-scroll {
+  flex: 1 1 auto;
+}
+
+.heatmap-wrap--fill .heatmap-grid {
+  height: 100%;
+}
+
+/* the stack wrapper around a filling diagram must pass the height through */
+.card-viz-stack:has(> .heatmap-wrap--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .heatmap-grid {
   display: grid;
   gap: 4px;

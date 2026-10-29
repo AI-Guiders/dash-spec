@@ -168,6 +168,19 @@ module HostModuleParser =
                 for kv in props do
                     presentation.[kv.Key] <- kv.Value
                 reader.SkipNewlines()
+            elif reader.TryKeyword "menu" then
+                // Menu policy (ADR-0073 nav surface): rides to the shell chrome
+                // as menu_-prefixed presentation keys.
+                let props =
+                    PropertyBlockParser.parse
+                        reader
+                        PropertySchemas.hostMenu
+                        "menu"
+                        false
+                        false
+                for kv in props do
+                    presentation.[$"menu_{kv.Key}"] <- kv.Value
+                reader.SkipNewlines()
             elif reader.TryKeyword "host" then
                 // Settings home block (ADR-0112 §6): nested `host … end host` — the first
                 // `end host` closes the block, the module's own one closes the module.

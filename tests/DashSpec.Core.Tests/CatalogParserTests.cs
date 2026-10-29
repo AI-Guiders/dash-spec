@@ -52,7 +52,7 @@ public sealed class CatalogParserTests
             module catalog demo
             entry versions as "Версии ПО"
               dashspec "demo-soak.ds"
-              tab versions
+              section versions
             """;
 
         var catalog = CatalogReader.Parse(text);

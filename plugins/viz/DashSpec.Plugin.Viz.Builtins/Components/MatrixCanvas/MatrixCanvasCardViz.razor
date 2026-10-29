@@ -25,6 +25,8 @@
                       CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
                       Payload="Context.EffectiveCard.Matrix"
                       HeightPx="@ResolveMatrixHeightPx()"
+                      StretchMode="@(spec.StretchMode)"
+                      StretchDirection="@(spec.StretchDirection)"
                       VisibleRows="@presentation?.VisibleRows"
                       XAxisLabel="@presentation?.XLabel"
                       YAxisLabel="@presentation?.YLabel"

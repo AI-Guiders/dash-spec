@@ -135,7 +135,7 @@ public static class DashSpecDiagnosticService
                 return [];
             case "dashboard":
                 return ValidateAssembledRoot(text, filePath, specDirectory, parseOptions);
-            case "tab":
+            case "section":
                 return ValidateTabAssembled(text, filePath, specDirectory, parseOptions);
             default:
                 var document = DashSpecParser.Parse(text, specDirectory, parseOptions);
@@ -213,7 +213,7 @@ public static class DashSpecDiagnosticService
             var diagnostics = ValidateStandalone(text, filePath, specDirectory, parseOptions).ToList();
             diagnostics.Add(new DashSpecDiagnostic(
                 0, 0, 0, 1,
-                $"Tab is not imported by any root — standalone validation only. Import it: import tabs from {tabNamespace} in a dashboard.",
+                $"Tab is not imported by any root — standalone validation only. Import it: import sections from {tabNamespace} in a dashboard.",
                 DashSpecDiagnosticSeverity.Warning));
             return diagnostics;
         }

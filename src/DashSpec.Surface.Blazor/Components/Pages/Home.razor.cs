@@ -11,6 +11,8 @@ public partial class Home : IDisposable
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings { get; set; } = default!;
 
+    [Inject] private DashSpec.Abstractions.Viewer.IViewerShellChrome HostShell { get; set; } = default!;
+
     private bool IsRadzenStack =>
         string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
 

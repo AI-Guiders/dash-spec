@@ -147,7 +147,7 @@ public static class AuthoringCatalog
     ///   filters { … }   # опционально, локальные фильтры tab
     ///   card …
     /// end report
-    /// end tab
+    /// end section
     /// ```
     ///
     /// Вкладка с телом (`cards` или `layout` на следующих строках) объявляется inline;
@@ -324,7 +324,7 @@ public static class AuthoringCatalog
     /// module layout stakeholder_grid
     ///   namespace Demo.Layouts
     ///
-    /// scope tab
+    /// scope section
     ///
     /// [ kpi_a kpi_b kpi_c ]
     /// [ chart_left chart_right ]

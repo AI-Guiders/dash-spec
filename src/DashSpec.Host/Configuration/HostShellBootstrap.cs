@@ -35,6 +35,17 @@ public sealed class HostShellBootstrap
         Document.Surfaces.Count == 0
         || Document.Surfaces.Contains(surface, StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Menu policy (the host module's `menu` block, ADR-0073 nav surface).</summary>
+    public ViewerMenuPolicy Menu => new(
+        Sections: (GetPresentation("menu_sections") ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "siblings" => ViewerMenuSectionsMode.Siblings,
+            "none" => ViewerMenuSectionsMode.None,
+            _ => ViewerMenuSectionsMode.All,
+        },
+        CollapseDuplicateSection: (GetPresentation("menu_collapse_duplicate") ?? string.Empty).Trim().ToLowerInvariant()
+            is "true" or "yes" or "1");
+
     private LayoutBoardDefinition? _embeddedDefaultBoard;
 
     /// <summary>

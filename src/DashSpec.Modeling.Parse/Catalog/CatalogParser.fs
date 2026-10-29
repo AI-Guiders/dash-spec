@@ -21,7 +21,7 @@ module CatalogParser =
         if String.IsNullOrWhiteSpace dashspecPath then
             raise (DashSpecParseException($"Catalog entry '{id}' requires dashspec path."))
         let mutable initialTab: string option = None
-        if reader.TryKeyword "tab" then
+        if reader.TryKeyword "section" then
             let tabId = reader.ReadIdent()
             if String.IsNullOrWhiteSpace tabId then
                 raise (DashSpecParseException($"Catalog entry '{id}': tab requires an id."))

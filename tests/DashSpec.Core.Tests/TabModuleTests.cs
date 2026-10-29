@@ -19,7 +19,7 @@ public class TabModuleTests
             File.WriteAllText(
                 Path.Combine(dir, "extra.ds"),
                 """
-                module tab extra
+                module section extra
                 namespace Extra
                 report
                 title = "Extra"
@@ -43,13 +43,13 @@ public class TabModuleTests
                 data flow { fixture_src [rows] -> [rows] __diagram__ }
                 end card
                 end report
-                end tab
+                end section
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  import tabs from Extra
+                  import sections from Extra
                   report
                   title = "T"
                   filter app_name
@@ -60,12 +60,12 @@ public class TabModuleTests
                       label = "Apps"
                     end show
                   end filter
-                  tab overview as "Overview"
+                  section overview as "Overview"
                   cards
                   a
                   end cards
-                  end tab
-                  tab extra as "Extra"
+                  end section
+                  section extra as "Extra"
                   card a as "A"
                   diagram number
                   value = n
@@ -197,7 +197,7 @@ public class TabModuleTests
             File.WriteAllText(
                 Path.Combine(dir, "extra.ds"),
                 """
-                module tab extra
+                module section extra
                 namespace Extra
                 report
                 title = "Extra"
@@ -211,21 +211,21 @@ public class TabModuleTests
                 data flow { fixture_src [rows] -> [rows] __diagram__ }
                 end card
                 end report
-                end tab
+                end section
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard t
                   import types from Fixtures.QueryRowTypes
-                  import tabs from Extra
+                  import sections from Extra
                   report
                   title = "T"
-                  tab overview as "Overview"
+                  section overview as "Overview"
                   cards
                   a
                   end cards
-                  end tab
-                  tab extra as "Extra"
+                  end section
+                  section extra as "Extra"
                   card a as "A"
                   diagram number
                   value = n
@@ -255,7 +255,7 @@ public class TabModuleTests
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              tab x dashspec "x.dashspec"
+              section x dashspec "x.dashspec"
               card a as "A"
               diagram number
               value = n
@@ -275,7 +275,7 @@ public class TabModuleTests
     public void Parse_tab_root_standalone_document()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab soak
+            module section soak
               connect
               end connect
               report
@@ -304,7 +304,7 @@ public class TabModuleTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         Assert.Equal("soak", doc.Id);
@@ -318,7 +318,7 @@ public class TabModuleTests
     public void ReadDashboardHeader_reads_tab_root_id()
     {
         const string text = """
-            module tab analytics_tab
+            module section analytics_tab
               runtime
               manifest = "cfg.toml"
               end runtime
@@ -332,7 +332,7 @@ public class TabModuleTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """;
 
         Assert.Equal(("analytics_tab", "analytics_tab"), DashSpecParser.ReadDashboardHeader(text));

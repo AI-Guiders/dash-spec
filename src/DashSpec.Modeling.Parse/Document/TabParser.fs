@@ -11,8 +11,10 @@ open DashSpec.Modeling.Parse.Lexing
 
 module TabParser =
 
-    /// Tab with a cards body is inline; a tab without one references the tab module imported under its id (`import tabs`).
-    let parse (reader: TokenReader) =
+    /// Section/tab with a cards body is inline; without one it references the section module
+    /// imported under its id (`import sections`). `moduleWord` — the opening keyword
+    /// (`section` canonical or `tab` alias, ADR-0073); the block ends with the same word.
+    let parse (reader: TokenReader) (moduleWord: string) =
         let id = reader.ReadIdent()
         let mutable label: string option = None
         if reader.TryKeywordSameLine "as" then
@@ -30,9 +32,9 @@ module TabParser =
             let mutable cardIds: IReadOnlyList<string> = [||]
             let mutable layoutBoard: LayoutBoardDefinition option = None
 
-            while not (BlockSyntax.isBlockEnd reader "tab" (Some id)) && not reader.IsEof do
+            while not (BlockSyntax.isBlockEnd reader moduleWord (Some id)) && not reader.IsEof do
                 reader.SkipNewlines()
-                if BlockSyntax.isBlockEnd reader "tab" (Some id) then ()
+                if BlockSyntax.isBlockEnd reader moduleWord (Some id) then ()
                 elif reader.TryKeyword "cards" then
                     cardIds <- PropertyBlockParser.parseIdentListBlock reader "cards" $"tab {id} cards"
                     reader.SkipNewlines()
@@ -43,7 +45,7 @@ module TabParser =
                     let key = reader.ReadIdent()
                     raise (DashSpecParseException($"Unknown property '{key}' in tab {id} block."))
 
-            BlockSyntax.expectBlockEnd reader "tab" (Some id)
+            BlockSyntax.expectBlockEnd reader moduleWord (Some id)
 
             if cardIds.Count = 0 then
                 raise (DashSpecParseException($"Tab '{id}' requires a cards block."))
@@ -52,7 +54,7 @@ module TabParser =
         | _ ->
             { Id = id; Label = label; CardIds = [||]; ModulePath = None; LayoutBoard = None }
 
-    let parseModuleLocalBlock (reader: TokenReader) (expectedTabId: string) (allowFilters: bool) =
+    let parseModuleLocalBlock (reader: TokenReader) (expectedTabId: string) (moduleWord: string) (allowFilters: bool) =
         let id = reader.ReadIdent()
         if not (String.Equals(id, expectedTabId, StringComparison.OrdinalIgnoreCase)) then
             raise (DashSpecParseException($"Tab module declares @tab '{expectedTabId}' but tab block uses '{id}'."))
@@ -67,15 +69,15 @@ module TabParser =
         if reader.IsOnNewline() then
             reader.SkipNewlines()
 
-        if reader.IsEof || BlockSyntax.isBlockEnd reader "tab" (Some expectedTabId) then
+        if reader.IsEof || BlockSyntax.isBlockEnd reader moduleWord (Some expectedTabId) then
             label, filters :> IReadOnlyList<_>, layoutBoard
         else
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
 
-            while not (BlockSyntax.isBlockEnd reader "tab" (Some expectedTabId)) && not reader.IsEof do
+            while not (BlockSyntax.isBlockEnd reader moduleWord (Some expectedTabId)) && not reader.IsEof do
                 reader.SkipNewlines()
-                if BlockSyntax.isBlockEnd reader "tab" (Some expectedTabId) then ()
+                if BlockSyntax.isBlockEnd reader moduleWord (Some expectedTabId) then ()
                 elif reader.TryKeyword "layout" then
                     layoutBoard <- Some(LayoutParser.parseBoard reader)
                     reader.SkipNewlines()
@@ -88,7 +90,7 @@ module TabParser =
                     let key = reader.ReadIdent()
                     raise (DashSpecParseException($"Tab module '{expectedTabId}' allows only layout and filter declarations in tab block, not '{key}'."))
 
-            BlockSyntax.expectBlockEnd reader "tab" (Some expectedTabId)
+            BlockSyntax.expectBlockEnd reader moduleWord (Some expectedTabId)
             label, filters :> IReadOnlyList<_>, layoutBoard
 
     let assignTabs (resolveName: string -> string) (cards: IReadOnlyList<CardDefinition>) (tabs: IReadOnlyList<TabDefinition>) =

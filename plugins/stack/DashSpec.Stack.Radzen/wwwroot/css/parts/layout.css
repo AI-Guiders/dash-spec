@@ -8,9 +8,6 @@
 }
 
 .shell-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
   min-width: 0;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -346,8 +343,8 @@
   flex-wrap: wrap;
 }
 
-.admin .ok { color: #1a7f37; white-space: pre-wrap; }
-.admin .err { color: #c0392b; }
+.admin .ok { color: var(--success); white-space: pre-wrap; }
+.admin .err { color: var(--danger); }
 .admin .mono { font-family: ui-monospace, Consolas, monospace; word-break: break-all; }
 .admin .check { display: flex; gap: 0.4rem; align-items: center; }
 

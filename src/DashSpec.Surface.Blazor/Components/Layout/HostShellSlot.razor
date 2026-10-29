@@ -40,7 +40,9 @@ else if (Slot.SlotId == ViewerShellSlotIds.Nav)
 {
     if (IsRadzenStack)
     {
-        <RadzenButton Text="@Loc.T("Dashboard")" Variant="Variant.Text" Href="/" />
+        @* RadzenLink renders a real <a href> — navigation works in every render mode
+           (RadzenButton Href rides a dead href attribute on <button> in SSR chrome). *@
+        <RadzenLink Path="/" Text="@Loc.T("Dashboard")" />
     }
     else
     {
@@ -53,7 +55,7 @@ else if (Slot.SlotId == ViewerShellSlotIds.ExternalLinks)
     {
         if (IsRadzenStack)
         {
-            <RadzenButton Text="@link.Label" Href="@link.Url" Target="@link.Target" Variant="Variant.Text" class="external-link" />
+            <RadzenLink Path="@link.Url" Target="@link.Target" Text="@link.Label" class="external-link" />
         }
         else
         {
@@ -65,7 +67,7 @@ else if (Slot.SlotId == ViewerShellSlotIds.Help && ShowsSurface("help"))
 {
     if (IsRadzenStack)
     {
-        <RadzenButton Text="?" Variant="Variant.Text" Href="/help" Title="@Loc.T("Help")" class="help-link" />
+        <RadzenLink Path="/help" Text="?" Title="@Loc.T("Help")" class="help-link" />
     }
     else
     {
@@ -76,7 +78,7 @@ else if (Slot.SlotId == ViewerShellSlotIds.Settings && ShowsSurface("settings"))
 {
     if (IsRadzenStack)
     {
-        <RadzenButton Text="@Loc.T("Settings")" Variant="Variant.Text" Href="/admin/access" />
+        <RadzenLink Path="/admin/access" Text="@Loc.T("Settings")" />
     }
     else
     {
@@ -87,7 +89,7 @@ else if (Slot.SlotId == ViewerShellSlotIds.SpecDev && Environment.IsDevelopment(
 {
     if (IsRadzenStack)
     {
-        <RadzenButton Text="@Loc.T("Spec")" Variant="Variant.Text" Href="/dev/spec" />
+        <RadzenLink Path="/dev/spec" Text="@Loc.T("Spec")" />
     }
     else
     {

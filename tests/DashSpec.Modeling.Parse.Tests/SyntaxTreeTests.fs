@@ -6,7 +6,7 @@ open DashSpec.Modeling.Parse.Syntax
 module SyntaxTreeTests =
 
     let private nestedTabText =
-        "        tab analytics as \"Analytics\" dashspec \"demo-analytics.ds\"\n            tab detail as \"Detail\"\n                cards\n                    events_detail\n"
+        "        section analytics as \"Analytics\" dashspec \"demo-analytics.ds\"\n            section detail as \"Detail\"\n                cards\n                    events_detail\n"
 
     [<Fact>]
     let ``parse builds nested block nodes`` () =
@@ -34,16 +34,16 @@ module SyntaxTreeTests =
                 | _ -> false)
 
     [<Fact>]
-    let ``findNodeAt resolves nested tab line`` () =
+    let ``findNodeAt resolves nested section line`` () =
         let tree = SyntaxTree.parse nestedTabText
-        let offset = tree.Text.IndexOf("tab detail")
+        let offset = tree.Text.IndexOf("section detail")
         Assert.True(offset >= 0)
 
         match SyntaxTree.findNodeAt tree offset with
         | Some(DashSpecAstNode.BlockDeclaration block) ->
-            Assert.Equal(DashSpecBlockKeyword.Tab, match block.Opener with | DashSpecBlockOpener.Named(k, _) -> k | _ -> failwith "expected named tab")
-            Assert.True(block.Tokens |> Array.exists (fun token -> token.Text = "tab"))
-        | _ -> Assert.Fail("expected block node at nested tab offset")
+            Assert.Equal(DashSpecBlockKeyword.Tab, match block.Opener with | DashSpecBlockOpener.Named(k, _) -> k | _ -> failwith "expected named section")
+            Assert.True(block.Tokens |> Array.exists (fun token -> token.Text = "section"))
+        | _ -> Assert.Fail("expected block node at nested section offset")
 
     [<Fact>]
     let ``classified spans match classifier projection`` () =

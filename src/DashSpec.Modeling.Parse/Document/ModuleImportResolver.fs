@@ -36,6 +36,42 @@ module ModuleImportResolver =
                 DashSpecDiagnosticSeverity.Warning
         )
 
+    /// <summary>
+    /// Implicit imports (`.dsproj` <c>global import</c> lines, like C# ImplicitUsings):
+    /// every module in the project sees these namespaces without a per-module import.
+    /// Already-imported namespaces are skipped.
+    /// </summary>
+    let private appendImplicitImports
+        (header: ModuleHeader)
+        (specDirectory: string option)
+        =
+        match specDirectory with
+        | Some dir ->
+            match DashSpecProjectLocator.tryFindConfig (Some dir) with
+            | Some cfg when cfg.ImplicitImports.Count > 0 ->
+                let headerKeys =
+                    header.Imports
+                    |> Seq.map (fun d -> $"{ImportKindRegistry.keyword d.Kind}|{d.Namespace}")
+                    |> HashSet<string>
+
+                cfg.ImplicitImports
+                |> Seq.choose (fun line ->
+                    // "presentations from DashSpec.Std" → directive
+                    let parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    match parts with
+                    | [| kindKeyword; "from"; ns |] ->
+                        match ImportKindRegistry.tryFindByKeyword kindKeyword with
+                        | Some kind ->
+                            let key = $"{ImportKindRegistry.keyword kind}|{ns}"
+                            if not (headerKeys.Contains key) then
+                                Some { Kind = kind; Namespace = ns; Alias = None; SourceOffset = 0 }
+                            else None
+                        | None -> None
+                    | _ -> None)
+                |> Seq.toList
+            | _ -> []
+        | None -> []
+
     /// <summary>Register imported units before report body parse (ADR-0098).</summary>
     let applyHeaderImports
         (header: ModuleHeader)
@@ -46,13 +82,18 @@ module ModuleImportResolver =
         =
         validateImports header.Imports
 
-        if header.Imports.Count = 0 then ()
+        let implicitImports = appendImplicitImports header specDirectory
+        let allImports : IReadOnlyList<ModuleImportDirective> =
+            if List.isEmpty implicitImports then header.Imports
+            else (header.Imports |> Seq.toList) @ implicitImports
+
+        if allImports.Count = 0 then ()
         else
             match specDirectory with
             | Some dir ->
                 let index = UnitIndex.build dir
 
-                for directive in header.Imports do
+                for directive in allImports do
                     let keyword = ImportKindRegistry.keyword directive.Kind
                     let unitKeyword = ImportKindRegistry.moduleKeyword directive.Kind
 

@@ -150,8 +150,8 @@ module internal ReferenceScanSkip =
                 | _ -> skipBalancedBlock reader "filters" None
             elif reader.TryKeyword "toolbar" then
                 skipFiltersToolbarTail reader
-            elif reader.TryKeyword "tab" then
-                TabParser.parse reader |> ignore
+            elif reader.TryKeyword "section" then
+                TabParser.parse reader "section" |> ignore
                 reader.SkipNewlines()
             else
                 consumeLine reader
@@ -386,10 +386,10 @@ module internal ReferenceScanSkip =
             let isDashboard = reader.TryKeyword "dashboard"
 
             if not isDashboard then
-                reader.ExpectKeyword "tab"
+                reader.ExpectKeyword "section"
 
             let moduleId = reader.ReadIdent()
-            let moduleKind = if isDashboard then "dashboard" else "tab"
+            let moduleKind = if isDashboard then "dashboard" else "section"
 
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()

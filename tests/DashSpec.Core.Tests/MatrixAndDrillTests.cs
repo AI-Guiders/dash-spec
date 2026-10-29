@@ -51,7 +51,9 @@ public sealed class DrillDownPhraseTests
         };
 
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
+              import types from Fixtures.QueryRowTypes
+              import flows from Fixtures.Flow as fixture_flow
               connect
               use flow fixture_flow
               end connect
@@ -68,7 +70,7 @@ public sealed class DrillDownPhraseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """, specDirectory: null, options);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];

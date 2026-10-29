@@ -29,6 +29,7 @@ else
     <div id="@HostId"
          class="matrix-canvas-host @HostCssClass"
          style="@HostStyle"
+         data-stretch="@StretchWire"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
         <div class="matrix-canvas-scroll">
             <div class="matrix-canvas-layout">
@@ -99,6 +100,11 @@ else
 
     [Parameter] public int HeightPx { get; set; } = 320;
 
+    /// <summary>stretch_mode = fill: the matrix takes the slot height (WPF Stretch vocabulary).</summary>
+    [Parameter] public VizStretchMode StretchMode { get; set; } = VizStretchMode.None;
+
+    [Parameter] public VizStretchDirection StretchDirection { get; set; } = VizStretchDirection.UpOnly;
+
     [Parameter] public int? VisibleRows { get; set; }
 
     [Parameter] public string? XAxisLabel { get; set; }
@@ -164,6 +170,11 @@ else
                 parts.Add("matrix-canvas-host--axis-sticky");
             }
 
+            if (StretchMode is VizStretchMode.Fill)
+            {
+                parts.Add("matrix-canvas-host--fill");
+            }
+
             return string.Join(' ', parts);
         }
     }
@@ -174,6 +185,16 @@ else
     private const int TargetVisibleXLabels = 14;
 
     private string HostStyle => $"--matrix-max-height:{HeightPx}px";
+
+    private string StretchWire =>
+        StretchMode is not VizStretchMode.Fill
+            ? "none"
+            : StretchDirection switch
+            {
+                VizStretchDirection.DownOnly => "down_only",
+                VizStretchDirection.Both => "both",
+                _ => "up_only",
+            };
 
     private MatrixPayload? _lastSeenPayload;
 
@@ -225,6 +246,7 @@ else
             colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
+            stretchFill = StretchMode is VizStretchMode.Fill,
             visibleRows = VisibleRows,
             showValues = ValueLabelsWire,
             valueLabelsThreshold = ValueLabelsThresholdPx,
@@ -257,7 +279,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}:{ActiveCellKey()}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{StretchWire}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}:{ActiveCellKey()}";
 
     private string ActiveCellKey() => _activeCell is { } cell ? $"{cell.Yi},{cell.Xi}" : "-";
 

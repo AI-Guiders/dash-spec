@@ -13,7 +13,7 @@ public sealed class ReportTimeConfigurationRegressionTests
 {
     /// <summary>Minimal module tab reproduction: no demo sample sets <c>work_time_column</c> any more.</summary>
     private const string EmbeddedOverviewConfigurationTab = """
-        module tab overview
+        module section overview
           configuration
             sqldialect = tsql
             work_time_column = bucket_start_utc
@@ -27,7 +27,7 @@ public sealed class ReportTimeConfigurationRegressionTests
           data flow { fixture_src [rows] -> [rows] __diagram__ }
           end card
           end report
-        end tab
+        end section
         """;
 
     private static DashSpecParseOptions TabParseOptions { get; } = new()

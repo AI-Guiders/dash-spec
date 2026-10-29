@@ -90,7 +90,7 @@
   align-items: flex-end;
   padding: 0.35rem 0 0.55rem;
   margin-bottom: 0.15rem;
-  background: color-mix(in srgb, var(--bg, #0f1419) 90%, transparent);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -101,7 +101,7 @@
   z-index: 31;
   margin-bottom: 0;
   padding: 0.35rem 0 0.45rem;
-  background: color-mix(in srgb, var(--bg, #0f1419) 92%, transparent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -319,7 +319,7 @@
 .filter-scope {
   display: block;
   font-size: 0.72rem;
-  color: #6b7c90;
+  color: var(--muted);
   margin-top: 0.1rem;
   line-height: 1.3;
 }
@@ -551,7 +551,7 @@
 }
 
 .combobox-trigger:hover {
-  border-color: #4b5d73;
+  border-color: var(--border);
 }
 
 .combobox-summary {
@@ -615,7 +615,7 @@
 }
 
 .combobox-option-active {
-  background: #1e3a5f33;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .combobox-option-single {
@@ -630,8 +630,8 @@
   min-width: 6.5rem;
   padding: 0.35rem 0.5rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--border, #334155);
-  background: var(--surface, #0f172a);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: inherit;
 }
 
@@ -665,13 +665,13 @@
 }
 
 .chip:hover {
-  border-color: #4b5d73;
+  border-color: var(--border);
 }
 
 .chip-active {
-  background: #1e3a5f;
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface));
   border-color: var(--accent);
-  color: #dbeafe;
+  color: var(--text);
 }
 
 .chip-actions {
