@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0097: Document compile pipeline (phase registry)
+---
+type: ADR
+id: DASHSPEC-ADR-0097
+title: "Document compile pipeline (phase registry)"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0095
+  - DASHSPEC-ADR-0096
+  - DASHSPEC-ADR-0098
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0095](DASHSPEC-ADR-0095-dashboard-shell-wiring-pipeline.md), [ADR-0096](DASHSPEC-ADR-0096-placement-flow.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) (`ResolveImports`) |
+# DASHSPEC-ADR-0097: Document compile pipeline (phase registry)
 
 ## Decision
 

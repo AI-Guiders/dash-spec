@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0048 — карта миграции модели (C# → только F#)
+---
+type: ADR
+id: DASHSPEC-ADR-0048
+title: "Карта миграции модели (C -> только F#)"
+status: "Working document"
+date: 2026-10-17
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Working document (ветка `refactor/model-fsharp-ssot`) |
-| **Date** | 2026-10-17 |
-| **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) · [ADR-0102](DASHSPEC-ADR-0102-one-language.md) |
+# DASHSPEC-ADR-0048: Карта миграции модели (C -> только F#)
 
 ## Решение
 

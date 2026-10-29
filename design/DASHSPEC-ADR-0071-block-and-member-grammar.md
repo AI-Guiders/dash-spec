@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0071: Block and member grammar (parse spine)
+---
+type: ADR
+id: DASHSPEC-ADR-0071
+title: "Block and member grammar (parse spine)"
+status: "Accepted"
+date: 2026-09-30
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0036
+  - DASHSPEC-ADR-0048
+  - DASHSPEC-ADR-0070
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-30 |
-| **Relates to** | [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0070](DASHSPEC-ADR-0070-table-column-formats-block.md) |
+# DASHSPEC-ADR-0071: Block and member grammar (parse spine)
 
 ## Context
 

@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0105: Filters pipe-table — `filters { | id | bind | … | }`
+---
+type: ADR
+id: DASHSPEC-ADR-0105
+title: "Filters pipe-table — `filters { | id | bind | … | }`"
+status: "Accepted"
+date: 2026-10-20
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0104
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0071
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-20 |
-| **Relates to** | [ADR-0104](DASHSPEC-ADR-0104-table-columns-pipe-table.md) (pipe-table grammar family), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) |
+# DASHSPEC-ADR-0105: Filters pipe-table — `filters { | id | bind | … | }`
 
 ## Context
 

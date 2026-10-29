@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0091: Unified Graph — one wire syntax
+---
+type: ADR
+id: DASHSPEC-ADR-0091
+title: "Unified Graph — one wire syntax"
+status: "Accepted"
+date: 2026-10-06
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0088
+  - DASHSPEC-ADR-0090
+  - DASHSPEC-ADR-0009
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-06 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) |
+# DASHSPEC-ADR-0091: Unified Graph — one wire syntax
 
 ## Context
 

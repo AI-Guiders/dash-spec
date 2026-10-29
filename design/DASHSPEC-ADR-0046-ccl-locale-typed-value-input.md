@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0046: CCL locale typed value input (DashSpec adapter)
+---
+type: ADR
+id: DASHSPEC-ADR-0046
+title: "CCL locale typed value input (DashSpec adapter)"
+status: "Accepted"
+date: 2026-08-31
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-31 |
-| **Relates to** | [GUIDERS-ADR-0037](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0037-slash-locale-typed-value-input.md), DASHSPEC-ADR-0043, DASHSPEC-ADR-0044, DASHSPEC-ADR-0045 |
+# DASHSPEC-ADR-0046: CCL locale typed value input (DashSpec adapter)
 
 ## Decision
 

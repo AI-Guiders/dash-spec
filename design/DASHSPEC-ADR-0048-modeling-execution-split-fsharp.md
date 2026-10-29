@@ -1,11 +1,20 @@
-# DASHSPEC-ADR-0048: Modeling vs Execution — planet DSL split (F# parse)
+---
+type: ADR
+id: DASHSPEC-ADR-0048
+title: "Modeling vs Execution — planet DSL split (F# parse)"
+status: "Accepted"
+date: 2026-09-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0036
+  - DASHSPEC-ADR-0047
+  - DASHSPEC-ADR-0051
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-02 |
-| **Tags** | #dashspec #planet #modeling #execution #fsharp #dsl #parse |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) · [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) · [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) · [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md) · [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) · [GUIDERS-ADR-0048](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0048-authoring-quarry-family.md) (Authoring Guild) · [GUIDERS-ADR-0061](https://github.com/AI-Guiders/guiders-dotnet-platform/blob/main/docs/adr/GUIDERS-ADR-0061-language-resolver-center.md) (LRC) · [GUIDERS-FSHARP-ADR-0002](https://github.com/AI-Guiders/guiders-fsharp/blob/main/docs/adr/GUIDERS-FSHARP-ADR-0002-model-guild-fsharp-ownership.md) · [CDP-ADR-0208](https://github.com/AI-Guiders/cdp-mcp/blob/main/docs/adr/CDP-ADR-0208-language-resolver-center-cdp-host.md) (CDP host) |
+# DASHSPEC-ADR-0048: Modeling vs Execution — planet DSL split (F# parse)
 
 ## Context
 

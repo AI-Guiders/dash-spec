@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0001: Коннекторы как plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0001
+title: "Коннекторы как plugins"
+status: "Accepted"
+date: 2026-06-24
+tags: [dashspec, adr]
+language: ru
+relates:
+  - FORGE-ADR-0014
+  - DASHSPEC-ADR-0082
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · v0.2 |
-| **Date** | 2026-06-24 |
-| **Relates to** | Forge [FORGE-ADR-0014](https://github.com/AI-Guiders/agent-forge) (microkernel + plugins), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
+# DASHSPEC-ADR-0001: Коннекторы как plugins
 
 ## Context
 

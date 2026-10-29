@@ -1,10 +1,24 @@
-# DASHSPEC-ADR-0110: Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты
+---
+type: ADR
+id: DASHSPEC-ADR-0110
+title: "Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты"
+status: "Accepted"
+date: 2026-10-21
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0072
+  - DASHSPEC-ADR-0061
+  - DASHSPEC-ADR-0063
+  - DASHSPEC-ADR-0073
+  - DASHSPEC-ADR-0074
+  - DASHSPEC-ADR-0054
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0060
+  - DASHSPEC-ADR-0101
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-21 |
-| **Relates to** | [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md) (плоскость слотов: host grid = card grid), [ADR-0061](DASHSPEC-ADR-0061-layout-board-weights-and-filter-place.md) (веса и place), [ADR-0063](DASHSPEC-ADR-0063-layout-board-nest.md) (nest), [ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md) (навигационная поверхность), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) (host как оболочка; композер — предшественник), [ADR-0054](DASHSPEC-ADR-0054-dashhost-module.md), [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md) / [ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md) (вертикальные плагины, паттерн), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md) (единый `.ds`) |
+# DASHSPEC-ADR-0110: Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты
 
 ## Context
 

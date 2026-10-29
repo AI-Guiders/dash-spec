@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0094: Report/page data flow
+---
+type: ADR
+id: DASHSPEC-ADR-0094
+title: "Report/page data flow"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0093
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0090
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md) |
+# DASHSPEC-ADR-0094: Report/page data flow
 
 ## Decision
 

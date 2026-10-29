@@ -1,11 +1,17 @@
-# DASHSPEC-ADR-0077: Host UI copy — SSOT and build-time freeze
+---
+type: ADR
+id: DASHSPEC-ADR-0077
+title: "Host UI copy — SSOT and build-time freeze"
+status: "Accepted"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0076
+  - DASHSPEC-ADR-0090
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-02 |
-| **Amended** | 2026-10-17 — translations relocated from C# dictionaries to `.resx` (operator decision: standard over bespoke) |
-| **Relates to** | [ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md), [ADR-0090](DASHSPEC-ADR-0090-report-culture-defaults.md) |
+# DASHSPEC-ADR-0077: Host UI copy — SSOT and build-time freeze
 
 ## Context
 

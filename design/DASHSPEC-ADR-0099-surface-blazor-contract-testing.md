@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0099: Surface.Blazor — full separation and contract testing
+---
+type: ADR
+id: DASHSPEC-ADR-0099
+title: "Surface.Blazor — full separation and contract testing"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0047
+  - DASHSPEC-ADR-0086
+  - DASHSPEC-ADR-0098
+  - DASHSPEC-ADR-0048
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · **B1–B4 implemented** (viewer in `DashSpec.Surface.Blazor`; Host bootstrap via `IReportCompiler` + project index — [B3 checklist](DASHSPEC-ADR-0099-B3-viewer-migration-checklist.md); B5 product migration + Surface.Bff/OpenAPI out of scope here) |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0086](DASHSPEC-ADR-0086-surfaces-as-plugins-bff.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) |
+# DASHSPEC-ADR-0099: Surface.Blazor — full separation and contract testing
 
 ## Context
 

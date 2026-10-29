@@ -1,11 +1,20 @@
-# DASHSPEC-ADR-0029: Tooltip as entity (content only)
+---
+type: ADR
+id: DASHSPEC-ADR-0029
+title: "Tooltip as entity (content only)"
+status: "Accepted"
+date: 2026-08-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0012
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0028
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-27 |
-| **Supersedes** | earlier drafts (format/split on tooltip; EBNF; raw SQL placeholders) |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) |
+# DASHSPEC-ADR-0029: Tooltip as entity (content only)
 
 ## Context
 

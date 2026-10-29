@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0092: Report-scope routing and events
+---
+type: ADR
+id: DASHSPEC-ADR-0092
+title: "Report-scope routing and events"
+status: "Accepted"
+date: 2026-10-06
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0091
+  - DASHSPEC-ADR-0090
+  - DASHSPEC-ADR-0009
+  - DASHSPEC-ADR-0073
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-06 |
-| **Relates to** | [ADR-0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md), [ADR-0090](DASHSPEC-ADR-0090-card-interior-flow.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md) |
+# DASHSPEC-ADR-0092: Report-scope routing and events
 
 ## Context
 

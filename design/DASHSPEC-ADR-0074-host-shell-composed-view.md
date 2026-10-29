@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0074: Host as shell — composed view, no UI defaults
+---
+type: ADR
+id: DASHSPEC-ADR-0074
+title: "Host as shell — composed view, no UI defaults"
+status: "Accepted (composer contract: normative; Host refactor: incremental)"
+date: 2026-10-01
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0054
+  - DASHSPEC-ADR-0072
+  - DASHSPEC-ADR-0073
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (composer contract: normative; Host refactor: incremental) |
-| **Date** | 2026-10-01 |
-| **Relates to** | [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0054](DASHSPEC-ADR-0054-dashhost-module.md), [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md), [ADR-0073](DASHSPEC-ADR-0073-author-navigation-surface.md) |
+# DASHSPEC-ADR-0074: Host as shell — composed view, no UI defaults
 
 ## Context
 

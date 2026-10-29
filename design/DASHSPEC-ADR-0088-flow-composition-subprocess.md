@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0088: Composable flows (BPMN-style subprocess)
+---
+type: ADR
+id: DASHSPEC-ADR-0088
+title: "Composable flows (BPMN-style subprocess)"
+status: "Accepted (concept + IR contract; parser phased)"
+date: 2026-10-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0080
+  - DASHSPEC-ADR-0083
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0036
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (concept + IR contract; parser phased) |
-| **Date** | 2026-10-05 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0036](DASHSPEC-ADR-0036-end-blocks-page-toolbar.md) |
+# DASHSPEC-ADR-0088: Composable flows (BPMN-style subprocess)
 
 ## Context
 

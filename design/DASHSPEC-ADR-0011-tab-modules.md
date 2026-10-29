@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0011: `@tab` modules and `tab … dashspec`
+---
+type: ADR
+id: DASHSPEC-ADR-0011
+title: "`@tab` modules and `tab … dashspec`"
+status: "Accepted (updated surface"
+date: 2026-06-24
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0010
+  - DASHSPEC-ADR-0024
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (updated surface — [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md)) |
-| **Date** | 2026-06-24 |
-| **Relates to** | [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
+# DASHSPEC-ADR-0011: `@tab` modules and `tab … dashspec`
 
 ## Context
 

@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0062: Viz axis presentation (diagram-agnostic)
+---
+type: ADR
+id: DASHSPEC-ADR-0062
+title: "Viz axis presentation (diagram-agnostic)"
+status: "Accepted"
+date: 2026-09-28
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0002
+  - DASHSPEC-ADR-0003
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-28 |
-| **Relates to** | [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md), [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds.md) |
+# DASHSPEC-ADR-0062: Viz axis presentation (diagram-agnostic)
 
 ## Context
 

@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0010: `on`, `toolbar`, `use card.*`, `bind dashboard`
+---
+type: ADR
+id: DASHSPEC-ADR-0010
+title: "`on`, `toolbar`, `use card.*`, `bind dashboard`"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0009
+  - DASHSPEC-ADR-0008
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md) |
+# DASHSPEC-ADR-0010: `on`, `toolbar`, `use card.*`, `bind dashboard`
 
 ## Context
 

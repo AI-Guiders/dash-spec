@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0100: Diagram kind — вертикальная плагинная способность и каталог-композиция (SSOT)
+---
+type: ADR
+id: DASHSPEC-ADR-0100
+title: "Diagram kind — вертикальная плагинная способность и каталог-композиция (SSOT)"
+status: "Accepted"
+date: 2026-10-09
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · design fixed; implementation phased (P1–P5) |
-| **Date** | 2026-10-09 |
-| **Relates to** | [0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md) · [0008](DASHSPEC-ADR-0008-viz-render-plugins.md) · [0032](DASHSPEC-ADR-0032-extension-blocks-and-plugins.md) · [0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) · [0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md) · [0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md) · [0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md) · [0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) |
+# DASHSPEC-ADR-0100: Diagram kind — вертикальная плагинная способность и каталог-композиция (SSOT)
 
 ## Context
 

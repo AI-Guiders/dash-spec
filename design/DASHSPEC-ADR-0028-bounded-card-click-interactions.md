@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0028: Bounded `on click` interactions
+---
+type: ADR
+id: DASHSPEC-ADR-0028
+title: "Bounded `on click` interactions"
+status: "Accepted (v1 implemented; amended ADR"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0029
+  - DASHSPEC-ADR-0027
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0031
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (v1 implemented; amended ADR-0031) |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0029](DASHSPEC-ADR-0029-inspect-tooltip-presentation-split.md), [ADR-0027](DASHSPEC-ADR-0027-single-declaration-and-layout-ids.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md) |
+# DASHSPEC-ADR-0028: Bounded `on click` interactions
 
 ## Context
 

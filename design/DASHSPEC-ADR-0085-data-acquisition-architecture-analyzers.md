@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0085: Data Acquisition vs Data Flow — boundaries and DSPEC analyzers
+---
+type: ADR
+id: DASHSPEC-ADR-0085
+title: "Data Acquisition vs Data Flow — boundaries and DSPEC analyzers"
+status: "Accepted"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0083
+  - DASHSPEC-ADR-0076
+  - DASHSPEC-ADR-0102
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md), CIDE [ADR-0102](https://github.com/AI-Guiders/cascade-ide/blob/main/docs/adr/0102-data-acquisition-layer-boundary-and-contract.md) |
+# DASHSPEC-ADR-0085: Data Acquisition vs Data Flow — boundaries and DSPEC analyzers
 
 ## Context
 

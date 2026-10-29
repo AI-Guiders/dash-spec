@@ -1,10 +1,26 @@
-# DASHSPEC-ADR-0078: Dashflow — data plane (sources, transformers, card inputs)
+---
+type: ADR
+id: DASHSPEC-ADR-0078
+title: "Dashflow — data plane (sources, transformers, card inputs)"
+status: "Accepted (concept + IR; parser / runtime phased)"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0006
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0009
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0018
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0048
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0080
+  - DASHSPEC-ADR-0083
+  - DASHSPEC-ADR-0088
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (concept + IR; parser / runtime phased) |
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0080](DASHSPEC-ADR-0080-dataflow-transform-plugins.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) |
+# DASHSPEC-ADR-0078: Dashflow — data plane (sources, transformers, card inputs)
 
 ## Context
 

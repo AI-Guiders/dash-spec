@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0068: Diagram Designer — discoverability через VIEW + diagram (не question entity)
+---
+type: ADR
+id: DASHSPEC-ADR-0068
+title: "Diagram Designer — discoverability через VIEW + diagram (не question entity)"
+status: "Proposed"
+date: 2026-09-30
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0003
+  - DASHSPEC-ADR-0006
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0018
+  - DASHSPEC-ADR-0023
+  - DASHSPEC-ADR-0065
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-09-30 |
-| **Relates to** | [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md), [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) |
+# DASHSPEC-ADR-0068: Diagram Designer — discoverability через VIEW + diagram (не question entity)
 
 ## Context
 

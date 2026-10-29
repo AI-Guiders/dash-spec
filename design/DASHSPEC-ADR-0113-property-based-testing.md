@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0113: Property-based testing — парсеры и грамматики как исполняемые законы
+---
+type: ADR
+id: DASHSPEC-ADR-0113
+title: "Property-based testing — парсеры и грамматики как исполняемые законы"
+status: "Proposed"
+date: 2026-10-24
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-10-24 |
-| **Tags** | #dashspec #testing #pbt #fscheck #parsers |
+# DASHSPEC-ADR-0113: Property-based testing — парсеры и грамматики как исполняемые законы
 
 ## Context
 

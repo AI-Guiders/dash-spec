@@ -1,10 +1,24 @@
-# DASHSPEC-ADR-0112: Рендер-стек — выбор визуального фреймворка и тема как токен
+---
+type: ADR
+id: DASHSPEC-ADR-0112
+title: "Рендер-стек — выбор визуального фреймворка и тема как токен"
+status: "Proposed"
+date: 2026-10-22
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0111
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0060
+  - DASHSPEC-ADR-0081
+  - DASHSPEC-ADR-0074
+  - DASHSPEC-ADR-0110
+  - DASHSPEC-ADR-0012
+  - DASHSPEC-ADR-0077
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-10-22 |
-| **Relates to** | [ADR-0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) (собранная плоскость — вход рендера), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) (семьи плагинов, микроядро), [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md) / [ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md) (вертикальные плагины), [ADR-0081](DASHSPEC-ADR-0081-type-plugins.md) (плагины расширяют язык), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md), [ADR-0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0077](DASHSPEC-ADR-0077-host-ui-copy-ssot.md) |
+# DASHSPEC-ADR-0112: Рендер-стек — выбор визуального фреймворка и тема как токен
 
 ## Context
 

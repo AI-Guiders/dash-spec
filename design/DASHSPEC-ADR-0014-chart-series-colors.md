@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0014: Chart series colors in spec
+---
+type: ADR
+id: DASHSPEC-ADR-0014
+title: "Chart series colors in spec"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0003
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0008
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md) |
+# DASHSPEC-ADR-0014: Chart series colors in spec
 
 ## Context
 

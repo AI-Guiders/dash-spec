@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0038: Структурированный card и report как composition
+---
+type: ADR
+id: DASHSPEC-ADR-0038
+title: "Структурированный card и report как composition"
+status: "Proposed"
+date: 2026-07-08
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0037
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-07-08 |
-| **Relates to** | [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0037](DASHSPEC-ADR-0037-filter-scopes-and-toolbar-grouping.md) |
+# DASHSPEC-ADR-0038: Структурированный card и report как composition
 
 ## Контекст
 

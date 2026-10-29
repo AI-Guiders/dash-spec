@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0027: Single declaration and layout by canonical id
+---
+type: ADR
+id: DASHSPEC-ADR-0027
+title: "Single declaration and layout by canonical id"
+status: "Proposed"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0021
+  - DASHSPEC-ADR-0025
+  - DASHSPEC-ADR-0026
+  - DASHSPEC-ADR-0024
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md), [ADR-0025](DASHSPEC-ADR-0025-card-interior-layout-board.md), [ADR-0026](DASHSPEC-ADR-0026-layout-module-scope.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
+# DASHSPEC-ADR-0027: Single declaration and layout by canonical id
 
 ## Context
 

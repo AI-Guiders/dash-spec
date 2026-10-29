@@ -1,9 +1,16 @@
-# ADR-0099 B3 — viewer migration checklist (Host → Surface.Blazor)
+---
+type: ADR
+id: DASHSPEC-ADR-0099-B3
+title: "viewer migration checklist (Host -> Surface.Blazor)"
+status: "Accepted"
+date: unknown
+tags: [dashspec, adr]
+language: en
+relates:
+  - DASHSPEC-ADR-0099
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · **B3.1–B3.6 done** (`develop`) |
-| **Relates to** | [ADR-0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) B3 |
+# DASHSPEC-ADR-0099-B3: viewer migration checklist (Host -> Surface.Blazor)
 
 ## Current state (`develop` after B3.6)
 

@@ -1,11 +1,17 @@
-# DASHSPEC-ADR-0019: `@runtime` — manifest вне DSL
+---
+type: ADR
+id: DASHSPEC-ADR-0019
+title: "`@runtime` — manifest вне DSL"
+status: "Accepted"
+date: 2026-07-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0024
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · v0.6 |
-| **Date** | 2026-07-02 |
-| **Supersedes** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md) § «`@config`» (имя) |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) (блочный `runtime { manifest = … }` — канон surface) |
+# DASHSPEC-ADR-0019: `@runtime` — manifest вне DSL
 
 ## Context
 

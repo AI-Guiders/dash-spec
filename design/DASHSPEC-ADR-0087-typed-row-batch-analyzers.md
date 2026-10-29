@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0087: Typed row batch (`rows R`) — wire model and DSPEC031–034
+---
+type: ADR
+id: DASHSPEC-ADR-0087
+title: "Typed row batch (`rows R`) — wire model and DSPEC031–034"
+status: "Accepted"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0085
+  - DASHSPEC-ADR-0076
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md), [ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md) |
+# DASHSPEC-ADR-0087: Typed row batch (`rows R`) — wire model and DSPEC031–034
 
 ## Context
 

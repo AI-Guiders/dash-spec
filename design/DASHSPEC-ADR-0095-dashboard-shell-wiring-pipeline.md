@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0095: Dashboard shell wiring pipeline (SSOT)
+---
+type: ADR
+id: DASHSPEC-ADR-0095
+title: "Dashboard shell wiring pipeline (SSOT)"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0093
+  - DASHSPEC-ADR-0094
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0093](DASHSPEC-ADR-0093-qualified-flow-graph-kinds.md), [ADR-0094](DASHSPEC-ADR-0094-report-page-data-flow.md) |
+# DASHSPEC-ADR-0095: Dashboard shell wiring pipeline (SSOT)
 
 ## Problem
 

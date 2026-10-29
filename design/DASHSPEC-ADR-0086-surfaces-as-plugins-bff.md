@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0086: Surfaces as plugins — viewer-agnostic platform + BFF
+---
+type: ADR
+id: DASHSPEC-ADR-0086
+title: "Surfaces as plugins — viewer-agnostic platform + BFF"
+status: "Accepted"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0047
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0013
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0083
+  - DASHSPEC-ADR-0085
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · partial (S0–S1 in repo; BFF S2 not started)|
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0047](DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0013](DASHSPEC-ADR-0013-host-solid-ports-viz-registry.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0083](DASHSPEC-ADR-0083-dataflow-engine-cockpit-transport.md), [ADR-0085](DASHSPEC-ADR-0085-data-acquisition-architecture-analyzers.md) |
+# DASHSPEC-ADR-0086: Surfaces as plugins — viewer-agnostic platform + BFF
 
 ## Context
 

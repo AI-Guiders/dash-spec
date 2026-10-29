@@ -1,12 +1,17 @@
-# DASHSPEC-ADR-0066: Host refresh scopes (implementation of ADR-0028)
+---
+type: ADR
+id: DASHSPEC-ADR-0066
+title: "Host refresh scopes (implementation of ADR-0028)"
+status: "Accepted"
+date: 2026-09-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0064
+  - DASHSPEC-ADR-0065
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-29 |
-| **Audience** | Host / Execution engineers only |
-| **Author SSOT** | [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) — таблица «что обновляется» в грамматике `on click` |
-| **Relates to** | [ADR-0064](DASHSPEC-ADR-0064-cell-drill-tabular-payload.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md) |
+# DASHSPEC-ADR-0066: Host refresh scopes (implementation of ADR-0028)
 
 ## Context
 

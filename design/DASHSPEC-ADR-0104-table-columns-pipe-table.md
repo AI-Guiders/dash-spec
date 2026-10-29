@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0104: Table columns pipe-table — `id | format | label | sorting`
+---
+type: ADR
+id: DASHSPEC-ADR-0104
+title: "Table columns pipe-table — `id | format | label | sorting`"
+status: "Accepted"
+date: 2026-10-20
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+  - DASHSPEC-ADR-0057
+  - DASHSPEC-ADR-0070
+  - DASHSPEC-ADR-0071
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-20 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md) (deferred `table columns` step), [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) (GDL-таблицы as future authoring form), [ADR-0070](DASHSPEC-ADR-0070-table-column-formats-block.md), [ADR-0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) |
+# DASHSPEC-ADR-0104: Table columns pipe-table — `id | format | label | sorting`
 
 ## Context
 

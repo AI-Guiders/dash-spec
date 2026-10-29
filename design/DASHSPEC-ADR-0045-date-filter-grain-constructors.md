@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0045: Date filter grain constructors
+---
+type: ADR
+id: DASHSPEC-ADR-0045
+title: "Date filter grain constructors"
+status: "Accepted"
+date: 2026-08-31
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0043
+  - DASHSPEC-ADR-0044
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-31 |
-| **Relates to** | [ADR-0043](DASHSPEC-ADR-0043-filter-command-palette.md), [ADR-0044](DASHSPEC-ADR-0044-date-filter-value-constructor.md), [GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md) |
+# DASHSPEC-ADR-0045: Date filter grain constructors
 
 ## Context
 

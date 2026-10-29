@@ -1,8 +1,21 @@
-# ADR-0057: Resolution registry — единая точка «кто побеждает»
+---
+type: ADR
+id: DASHSPEC-ADR-0057
+title: "Resolution registry — единая точка «кто побеждает»"
+status: "Accepted"
+date: 2026-09-25
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0031
+  - DASHSPEC-ADR-0038
+  - DASHSPEC-ADR-0039
+  - DASHSPEC-ADR-0042
+  - DASHSPEC-ADR-0054
+  - DASHSPEC-ADR-0056
+---
 
-**Status:** Accepted  
-**Date:** 2026-09-25  
-**Relates to:** [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md), [ADR-0038](DASHSPEC-ADR-0038-structured-card-and-report-composition.md), [ADR-0039](DASHSPEC-ADR-0039-chart-chrome-merge.md), [ADR-0042](DASHSPEC-ADR-0042-host-control-center-witdb.md), [ADR-0054](DASHSPEC-ADR-0054-dashhost-module.md), [ADR-0056](DASHSPEC-ADR-0056-layout-card-groups.md)
+# DASHSPEC-ADR-0057: Resolution registry — единая точка «кто побеждает»
 
 ## Context
 

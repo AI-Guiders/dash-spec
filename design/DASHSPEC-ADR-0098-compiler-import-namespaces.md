@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0098: Compiler modules — `namespace` and `import`
+---
+type: ADR
+id: DASHSPEC-ADR-0098
+title: "Compiler modules — `namespace` and `import`"
+status: "Accepted"
+date: 2026-10-07
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0097
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · **implemented** (`IReportCompiler`, `import` by namespace + kind; `samples/demo` + `tests/Fixtures/import-project`; `!include` removed, product migration — ADR-0099 B5; resolution index over `.dsproj` membership and resolved units instead of paths — 2026-10-15) |
-| **Date** | 2026-10-07 |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md) |
+# DASHSPEC-ADR-0098: Compiler modules — `namespace` and `import`
 
 ## Context
 

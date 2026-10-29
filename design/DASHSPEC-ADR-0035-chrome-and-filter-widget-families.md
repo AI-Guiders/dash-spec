@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0035: Card chrome and filter widget families
+---
+type: ADR
+id: DASHSPEC-ADR-0035
+title: "Card chrome and filter widget families"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Extends** | [ADR-0032](DASHSPEC-ADR-0032-extension-blocks-and-plugins.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0034](DASHSPEC-ADR-0034-phrase-templates-and-scopes.md) |
+# DASHSPEC-ADR-0035: Card chrome and filter widget families
 
 ## Context
 

@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0041: Git catalog sync on push (webhook), poll as safety net
+---
+type: ADR
+id: DASHSPEC-ADR-0041
+title: "Git catalog sync on push (webhook), poll as safety net"
+status: "Accepted"
+date: 2026-08-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0049
+  - DASHSPEC-ADR-0005
+  - DASHSPEC-ADR-0067
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-27 |
-| **Relates to** | [ADR-0049](DASHSPEC-ADR-0049-git-catalog.md), Forge [ADR-0005](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0005-ci-webhook-bridge.md), Forge [ADR-0067](../../../../agent-forge/design/FORGE-ADR-0067-outbound-push-fanout.md) (sibling repo) |
+# DASHSPEC-ADR-0041: Git catalog sync on push (webhook), poll as safety net
 
 ## Context
 

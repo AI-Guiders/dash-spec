@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0009: `bind` — единственный список фильтров карточки
+---
+type: ADR
+id: DASHSPEC-ADR-0009
+title: "`bind` — единственный список фильтров карточки"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0006
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [FILTERS_RU.md](../docs/FILTERS_RU.md), [ADR-0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md) |
+# DASHSPEC-ADR-0009: `bind` — единственный список фильтров карточки
 
 ## Context
 

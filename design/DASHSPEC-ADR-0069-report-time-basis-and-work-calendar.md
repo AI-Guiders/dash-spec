@@ -1,8 +1,14 @@
-# DASHSPEC-ADR-0069: Report time basis (calendar vs working) and work calendar v1
+---
+type: ADR
+id: DASHSPEC-ADR-0069
+title: "Report time basis (calendar vs working) and work calendar v1"
+status: "Unknown"
+date: unknown
+tags: [dashspec, adr]
+language: ru
+---
 
-| Status | Proposed |
-|--------|----------|
-| Date | 2026-09-30 |
+# DASHSPEC-ADR-0069: Report time basis (calendar vs working) and work calendar v1
 
 ## Context
 

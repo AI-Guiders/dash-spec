@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0015: Dev spec resolve, dashboard palette
+---
+type: ADR
+id: DASHSPEC-ADR-0015
+title: "Dev spec resolve, dashboard palette"
+status: "Accepted"
+date: 2026-06-30
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0014
+  - DASHSPEC-ADR-0011
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-30 |
-| **Relates to** | [ADR-0014](DASHSPEC-ADR-0014-chart-series-colors.md), [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md) |
+# DASHSPEC-ADR-0015: Dev spec resolve, dashboard palette
 
 ## Context
 

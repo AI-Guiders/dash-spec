@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0101: Single compilation-unit file type (`.ds`) and `module <kind> <id>` envelope
+---
+type: ADR
+id: DASHSPEC-ADR-0101
+title: "Single compilation-unit file type (`.ds`) and `module <kind> <id>` envelope"
+status: "Accepted"
+date: 2026-10-11
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0089
+  - DASHSPEC-ADR-0097
+  - DASHSPEC-ADR-0098
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-11 |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0089](DASHSPEC-ADR-0089-document-modules-using-import.md), [ADR-0097](DASHSPEC-ADR-0097-document-compile-pipeline.md), [ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md) |
+# DASHSPEC-ADR-0101: Single compilation-unit file type (`.ds`) and `module <kind> <id>` envelope
 
 ## Context
 

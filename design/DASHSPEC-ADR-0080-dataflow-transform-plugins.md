@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0080: Dataflow transforms as plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0080
+title: "Dataflow transforms as plugins"
+status: "Accepted (concept; loader phased)"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0001
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0081
+  - DASHSPEC-ADR-0082
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (concept; loader phased) |
-| **Date** | 2026-10-02 |
-| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0081](DASHSPEC-ADR-0081-type-plugins.md), [ADR-0082](DASHSPEC-ADR-0082-dashspec-sdk.md) |
+# DASHSPEC-ADR-0080: Dataflow transforms as plugins
 
 ## Context
 

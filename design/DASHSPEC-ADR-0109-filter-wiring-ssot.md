@@ -1,4 +1,14 @@
-# ADR-0109: SSOT проводки фильтров клика
+---
+type: ADR
+id: DASHSPEC-ADR-0109
+title: "SSOT проводки фильтров клика"
+status: "Accepted"
+date: 2026-10-21
+tags: [dashspec, adr]
+language: ru
+---
+
+# DASHSPEC-ADR-0109: SSOT проводки фильтров клика
 
 ## Статус
 

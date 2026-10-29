@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0016: Bar reference markers (purchased seats / entitlement)
+---
+type: ADR
+id: DASHSPEC-ADR-0016
+title: "Bar reference markers (purchased seats / entitlement)"
+status: "Accepted"
+date: 2026-07-01
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0003
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-01 |
-| **Relates to** | [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), demo stakeholder report №1 |
+# DASHSPEC-ADR-0016: Bar reference markers (purchased seats / entitlement)
 
 ## Контекст
 

@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0023: `.dashcatalog` and report catalog
+---
+type: ADR
+id: DASHSPEC-ADR-0023
+title: "`.dashcatalog` and report catalog"
+status: "Accepted"
+date: 2026-07-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0011
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0019
+  - DASHSPEC-ADR-0024
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-02 |
-| **Relates to** | [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0019](DASHSPEC-ADR-0019-runtime-directive.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md) |
+# DASHSPEC-ADR-0023: `.dashcatalog` and report catalog
 
 ## Context
 

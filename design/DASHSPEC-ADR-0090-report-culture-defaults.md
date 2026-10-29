@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0090: Report culture as locale SSOT
+---
+type: ADR
+id: DASHSPEC-ADR-0090
+title: "Report culture as locale SSOT"
+status: "Accepted"
+date: 2026-10-06
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0069
+  - DASHSPEC-ADR-0012
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · Implemented|
-| **Date** | 2026-10-06 |
-| **Relates to** | [ADR-0069](DASHSPEC-ADR-0069-report-time-basis-and-work-calendar.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md) |
+# DASHSPEC-ADR-0090: Report culture as locale SSOT
 
 ## Context
 

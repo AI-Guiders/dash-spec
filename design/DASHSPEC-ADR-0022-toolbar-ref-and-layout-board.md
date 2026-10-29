@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0022: Filter `ref` and toolbar layout board
+---
+type: ADR
+id: DASHSPEC-ADR-0022
+title: "Filter `ref` and toolbar layout board"
+status: "Accepted"
+date: 2026-07-02
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0020
+  - DASHSPEC-ADR-0021
+  - DASHSPEC-ADR-0010
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · **superseded in part** — `include toolbar "…"` was removed; a toolbar board is an imported layout unit (`scope toolbar`) or an inline board ([ADR-0098](DASHSPEC-ADR-0098-compiler-import-namespaces.md), [ADR-0101](DASHSPEC-ADR-0101-single-unit-file-type.md)) |
-| **Date** | 2026-07-02 |
-| **Relates to** | [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0021](DASHSPEC-ADR-0021-dashlayout-include.md), [ADR-0010](DASHSPEC-ADR-0010-spec-ergonomics.md) |
+# DASHSPEC-ADR-0022: Filter `ref` and toolbar layout board
 
 ## Context
 

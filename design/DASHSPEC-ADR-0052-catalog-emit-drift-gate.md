@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0052: Catalog emit drift gate (W0)
+---
+type: ADR
+id: DASHSPEC-ADR-0052
+title: "Catalog emit drift gate (W0)"
+status: "Accepted"
+date: 2026-09-13
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0051
+---
 
-| Field | Value |
-|-------|-------|
-| **Status** | Accepted |
-| **Date** | 2026-09-13 |
-| **Relates to** | [ADR-0051](DASHSPEC-ADR-0051-language-affinity-modeling-execution.md) §4b I1 · [GUIDERS-ADR-0059](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0059-gdl-hyperlane.md) |
+# DASHSPEC-ADR-0052: Catalog emit drift gate (W0)
 
 ## Context
 

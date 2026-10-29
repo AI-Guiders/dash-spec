@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0012: Host presentation layering
+---
+type: ADR
+id: DASHSPEC-ADR-0012
+title: "Host presentation layering"
+status: "Accepted"
+date: 2026-06-24
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0011
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-24 |
-| **Relates to** | [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md) |
+# DASHSPEC-ADR-0012: Host presentation layering
 
 ## Context
 
