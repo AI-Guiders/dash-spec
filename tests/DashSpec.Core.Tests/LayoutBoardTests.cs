@@ -12,7 +12,7 @@ public class LayoutBoardTests
     public void Parse_card_ref_and_tab_layout_board()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   connect
   layout board
   [ Q E ]
@@ -48,7 +48,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """);
 
         Assert.Equal("Q", doc.Cards[0].LayoutRef);
@@ -61,7 +61,7 @@ end tab
     public void TabLayoutBoardResolver_places_2x2_grid()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   connect
   layout board
   [ Q E ]
@@ -95,7 +95,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """);
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
@@ -110,7 +110,7 @@ end tab
     public void TabLayoutBoardResolver_single_cell_row_is_full_width()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   connect
   layout board
   [ Q W ]
@@ -139,7 +139,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """);
 
         var layout = TabLayoutCompactor.Compact(doc, "demo");
@@ -154,7 +154,7 @@ end tab
     public void TabLayoutBoardResolver_uneven_rows_distribute_per_row()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   connect
   layout board
   [ Q E ]
@@ -201,7 +201,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """);
 
             Assert.Equal(3, doc.Tabs[0].LayoutBoard!.Value.RowCount);
@@ -227,14 +227,14 @@ end tab
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
                 namespace Layouts.Grid
-                scope tab
+                scope section
                 
                 [ Q E ]
                 [ T F ]
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   import layouts from Layouts.Grid
   report
   title = "demo"
@@ -263,7 +263,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """, dir);
 
             Assert.NotNull(doc.Tabs[0].LayoutBoard);
@@ -287,12 +287,12 @@ end tab
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
                 namespace Layouts.Grid
-                scope tab
+                scope section
                 [ Q ]
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-                module tab demo
+                module section demo
                   import layouts from Layouts.Grid
                   connect
                   layout board
@@ -308,7 +308,7 @@ end tab
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
-                end tab
+                end section
                 """, dir));
 
             Assert.Contains("layout board", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -699,7 +699,7 @@ end tab
                 """);
 
             var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-                module tab demo
+                module section demo
                   import layouts from Layouts.Toolbar
                   report
                   title = "demo"
@@ -710,7 +710,7 @@ end tab
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
-                end tab
+                end section
                 """, dir));
 
             Assert.Contains("scope toolbar", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -732,7 +732,7 @@ end tab
             File.WriteAllText(Path.Combine(dir, "layouts", "grid.ds"), """
                 module layout g
                 namespace Layouts.Tab
-                scope tab
+                scope section
                 [ Q ]
                 """);
 
@@ -767,7 +767,7 @@ end tab
                 end dashboard
                 """, dir));
 
-            Assert.Contains("scope tab", ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("scope section", ex.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("toolbar", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
@@ -786,7 +786,7 @@ end tab
             File.WriteAllText(Path.Combine(dir, "layouts", "grouped.ds"), """
                 module layout grouped
                 namespace Layouts.Grouped
-                scope tab
+                scope section
 
                 group distribution {
                   title = "Distribution"
@@ -796,7 +796,7 @@ end tab
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
-                module tab demo
+                module section demo
                   import layouts from Layouts.Grouped
                   report
                   title = "demo"
@@ -819,7 +819,7 @@ end tab
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   end report
-                end tab
+                end section
                 """, dir);
 
             var context = TabLayoutCompactor.ResolveContext(doc, "demo");
@@ -845,7 +845,7 @@ end tab
     public void TabLayoutPlanner_places_nest_in_bracket_cell_with_inner_rows()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-module tab demo
+module section demo
   connect
   layout board
   nest strip {
@@ -876,7 +876,7 @@ module tab demo
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   end report
-end tab
+end section
 """);
 
         var context = TabLayoutCompactor.ResolveContext(doc, "demo");

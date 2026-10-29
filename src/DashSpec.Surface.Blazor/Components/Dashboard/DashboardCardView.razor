@@ -45,7 +45,15 @@
         }
         @if (HasHeadToolbar && !BodyFolded)
         {
-            <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
+            @* Chrome is the stack's (ADR-0112): the action row is a Radzen stack —
+               layout and rhythm from the theme, content stays ours. *@
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         AlignItems="AlignItems.Center"
+                         Wrap="FlexWrap.Wrap"
+                         Gap="0.4rem"
+                         class="card-head-toolbar"
+                         role="toolbar"
+                         aria-label="@Loc.T("Card actions")">
             @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
             {
                 <CardLocalFilterChrome Card="Card"
@@ -101,7 +109,7 @@
             {
                 <span class="card-status card-status-error">@Loc.T("Error")</span>
             }
-            </div>
+            </RadzenStack>
         }
         @if (HasHeadMeta && !BodyFolded)
         {
@@ -152,7 +160,8 @@
                 @foreach (var slot in InteriorSlots)
                 {
                     <PlacementSlot Placement="slot.Placement"
-                                   CssClass="@InteriorSlotClass(slot.Node.Kind)">
+                                   CssClass="@InteriorSlotCssClass(slot)"
+                                   ExtraStyle="@InteriorSlotExtraStyle(slot)">
                         <CardInteriorSlotContent Slot="slot" />
                     </PlacementSlot>
                 }
@@ -174,6 +183,10 @@
              @onkeydown="OnFullscreenKeyDown">
             <header class="card-fullscreen-head">
                 <h2><RichTextView Text="@Card.Title" /></h2>
+                @if (_fullscreenSlotId is not null)
+                {
+                    <span class="muted card-fullscreen-slot-hint">@_fullscreenSlotId</span>
+                }
                 <button type="button"
                         class="secondary card-icon-btn card-fullscreen-close"
                         title="@Loc.T("Collapse")"
@@ -188,10 +201,29 @@
                 </button>
             </header>
             <div class="card-fullscreen-body">
-                @if (_cardBodyType is not null)
-                {
-                    <DynamicComponent Type="_cardBodyType" Parameters="_cardBodyParameters" />
-                }
+                <CascadingValue Value="this" IsFixed="true">
+                    @* [ADR-0111] P1: the maximized card keeps its interior slot plan — every
+                       slot rides along (filters, diagram, drills), only the frame grows.
+                       The plan is SSOT: the panel renders slots only, no direct diagram path. *@
+                    @if (_fullscreenSlotId is { } slotId &&
+                        InteriorSlots.FirstOrDefault(slot => slot.Node.Id == slotId) is { } fsSlot)
+                    {
+                        <CardInteriorSlotContent Slot="fsSlot" />
+                    }
+                    else
+                    {
+                        <CardInteriorGrid GridColumns="GridColumns">
+                            @foreach (var slot in InteriorSlots)
+                            {
+                                <PlacementSlot Placement="slot.Placement"
+                                               CssClass="@InteriorSlotCssClass(slot)"
+                                               ExtraStyle="@InteriorSlotExtraStyle(slot)">
+                                    <CardInteriorSlotContent Slot="slot" />
+                                </PlacementSlot>
+                            }
+                        </CardInteriorGrid>
+                    }
+                </CascadingValue>
             </div>
         </div>
     </div>
@@ -236,6 +268,7 @@
     private HeatmapCellContext? _selection;
     private RenderSnapshot _renderSnapshot;
     private bool _fullscreen;
+    private string? _fullscreenSlotId;
     private ElementReference _fullscreenPanel;
 
     private bool HasHeadToolbar =>
@@ -253,6 +286,7 @@
 
     private bool CanFullscreen =>
         !Card.IsVisibilityPlaceholder &&
+        InteriorSlots.Count > 0 &&
         Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table or DiagramDataFamily.Gantt;
 
     [Inject] private VizCardToolbarRegistry VizToolbars { get; set; } = default!;
@@ -265,25 +299,31 @@
     private Dictionary<string, object?> _vizToolbarParameters = new();
     private IReadOnlyList<Type> _cardChromeTypes = [];
     private Dictionary<string, object?> _cardChromeParameters = new();
-    private Type? _cardBodyType;
-    private Dictionary<string, object?> _cardBodyParameters = new();
     private Type? _filterWidgetType;
-
-    private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
-
-    private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
-
 
     private void ToggleFullscreen()
     {
         _fullscreen = !_fullscreen;
+        _fullscreenSlotId = null;
         if (_fullscreen)
         {
             _ = FocusFullscreenAsync();
         }
     }
 
-    private void CloseFullscreen() => _fullscreen = false;
+    /// <summary>Per-slot maximize (hover button on a slot): the panel shows only this slot.</summary>
+    internal void OpenSlotFullscreen(string slotId)
+    {
+        _fullscreenSlotId = slotId;
+        _fullscreen = true;
+        _ = FocusFullscreenAsync();
+    }
+
+    private void CloseFullscreen()
+    {
+        _fullscreen = false;
+        _fullscreenSlotId = null;
+    }
 
     private async Task FocusFullscreenAsync()
     {
@@ -335,6 +375,7 @@
             _selection?.Xi,
             _selection?.Yi,
             _fullscreen,
+            _fullscreenSlotId,
             BodyFolded,
             LocalFieldOptionsToken(),
             FieldOptionsRevision,
@@ -361,6 +402,7 @@
         int? SelectionXi,
         int? SelectionYi,
         bool Fullscreen,
+        string? FullscreenSlotId,
         bool BodyFolded,
         int LocalFieldOptionsToken,
         int FieldOptionsRevision,
@@ -411,23 +453,7 @@
                 },
             };
 
-        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardDiagram, out _cardBodyType);
         Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.FilterWidget, out _filterWidgetType);
-        _cardBodyParameters = _cardBodyType is null
-            ? new Dictionary<string, object?>()
-            : new Dictionary<string, object?>
-            {
-                ["Card"] = Card,
-                ["DetailView"] = true,
-                ["MatrixMin"] = DetailMatrixMin,
-                ["MatrixMax"] = DetailMatrixMax,
-                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                    this,
-                    HandleHeatmapCellSelectedAsync),
-                ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                    this,
-                    HandleHeatmapCategoryItemSelectedAsync),
-            };
 
         _cardChromeTypes = Card.IsVisibilityPlaceholder ||
                            Card.Loading ||
@@ -551,6 +577,37 @@
         kind == DashSpec.Modeling.Core.WiringNodeKind.Filter
             ? "card-interior-slot card-filter-slot"
             : "card-interior-slot card-diagram-slot";
+
+    /// <summary>stretch_mode = fill diagram slot: the card is the frame — the authored px
+    /// height fixes the slot, the content fills it and scrolls inside; siblings stretch
+    /// to the same frame instead of dictating heights to each other (ADR-0116 flex row).</summary>
+    private bool IsFillDiagramSlot(DashSpec.Modeling.Parse.Layout.Slot slot)
+    {
+        if (slot.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter ||
+            Card.InteriorSlotRenders?.ContainsKey(slot.Node.Id) == true)
+        {
+            return false;
+        }
+
+        return Card.ChartPresentation is { StretchMode: VizStretchMode.Fill } ||
+               Card.MatrixPresentation is { StretchMode: VizStretchMode.Fill };
+    }
+
+    private string InteriorSlotExtraStyle(DashSpec.Modeling.Parse.Layout.Slot slot) =>
+        IsFillDiagramSlot(slot)
+            ? $"--fill-h:{EffectiveFillFloorPx}px;"
+            : string.Empty;
+
+    private int EffectiveFillFloorPx =>
+        Card.ChartPresentation is { StretchMode: VizStretchMode.Fill } chart ? chart.HeightPx
+        : Card.MatrixPresentation is { StretchMode: VizStretchMode.Fill } matrix ? matrix.HeightPx
+        : 320;
+
+    private string InteriorSlotCssClass(DashSpec.Modeling.Parse.Layout.Slot slot)
+    {
+        var kindClass = InteriorSlotClass(slot.Node.Kind);
+        return IsFillDiagramSlot(slot) ? $"{kindClass} card-diagram-slot--fill" : kindClass;
+    }
 
     internal string InteriorSlotStyle(string slotKey) =>
         Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true

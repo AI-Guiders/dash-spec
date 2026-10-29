@@ -55,11 +55,13 @@ else
                active report's sections — the top strip and the catalog combobox go away. *@
             <DashboardSidebar Entries="Page.CatalogEntries"
                               Groups="Page.CatalogGroups"
-                              ActiveEntryId="Page.ActiveCatalogEntryId"
+                              ActiveEntryId="@Page.ActiveCatalogEntryId"
                               Busy="Page.Switching"
                               Tabs="Page.Session.Document.Tabs"
                               ResolveTabLabel="Page.ResolveTabLabel"
-                              ActiveTabId="Page.ActiveTabId"
+                              ActiveTabId="@Page.ActiveTabId"
+                              SectionsMode="HostShell.Menu.Sections"
+                              CollapseDuplicateSection="HostShell.Menu.CollapseDuplicateSection"
                               OnSelectEntry="Page.SelectCatalogEntryAsync"
                               OnSelectTab="Page.SelectTab" />
         }

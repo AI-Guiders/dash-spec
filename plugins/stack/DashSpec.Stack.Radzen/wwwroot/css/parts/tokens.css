@@ -4,17 +4,22 @@
    flat names and get the stack's reading of them. */
 
 :root {
-  color-scheme: dark;
   font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --bg: var(--rz-base-900);
-  --surface: var(--rz-base-800);
-  --surface-2: var(--rz-base-700);
-  --border: var(--rz-base-700);
-  --text: var(--rz-base-50);
-  --muted: var(--rz-base-300);
+  /* Semantic mapping over the real Radzen 12 theme vocabulary (works in light and
+     dark): backgrounds from body/panel, text from --rz-text-color/-body2, borders
+     from the base scale — exactly how the stock components draw theirs. */
+  --bg: var(--rz-body-background-color);
+  --surface: var(--rz-panel-background-color);
+  --surface-2: var(--rz-base-400);
+  --border: var(--rz-base-500);
+  --text: var(--rz-text-color);
+  --muted: var(--rz-text-body2-color);
   --accent: var(--rz-primary);
   --accent-hover: var(--rz-primary-dark);
   --danger: var(--rz-danger);
+  --success: var(--rz-success);
+  --warning: var(--rz-warning);
+  --info: var(--rz-info);
   --radius: var(--rz-border-radius, 6px);
 }
 
@@ -24,7 +29,7 @@
 
 body {
   margin: 0;
-  background: var(--rz-base-background-color, var(--rz-base-900));
-  color: var(--rz-text-primary-color, var(--rz-base-50));
+  background: var(--rz-body-background-color);
+  color: var(--rz-text-color);
   line-height: 1.45;
 }

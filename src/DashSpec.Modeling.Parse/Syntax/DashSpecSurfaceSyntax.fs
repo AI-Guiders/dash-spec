@@ -284,7 +284,7 @@ module DashSpecSurfaceSyntax =
 
     let private appendModule (parent: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) (kind: string) (moduleId: string) =
         let directive =
-            if String.Equals(kind, "tab", StringComparison.OrdinalIgnoreCase) then
+            if String.Equals(kind, "section", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Tab moduleId
             elif String.Equals(kind, "dashboard", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Dashboard moduleId

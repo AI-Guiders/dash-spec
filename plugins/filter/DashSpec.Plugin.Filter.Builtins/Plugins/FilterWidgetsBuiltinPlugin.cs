@@ -22,7 +22,7 @@ public sealed class FilterWidgetsBuiltinPlugin : IDashSpecPlugin
         Register(registry, "combobox", typeof(ComboboxFilterWidget), ["field"]);
         Register(registry, "select", typeof(SelectFilterWidget), ["field"]);
         Register(registry, "chips", typeof(ChipsFilterWidget), ["field"]);
-        Register(registry, "range", typeof(DateFilterWidget), ["date"]);
+        Register(registry, "range", typeof(DateRangeFilterWidget), ["date"]);
         Register(registry, "day", typeof(DateFilterWidget), ["date"]);
         Register(registry, "top", typeof(TopFilterWidget), ["top"]);
     }

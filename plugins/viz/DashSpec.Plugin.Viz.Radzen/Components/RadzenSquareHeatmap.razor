@@ -19,7 +19,7 @@
     }
     else
     {
-        <div class="rviz-shm-scroll" style="@($"max-height:{HeightPx}px")">
+        <div class="rviz-shm-scroll" style="@ScrollStyle">
             <div class="rviz-shm-grid" style="@GridStyle()">
                 <div class="rviz-shm-corner" style="grid-row:1;grid-column:1">
                     @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(Presentation?.YLabel))
@@ -139,6 +139,8 @@
 
     private int HeightPx => Presentation?.HeightPx ?? 320;
 
+    private bool IsFill => Presentation is { StretchMode: VizStretchMode.Fill };
+
     /// <summary>Value labels: no heuristic — visible unless the author (<c>value_labels = hide</c>)
     /// or the viewer's display toolbar says otherwise (ADR-0116: the toolbar buttons are the
     /// control; the shared resolver already behaves exactly that way).</summary>
@@ -148,7 +150,14 @@
             VizDisplayState.GetValueLabelsOverride(VizStateCardId ?? string.Empty));
 
     private string WrapCssClass =>
-        $"{(ShowAxisLabelsX ? null : "rviz-shm--hide-x")} {(ShowAxisLabelsY ? null : "rviz-shm--hide-y")}".Trim();
+        $"{(IsFill ? "rviz-shm--fill" : null)} {(ShowAxisLabelsX ? null : "rviz-shm--hide-x")} {(ShowAxisLabelsY ? null : "rviz-shm--hide-y")}".Trim();
+
+    /// <summary>none: content-sized with the px cap; fill: the slot sizes the box,
+    /// the px height rides as the floor (up_only) / cap (down_only).</summary>
+    private string ScrollStyle =>
+        IsFill && Presentation is { } p
+            ? VizStretch.ContainerStyle(p.StretchMode, p.StretchDirection, HeightPx)
+            : $"max-height:{HeightPx}px";
 
     /// <summary>Data columns size from their content (ADR-0116): each column is at least as
     /// wide as its X label — a wider date format widens the columns by itself — and spare

@@ -23,12 +23,12 @@ module DashSpecKeywords =
         | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
-        | "diagramlibrary" | "group" | "phase" | "diagram" -> true
+        | "diagramlibrary" | "group" | "phase" | "diagram" | "section" | "menu" -> true
         | _ -> diagramKinds |> List.contains keyword
 
     let isControlKeyword (value: string) =
         match value.ToLowerInvariant() with
-        | "tab" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
+        | "section" | "sections" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
         | "import" | "from" | "namespace" | "on" | "goto" | "page" | "phase" | "group"
         | "connector" | "provider" | "palette" | "manifest" | "sqldialect" | "datasource" | "link" | "catalog"
         | "diagram" | "end" -> true

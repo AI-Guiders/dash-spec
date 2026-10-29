@@ -232,16 +232,31 @@ window.dashSpecMatrix = {
     const gapPx = payload.gap ?? 2;
     const scroll = host.querySelector(".matrix-canvas-scroll") || host;
     const width = scroll.clientWidth || host.getBoundingClientRect().width || 800;
-    const maxHeight = payload.maxHeight ?? 420;
+    // stretch_mode = fill: the slot (CSS) sizes the scroll box — fit cells to the real
+    // height instead of the resolved px floor/cap.
+    const measured = scroll.clientHeight || 0;
+    const availableHeight = payload.stretchFill && measured > 0 ? measured : payload.maxHeight ?? 420;
     const labelCol = this.yLabelCol(host);
-    const { cellW, cellH } = this.fitCellSize(
+    const fitted = this.fitCellSize(
       payload.xCount,
       payload.yCount,
       width,
-      maxHeight,
+      availableHeight,
       gapPx,
       labelCol,
       payload.visibleRows ?? null);
+    let cellW = fitted.cellW;
+    let cellH = fitted.cellH;
+    // fill only: when the rows already fit, grow the cells to eat the spare height
+    // (fitCellSize keeps preferred sizes for wide matrices; fill grows without a cap).
+    if (payload.stretchFill) {
+      const gap = gapPx;
+      const naturalH = payload.yCount * (cellH + gap) + gap;
+      if (naturalH <= availableHeight && payload.yCount > 0) {
+        const grown = Math.floor((availableHeight - 28 - 16 - gap * (payload.yCount + 1)) / payload.yCount);
+        cellH = Math.max(cellH, grown);
+      }
+    }
     host.style.setProperty("--matrix-cell-w", `${cellW}px`);
     host.style.setProperty("--matrix-cell-h", `${cellH}px`);
     return this.render(canvas, {

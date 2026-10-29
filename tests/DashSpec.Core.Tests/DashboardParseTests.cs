@@ -598,11 +598,11 @@ public class DashboardParseTests
               filters dashboard
               usage_date
               end dashboard
-              tab main as "Main"
+              section main as "Main"
               cards
               a
               end cards
-              end tab
+              end section
               card a as "A"
               bind
                 usage_date
@@ -1287,13 +1287,13 @@ public class DashboardParseTests
                   import types from Fixtures.QueryRowTypes
               report
               title = "T"
-              tab s as "S"
+              section s as "S"
               cards
               a
               b
               c
               end cards
-              end tab
+              end section
               card a as "A"
               place
               row = 1

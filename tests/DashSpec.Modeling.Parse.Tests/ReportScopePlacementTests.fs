@@ -18,7 +18,7 @@ module ReportScopePlacementTests =
 
         let specText =
             """
-module tab placement_flow
+module section placement_flow
   import flows from Test.Flows as peak_flow
 
 connect
@@ -75,7 +75,7 @@ report "Scope"
   end card
 end report
 
-end tab placement_flow
+end section placement_flow
 """
 
         try

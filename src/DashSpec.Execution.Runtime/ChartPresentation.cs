@@ -12,7 +12,9 @@ public sealed record ChartPresentation(
     string? ValueAxisLabel = null,
     double? ValueAxisMax = null,
     bool FillArea = false,
-    bool Sparkline = false)
+    bool Sparkline = false,
+    VizStretchMode StretchMode = VizStretchMode.None,
+    VizStretchDirection StretchDirection = VizStretchDirection.UpOnly)
 {
     public bool IsHorizontal => Orientation is ChartOrientation.Horizontal;
 
@@ -78,7 +80,9 @@ public sealed record ChartPresentation(
             valueAxisScale,
             ValueAxisMax: valueAxisMax,
             FillArea: fillArea,
-            Sparkline: sparkline);
+            Sparkline: sparkline,
+            StretchMode: VizStretch.ResolveMode(properties),
+            StretchDirection: VizStretch.ResolveDirection(properties));
     }
 
     private static bool TryReadAxisMax(

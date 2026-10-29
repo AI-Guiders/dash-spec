@@ -1,0 +1,78 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components
+@using DashSpec.Filters
+@using DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+<div class="@WrapperClass" style="@Context.PlacementStyle">
+    @if (Context.ShowLabel && Context.ShowDateLabel)
+    {
+        <span class="filter-inline-label">@Context.Label</span>
+    }
+    <div class="date-range date-range-picker">
+        <RangeDateInput From="@FromWire"
+                        To="@ToWire"
+                        RangePicked="OnRangePickedAsync"
+                        Disabled="@Context.Disabled"
+                        InputClass="filter-range-input"
+                        AriaLabel="@Context.Label" />
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+
+    private string WrapperClass =>
+        Context.ToolbarLabeledCells ? "filter filter-date filter-inline" : "filter filter-date filter-compact";
+
+    private string FromWire => WireOf(Context.DateFrom.TryGetValue(Context.Filter.Name, out var from) ? from : null);
+
+    private string ToWire => WireOf(Context.DateTo.TryGetValue(Context.Filter.Name, out var to) ? to : null);
+
+    private static string WireOf(DateOnly? day) =>
+        day is { } value ? DateValueCodec.FormatWireDay(value) : string.Empty;
+
+    private DateOnly? _lastNotifiedFrom;
+    private DateOnly? _lastNotifiedTo;
+
+    /// <summary>One picker gesture writes both ends and commits once through the
+    /// standard apply pipeline (same-day echo does not re-trigger the reload).</summary>
+    private async Task OnRangePickedAsync((string From, string To) picked)
+    {
+        var from = ParseDay(picked.From);
+        var to = ParseDay(picked.To);
+        if (from is null || to is null)
+        {
+            return;
+        }
+
+        if (to < from)
+        {
+            (from, to) = (to, from);
+        }
+
+        Context.DateFrom[Context.Filter.Name] = from.Value;
+        Context.DateTo[Context.Filter.Name] = to.Value;
+
+        if (_lastNotifiedFrom == from && _lastNotifiedTo == to)
+        {
+            return;
+        }
+
+        _lastNotifiedFrom = from;
+        _lastNotifiedTo = to;
+
+        // Range contract: the dicts already carry both ends — OnRangeChanged tells the
+        // host to re-read them. (OnDayChanged is the single-day channel: the handler
+        // collapses to = from and would eat the range's second end.)
+        if (Context.OnRangeChanged.HasDelegate)
+        {
+            await Context.OnRangeChanged.InvokeAsync();
+        }
+        else if (Context.OnDayChanged.HasDelegate)
+        {
+            await Context.OnDayChanged.InvokeAsync(Context.Filter.Name);
+        }
+    }
+
+    private static DateOnly? ParseDay(string wire) =>
+        DateValueCodec.TryParseWireDay(wire, out var parsed) ? parsed : null;
+}

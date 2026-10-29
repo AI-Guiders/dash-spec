@@ -13,7 +13,7 @@ public sealed class PhraseTemplateTests
     public void Parse_on_click_invoke_with_call_args()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card c as "C"
@@ -27,7 +27,7 @@ public sealed class PhraseTemplateTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
@@ -60,7 +60,7 @@ public sealed class PhraseTemplateTests
         };
 
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card c as "C"
@@ -74,7 +74,7 @@ public sealed class PhraseTemplateTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """, specDirectory: null, options);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];

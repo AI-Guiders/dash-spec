@@ -1,4 +1,4 @@
-module tab analytics
+module section analytics
     namespace Demo.Analytics
     import palettes from Demo.Palettes
     runtime
@@ -125,4 +125,4 @@ module tab analytics
                                                 end bind
                                             end card
                                         end report
-                                    end tab
+                                    end section

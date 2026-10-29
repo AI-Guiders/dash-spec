@@ -29,6 +29,11 @@
         altFormat: cfg.altFormat,
         theme: "light"
       })];
+    } else if (mode === "range") {
+      cfg.mode = "range";
+      // No altInput: the original input is Blazor-owned (disabled syncs on re-render);
+      // an alt-input copies the disabled flag at init and then drifts.
+      cfg.allowInput = false;
     } else if (mode === "time") {
       cfg.enableTime = true;
       cfg.noCalendar = true;
@@ -43,6 +48,19 @@
     // Commit once — on close (calendar pick done, blur, or Enter), never per
     // keystroke: each OnPicked triggers a full data reload downstream.
     cfg.onClose = function (dates, dateStr, instance) {
+      if (cfg.mode === "range") {
+        if (dates && dates.length === 2) {
+          dotNetRef.invokeMethodAsync("OnPickedRange",
+            window.flatpickr.formatDate(dates[0], wireFormat),
+            window.flatpickr.formatDate(dates[1], wireFormat));
+        } else if (dates && dates.length === 1) {
+          var single = window.flatpickr.formatDate(dates[0], wireFormat);
+          dotNetRef.invokeMethodAsync("OnPickedRange", single, single);
+        } else if (!instance.input.value) {
+          dotNetRef.invokeMethodAsync("OnPickedRange", "", "");
+        }
+        return;
+      }
       if (!instance.input.value) {
         dotNetRef.invokeMethodAsync("OnPicked", "");
         return;
@@ -56,7 +74,12 @@
     };
 
     var fp = window.flatpickr(el, cfg);
-    if (opts.wire) {
+    if (mode === "range") {
+      var from = opts.wireFrom ? window.flatpickr.parseDate(opts.wireFrom, wireFormat) : null;
+      var to = opts.wireTo ? window.flatpickr.parseDate(opts.wireTo, wireFormat) : null;
+      if (from && to) fp.setDate([from, to], false);
+      else if (from) fp.setDate(from, false);
+    } else if (opts.wire) {
       var parsed = window.flatpickr.parseDate(opts.wire, wireFormat);
       if (parsed) fp.setDate(parsed, false);
     }
@@ -77,6 +100,15 @@
     st.fp.setDate(d || "", false);
   }
 
+  function updateRange(el, fromWire, toWire) {
+    var st = instances.get(el);
+    if (!st) return;
+    var from = fromWire ? window.flatpickr.parseDate(fromWire, st.wireFormat) : null;
+    var to = toWire ? window.flatpickr.parseDate(toWire, st.wireFormat) : null;
+    if (from && to) st.fp.setDate([from, to], false);
+    else st.fp.setDate(from || "", false);
+  }
+
   function dispose(el) {
     var st = instances.get(el);
     if (st) {
@@ -85,5 +117,5 @@
     }
   }
 
-  window.dashspecDatepicker = { init: init, update: update, dispose: dispose };
+  window.dashspecDatepicker = { init: init, update: update, updateRange: updateRange, dispose: dispose };
 })();

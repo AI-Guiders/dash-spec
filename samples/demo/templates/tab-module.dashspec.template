@@ -2,7 +2,7 @@
 #   Dashboard: import tabs from Demo.MyTab   +   tab my_tab as "My tab"   (no body)
 #   Units shared by namespace: import palettes / layouts / diagrams … from <Namespace> (ADR-0098).
 
-module tab my_tab
+module section my_tab
     namespace Demo.MyTab
     import palettes from Demo.Palettes
 
@@ -35,4 +35,4 @@ module tab my_tab
                 end bind
             end card
         end report
-end tab
+end section

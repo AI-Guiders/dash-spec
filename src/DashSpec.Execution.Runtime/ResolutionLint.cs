@@ -29,7 +29,128 @@ public static class ResolutionLint
 
         findings.AddRange(AnalyzeComposition(document));
         findings.AddRange(AnalyzePlacement(document));
+        findings.AddRange(AnalyzePresetResolution(document));
+        findings.AddRange(AnalyzeFilterUsage(document));
         return findings;
+    }
+
+    /// <summary>
+    /// DS0572: a diagram module's chrome <c>use &lt;preset&gt;</c> must resolve in the
+    /// document's library — otherwise height/colors silently fall to defaults.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzePresetResolution(
+        DashboardDocument document)
+    {
+        var availablePresets = document.ResolvedChartChromePresets;
+
+        foreach (var moduleDiagram in document.ResolvedModuleDiagrams.Values)
+        {
+            var presetName = moduleDiagram.Presentation?.Value?.UsePreset?.Value;
+            if (!string.IsNullOrWhiteSpace(presetName) &&
+                !availablePresets.ContainsKey(presetName))
+            {
+                yield return Finding(
+                    "diagram.preset_not_found",
+                    null,
+                    $"diagram.use.{presetName}",
+                    "library.chart_chrome_presets",
+                    $"diagram module '{moduleDiagram.Diagram.Kind}' uses preset '{presetName}' " +
+                    "which is not in the library — height/colors fall to defaults. " +
+                    "Import the preset namespace (import presentations from <ns>) " +
+                    "or declare the preset inline.");
+            }
+        }
+
+        // stretch_mode = fill with default height: the fill floor silently becomes
+        // the presentation default (280/320) instead of the authored preset value.
+        foreach (var card in document.Cards)
+        {
+            var props = card.Diagram.Properties;
+            if (props.TryGetValue("stretch_mode", out var stretch) &&
+                string.Equals(stretch, "fill", StringComparison.OrdinalIgnoreCase))
+            {
+                var presetName = card.Presentation?.Value?.UsePreset?.Value ??
+                    moduleDiagramPresetFor(card, document);
+                if (!string.IsNullOrWhiteSpace(presetName) &&
+                    !availablePresets.ContainsKey(presetName))
+                {
+                    yield return Finding(
+                        "card.fill_height_default",
+                        null,
+                        $"card.{card.Id}.stretch_mode",
+                        "library.chart_chrome_presets",
+                        $"card '{card.Id}': stretch_mode = fill but preset '{presetName}' not resolved — " +
+                        "fill floor falls to the default height (280/320). " +
+                        "This is almost certainly not what you want.");
+                }
+            }
+        }
+    }
+
+    private static string? moduleDiagramPresetFor(CardDefinition card, DashboardDocument document)
+    {
+        // Cards reference module diagrams by name; find the matching module's preset
+        foreach (var (id, moduleDiagram) in document.ResolvedModuleDiagrams)
+        {
+            if (string.Equals(moduleDiagram.Diagram.Kind, card.Diagram.Kind, StringComparison.OrdinalIgnoreCase))
+            {
+                return moduleDiagram.Presentation?.Value?.UsePreset?.Value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// DS0573: a report-level filter declared in <c>filters</c> that no card binds
+    /// is dead weight — the widget renders but filters nothing.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeFilterUsage(
+        DashboardDocument document)
+    {
+        var usedFilterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var card in document.Cards)
+        {
+            foreach (var name in card.BoundFilters)
+            {
+                usedFilterNames.Add(name);
+            }
+
+            foreach (var name in card.LocalFilters)
+            {
+                usedFilterNames.Add(name);
+            }
+        }
+
+        foreach (var tab in document.Tabs)
+        {
+            foreach (var cardId in tab.CardIds)
+            {
+                var card = document.Cards.FirstOrDefault(c =>
+                    string.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (card is null) continue;
+                foreach (var name in card.BoundFilters)
+                {
+                    usedFilterNames.Add(name);
+                }
+            }
+        }
+
+        foreach (var filter in document.Filters)
+        {
+            if (!usedFilterNames.Contains(filter.Name))
+            {
+                yield return Finding(
+                    "filter.unused",
+                    null,
+                    $"filter.{filter.Name}",
+                    "report.filters",
+                    $"filter '{filter.Name}' is declared but not bound to any card — " +
+                    "it renders a widget that filters nothing.",
+                    informational: true);
+            }
+        }
     }
 
     private static IEnumerable<ResolutionLintFinding> AnalyzeCatalogProd(

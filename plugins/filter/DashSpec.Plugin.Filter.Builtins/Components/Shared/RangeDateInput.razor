@@ -1,0 +1,102 @@
+@namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
+
+@using System.Globalization
+@using DashSpec.Execution.Runtime
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+
+@* One compact field over flatpickr mode="range" (stack-neutral picker plugin):
+   display shows both ends, the calendar picks the pair in one gesture. *@
+
+<input type="text"
+       @ref="_element"
+       class="@InputClass"
+       aria-label="@AriaLabel"
+       disabled="@Disabled"
+       autocomplete="off"
+       readonly />
+
+@code {
+    /// <summary>Range ends as canonical wires (yyyy-MM-dd).</summary>
+    [Parameter] public string From { get; set; } = string.Empty;
+
+    [Parameter] public string To { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<(string From, string To)> RangePicked { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private ElementReference _element;
+    private DotNetObjectReference<RangeDateInput>? _selfRef;
+    private bool _pickerReady;
+    private string _renderedFrom = string.Empty;
+    private string _renderedTo = string.Empty;
+
+    private CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await Js.InvokeVoidAsync("dashspecDatepicker.init", _element, _selfRef, BuildOptions());
+            _pickerReady = true;
+            _renderedFrom = From;
+            _renderedTo = To;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_pickerReady &&
+            (!string.Equals(_renderedFrom, From, StringComparison.Ordinal) ||
+             !string.Equals(_renderedTo, To, StringComparison.Ordinal)))
+        {
+            _renderedFrom = From;
+            _renderedTo = To;
+            await Js.InvokeVoidAsync("dashspecDatepicker.updateRange", _element, From, To);
+        }
+    }
+
+    private object BuildOptions()
+    {
+        var culture = Culture;
+        return new
+        {
+            mode = "range",
+            wireFormat = "Y-m-d",
+            dateFormat = CultureInputFormat.DayPattern(culture),
+            locale = CultureInputFormat.Locale(culture),
+            weekStart = CultureInputFormat.WeekStart(culture),
+            wireFrom = From,
+            wireTo = To,
+        };
+    }
+
+    /// <summary>Called by the picker with canonical wire ends; a single picked day rides both.</summary>
+    [JSInvokable]
+    public Task OnPickedRange(string fromWire, string toWire) =>
+        RangePicked.InvokeAsync((fromWire ?? string.Empty, toWire ?? string.Empty));
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pickerReady)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.dispose", _element);
+            }
+            catch (Exception)
+            {
+                // circuit already gone — nothing to dispose
+            }
+        }
+
+        _selfRef?.Dispose();
+    }
+}

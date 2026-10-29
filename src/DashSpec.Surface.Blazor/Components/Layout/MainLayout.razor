@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@using Radzen
+@using Radzen.Blazor
 @using DashSpec.Abstractions.Viewer
 @using DashSpec.Presentation.Filters
 @using DashSpec.Surface.Blazor.Services.Presentation
@@ -56,7 +58,11 @@
     @foreach (var row in chromeRows)
     {
         var cells = row.OrderBy(slot => slot.Col).ToList();
-        <div class="shell-row">
+        @* Chrome is the stack's (ADR-0112): shell rows are Radzen stacks. *@
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     AlignItems="AlignItems.Center"
+                     Gap="0.75rem"
+                     class="shell-row">
             @foreach (var cell in cells)
             {
                 @if (cell.SlotId == ".")
@@ -70,7 +76,7 @@
                     </nav>
                 }
             }
-        </div>
+        </RadzenStack>
     }
     @if (contentSlot is not null)
     {

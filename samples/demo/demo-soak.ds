@@ -5,7 +5,7 @@ module dashboard demo_soak
     import types from Demo.Types
     import flows from Demo.Flows as demo_report_flow
     import palettes from Demo.Palettes
-    import tabs from Demo.Analytics
+    import sections from Demo.Analytics
     import presentations from DashSpec.Std
     runtime
         manifest = "demo.toml"
@@ -113,7 +113,7 @@ module dashboard demo_soak
             app_name -> [toolbar] chrome.dashboard
         end show flow
 
-        tab overview as "Overview"
+        section overview as "Overview"
             cards
                 peak_concurrent_kpi
                 peak_sparkline
@@ -124,14 +124,14 @@ module dashboard demo_soak
                 dau_by_product
                 dau_by_product_donut
             end cards
-        end tab
+        end section
 
-        tab analytics as "Analytics"
-            tab detail as "Detail"
+        section analytics as "Analytics"
+            section detail as "Detail"
                 cards
                     events_detail
                 end cards
-            end tab
+            end section
 
             card peak_concurrent_kpi as "Peak concurrent (max)"
                 data flow

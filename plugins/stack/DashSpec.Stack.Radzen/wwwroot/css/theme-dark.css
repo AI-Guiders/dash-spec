@@ -99,3 +99,9 @@
   /* Shape */
   --rz-border-radius: 6px;
 }
+
+/* №2e: the drill table header rides one step above the card surface (base-700,
+   not the stock base-900 floor) so it reads as a header band, not the void. */
+:root {
+  --rz-grid-header-background-color: var(--rz-base-700);
+}

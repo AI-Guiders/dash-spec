@@ -161,3 +161,23 @@
   color: var(--text);
   font-size: 0.85rem;
 }
+
+/* widget = range: one compact field over the flatpickr range calendar. The alt-input
+   carries the visible pair ("22.10 — 29.10"); the original input stays hidden by the
+   picker itself. One control replaces the from/to pair. */
+.date-range-picker input.filter-range-input,
+.date-range-picker input.filter-range-input.alt-input {
+  border: none;
+  background: transparent;
+  padding: 0.15rem 0.35rem;
+  color: var(--text);
+  font: inherit;
+  width: 9.5rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.date-range-picker input.filter-range-input:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

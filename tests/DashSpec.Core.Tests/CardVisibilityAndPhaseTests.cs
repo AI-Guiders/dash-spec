@@ -31,7 +31,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_limits_and_when_oversize_on_matrix_card()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card heat as "H"
@@ -49,7 +49,7 @@ public sealed class CardVisibilityAndPhaseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var card = doc.Cards[0];
@@ -64,7 +64,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_when_empty_and_message_block()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card browse as "Browse"
@@ -85,7 +85,7 @@ public sealed class CardVisibilityAndPhaseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         Assert.Equal(CardVisibilityMode.WhenEmpty, doc.Cards[0].Visibility!.Value.Mode);
@@ -97,7 +97,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_phase_and_focus()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               phase browse
@@ -121,7 +121,7 @@ public sealed class CardVisibilityAndPhaseTests
               end card
               end phase
               end report
-            end tab
+            end section
             """);
 
         Assert.Equal("browse", doc.Cards[0].PhaseId);
@@ -133,7 +133,7 @@ public sealed class CardVisibilityAndPhaseTests
     public void Parse_browse_bar_click_set_and_focus()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               filter user_name
@@ -158,7 +158,7 @@ public sealed class CardVisibilityAndPhaseTests
               end card
               end phase
               end report
-            end tab
+            end section
             """);
 
         var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;

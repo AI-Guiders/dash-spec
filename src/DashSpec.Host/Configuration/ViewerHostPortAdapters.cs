@@ -41,6 +41,8 @@ internal sealed class ViewerShellChromeAdapter(HostShellBootstrap shell) : IView
     public IReadOnlyList<ViewerShellSlot> ShellSlots => shell.ShellSlots;
 
     public bool ShowsSurface(string surface) => shell.ShowsSurface(surface);
+
+    public ViewerMenuPolicy Menu => shell.Menu;
 }
 
 internal sealed class ViewerPresentationOptionsAdapter(DashSpecTomlRoot bootstrap) : IViewerPresentationOptions

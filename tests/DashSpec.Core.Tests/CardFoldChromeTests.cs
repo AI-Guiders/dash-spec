@@ -8,7 +8,7 @@ public class CardFoldChromeTests
     public void Parse_card_chrome_fold_independent()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card c as "C"
@@ -22,7 +22,7 @@ public class CardFoldChromeTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         Assert.Equal(CardFoldMode.Independent, doc.Cards[0].Chrome?.Value.Fold);

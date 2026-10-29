@@ -54,7 +54,7 @@ module DashSpecBlockKeyword =
         | "chrome" -> Some DashSpecBlockKeyword.Chrome
         | "click" -> Some DashSpecBlockKeyword.Click
         | "card" -> Some DashSpecBlockKeyword.Card
-        | "tab" -> Some DashSpecBlockKeyword.Tab
+        | "section" -> Some DashSpecBlockKeyword.Tab
         | "page" -> Some DashSpecBlockKeyword.Page
         | "phase" -> Some DashSpecBlockKeyword.Phase
         | "group" -> Some DashSpecBlockKeyword.Group
@@ -128,7 +128,7 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.FiltersChrome -> "chrome"
         | DashSpecBlockKeyword.OnClick -> "click"
         | DashSpecBlockKeyword.Card -> "card"
-        | DashSpecBlockKeyword.Tab -> "tab"
+        | DashSpecBlockKeyword.Tab -> "section"
         | DashSpecBlockKeyword.Page -> "page"
         | DashSpecBlockKeyword.Phase -> "phase"
         | DashSpecBlockKeyword.Group -> "group"

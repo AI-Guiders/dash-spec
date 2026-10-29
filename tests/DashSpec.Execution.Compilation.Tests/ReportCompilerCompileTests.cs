@@ -66,7 +66,7 @@ public sealed class ReportCompilerCompileTests
     public void Compile_import_project_rejects_legacy_include_when_index_disables_it()
     {
         const string text = """
-            module tab x
+            module section x
             !include "units/*.dashdiagram"
             runtime
             end runtime
@@ -78,7 +78,7 @@ public sealed class ReportCompilerCompileTests
                 end view
               end card
             end report
-            end tab x
+            end section x
             """;
 
         var compiler = new ReportCompiler();

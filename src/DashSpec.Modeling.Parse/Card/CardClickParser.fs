@@ -211,7 +211,7 @@ module CardClickParser =
             reader.ReadCommaListInline()
 
     let private parseGotoEffect (reader: TokenReader) (cardId: string) =
-        if reader.TryKeyword "tab" then
+        if reader.TryKeyword "section" then
             let tabId = reader.ReadIdent()
             if String.IsNullOrWhiteSpace tabId then
                 raise (DashSpecParseException($"Card '{cardId}': goto tab requires tab id."))

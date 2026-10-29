@@ -29,6 +29,8 @@ module PropertySchemas =
           spec "height" Scalar
           spec "max_height" Scalar
           spec "visible_rows" Scalar
+          spec "stretch_mode" Scalar
+          spec "stretch_direction" Scalar
           spec "stacked" Scalar
           spec "fill" Scalar
           spec "color_mode" Scalar
@@ -130,6 +132,12 @@ module PropertySchemas =
           spec "color_scheme" Scalar
           spec "large_field_filter_layout" Scalar
           spec "render" Scalar ]
+
+    /// <summary>Host `menu` block (ADR-0073 nav surface): sidebar composition policy.
+    /// Rides to the shell chrome as `menu_*` presentation keys.</summary>
+    let hostMenu =
+        [ spec "sections" Scalar
+          spec "collapse_duplicate" Scalar ]
 
     /// <summary>Settings home block (`host … end host`, ADR-0112 §6): single-token keys of the block
     /// grammar (`render`, `color_scheme` — established names), folded over the legacy blocks at bootstrap.</summary>

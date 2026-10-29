@@ -12,7 +12,7 @@ public sealed class PluginFamilyParseTests
     public void Parse_module_extensions_use()
     {
         var text = """
-            module tab soak
+            module section soak
               runtime
               manifest = "demo.toml"
               end runtime
@@ -43,7 +43,7 @@ public sealed class PluginFamilyParseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """;
 
         var document = DashSpecTestRowTypes.ParseDashboard(text);
@@ -60,7 +60,7 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            module tab soak
+            module section soak
               runtime
               manifest = "demo.toml"
               end runtime
@@ -94,7 +94,7 @@ public sealed class PluginFamilyParseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """;
 
         var document = DashSpecTestRowTypes.ParseDashboard(text, specDirectory: null, options);
@@ -114,7 +114,7 @@ public sealed class PluginFamilyParseTests
         };
 
         var text = """
-            module tab soak
+            module section soak
               runtime
               manifest = "demo.toml"
               end runtime
@@ -151,7 +151,7 @@ public sealed class PluginFamilyParseTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """;
 
         var document = DashSpecTestRowTypes.ParseDashboard(text, specDirectory: null, options);

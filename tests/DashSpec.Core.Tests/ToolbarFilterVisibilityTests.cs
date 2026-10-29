@@ -10,7 +10,7 @@ public class ToolbarFilterVisibilityTests
     public void Page_toolbar_chart_top_visible_not_on_card_local_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab customer_reports
+            module section customer_reports
                   import types from Fixtures.QueryRowTypes
               report
               title = "Customer"
@@ -62,7 +62,7 @@ public class ToolbarFilterVisibilityTests
                 end card
               end page
               end report
-            end tab
+            end section
             """);
 
         var map = FilterBinding.MapFiltersToCards(doc);

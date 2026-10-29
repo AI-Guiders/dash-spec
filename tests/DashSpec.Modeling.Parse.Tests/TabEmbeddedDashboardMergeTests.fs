@@ -35,7 +35,7 @@ end flow
 
         let tabText =
             """
-module tab versions
+module section versions
   namespace Test.Tabs
   import flows from Test.Flows as embed_flow
 
@@ -73,13 +73,13 @@ report "Versions"
   end card
 end report
 
-end tab versions
+end section versions
 """
 
         let dashboardText =
             """
 module dashboard soak
-  import tabs from Test.Tabs
+  import sections from Test.Tabs
 
 report "Soak"
   defaults
@@ -95,7 +95,7 @@ report "Soak"
     end show
   end filter
 
-  tab versions as "Versions"
+  section versions as "Versions"
 end report
 """
 
@@ -124,7 +124,7 @@ end report
 
         let tabText =
             """
-module tab versions
+module section versions
   namespace Test.Tabs
   import flows from Test.Flows as embed_flow
 
@@ -164,16 +164,16 @@ report "Versions"
   end card
 end report
 
-end tab versions
+end section versions
 """
 
         let dashboardText =
             """
 module dashboard soak
-  import tabs from Test.Tabs
+  import sections from Test.Tabs
 
 report "Soak"
-  tab versions as "Versions"
+  section versions as "Versions"
 end report
 """
 

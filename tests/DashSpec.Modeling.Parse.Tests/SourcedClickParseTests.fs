@@ -11,7 +11,7 @@ module SourcedClickParseTests =
 
     let private specText =
         """
-module tab sourced_click
+module section sourced_click
   import diagrams from Test.Diagrams
 
 report "Sourced clicks"
@@ -52,7 +52,7 @@ report "Sourced clicks"
   end card
 end report
 
-end tab sourced_click
+end section sourced_click
 """
 
     let private writeTempDiagram (dir: string) =
@@ -121,7 +121,7 @@ end heatmap
     /// ADR-0113: `diagram ref <slot>` + `payload` lines, dotted click targets and dotted flow links.
     let private switchSlotSpec =
         """
-module tab switch_slot
+module section switch_slot
   import diagrams from Test.Diagrams
 
 report "Switch slot"
@@ -159,7 +159,7 @@ report "Switch slot"
   end card
 end report
 
-end tab switch_slot
+end section switch_slot
 """
 
     [<Fact>]

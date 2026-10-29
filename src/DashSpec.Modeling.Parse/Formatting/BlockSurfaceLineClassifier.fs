@@ -56,8 +56,8 @@ module BlockSurfaceLineClassifier =
                 BlockOpener("chrome", None)
             | { Kind = TokenKind.Ident; Value = "card" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 BlockOpener("card", Some id)
-            | { Kind = TokenKind.Ident; Value = "tab" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("tab", Some id)
+            | { Kind = TokenKind.Ident; Value = "section" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
+                BlockOpener("section", Some id)
             | { Kind = TokenKind.Ident; Value = "page" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 BlockOpener("page", Some id)
             | { Kind = TokenKind.Ident; Value = "phase" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->

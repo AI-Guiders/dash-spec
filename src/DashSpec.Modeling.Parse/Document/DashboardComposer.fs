@@ -35,7 +35,7 @@ module rec DashboardComposer =
         if not (reader.IsAt TokenKind.At) then false
         else
             reader.Advance()
-            reader.TryKeyword "tab"
+            reader.TryKeyword "section"
 
     let private insertTabModuleDashboardFilter (dashboardFilters: ResizeArray<string>) (filterName: string) =
         if String.Equals(filterName, "period_start", StringComparison.OrdinalIgnoreCase) then
@@ -57,6 +57,14 @@ module rec DashboardComposer =
            |> Seq.forall (fun kv ->
                match right.Variables.TryGetValue kv.Key with
                | true, value -> String.Equals(kv.Value, value, StringComparison.OrdinalIgnoreCase)
+               | false, _ -> false)
+
+    let private presentationBlocksEquivalent (left: PresentationBlock) (right: PresentationBlock) =
+        left.Properties.Count = right.Properties.Count
+        && left.Properties
+           |> Seq.forall (fun kv ->
+               match right.Properties.TryGetValue kv.Key with
+               | true, value -> String.Equals(kv.Value, value, StringComparison.Ordinal)
                | false, _ -> false)
 
     let parse (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
@@ -168,10 +176,14 @@ module rec DashboardComposer =
                     moduleDiagrams.[pair.Key] <- pair.Value
 
                 for pair in Option.defaultValue DashboardDocument.emptyModuleChartChromePresets tabModule.ModuleChartChromePresets do
-                    if moduleChartChromePresets.ContainsKey pair.Key then
-                        raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares chart chrome preset '{pair.Key}'."))
-
-                    moduleChartChromePresets.[pair.Key] <- pair.Value
+                    // Same rule as tooltips below: a section re-exporting the same preset
+                    // (e.g. both parent and section import DashSpec.Std) is an idempotent
+                    // merge — only a *different* definition under the same name conflicts.
+                    match moduleChartChromePresets.TryGetValue pair.Key with
+                    | true, existing when not (presentationBlocksEquivalent existing pair.Value) ->
+                        raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares chart chrome preset '{pair.Key}' with a different definition."))
+                    | true, _ -> ()
+                    | false, _ -> moduleChartChromePresets.[pair.Key] <- pair.Value
 
                 for pair in Option.defaultValue DashboardDocument.emptyModuleTooltips tabModule.ModuleTooltips do
                     match moduleTooltips.TryGetValue pair.Key with

@@ -20,7 +20,7 @@ module LayoutModuleParser =
 
         match kind.ToLowerInvariant() with
         | "toolbar" -> LayoutScope.Toolbar
-        | "tab" -> LayoutScope.Tab
+        | "section" -> LayoutScope.Tab
         | "page" -> LayoutScope.Page
         | "card" -> LayoutScope.Card
         | "host" -> LayoutScope.Host

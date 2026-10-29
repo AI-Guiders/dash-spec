@@ -19,11 +19,13 @@ public sealed record MatrixPresentation(
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
     MatrixAxisScrollMode AxisScroll = MatrixAxisScrollMode.Sticky,
-    string? ToolbarValueLabels = null,
-    string? ToolbarAxisLabelsX = null,
-    string? ToolbarAxisLabelsY = null,
-    LegendDefinition? Legend = null,
-    bool HasTooltip = false) : IVizAxisPresentationSpec
+        string? ToolbarValueLabels = null,
+        string? ToolbarAxisLabelsX = null,
+        string? ToolbarAxisLabelsY = null,
+        LegendDefinition? Legend = null,
+        bool HasTooltip = false,
+        VizStretchMode StretchMode = VizStretchMode.None,
+        VizStretchDirection StretchDirection = VizStretchDirection.UpOnly) : IVizAxisPresentationSpec
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
@@ -47,6 +49,8 @@ public sealed record MatrixPresentation(
         var toolbarAxisLabelsY = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
         var axisScroll = VizAxisPresentationParser.ParseAxisScroll(diagram.Properties);
 
+        var stretchProps = ChartChromeProperties.Merge(card, library);
+
         return new MatrixPresentation(
             height,
             visibleRows,
@@ -68,7 +72,9 @@ public sealed record MatrixPresentation(
             toolbarAxisLabelsX,
             toolbarAxisLabelsY,
             card.Legend?.Value,
-            card.Tooltip is not null);
+            card.Tooltip is not null,
+            VizStretch.ResolveMode(stretchProps),
+            VizStretch.ResolveDirection(stretchProps));
     }
 
     public bool ShowsGradientLegend =>

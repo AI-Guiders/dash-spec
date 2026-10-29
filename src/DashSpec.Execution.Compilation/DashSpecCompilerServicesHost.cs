@@ -123,7 +123,7 @@ public sealed class DashSpecAssembledCorpus(
     DashSpecParseOptions assembledOptions)
 {
     static readonly Regex ImportTabsLine = new(
-        @"(?m)^\s*import\s+tabs\s+from\s+([A-Za-z_][\w.]*)\s*$",
+        @"(?m)^\s*import\s+sections\s+from\s+([A-Za-z_][\w.]*)\s*$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     readonly object _gate = new();

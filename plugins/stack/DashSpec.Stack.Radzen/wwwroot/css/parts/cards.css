@@ -108,6 +108,26 @@
   flex-direction: column;
 }
 
+/* stretch_mode = fill: the card is the frame — the fill slot rides the authored px
+   height (--fill-h rides inline from the spec), its content fills and scrolls inside;
+   sibling diagram/table slots stretch to the same frame and scroll instead of
+   growing the row. */
+.card-interior-grid > .card-diagram-slot--fill {
+  height: var(--fill-h, auto);
+}
+
+.card-interior-grid:has(> .card-diagram-slot--fill) > .card-diagram-slot:not(.card-diagram-slot--fill) {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* the maximized panel becomes the frame: the fixed slot height uncap and stretch
+   (source order wins over the rule above at equal specificity) */
+.card-fullscreen-body .card-diagram-slot--fill {
+  height: auto;
+  min-height: 0;
+}
+
 .card-diagram-slot .chart-wrap {
   flex: 1 1 auto;
   min-height: min(320px, 42vh);
@@ -172,11 +192,8 @@
 }
 
 .card-head-toolbar {
-  display: flex;
-  align-items: center;
   justify-content: flex-end;
   flex-wrap: nowrap;
-  gap: 0.35rem;
   margin-left: auto;
   overflow: visible;
 }
@@ -264,7 +281,7 @@
 }
 
 .card-export-xlsx .card-icon {
-  color: #217346;
+  color: #217346; /* Excel brand green on the export icon — intentional */
 }
 
 .card-icon-btn {
@@ -290,15 +307,17 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 1rem;
+  padding: 0;
 }
 
+/* true fullscreen: the maximized card owns the whole viewport */
 .card-fullscreen-panel {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  width: min(96vw, 1400px);
-  max-height: calc(100vh - 2rem);
+  border: none;
+  border-radius: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
   display: flex;
   flex-direction: column;
   outline: none;
@@ -312,6 +331,7 @@
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
 }
 
 .card-fullscreen-head h2 {
@@ -324,14 +344,41 @@
   min-height: 0;
   padding: 0.75rem 1rem 1rem;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.card-fullscreen-body .chart-wrap {
-  min-height: min(72vh, 720px);
-}
-
-.card-fullscreen-body .chart-wrap-detail {
+/* the maximized card keeps its interior slot plan; slots share the panel height */
+.card-fullscreen-body .card-interior-grid {
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+.card-fullscreen-body .card-interior-grid > .card-diagram-slot {
+  flex: var(--fx-grow, 1) 1 0;
+}
+
+/* per-slot maximize (hover): the shell pins the button to the slot's corner */
+.card-slot-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.slot-maximize-btn {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.card-slot-shell:hover .slot-maximize-btn,
+.slot-maximize-btn:focus-visible {
+  opacity: 1;
 }
 
 .card-kpi .card-head {
@@ -369,15 +416,15 @@
 }
 
 .card-link-group-host {
-  box-shadow: inset 3px 0 0 var(--accent, #3b82f6);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .card-link-group-guest {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent, #3b82f6) 55%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .card-link-n-shared {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent, #3b82f6) 30%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .card-status {
@@ -396,9 +443,9 @@
 }
 
 .card-error {
-  color: #fecaca;
-  background: #3f1d1d;
-  border: 1px solid #7f1d1d;
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
   border-radius: 8px;
   padding: 0.75rem;
   font-size: 0.9rem;

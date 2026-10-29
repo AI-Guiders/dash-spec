@@ -43,7 +43,7 @@ end flow
 
         let specText =
             """
-module tab multi_slot_flow
+module section multi_slot_flow
   import flows from Test.Flows as peak_flow
 
 connect
@@ -89,7 +89,7 @@ report "Multi"
   end card
 end report
 
-end tab multi_slot_flow
+end section multi_slot_flow
 """
 
         try

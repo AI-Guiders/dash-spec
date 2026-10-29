@@ -25,7 +25,8 @@ public class ProjectMembershipTests
             null,
             new[] { "." },
             files ?? new[] { "diagrams/*.dashdiagram", "rows.dashtype" },
-            exclude ?? new[] { "diagrams/_scratch/*" });
+            exclude ?? new[] { "diagrams/_scratch/*" },
+            Array.Empty<string>());
 
     [Fact]
     public void Expand_is_lex_sorted_and_excludes_apply_after_positives()

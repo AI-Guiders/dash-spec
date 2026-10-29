@@ -55,13 +55,13 @@ public sealed class DashSpecEditorIntelligenceTests
         index.RegisterDiagram("lus_users_app_list", Path.Combine(Path.GetTempPath(), "app-list.ds"));
 
         var text = """
-            module tab users
+            module section users
             report
               card app_users as "Apps"
                 diagram ref products lus_us
               end card
             end report
-            end tab
+            end section
             """;
 
         // The living slot-ref form: `diagram ref <slot> <id prefix…>`.
@@ -82,7 +82,7 @@ public sealed class DashSpecEditorIntelligenceTests
         index.RegisterUnit(new DashSpecUnitDeclaration("flow", "LicenseUsageReport", Path.Combine(Path.GetTempPath(), "lus-report.ds"), 1));
 
         var text = """
-            module tab users
+            module section users
             report
               card app_users as "Apps"
                 connect
@@ -90,7 +90,7 @@ public sealed class DashSpecEditorIntelligenceTests
                 end connect
               end card
             end report
-            end tab
+            end section
             """;
 
         var items = DashSpecEditorIntelligence.GetCompletions(
@@ -131,7 +131,7 @@ public sealed class DashSpecEditorIntelligenceTests
             end table
             """);
         var dashboard = Write("lus-dev-users.ds", """
-            module tab users
+            module section users
             namespace Luf.Users
 
             report
@@ -153,7 +153,7 @@ public sealed class DashSpecEditorIntelligenceTests
         Assert.EndsWith("app-list.ds", diagram.Path.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
 
         var tab = index.UnitsById["users"];
-        Assert.Equal("tab", tab.Kind);
+        Assert.Equal("section", tab.Kind);
         Assert.True(File.Exists(tab.Path));
         Assert.Equal(dashboard, tab.Path, StringComparer.OrdinalIgnoreCase);
     }
@@ -170,7 +170,7 @@ public sealed class DashSpecEditorIntelligenceTests
             namespace Luf.Users.Diagrams
             """);
         Write("lus-dev-users.ds", """
-            module tab users
+            module section users
             namespace Luf.Users
 
             import diagrams from Luf.Users.Diagrams
@@ -226,7 +226,7 @@ public sealed class DashSpecEditorIntelligenceTests
             namespace Luf.Users.Diagrams
             """);
         Write("lus-dev-users.ds", """
-            module tab users
+            module section users
 
             report
               card app_users as "Apps"

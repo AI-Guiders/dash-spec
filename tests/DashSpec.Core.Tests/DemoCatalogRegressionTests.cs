@@ -91,7 +91,7 @@ public sealed class DemoCatalogRegressionTests
     public void Parse_events_detail_registry_diagram_ref_plain_data_tab()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab detail
+            module section detail
             namespace Demo.Detail
 
             import diagrams from Demo.Diagrams
@@ -147,7 +147,7 @@ public sealed class DemoCatalogRegressionTests
                 end layout
               end card
             end report
-            end tab
+            end section
             """,
             SamplesDemo,
             DemoParseOptions);

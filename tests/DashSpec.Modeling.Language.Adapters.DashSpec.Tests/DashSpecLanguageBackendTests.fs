@@ -24,7 +24,7 @@ module DashSpecLanguageBackendTests =
       data flow { src [rows] -> [rows] __diagram__ }
     end card
   end report
-end tab
+end section
 """
 
     let private request line column =

@@ -10,7 +10,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_show_list_from_tooltip_copy()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab demo
+            module section demo
               report
               title = "demo"
               standalone
@@ -49,7 +49,7 @@ public class CardClickBehaviourTests
               end bind
               end card
               end report
-            end tab
+            end section
             """);
 
         var card = doc.Cards[0];
@@ -68,7 +68,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_goto_and_set_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               standalone
@@ -98,7 +98,7 @@ public class CardClickBehaviourTests
               on click
               set usage_date from x
               set user_name from y
-              goto tab detail
+              goto section detail
               end click
               diagram heatmap
               x = a y
@@ -107,7 +107,7 @@ public class CardClickBehaviourTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var card = doc.Cards[0];
@@ -122,7 +122,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_drill_table_from_cell_binds_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               defaults
@@ -157,7 +157,7 @@ public class CardClickBehaviourTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
@@ -169,7 +169,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_rejects_unknown_show_format()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            module tab demo
+            module section demo
               report
               title = "demo"
               card c as "C"
@@ -183,7 +183,7 @@ public class CardClickBehaviourTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """));
 
         Assert.Contains("list, plain, or kv", ex.Message, StringComparison.OrdinalIgnoreCase);
@@ -193,7 +193,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_show_accepts_split_on_tooltip_source()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab demo
+            module section demo
               report
               title = "demo"
               card c as "C"
@@ -213,7 +213,7 @@ public class CardClickBehaviourTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
@@ -225,7 +225,7 @@ public class CardClickBehaviourTests
     public void CardDrillSlotTargets_resolves_sourced_drill_slots()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               filter app_name
@@ -255,7 +255,7 @@ public class CardClickBehaviourTests
               end data flow
               end card
               end report
-            end tab
+            end section
             """);
 
         var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
@@ -272,7 +272,7 @@ public class CardClickBehaviourTests
     public void CardDrillSlotTargets_switch_slot_collects_sources_from_dotted_targets()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               filter app_name
@@ -303,7 +303,7 @@ public class CardClickBehaviourTests
               end data flow
               end card
               end report
-            end tab
+            end section
             """);
 
         var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
@@ -321,7 +321,7 @@ public class CardClickBehaviourTests
     public void CardDrillSlotTargets_legacy_drill_targets_all_slots()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               defaults
@@ -356,7 +356,7 @@ public class CardClickBehaviourTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var targets = CardDrillSlotTargets.Resolve(doc.Cards[0]);
@@ -370,7 +370,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_row_source_targets_drill_slot()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               filter app_name
@@ -396,7 +396,7 @@ public class CardClickBehaviourTests
               end data flow
               end card
               end report
-            end tab
+            end section
             """);
 
         var card = doc.Cards[0];
@@ -412,7 +412,7 @@ public class CardClickBehaviourTests
     public void Parse_on_click_unknown_bind_filter_fails_validation_loudly()
     {
         var ex = Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card c as "C"
@@ -430,7 +430,7 @@ public class CardClickBehaviourTests
               end data flow
               end card
               end report
-            end tab
+            end section
             """));
 
         Assert.Contains("ghost", ex.Message, StringComparison.OrdinalIgnoreCase);

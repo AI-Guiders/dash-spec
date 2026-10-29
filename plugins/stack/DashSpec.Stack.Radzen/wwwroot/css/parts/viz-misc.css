@@ -34,19 +34,19 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
-  color: var(--muted, #94a3b8);
+  color: var(--muted);
 }
 
 .number-delta-up {
-  color: #34d399;
+  color: var(--success);
 }
 
 .number-delta-down {
-  color: #f87171;
+  color: var(--danger);
 }
 
 .number-delta-flat {
-  color: var(--muted, #94a3b8);
+  color: var(--muted);
 }
 
 .empty-state {
@@ -83,8 +83,8 @@
 }
 
 .alert {
-  background: #3f1d1d;
-  border: 1px solid #7f1d1d;
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
   padding: 1rem;
   border-radius: var(--radius);
 }

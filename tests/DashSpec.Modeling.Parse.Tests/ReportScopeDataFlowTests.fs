@@ -17,7 +17,7 @@ module ReportScopeDataFlowTests =
 
         let specText =
             """
-module tab report_data_flow
+module section report_data_flow
   import flows from Test.Flows as peak_flow
 
 connect
@@ -63,7 +63,7 @@ report "Scope"
   end card
 end report
 
-end tab report_data_flow
+end section report_data_flow
 """
 
         try

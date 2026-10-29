@@ -54,7 +54,7 @@ type LayoutModuleParserTests() =
         let text =
             """
                 module layout g
-                scope tab
+                scope section
                 
                 group distribution {
                   title = "Distribution"
@@ -82,7 +82,7 @@ type LayoutModuleParserTests() =
         let text =
             """
                 module layout n
-                scope tab
+                scope section
 
                 nest panel {
                   [ A B ]

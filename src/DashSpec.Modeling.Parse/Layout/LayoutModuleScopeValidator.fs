@@ -8,7 +8,7 @@ module LayoutModuleScopeValidator =
     let private formatScope scope =
         match scope with
         | LayoutScope.Toolbar -> "toolbar"
-        | LayoutScope.Tab -> "tab"
+        | LayoutScope.Tab -> "section"
         | LayoutScope.Page -> "page"
         | LayoutScope.Card -> "card"
         | LayoutScope.Host -> "host"

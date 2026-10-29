@@ -80,7 +80,7 @@ module rec DocumentModuleParser =
         reader.SkipNewlines()
 
         if not (reader.TryKeyword "module") then false
-        elif not (reader.TryKeyword "dashboard") && not (reader.TryKeyword "tab") then false
+        elif not (reader.TryKeyword "dashboard") && not (reader.TryKeyword "section") then false
         else
             reader.ReadIdent() |> ignore
             reader.SkipNewlines()
@@ -101,6 +101,7 @@ module rec DocumentModuleParser =
             parseTabReportCompile
                 reader
                 tabId
+                "section"
                 ReportCompileMode.TabStandalone
                 specDirectory
                 None
@@ -237,7 +238,7 @@ module rec DocumentModuleParser =
         reader.SkipNewlines()
         reader.ExpectKeyword "module"
 
-        if reader.TryKeyword "tab" then
+        if reader.TryKeyword "section" then
             composeTabStandalone reader specDirectory parseOptions diagnostics
         elif reader.TryKeyword "dashboard" then
             parseDashboard reader specDirectory parseOptions
@@ -263,7 +264,8 @@ module rec DocumentModuleParser =
         let reader = ParserUtilities.createReader text
         reader.SkipNewlines()
         reader.ExpectKeyword "module"
-        reader.ExpectKeyword "tab"
+        reader.ExpectKeyword "section"
+        let moduleWord = "section"
         let tabId = reader.ReadIdent()
 
         if not (String.Equals(tabId, expectedTabId, StringComparison.OrdinalIgnoreCase)) then
@@ -273,6 +275,7 @@ module rec DocumentModuleParser =
             parseTabReportCompile
                 reader
                 tabId
+                moduleWord
                 ReportCompileMode.TabEmbedded
                 specDirectory
                 parentFilters
@@ -309,9 +312,8 @@ module rec DocumentModuleParser =
             reader.SkipNewlines()
             reader.ExpectKeyword "module"
             let isDashboard = reader.TryKeyword "dashboard"
-            if not isDashboard then reader.TryKeyword "tab" |> ignore
+            let moduleKind = if isDashboard then "dashboard" else reader.ExpectKeyword("section"); "section"
             let moduleId = reader.ReadIdent()
-            let moduleKind = if isDashboard then "dashboard" else "tab"
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
             ModuleHeaderParser.parse reader |> ignore
@@ -344,9 +346,8 @@ module rec DocumentModuleParser =
             reader.SkipNewlines()
             reader.ExpectKeyword "module"
             let isDashboard = reader.TryKeyword "dashboard"
-            if not isDashboard then reader.TryKeyword "tab" |> ignore
+            let moduleKind = if isDashboard then "dashboard" else reader.ExpectKeyword("section"); "section"
             let moduleId = reader.ReadIdent()
-            let moduleKind = if isDashboard then "dashboard" else "tab"
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
             ModuleHeaderParser.parse reader |> ignore
@@ -472,6 +473,7 @@ module rec DocumentModuleParser =
     let private parseTabReportCompile
         (reader: TokenReader)
         (tabId: string)
+        (moduleWord: string)
         (mode: ReportCompileMode)
         (specDirectory: string option)
         (parentFilters: IReadOnlyList<FilterDefinition> option)
@@ -506,9 +508,9 @@ module rec DocumentModuleParser =
 
         let seenCode = ref false
 
-        while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "tab" (Some tabId)) do
+        while not reader.IsEof && not (BlockSyntax.isBlockEnd reader moduleWord (Some tabId)) do
             reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "tab" (Some tabId) then ()
+            if BlockSyntax.isBlockEnd reader moduleWord (Some tabId) then ()
             elif
                 tryParseEnvelopeSection
                     reader
@@ -562,7 +564,7 @@ module rec DocumentModuleParser =
 
 
         if not reader.IsEof then
-            BlockSyntax.expectBlockEnd reader "tab" (Some tabId)
+            BlockSyntax.expectBlockEnd reader moduleWord (Some tabId)
 
         match shell with
         | None -> raise (DashSpecParseException($"@tab '{tabId}' module body is empty."))

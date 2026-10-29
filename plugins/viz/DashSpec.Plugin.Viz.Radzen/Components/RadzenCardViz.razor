@@ -120,7 +120,8 @@ else if (IsChartFamily)
 }
 else
 {
-    <div class="rviz-chart-wrap @(NeedsFixedHeight ? "rviz-chart-wrap--fixed" : null)">
+    <div class="rviz-chart-wrap @((NeedsFixedHeight && !MatrixFill) ? "rviz-chart-wrap--fixed" : null) @(MatrixFill ? "rviz-chart-wrap--fill" : null)"
+         style="@MatrixWrapStyle">
         @switch (DiagramKind)
         {
             case "heatmap":
@@ -231,6 +232,14 @@ else
     /// <summary>Card-authored chart height (chartjs parity): the presentation height on the
     /// board, expanded in the detail view so rotated axis labels keep their room.</summary>
     private string ChartWrapStyle => ChartHeightStyle.Resolve(Context.Card, Context.DetailView);
+
+    /// <summary>stretch_mode = fill (matrix): the wrap stops capping at the fixed px height
+    /// and takes the slot; the heatmap inside owns its own floor/cap.</summary>
+    private bool MatrixFill =>
+        DiagramKind is "heatmap" &&
+        Context.EffectiveCard.MatrixPresentation is { StretchMode: VizStretchMode.Fill };
+
+    private string MatrixWrapStyle => MatrixFill ? "height:100%;" : string.Empty;
 
     /// <summary>ADR-0107 category click: a series point click rides the same contract as the
     /// builtin chartjs renderer — gated on the card declaring effects for its click.</summary>
