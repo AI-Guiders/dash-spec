@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0069
 title: "Report time basis (calendar vs working) and work calendar v1"
-status: "Unknown"
+status: "Accepted"
 date: unknown
 tags: [dashspec, adr]
 language: ru

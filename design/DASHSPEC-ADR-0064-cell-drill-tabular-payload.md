@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0064
 title: "Cell drill via table + tabular payload sources"
-status: "Accepted (pilot track); structured carrier **Proposed**"
+status: "Accepted (pilot; structured carrier — Proposed)"
 date: 2026-09-29
 tags: [dashspec, adr]
 language: ru

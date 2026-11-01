@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0116**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0118**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -8,13 +8,13 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [0001](DASHSPEC-ADR-0001-connectors-as-plugins.md) | Коннекторы как plugins | Accepted · v0.2 |
+| [0001](DASHSPEC-ADR-0001-connectors-as-plugins.md) | Коннекторы как plugins | Accepted |
 | [0002](DASHSPEC-ADR-0002-layout-and-presentation.md) | Layout и presentation в spec | Accepted |
 | [0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md) | Diagram kinds — registry вместо enum | Accepted |
 | [0004](DASHSPEC-ADR-0004-diagram-column-as.md) | Column binding — `column as "Label"` | Accepted |
 | [0005](DASHSPEC-ADR-0005-rich-text-creole-subset.md) | Rich text — Creole-subset | Accepted |
-| [0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md) | `@sqldialect` и семантика SQL-источников | Accepted · v0.3 |
-| [0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) | `presentation`, `transform`, `@diagramlibrary` | Accepted · v0.4 |
+| [0006](DASHSPEC-ADR-0006-sql-datasource-and-sqldialect.md) | `@sqldialect` и семантика SQL-источников | Accepted |
+| [0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md) | `presentation`, `transform`, `@diagramlibrary` | Accepted |
 | [0008](DASHSPEC-ADR-0008-viz-render-plugins.md) | Diagram library presets and viz render plugins | Accepted (presets/registry implemented; external DLL proposed) |
 | [0009](DASHSPEC-ADR-0009-bind-only-filters.md) | `bind` — единственный список фильтров карточки | Accepted |
 | [0010](DASHSPEC-ADR-0010-spec-ergonomics.md) | `on`, `toolbar`, `use card.*`, `bind dashboard` | Accepted |
@@ -24,9 +24,9 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0014](DASHSPEC-ADR-0014-chart-series-colors.md) | Chart series colors in spec | Accepted |
 | [0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md) | Dev spec resolve, dashboard palette | Accepted |
 | [0016](DASHSPEC-ADR-0016-bar-reference-markers.md) | Bar reference markers | Accepted |
-| [0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) | File includes and stdlib (PlantUML-style) | Accepted · v0.5 |
-| [0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) | `datasource sql` — query и file | Accepted · v0.6 |
-| [0019](DASHSPEC-ADR-0019-runtime-directive.md) | `@runtime` — manifest вне DSL | Accepted · v0.6 |
+| [0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) | File includes and stdlib (PlantUML-style) | Accepted |
+| [0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) | `datasource sql` — query и file | Accepted |
+| [0019](DASHSPEC-ADR-0019-runtime-directive.md) | `@runtime` — manifest вне DSL | Accepted |
 | [0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md) | Card `ref` and tab layout board | Accepted |
 | [0021](DASHSPEC-ADR-0021-dashlayout-include.md) | `.dashlayout` and `include layout` | Accepted |
 | [0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md) | Filter `ref` and toolbar layout board | Accepted |
@@ -119,3 +119,4 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0114](DASHSPEC-ADR-0114-switch-slot-payloads.md) | Switch slot — мультипейлоадный слот (`payload` + адресация `slot.payload`) | Accepted |
 | [0115](DASHSPEC-ADR-0115-radzen-table-grid-extras.md) | Radzen-таблица — фичи грида: picking, reorder, frozen, copy | Accepted |
 | [0116](DASHSPEC-ADR-0116-radzen-heatmap-feedback.md) | Radzen-тепловая карта — выделение, цифры без эвристик, `cell_size` | Accepted |
+| [0117](DASHSPEC-ADR-0117-dsc-cli-composition-root.md) | dsc — CLI composition root; компилятор — библиотека за контрактом | Proposed |

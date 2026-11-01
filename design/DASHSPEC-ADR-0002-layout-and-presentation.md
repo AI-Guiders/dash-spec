@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0002
 title: "Layout и presentation в spec"
-status: "Unknown"
+status: "Accepted"
 date: unknown
 tags: [dashspec, adr]
 language: ru

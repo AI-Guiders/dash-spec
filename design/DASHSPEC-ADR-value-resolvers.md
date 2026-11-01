@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-value-resolvers
 title: Value Resolvers — from_* expressions for external data sources
-status: Proposed
+status: "Proposed"
 date: 2026-10-30
 tags: [dashspec, adr, runtime, plugins, configuration, value-resolvers]
 language: en

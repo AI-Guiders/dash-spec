@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0030
 title: "Report scale — `page`, `gate`, `phase`, catalog `group`"
-status: "Accepted (partial"
+status: "Accepted (partial — P0–P2 implemented; P3 pending)"
 date: 2026-07-05
 tags: [dashspec, adr]
 language: ru

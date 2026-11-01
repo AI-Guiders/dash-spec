@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0028
 title: "Bounded `on click` interactions"
-status: "Accepted (v1 implemented; amended ADR"
+status: "Accepted (v1 implemented; amended by ADR-0031)"
 date: 2026-07-05
 tags: [dashspec, adr]
 language: ru

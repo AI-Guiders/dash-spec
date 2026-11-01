@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0020
 title: "Card `ref` and tab layout board"
-status: "Unknown"
+status: "Accepted"
 date: unknown
 tags: [dashspec, adr]
 language: ru

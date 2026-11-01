@@ -2,7 +2,7 @@
 type: ADR
 id: DASHSPEC-ADR-0058
 title: "Display bindings (`bind display`)"
-status: "Unknown"
+status: "Accepted"
 date: unknown
 tags: [dashspec, adr]
 language: ru
