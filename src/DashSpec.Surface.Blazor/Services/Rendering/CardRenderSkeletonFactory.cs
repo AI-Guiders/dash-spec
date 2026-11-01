@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Viz;
 using DashSpec.Surface.Blazor.Services.Presentation;
 

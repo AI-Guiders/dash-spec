@@ -1,8 +1,8 @@
 using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viewer;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 
-namespace DashSpec.Viewer;
+namespace DashSpec.Composition;
 
 public sealed class ViewerPluginHost(DashSpecContributorRegistry contributors, DashSpecPluginCapabilities capabilities)
     : IViewerPluginHost

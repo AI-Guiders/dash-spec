@@ -16,7 +16,7 @@ using DashSpec.Host.Services.Diagnostics;
 using DashSpec.Host.Services.Git;
 using DashSpec.Host.Services.Health;
 using DashSpec.Host.Services.Loading;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Host.Services.Settings;
 using DashSpec.Surface.Blazor;
 using DashSpec.Surface.Blazor.Commands;

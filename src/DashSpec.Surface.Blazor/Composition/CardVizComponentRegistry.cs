@@ -1,6 +1,6 @@
 using DashSpec.Viz;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Surface.Blazor.Composition;
 
 public sealed class CardVizComponentRegistry : ICardVizComponentResolver
 {

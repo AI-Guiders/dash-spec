@@ -6,7 +6,7 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Viz;
 using Microsoft.JSInterop;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Surface.Blazor.Composition;
 
 public sealed class DashSpecActionDispatcher
 {

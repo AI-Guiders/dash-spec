@@ -1,6 +1,6 @@
 using DashSpec.Abstractions.Plugins;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Composition.Plugins;
 
 public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 {
@@ -164,29 +164,14 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             throw new ArgumentException("Widget id is required.", nameof(widgetId));
         }
 
-        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
-        {
-            throw new ArgumentException(
-                $"Type {componentType.FullName} must implement IComponent.",
-                nameof(componentType));
-        }
-
+        // IComponent validation lives in the surface registries (ADR-0117): the kernel collects Type maps only.
         if (!_filterWidgetComponents.TryAdd(widgetId, componentType))
         {
             throw new InvalidOperationException($"Duplicate filter widget component registration for '{widgetId}'.");
         }
     }
 
-    public FilterWidgetComponentRegistry BuildFilterWidgetComponentRegistry()
-    {
-        var registry = new FilterWidgetComponentRegistry();
-        foreach (var (widgetId, componentType) in _filterWidgetComponents)
-        {
-            registry.Register(widgetId, componentType);
-        }
-
-        return registry;
-    }
+    public IReadOnlyDictionary<string, Type> FilterWidgetComponents => _filterWidgetComponents;
 
     public void AddCardChrome(CardChromeContributorDescriptor descriptor)
     {
@@ -224,13 +209,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             throw new ArgumentException("Renderer id is required.", nameof(rendererId));
         }
 
-        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
-        {
-            throw new ArgumentException(
-                $"Type {componentType.FullName} must implement IComponent.",
-                nameof(componentType));
-        }
-
+        // IComponent validation lives in the surface registries (ADR-0117): the kernel collects Type maps only.
         if (!_vizComponents.TryAdd(rendererId, componentType))
         {
             throw new InvalidOperationException($"Duplicate viz component registration for '{rendererId}'.");
@@ -244,13 +223,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             throw new ArgumentException("Renderer id is required.", nameof(rendererId));
         }
 
-        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(toolbarComponentType))
-        {
-            throw new ArgumentException(
-                $"Type {toolbarComponentType.FullName} must implement IComponent.",
-                nameof(toolbarComponentType));
-        }
-
+        // IComponent validation lives in the surface registries (ADR-0117): the kernel collects Type maps only.
         if (!_vizToolbars.TryAdd(rendererId, toolbarComponentType))
         {
             throw new InvalidOperationException($"Duplicate viz toolbar registration for '{rendererId}'.");
@@ -264,13 +237,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             throw new ArgumentException("Plugin id is required.", nameof(pluginId));
         }
 
-        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
-        {
-            throw new ArgumentException(
-                $"Type {componentType.FullName} must implement IComponent.",
-                nameof(componentType));
-        }
-
+        // IComponent validation lives in the surface registries (ADR-0117): the kernel collects Type maps only.
         if (!_cardChromeComponents.TryAdd(pluginId, componentType))
         {
             throw new InvalidOperationException($"Duplicate card chrome component registration for '{pluginId}'.");
@@ -284,13 +251,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             throw new ArgumentException("Slot id is required.", nameof(slotId));
         }
 
-        if (!typeof(Microsoft.AspNetCore.Components.IComponent).IsAssignableFrom(componentType))
-        {
-            throw new ArgumentException(
-                $"Type {componentType.FullName} must implement IComponent.",
-                nameof(componentType));
-        }
-
+        // IComponent validation lives in the surface registries (ADR-0117): the kernel collects Type maps only.
         if (_PluginComponents.TryGetValue(slotId, out var existing))
         {
             // Several viz plugins share one slot component; identical re-registration is fine.
@@ -306,27 +267,9 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         _PluginComponents[slotId] = componentType;
     }
 
-    public CardVizComponentRegistry BuildCardVizComponentRegistry()
-    {
-        var registry = new CardVizComponentRegistry();
-        foreach (var (rendererId, componentType) in _vizComponents)
-        {
-            registry.Register(rendererId, componentType);
-        }
+    public IReadOnlyDictionary<string, Type> VizComponents => _vizComponents;
 
-        return registry;
-    }
-
-    public VizCardToolbarRegistry BuildVizCardToolbarRegistry()
-    {
-        var registry = new VizCardToolbarRegistry();
-        foreach (var (rendererId, componentType) in _vizToolbars)
-        {
-            registry.Register(rendererId, componentType);
-        }
-
-        return registry;
-    }
+    public IReadOnlyDictionary<string, Type> VizToolbars => _vizToolbars;
 
     public IReadOnlyDictionary<string, CardChromeContributorDescriptor> CardChromeBlocks => _cardChrome;
 

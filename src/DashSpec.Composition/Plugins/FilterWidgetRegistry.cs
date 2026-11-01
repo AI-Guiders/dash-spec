@@ -1,25 +1,25 @@
 using DashSpec.Filters;
 using DashSpec.Modeling.Parse.Filter;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Composition.Plugins;
 
 public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
 {
-    private readonly FilterWidgetComponentRegistry _components;
+    private readonly IReadOnlyDictionary<string, Type> _components;
     private readonly DashSpecContributorRegistry _contributors;
 
-    public FilterWidgetRegistry(
-        FilterWidgetComponentRegistry components,
-        DashSpecContributorRegistry contributors)
+    public FilterWidgetRegistry(DashSpecContributorRegistry contributors)
     {
-        _components = components;
+        // Live map (ADR-0117): the kernel gathers widget component types; the surface owns their registry class.
+        _components = contributors.FilterWidgetComponents;
         _contributors = contributors;
     }
 
     public Type ResolveComponentType(FilterDefinition filter)
     {
         var widgetId = ResolveWidgetId(filter);
-        var componentType = _components.TryGet(widgetId);
+        _components.TryGetValue(widgetId, out var componentType);
+
         if (componentType is not null)
         {
             return componentType;
@@ -57,7 +57,7 @@ public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
             _ => "combobox",
         };
 
-        return _components.TryGet(fallbackId)
+        return (_components.TryGetValue(fallbackId, out var fallback) ? fallback : null)
             ?? throw new InvalidOperationException($"No filter widget component registered for '{fallbackId}'.");
     }
 }

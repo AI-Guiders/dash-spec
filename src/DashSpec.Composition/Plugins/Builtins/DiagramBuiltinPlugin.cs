@@ -2,7 +2,7 @@ using DashSpec.Abstractions.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DashSpec.Viewer.Plugins.Builtins;
+namespace DashSpec.Composition.Plugins.Builtins;
 
 public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
 {

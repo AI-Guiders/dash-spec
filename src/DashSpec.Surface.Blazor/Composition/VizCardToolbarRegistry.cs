@@ -1,4 +1,4 @@
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Surface.Blazor.Composition;
 
 public sealed class VizCardToolbarRegistry
 {

@@ -1,9 +1,9 @@
 using DashSpec.Abstractions.Plugins;
-using DashSpec.Viewer.Plugins.Builtins;
+using DashSpec.Composition.Plugins.Builtins;
 using DashSpec.Plugin.Filter.Builtins;
 using DashSpec.Plugin.Viz.Builtins.Plugins;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Composition.Plugins;
 
 /// <summary>Registers built-in DashSpec plugins without external assemblies (CLI validate, Host startup).</summary>
 public static class DashSpecBuiltinContributorRegistrar

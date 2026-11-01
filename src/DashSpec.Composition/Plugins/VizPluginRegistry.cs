@@ -1,6 +1,6 @@
 using DashSpec.Abstractions.Viz;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Composition.Plugins;
 
 /// <summary>
 /// Renderer resolution per render stack (ADR-0112): the author never picks a renderer —

@@ -7,8 +7,8 @@ using DashSpec.Host.Configuration;
 using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Host.Plugins.Builtins;
 using DashSpec.Surface.Blazor.Services.Presentation;
-using DashSpec.Viewer;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition;
+using DashSpec.Composition.Plugins;
 using DashSpec.Viz;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,6 +63,11 @@ public static class DashSpecPluginLoader
             services,
             configuration,
             plugin => RegisterCommandPlugin(plugin, commandRegistry));
+        DashSpec.Surface.Blazor.Composition.SurfaceCompositionServices.RegisterBuiltInPlugins(
+            registry,
+            services,
+            configuration,
+            plugin => RegisterCommandPlugin(plugin, commandRegistry));
 
         services.AddSingleton<OnClickInteractionService>();
         services.AddSingleton<IOnClickInteractionService>(sp => sp.GetRequiredService<OnClickInteractionService>());
@@ -99,6 +104,9 @@ public static class DashSpecPluginLoader
         {
             RegisterBuiltIn(new DiagnosticsBuiltinPlugin(), registry, services, configuration, commandRegistry);
         }
+
+        // Surface registries snapshot the kernel's component maps AFTER all plugin loads (external plugins included).
+        DashSpec.Surface.Blazor.Composition.SurfaceCompositionServices.RegisterComponentRegistries(services, registry);
 
         services.AddSingleton(commandRegistry);
         services.AddSingleton(registry);

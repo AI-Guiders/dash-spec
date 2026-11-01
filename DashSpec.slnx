@@ -29,14 +29,18 @@
   <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
 
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
+  <Folder Name="/plugins/" />
+  <Folder Name="/plugins/filter/" />
+  <Folder Name="/plugins/viz/" />
+  <Folder Name="/src/">
+    <Project Path="src/DashSpec.Composition/DashSpec.Composition.csproj" />
+  </Folder>
 
   <Project Path="connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
 
   <Project Path="src\DashSpec.Analyzers\DashSpec.Analyzers.csproj" />
 
   <Project Path="src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
-
-  <Project Path="src\DashSpec.Viewer\DashSpec.Viewer.csproj" />
 
   <Project Path="src\DashSpec.Host\DashSpec.Host.csproj" />
 

@@ -5,18 +5,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>14</LangVersion>
-    <RootNamespace>DashSpec.Viewer</RootNamespace>
+    <RootNamespace>DashSpec.Composition</RootNamespace>
     <Version>0.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
-    <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\DashSpec.Compiler.Contract\DashSpec.Compiler.Contract.csproj" />
+    <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\DashSpec.Filters\DashSpec.Filters.csproj" />
     <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />

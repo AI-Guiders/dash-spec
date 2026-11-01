@@ -3,7 +3,7 @@ using DashSpec.Abstractions.Connectors;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using DashSpec.Modeling.Parse.Card;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz;
 using DashSpec.Viz.Platform;

@@ -1,13 +1,10 @@
 using DashSpec.Abstractions.Plugins;
+using DashSpec.Composition.Plugins.Builtins;
 using DashSpec.Filters;
-using DashSpec.Plugin.Filter.Builtins;
-using DashSpec.Viz;
-using DashSpec.Plugin.Viz.Builtins.Plugins;
-using DashSpec.Viewer.Plugins.Builtins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DashSpec.Viewer.Plugins;
+namespace DashSpec.Composition.Plugins;
 
 /// <summary>Core viewer plugin registration (ADR-0099 B3.2). Host adds planet-specific builtins and external loads.</summary>
 public static class ViewerPluginBootstrap
@@ -28,33 +25,18 @@ public static class ViewerPluginBootstrap
         Register(new ScopeBuiltinPlugin());
         Register(new DiagramBuiltinPlugin());
         Register(new OnClickDefaultPlugin());
-        foreach (var vizPlugin in VizBuiltinsPluginCatalog.CreateAll())
-        {
-            Register(vizPlugin);
-        }
 
-        // Radzen visual layer pilot ([ADR-0111]): registered alongside the builtin viz plugins —
-        // the bundle id (viz_radzen) activates it, diagrams pick it via render = "radzen".
-        Register(new DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin());
-
-        foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
-        {
-            Register(filterPlugin);
-        }
-
+        // Razor plugin catalogs (viz/filter/Radzen) register from DashSpec.Surface.Blazor (ADR-0117):
+        // they are component libraries and would pull AspNetCore into the kernel.
         Register(new CardViewsBuiltinPlugin());
     }
 
     public static void RegisterViewerServices(IServiceCollection services, DashSpecContributorRegistry registry)
     {
-        var cardVizComponents = registry.BuildCardVizComponentRegistry();
-        services.AddSingleton(cardVizComponents);
-        services.AddSingleton<ICardVizComponentResolver>(cardVizComponents);
-        services.AddSingleton(registry.BuildVizCardToolbarRegistry());
-        services.AddSingleton(registry.BuildFilterWidgetComponentRegistry());
+        // UI-binding registries and the session dispatcher live in DashSpec.Surface.Blazor (ADR-0117);
+        // the kernel registers only the logical registries.
         services.AddSingleton<FilterWidgetRegistry>();
         services.AddSingleton<IFilterWidgetComponentResolver>(sp => sp.GetRequiredService<FilterWidgetRegistry>());
         services.AddSingleton<VizPluginRegistry>();
-        services.AddScoped<DashSpecActionDispatcher>();
     }
 }

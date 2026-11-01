@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime.Platform;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 
 using DashSpec.Execution.Runtime;
 
