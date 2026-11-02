@@ -420,7 +420,16 @@ public sealed class DashboardRefreshCoordinator : IDisposable
             render,
             filterDisplay,
             PageDisplayBindings);
-        return enriched with { FoldMode = card.Chrome?.Value?.Fold ?? CardFoldMode.None };
+        return enriched with
+        {
+            FoldMode = card.Chrome?.Value?.Fold ?? CardFoldMode.None,
+            SlotExpand = card.Chrome?.Value?.SlotExpand switch
+            {
+                CardSlotExpand.On => true,
+                CardSlotExpand.Off => false,
+                _ => null,
+            },
+        };
     }
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)

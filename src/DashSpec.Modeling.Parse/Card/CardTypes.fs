@@ -209,11 +209,20 @@ type CardsChromeDefinition =
 
     static member Default = { FoldPolicy = CardsFoldPolicy.None }
 
+/// Card chrome slot_expand (per-slot maximize affordance): Unspecified keeps the
+/// surface default (on) — a tri-state instead of a bool option, so the C# boundary
+/// reads a plain enum with no FSharpOption interop.
+type CardSlotExpand =
+    | Unspecified = 0
+    | On = 1
+    | Off = 2
+
 [<CLIMutable>]
 type CardChromeDefinition =
     { BoundFilters: CardBoundFilterChrome
       HideTitle: bool
-      Fold: CardFoldMode }
+      Fold: CardFoldMode
+      SlotExpand: CardSlotExpand }
 
 type CardVisibilityMode =
     | WhenEmpty = 0

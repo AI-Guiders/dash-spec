@@ -119,7 +119,8 @@ module PropertySchemas =
     let cardChrome =
         [ spec "bound_filters" Scalar
           spec "title" Scalar
-          spec "fold" Scalar ]
+          spec "fold" Scalar
+          spec "slot_expand" Scalar ]
 
     let cardsChrome = [ spec "fold" Scalar ]
 

@@ -41,6 +41,9 @@ public sealed record CardRenderResult(
     string? TopFilterScopeHint = null,
     bool ShowChromeTitle = true,
     CardFoldMode FoldMode = CardFoldMode.None,
+    /// <summary>Chrome <c>slot_expand</c>: whether interior slots carry the per-slot
+    /// maximize button. Null (absent in spec) renders ON — the surface default.</summary>
+    bool? SlotExpand = null,
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
     IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null,
     /// <summary>Граф (G), которым получены данные карточки: клик-значения конвертируются его инверсией.</summary>
