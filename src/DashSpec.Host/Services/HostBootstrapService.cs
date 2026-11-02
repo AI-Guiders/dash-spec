@@ -2,6 +2,7 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Composition.Shell;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
@@ -52,7 +53,7 @@ public sealed class HostBootstrapService(
         var document = HostModuleParser.ParseFile(dashhostPath);
         var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
         ApplyHostShell(bootstrap, hostShell);
-        RegisterGridDefault(hostShell);
+        DashSpecDefaultShell.RegisterGridDefault();
 
         settingsOverlay.Apply(bootstrap);
         gitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
@@ -98,15 +99,6 @@ public sealed class HostBootstrapService(
         ValidateRuntimeConfig(runtime, configPath);
         return runtime;
     }
-
-    /// <summary>
-    /// Register the host default grid ([ADR-0111] §2): the embedded <c>host.ds</c> grid drawing
-    /// serves every document that draws no grid of its own — documents draw, the host defaults, code stays silent.
-    /// </summary>
-    private static void RegisterGridDefault(HostShellBootstrap hostShell) =>
-        DashSpec.Modeling.Parse.Layout.GridDefaultBridge.Default =
-            Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Layout.LayoutDefinition>.Some(
-                hostShell.DefaultGrid());
 
     private void ApplyHostShell(DashSpecTomlRoot bootstrap, HostShellBootstrap hostShell)
     {
