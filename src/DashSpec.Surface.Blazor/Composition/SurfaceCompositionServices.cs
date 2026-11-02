@@ -39,6 +39,9 @@ public static class SurfaceCompositionServices
         // Radzen visual layer pilot ([ADR-0111]): bundle id (viz_radzen) activates it, render = "radzen".
         Register(new DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin());
 
+        // ECharts matrix guest (ADR-0112 spike): bundle id (viz_echarts); stacks delegate the heatmap kind here.
+        Register(new DashSpec.Plugin.Viz.EChartsUI.Plugins.EChartsVizDashSpecPlugin());
+
         foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
         {
             Register(filterPlugin);

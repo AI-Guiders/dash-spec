@@ -25,7 +25,9 @@ public sealed record MatrixPresentation(
         LegendDefinition? Legend = null,
         bool HasTooltip = false,
         VizStretchMode StretchMode = VizStretchMode.None,
-        VizStretchDirection StretchDirection = VizStretchDirection.UpOnly) : IVizAxisPresentationSpec
+        VizStretchDirection StretchDirection = VizStretchDirection.UpOnly,
+        string XAxisPlacement = "top",
+        string YAxisPlacement = "left") : IVizAxisPresentationSpec
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
@@ -74,8 +76,18 @@ public sealed record MatrixPresentation(
             card.Legend?.Value,
             card.Tooltip is not null,
             VizStretch.ResolveMode(stretchProps),
-            VizStretch.ResolveDirection(stretchProps));
+            VizStretch.ResolveDirection(stretchProps),
+            NormalizePlacement(diagram.Properties.GetValueOrDefault("x_axis_placement"), "top", "bottom"),
+            NormalizePlacement(diagram.Properties.GetValueOrDefault("y_axis_placement"), "left", "right"));
     }
+
+    /// <summary>Axis placement knob (<c>x_axis_placement = top|bottom</c>,
+    /// <c>y_axis_placement = left|right</c>): an unknown word falls back to the default
+    /// placement — the one the builtin canvas has always drawn.</summary>
+    private static string NormalizePlacement(string? raw, string defaultValue, string otherValue) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? defaultValue
+            : raw.Trim().ToLowerInvariant() == otherValue ? otherValue : defaultValue;
 
     public bool ShowsGradientLegend =>
         Legend?.Show?.Value is false

@@ -124,18 +124,9 @@ else
          style="@MatrixWrapStyle">
         @switch (DiagramKind)
         {
-            case "heatmap":
-                @* Kind heatmap is native to the Radzen stack (ADR-0112): the square
-                   heatmap draws the matrix payload — row-normalized colors, tooltips,
-                   cell drill-down ride the same contracts as the builtin heatmap. *@
-                <RadzenSquareHeatmap Matrix="@Matrix"
-                                     Presentation="@Context.Card.MatrixPresentation"
-                                     VizStateCardId="@Context.ResolveVizStateCardId()"
-                                     FlowPath="@Context.Card.FlowPath"
-                                     OnCellSelected="@Context.OnHeatmapCellSelected"
-                                     OnCategoryItemSelected="@Context.OnHeatmapCategoryItemSelected"
-                                     Style="width:100%;height:100%" />
-                break;
+            @* Kind heatmap no longer routes here: the stack delegates it to the ECharts
+               guest (KindPlugins, ADR-0112) — this switch only sees kinds the Radzen
+               stack owns natively. *@
             case "gantt":
             case "gantt_timeline":
                 <RadzenGantt TItem="GanttTask" Data="@GanttTasks"

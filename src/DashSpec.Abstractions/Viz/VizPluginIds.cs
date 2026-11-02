@@ -9,4 +9,5 @@ public static class VizPluginIds
     public const string ScalarHtml = "scalar-html";
     public const string GanttHtml = "gantt-html";
     public const string GanttTimeline = "gantt-timeline";
+    public const string ECharts = "echarts";
 }

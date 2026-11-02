@@ -1,0 +1,123 @@
+/* ECharts plugin (spike): frozen panes — the frame is a fixed 2×2 grid (corner, X strip,
+   Y strip, body). The body pane is the ONLY scroller; the axis strips are overflow:hidden
+   and their inner content shifts in sync (JS transforms). Axes never move and nothing
+   ever scrolls under them (ADR-0084: the reader always sees both axes). Square cells are
+   geometry: every data track is exactly CellPx wide/tall. */
+.ech-frame {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Stretch fill (ADR-0073): the height comes from the card boundary through the flex
+   chain — the frame and its slot wrapper grow into the card, visible_rows steps aside. */
+.ech-frame--fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.card-viz-stack:has(.ech-frame--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ech-empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--rviz-text-muted, #94a3b8);
+}
+
+.ech-corner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-axis-y,
+.ech-axis-x {
+  font-size: 0.72rem;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+}
+
+.ech-x-strip {
+  overflow: hidden;
+  display: flex;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-x-inner {
+  display: grid;
+  height: 100%;
+  align-items: end;
+  margin: 0 auto;
+  will-change: transform;
+}
+
+.ech-x-label {
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+  padding-bottom: 0.15rem;
+  cursor: pointer;
+}
+
+.ech-x-label:hover {
+  color: var(--rz-text-color, #e2e8f0);
+}
+
+.ech-x-label-sparse {
+  color: transparent;
+  cursor: default;
+}
+
+.ech-y-strip {
+  overflow: hidden;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-y-inner {
+  display: grid;
+  will-change: transform;
+}
+
+.ech-y-label {
+  font-size: 0.75rem;
+  text-align: right;
+  padding: 0 0.4rem 0 0;
+  border: 0;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  height: var(--ech-cell, 28px);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ech-y-label:hover {
+  color: var(--rz-text-color, #e6ecf3);
+}
+
+.ech-y-label-selected {
+  color: var(--rz-text-color, #e6ecf3);
+  font-weight: 600;
+}
+
+.ech-body {
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* A matrix narrower than the pane centers; a wider one scrolls (margin auto keeps
+   the left edge reachable, unlike flex centering). */
+.ech-host {
+  display: block;
+  margin: 0 auto;
+}

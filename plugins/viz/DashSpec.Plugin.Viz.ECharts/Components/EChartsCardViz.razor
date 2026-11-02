@@ -1,0 +1,436 @@
+@namespace DashSpec.Plugin.Viz.EChartsUI.Components
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject IJSRuntime JS
+@inject ICardVizDisplayState VizDisplayState
+@implements IAsyncDisposable
+
+@* ECharts heatmap (ADR-0112 spike): square cells by geometry — both canvas dimensions
+   follow the data (N × cell), so cells stay square at any filter width; no CSS stretch
+   to fight. The wrap is the scroll viewport; the axis strips are DOM and sticky
+   (dates pin to the top, users pin to the left — the reader always sees both axes,
+   ADR-0084 parity). ECharts paints the cells only. Payload contracts ride the same
+   ADR-0107 wires as every matrix renderer: cell / category item / X-label clicks,
+   bucket intervals, per-cell color normalization. *@
+<div class="ech-frame @(IsFill ? "ech-frame--fill" : null)" style="@FrameStyle">
+    @if (Empty)
+    {
+        <p class="ech-empty">Нет данных за выбранный период</p>
+    }
+    else
+    {
+        <div class="ech-corner">
+            @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(Presentation?.YLabel))
+            {
+                <span class="ech-axis-y">@Presentation!.YLabel</span>
+            }
+            @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(Presentation?.XLabel))
+            {
+                <span class="ech-axis-x">@Presentation!.XLabel →</span>
+            }
+        </div>
+        <div class="ech-x-strip">
+            <div @ref="_xInner" class="ech-x-inner" style="@XInnerStyle">
+                @if (ShowAxisLabelsX)
+                {
+                    @for (var xi = 0; xi < Cols; xi++)
+                    {
+                        var xIndex = xi;
+                        var showXLabel = ShouldShowXLabel(xi);
+                        <div class="ech-x-label @(showXLabel ? null : "ech-x-label-sparse")"
+                             role="button"
+                             tabindex="0"
+                             title="@FormatXLabel(XLabel(xIndex))"
+                             @onclick="() => SelectXLabel(xIndex)"
+                             @onclick:stopPropagation="true">
+                            @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        <div class="ech-y-strip">
+            <div @ref="_yInner" class="ech-y-inner" style="@YInnerStyle">
+                @if (ShowAxisLabelsY)
+                {
+                    @for (var yi = 0; yi < Rows; yi++)
+                    {
+                        var rowIndex = yi;
+                        <button type="button"
+                                class="ech-y-label @(_selectedRow == rowIndex ? "ech-y-label-selected" : null)"
+                                title="@FormatYLabel(YLabel(rowIndex))"
+                                @onclick="() => SelectCategory(rowIndex)"
+                                @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
+                    }
+                }
+            </div>
+        </div>
+        <div @ref="_body" class="ech-body">
+            <div @ref="_host" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
+        </div>
+    }
+</div>
+
+@code {
+    private const int CellPx = 28;
+    private const int YLabelPx = 128;
+    private const int XLabelPx = 24;
+    /// <summary>Viewport rows when the author did not set <c>visible_rows</c>: tall
+    /// matrices scroll inside the card (with sticky axes), short ones fit naturally.</summary>
+    private const int DefaultVisibleRows = 12;
+
+    /// <summary>The card render context — the host passes exactly this one parameter
+    /// (CardVizHost convention, same as every card viz component).</summary>
+    [Parameter, EditorRequired]
+    public CardVizRenderContext Context { get; set; } = default!;
+
+    private MatrixPayload Matrix => Context.Card.Matrix!;
+
+    private MatrixPresentation? Presentation => Context.EffectiveCard.MatrixPresentation;
+
+    /// <summary>Cell click — the generic drill source (ADR-0107).</summary>
+    private EventCallback<HeatmapCellContext> OnCellSelected => Context.OnHeatmapCellSelected;
+
+    /// <summary>Y-axis category item click (ADR-0107: "category item").</summary>
+    private EventCallback<HeatmapCellContext> OnCategoryItemSelected => Context.OnHeatmapCategoryItemSelected;
+
+    /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹ в storage-кадр.</summary>
+    private DashflowExecutionPath? FlowPath => Context.FlowPath;
+
+    /// <summary>The viz-state key (ADR-0062): the display toolbar's toggles land here.</summary>
+    private string VizStateCardId => Context.ResolveVizStateCardId();
+
+    private ElementReference _host;
+    private ElementReference _body;
+    private ElementReference _xInner;
+    private ElementReference _yInner;
+    private DotNetObjectReference<EChartsCardViz>? _self;
+    private string _renderKey = string.Empty;
+    private bool _first = true;
+
+    private int? _selectedRow;
+
+    private int Rows => Matrix.YLabels.Count;
+
+    private int Cols => Matrix.XLabels.Count;
+
+    private bool Empty => Rows == 0 || Cols == 0;
+
+    private string ColorScale => HeatmapColorScale.Normalize(Presentation?.ColorScale);
+
+    private bool ShowAxisLabelsX =>
+        VizLabelDisplayResolver.EffectiveAxisVisible(
+            Presentation?.AxisLabelsX ?? true,
+            VizDisplayState.GetAxisLabelsXOverride(VizStateCardId ?? string.Empty));
+
+    private bool ShowAxisLabelsY =>
+        VizLabelDisplayResolver.EffectiveAxisVisible(
+            Presentation?.AxisLabelsY ?? true,
+            VizDisplayState.GetAxisLabelsYOverride(VizStateCardId ?? string.Empty));
+
+    private bool ShowCellValues =>
+        VizLabelDisplayResolver.EffectiveValueLabelsVisible(
+            Presentation?.ValueLabels ?? VizValueLabelMode.Auto,
+            VizDisplayState.GetValueLabelsOverride(VizStateCardId ?? string.Empty));
+
+    private int VisibleRows => Math.Min(Presentation?.VisibleRows ?? DefaultVisibleRows, Math.Max(Rows, 1));
+
+    /// <summary>Fullscreen/detail expands the viewport (house pattern of the builtin
+    /// canvas): visible rows double with a 16-row floor — the squares and the sticky
+    /// axes keep working, just with more of the matrix on screen.</summary>
+    private int ViewportRows =>
+        Context.DetailView
+            ? Math.Min(Math.Max(VisibleRows * 2, 16), Math.Max(Rows, 1))
+            : VisibleRows;
+
+    /// <summary>Stretch (ADR-0073 fill): the frame takes the card boundary — the height
+    /// comes from the card slot through the flex chain, not from <c>visible_rows</c>;
+    /// the bridge computes the cell side from the actual pane size.</summary>
+    private bool IsFill => Presentation is { StretchMode: VizStretchMode.Fill };
+
+    /// <summary>The frame is the bounded viewport (ADR-0084: axes must stay visible) —
+    /// a fixed 2×2 pane: corner + X strip + Y strip + the scrollable body. The axes
+    /// never move and nothing ever scrolls under them; only the body pane scrolls and
+    /// the strips' inner content shifts in sync. Non-stretch height follows
+    /// <c>visible_rows</c>; the cell side is computed to fill the pane (the bridge
+    /// measures and sets <c>--ech-cell</c>) — squares by construction, no dead space.</summary>
+    private string FrameStyle =>
+        $"--ech-cell:{CellPx}px;" +
+        (IsFill ? string.Empty : $"max-height:{ViewportHeightPx}px;") +
+        $"grid-template-columns:{(ShowAxisLabelsY ? YLabelPx : 0)}px 1fr;" +
+        $"grid-template-rows:{(ShowAxisLabelsX ? XLabelPx : 0)}px 1fr;";
+
+    private int ViewportHeightPx
+    {
+        get
+        {
+            var height = (ShowAxisLabelsX ? XLabelPx : 0) + ViewportRows * CellPx;
+            return Context.DetailView ? Math.Max(height, 480) : height;
+        }
+    }
+
+    private string XInnerStyle => $"grid-template-columns:repeat({Cols},var(--ech-cell));width:calc({Cols} * var(--ech-cell));";
+
+    private string YInnerStyle => $"grid-template-rows:repeat({Rows},var(--ech-cell));";
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        var key = $"{ReferenceEquals(Matrix, _lastMatrix)}|{ShowAxisLabelsX}|{ShowAxisLabelsY}|{ShowCellValues}";
+        if (key != _renderKey)
+        {
+            _renderKey = key;
+            _lastMatrix = Matrix;
+        }
+    }
+
+    private MatrixPayload? _lastMatrix;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Empty)
+        {
+            return;
+        }
+
+        if (!_first && _renderKey == _renderedKey)
+        {
+            return;
+        }
+
+        _first = false;
+        _renderedKey = _renderKey;
+        _self ??= DotNetObjectReference.Create(this);
+
+        var option = BuildOption();
+        var ctx = new
+        {
+            xLabels = Array.Empty<string>(),
+            yLabels = Array.Empty<string>(),
+            tooltips = Matrix.Tooltips,
+            cols = Cols,
+            rows = Rows,
+        };
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        };
+
+        await JS.InvokeVoidAsync(
+            "dashspecECharts.render",
+            _host,
+            JsonSerializer.Serialize(option, jsonOptions),
+            JsonSerializer.Serialize(ctx, jsonOptions),
+            _self);
+
+        // Frozen panes: the body is the only scroller; the axis strips shift in sync.
+        await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner);
+    }
+
+    private string _renderedKey = string.Empty;
+
+    /// <summary>Cells only — the axes are DOM strips above/left of the canvas. The plot
+    /// area fills the whole canvas, so one data column is exactly CellPx wide: squares
+    /// by construction.</summary>
+    private object BuildOption()
+    {
+        var items = new List<object>(Rows * Cols);
+        for (var yi = 0; yi < Rows; yi++)
+        {
+            for (var xi = 0; xi < Cols; xi++)
+            {
+                var value = Matrix.Cells[yi][xi];
+                if (value is not { } v)
+                {
+                    continue;
+                }
+
+                var (cellMin, cellMax) = Matrix.ColorRangeForCell(yi, xi);
+                items.Add(new
+                {
+                    value = new[] { xi, yi, (int)v },
+                    itemStyle = new
+                    {
+                        color = HeatmapColorScale.CellBackground(ColorScale, v, cellMin, cellMax),
+                    },
+                    label = new
+                    {
+                        show = ShowCellValues,
+                        color = HeatmapColorScale.CellText(ColorScale, v, cellMin, cellMax),
+                        formatter = "{c2}",
+                    },
+                });
+            }
+        }
+
+        return new
+        {
+            animation = false,
+            tooltip = new { confine = true },
+            grid = new { left = 0, top = 0, right = 0, bottom = 0 },
+            xAxis = new
+            {
+                type = "category",
+                show = false,
+                data = Enumerable.Range(0, Cols).Select(i => i.ToString()).ToArray(),
+            },
+            yAxis = new
+            {
+                type = "category",
+                show = false,
+                data = Enumerable.Range(0, Rows).Select(i => i.ToString()).ToArray(),
+            },
+            series = new object[]
+            {
+                new
+                {
+                    type = "heatmap",
+                    data = items,
+                    itemStyle = new { borderColor = "rgba(15,23,42,0.65)", borderWidth = 1 },
+                    emphasis = new { itemStyle = new { shadowBlur = 6, shadowColor = "rgba(0,0,0,0.5)" } },
+                },
+            },
+        };
+    }
+
+    /// <summary>JS → .NET click bridge (the body chart maps a series click to indices).</summary>
+    [JSInvokable]
+    public async Task OnJsEvent(string kind, int xi, int yi)
+    {
+        if (kind == "cell" && xi >= 0 && yi >= 0)
+        {
+            await SelectCell(yi, xi);
+        }
+    }
+
+    private async Task SelectCell(int yi, int xi)
+    {
+        var value = Matrix.Cells[yi][xi];
+        if (value is null)
+        {
+            return;
+        }
+
+        _selectedRow = null;
+        await OnCellSelected.InvokeAsync(CellContext(yi, xi, value, MatrixClickSources.Cell));
+    }
+
+    private async Task SelectCategory(int yi)
+    {
+        if (!OnCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        _selectedRow = yi;
+
+        // Canvas-parity: a category click carries no bucket instants — otherwise the
+        // resolver's auto bucket-range overlay pins the drill to the axis's first bucket.
+        await OnCategoryItemSelected.InvokeAsync(new HeatmapCellContext(
+            yi,
+            -1,
+            string.Empty,
+            Matrix.YLabels[yi],
+            null,
+            null,
+            null,
+            null,
+            ClickSource: MatrixClickSources.CategoryItem,
+            FlowPath: FlowPath));
+    }
+
+    private HeatmapCellContext CellContext(int yi, int xi, double? value, string clickSource)
+    {
+        var (bucketStart, bucketEnd) = BucketInterval(xi);
+
+        return new HeatmapCellContext(
+            yi,
+            xi,
+            Matrix.XLabels[xi],
+            Matrix.YLabels[yi],
+            value,
+            Matrix.Tooltips?[yi][xi],
+            bucketStart,
+            bucketEnd,
+            ClickSource: clickSource,
+            FlowPath: FlowPath);
+    }
+
+    /// <summary>Полуинтервал бакета колонки [start, end): конец следующего бакета, для
+    /// последнего — шаг сетки (разница соседних starts).</summary>
+    private (DateTime? Start, DateTime? End) BucketInterval(int xi)
+    {
+        if (Matrix.XBucketStarts is not { } buckets || xi >= buckets.Count)
+        {
+            return (null, null);
+        }
+
+        var start = buckets[xi];
+        var end = xi + 1 < buckets.Count
+            ? buckets[xi + 1]
+            : buckets.Count > 1
+                ? start + (start - buckets[xi - 1])
+                : (DateTime?)null;
+        return (start, end);
+    }
+
+    /// <summary>X-axis label click: the whole column — one time bucket, all categories.
+    /// Fires through the "cell" source: the <c>on click</c> | cell | row binds the bucket
+    /// interval via <c>activity_slot=x</c>; the <c>y</c> bind stays empty and the resolver
+    /// skips it — so the drill shows the hour across every product.</summary>
+    private async Task SelectXLabel(int xi)
+    {
+        var (bucketStart, bucketEnd) = BucketInterval(xi);
+
+        _selectedRow = null;
+        await OnCellSelected.InvokeAsync(new HeatmapCellContext(
+            -1,
+            xi,
+            Matrix.XLabels[xi],
+            string.Empty,
+            null,
+            null,
+            bucketStart,
+            bucketEnd,
+            ClickSource: MatrixClickSources.Cell,
+            FlowPath: FlowPath));
+    }
+
+    private string YLabel(int index) => Matrix.YLabels[index];
+
+    private string XLabel(int index) => Matrix.XLabels[index];
+
+    private string FormatXLabel(string label) =>
+        LabelFormat.Format(label, Presentation?.XFormat ?? "date.short");
+
+    private string FormatYLabel(string label) =>
+        LabelFormat.Format(label, Presentation?.YFormat ?? "user.short");
+
+    private bool ShouldShowXLabel(int index)
+    {
+        if (Cols <= 14)
+        {
+            return true;
+        }
+
+        var step = (int)Math.Ceiling(Cols / 14.0);
+        return index == 0 || index == Cols - 1 || index % step == 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_self is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("dashspecECharts.dispose", _self);
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit gone — nothing to dispose on the client.
+            }
+
+            _self.Dispose();
+        }
+    }
+}

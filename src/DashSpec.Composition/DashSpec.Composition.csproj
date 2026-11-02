@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
     <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Builtins\DashSpec.Plugin.Viz.Builtins.csproj" />
     <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Radzen\DashSpec.Plugin.Viz.Radzen.csproj" />
+    <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.ECharts\DashSpec.Plugin.Viz.ECharts.csproj" />
   </ItemGroup>
 
 </Project>

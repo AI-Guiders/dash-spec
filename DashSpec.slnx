@@ -50,6 +50,8 @@
 
   <Project Path="src\DashSpec.Cli\DashSpec.Cli.csproj" />
 
+  <Project Path="plugins\viz\DashSpec.Plugin.Viz.ECharts\DashSpec.Plugin.Viz.ECharts.csproj" />
+
   <Project Path="tests\DashSpec.Analyzers.Tests\DashSpec.Analyzers.Tests.csproj" />
 
   <Project Path="tests\DashSpec.Architecture.Tests\DashSpec.Architecture.Tests.csproj" />
