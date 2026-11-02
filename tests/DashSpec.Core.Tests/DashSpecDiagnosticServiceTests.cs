@@ -96,7 +96,7 @@ public sealed class DashSpecDiagnosticServiceTests
         {
             var diagnostics = DashSpecDiagnosticService.ValidateText(
                 text,
-                "sample.dashspec",
+                "sample.ds",
                 specDirectory,
                 DashSpecParseOptions.Editor);
 
@@ -132,7 +132,7 @@ public sealed class DashSpecDiagnosticServiceTests
         {
             var diagnostics = DashSpecDiagnosticService.ValidateText(
                 text,
-                "sample.dashspec",
+                "sample.ds",
                 specDirectory,
                 DashSpecParseOptions.Editor);
 

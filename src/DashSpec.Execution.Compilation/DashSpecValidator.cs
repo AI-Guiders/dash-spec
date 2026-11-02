@@ -6,12 +6,13 @@ using DashSpec.Compiler.Contract;
 
 namespace DashSpec.Execution.Compilation;
 
-/// <summary>CLI-friendly validation entry points (ADR-0030).</summary>
+/// <summary>
+/// CLI-friendly validation entry points (ADR-0030). One engine: the per-file diagnostic
+/// service over the assembled corpus — there is no standalone-parse second path anymore;
+/// legacy flat document formats are retired (ADR-0101 single unit file type).
+/// </summary>
 public static class DashSpecValidator
 {
-    public static void ValidateSpec(string path, string? specDirectory = null) =>
-        ValidateSpec(path, specDirectory, DashSpecParseOptions.Default);
-
     public static void ValidateSpec(
         string path,
         string? specDirectory,
@@ -24,52 +25,35 @@ public static class DashSpecValidator
             throw new FileNotFoundException("DashSpec file not found.", path);
         }
 
+        if (!Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DashSpecParseException(
+                $"Not a .ds unit: '{path}'. Single-unit files are the only format (ADR-0101); legacy document formats are retired.");
+        }
+
         var directory = specDirectory ?? Path.GetDirectoryName(path)!;
-
-        if (Path.GetExtension(path).Equals(".ds", StringComparison.OrdinalIgnoreCase))
-        {
-            // Unit files (ADR-0101) are routed by the kind in their module header, exactly like the editor path.
-            var diagnostics = DashSpecDiagnosticService.ValidateFile(path, directory, parseOptions);
-            var error = diagnostics.FirstOrDefault(d => d.Severity == DashSpecDiagnosticSeverity.Error);
-            if (error is not null)
-            {
-                throw new DashSpecParseException(error.Message);
-            }
-
-            foreach (var warning in diagnostics.Where(d => d.Severity == DashSpecDiagnosticSeverity.Warning))
-            {
-                Console.Error.WriteLine($"warning: {warning.Message}");
-            }
-
-            return;
-        }
-
-        var document = DashSpecParser.Parse(File.ReadAllText(path), directory, parseOptions);
-        EmitResolutionWarnings(ResolutionLint.Analyze(document));
+        ThrowOnDiagnostics(DashSpecDiagnosticService.ValidateFile(path, directory, parseOptions));
     }
 
-    public static void ValidateCatalog(string path)
+    /// <summary>
+    /// Catalog validation rides the per-file diagnostic service: dashboard entries validate
+    /// the way the runtime assembles them (imports merged, root filters visible to section
+    /// cards); sections route by their own unit kind.
+    /// </summary>
+    public static void ValidateCatalog(string path, DashSpecParseOptions? parseOptions = null) =>
+        ThrowOnDiagnostics(DashSpecDiagnosticService.ValidateFile(path, parseOptions: parseOptions));
+
+    private static void ThrowOnDiagnostics(IReadOnlyList<DashSpecDiagnostic> diagnostics)
     {
-        var catalog = CatalogReader.ParseFile(path);
-        foreach (var entry in catalog.Entries)
+        var error = diagnostics.FirstOrDefault(d => d.Severity == DashSpecDiagnosticSeverity.Error);
+        if (error is not null)
         {
-            var specPath = CatalogReader.ResolveEntrySpecPath(path, entry.DashspecPath);
-            var specDirectory = Path.GetDirectoryName(specPath)!;
-            var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectory);
-            EmitResolutionWarnings(ResolutionLint.Analyze(document, entry));
+            throw new DashSpecParseException(error.Message);
         }
-    }
 
-    public static IReadOnlyList<ResolutionLintFinding> GetResolutionFindings(
-        DashboardDocument document,
-        CatalogEntryDefinition? catalogEntry = null) =>
-        ResolutionLint.Analyze(document, catalogEntry);
-
-    private static void EmitResolutionWarnings(IReadOnlyList<ResolutionLintFinding> findings)
-    {
-        foreach (var finding in findings.Where(f => f.Severity == ResolutionLintSeverity.Warning))
+        foreach (var warning in diagnostics.Where(d => d.Severity == DashSpecDiagnosticSeverity.Warning))
         {
-            Console.Error.WriteLine($"warning: {finding.FormatMessage()}");
+            Console.Error.WriteLine($"warning: {warning.Message}");
         }
     }
 }
