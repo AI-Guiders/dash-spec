@@ -28,7 +28,7 @@ else if (Owner is not null)
         @* Per-slot maximize is author intent (chrome slot_expand = on|off; default on):
            the hover button opens this slot alone in the card's fullscreen panel. *@
         <div class="card-slot-shell">
-            @if (Owner.Card.SlotExpand != false)
+            @if (Owner.Card.Chrome?.SlotExpand is not CardSlotExpand.Off)
             {
                 <button type="button"
                         class="secondary card-icon-btn slot-maximize-btn"

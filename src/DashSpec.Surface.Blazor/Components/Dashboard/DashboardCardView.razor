@@ -175,7 +175,7 @@
     [Parameter] public EventCallback OnToggleBodyFold { get; set; }
 
     private bool CanFoldBody =>
-        Card.FoldMode is not CardFoldMode.None && !Card.IsVisibilityPlaceholder;
+        Card.Chrome is { Fold: not CardFoldMode.None } && !Card.IsVisibilityPlaceholder;
 
     private Task ToggleBodyFoldAsync() =>
         OnToggleBodyFold.HasDelegate ? OnToggleBodyFold.InvokeAsync() : Task.CompletedTask;

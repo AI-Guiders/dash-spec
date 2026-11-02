@@ -40,10 +40,11 @@ public sealed record CardRenderResult(
     string? FilterLinkCssClass = null,
     string? TopFilterScopeHint = null,
     bool ShowChromeTitle = true,
-    CardFoldMode FoldMode = CardFoldMode.None,
-    /// <summary>Chrome <c>slot_expand</c>: whether interior slots carry the per-slot
-    /// maximize button. Null (absent in spec) renders ON — the surface default.</summary>
-    bool? SlotExpand = null,
+    /// <summary>The card's chrome — the domain definition passed through (fold,
+    /// slot_expand, bound_filters, hide_title), not splatted into loose fields.
+    /// ShowChromeTitle stays separate: it is the resolved title bit (catalog-prod
+    /// suppression, ResolvedCardChrome) — not expressible from the definition alone.</summary>
+    CardChromeDefinition? Chrome = null,
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
     IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null,
     /// <summary>Граф (G), которым получены данные карточки: клик-значения конвертируются его инверсией.</summary>
