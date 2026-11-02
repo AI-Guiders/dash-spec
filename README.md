@@ -1,6 +1,6 @@
 # DashSpec (DSPEC)
 
-Декларативные operational dashboards: **текстовый `.dashspec` в git** → **DashSpec Platform** (engine) → **surfaces** (Web Host, Studio, …).
+Декларативные operational dashboards: **текстовые спеки `.ds` в git** → **DashSpec Platform** (engine) → **surfaces** (Web Host, Studio, …).
 
 Проект AI Guiders — product-neutral DSL и BI platform; **без привязки к конкретной БД** в Core. **DashSpec.Host** — web **viewer**, не весь продукт ([ADR-0047](design/DASHSPEC-ADR-0047-platform-surfaces-viewer-split.md)).
 
@@ -25,7 +25,7 @@ cd dash-spec
 dotnet run --project src/DashSpec.Host
 ```
 
-→ **http://localhost:5295** (по умолчанию `samples/demo/demo-catalog.dashcatalog`, entry `demo_soak`)
+→ **http://localhost:5295** (bootstrap: `src/DashSpec.Host/dash-spec.toml` → host-модуль `samples/demo/demo.ds` → каталог `demo-catalog.ds`, entry `demo_soak`)
 
 Нужна SQL Server с demo-схемой — см. [`samples/demo/demo.toml`](samples/demo/demo.toml) и `demo.local.toml.example`. Локальный seed:
 
@@ -35,10 +35,10 @@ sqlcmd -S localhost -d DashSpecDemo -E -i samples/demo/sql/bootstrap-demo-soak.s
 
 ### Bootstrap
 
-1. Host `dash-spec.toml` — `[host] dashhost` → `.dashhost` → `.dashcatalog`
-2. `.dashcatalog` — whitelist отчётов; `default` entry → первый экран
-3. `.dashspec` — `@module` + `runtime { manifest = "…" }`, `configuration { }`, `body` / `dashboard { }` ([ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md)); legacy: flat `@runtime`, `@sqldialect`
-4. TOML из `runtime.manifest` — providers + plugins (deployment manifest, не DSL)
+1. Host `dash-spec.toml` — `[host] dashhost` → **host-модуль `.ds`** (`module host`: chrome, `catalog`, `surfaces` — [ADR-0054](design/DASHSPEC-ADR-0054-dashhost-module.md))
+2. Catalog-модуль `.ds` — whitelist отчётов (`entry … dashspec "*.ds"`); `default` entry → первый экран ([ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md))
+3. Dashboard/section `.ds` — типизированные модули ([ADR-0101](design/DASHSPEC-ADR-0101-single-unit-file-type.md)) с блоками `runtime { manifest = "…" }`, `configuration { }`, `report { }`
+4. TOML из `runtime.manifest` — providers (deployment manifest, не DSL); viz/on-click плагины — `[plugins]` в host TOML (bundles)
 
 `samples/demo/demo.toml`:
 
@@ -57,11 +57,11 @@ assembly = "DashSpec.Connector.SqlServer.dll"
 is_provider = true
 ```
 
-Без `@runtime` host выдаст понятную ошибку. `@config` — deprecated alias.
+Без блока `runtime { manifest = … }` host выдаст понятную ошибку.
 
 ### Доступ (prod)
 
-В host TOML (`dash-spec.local.toml`, не в `@runtime` продукта):
+В host TOML (`dash-spec.local.toml`, не в спеке продукта):
 
 ```toml
 [access]
@@ -83,8 +83,8 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 |-------------|----------|
 | Blazor Server host, hot reload spec-файлов | PostgreSQL / другие коннекторы (только plugin model) |
 | SqlServer connector plugin | `place` на фильтрах (toolbar — только board/ref) |
-| Line, bar, table, heatmap, pie/donut charts | Полный language reference на EN (RU: docs/AUTHORING_GUIDE + HOWTO + DIAGRAM_KINDS_ROADMAP) |
-| Модульные `@tab`, file includes, layout boards | CI badge, packaged NuGet |
+| Line, area, bar, stacked bar, donut, table, heatmap, box, histogram, scatter, treemap, windrose, gauge, KPI, sparkline + gantt (viz-плагины) | Полный language reference на EN (RU: docs/AUTHORING_GUIDE + HOWTO + DIAGRAM_KINDS_ROADMAP) |
+| Типизированные модули `.ds` ([ADR-0101](design/DASHSPEC-ADR-0101-single-unit-file-type.md)), namespaces/imports, flows, layout boards | CI badge, packaged NuGet |
 
 ## Структура
 
@@ -94,7 +94,7 @@ Reference sample: [`samples/demo/`](samples/demo/) — вымышленная с
 | `DashSpec.Core` | parser, фильтры, layout/toolbar boards, `QueryCompiler`, chart payloads |
 | `DashSpec.Connector.SqlServer` | единственный bundled connector (plugin dll) |
 | `DashSpec.Host` | loader + Blazor UI (CSS grid для cards и toolbar) |
-| `samples/demo/` | reference `.dashspec` + `diagrams/` / `palettes/` |
+| `samples/demo/` | reference `.ds`-модули: host, catalog, dashboard, sections, flows, diagrams, palettes, types, tooltips |
 | `design/` | ADR (архитектурные решения DSL и host) |
 | `docs/` | Authoring Guide, How-to, FILTERS, authoring |
 | `editor/` | VS Code extension ([`editor/vscode-dashspec`](editor/vscode-dashspec/)); authoring: [`docs/authoring`](docs/authoring/README.md) |
@@ -108,144 +108,226 @@ Grammar в редакторе **может отставать** от парсе�
 
 **Не в коннекторе.** См. **[docs/FILTERS_RU.md](docs/FILTERS_RU.md)**:
 
-- объявление → `filter …` в `.dashspec`
+- объявление → `filter …` в `.ds`
 - привязка к карточке → `bind usage_date, app_name` (SQL компилируется из bind)
 - значения на экране → `FilterState` в host
 - SQL → `QueryCompiler` в Core
 
 ## DSL (кратко)
 
-### Dashboard shell
+> Синтаксис сверен с живыми спеками `samples/demo/` (2026-11). Источник правды — парсер (`DashSpec.Host validate` / validate on save в editor-плагине); этот раздел и `docs/` могут отставать.
+
+### Модульная модель (ADR-0101)
+
+Один тип файла — **`.ds`**; вид модуля задаёт корень `module <вид> <id>`. Блоки закрываются `end`. Между модулями — `namespace` и `import … from …`; проект — `.dsproj`.
+
+| Вид | Корень | Содержимое |
+|-----|--------|------------|
+| host | `module host <id>` | chrome: `catalog "*.ds"`, `host { language, color_scheme, render, … }`, `surfaces` ([ADR-0054](design/DASHSPEC-ADR-0054-dashhost-module.md)) |
+| catalog | `module catalog <id>` | whitelist отчётов: `default`, `entry … dashspec "*.ds"` ([ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md)) |
+| dashboard | `module dashboard <id>` | `runtime` / `configuration` / `connect` / `report` |
+| section | `module section <id>` | вкладка: cards, локальные фильтры ([ADR-0073](design/DASHSPEC-ADR-0073-author-navigation-surface.md)) |
+| flow | `module flow <id>` | dataflow-граф: `source`, `transformer`, рёбра |
+| diagram | `module diagram <id>` | вид, оси, `scale_y`, series, `render` |
+| types | `module types <id>` | строки потоков: `type FixtureRow { optional date … }` |
+| palette | `module palette <id>` | `const`-цвета, `default` / `Other` |
+| layout | `module layout <id>` | bracket board `[ … ]`, `scope tab` / `scope host` ([ADR-0020](design/DASHSPEC-ADR-0020-card-ref-and-layout-board.md), [ADR-0021](design/DASHSPEC-ADR-0021-dashlayout-include.md)) |
+| tooltip | `module tooltip <id>` | тултипы |
+| project | `module project <id>` (`.dsproj`) | `namespace`, `global import` |
+
+### Dashboard (корень отчёта)
+
+`samples/demo/demo-soak.ds` (сокращено):
 
 ```text
-@runtime "demo.toml"
-@sqldialect tsql
-@palette "palettes/demo-apps.dashpalette"
+module dashboard demo_soak
+namespace Demo.Soak
+import diagrams from Demo.Diagrams
+import flows from Demo.Flows as demo_report_flow
+import sections from Demo.Analytics
 
-@dashboard demo_soak
+runtime
+  manifest = "demo.toml"
+end runtime
 
-dashboard "Title" {
-  connector sqlserver
-  layout grid { columns = 12; gap = 16 }
+configuration
+  sqldialect = tsql
+end configuration
 
-  filter date usage_date on usage_date as "Report date" default -7d..today
-  filter field app_name on demo.v_daily_active_events.app_name as "Products"
+connect
+  use palette demo_apps
+  use flow demo_report_flow
+end connect
 
-  toolbar chrome { layout = bar; sticky = line; apply = auto }
+report
+  title = "DashSpec — Demo soak"
 
-  tab overview as "Overview" { cards { peak, dau } }
-  tab analytics dashspec "demo-analytics.dashspec"
+  defaults
+    filter.usage_date.range = -7d..today
+  end defaults
 
-  card peak as "Peak" {
-    bind usage_date, app_name
-    include diagram "diagrams/peak-concurrent-line.dashdiagram"
-    datasource view demo.v_daily_peak_concurrent_proxy
-  }
-}
+  filter usage_date
+    bind date
+      column = usage_date
+    end bind
+    show
+      label = "Report date"
+    end show
+  end filter
+
+  toolbar chrome
+    layout = bar
+    sticky = line
+    apply = auto
+  end chrome
+
+  section overview as "Overview"
+    cards
+      peak_concurrent_proxy
+      events_detail
+    end cards
+  end section
+
+  card events_detail as "Events detail"
+    show flow
+      events_top -> [toolbar] chrome.card.events_detail
+    end show flow
+    data flow
+      events_tz [rows] -> [rows] __diagram__
+    end data flow
+    diagram demo_events_detail_table
+      bind
+        app_name, user_name
+      end bind
+  end card
+end report
 ```
 
+- фильтры также объявляются компактной **таблицей** (`| id | bind | column | label | widget | range |` … `end filters`)
 - `default -7d..today` — диапазон **в spec**; см. [FILTERS_RU.md](docs/FILTERS_RU.md)
 - `bind` на card — фильтры карточки; Core строит `WHERE` / `TOP` ([ADR-0009](design/DASHSPEC-ADR-0009-bind-only-filters.md))
-- `datasource view` — default; `datasource sql query` / `datasource sql file` ([ADR-0018](design/DASHSPEC-ADR-0018-sql-datasource-carriers.md))
 
-### Модульность и file includes
+### Section (вкладка в отдельном файле)
 
-Один язык — несколько корней файлов ([ADR-0017](design/DASHSPEC-ADR-0017-file-includes-and-stdlib.md)). **Грамматика документа** (`runtime { }`, `configuration { }`, `imports { }`, `wiring { }`, `body { }`) — [ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md).
-
-| Расширение | Корень | Содержимое |
-|------------|--------|------------|
-| `.dashspec` | `@dashboard` / `@tab` | dashboard, filters, cards, tabs |
-| `.dashcatalog` | `@catalog` | whitelist отчётов для Host ([ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md)) |
-| `.dashdiagram` | `@diagram` | `diagram { }`, опционально presentation/transform |
-| `.dashpresentation` | `@presentation` | layout chart area |
-| `.dashpalette` | `@palette` | цвета серий |
-| `.dashlayout` | `@layout` | bracket board `[ Q W ]` |
-
-**Вкладка в отдельном файле** — `@tab` module ([ADR-0011](design/DASHSPEC-ADR-0011-tab-modules.md)):
+`samples/demo/demo-analytics.ds` (сокращено); подключается в dashboard через `import sections from Demo.Analytics`:
 
 ```text
-@tab analytics
-@runtime "demo.toml"
+module section analytics
+namespace Demo.Analytics
 
-card period_peak as "Peak by period" {
-  include diagram "diagrams/period-peak-by-app-bar.dashdiagram"
-  datasource view demo.v_peak_concurrent_by_period
-  bind period_grain, period_start, app_name
-}
+connect
+  use palette demo_apps
+end connect
+
+report
+  title = "Analytics"
+
+  card period_peak_by_app as "Peak by app (period)"
+    show flow
+      period_grain -> [toolbar] chrome.card.period_peak_by_app
+    end show flow
+    data flow
+      period_peak_tz [rows] -> [rows] __diagram__
+    end data flow
+    diagram demo_period_peak_by_app_bar
+      bind
+        period_grain, period_start, app_name
+      end bind
+  end card
+end report
 ```
 
-В parent: `tab analytics dashspec "demo-analytics.dashspec"`.
+### Flow (слой данных)
 
-### Catalog отчётов (`.dashcatalog`)
-
-Whitelist верхнего уровня для Host ([ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md)):
+`samples/demo/flows/demo-report.ds` (сокращено; блоки `ports` опущены):
 
 ```text
-@catalog demo
-default soak
+module flow demo_report
+namespace Demo.Flows
 
-entry soak as "Demo — Soak"
-  dashspec "demo-soak.dashspec"
-
-entry stakeholder as "Сводка"
-  dashspec "demo-stakeholder.dashspec"
-```
-
-Host bootstrap:
-
-```toml
-[host]
-dashhost = "path/to/planet.dashhost"
-```
-
-Зритель переключает отчёт в dropdown; автор добавляет `entry` в git.
-
-### Layout карточек (tab board)
-
-Короткий `ref` на card + ASCII-сетка на вкладке ([ADR-0020](design/DASHSPEC-ADR-0020-card-ref-and-layout-board.md)):
-
-```text
-card stakeholder_peak_by_app as "Peak" ref Q { ... }
-
-tab stakeholder as "Reports" {
-  layout {
-    [ Q W ]
-    [ E ]
-  }
-}
-```
-
-Вынести board в файл ([ADR-0021](design/DASHSPEC-ADR-0021-dashlayout-include.md)):
-
-```text
-include layout "layouts/stakeholder-grid.dashlayout"
-```
-
-```text
-@layout stakeholder_grid
-scope tab
-
-[ Q W ]
-[ E ]
-```
-
-### Toolbar (filter ref + board)
-
-Та же bracket-модель для фильтров ([ADR-0022](design/DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md)):
-
-```text
-filter date usage_date on usage_date as "Date" ref D default -7d..today
-filter field app_name on demo.v_daily_active_events.app_name as "Products" ref A
-
-toolbar {
-  [ D A ]
-  [ U   ]
+source daily_peak_raw {
+  use provider infer
+  from view demo.v_daily_peak_concurrent_proxy
 }
 
-include toolbar "layouts/soak-toolbar.dashlayout"
+transformer daily_peak_tz {
+  transform use to_zone { zone = UTC+3 }
+}
+
+daily_peak_raw [raw] -> [raw] daily_peak_tz
 ```
 
-Legacy `toolbar { usage_date, app_name }` — одна неявная строка (совместимость).
+Карточка подключает поток через `data flow` (`daily_peak_tz [rows] -> [rows] __diagram__`).
+
+### Diagram
+
+`samples/demo/diagrams/activity-5min-line.ds`:
+
+```text
+module diagram demo_activity_5min_line
+namespace Demo.Diagrams
+
+series
+  max = 6
+  other = "Other"
+end series
+
+line
+  render = "chartjs"
+  x = bucket_start_utc
+  x_format = time.short
+  x_step = 5m
+  y = event_count
+  scale_y = integer
+  series = app_name
+end line
+```
+
+### Host и catalog
+
+`samples/demo/demo.ds` + `demo-catalog.ds` (сокращено):
+
+```text
+module host demo
+import layouts from Demo.Layouts
+
+catalog "demo-catalog.ds"
+
+host
+  language = "ru-RU"
+  product_title = "DashSpec Demo"
+  color_scheme = dark
+end host
+
+surfaces
+  show help, settings, spec_dev
+end surfaces
+```
+
+```text
+module catalog demo
+
+default demo_soak
+
+entry demo_soak as "DashSpec — Demo soak"
+  dashspec "demo-soak.ds"
+```
+
+Bootstrap: `[host] dashhost = "../../samples/demo/demo.ds"` в `src/DashSpec.Host/dash-spec.toml`; локальное переопределение — `dash-spec.local.toml` (gitignored). Зритель переключает отчёт в dropdown; автор добавляет `entry` в git.
+
+### Layout (bracket boards)
+
+`samples/demo/layouts/host-topbar.ds` — `scope host`:
+
+```text
+module layout demo_host_topbar
+namespace Demo.Layouts
+scope host
+
+[ brand [] catalog nav external_links help settings ]
+```
+
+`scope tab` — та же bracket-модель для раскладки карточек/фильтров вкладки; карточки и фильтры могут нести `ref`-токен для board ([ADR-0022](design/DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md)).
 
 ## Design
 
@@ -263,6 +345,8 @@ Legacy `toolbar { usage_date, app_name }` — одна неявная строк
 - [ADR-0043](design/DASHSPEC-ADR-0043-filter-command-palette.md) — `/select` filter commands via CommandPlane (accepted)
 - [ADR-0023](design/DASHSPEC-ADR-0023-dashcatalog.md) — `.dashcatalog`
 - [ADR-0024](design/DASHSPEC-ADR-0024-document-authoring-layers.md) — document blocks (`runtime`, `configuration`, `wiring`, `body`)
+- [ADR-0073](design/DASHSPEC-ADR-0073-author-navigation-surface.md) — sections / author navigation
+- [ADR-0101](design/DASHSPEC-ADR-0101-single-unit-file-type.md) — единый тип файла `.ds` (module-модель)
 
 Полный список — каталог [`design/`](design/).
 
