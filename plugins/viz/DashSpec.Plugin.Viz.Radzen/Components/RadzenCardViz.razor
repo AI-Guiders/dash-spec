@@ -16,7 +16,27 @@
    The render is a vertical slice (ADR-0077): rviz-* classes live in this plugin's css,
    the copy rides RadzenVizStrings — the renderer owns the whole render. *@
 
-@if (IsEmptyForFamily)
+@if (IsNumberFamily)
+{
+    @* KPI number (ADR-0112: Radzen speaks it natively): a percent rides a RadialGauge
+       with traffic ranges, everything else (counts, dates) is a value tile. The value
+       text is the resolver's formatted Number — one formatting path for every stack. *@
+    <div class="rviz-kpi @(IsPercentGauge ? "rviz-kpi--gauge" : "rviz-kpi--tile")">
+        @if (IsPercentGauge)
+        {
+            <RadzenRadialGauge Style="width:100%;height:120px">
+                <RadzenRadialGaugeScale Min="0" Max="100" StartAngle="-120" EndAngle="120" Step="25" TickPosition="GaugeTickPosition.Inside">
+                    <RadzenRadialGaugeScalePointer Value="@GaugeValue" Length="0.62" ShowValue="false" />
+                    <RadzenRadialGaugeScaleRange From="0" To="50" Fill="var(--rz-success)" />
+                    <RadzenRadialGaugeScaleRange From="50" To="80" Fill="var(--rz-warning)" />
+                    <RadzenRadialGaugeScaleRange From="80" To="100" Fill="var(--rz-danger)" />
+                </RadzenRadialGaugeScale>
+            </RadzenRadialGauge>
+        }
+        <div class="rviz-kpi-value">@NumberText</div>
+    </div>
+}
+else if (IsEmptyForFamily)
 {
     <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
 }
@@ -199,11 +219,26 @@ else
     /// The square heatmap handles its own all-empty-cells and oversize states.</summary>
     private bool IsEmptyForFamily => DiagramKind switch
     {
+        "number" => string.IsNullOrWhiteSpace(NumberText),
         "heatmap" => Context.EffectiveCard.Matrix is null,
         "table" or "browse" => Context.EffectiveCard.Table is null || Table.Rows.Count == 0,
         "gantt" or "gantt_timeline" => Context.EffectiveCard.Gantt is null || Gantt.Rows.Count == 0,
         _ => Context.EffectiveCard.Chart is null || IsEmpty(Context.EffectiveCard.Chart),
     };
+
+    /// <summary>KPI number family: the resolver's formatted value (scalar payload).</summary>
+    private bool IsNumberFamily => DiagramKind == "number";
+
+    private string? NumberText => Context.EffectiveCard.Number;
+
+    /// <summary><c>scale_value = percent</c> numbers ride a radial gauge (0..100 traffic).</summary>
+    private bool IsPercentGauge =>
+        string.Equals(Context.EffectiveCard.NumberScale, "percent", StringComparison.OrdinalIgnoreCase);
+
+    private double GaugeValue =>
+        double.TryParse((NumberText ?? "0").Replace(',', '.').TrimEnd('%'), System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? Math.Clamp(v, 0, 100)
+            : 0;
 
     /// <summary>Horizontal bars (bar/histogram): RadzenBarSeries vs the default vertical columns.</summary>
     private bool IsHorizontal =>

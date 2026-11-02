@@ -223,6 +223,7 @@ public sealed class CardRenderService(
                 kind.DataFamily,
                 renderPluginId,
                 Number: FormatNumber(rows, effective.Diagram),
+                NumberScale: effective.Diagram.Properties.TryGetValue("scale_value", out var numberScale) ? numberScale : null,
                 NumberDelta: numberDelta,
                 NumberDeltaTone: numberDeltaTone,
                 Placement: card.Placement?.Value,
@@ -601,6 +602,18 @@ public sealed class CardRenderService(
         var preferInteger =
             diagram.Properties.TryGetValue("scale_value", out var scale) &&
             scale.Equals("integer", StringComparison.OrdinalIgnoreCase);
+        var preferPercent =
+            diagram.Properties.TryGetValue("scale_value", out var percentScale) &&
+            percentScale.Equals("percent", StringComparison.OrdinalIgnoreCase);
+
+        if (preferPercent)
+        {
+            return value switch
+            {
+                IFormattable formattable => formattable.ToString("N1", culture) + " %",
+                _ => Convert.ToString(value, culture) + " %",
+            };
+        }
 
         if (preferInteger)
         {

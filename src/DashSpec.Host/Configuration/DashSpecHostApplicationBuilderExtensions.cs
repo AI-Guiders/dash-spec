@@ -87,6 +87,15 @@ public static class DashSpecHostApplicationBuilderExtensions
                 ? "dark"
                 : bootstrap.Presentation.ColorScheme.Trim(),
         };
+        // The active stack's theme dictionary rides the settings (ADR-0112 §2): the
+        // stack owns the words, the surface renders the per-user picker from this copy.
+        if (string.Equals(renderStackSettings.HostStack, "radzen", StringComparison.OrdinalIgnoreCase))
+        {
+            renderStackSettings.Themes = DashSpec.Stack.Radzen.RadzenColorSchemes.All
+                .Select(t => new DashSpec.Abstractions.Viz.ViewerTheme(t.Token, t.Label))
+                .ToList();
+        }
+
         builder.Services.AddSingleton(renderStackSettings);
         builder.Services.AddSingleton<IRenderStackSettings>(renderStackSettings);
         builder.Services.AddSelfMadeRenderStack();

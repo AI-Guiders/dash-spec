@@ -88,3 +88,27 @@
   color: var(--rz-success, #4caf50);
   opacity: 1;
 }
+
+/* KPI number (native Radzen reading of the scalar family): percent values ride a
+   RadialGauge with the value under it; counts/dates are a plain value tile. */
+.rviz-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 96px;
+  padding: 0.4rem 0.6rem;
+}
+
+.rviz-kpi-value {
+  font-size: 1.9rem;
+  font-weight: 650;
+  line-height: 1.1;
+  color: var(--rz-text-color, #e2e8f0);
+  font-variant-numeric: tabular-nums;
+}
+
+.rviz-kpi--gauge .rviz-kpi-value {
+  font-size: 1.45rem;
+}

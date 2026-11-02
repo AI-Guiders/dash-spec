@@ -20,9 +20,9 @@ public sealed class RadzenRenderStack : IRenderStack
         {
             ["Chart"] = RendererId,
             ["Table"] = RendererId,
-            ["Scalar"] = RendererId,
             ["Gantt"] = RendererId,
             ["Matrix"] = VizPluginIds.MatrixCanvas, // guest: no Radzen matrix canvas
+            ["Scalar"] = RendererId // KPI numbers: RadzenRadialGauge / value tile (RadzenCardViz)
         };
 
     public IReadOnlyDictionary<string, string> KindPlugins { get; } =

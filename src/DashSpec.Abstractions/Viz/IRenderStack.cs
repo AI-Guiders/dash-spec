@@ -22,6 +22,11 @@ public interface IRenderStack
     IReadOnlyDictionary<string, string> KindPlugins { get; }
 }
 
+/// <summary>A theme the active stack can render (ADR-0112 §2): the token is the
+/// author's/viewer's word, the label is for pickers. The dictionary itself lives in
+/// the stack; the host copies it here for surface chrome (the per-user picker).</summary>
+public sealed record ViewerTheme(string Token, string Label);
+
 /// <summary>Host-level render stack selection (ADR-0112 §6): filled from host bootstrap.</summary>
 public interface IRenderStackSettings
 {
@@ -30,6 +35,11 @@ public interface IRenderStackSettings
 
     /// <summary>Color scheme token (existing <c>color_scheme</c>): each stack reads it its own way.</summary>
     string ColorScheme { get; }
+
+    /// <summary>Themes the active stack can render (empty = the stack does not read the
+    /// token; surface chrome hides the picker). The admin sets the host default; each
+    /// viewer may override it locally (cookie).</summary>
+    IReadOnlyList<ViewerTheme> Themes { get; }
 }
 
 /// <summary>Mutable singleton behind <see cref="IRenderStackSettings"/> — filled once at host bootstrap.</summary>
@@ -38,4 +48,6 @@ public sealed class RenderStackSettings : IRenderStackSettings
     public string HostStack { get; set; } = "selfmade";
 
     public string ColorScheme { get; set; } = "dark";
+
+    public IReadOnlyList<ViewerTheme> Themes { get; set; } = [];
 }

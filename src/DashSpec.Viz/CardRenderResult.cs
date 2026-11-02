@@ -12,6 +12,7 @@ public sealed record CardRenderResult(
     ChartPayload? DetailChart = null,
     TablePayload? Table = null,
     string? Number = null,
+    string? NumberScale = null,
     string? NumberDelta = null,
     string? NumberDeltaTone = null,
     string? Error = null,

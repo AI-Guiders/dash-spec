@@ -1,0 +1,22 @@
+@namespace DashSpec.Surface.Blazor.Components.Layout
+@inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
+@inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
+
+@* Per-user theme (ADR-0112 §2, viewer layer): the host admin sets the default; each
+   viewer overrides it for themselves — the choice lives in a cookie, the page reloads
+   and the head re-renders with the new token. Pure markup + JS: no circuit needed,
+   so it works in the static chrome pass exactly as interactively. *@
+@if (RenderStackSettings.Themes is { Count: > 0 })
+{
+    <select class="theme-picker"
+            title="@Loc.T("Theme")"
+            aria-label="@Loc.T("Theme")"
+            data-theme-picker
+            onchange="dashspecTheme.set(this.value)">
+        <option value="">@Loc.T("Theme: host default")</option>
+        @foreach (var theme in RenderStackSettings.Themes)
+        {
+            <option value="@theme.Token">@theme.Label</option>
+        }
+    </select>
+}

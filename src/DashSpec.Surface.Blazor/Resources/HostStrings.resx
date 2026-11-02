@@ -240,4 +240,10 @@
   <data name="View" xml:space="preserve">
     <value>View</value>
   </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Theme: host default" xml:space="preserve">
+    <value>Theme: host default</value>
+  </data>
 </root>

@@ -76,6 +76,9 @@ else if (Slot.SlotId == ViewerShellSlotIds.Help && ShowsSurface("help"))
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Settings && ShowsSurface("settings"))
 {
+    @* The per-user theme picker rides the settings cell: the admin sets the host
+       default, every viewer picks their own (ADR-0112 §2 viewer layer). *@
+    <ThemePicker />
     if (IsRadzenStack)
     {
         <RadzenLink Path="/admin/access" Text="@Loc.T("Settings")" />
