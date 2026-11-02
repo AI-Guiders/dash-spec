@@ -118,38 +118,8 @@
       });
     },
 
-    // Viewer selection (ADR-0116): the clicked cell keeps an accent border until the
-    // payload changes. Repaints item borders in place and re-sets the series data.
-    setSelection: function (dotnet, xi, yi) {
-      const entry = charts.get(dotnet);
-      if (!entry) {
-        return;
-      }
-      const items = entry.option.series[0].data;
-      const accent = '#f0a30a';
-      const paint = function (item, on) {
-        item.itemStyle = item.itemStyle || {};
-        item.itemStyle.borderWidth = on ? 2 : 1;
-        item.itemStyle.borderColor = on ? accent : 'rgba(15,23,42,0.65)';
-      };
-      if (entry.selected) {
-        const prev = items[entry.selected.index];
-        if (prev) {
-          paint(prev, false);
-        }
-      }
-      entry.selected = null;
-      if (xi >= 0 && yi >= 0) {
-        const index = items.findIndex(function (it) {
-          return it.value[0] === xi && it.value[1] === yi;
-        });
-        if (index >= 0) {
-          entry.selected = { index: index };
-          paint(items[index], true);
-        }
-      }
-      entry.chart.setOption({ series: [{ data: items }] });
-    },
+    // Viewer selection (ADR-0116) lives server-side now: the selected cell is baked
+    // into the option (accent fill) on every render — no JS-side repaint roundtrip.
 
     dispose: function (dotnet) {
       const entry = charts.get(dotnet);

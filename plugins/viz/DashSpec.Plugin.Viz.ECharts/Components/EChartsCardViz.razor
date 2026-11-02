@@ -199,14 +199,27 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        var key = $"{ReferenceEquals(Matrix, _lastMatrix)}|{ShowAxisLabelsX}|{ShowAxisLabelsY}|{ShowCellValues}";
+        var key = $"{ReferenceEquals(Matrix, _lastMatrix)}|{ShowAxisLabelsX}|{ShowAxisLabelsY}|{ShowCellValues}|{_selectedYi}|{_selectedXi}";
         if (key != _renderKey)
         {
             _renderKey = key;
             _lastMatrix = Matrix;
-            _selectedRow = null;
+        }
+
+        // Selection is viewer feedback (ADR-0116): it survives payload refreshes — a
+        // click often loads the drill slot, which rebuilds this card's result object;
+        // the highlight must not blink away with it. It drops only when the selected
+        // cell no longer exists in the matrix.
+        if (_selectedYi is >= 0 && _selectedYi >= Rows || _selectedXi is >= 0 && _selectedXi >= Cols)
+        {
             _selectedYi = null;
             _selectedXi = null;
+            _selectedRow = null;
+        }
+
+        if (_selectedRow is >= 0 && _selectedRow >= Rows)
+        {
+            _selectedRow = null;
         }
     }
 
@@ -272,17 +285,20 @@
                 }
 
                 var (cellMin, cellMax) = Matrix.ColorRangeForCell(yi, xi);
+                var isSelected = yi == _selectedYi && xi == _selectedXi;
                 items.Add(new
                 {
                     value = new[] { xi, yi, (int)v },
                     itemStyle = new
                     {
-                        color = HeatmapColorScale.CellBackground(ColorScale, v, cellMin, cellMax),
+                        color = isSelected
+                            ? "#f0a30a"
+                            : HeatmapColorScale.CellBackground(ColorScale, v, cellMin, cellMax),
                     },
                     label = new
                     {
                         show = ShowCellValues,
-                        color = HeatmapColorScale.CellText(ColorScale, v, cellMin, cellMax),
+                        color = isSelected ? "#0f172a" : HeatmapColorScale.CellText(ColorScale, v, cellMin, cellMax),
                         formatter = "{c2}",
                     },
                 });
@@ -343,16 +359,8 @@
         _selectedRow = null;
         _selectedYi = yi;
         _selectedXi = xi;
-        await SetCellSelectionAsync(xi, yi);
         await OnCellSelected.InvokeAsync(CellContext(yi, xi, value, MatrixClickSources.Cell));
     }
-
-    /// <summary>Viewer selection feedback (ADR-0116): the clicked cell keeps an accent
-    /// outline until the payload changes — the bridge repaints the item's border.</summary>
-    private Task SetCellSelectionAsync(int xi, int yi) =>
-        _self is null
-            ? Task.CompletedTask
-            : JS.InvokeVoidAsync("dashspecECharts.setSelection", _self, xi, yi).AsTask();
 
     private async Task SelectCategory(int yi)
     {
@@ -364,7 +372,6 @@
         _selectedRow = yi;
         _selectedYi = null;
         _selectedXi = null;
-        await SetCellSelectionAsync(-1, -1);
 
         // Canvas-parity: a category click carries no bucket instants — otherwise the
         // resolver's auto bucket-range overlay pins the drill to the axis's first bucket.
@@ -427,7 +434,6 @@
         _selectedRow = null;
         _selectedYi = null;
         _selectedXi = null;
-        await SetCellSelectionAsync(-1, -1);
         await OnCellSelected.InvokeAsync(new HeatmapCellContext(
             -1,
             xi,
