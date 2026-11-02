@@ -46,71 +46,7 @@
         }
         @if (HasHeadToolbar && !BodyFolded)
         {
-            @* Chrome is the stack's (ADR-0112): the action row is a Radzen stack —
-               layout and rhythm from the theme, content stays ours. *@
-            <RadzenStack Orientation="Orientation.Horizontal"
-                         AlignItems="AlignItems.Center"
-                         Wrap="FlexWrap.Wrap"
-                         Gap="0.4rem"
-                         class="card-head-toolbar"
-                         role="toolbar"
-                         aria-label="@Loc.T("Card actions")">
-            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
-            {
-                <CardLocalFilterChrome Card="Card"
-                                       GridColumns="GridColumns"
-                                       FieldOptionsRevision="FieldOptionsRevision"
-                                       ApplyLabel="@Loc.T("Apply")"
-                                       FilterIndex="FilterIndex"
-                                       DateFrom="CardLocalDateFrom"
-                                       DateTo="CardLocalDateTo"
-                                       SelectedFields="CardLocalSelectedFields"
-                                       TopLimits="CardLocalTopLimits"
-                                       GetFieldOptions="GetFieldOptions"
-                                       AutoApply="AutoApply"
-                                       OnApplyCard="OnApplyCard"
-                                       OnScheduleCardApply="OnScheduleCardApply"
-                                       OnCardDayChanged="OnCardDayChanged"
-                                       OnCardFieldChanged="OnCardFieldChanged" />
-            }
-            @if (_vizToolbarType is not null)
-            {
-                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
-            }
-            @foreach (var chromeType in _cardChromeTypes)
-            {
-                <DynamicComponent Type="chromeType" Parameters="_cardChromeParameters" />
-            }
-            @if (CanFullscreen)
-            {
-                <button type="button"
-                        class="secondary card-icon-btn card-fullscreen-btn"
-                        title="@Loc.T("Expand diagram")"
-                        disabled="@Card.Loading"
-                        aria-pressed="@_fullscreen"
-                        aria-label="@Loc.T("Expand diagram")"
-                        @onclick="ToggleFullscreen">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-                    </svg>
-                </button>
-            }
-            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
-                                   Card="Card"
-                                   ActiveViewId="@ActiveViewId"
-                                   OnAction="OnCardAction" />
-            @if (Card.Loading)
-            {
-                <span class="card-status muted">@Loc.T("Loading…")</span>
-            }
-            else if (!string.IsNullOrEmpty(Card.Error))
-            {
-                <span class="card-status card-status-error">@Loc.T("Error")</span>
-            }
-            </RadzenStack>
+            @CardToolbarChrome(showFullscreenToggle: true)
         }
         @if (HasHeadMeta && !BodyFolded)
         {
@@ -155,19 +91,7 @@
     }
     else if (!BodyFolded)
     {
-        <CascadingValue Value="this" IsFixed="true">
-            <CardInteriorGrid GridColumns="GridColumns">
-                @* [ADR-0111] P1: the render reads the assembled interior slice — no per-render planning. *@
-                @foreach (var slot in InteriorSlots)
-                {
-                    <PlacementSlot Placement="slot.Placement"
-                                   CssClass="@InteriorSlotCssClass(slot)"
-                                   ExtraStyle="@InteriorSlotExtraStyle(slot)">
-                        <CardInteriorSlotContent Slot="slot" />
-                    </PlacementSlot>
-                }
-            </CardInteriorGrid>
-        </CascadingValue>
+        @InteriorPlan()
     }
 </RadzenCard>
 
@@ -201,11 +125,15 @@
                     </svg>
                 </button>
             </header>
-            <div class="card-fullscreen-body">
-                <CascadingValue Value="this" IsFixed="true">
-                    @* [ADR-0111] P1: the maximized card keeps its interior slot plan — every
-                       slot rides along (filters, diagram, drills), only the frame grows.
-                       The plan is SSOT: the panel renders slots only, no direct diagram path. *@
+            @* The maximized card IS the card (ADR-0111 P1): toolbar and interior plan
+               ride along — the same fragments the inline card renders, only the frame
+               grows. Slot-maximize (the hover button) still shows that slot alone. *@
+            <CascadingValue Value="this" IsFixed="true">
+                @if (_fullscreenSlotId is null)
+                {
+                    @CardToolbarChrome(showFullscreenToggle: false)
+                }
+                <div class="card-fullscreen-body">
                     @if (_fullscreenSlotId is { } slotId &&
                         InteriorSlots.FirstOrDefault(slot => slot.Node.Id == slotId) is { } fsSlot)
                     {
@@ -213,19 +141,10 @@
                     }
                     else
                     {
-                        <CardInteriorGrid GridColumns="GridColumns">
-                            @foreach (var slot in InteriorSlots)
-                            {
-                                <PlacementSlot Placement="slot.Placement"
-                                               CssClass="@InteriorSlotCssClass(slot)"
-                                               ExtraStyle="@InteriorSlotExtraStyle(slot)">
-                                    <CardInteriorSlotContent Slot="slot" />
-                                </PlacementSlot>
-                            }
-                        </CardInteriorGrid>
+                        @InteriorPlan()
                     }
-                </CascadingValue>
-            </div>
+                </div>
+            </CascadingValue>
         </div>
     </div>
 }
@@ -272,9 +191,99 @@
     private string? _fullscreenSlotId;
     private ElementReference _fullscreenPanel;
 
+    /// <summary>The card's action row — local filters, viz toolbar (view switch),
+    /// chrome, fullscreen toggle, extension blocks. One fragment, two frames: the
+    /// inline card and the fullscreen panel render the same row.</summary>
+    private RenderFragment CardToolbarChrome(bool showFullscreenToggle) => __builder =>
+    {
+        @* Chrome is the stack's (ADR-0112): the action row is a Radzen stack —
+           layout and rhythm from the theme, content stays ours. *@
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     AlignItems="AlignItems.Center"
+                     Wrap="FlexWrap.Wrap"
+                     Gap="0.4rem"
+                     class="card-head-toolbar"
+                     role="toolbar"
+                     aria-label="@Loc.T("Card actions")">
+            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+            {
+                <CardLocalFilterChrome Card="Card"
+                                       GridColumns="GridColumns"
+                                       FieldOptionsRevision="FieldOptionsRevision"
+                                       ApplyLabel="@Loc.T("Apply")"
+                                       FilterIndex="FilterIndex"
+                                       DateFrom="CardLocalDateFrom"
+                                       DateTo="CardLocalDateTo"
+                                       SelectedFields="CardLocalSelectedFields"
+                                       TopLimits="CardLocalTopLimits"
+                                       GetFieldOptions="GetFieldOptions"
+                                       AutoApply="AutoApply"
+                                       OnApplyCard="OnApplyCard"
+                                       OnScheduleCardApply="OnScheduleCardApply"
+                                       OnCardDayChanged="OnCardDayChanged"
+                                       OnCardFieldChanged="OnCardFieldChanged" />
+            }
+            @if (_vizToolbarType is not null)
+            {
+                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
+            }
+            @foreach (var chromeType in _cardChromeTypes)
+            {
+                <DynamicComponent Type="chromeType" Parameters="_cardChromeParameters" />
+            }
+            @if (showFullscreenToggle && CanFullscreen)
+            {
+                <button type="button"
+                        class="secondary card-icon-btn card-fullscreen-btn"
+                        title="@Loc.T("Expand diagram")"
+                        disabled="@Card.Loading"
+                        aria-pressed="@_fullscreen"
+                        aria-label="@Loc.T("Expand diagram")"
+                        @onclick="ToggleFullscreen">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                </button>
+            }
+            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
+                                   Card="Card"
+                                   ActiveViewId="@ActiveViewId"
+                                   OnAction="OnCardAction" />
+            @if (Card.Loading)
+            {
+                <span class="card-status muted">@Loc.T("Loading…")</span>
+            }
+            else if (!string.IsNullOrEmpty(Card.Error))
+            {
+                <span class="card-status card-status-error">@Loc.T("Error")</span>
+            }
+        </RadzenStack>
+    };
+
+    /// <summary>The interior slot plan — the SSOT render (ADR-0111 P1). The inline
+    /// card and the fullscreen panel render the same grid; only the frame differs.</summary>
+    private RenderFragment InteriorPlan() => __builder =>
+    {
+        <CascadingValue Value="this" IsFixed="true">
+            <CardInteriorGrid GridColumns="GridColumns">
+                @foreach (var slot in InteriorSlots)
+                {
+                    <PlacementSlot Placement="slot.Placement"
+                                   CssClass="@InteriorSlotCssClass(slot)"
+                                   ExtraStyle="@InteriorSlotExtraStyle(slot)">
+                        <CardInteriorSlotContent Slot="slot" />
+                    </PlacementSlot>
+                }
+            </CardInteriorGrid>
+        </CascadingValue>
+    };
+
     private bool HasHeadToolbar =>
         _vizToolbarType is not null ||
-        CanFullscreen ||        CanFullscreen ||
+        CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
         (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
         Card.Loading ||
