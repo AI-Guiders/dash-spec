@@ -22,6 +22,13 @@ public sealed class VizPluginRegistry
     private readonly IReadOnlyDictionary<string, IVizPlugin> _byId;
     private readonly IReadOnlyList<IRenderStack> _stacks;
     private readonly IRenderStackSettings _settings;
+    private readonly HashSet<string> _announcedFallbacks = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>DS0582: fires once per distinct (stack, family/kind, missing plugin) when the
+    /// stack's pick is not active (not in the bundle) and rendering silently falls back to
+    /// the builtin default. The host subscribes and logs — a missing bundle entry is an
+    /// operator decision to revisit, not noise to swallow (the empty-cards class).</summary>
+    public event Action<string>? SilentFallback;
 
     public VizPluginRegistry(
         IEnumerable<IVizPlugin> plugins,
@@ -31,6 +38,27 @@ public sealed class VizPluginRegistry
         _byId = plugins.ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
         _stacks = stacks.ToList();
         _settings = settings;
+    }
+
+    private void AnnounceFallback(string stack, string family, string? kindId, string missing)
+    {
+        var key = $"{stack}|{kindId ?? family}|{missing}";
+        lock (_announcedFallbacks)
+        {
+            if (!_announcedFallbacks.Add(key))
+            {
+                return;
+            }
+        }
+
+        var fallback = BuiltInDefaults.TryGetValue(
+            Enum.TryParse<DiagramDataFamily>(family, ignoreCase: true, out var parsed)
+                ? parsed
+                : DiagramDataFamily.Chart, out var fb) ? fb : "?";
+        SilentFallback?.Invoke(
+            $"DS0582 bundle.renderer_missing: the '{stack}' stack routes {(kindId is null ? family : $"kind '{kindId}'")} " +
+            $"to '{missing}', but it is not an active plugin — rendering falls back to '{fallback}'. " +
+            $"Add '{missing}' to the runtime bundle.");
     }
 
     public string Resolve(DiagramDataFamily family, string? kindId)
@@ -49,10 +77,14 @@ public sealed class VizPluginRegistry
                 return kindPick;
             }
 
-            if (stack.FamilyPlugins.TryGetValue(family.ToString(), out var pick) &&
-                _byId.ContainsKey(pick))
+            if (stack.FamilyPlugins.TryGetValue(family.ToString(), out var pick))
             {
-                return pick;
+                if (_byId.ContainsKey(pick))
+                {
+                    return pick;
+                }
+
+                AnnounceFallback(stack.Name, family.ToString(), kindId, pick);
             }
         }
 

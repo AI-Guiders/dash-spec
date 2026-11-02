@@ -24,5 +24,13 @@ builder.WebHost.UseStaticWebAssets();
 _ = await builder.AddDashSpecHostAsync();
 
 var app = builder.Build();
+
+// DS0582: the viz registry announces silent renderer fallbacks (stack pick missing
+// from the bundle) — log them once; an operator decision to revisit, not noise.
+var vizRegistry = app.Services.GetRequiredService<global::DashSpec.Composition.Plugins.VizPluginRegistry>();
+var vizLogger = app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+    .CreateLogger("DashSpec.VizPluginRegistry");
+vizRegistry.SilentFallback += message => vizLogger.LogWarning("{Message}", message);
+
 app.UseDashSpecHost();
 app.Run();

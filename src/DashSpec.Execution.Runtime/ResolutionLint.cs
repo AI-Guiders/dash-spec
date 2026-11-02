@@ -6,7 +6,41 @@ namespace DashSpec.Execution.Runtime;
 /// <summary>ADR-0057 P2 — warn when multiple chain sources compete on one slot.</summary>
 public static class ResolutionLint
 {
-    public const string CodeDuplicateStrongSource = "DS0571";
+    /// <summary>Append-only lint rule registry — the resolution layer's mirror of
+    /// <c>DashSpecRules</c> (parse layer): one rule = one slot, the code derives from
+    /// registration order (DS0570 + position). Append new rules at the END — the code
+    /// lands automatically and never changes meaning. DS0571 was the original
+    /// duplicate-strong-source code (that analyzer lives on in composition shadow
+    /// warnings); a stamping bug printed it for every rule — the registry gives each
+    /// rule its own stable code, with preset_not_found = DS0572 and filter.unused =
+    /// DS0573 exactly as originally documented.</summary>
+    private static readonly string[] RuleRegistry =
+    [
+        "report.header_title",        // DS0571
+        "diagram.preset_not_found",   // DS0572
+        "filter.unused",              // DS0573
+        "card.fill_height_default",   // DS0574
+        "tab.label",                  // DS0575
+        "card.chrome_title",          // DS0576
+        "diagram.chart_chrome",       // DS0577
+        "diagram.series_transform",   // DS0578
+        "tab.card_placement",         // DS0579
+        "flow.unfiltered",            // DS0580
+        "diagram.column_not_in_type", // DS0581
+        "bundle.renderer_missing",    // DS0582 (VizPluginRegistry fallback announcements)
+    ];
+
+    private static string CodeFor(string slot)
+    {
+        var index = Array.IndexOf(RuleRegistry, slot);
+        if (index < 0)
+        {
+            throw new InvalidOperationException(
+                $"Lint slot '{slot}' is not in the rule registry — append it at the end (codes derive from order).");
+        }
+
+        return "DS" + (571 + index).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(4, '0');
+    }
 
     private static readonly string[] LegacyChartChromeKeys =
     [
@@ -31,6 +65,8 @@ public static class ResolutionLint
         findings.AddRange(AnalyzePlacement(document));
         findings.AddRange(AnalyzePresetResolution(document));
         findings.AddRange(AnalyzeFilterUsage(document));
+        findings.AddRange(AnalyzeFlowFilterUsage(document));
+        findings.AddRange(AnalyzeColumnTypeCoverage(document));
         return findings;
     }
 
@@ -152,6 +188,158 @@ public static class ResolutionLint
             }
         }
     }
+
+    /// <summary>
+    /// DS0580: a card whose data flow consumes none of the report filters while sibling
+    /// cards consume some — the toolbar will not affect this card. The wiring line
+    /// (<c>filter -&gt; [column] slot</c>) is missing and the change is silent.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeFlowFilterUsage(
+        DashboardDocument document)
+    {
+        var filterNames = document.Filters
+            .Select(f => f.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (filterNames.Count == 0)
+        {
+            yield break;
+        }
+
+        var consumedAnywhere = false;
+        var cardsWithoutFilters = new List<CardDefinition>();
+
+        foreach (var card in document.Cards)
+        {
+            var consumed = CountFlowFilterLinks(card, filterNames);
+            if (consumed > 0)
+            {
+                consumedAnywhere = true;
+            }
+            else
+            {
+                cardsWithoutFilters.Add(card);
+            }
+        }
+
+        if (!consumedAnywhere)
+        {
+            // The whole document ignores its filters — filter.unused (DS0573) covers that.
+            yield break;
+        }
+
+        foreach (var card in cardsWithoutFilters)
+        {
+            yield return Finding(
+                "flow.unfiltered",
+                null,
+                $"card.{card.Id}.data_flow",
+                "report.filters",
+                $"card '{card.Id}': the data flow consumes none of the report filters that " +
+                "drive sibling cards — the toolbar will not affect it. Wire the filters " +
+                "(filter -> [column] slot) or confirm the card is intentionally global.");
+        }
+    }
+
+    private static int CountFlowFilterLinks(CardDefinition card, HashSet<string> filterNames)
+    {
+        // FSharpOption from C#: None == null; Value carries Some.
+        if (card.InteriorFlow is not { } flow)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        if (flow.Value.Sections.Sections.TryGetValue(
+                DashSpec.Modeling.Core.FlowGraphKind.Data,
+                out var links))
+        {
+            foreach (var link in links)
+            {
+                if (filterNames.Contains(link.FromNode))
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// DS0581: a diagram binding (value/x/y/color…) references a column that is not a
+    /// field of the slot's declared row type — the value is silently dropped at the
+    /// typed stream boundary and arrives null (the empty-KPI class).
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeColumnTypeCoverage(
+        DashboardDocument document)
+    {
+        var schemas = document.ResolvedRowTypeSchemas;
+        if (schemas is not { Count: > 0 })
+        {
+            yield break;
+        }
+
+        foreach (var card in document.Cards)
+        {
+            if (card.DiagramSlots is not { Count: > 0 })
+            {
+                var single = CheckColumnCoverage(card.Id, "__diagram__", card.Diagram, card.DataSource, schemas);
+                if (single is not null)
+                {
+                    yield return single;
+                }
+
+                continue;
+            }
+
+            foreach (var slot in card.DiagramSlots.Values)
+            {
+                var finding = CheckColumnCoverage(card.Id, slot.SlotRef, slot.Diagram, slot.DataSource, schemas);
+                if (finding is not null)
+                {
+                    yield return finding;
+                }
+            }
+        }
+    }
+
+    private static ResolutionLintFinding? CheckColumnCoverage(
+        string cardId,
+        string slotRef,
+        DiagramDefinition diagram,
+        DataSourceDefinition dataSource,
+        IReadOnlyDictionary<string, DashSpec.Abstractions.Data.RowTypeSchema> schemas)
+    {
+        if (string.IsNullOrWhiteSpace(dataSource.RowsType) ||
+            !schemas.TryGetValue(dataSource.RowsType.Trim(), out var schema))
+        {
+            return null;
+        }
+
+        var fields = schema.Fields
+            .Select(f => f.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var role in DiagramBindingRoles)
+        {
+            if (DiagramBindings.TryGetColumn(diagram, role, out var column) &&
+                !fields.Contains(column))
+            {
+                return Finding(
+                    "diagram.column_not_in_type",
+                    null,
+                    $"card.{cardId}.{slotRef}.{role}",
+                    $"type.{dataSource.RowsType}",
+                    $"card '{cardId}' slot '{slotRef}': diagram {role} column '{column}' is not a field of " +
+                    $"row type '{dataSource.RowsType}' — the value is dropped at the typed stream boundary " +
+                    "and arrives null. Extend the row type or fix the binding.");
+            }
+        }
+
+        return null;
+    }
+
+    private static readonly string[] DiagramBindingRoles = ["value", "category", "x", "y", "color"];
 
     private static IEnumerable<ResolutionLintFinding> AnalyzeCatalogProd(
         DashboardDocument document,
@@ -408,7 +596,7 @@ public static class ResolutionLint
         string message,
         bool informational = false) =>
         new(
-            CodeDuplicateStrongSource,
+            CodeFor(slot),
             slot,
             mode,
             loser,
