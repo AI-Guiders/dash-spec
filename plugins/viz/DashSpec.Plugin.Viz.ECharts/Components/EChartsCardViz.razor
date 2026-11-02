@@ -2,11 +2,13 @@
 @using System.Text.Json
 @using System.Text.Json.Serialization
 @using DashSpec.Plugin.Viz.EChartsUI.Resources
+@using DashSpec.Presentation.Components
 @using Microsoft.Extensions.Localization
 @inject IJSRuntime JS
 @inject ICardVizDisplayState VizDisplayState
 @inject IStringLocalizer<EChartsVizStrings> Loc
 @implements IAsyncDisposable
+@implements IDisposable
 
 @* ECharts heatmap (ADR-0112 spike): square cells by geometry — both canvas dimensions
    follow the data (N × cell), so cells stay square at any filter width; no CSS stretch
@@ -15,7 +17,9 @@
    ADR-0084 parity). ECharts paints the cells only. Payload contracts ride the same
    ADR-0107 wires as every matrix renderer: cell / category item / X-label clicks,
    bucket intervals, per-cell color normalization. *@
-<div class="ech-frame @(IsFill ? "ech-frame--fill" : null) @(IsCenterAligned ? "ech-frame--center" : null)" style="@FrameStyle">
+<div class="ech-frame @(IsFill ? "ech-frame--fill" : null) @(IsCenterAligned ? "ech-frame--center" : null)"
+     data-color-scale="@ColorScale"
+     style="@FrameStyle">
     @if (UnsupportedPlacement is { } message)
     {
         <p class="ech-empty">@message</p>
@@ -75,6 +79,22 @@
         <div @ref="_body" class="ech-body">
             <div @ref="_host" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
         </div>
+        @if (ShowsLegendRow)
+        {
+            @* Gradient legend (canvas parity): min/max templates ride RichTextView —
+               the spec labels may carry creole (**bold**), same as the builtin stack. *@
+            <div class="ech-legend">
+                @if (!string.IsNullOrWhiteSpace(LegendMinText))
+                {
+                    <span><RichTextView Text="@LegendMinText" /></span>
+                }
+                <span class="ech-legend-bar" aria-hidden="true"></span>
+                @if (!string.IsNullOrWhiteSpace(LegendMaxText))
+                {
+                    <span><RichTextView Text="@LegendMaxText" /></span>
+                }
+            </div>
+        }
     }
 </div>
 
@@ -112,8 +132,6 @@
     private ElementReference _xInner;
     private ElementReference _yInner;
     private DotNetObjectReference<EChartsCardViz>? _self;
-    private string _renderKey = string.Empty;
-    private bool _first = true;
 
     private int? _selectedRow;
 
@@ -181,16 +199,38 @@
         $"--ech-cell:{CellPx}px;" +
         (IsFill ? string.Empty : $"max-height:{ViewportHeightPx}px;") +
         $"grid-template-columns:{(ShowAxisLabelsY ? YLabelPx : 0)}px 1fr;" +
-        $"grid-template-rows:{(ShowAxisLabelsX ? XLabelPx : 0)}px 1fr;";
+        $"grid-template-rows:{(ShowAxisLabelsX ? XLabelPx : 0)}px 1fr{(ShowsLegendRow ? " auto" : string.Empty)};";
+
+    /// <summary>Gradient legend (canvas parity): visible when the spec declares
+    /// min/max labels and the viewer has not toggled it off (ADR-0062 session state).</summary>
+    private bool ShowLegend =>
+        VizLabelDisplayResolver.EffectiveLegendVisible(
+            Presentation?.ShowsGradientLegend == true,
+            VizDisplayState.GetLegendOverride(VizStateCardId ?? string.Empty));
+
+    private string? LegendMinText =>
+        ShowLegend ? Presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null;
+
+    private string? LegendMaxText =>
+        ShowLegend ? Presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null;
+
+    private bool ShowsLegendRow =>
+        ShowLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText));
 
     private int ViewportHeightPx
     {
         get
         {
-            var height = (ShowAxisLabelsX ? XLabelPx : 0) + ViewportRows * CellPx;
+            var height = (ShowAxisLabelsX ? XLabelPx : 0) + ViewportRows * CellPx
+                + (ShowsLegendRow ? LegendRowPx : 0);
             return Context.DetailView ? Math.Max(height, 480) : height;
         }
     }
+
+    /// <summary>The legend row's budget in the capped frame height: the bar (0.65rem +
+    /// border) under a 0.72rem text line with 0.15rem padding — slightly over-estimated
+    /// so the last matrix row can never clip (under-estimating squeezes the body).</summary>
+    private const int LegendRowPx = 24;
 
     private string XInnerStyle => $"grid-template-columns:repeat({Cols},var(--ech-cell));width:calc({Cols} * var(--ech-cell));";
 
@@ -199,12 +239,6 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        var key = $"{ReferenceEquals(Matrix, _lastMatrix)}|{ShowAxisLabelsX}|{ShowAxisLabelsY}|{ShowCellValues}|{_selectedYi}|{_selectedXi}";
-        if (key != _renderKey)
-        {
-            _renderKey = key;
-            _lastMatrix = Matrix;
-        }
 
         // Selection is viewer feedback (ADR-0116): it survives payload refreshes — a
         // click often loads the drill slot, which rebuilds this card's result object;
@@ -225,6 +259,9 @@
 
     private MatrixPayload? _lastMatrix;
 
+    /// <summary>Display-state toggles (axes/values/legend) re-render this component
+    /// from its own subscription — OnParametersSet does not run for those, so the
+    /// option-rebuild key is evaluated on every render, here.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (Empty)
@@ -232,13 +269,14 @@
             return;
         }
 
-        if (!_first && _renderKey == _renderedKey)
+        var key = $"{ReferenceEquals(Matrix, _lastMatrix)}|{ShowAxisLabelsX}|{ShowAxisLabelsY}|{ShowCellValues}|{_selectedYi}|{_selectedXi}";
+        if (!firstRender && key == _renderedKey)
         {
             return;
         }
 
-        _first = false;
-        _renderedKey = _renderKey;
+        _renderedKey = key;
+        _lastMatrix = Matrix;
         _self ??= DotNetObjectReference.Create(this);
 
         var option = BuildOption();
@@ -267,6 +305,29 @@
     }
 
     private string _renderedKey = string.Empty;
+
+    /// <summary>Display-state changes (toolbar toggles) must repaint: axes/legend are
+    /// markup, but value labels are baked into the ECharts option (canvas-parity
+    /// wiring, ADR-0062 — the override lands via ICardVizDisplayState).</summary>
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, Context.ResolveVizStateCardId(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    void IDisposable.Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
 
     /// <summary>Cells only — the axes are DOM strips above/left of the canvas. The plot
     /// area fills the whole canvas, so one data column is exactly CellPx wide: squares

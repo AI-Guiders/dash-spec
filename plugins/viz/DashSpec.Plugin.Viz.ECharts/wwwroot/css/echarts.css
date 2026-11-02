@@ -132,3 +132,40 @@
   display: block;
   margin: 0 auto;
 }
+
+/* Gradient legend (canvas parity: .heatmap-legend): spans the frame as its last grid
+   row; the bar gradient mirrors HeatmapColorScale per declared scale. */
+.ech-legend {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  padding-top: 0.15rem;
+}
+
+.ech-legend-bar {
+  flex: 1;
+  height: 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.35));
+}
+
+.ech-frame[data-color-scale="heat"] .ech-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(215, 55%, 32%) 0%,
+    hsl(145, 60%, 42%) 35%,
+    hsl(45, 90%, 52%) 68%,
+    hsl(0, 75%, 50%) 100%
+  );
+}
+
+.ech-frame[data-color-scale="mono"] .ech-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(210, 65%, 28%) 0%,
+    hsl(210, 65%, 52%) 100%
+  );
+}
