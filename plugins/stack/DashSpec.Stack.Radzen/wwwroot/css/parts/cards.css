@@ -118,6 +118,7 @@
 
 .card-interior-grid:has(> .card-diagram-slot--fill) > .card-diagram-slot:not(.card-diagram-slot--fill) {
   min-height: 0;
+  max-height: var(--fill-h, none);
   overflow: auto;
 }
 
@@ -126,6 +127,18 @@
 .card-fullscreen-body .card-diagram-slot--fill {
   height: auto;
   min-height: 0;
+}
+
+/* fullscreen: sibling caps lift too — the panel body is the scroller there */
+.card-fullscreen-body .card-diagram-slot:not(.card-diagram-slot--fill) {
+  max-height: none;
+}
+
+/* fullscreen: slots stretch to the panel, not their content — a content-sized
+   slot lets a fill diagram (frame + legend chrome) overflow the panel bottom
+   and ride onto whatever follows the fold */
+.card-fullscreen-body .card-interior-grid {
+  align-items: stretch;
 }
 
 .card-diagram-slot .chart-wrap {

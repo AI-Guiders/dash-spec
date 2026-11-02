@@ -66,6 +66,7 @@
       // 64px. Re-fit on pane resize.
       const frame = host.closest('.ech-frame');
       const body = host.parentElement;
+      const xStrip = frame.querySelector('.ech-x-strip');
       const fit = function () {
         let labelWidth = 20;
         frame.querySelectorAll('.ech-x-label').forEach(function (l) {
@@ -73,10 +74,29 @@
             labelWidth = Math.max(labelWidth, Math.ceil(l.scrollWidth));
           }
         });
-        const fill = Math.floor(Math.min(body.clientWidth / ctx.cols, body.clientHeight / ctx.rows));
+        // The pane's available height comes from the frame (its max-height cap or the
+        // fill slot) — read it there, not from the body: the snap below sets the
+        // body's own height, and reading it back would feed back into `fill`.
+        const availH = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
+        const fill = Math.floor(Math.min(body.clientWidth / ctx.cols, availH / ctx.rows));
         const side = Math.max(labelWidth, Math.min(64, fill));
         frame.style.setProperty('--ech-cell', side + 'px');
         chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
+        // Whole-row fold: never slice the last visible row at the scroll edge — a
+        // half row there reads as the legend riding onto the matrix. Snap only when
+        // the content actually overflows; a short matrix keeps its natural height
+        // (snapping it would spiral the frame's content height down).
+        const contentH = ctx.rows * side;
+        if (contentH > availH) {
+          const snapped = Math.floor(availH / side) * side;
+          if (body.__dashspecSnapH !== snapped) {
+            body.__dashspecSnapH = snapped;
+            body.style.height = snapped + 'px';
+          }
+        } else if (body.style.height !== '') {
+          body.__dashspecSnapH = null;
+          body.style.height = '';
+        }
       };
       fit();
       if (frame.__dashspecFitObserver) {
@@ -94,9 +114,29 @@
         xInner.style.transform = 'translateX(' + -body.scrollLeft + 'px)';
         yInner.style.transform = 'translateY(' + -body.scrollTop + 'px)';
       };
+      // Row-quantized scroll: both fold edges land on cell boundaries — no half row
+      // or sliced label ever shows at the pane edge. Snap only after the gesture
+      // settles (150ms idle), never mid-momentum.
+      const quantize = function () {
+        const frame = body.closest('.ech-frame');
+        const side = parseFloat(getComputedStyle(frame).getPropertyValue('--ech-cell')) || 28;
+        const top = Math.round(body.scrollTop / side) * side;
+        const left = Math.round(body.scrollLeft / side) * side;
+        if (Math.abs(top - body.scrollTop) >= 2 || Math.abs(left - body.scrollLeft) >= 2) {
+          body.scrollTop = top;
+          body.scrollLeft = left;
+        }
+      };
+      const onScroll = function () {
+        sync();
+        if (body.__dashspecSnapTimer) {
+          clearTimeout(body.__dashspecSnapTimer);
+        }
+        body.__dashspecSnapTimer = setTimeout(quantize, 150);
+      };
       body.removeEventListener('scroll', body.__dashspecPaneSync || function () {});
-      body.__dashspecPaneSync = sync;
-      body.addEventListener('scroll', sync, { passive: true });
+      body.__dashspecPaneSync = onScroll;
+      body.addEventListener('scroll', onScroll, { passive: true });
       sync();
 
       const forward = function (e) {

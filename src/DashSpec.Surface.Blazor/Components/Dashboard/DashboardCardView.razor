@@ -258,7 +258,7 @@
     private RenderFragment InteriorPlan() => __builder =>
     {
         <CascadingValue Value="this" IsFixed="true">
-            <CardInteriorGrid GridColumns="GridColumns">
+            <CardInteriorGrid GridColumns="GridColumns" ExtraStyle="@InteriorGridFillStyle()">
                 @foreach (var slot in InteriorSlots)
                 {
                     <PlacementSlot Placement="slot.Placement"
@@ -595,6 +595,14 @@
 
     private string InteriorSlotExtraStyle(DashSpec.Modeling.Parse.Layout.Slot slot) =>
         IsFillDiagramSlot(slot)
+            ? $"--fill-h:{EffectiveFillFloorPx}px;"
+            : string.Empty;
+
+    /// <summary>The fill height rides the grid container too: sibling slots cap to it
+    /// (ADR-0073 — the card is the frame; a drill table paginates/scrolls inside its
+    /// slot instead of growing the card).</summary>
+    private string InteriorGridFillStyle() =>
+        InteriorSlots.Any(IsFillDiagramSlot)
             ? $"--fill-h:{EffectiveFillFloorPx}px;"
             : string.Empty;
 

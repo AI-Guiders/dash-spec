@@ -79,24 +79,27 @@
         <div @ref="_body" class="ech-body">
             <div @ref="_host" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
         </div>
-        @if (ShowsLegendRow)
-        {
-            @* Gradient legend (canvas parity): min/max templates ride RichTextView —
-               the spec labels may carry creole (**bold**), same as the builtin stack. *@
-            <div class="ech-legend">
-                @if (!string.IsNullOrWhiteSpace(LegendMinText))
-                {
-                    <span><RichTextView Text="@LegendMinText" /></span>
-                }
-                <span class="ech-legend-bar" aria-hidden="true"></span>
-                @if (!string.IsNullOrWhiteSpace(LegendMaxText))
-                {
-                    <span><RichTextView Text="@LegendMaxText" /></span>
-                }
-            </div>
-        }
     }
 </div>
+@if (HasChart && ShowsLegendRow)
+{
+    @* Gradient legend (canvas parity): min/max templates ride RichTextView — the spec
+       labels may carry creole (**bold**), same as the builtin stack. A sibling below
+       the frame, not a grid row: the frame is fit-content of the matrix (a narrow
+       matrix would starve the bar), the legend spans the card's full slot width and
+       the bar flexes between the texts. *@
+    <div class="ech-legend" data-color-scale="@ColorScale">
+        @if (!string.IsNullOrWhiteSpace(LegendMinText))
+        {
+            <span><RichTextView Text="@LegendMinText" /></span>
+        }
+        <span class="ech-legend-bar" aria-hidden="true"></span>
+        @if (!string.IsNullOrWhiteSpace(LegendMaxText))
+        {
+            <span><RichTextView Text="@LegendMaxText" /></span>
+        }
+    </div>
+}
 
 @code {
     private const int CellPx = 28;
@@ -199,7 +202,9 @@
         $"--ech-cell:{CellPx}px;" +
         (IsFill ? string.Empty : $"max-height:{ViewportHeightPx}px;") +
         $"grid-template-columns:{(ShowAxisLabelsY ? YLabelPx : 0)}px 1fr;" +
-        $"grid-template-rows:{(ShowAxisLabelsX ? XLabelPx : 0)}px 1fr{(ShowsLegendRow ? " auto" : string.Empty)};";
+        $"grid-template-rows:{(ShowAxisLabelsX ? XLabelPx : 0)}px 1fr;";
+
+    private bool HasChart => UnsupportedPlacement is null && !Empty;
 
     /// <summary>Gradient legend (canvas parity): visible when the spec declares
     /// min/max labels and the viewer has not toggled it off (ADR-0062 session state).</summary>
@@ -221,16 +226,10 @@
     {
         get
         {
-            var height = (ShowAxisLabelsX ? XLabelPx : 0) + ViewportRows * CellPx
-                + (ShowsLegendRow ? LegendRowPx : 0);
+            var height = (ShowAxisLabelsX ? XLabelPx : 0) + ViewportRows * CellPx;
             return Context.DetailView ? Math.Max(height, 480) : height;
         }
     }
-
-    /// <summary>The legend row's budget in the capped frame height: the bar (0.65rem +
-    /// border) under a 0.72rem text line with 0.15rem padding — slightly over-estimated
-    /// so the last matrix row can never clip (under-estimating squeezes the body).</summary>
-    private const int LegendRowPx = 24;
 
     private string XInnerStyle => $"grid-template-columns:repeat({Cols},var(--ech-cell));width:calc({Cols} * var(--ech-cell));";
 

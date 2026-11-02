@@ -12,10 +12,14 @@
     [Parameter] public LayoutDefinition? HostLayout { get; set; }
     [Parameter] public IReadOnlyDictionary<string, PlacementDefinition>? ChromePlacements { get; set; }
     [Parameter] public string? GridStyle { get; set; }
+
+    /// <summary>Appended after the resolved grid variables (never replaces the
+    /// track variables) — same contract as PlacementSlot.ExtraStyle.</summary>
+    [Parameter] public string? ExtraStyle { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private string ResolvedGridStyle =>
-        GridStyle ?? Scope switch
+        (GridStyle ?? Scope switch
         {
             LayoutSlotScope.CardFilterChrome when ChromePlacements is { Count: > 0 } =>
                 PlacementGridCss.ChromeGridStyle(ChromePlacements, GridColumns),
@@ -24,5 +28,5 @@
             LayoutSlotScope.HostTabBoard or LayoutSlotScope.HostPageToolbar when HostLayout is not null =>
                 PlacementGridCss.GridVariables(Scope, HostLayout),
             _ => PlacementGridCss.InteriorGridVariables(GridColumns),
-        };
+        }) + (string.IsNullOrWhiteSpace(ExtraStyle) ? string.Empty : ExtraStyle);
 }
