@@ -6,5 +6,5 @@ grid
 [] [] [] [] [] [] [] [] [] [] [] []
 end grid
 
-[ brand [] nav ]
+[ brand [] nav external_links help settings ]
 [ content ]
