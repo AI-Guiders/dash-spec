@@ -1,3 +1,4 @@
+using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Plugin.Viz.Builtins.Components.GanttTimeline;
 

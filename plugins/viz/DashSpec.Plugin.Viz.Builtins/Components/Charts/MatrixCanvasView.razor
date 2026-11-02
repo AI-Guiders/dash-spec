@@ -337,7 +337,7 @@ else
             xBucketEnd,
             // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
             // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
-            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell,
+            DashSpec.Abstractions.Viz.MatrixClickSources.Cell,
             FlowPath);
 
         await OnCellSelected.InvokeAsync(context);
@@ -364,7 +364,7 @@ else
             null,
             null,
             null,
-            ClickSource: DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem,
+            ClickSource: DashSpec.Abstractions.Viz.MatrixClickSources.CategoryItem,
             FlowPath: FlowPath);
 
         await OnCategoryItemSelected.InvokeAsync(context);

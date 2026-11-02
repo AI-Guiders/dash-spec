@@ -1,10 +1,14 @@
-using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viz;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DashSpec.Plugin.Viz.Builtins.Plugins;
+namespace DashSpec.Abstractions.Plugins;
 
+/// <summary>
+/// Viz plugin contract base (ADR-0117): kernel ABI without a UI stack — registers the
+/// renderer descriptor, card viz component and optional toolbar. Card chrome (the diagram
+/// host inside a card) is surface-owned, never a plugin concern: plugins are vertical.
+/// </summary>
 public abstract class VizDashSpecPluginBase : IDashSpecPlugin
 {
     public abstract string Id { get; }
@@ -30,7 +34,6 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
     {
         registry.AddVizRenderer(new VizRendererDescriptor(Id, RendererId, RendererDisplayName));
         registry.RegisterCardVizComponent(RendererId, CardVizComponentType);
-        registry.RegisterPluginComponent(DashSpecPluginComponents.CardDiagram, typeof(Components.Hosting.CardVizHost));
         if (CardToolbarComponentType is not null)
         {
             registry.RegisterVizCardToolbar(RendererId, CardToolbarComponentType);

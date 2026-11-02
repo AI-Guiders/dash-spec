@@ -1,6 +1,6 @@
+using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Plugin.Viz.Builtins.Components.Matrix;
-using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Plugin.Viz.RadzenUI.Components;
 using DashSpec.Plugin.Viz.RadzenUI.Resources;
 using Microsoft.Extensions.Configuration;

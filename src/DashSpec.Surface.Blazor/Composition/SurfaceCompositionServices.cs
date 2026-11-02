@@ -25,6 +25,12 @@ public static class SurfaceCompositionServices
             onPluginRegistered(plugin);
         }
 
+        // Card diagram chrome is surface-owned (ADR-0117, vertical plugins): one renderer-agnostic
+        // host for every renderer — the builtin CardVizHost. Plugins never register card hosts.
+        registry.RegisterPluginComponent(
+            DashSpecPluginComponents.CardDiagram,
+            typeof(DashSpec.Plugin.Viz.Builtins.Components.Hosting.CardVizHost));
+
         foreach (var vizPlugin in VizBuiltinsPluginCatalog.CreateAll())
         {
             Register(vizPlugin);
