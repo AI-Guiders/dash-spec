@@ -215,8 +215,8 @@
         var option = BuildOption();
         var ctx = new
         {
-            xLabels = Array.Empty<string>(),
-            yLabels = Array.Empty<string>(),
+            xLabels = Enumerable.Range(0, Cols).Select(i => FormatXLabel(XLabel(i))).ToArray(),
+            yLabels = Enumerable.Range(0, Rows).Select(i => FormatYLabel(YLabel(i))).ToArray(),
             tooltips = Matrix.Tooltips,
             cols = Cols,
             rows = Rows,
@@ -288,6 +288,9 @@
             {
                 type = "category",
                 show = false,
+                // ECharts draws categories bottom-up by default; the DOM label strip is
+                // top-down — without the flip every row mirrors against its label.
+                inverse = true,
                 data = Enumerable.Range(0, Rows).Select(i => i.ToString()).ToArray(),
             },
             series = new object[]
