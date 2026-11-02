@@ -5,38 +5,14 @@ using DashSpec.Host.Services.Abstractions;
 using DashSpec.Composition.Plugins;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
-if (args is ["validate", var validatePath, ..])
+if (args is ["validate", ..])
 {
-    try
-    {
-        var fullPath = Path.GetFullPath(validatePath);
-        if (fullPath.EndsWith(".dashcatalog", StringComparison.OrdinalIgnoreCase))
-        {
-            DashSpecValidator.ValidateCatalog(fullPath);
-        }
-        else if (fullPath.EndsWith(".dashhost", StringComparison.OrdinalIgnoreCase))
-        {
-            DashSpecParser.EnsureModuleParsersRegistered();
-            HostModuleParser.ParseFile(fullPath);
-        }
-        else
-        {
-            DashSpecParser.EnsureModuleParsersRegistered();
-            var registry = DashSpecBuiltinContributorRegistrar.RegisterBuiltins();
-            var parseOptions = new DashSpecParseOptionsProvider(registry).CreateOptions();
-            var specDirectory = Path.GetDirectoryName(fullPath)!;
-            DashSpecValidator.ValidateSpec(fullPath, specDirectory, parseOptions);
-        }
-
-        Console.WriteLine($"OK: {fullPath}");
-        return;
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(ex.Message);
-        Environment.ExitCode = 1;
-        return;
-    }
+    // validate moved to dsc (DASHSPEC-ADR-0117 steps 3–4): the CLI is the second
+    // composition root with full plugin-vocabulary parity; the web Host no longer
+    // carries a builtins-only validator that saw a different language than the runtime.
+    Console.Error.WriteLine("validate moved to dsc (DASHSPEC-ADR-0117). Run: dsc validate <path> [--toml <dash-spec.toml>]");
+    Environment.ExitCode = 2;
+    return;
 }
 
 var builder = WebApplication.CreateBuilder(args);
