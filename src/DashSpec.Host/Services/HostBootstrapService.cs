@@ -4,6 +4,7 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Composition.Shell;
 using DashSpec.Host.Configuration;
+using DashSpec.Stack.Radzen;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
@@ -14,7 +15,8 @@ public sealed class HostBootstrapService(
     IDashSpecTomlLoader tomlLoader,
     IHostPathResolver pathResolver,
     IHostSettingsOverlay settingsOverlay,
-    IGitCatalogSynchronizer gitCatalogSynchronizer) : IHostBootstrap
+    IGitCatalogSynchronizer gitCatalogSynchronizer,
+    Microsoft.Extensions.Logging.ILogger<HostBootstrapService> logger) : IHostBootstrap
 {
     public DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
         LoadBootstrapWithHost(environment).Bootstrap;
@@ -56,6 +58,7 @@ public sealed class HostBootstrapService(
         DashSpecDefaultShell.RegisterGridDefault();
 
         settingsOverlay.Apply(bootstrap);
+        WarnUnknownColorScheme(bootstrap);
         gitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
         return (bootstrap, hostShell);
@@ -156,6 +159,31 @@ public sealed class HostBootstrapService(
         {
             bootstrap.Plugins.DefaultProviderId = providerDefault;
         }
+    }
+
+    /// <summary>ADR-0112 §2: an unknown theme word is the stack default + a loud
+    /// warning — never a silent wrong theme (the old "High contrast" admin option
+    /// rendered plain dark). The dictionary belongs to the Radzen stack; selfmade
+    /// does not read the token.</summary>
+    private void WarnUnknownColorScheme(DashSpecTomlRoot bootstrap)
+    {
+        var stack = (bootstrap.Presentation.RenderStack ?? string.Empty).Trim();
+        if (!string.Equals(stack, "radzen", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var scheme = (bootstrap.Presentation.ColorScheme ?? string.Empty).Trim();
+        if (RadzenColorSchemes.Find(scheme) is not null)
+        {
+            return;
+        }
+
+        logger.LogWarning(
+            "color_scheme '{Scheme}' is not in the Radzen stack theme dictionary ({Words}) — rendering '{Default}' instead (ADR-0112 §2).",
+            scheme,
+            string.Join(", ", RadzenColorSchemes.All.Select(t => t.Token)),
+            RadzenColorSchemes.DefaultToken);
     }
 
     private static bool ShouldSkipLocalHostOverlay(IHostEnvironment environment) =>

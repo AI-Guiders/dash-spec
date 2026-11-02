@@ -1,4 +1,5 @@
 @inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
+@inject DashSpec.Abstractions.Viewer.IViewerPresentationOptions Bootstrap
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -17,7 +18,10 @@
     @if (IsRadzenStack)
     {
         <RadzenVizHead />
-        <RadzenStackHead Theme="@RenderStackSettings.ColorScheme" />
+        @* The theme token is read LIVE (IViewerPresentationOptions): the admin save
+           lands in WitDB immediately, the next page load re-renders this head — no
+           host restart. The stack choice itself stays startup-frozen (RenderStackSettings). *@
+        <RadzenStackHead Theme="@Bootstrap.ColorScheme" />
     }
     else
     {
