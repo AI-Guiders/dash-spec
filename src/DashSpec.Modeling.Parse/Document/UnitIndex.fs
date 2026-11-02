@@ -55,7 +55,7 @@ module UnitIndex =
         | None -> enumerateUnitFiles (Path.GetFullPath specDirectory)
 
     let private candidateFiles (specDirectory: string) =
-        projectFiles specDirectory @ enumerateUnitFiles (UnitSource.stdlibRoot ())
+        projectFiles specDirectory @ UnitSource.embeddedUnitPaths ()
 
     /// Corpus member files — dsproj membership when declared, its source roots
     /// otherwise, the spec directory scan as fallback. No stdlib: the assembled
@@ -64,21 +64,23 @@ module UnitIndex =
     let corpusFiles (specDirectory: string) : string[] =
         projectFiles specDirectory |> List.toArray
 
+    /// Raw text — the index reads headers (namespace/kind) that readUnit blanks out.
     let private readEntry (path: string) =
         try
-            let text = File.ReadAllText path
-
-            match UnitSource.namespaceOf text with
-            | Some ns -> Some { Path = path; Namespace = ns; Kind = UnitSource.moduleKindOf text }
+            match UnitSource.tryReadRaw path with
+            | Some text ->
+                match UnitSource.namespaceOf text with
+                | Some ns -> Some { Path = path; Namespace = ns; Kind = UnitSource.moduleKindOf text }
+                | None -> None
             | None -> None
         with _ ->
             None
 
-    /// <summary>Index of the units reachable from a spec file: project membership (or its directory) plus the stdlib.</summary>
+    /// <summary>Index of the units reachable from a spec file: project membership (or its directory) plus the embedded stdlib.</summary>
     let build (specDirectory: string) : UnitIndex =
         let entries =
             candidateFiles specDirectory
-            |> List.filter File.Exists
+            |> List.filter UnitSource.existsUnit
             |> List.distinctBy (fun path -> path.ToLowerInvariant())
             |> List.choose readEntry
             |> List.toArray

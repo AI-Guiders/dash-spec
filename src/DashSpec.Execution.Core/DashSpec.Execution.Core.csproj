@@ -27,7 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="stdlib\**\*" CopyToOutputDirectory="PreserveNewest" LinkBase="stdlib" />
+    <!-- Stdlib units ship inside the assembly (ADR-0017): the resolver reads them from
+         the manifest (virtual stdlib:// paths) — no copy-to-output, no filesystem walks. -->
+    <EmbeddedResource Include="stdlib\**\*.ds">
+      <LogicalName>stdlib/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

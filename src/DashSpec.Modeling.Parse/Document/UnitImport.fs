@@ -115,7 +115,7 @@ module UnitImport =
         (state: ModuleImportState)
         (importKind: ImportKind option)
         =
-        if not (File.Exists path) then
+        if not (UnitSource.existsUnit path) then
             raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
         let text = UnitSource.readUnit path

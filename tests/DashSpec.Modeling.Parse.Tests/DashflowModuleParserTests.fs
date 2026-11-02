@@ -11,10 +11,14 @@ module DashflowModuleParserTests =
 
     [<Fact>]
     let ``stdlib time unit defines DateTime shape`` () =
+        // The stdlib ships embedded in Execution.Core; this parser test reads the unit
+        // straight from the repo (it tests parsing, not resolution).
         let stdlibPath =
             Path.GetFullPath(
                 Path.Combine(
-                    DashSpec.Modeling.Parse.Document.UnitSource.stdlibRoot (),
+                    __SOURCE_DIRECTORY__,
+                    "..", "..",
+                    "src", "DashSpec.Execution.Core", "stdlib",
                     "types",
                     "time.ds"))
 

@@ -10,6 +10,9 @@ open DashSpec.Modeling.Parse.Document
 [<Xunit.Collection("GridDefault")>]
 module DemoSampleParseTests =
 
+    // Pure parser test project: register the repo stdlib before the first parse
+    // (module-level do runs on first access to this module).
+    do DashSpec.Modeling.Parse.Tests.StdlibFromRepoRegistration.register ()
 
     let private samplesDemoDir =
         Path.GetFullPath(
