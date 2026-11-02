@@ -26,7 +26,15 @@
     }
     else if (Empty)
     {
-        <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
+        @* ADR-0106 when-table: the author's wording for an empty result. *@
+        @if (!string.IsNullOrWhiteSpace(EmptyMessage))
+        {
+            <p class="ech-empty"><RichTextView Text="@EmptyMessage" /></p>
+        }
+        else
+        {
+            <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
+        }
     }
     else
     {
@@ -115,6 +123,9 @@
     public CardVizRenderContext Context { get; set; } = default!;
 
     private MatrixPayload Matrix => Context.Card.Matrix!;
+
+    /// <summary><c>when | no data | message |</c> — the author's empty-state wording.</summary>
+    private string? EmptyMessage => Context.EffectiveCard.EmptyMessage;
 
     private MatrixPresentation? Presentation => Context.EffectiveCard.MatrixPresentation;
 

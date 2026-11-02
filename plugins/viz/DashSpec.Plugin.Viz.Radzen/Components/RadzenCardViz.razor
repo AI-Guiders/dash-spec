@@ -1,4 +1,5 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Presentation.Components
 @using DashSpec.Abstractions.Viz
 @using DashSpec.Core.Interaction
 @using DashSpec.Abstractions.Plugins
@@ -38,7 +39,16 @@
 }
 else if (IsEmptyForFamily)
 {
-    <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
+    @* ADR-0106 when-table: the author's wording for an empty result beats the generic
+       string — an empty over-limit top is a good result, not missing data. *@
+    @if (!string.IsNullOrWhiteSpace(EmptyMessage))
+    {
+        <p class="rviz-empty-state"><RichTextView Text="@EmptyMessage" /></p>
+    }
+    else
+    {
+        <p class="rviz-empty-state">@Loc["No data for the selected period"]</p>
+    }
 }
 else if (IsChartFamily)
 {
@@ -230,6 +240,9 @@ else
     private bool IsNumberFamily => DiagramKind == "number";
 
     private string? NumberText => Context.EffectiveCard.Number;
+
+    /// <summary><c>when | no data | message |</c> — the author's empty-state wording.</summary>
+    private string? EmptyMessage => Context.EffectiveCard.EmptyMessage;
 
     /// <summary><c>scale_value = percent</c> numbers ride a radial gauge (0..100 traffic).</summary>
     private bool IsPercentGauge =>

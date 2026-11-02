@@ -37,6 +37,7 @@ public sealed record CardRenderResult(
     string? VisibilityMessage = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,
     string? OversizeMessage = null,
+    string? EmptyMessage = null,
     string? FilterLinkHint = null,
     string? FilterLinkCssClass = null,
     string? TopFilterScopeHint = null,

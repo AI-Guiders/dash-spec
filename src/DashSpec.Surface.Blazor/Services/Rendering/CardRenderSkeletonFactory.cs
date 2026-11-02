@@ -49,7 +49,8 @@ public static class CardRenderSkeletonFactory
                 ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
                 : null,
             MatrixLimits: card.MatrixLimits?.Value,
-            OversizeMessage: card.OversizeMessage?.Value);
+            OversizeMessage: card.OversizeMessage?.Value,
+            EmptyMessage: card.EmptyMessage?.Value);
     }
 
     public static CardRenderResult CreatePlaceholder(
@@ -112,6 +113,7 @@ public static class CardRenderSkeletonFactory
                 ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
                 : null,
             MatrixLimits: card.MatrixLimits?.Value,
-            OversizeMessage: card.OversizeMessage?.Value);
+            OversizeMessage: card.OversizeMessage?.Value,
+            EmptyMessage: card.EmptyMessage?.Value);
     }
 }

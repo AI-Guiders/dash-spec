@@ -236,7 +236,8 @@ public sealed class CardRenderService(
                 LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                 MatrixLimits: card.MatrixLimits?.Value,
-                OversizeMessage: card.OversizeMessage?.Value));
+                OversizeMessage: card.OversizeMessage?.Value,
+                EmptyMessage: card.EmptyMessage?.Value));
         }
 
         return AttachSlots(kind.DataFamily switch
@@ -264,6 +265,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -287,6 +289,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -313,6 +316,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -338,6 +342,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),

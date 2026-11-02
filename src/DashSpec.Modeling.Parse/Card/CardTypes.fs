@@ -341,6 +341,7 @@ type CardDefinition =
       PageId: string option
       MatrixLimits: MatrixRenderLimitsDefinition option
       OversizeMessage: string option
+      EmptyMessage: string option
       Chrome: CardChromeDefinition option
       Inspect: InspectPresentation option
       Tooltip: TooltipDefinition option
