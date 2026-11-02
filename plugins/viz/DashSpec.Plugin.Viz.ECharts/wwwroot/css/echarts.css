@@ -5,8 +5,12 @@
    geometry: every data track is exactly CellPx wide/tall. */
 .ech-frame {
   display: grid;
-  width: 100%;
+  /* The whole block (axes + body) sizes to the data and centers as one — the Y labels
+     can never detach from the cells on a wide card. Wider than the card → the frame
+     caps and the body pane scrolls. */
+  width: fit-content;
   max-width: 100%;
+  margin: 0 auto;
   overflow: hidden;
 }
 
@@ -95,7 +99,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  /* Vertically centered against its row: line-height rides the cell side. */
   height: var(--ech-cell, 28px);
+  line-height: var(--ech-cell, 28px);
   background: transparent;
   cursor: pointer;
 }

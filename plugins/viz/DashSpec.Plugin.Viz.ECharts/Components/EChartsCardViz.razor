@@ -1,8 +1,11 @@
 @namespace DashSpec.Plugin.Viz.EChartsUI.Components
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using DashSpec.Plugin.Viz.EChartsUI.Resources
+@using Microsoft.Extensions.Localization
 @inject IJSRuntime JS
 @inject ICardVizDisplayState VizDisplayState
+@inject IStringLocalizer<EChartsVizStrings> Loc
 @implements IAsyncDisposable
 
 @* ECharts heatmap (ADR-0112 spike): square cells by geometry — both canvas dimensions
@@ -15,7 +18,7 @@
 <div class="ech-frame @(IsFill ? "ech-frame--fill" : null)" style="@FrameStyle">
     @if (Empty)
     {
-        <p class="ech-empty">Нет данных за выбранный период</p>
+        <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
     }
     else
     {
@@ -110,6 +113,10 @@
 
     private int? _selectedRow;
 
+    private int? _selectedYi;
+
+    private int? _selectedXi;
+
     private int Rows => Matrix.YLabels.Count;
 
     private int Cols => Matrix.XLabels.Count;
@@ -181,6 +188,9 @@
         {
             _renderKey = key;
             _lastMatrix = Matrix;
+            _selectedRow = null;
+            _selectedYi = null;
+            _selectedXi = null;
         }
     }
 
@@ -312,8 +322,18 @@
         }
 
         _selectedRow = null;
+        _selectedYi = yi;
+        _selectedXi = xi;
+        await SetCellSelectionAsync(xi, yi);
         await OnCellSelected.InvokeAsync(CellContext(yi, xi, value, MatrixClickSources.Cell));
     }
+
+    /// <summary>Viewer selection feedback (ADR-0116): the clicked cell keeps an accent
+    /// outline until the payload changes — the bridge repaints the item's border.</summary>
+    private Task SetCellSelectionAsync(int xi, int yi) =>
+        _self is null
+            ? Task.CompletedTask
+            : JS.InvokeVoidAsync("dashspecECharts.setSelection", _self, xi, yi).AsTask();
 
     private async Task SelectCategory(int yi)
     {
@@ -323,6 +343,9 @@
         }
 
         _selectedRow = yi;
+        _selectedYi = null;
+        _selectedXi = null;
+        await SetCellSelectionAsync(-1, -1);
 
         // Canvas-parity: a category click carries no bucket instants — otherwise the
         // resolver's auto bucket-range overlay pins the drill to the axis's first bucket.
@@ -383,6 +406,9 @@
         var (bucketStart, bucketEnd) = BucketInterval(xi);
 
         _selectedRow = null;
+        _selectedYi = null;
+        _selectedXi = null;
+        await SetCellSelectionAsync(-1, -1);
         await OnCellSelected.InvokeAsync(new HeatmapCellContext(
             -1,
             xi,

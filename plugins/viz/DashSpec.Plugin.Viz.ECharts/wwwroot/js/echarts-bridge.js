@@ -58,20 +58,23 @@
       const chart = echarts.init(host, null, { renderer: 'canvas' });
       chart.setOption(option);
       wireClicks(chart, ctx, dotnet);
-      charts.set(dotnet, { chart: chart, ctx: ctx });
+      charts.set(dotnet, { chart: chart, ctx: ctx, option: option, selected: null });
 
       // Fill the pane: compute the cell side from the actual body size — squares by
-      // construction, dead space below disappears. Re-fit on pane resize.
+      // construction, dead space below disappears. The floor is the widest date label
+      // (the label defines its column; 30px label — 30px cell), the fill is capped at
+      // 64px. Re-fit on pane resize.
       const frame = host.closest('.ech-frame');
       const body = host.parentElement;
       const fit = function () {
-        // Floor 28px: a date label is ~30px wide — narrower cells squash the labels
-        // into each other. Below the floor the body scrolls instead (frozen panes).
-        const side = Math.max(
-          28,
-          Math.min(
-            64,
-            Math.floor(Math.min(body.clientWidth / ctx.cols, body.clientHeight / ctx.rows))));
+        let labelWidth = 20;
+        frame.querySelectorAll('.ech-x-label').forEach(function (l) {
+          if (l.textContent.trim()) {
+            labelWidth = Math.max(labelWidth, Math.ceil(l.scrollWidth));
+          }
+        });
+        const fill = Math.floor(Math.min(body.clientWidth / ctx.cols, body.clientHeight / ctx.rows));
+        const side = Math.max(labelWidth, Math.min(64, fill));
         frame.style.setProperty('--ech-cell', side + 'px');
         chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
       };
@@ -113,6 +116,39 @@
         strip.__dashspecPaneWheel = forward;
         strip.addEventListener('wheel', forward, { passive: false });
       });
+    },
+
+    // Viewer selection (ADR-0116): the clicked cell keeps an accent border until the
+    // payload changes. Repaints item borders in place and re-sets the series data.
+    setSelection: function (dotnet, xi, yi) {
+      const entry = charts.get(dotnet);
+      if (!entry) {
+        return;
+      }
+      const items = entry.option.series[0].data;
+      const accent = '#f0a30a';
+      const paint = function (item, on) {
+        item.itemStyle = item.itemStyle || {};
+        item.itemStyle.borderWidth = on ? 2 : 1;
+        item.itemStyle.borderColor = on ? accent : 'rgba(15,23,42,0.65)';
+      };
+      if (entry.selected) {
+        const prev = items[entry.selected.index];
+        if (prev) {
+          paint(prev, false);
+        }
+      }
+      entry.selected = null;
+      if (xi >= 0 && yi >= 0) {
+        const index = items.findIndex(function (it) {
+          return it.value[0] === xi && it.value[1] === yi;
+        });
+        if (index >= 0) {
+          entry.selected = { index: index };
+          paint(items[index], true);
+        }
+      }
+      entry.chart.setOption({ series: [{ data: items }] });
     },
 
     dispose: function (dotnet) {
