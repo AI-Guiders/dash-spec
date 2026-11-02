@@ -97,8 +97,10 @@
     private bool ShowDashboardFilters =>
         FilterNames.Count > 0 || (AutoApply && Busy);
 
-    private IReadOnlyList<LayoutSlotDescriptor> ToolbarSlots =>
-        LayoutSlotEngine.PlanHostPageToolbar(FilterNames, FilterPlacements);
+    /// <summary>[ADR-0111] P1: the toolbar slice is precomputed at assembly — the section
+    /// places what it is given (the controller projects the plane slice through the
+    /// session-visible filter set); no planner call on render.</summary>
+    [Parameter] public IReadOnlyList<LayoutSlotDescriptor> ToolbarSlots { get; set; } = [];
 
     [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
@@ -112,8 +114,6 @@
     [Parameter] public Func<string, IReadOnlyList<string>> GetFieldOptions { get; set; } = _ => [];
     [Parameter] public int FieldOptionsRevision { get; set; }
     [Parameter] public LayoutDefinition Layout { get; set; } = new LayoutDefinition { Columns = 12 };
-    [Parameter] public IReadOnlyDictionary<string, PlacementDefinition> FilterPlacements { get; set; } =
-        new Dictionary<string, PlacementDefinition>();
     [Parameter] public bool BarLayout { get; set; }
     [Parameter] public bool ToolbarLabeledCells { get; set; }
     [Parameter] public bool AutoApply { get; set; }

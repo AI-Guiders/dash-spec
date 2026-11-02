@@ -622,6 +622,21 @@ public sealed class DashboardPageController : IDisposable
             .ToList();
     }
 
+    /// <summary>[ADR-0111] P1: the toolbar slice projected through the session-visible
+    /// filter set — placements come from the plane (defaults recorded at assembly); the
+    /// section places these as given, no planner call on render. The (0,0,1) fallback
+    /// mirrors the old per-render planner for a filter absent from the slice.</summary>
+    public IReadOnlyList<LayoutSlotDescriptor> VisibleToolbarSlots =>
+        VisibleToolbarFilters()
+            .Select(name => new LayoutSlotDescriptor(
+                name,
+                ToolbarPlacements.TryGetValue(name, out var placement)
+                    ? placement
+                    : new PlacementDefinition(0, 0, 1),
+                LayoutSlotScope.HostPageToolbar,
+                LayoutSlotContentKind.Filter))
+            .ToList();
+
     public async Task SelectCatalogEntryAsync(string entryId)
     {
         await SelectCatalogEntryAsync(entryId, carriedFilters: null, CancellationToken.None).ConfigureAwait(false);
