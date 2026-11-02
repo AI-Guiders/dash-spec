@@ -31,7 +31,7 @@ module CardParser =
         | false, _ -> None
 
     let private parsePresentation (reader: TokenReader) =
-        let props = PropertyBlockParser.parse reader PropertySchemas.presentation "presentation" false false
+        let props = PropertyBlockParser.parse reader (PropertySchemas.presentation ()) "presentation" false false
         let usePreset = propValue props "use"
         let inlineProps =
             let map = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

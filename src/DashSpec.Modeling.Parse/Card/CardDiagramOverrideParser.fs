@@ -51,7 +51,7 @@ module CardDiagramOverrideParser =
 
     let private parsePresentationOverride (reader: TokenReader) =
         let props =
-            PropertyBlockParser.parseWithEndKind reader PropertySchemas.presentation "presentation" "presentation" false false None
+            PropertyBlockParser.parseWithEndKind reader (PropertySchemas.presentation ()) "presentation" "presentation" false false None
         toPresentationBlock props
 
     let private parseSeriesOverride (reader: TokenReader) (cardId: string) (diagramId: string) =

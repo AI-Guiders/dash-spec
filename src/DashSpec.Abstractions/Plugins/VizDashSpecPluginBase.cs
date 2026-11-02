@@ -27,6 +27,9 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
 
     protected abstract IVizPlugin CreateBackend();
 
+    /// <summary>This renderer's presentation knobs (see IDashSpecPlugin.PresentationProperties).</summary>
+    public virtual IEnumerable<string> PresentationProperties => [];
+
     public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
         services.AddSingleton(CreateBackend());
 

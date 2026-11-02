@@ -6,8 +6,9 @@ namespace DashSpec.Composition.Plugins;
 
 public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry registry)
 {
-    public DashSpecParseOptions CreateOptions() =>
-        new()
+    public DashSpecParseOptions CreateOptions()
+    {
+        var options = new DashSpecParseOptions
         {
             ExtensionBlockKeywords = registry.ExtensionBlockKeywords,
             ExtensionBlockPluginIds = registry.ExtensionBlocks.ToDictionary(
@@ -18,5 +19,17 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
             KnownActionHandlers = registry.ActionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownInteractionHandlers = registry.InteractionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownClickSources = registry.ClickSources.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
+            KnownPresentationProperties = registry.PresentationProperties.ToHashSet(StringComparer.OrdinalIgnoreCase),
         };
+
+        // The F# grammar reads the presentation vocabulary through a bridge (the same
+        // pattern as the parse bridges): plugin knobs become parseable process-wide
+        // once a kernel with those plugins has built its options.
+        if (options.KnownPresentationProperties.Count > 0)
+        {
+            DashSpec.Modeling.Parse.PropertySchemas.registerPresentationProperties(options.KnownPresentationProperties);
+        }
+
+        return options;
+    }
 }

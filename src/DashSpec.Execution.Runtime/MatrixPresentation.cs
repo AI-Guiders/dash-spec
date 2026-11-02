@@ -26,8 +26,9 @@ public sealed record MatrixPresentation(
         bool HasTooltip = false,
         VizStretchMode StretchMode = VizStretchMode.None,
         VizStretchDirection StretchDirection = VizStretchDirection.UpOnly,
-        string XAxisPlacement = "top",
-        string YAxisPlacement = "left") : IVizAxisPresentationSpec
+        string? XAxisPlacement = null,
+        string? YAxisPlacement = null,
+        string? Align = null) : IVizAxisPresentationSpec
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
@@ -77,17 +78,31 @@ public sealed record MatrixPresentation(
             card.Tooltip is not null,
             VizStretch.ResolveMode(stretchProps),
             VizStretch.ResolveDirection(stretchProps),
-            NormalizePlacement(diagram.Properties.GetValueOrDefault("x_axis_placement"), "top", "bottom"),
-            NormalizePlacement(diagram.Properties.GetValueOrDefault("y_axis_placement"), "left", "right"));
+            ParsePlacement(diagram.Properties.GetValueOrDefault("x_axis_placement"), "x_axis_placement", "top", "bottom"),
+            ParsePlacement(diagram.Properties.GetValueOrDefault("y_axis_placement"), "y_axis_placement", "left", "right"),
+            ParsePlacement(diagram.Properties.GetValueOrDefault("align"), "align", "left", "center"));
     }
 
-    /// <summary>Axis placement knob (<c>x_axis_placement = top|bottom</c>,
-    /// <c>y_axis_placement = left|right</c>): an unknown word falls back to the default
-    /// placement — the one the builtin canvas has always drawn.</summary>
-    private static string NormalizePlacement(string? raw, string defaultValue, string otherValue) =>
-        string.IsNullOrWhiteSpace(raw)
-            ? defaultValue
-            : raw.Trim().ToLowerInvariant() == otherValue ? otherValue : defaultValue;
+    /// <summary>Placement knobs (<c>x_axis_placement = top|bottom</c>,
+    /// <c>y_axis_placement = left|right</c>, <c>align = left|center</c>): no silent
+    /// fallbacks — absent stays null (the renderer's documented natural layout applies),
+    /// an unknown word is a loud parse error. Explicit defaults live in the spec
+    /// presentation presets (stdlib heatmap_tall), not in code.</summary>
+    private static string? ParsePlacement(string? raw, string property, string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var value = raw.Trim().ToLowerInvariant();
+        return value switch
+        {
+            var v when v == first || v == second => v,
+            _ => throw new DashSpecParseException(
+                $"diagram: unknown {property} '{raw.Trim()}' — expected {first} or {second}."),
+        };
+    }
 
     public bool ShowsGradientLegend =>
         Legend?.Show?.Value is false

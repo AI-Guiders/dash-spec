@@ -19,6 +19,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PhraseTemplateDescriptor> _phraseTemplates =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _presentationProperties = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, ScopeContributorDescriptor> _scopeContributors =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, FilterWidgetContributorDescriptor> _filterWidgets =
@@ -48,6 +49,14 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
 
         _plugins.Add(new LoadedPluginEntry(plugin.Id, plugin.DisplayName, plugin.Tier));
+        foreach (var property in plugin.PresentationProperties)
+        {
+            if (!string.IsNullOrWhiteSpace(property))
+            {
+                _presentationProperties.Add(property.Trim());
+            }
+        }
+
         plugin.RegisterContributors(this);
 
         if (plugin is IDashSpecEndpointContributor endpointContributor)
@@ -293,6 +302,9 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 
     /// <summary>Click sources rendered by plugin diagram families (ADR-0107).</summary>
     public IReadOnlyDictionary<string, ClickSourceContributorDescriptor> ClickSources => _clickSources;
+
+    /// <summary>Plugin-declared presentation properties (union over active plugins).</summary>
+    public IReadOnlySet<string> PresentationProperties => _presentationProperties;
 
     public IReadOnlyDictionary<string, ActionHandlerDescriptor> ActionHandlers => _actionHandlers;
 

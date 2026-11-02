@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse
 
 open System
+open System.Collections.Generic
 
 /// Property schemas for Modeling.Parse (ADR-0048 SSOT).
 module PropertySchemas =
@@ -23,7 +24,10 @@ module PropertySchemas =
           spec "max" Scalar
           spec "other" String ]
 
-    let presentation =
+    /// Core presentation vocabulary — engine-owned semantics only. Renderer plugins
+    /// declare their own knobs (IDashSpecPlugin.PresentationProperties) and the kernel
+    /// extends this list through the bridge: one knob, one owner.
+    let private presentationCore =
         [ spec "use" Scalar
           spec "legend" Scalar
           spec "height" Scalar
@@ -41,6 +45,24 @@ module PropertySchemas =
           spec "width" Scalar
           spec "density" Scalar
           spec "column_filters" Scalar ]
+
+    let private extraPresentationProperties = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+    /// Plugin-declared presentation knobs join the vocabulary (bridge pattern — the
+    /// kernel registers them when it builds parse options from active plugins).
+    let registerPresentationProperties (properties: seq<string>) =
+        for property in properties do
+            if not (String.IsNullOrWhiteSpace property) then
+                extraPresentationProperties.Add(property.Trim()) |> ignore
+
+    /// The effective presentation schema: core + plugin-declared, all Scalar.
+    let presentation () =
+        let extras =
+            extraPresentationProperties
+            |> Seq.filter (fun name -> presentationCore |> List.exists (fun s -> String.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) |> not)
+            |> Seq.map (fun name -> spec name Scalar)
+            |> List.ofSeq
+        presentationCore @ extras
 
     let layoutGroup = [ spec "title" String ]
 

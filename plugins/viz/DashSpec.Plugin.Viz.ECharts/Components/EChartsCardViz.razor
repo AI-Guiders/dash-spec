@@ -15,8 +15,12 @@
    ADR-0084 parity). ECharts paints the cells only. Payload contracts ride the same
    ADR-0107 wires as every matrix renderer: cell / category item / X-label clicks,
    bucket intervals, per-cell color normalization. *@
-<div class="ech-frame @(IsFill ? "ech-frame--fill" : null)" style="@FrameStyle">
-    @if (Empty)
+<div class="ech-frame @(IsFill ? "ech-frame--fill" : null) @(IsCenterAligned ? "ech-frame--center" : null)" style="@FrameStyle">
+    @if (UnsupportedPlacement is { } message)
+    {
+        <p class="ech-empty">@message</p>
+    }
+    else if (Empty)
     {
         <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
     }
@@ -154,6 +158,18 @@
     /// comes from the card slot through the flex chain, not from <c>visible_rows</c>;
     /// the bridge computes the cell side from the actual pane size.</summary>
     private bool IsFill => Presentation is { StretchMode: VizStretchMode.Fill };
+
+    /// <summary><c>align = left|center</c>. Unspecified (null) is the stack's own natural
+    /// layout — left-pinned, canvas parity — a renderer decision (ADR-0112 expression),
+    /// not a language default; explicit values come from the spec presentation presets.</summary>
+    private bool IsCenterAligned => Presentation is { Align: "center" };
+
+    /// <summary>The frozen-pane frame speaks top/left; bottom/right are not silently
+    /// coerced — the card says so instead of lying with a wrong layout.</summary>
+    private string? UnsupportedPlacement =>
+        Presentation?.XAxisPlacement is "bottom" ? "x_axis_placement = bottom is not supported by the ECharts renderer"
+        : Presentation?.YAxisPlacement is "right" ? "y_axis_placement = right is not supported by the ECharts renderer"
+        : null;
 
     /// <summary>The frame is the bounded viewport (ADR-0084: axes must stay visible) —
     /// a fixed 2×2 pane: corner + X strip + Y strip + the scrollable body. The axes

@@ -31,6 +31,12 @@ public sealed class EChartsVizDashSpecPlugin : VizDashSpecPluginBase
     /// widget the builtin and Radzen stacks use; stack-agnostic by design.</summary>
     protected override Type? CardToolbarComponentType => typeof(MatrixLabelToolbar);
 
+    /// <summary>This renderer's presentation knobs — the plugin-declared vocabulary
+    /// (parsed once a kernel with this plugin builds its options; unknown-to-everyone
+    /// properties stay loud errors).</summary>
+    public override IEnumerable<string> PresentationProperties =>
+        ["x_axis_placement", "y_axis_placement", "align"];
+
     protected override IVizPlugin CreateBackend() => new EChartsVizBackend();
 
     private sealed class EChartsVizBackend : IVizPlugin
