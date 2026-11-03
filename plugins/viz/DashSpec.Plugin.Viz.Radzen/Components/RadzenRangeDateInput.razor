@@ -1,42 +1,23 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using System.Globalization
 @using Radzen.Blazor
-@using DashSpec.Execution.Runtime
 
-@* ADR-0118: the Radzen stack's selector/dates range control — two RadzenDatePicker
-   inputs (from/to) replacing the flatpickr dual input. Same wire surface as
-   RangeDateInput (From/To wire strings yyyy-MM-dd, RangePicked (From, To), Disabled,
-   InputClass, AriaLabel): the swap is invisible to the wrapper's echo protection. *@
+@* ADR-0118: the Radzen stack's selector/dates range control - ONE native
+   RadzenDateRangePicker (official bind pattern: TValue DateTime?, Value = [start, end]).
+   Same wire surface as RangeDateInput (From/To wire strings yyyy-MM-dd,
+   RangePicked (From, To), Disabled, InputClass, AriaLabel): the swap is invisible
+   to the wrapper's echo protection. Theme paints it - no extra skin. *@
 
-<RadzenDatePicker TValue="DateTime?"
-                  Value="@FromParsed"
-                  Change="@OnFromChanged"
-                  Culture="@Culture"
-                  DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
-                  ShowTime="false"
-                  Min="@MinDate"
-                  Max="@MaxDate"
-                  Disabled="@Disabled"
-                  @key="@($"from:{From}")"
-                  Placeholder="@AriaLabel"
-                  Style="width:100%"
-                  class="@InputClass"
-                  AriaLabel="@($"{AriaLabel} from")" />
-
-<RadzenDatePicker TValue="DateTime?"
-                  Value="@ToParsed"
-                  Change="@OnToChanged"
-                  Culture="@Culture"
-                  DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
-                  ShowTime="false"
-                  Min="@MinDate"
-                  Max="@MaxDate"
-                  Disabled="@Disabled"
-                  @key="@($"to:{To}")"
-                  Placeholder="@AriaLabel"
-                  Style="width:100%;margin-top:0.15rem"
-                  class="@InputClass"
-                  AriaLabel="@($"{AriaLabel} to")" />
+<RadzenDateRangePicker @bind-Value="@Range"
+                       DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
+                       Culture="@Culture"
+                       ShowTime="false"
+                       Disabled="@Disabled"
+                       @key="@($"range:{From}:{To}")"
+                       Placeholder="@AriaLabel"
+                       Style="width:100%"
+                       class="@InputClass"
+                       AriaLabel="@AriaLabel" />
 
 @code {
     /// <summary>Wire from: yyyy-MM-dd, empty = unset (ADR-0118 wire).</summary>
@@ -56,10 +37,6 @@
 
     private CultureInfo Culture => LabelFormat.ResolveReportCulture();
 
-    private DateTime? MinDate => new DateTime(1970, 1, 1);
-
-    private DateTime? MaxDate => new DateTime(2100, 12, 31);
-
     private static DateTime? ParseWire(string wire) =>
         DateTime.TryParseExact(
             wire.Trim(),
@@ -70,29 +47,41 @@
             ? parsed
             : null;
 
-    private DateTime? FromParsed => ParseWire(From);
+    private Radzen.DateRange? _picked;
 
-    private DateTime? ToParsed => ParseWire(To);
-
-    private async Task OnFromChanged(DateTime? value)
+    /// <summary>@bind-Value target: getter shows the committed wires (or the last
+    /// picked range for the open calendar); setter catches the user gesture and
+    /// fires RangePicked once (the wrapper sorts and commits).
+    private Radzen.DateRange Range
     {
-        if (value is null)
+        get
         {
-            return;
+            if (_picked is { } picked)
+            {
+                return picked;
+            }
+
+            return new Radzen.DateRange(ParseWire(From), ParseWire(To));
         }
-
-        var to = string.IsNullOrWhiteSpace(To) ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : To;
-        await RangePicked.InvokeAsync((value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), to));
-    }
-
-    private async Task OnToChanged(DateTime? value)
-    {
-        if (value is null)
+        set
         {
-            return;
-        }
+            if (value is null || value.Start is null || value.End is null)
+            {
+                return;
+            }
 
-        var from = string.IsNullOrWhiteSpace(From) ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : From;
-        await RangePicked.InvokeAsync((from, value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+            if (_picked == value)
+            {
+                return;
+            }
+
+            _picked = value;
+            _ = InvokeAsync(async () =>
+            {
+                await RangePicked.InvokeAsync((
+                    value.Start.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    value.End.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+            });
+        }
     }
 }
