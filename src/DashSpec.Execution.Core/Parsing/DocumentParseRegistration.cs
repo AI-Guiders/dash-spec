@@ -152,8 +152,13 @@ internal static class DocumentParseRegistration
         return items.Length > 0 ? items[0] : null;
     }
 
-    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Compiler.Contract.DashSpecParseOptions options) =>
-        new()
+    private static DashSpec.Modeling.Parse.DashSpecParseOptions ToFsharp(DashSpec.Compiler.Contract.DashSpecParseOptions options)
+    {
+        // ADR-0118: the widget role registry feeds the parser's word validation
+        // (module-level, same pattern as the embedded stdlib registration).
+        DashSpec.Modeling.Parse.Filter.FilterParser.configureKnownWidgetRoles(options.KnownWidgetRoles);
+
+        return new()
         {
             MergeReferencedTabModules = options.MergeReferencedTabModules,
             ExtensionBlockKeywords = options.ExtensionBlockKeywords,
@@ -161,8 +166,10 @@ internal static class DocumentParseRegistration
             PhraseTemplates = options.PhraseTemplates.Select(ToFsharpPhraseTemplate).ToList(),
             KnownActionHandlers = options.KnownActionHandlers,
             KnownInteractionHandlers = options.KnownInteractionHandlers,
+            KnownWidgetRoles = options.KnownWidgetRoles,
             KnownClickSources = options.KnownClickSources,
         };
+    }
 
     private static DashSpec.Modeling.Parse.PhraseTemplateDescriptor ToFsharpPhraseTemplate(CorePhraseTemplate template) =>
         new()

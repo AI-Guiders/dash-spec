@@ -25,4 +25,11 @@
     <ProjectReference Include="..\..\..\src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ADR-0118: the stack binds its own selector/dates controls; the parameter
+         surfaces (IFilterDateInputOverride, wire codecs) live in the filter plugin. -->
+    <ProjectReference Include="..\..\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
+    <ProjectReference Include="..\..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+  </ItemGroup>
+
 </Project>

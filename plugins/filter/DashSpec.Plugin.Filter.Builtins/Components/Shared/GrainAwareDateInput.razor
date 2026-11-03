@@ -17,41 +17,25 @@
             @switch (Grain)
             {
                 case "month":
-                    <CultureAwareDateInput Mode="month"
-                                           Value="@MonthValue"
-                                           ValueChanged="OnMonthWireChanged"
-                                           InputClass="date-input-grain filter-grain-input"
-                                           AriaLabel="@Label"
-                                           Disabled="@Disabled" />
+                    <DynamicComponent Type="@DateControlType("month")"
+                                      Parameters="@DateControl("month", MonthValue, OnMonthWireChanged, "date-input-grain filter-grain-input", Label)" />
                     break;
 
                 case "year":
-                    <CultureAwareDateInput Mode="year"
-                                           Value="@YearValue"
-                                           ValueChanged="OnYearWireChanged"
-                                           InputClass="date-input-grain date-input-year filter-grain-input"
-                                           AriaLabel="@Label"
-                                           Disabled="@Disabled" />
+                    <DynamicComponent Type="@DateControlType("year")"
+                                      Parameters="@DateControl("year", YearValue, OnYearWireChanged, "date-input-grain date-input-year filter-grain-input", Label)" />
                     break;
 
                 default:
-                    <CultureAwareDateInput Mode="day"
-                                           Value="@DayValue"
-                                           ValueChanged="OnDayWireChanged"
-                                           InputClass="filter-grain-input"
-                                           AriaLabel="@Label"
-                                           Disabled="@Disabled" />
+                    <DynamicComponent Type="@DateControlType("day")"
+                                      Parameters="@DateControl("day", DayValue, OnDayWireChanged, "filter-grain-input", Label)" />
                     break;
             }
         }
         else
         {
-            <CultureAwareDateInput Mode="day"
-                                   Value="@DayValue"
-                                   ValueChanged="OnDayWireChanged"
-                                   InputClass="filter-grain-input"
-                                   AriaLabel="@Label"
-                                   Disabled="@Disabled" />
+            <DynamicComponent Type="@DateControlType("day")"
+                              Parameters="@DateControl("day", DayValue, OnDayWireChanged, "filter-grain-input", Label)" />
         }
     </div>
 }
@@ -63,19 +47,11 @@ else
     }
 
     <div class="date-range">
-        <CultureAwareDateInput Mode="day"
-                               Value="@DayValue"
-                               ValueChanged="OnRangeFromWireChanged"
-                               InputClass="filter-grain-input"
-                               AriaLabel="@($"{Filter.Name} from")"
-                               Disabled="@Disabled" />
+        <DynamicComponent Type="@DateControlType("day")"
+                          Parameters="@DateControl("day", DayValue, OnRangeFromWireChanged, "filter-grain-input", $"{Filter.Name} from")" />
         <span class="date-sep">—</span>
-        <CultureAwareDateInput Mode="day"
-                               Value="@RangeToValue"
-                               ValueChanged="OnRangeToWireChanged"
-                               InputClass="filter-grain-input"
-                               AriaLabel="@($"{Filter.Name} to")"
-                               Disabled="@Disabled" />
+        <DynamicComponent Type="@DateControlType("day")"
+                          Parameters="@DateControl("day", RangeToValue, OnRangeToWireChanged, "filter-grain-input", $"{Filter.Name} to")" />
     </div>
 }
 
@@ -103,6 +79,23 @@ else
     [Parameter] public EventCallback<string> OnDayChanged { get; set; }
 
     private bool HasGrainFilter => !string.IsNullOrWhiteSpace(Filter.GrainFilterName?.Value);
+
+    // ADR-0118: the inner date control is stack-replaceable (Radzen stack binds its
+    // own RadzenDatePicker-backed control; default stays the flatpickr wrapper).
+    private static Type DateControlType(string mode) =>
+        FilterDateInputControls.DateInput(mode) ?? typeof(CultureAwareDateInput);
+
+    private Dictionary<string, object?> DateControl(
+        string mode, string value, MulticastDelegate changed, string inputClass, string ariaLabel) =>
+        new()
+        {
+            ["Mode"] = mode,
+            ["Value"] = value,
+            ["ValueChanged"] = Microsoft.AspNetCore.Components.EventCallback.Factory.Create(this, (string wire) => changed.DynamicInvoke(wire)),
+            ["Disabled"] = Disabled,
+            ["InputClass"] = inputClass,
+            ["AriaLabel"] = ariaLabel,
+        };
 
     private string? Grain => HasGrainFilter
         ? GrainFilterPresentation.ResolveGrain(Filter, FilterIndex, SelectedFields)

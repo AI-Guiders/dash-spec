@@ -8,17 +8,29 @@
         <span class="filter-inline-label">@Context.Label</span>
     }
     <div class="date-range date-range-picker">
-        <RangeDateInput From="@FromWire"
-                        To="@ToWire"
-                        RangePicked="OnRangePickedAsync"
-                        Disabled="@Context.Disabled"
-                        InputClass="filter-range-input"
-                        AriaLabel="@Context.Label" />
+        @* ADR-0118: the range control is stack-replaceable (Radzen stack binds its own). *@
+        <DynamicComponent Type="@RangeControlType"
+                          Parameters="@RangeControlParams" />
     </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+
+    // ADR-0118: the inner range control is stack-replaceable (Radzen stack binds its
+    // own RadzenDateRangePicker-backed control; default stays the flatpickr wrapper).
+    private Type RangeControlType =>
+        FilterDateInputControls.RangeInput() ?? typeof(RangeDateInput);
+
+    private Dictionary<string, object?> RangeControlParams => new()
+    {
+        ["From"] = FromWire,
+        ["To"] = ToWire,
+        ["RangePicked"] = Microsoft.AspNetCore.Components.EventCallback.Factory.Create<(string, string)>(this, OnRangePickedAsync),
+        ["Disabled"] = Context.Disabled,
+        ["InputClass"] = "filter-range-input",
+        ["AriaLabel"] = Context.Label,
+    };
 
     private string WrapperClass =>
         Context.ToolbarLabeledCells ? "filter filter-date filter-inline" : "filter filter-date filter-compact";

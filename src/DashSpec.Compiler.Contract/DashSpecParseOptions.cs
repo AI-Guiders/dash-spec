@@ -32,6 +32,11 @@ public sealed class DashSpecParseOptions
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Click sources declared by viz plugins (ADR-0107): the `on &lt;source&gt; click` vocabulary.</summary>
+    /// <summary>Filter widget role words (ADR-0118): fed from the widget registry —
+    /// the parser rejects unknown `widget =` words with the registered list.</summary>
+    public IReadOnlySet<string> KnownWidgetRoles { get; init; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlySet<string> KnownClickSources { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 

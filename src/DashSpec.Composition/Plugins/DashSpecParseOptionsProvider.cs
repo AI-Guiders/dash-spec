@@ -18,6 +18,7 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
             PhraseTemplates = registry.PhraseTemplates,
             KnownActionHandlers = registry.ActionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownInteractionHandlers = registry.InteractionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
+            KnownWidgetRoles = registry.FilterWidgets.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownClickSources = registry.ClickSources.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownPresentationProperties = registry.PresentationProperties.ToHashSet(StringComparer.OrdinalIgnoreCase),
         };

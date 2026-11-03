@@ -1,0 +1,98 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using System.Globalization
+@using Radzen.Blazor
+@using DashSpec.Execution.Runtime
+
+@* ADR-0118: the Radzen stack's selector/dates range control — two RadzenDatePicker
+   inputs (from/to) replacing the flatpickr dual input. Same wire surface as
+   RangeDateInput (From/To wire strings yyyy-MM-dd, RangePicked (From, To), Disabled,
+   InputClass, AriaLabel): the swap is invisible to the wrapper's echo protection. *@
+
+<RadzenDatePicker TValue="DateTime?"
+                  Value="@FromParsed"
+                  Change="@OnFromChanged"
+                  Culture="@Culture"
+                  DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
+                  ShowTime="false"
+                  Min="@MinDate"
+                  Max="@MaxDate"
+                  Disabled="@Disabled"
+                  @key="@($"from:{From}")"
+                  Placeholder="@AriaLabel"
+                  Style="width:100%"
+                  class="@InputClass"
+                  AriaLabel="@($"{AriaLabel} from")" />
+
+<RadzenDatePicker TValue="DateTime?"
+                  Value="@ToParsed"
+                  Change="@OnToChanged"
+                  Culture="@Culture"
+                  DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
+                  ShowTime="false"
+                  Min="@MinDate"
+                  Max="@MaxDate"
+                  Disabled="@Disabled"
+                  @key="@($"to:{To}")"
+                  Placeholder="@AriaLabel"
+                  Style="width:100%;margin-top:0.15rem"
+                  class="@InputClass"
+                  AriaLabel="@($"{AriaLabel} to")" />
+
+@code {
+    /// <summary>Wire from: yyyy-MM-dd, empty = unset (ADR-0118 wire).</summary>
+    [Parameter, EditorRequired] public string From { get; set; } = string.Empty;
+
+    /// <summary>Wire to: yyyy-MM-dd, empty = unset.</summary>
+    [Parameter, EditorRequired] public string To { get; set; } = string.Empty;
+
+    /// <summary>Both ends as wires; the wrapper sorts and commits once.</summary>
+    [Parameter] public EventCallback<(string From, string To)> RangePicked { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    private DateTime? MinDate => new DateTime(1970, 1, 1);
+
+    private DateTime? MaxDate => new DateTime(2100, 12, 31);
+
+    private static DateTime? ParseWire(string wire) =>
+        DateTime.TryParseExact(
+            wire.Trim(),
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed
+            : null;
+
+    private DateTime? FromParsed => ParseWire(From);
+
+    private DateTime? ToParsed => ParseWire(To);
+
+    private async Task OnFromChanged(DateTime? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        var to = string.IsNullOrWhiteSpace(To) ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : To;
+        await RangePicked.InvokeAsync((value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), to));
+    }
+
+    private async Task OnToChanged(DateTime? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        var from = string.IsNullOrWhiteSpace(From) ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : From;
+        await RangePicked.InvokeAsync((from, value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+    }
+}
