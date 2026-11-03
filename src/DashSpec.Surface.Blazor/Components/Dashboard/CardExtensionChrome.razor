@@ -20,7 +20,7 @@
                 var switchActionId = chrome.ActionId ?? string.Empty;
                 if (IsViewSwitchCombobox(block))
                 {
-                    <label class="card-view-switch card-view-switch-combobox">
+                    <label class="card-view-switch card-view-switch-combobox" data-testid="views-@Card?.Id">
                         <select class="card-view-select field-select"
                                 aria-label="@Loc.T("View")"
                                 disabled="@Card?.Loading"

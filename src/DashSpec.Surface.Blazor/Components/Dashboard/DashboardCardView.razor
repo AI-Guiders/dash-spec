@@ -15,7 +15,7 @@
 @inject DashboardLocalizer Loc
 @implements IDisposable
 
-<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle">
+<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
     <div class="card-head">
         @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
         {

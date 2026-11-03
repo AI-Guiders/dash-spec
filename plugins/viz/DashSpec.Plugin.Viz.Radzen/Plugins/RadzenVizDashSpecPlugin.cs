@@ -46,11 +46,25 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
         services.AddRadzenComponents();
         // Russian chrome for Radzen's built-in strings (ADR-0115 §3): no ru satellites upstream.
         services.AddSingleton<ILocalizer, RadzenRuLocalizer>();
-        // ADR-0118: the stack binds the selector/dates role to its own controls
-        // (RadzenDatePicker / RadzenDateRangePicker, theme-painted). Last wins.
-        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride, StackDateInputOverride>();
-        DashSpec.Plugin.Filter.Builtins.Components.FilterDateInputControls.Set(
-            new StackDateInputOverride());
+        // ADR-0118: the stack binds the selector and selector/dates roles to its own
+        // controls (RadzenDropDown / RadzenDatePicker / RadzenDateRangePicker) — but ONLY
+        // when this stack is the active one. The factory resolves lazily: on other stacks
+        // the default builtin controls stay (their flatpickr popups need the Radzen-free
+        // path; a Radzen-bound control without the Radzen assets can't open).
+        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackFilterControlsOverride()
+                : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterDateInputOverride();
+        });
+        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterSelectorOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackFilterControlsOverride()
+                : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterSelectorOverride();
+        });
     }
 
     private sealed class RadzenVizBackend : IVizPlugin

@@ -32,7 +32,9 @@ else
     {
         <div class="card-slot-title">@Slot.SlotTitle</div>
     }
+    <div data-testid="viz-@(Slot is null ? Card.Id : $"{Card.Id}:{Slot.SlotRef}")">
     <DynamicComponent Type="_componentType" Parameters="_parameters" />
+    </div>
 }
 
 @code {

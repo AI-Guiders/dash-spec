@@ -1,4 +1,5 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components
+@inject DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride DateControls
 @using DashSpec.Filters
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
 
@@ -20,7 +21,7 @@
     // ADR-0118: the inner range control is stack-replaceable (Radzen stack binds its
     // own RadzenDateRangePicker-backed control; default stays the flatpickr wrapper).
     private Type RangeControlType =>
-        FilterDateInputControls.RangeInput() ?? typeof(RangeDateInput);
+        DateControls.ResolveRangeInput() ?? typeof(RangeDateInput);
 
     private Dictionary<string, object?> RangeControlParams => new()
     {

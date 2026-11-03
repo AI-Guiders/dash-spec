@@ -3,6 +3,7 @@
 @using System.Globalization
 @using DashSpec.Execution.Runtime
 @using DashSpec.Presentation.Filters
+@inject DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride DateControls
 
 @if (Filter.IsDayWidget)
 {
@@ -82,8 +83,8 @@ else
 
     // ADR-0118: the inner date control is stack-replaceable (Radzen stack binds its
     // own RadzenDatePicker-backed control; default stays the flatpickr wrapper).
-    private static Type DateControlType(string mode) =>
-        FilterDateInputControls.DateInput(mode) ?? typeof(CultureAwareDateInput);
+    private Type DateControlType(string mode) =>
+        DateControls.ResolveDateInput(mode) ?? typeof(CultureAwareDateInput);
 
     private Dictionary<string, object?> DateControl(
         string mode, string value, MulticastDelegate changed, string inputClass, string ariaLabel) =>

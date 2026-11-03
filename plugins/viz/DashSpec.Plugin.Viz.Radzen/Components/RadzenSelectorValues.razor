@@ -1,0 +1,125 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using System.Globalization
+@using Radzen.Blazor
+
+@* ADR-0118: the Radzen stack's selector/values control — ONE RadzenDropDown covering
+   the whole role: Multiple=true (collapsed density), Chips=true (inline density),
+   Multiple=false (single-select). AllowFiltering gives the search; AllowClear the
+   reset; the theme paints it. Wire surface matches FieldMultiSelect: Options,
+   Selected (HashSet), SelectedChanged (HashSet), Disabled, SingleSelect, Label. *@
+
+@if (SingleSelect)
+{
+    <RadzenDropDown TValue="string"
+                    Data="@Options"
+                    Value="@SingleValue"
+                    Change="@(v => OnSingleChanged(v as string ?? string.Empty))"
+                    AllowClear="true"
+                    AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    Placeholder="@Label"
+                    Disabled="@Disabled"
+                    Name="@Label"
+                    Style="width:100%"
+                    AriaLabel="@Label" />
+}
+else if (Density == "inline")
+{
+    <RadzenDropDown TValue="IEnumerable<string>"
+                    Data="@Options"
+                    Value="@SelectedList"
+                    ValueChanged="@OnListChanged"
+                    Multiple="true"
+                    Chips="true"
+                    AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    Placeholder="@Label"
+                    Disabled="@Disabled"
+                    Name="@Label"
+                    Style="width:100%"
+                    AriaLabel="@Label" />
+}
+else
+{
+    <RadzenDropDown TValue="IEnumerable<string>"
+                    Data="@Options"
+                    Value="@SelectedList"
+                    ValueChanged="@OnListChanged"
+                    Multiple="true"
+                    MaxSelectedLabels="3"
+                    AllowClear="true"
+                    AllowFiltering="true"
+                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    Placeholder="@Label"
+                    Disabled="@Disabled"
+                    Name="@Label"
+                    Style="width:100%"
+                    AriaLabel="@Label" />
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Options { get; set; } = [];
+
+    /// <summary>Selected values (HashSet semantics on the wire).</summary>
+    [Parameter, EditorRequired] public HashSet<string> Selected { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter] public EventCallback<HashSet<string>> SelectedChanged { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>inline | collapsed (ADR-0118 selector density).</summary>
+    [Parameter, EditorRequired] public string Density { get; set; } = "collapsed";
+
+    [Parameter, EditorRequired] public bool SingleSelect { get; set; }
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    private List<string> SelectedList
+    {
+        get
+        {
+            var ordered = new List<string>();
+            foreach (var option in Options)
+            {
+                if (Selected.Contains(option))
+                {
+                    ordered.Add(option);
+                }
+            }
+
+            foreach (var extra in Selected)
+            {
+                if (!ordered.Contains(extra))
+                {
+                    ordered.Add(extra);
+                }
+            }
+
+            return ordered;
+        }
+    }
+
+    private string SingleValue => Selected.FirstOrDefault() ?? string.Empty;
+
+    private async Task OnListChanged(IEnumerable<string> values)
+    {
+        var next = new HashSet<string>(values ?? [], StringComparer.OrdinalIgnoreCase);
+        if (next.SetEquals(Selected))
+        {
+            return;
+        }
+
+        await SelectedChanged.InvokeAsync(next);
+    }
+
+    private async Task OnSingleChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            await SelectedChanged.InvokeAsync(new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+            return;
+        }
+
+        await SelectedChanged.InvokeAsync(new HashSet<string>([value], StringComparer.OrdinalIgnoreCase));
+    }
+}
