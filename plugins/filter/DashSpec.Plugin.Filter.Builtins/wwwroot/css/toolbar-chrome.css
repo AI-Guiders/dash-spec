@@ -181,3 +181,21 @@
   opacity: 0.55;
   cursor: default;
 }
+
+/* Combobox options are <button>s: without an explicit color they take the browser
+   default (black) and vanish on dark panels (the Radzen navy). Inherit the panel
+   color — both stacks stay theme-neutral; hover/selected get a currentColor tint. */
+.combobox-option {
+  color: inherit;
+  background: transparent;
+}
+
+.combobox-option:hover,
+.combobox-option:focus-visible {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.combobox-option[aria-selected="true"] {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  font-weight: 600;
+}
