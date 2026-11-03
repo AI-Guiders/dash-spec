@@ -1,6 +1,7 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @using System.Globalization
 @using Radzen.Blazor
+@implements IDisposable
 
 @* ADR-0118: the Radzen stack's selector/dates range control - ONE native
    RadzenDateRangePicker (official bind pattern: TValue DateTime?, Value = [start, end]).
@@ -8,7 +9,7 @@
    RangePicked (From, To), Disabled, InputClass, AriaLabel): the swap is invisible
    to the wrapper's echo protection. Theme paints it - no extra skin. *@
 
-<RadzenDateRangePicker @bind-Value="@Range"
+<RadzenDateRangePicker @bind-Value="@CurrentRange"
                        DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
                        Culture="@Culture"
                        ShowTime="false"
@@ -47,41 +48,90 @@
             ? parsed
             : null;
 
-    private Radzen.DateRange? _picked;
+    private Radzen.DateRange? _value;
 
-    /// <summary>@bind-Value target: getter shows the committed wires (or the last
-    /// picked range for the open calendar); setter catches the user gesture and
-    /// fires RangePicked once (the wrapper sorts and commits).
-    private Radzen.DateRange Range
+    /// <summary>@bind-Value target with real storage: the bind reads it back after
+    /// every Radzen internal render — a computed getter tied to the wires would reset
+    /// the user's in-progress selection on each click (the "can't select anything"
+    /// bug). Resyncs from the wires when they change externally (OnParametersSet).
+    /// Named CurrentRange: a razor property named Range collides with the
+    /// Radzen.DateRange type.</summary>
+    private Radzen.DateRange CurrentRange
     {
-        get
-        {
-            if (_picked is { } picked)
-            {
-                return picked;
-            }
-
-            return new Radzen.DateRange(ParseWire(From), ParseWire(To));
-        }
+        get => _value ?? new Radzen.DateRange(ParseWire(From), ParseWire(To));
         set
         {
-            if (value is null || value.Start is null || value.End is null)
+            // First click of a gesture: Radzen reports Start only (End null/null-equal).
+            // Hold it — dropping it here resets the in-progress selection and the picker
+            // "returns to one value" (the operator-visible bug).
+            if (value is null || value.Start is null)
             {
                 return;
             }
 
-            if (_picked == value)
+            if (value.End is null)
+            {
+                _value = new Radzen.DateRange(value.Start, null);
+                return;
+            }
+
+            if (_value is { } current &&
+                current.Start == value.Start &&
+                current.End == value.End)
             {
                 return;
             }
 
-            _picked = value;
-            _ = InvokeAsync(async () =>
-            {
-                await RangePicked.InvokeAsync((
-                    value.Start.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    value.End.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
-            });
+            _value = value;
+
+            // Radzen fires ValueChanged on EVERY click of the gesture — the first click
+            // arrives as (d, d). Committing immediately kills the popup mid-gesture and
+            // the range "returns to one value". Debounce: clicks within the window
+            // replace the pending commit; the commit lands after the gesture settles.
+            _pending = value;
+            _commitTimer?.Change(1200, System.Threading.Timeout.Infinite);
         }
     }
-}
+
+    private Radzen.DateRange? _pending;
+    private System.Threading.Timer? _commitTimer;
+
+    private void CommitPending()
+    {
+        var pending = _pending;
+        _pending = null;
+        if (pending is null || pending.Start is null || pending.End is null)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(async () =>
+        {
+            await RangePicked.InvokeAsync((
+                pending.Start.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                pending.End.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        });
+    }
+
+    /// <summary>The apply pipeline committed the wires — clear the pending gesture and
+    /// stop its timer so the reload doesn't double-fire.</summary>
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        var from = ParseWire(From);
+        var to = ParseWire(To);
+
+        if (_value is { } v && (v.Start != from || v.End != to))
+        {
+            _value = null;
+        }
+
+        _pending = null;
+        _commitTimer?.Dispose();
+        _commitTimer = null;
+    }
+
+    public void Dispose()
+    {
+        _commitTimer?.Dispose();
+    }}
