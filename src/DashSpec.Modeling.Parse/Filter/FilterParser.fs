@@ -43,7 +43,7 @@ module FilterParser =
                 | _ -> ()
 
         mergeInto bindProps [ "column"; "min"; "max"; "limit"; "range"; "grain_filter"; "single" ]
-        mergeInto showProps [ "widget"; "ref"; "grain_filter" ]
+        mergeInto showProps [ "widget"; "density"; "ref"; "grain_filter" ]
 
     let private resolveDefaultExpression
         (kind: FilterKind)
@@ -111,6 +111,7 @@ module FilterParser =
         (name: string)
         (defaultExpression: string option)
         (widget: string option)
+        (density: string option)
         (columnReference: string option)
         (props: IReadOnlyDictionary<string, string>)
         (singleSelect: bool)
@@ -152,6 +153,12 @@ module FilterParser =
                 && not (w.Equals("select", StringComparison.OrdinalIgnoreCase))
                 ->
                 raise (DashSpecParseException($"Field filter '{name}' widget must be 'combobox', 'chips', or 'select', got '{w}'."))
+            | _ -> ()
+
+            // ADR-0118: density is the selector expression intent (inline | collapsed).
+            match density with
+            | Some d when not (d.Equals("inline", StringComparison.OrdinalIgnoreCase)) && not (d.Equals("collapsed", StringComparison.OrdinalIgnoreCase)) ->
+                raise (DashSpecParseException($"Field filter '{name}' density must be 'inline' or 'collapsed', got '{d}'."))
             | _ -> ()
 
             match defaultExpr with
@@ -343,6 +350,22 @@ module FilterParser =
                 match showProps.TryGetValue "widget" with
                 | true, value -> Some value
                 | false, _ -> None
+            let density =
+                // ADR-0118: expression intent (inline | collapsed); legacy widget words
+                // combobox/chips/select migrate transitionally (chips -> inline).
+                match showProps.TryGetValue "density" with
+                | true, value -> Some value
+                | false, _ -> None
+            // legacy `widget` -> density (ADR-0118 transitional): chips -> inline,
+            // combobox/select -> collapsed; explicit density wins.
+            let effectiveDensity =
+                match density with
+                | Some d -> Some d
+                | None ->
+                    match resolvedKind, widget with
+                    | FilterKind.Field, Some w when w.Equals("chips", StringComparison.OrdinalIgnoreCase) -> Some "inline"
+                    | FilterKind.Field, Some w when w.Equals("combobox", StringComparison.OrdinalIgnoreCase) || w.Equals("select", StringComparison.OrdinalIgnoreCase) -> Some "collapsed"
+                    | _ -> None
 
             let grainFilterName =
                 match showProps.TryGetValue "grain_filter" with
@@ -377,7 +400,7 @@ module FilterParser =
             let label = resolveStructuredLabel name resolvedKind showProps
             let singleSelect = resolveSingleSelect widget bindProps
             let defaultExpression, minValue, maxValue =
-                validateSemantics resolvedKind name defaultExpression widget columnReference bindProps singleSelect
+                validateSemantics resolvedKind name defaultExpression widget density columnReference bindProps singleSelect
 
             { Kind = resolvedKind
               Name = name
@@ -385,6 +408,7 @@ module FilterParser =
               ColumnReference = columnReference
               Label = Some label
               Widget = widget
+              Density = effectiveDensity
               MinValue = minValue
               MaxValue = maxValue
               GrainFilterName = grainFilterName
@@ -565,8 +589,14 @@ module FilterParser =
             | false, _ -> None
 
         let singleSelect = resolveSingleSelect widget props
+        // ADR-0118: legacy widget words -> density (chips -> inline, combobox/select -> collapsed).
+        let density =
+            match widget with
+            | Some w when w.Equals("chips", StringComparison.OrdinalIgnoreCase) -> Some "inline"
+            | Some w when kind = FilterKind.Field && (w.Equals("combobox", StringComparison.OrdinalIgnoreCase) || w.Equals("select", StringComparison.OrdinalIgnoreCase)) -> Some "collapsed"
+            | _ -> None
         let defaultExpression, minValue, maxValue =
-            validateSemantics kind name defaultExpression widget columnReference props singleSelect
+            validateSemantics kind name defaultExpression widget density columnReference props singleSelect
 
         { Kind = kind
           Name = name
@@ -574,6 +604,7 @@ module FilterParser =
           ColumnReference = columnReference
           Label = Some label
           Widget = widget
+          Density = density
           MinValue = minValue
           MaxValue = maxValue
           GrainFilterName = grainFilterName

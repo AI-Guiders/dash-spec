@@ -32,8 +32,24 @@ public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
         string.IsNullOrWhiteSpace(widgetId) ||
         _contributors.FilterWidgets.ContainsKey(widgetId);
 
-    private static string ResolveWidgetId(FilterDefinition filter) =>
-        filter.Widget?.Value?.ToLowerInvariant() switch
+    private static string ResolveWidgetId(FilterDefinition filter)
+    {
+        // ADR-0118: the expression density decides first (inline -> chips, collapsed ->
+        // combobox/select); legacy `widget =` words follow; kind fallbacks close.
+        if (filter.Kind is FilterKind.Field)
+        {
+            if (filter.IsInlineDensity)
+            {
+                return "chips";
+            }
+
+            if (string.Equals(filter.Density?.Value, "collapsed", StringComparison.OrdinalIgnoreCase))
+            {
+                return filter.IsSingleSelectField ? "select" : "combobox";
+            }
+        }
+
+        return filter.Widget?.Value?.ToLowerInvariant() switch
         {
             "select" => "select",
             "chips" => "chips",
@@ -45,6 +61,7 @@ public sealed class FilterWidgetRegistry : IFilterWidgetComponentResolver
             _ when filter.IsSingleSelectField => "select",
             _ => "combobox",
         };
+    }
 
     private Type ResolveFallbackComponent(FilterDefinition filter)
     {

@@ -15,6 +15,7 @@ module ModelBehaviorTests =
           ColumnReference = None
           Label = None
           Widget = widget
+          Density = None
           MinValue = None
           MaxValue = None
           GrainFilterName = None

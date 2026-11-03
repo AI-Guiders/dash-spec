@@ -1045,6 +1045,16 @@ module rec DocumentModuleParser =
                     let columnReference = strAttr "column"
                     let label = strAttr "label"
                     let widget = strAttr "widget"
+                    let density = strAttr "density"
+                    // ADR-0118: legacy widget words migrate: chips -> inline, others -> collapsed.
+                    let density =
+                        match density with
+                        | Some d -> Some d
+                        | None ->
+                            match kind, widget with
+                            | FilterKind.Field, Some w when w.Equals("chips", StringComparison.OrdinalIgnoreCase) -> Some "inline"
+                            | FilterKind.Field, Some w when w.Equals("combobox", StringComparison.OrdinalIgnoreCase) || w.Equals("select", StringComparison.OrdinalIgnoreCase) -> Some "collapsed"
+                            | _ -> None
 
                     let singleSelect =
                         match Construct.tryCell m "single" with
@@ -1089,6 +1099,7 @@ module rec DocumentModuleParser =
                             (id.Trim())
                             defaultExpression
                             widget
+                            density
                             columnReference
                             props
                             singleSelect
@@ -1099,6 +1110,7 @@ module rec DocumentModuleParser =
                           DefaultExpression = defaultExpression
                           ColumnReference = columnReference
                           Label = label
+                          Density = density
                           Widget = widget
                           MinValue = minValue
                           MaxValue = maxValue

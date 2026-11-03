@@ -77,12 +77,13 @@ module PropertySchemas =
 
     let filterDate =
         [ spec "column" ColumnBinding
-          spec "widget" Scalar
+          spec "widget" Scalar // date-domain function (day | range), ADR-0118
           spec "grain_filter" Scalar ]
 
     let filterField =
         [ spec "column" ColumnBinding
-          spec "widget" Scalar
+          spec "widget" Scalar // legacy hint, migrates to density (ADR-0118)
+          spec "density" Scalar // selector expression: inline | collapsed (ADR-0118)
           spec "single" Scalar ]
 
     let filterTop =
@@ -101,7 +102,8 @@ module PropertySchemas =
     let filterShow =
         [ spec "apply" Scalar
           spec "label" String
-          spec "widget" Scalar
+          spec "widget" Scalar // legacy hint (ADR-0118)
+          spec "density" Scalar // selector expression: inline | collapsed (ADR-0118)
           spec "ref" Scalar
           spec "bind_scope" Scalar ]
 

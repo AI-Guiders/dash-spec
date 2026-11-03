@@ -46,10 +46,18 @@ public interface IDashSpecContributorRegistry
 
 public sealed record VizCardToolbarDescriptor(string RendererId, Type ComponentType);
 
+/// <summary>Filter widget role contract (ADR-0118): the role + candidate domain
+/// declare WHAT the widget provides (selector over values/dates/numbers); the skin
+/// mode declares who paints it — cascade (stack paints via cascade/variables) or own
+/// (the widget ships structural css only... legacy `own` widgets still carry skin css,
+/// marked for migration).</summary>
 public sealed record FilterWidgetContributorDescriptor(
     string PluginId,
     string WidgetId,
-    IReadOnlyList<string> FilterKinds);
+    IReadOnlyList<string> FilterKinds,
+    string Role = "selector",
+    string Domain = "values",
+    string Skin = "cascade");
 
 public enum CardChromeRenderKind
 {
