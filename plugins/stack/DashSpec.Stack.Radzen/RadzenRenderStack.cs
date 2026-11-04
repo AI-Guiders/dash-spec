@@ -25,8 +25,11 @@ public sealed class RadzenRenderStack : IRenderStack
             ["Scalar"] = RendererId // KPI numbers: RadzenRadialGauge / value tile (RadzenCardViz)
         };
 
-    public IReadOnlyDictionary<string, string> KindPlugins { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    // Heatmap no longer delegates to a guest: the matrix family default (MatrixCanvas,
-    // the builtin) renders it — ADR-0111: the renderer paints the tree it is given;
-    // no private geometry engine negotiates with CSS at runtime.
+    public IReadOnlyDictionary<string, string> KindPlugins { get; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Square-cell heatmap: the ECharts guest draws it (ADR-0112 §1 — the stack
+            // routes kinds; the canvas geometry keeps cells square at any filter width).
+            ["heatmap"] = VizPluginIds.ECharts,
+        };
 }
