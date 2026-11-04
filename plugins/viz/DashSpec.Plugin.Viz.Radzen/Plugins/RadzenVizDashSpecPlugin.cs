@@ -46,6 +46,17 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
         services.AddRadzenComponents();
         // Russian chrome for Radzen's built-in strings (ADR-0115 §3): no ru satellites upstream.
         services.AddSingleton<ILocalizer, RadzenRuLocalizer>();
+        // ADR-0118 small steps (1/4): the stack binds the date-domain role to its own
+        // control (day grain) — but ONLY when this stack is the active one. The factory
+        // resolves lazily: on other stacks the builtin flatpickr controls stay (a
+        // Radzen-bound control without the Radzen assets can't open).
+        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackDateInputOverride()
+                : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterDateInputOverride();
+        });
     }
 
     private sealed class RadzenVizBackend : IVizPlugin

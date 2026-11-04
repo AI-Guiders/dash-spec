@@ -1,0 +1,86 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using System.Globalization
+@using Radzen.Blazor
+@using DashSpec.Execution.Runtime
+
+@* ADR-0118: the Radzen stack's own date-domain control — binds via the enum seam
+   (IFilterDateInputOverride.ResolveDateInput(DateGrain)). Same wire surface as
+   CultureAwareDateInput (wire Value yyyy-MM-dd | yyyy-MM | yyyy; ValueChanged<string>;
+   Grain DateGrain). The theme paints it — no extra skin. *@
+
+<RadzenDatePicker TValue="DateTime?"
+                  Value="@Parsed"
+                  Change="@OnChanged"
+                  Culture="@Culture"
+                  DateFormat="@Format"
+                  ShowTime="false"
+                  Min="@MinDate"
+                  Max="@MaxDate"
+                  Disabled="@Disabled"
+                  @key="@($"{Grain}:{Value}")"
+                  Style="width:100%;"
+                  class="@InputClass"
+                  AriaLabel="@AriaLabel" />
+
+@code {
+    /// <summary>The date-domain grain (ADR-0118 enum seam).</summary>
+    [Parameter, EditorRequired] public DateGrain Grain { get; set; } = DateGrain.Day;
+
+    /// <summary>Wire value: yyyy-MM-dd | yyyy-MM | yyyy (the shared wire, ADR-0118).</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    private string Format => Grain switch
+    {
+        DateGrain.Month => "yyyy-MM",
+        DateGrain.Year => "yyyy",
+        _ => Culture.DateTimeFormat.ShortDatePattern,
+    };
+
+    private string[] AcceptedFormats => Grain switch
+    {
+        DateGrain.Month => ["yyyy-MM"],
+        DateGrain.Year => ["yyyy"],
+        _ => ["yyyy-MM-dd"],
+    };
+
+    private DateTime? Parsed =>
+        DateTime.TryParseExact(
+            Value.Trim(),
+            AcceptedFormats,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed
+            : null;
+
+    private DateTime? MinDate => Grain is DateGrain.Year or DateGrain.Month ? null : new DateTime(1970, 1, 1);
+
+    private DateTime? MaxDate => Grain is DateGrain.Year or DateGrain.Month ? null : new DateTime(2100, 12, 31);
+
+    private async Task OnChanged(DateTime? value)
+    {
+        if (value is null || !ValueChanged.HasDelegate)
+        {
+            return;
+        }
+
+        var wire = Grain switch
+        {
+            DateGrain.Month => value.Value.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            DateGrain.Year => value.Value.Year.ToString(CultureInfo.InvariantCulture),
+            _ => DateValueCodec.FormatWireDay(DateOnly.FromDateTime(value.Value)),
+        };
+
+        await ValueChanged.InvokeAsync(wire);
+    }
+}

@@ -2,6 +2,7 @@ using DashSpec.Abstractions.Plugins;
 using DashSpec.Plugin.Filter.Builtins.Components;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DashSpec.Plugin.Filter.Builtins.Plugins;
 
@@ -15,7 +16,11 @@ public sealed class FilterWidgetsBuiltinPlugin : IDashSpecPlugin
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<Components.IFilterSelectorOverride>(new Components.DefaultFilterSelectorOverride());
+        // TryAdd: the builtins defaults stand only when no stack registered its own
+        // controls — viz plugins configure before filter plugins, so a plain
+        // AddSingleton here would silently stomp the stack override (DI last-wins).
+        services.TryAddSingleton<Components.IFilterSelectorOverride>(new Components.DefaultFilterSelectorOverride());
+        services.TryAddSingleton<Components.IFilterDateInputOverride>(new Components.DefaultFilterDateInputOverride());
     }
 
     public void RegisterContributors(IDashSpecContributorRegistry registry)
