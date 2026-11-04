@@ -68,18 +68,26 @@
       const body = host.parentElement;
       const xStrip = frame.querySelector('.ech-x-strip');
       const fit = function () {
-        let labelWidth = 20;
+        // The agreed contract: the TOP strip defines the square's side — the widest
+        // x-label plus breathing room. No fill clamp: the pane scrolls right, and
+        // clamping to a shrunken fill re-merged the date labels ("06.1007.10").
+        // Measure the TEXT (Range), never the box: the label box stretches to the
+        // cell, so scrollWidth feeds the previous side back in — the cell ratchets
+        // wider on every fit (the 544px runaway).
+        let labelWidth = 32;
         frame.querySelectorAll('.ech-x-label').forEach(function (l) {
           if (l.textContent.trim()) {
-            labelWidth = Math.max(labelWidth, Math.ceil(l.scrollWidth));
+            const range = document.createRange();
+            range.selectNodeContents(l);
+            const textW = Math.ceil(range.getBoundingClientRect().width);
+            labelWidth = Math.max(labelWidth, textW + 12);
           }
         });
+        const side = labelWidth;
         // The pane's available height comes from the frame (its max-height cap or the
         // fill slot) — read it there, not from the body: the snap below sets the
-        // body's own height, and reading it back would feed back into `fill`.
+        // body's own height, and reading it back would feed back into the snap.
         const availH = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
-        const fill = Math.floor(Math.min(body.clientWidth / ctx.cols, availH / ctx.rows));
-        const side = Math.max(labelWidth, Math.min(64, fill));
         frame.style.setProperty('--ech-cell', side + 'px');
         chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
         // Whole-row fold: never slice the last visible row at the scroll edge — a
