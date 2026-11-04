@@ -67,7 +67,10 @@
 }
 
 .ech-x-label {
-  font-size: 0.72rem;
+  /* 0.62rem: "06.10" must sit INSIDE its cell (cell side floors at the label's
+     scrollWidth — at 0.72rem the text filled the cell edge-to-edge and adjacent
+     date labels read as one merged string). */
+  font-size: 0.62rem;
   text-align: center;
   color: var(--rz-text-secondary-color, #8fa0b3);
   white-space: nowrap;
