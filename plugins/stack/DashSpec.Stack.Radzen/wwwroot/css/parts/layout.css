@@ -66,6 +66,25 @@
   opacity: 0.65;
 }
 
+/* The per-user theme picker stays a native select BY CONTRACT — it must work
+   without a Blazor circuit (cookie + reload, the static chrome pass). The stack
+   paints it to read as one of its own inputs (rz-inputtext look), not a swap. */
+.topbar-nav select.theme-picker {
+  appearance: auto;
+  font-size: 0.82rem;
+  color: var(--text, #e2e8f0);
+  background-color: var(--surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.35));
+  border-radius: 0.375rem;
+  padding: 0.3rem 0.45rem;
+  max-width: 13rem;
+}
+
+.topbar-nav select.theme-picker:focus-visible {
+  outline: none;
+  border-color: var(--accent, #bb86fc);
+}
+
 .admin-links-list {
   list-style: none;
   padding: 0;
