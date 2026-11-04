@@ -10,34 +10,14 @@
    is the contract. Absent override — the builtin markup controls render. *@
 @if (SelectorControls.ResolveSelector(Combobox ? "collapsed" : "inline", SingleSelect) is { } selectorOverride)
 {
+    // The stack control carries its own visible label (RadzenDropDown's placeholder),
+    // so the widget-level label row is dropped here — Label still rides the parameters
+    // as aria-label/placeholder. The scope hint stays reachable when there is no label.
     <div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
-        @if (!Compact && ShowLabel)
+        @if (string.IsNullOrWhiteSpace(Hint))
         {
-            <div class="filter-field-head">
-                <div class="filter-label-row">
-                    <span class="filter-label">@Label</span>
-                    <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
-                </div>
-                @if (!SingleSelect)
-                {
-                    <span class="muted filter-count">
-                        @if (Selected.Count == 0)
-                        {
-                            <text>@Loc["AllCount"]</text>
-                        }
-                        else
-                        {
-                            <text>@(Loc["{0} of {1}", Selected.Count, Options.Count])</text>
-                        }
-                    </span>
-                }
-            </div>
         }
-        else if (Compact && ShowLabel)
-        {
-            <span class="filter-inline-label">@Label</span>
-        }
-        else if (!string.IsNullOrWhiteSpace(Hint))
+        else if (!Compact || !ShowLabel)
         {
             <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
         }

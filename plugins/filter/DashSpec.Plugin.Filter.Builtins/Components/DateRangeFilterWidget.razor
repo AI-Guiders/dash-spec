@@ -1,6 +1,13 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components
 @using DashSpec.Filters
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
+@inject DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride DateInputOverride
+
+@{
+    // ADR-0118: the stack may bind the range control (RadzenDateRangePicker on the
+    // Radzen stack); absent an override the flatpickr builtin renders — unchanged.
+    var stackRangeInput = DateInputOverride.ResolveRangeInput();
+}
 
 <div class="@WrapperClass" style="@Context.PlacementStyle">
     @if (Context.ShowLabel && Context.ShowDateLabel)
@@ -8,17 +15,37 @@
         <span class="filter-inline-label">@Context.Label</span>
     }
     <div class="date-range date-range-picker">
-        <RangeDateInput From="@FromWire"
-                        To="@ToWire"
-                        RangePicked="OnRangePickedAsync"
-                        Disabled="@Context.Disabled"
-                        InputClass="filter-range-input"
-                        AriaLabel="@Context.Label" />
+        @if (stackRangeInput is not null)
+        {
+            <DynamicComponent Type="stackRangeInput"
+                              Parameters="@RangeParameters" />
+        }
+        else
+        {
+            <RangeDateInput From="@FromWire"
+                            To="@ToWire"
+                            RangePicked="OnRangePickedAsync"
+                            Disabled="@Context.Disabled"
+                            InputClass="filter-range-input"
+                            AriaLabel="@Context.Label" />
+        }
     </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public FilterWidgetRenderContext Context { get; set; } = default!;
+
+    /// <summary>ADR-0118 parameter surface for the stack-bound range control —
+    /// identical to RangeDateInput's contract.</summary>
+    private Dictionary<string, object?> RangeParameters => new()
+    {
+        ["From"] = FromWire,
+        ["To"] = ToWire,
+        ["RangePicked"] = EventCallback.Factory.Create<(string From, string To)>(this, OnRangePickedAsync),
+        ["Disabled"] = Context.Disabled,
+        ["InputClass"] = "filter-range-input",
+        ["AriaLabel"] = Context.Label,
+    };
 
     private string WrapperClass =>
         Context.ToolbarLabeledCells ? "filter filter-date filter-inline" : "filter filter-date filter-compact";

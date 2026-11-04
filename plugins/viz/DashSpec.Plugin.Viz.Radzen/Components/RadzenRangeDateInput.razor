@@ -89,14 +89,24 @@
             // the range "returns to one value". Debounce: clicks within the window
             // replace the pending commit; the commit lands after the gesture settles.
             _pending = value;
-            _commitTimer?.Change(1200, System.Threading.Timeout.Infinite);
+            // The timer must actually exist: a bare "?." on a null field armed nothing,
+            // the debounce never fired and the gesture never committed.
+            if (_commitTimer is null)
+            {
+                _commitTimer = new System.Threading.Timer(CommitPending, null,
+                    1200, System.Threading.Timeout.Infinite);
+            }
+            else
+            {
+                _commitTimer.Change(1200, System.Threading.Timeout.Infinite);
+            }
         }
     }
 
     private Radzen.DateRange? _pending;
     private System.Threading.Timer? _commitTimer;
 
-    private void CommitPending()
+    private void CommitPending(object? state)
     {
         var pending = _pending;
         _pending = null;
@@ -114,10 +124,28 @@
     }
 
     /// <summary>The apply pipeline committed the wires — clear the pending gesture and
-    /// stop its timer so the reload doesn't double-fire.</summary>
+    /// stop its timer so the reload doesn't double-fire. Guarded: OnParametersSet runs
+    /// on EVERY render, and Radzen re-renders mid-gesture (its own selection highlight)
+    /// — an unconditional reset here destroyed the in-progress gesture on the picker's
+    /// own echo render, and the commit never landed (the "диаграмма не меняется" bug).
+    /// Only wires that actually changed may reset the gesture.</summary>
+    private string _seenFrom = string.Empty;
+    private string _seenTo = string.Empty;
+
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
+        var wiresChanged =
+            !string.Equals(_seenFrom, From, StringComparison.Ordinal) ||
+            !string.Equals(_seenTo, To, StringComparison.Ordinal);
+        _seenFrom = From;
+        _seenTo = To;
+
+        if (!wiresChanged)
+        {
+            return;
+        }
+
         var from = ParseWire(From);
         var to = ParseWire(To);
 
