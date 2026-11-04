@@ -5,18 +5,14 @@
    geometry: every data track is exactly CellPx wide/tall. */
 .ech-frame {
   display: grid;
-  /* The whole block (axes + body) sizes to the data as one — the Y labels can never
-     detach from the cells. Left-pinned by default: a time matrix grows rightward, so
-     the reading anchor stays put when a period is added (align = center opts out).
-     Wider than the card → the frame caps and the body pane scrolls. */
-  width: fit-content;
-  max-width: 100%;
+  /* The frame fills its slot (width: 100%): the card's surface stays the card's —
+     removing rows/columns just removes bands, the empty remainder is the card's own
+     background. fit-content here made every wrapper content-sized, so "free width"
+     did not exist and every JS measurement chased its own tail (the floating card).
+     The body pane snaps to whole columns — no half-square cut at the clip edge. */
+  width: 100%;
   margin: 0;
   overflow: hidden;
-}
-
-.ech-frame--center {
-  margin: 0 auto;
 }
 
 /* Stretch fill (ADR-0073): the height comes from the card boundary through the flex
