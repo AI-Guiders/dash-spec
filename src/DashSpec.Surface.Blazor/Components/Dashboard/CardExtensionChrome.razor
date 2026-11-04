@@ -2,8 +2,10 @@
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Composition.Plugins
 @using DashSpec.Surface.Blazor.Services.Localization
+@using DashSpec.Viz
 @inject DashSpecContributorRegistry Contributors
 @inject DashboardLocalizer Loc
+@inject ICardChromeControlsOverride ChromeControls
 
 @if (Blocks is { Count: > 0 })
 {
@@ -18,7 +20,18 @@
         {
             case CardChromeRenderKind.ViewSwitch:
                 var switchActionId = chrome.ActionId ?? string.Empty;
-                if (IsViewSwitchCombobox(block))
+                var stackViewSwitch = ChromeControls.ResolveViewSwitch();
+                if (stackViewSwitch is not null)
+                {
+                    // ADR-0112: the stack binds its own selector (RadzenDropDown); the
+                    // semantics — view ids, the active view, the action wiring — stay
+                    // surface-owned. Label rides the parameters as aria-label.
+                    <div class="card-view-switch card-view-switch-combobox" data-testid="views-@Card?.Id">
+                        <DynamicComponent Type="stackViewSwitch"
+                                          Parameters="@ViewSwitchParameters(block, switchActionId)" />
+                    </div>
+                }
+                else if (IsViewSwitchCombobox(block))
                 {
                     <label class="card-view-switch card-view-switch-combobox" data-testid="views-@Card?.Id">
                         <select class="card-view-select field-select"
@@ -53,17 +66,31 @@
                 }
                 break;
             case CardChromeRenderKind.Buttons:
+                var stackButton = ChromeControls.ResolveButton();
                 <div class="card-extension-chrome">
                     @foreach (var button in block.Nested)
                     {
                         var label = button.Properties.GetValueOrDefault("label") ?? button.Keyword;
                         var action = ResolveAction(button);
-                        <button type="button"
-                                class="secondary card-export-btn"
-                                disabled="@(string.IsNullOrWhiteSpace(action) || Card?.Loading == true)"
-                                @onclick="() => InvokeActionAsync(action)">
-                            @label
-                        </button>
+                        if (stackButton is not null)
+                        {
+                            <DynamicComponent Type="stackButton"
+                                              Parameters="@(new Dictionary<string, object?>
+                                              {
+                                                  ["Label"] = label,
+                                                  ["Disabled"] = string.IsNullOrWhiteSpace(action) || Card?.Loading == true,
+                                                  ["Clicked"] = EventCallback.Factory.Create(this, () => InvokeActionAsync(action)),
+                                              })" />
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="secondary card-export-btn"
+                                    disabled="@(string.IsNullOrWhiteSpace(action) || Card?.Loading == true)"
+                                    @onclick="() => InvokeActionAsync(action)">
+                                @label
+                            </button>
+                        }
                     }
                 </div>
                 break;
@@ -79,6 +106,22 @@
     [Parameter] public string? ActiveViewId { get; set; }
 
     [Parameter] public EventCallback<CardActionRequest> OnAction { get; set; }
+
+    /// <summary>ADR-0112 parameter surface for the stack-bound view switcher.</summary>
+    private Dictionary<string, object?> ViewSwitchParameters(ExtensionBlockNode block, string switchActionId) =>
+        new()
+        {
+            ["Views"] = block.Nested
+                .Select(view => new CardViewOption(
+                    view.Keyword,
+                    view.Properties.GetValueOrDefault("label") ?? view.Keyword))
+                .ToList(),
+            ["Active"] = ActiveViewId ?? string.Empty,
+            ["ActiveChanged"] = EventCallback.Factory.Create<string>(this,
+                id => SwitchViewAsync(id, switchActionId)),
+            ["Disabled"] = Card?.Loading == true,
+            ["AriaLabel"] = Loc.T("View"),
+        };
 
     private async Task SwitchViewAsync(string viewId, string actionId)
     {

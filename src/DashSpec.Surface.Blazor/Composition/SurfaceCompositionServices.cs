@@ -5,6 +5,7 @@ using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Viz;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DashSpec.Surface.Blazor.Composition;
 
@@ -46,6 +47,12 @@ public static class SurfaceCompositionServices
         {
             Register(filterPlugin);
         }
+
+        // The builtin chrome markup stands only when no stack bound its own controls —
+        // viz plugins configure before this point, so TryAdd (a plain AddSingleton
+        // would stomp the stack registration, DI last-wins).
+        services.TryAddSingleton<DashSpec.Viz.ICardChromeControlsOverride>(
+            new DashSpec.Viz.DefaultCardChromeControlsOverride());
     }
 
     public static void RegisterComponentRegistries(IServiceCollection services, DashSpecContributorRegistry registry)

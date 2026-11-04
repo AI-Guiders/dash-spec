@@ -65,6 +65,15 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
                 ? new StackFilterControlsOverride()
                 : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterSelectorOverride();
         });
+        // ADR-0112: the card chrome (view switcher, extension buttons) binds to native
+        // Radzen controls on this stack; other stacks keep the surface's native markup.
+        services.AddSingleton<DashSpec.Viz.ICardChromeControlsOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackCardChromeOverride()
+                : new DashSpec.Viz.DefaultCardChromeControlsOverride();
+        });
     }
 
     private sealed class RadzenVizBackend : IVizPlugin

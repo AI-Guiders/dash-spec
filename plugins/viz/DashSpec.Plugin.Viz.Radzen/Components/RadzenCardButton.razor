@@ -1,0 +1,21 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using Radzen.Blazor
+
+@* ADR-0112: the Radzen stack's card chrome button — RadzenButton, the theme paints
+   it. Surface: Label, Disabled, Clicked. *@
+
+<RadzenButton Text="@Label"
+              Click="@(() => Clicked.InvokeAsync())"
+              Disabled="@Disabled"
+              ButtonType="ButtonType.Button"
+              Size="ButtonSize.Small"
+              Variant="Variant.Text"
+              AriaLabel="@Label" />
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public EventCallback Clicked { get; set; }
+}
