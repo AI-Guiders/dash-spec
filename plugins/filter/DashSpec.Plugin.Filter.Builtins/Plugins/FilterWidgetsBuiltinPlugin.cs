@@ -15,6 +15,7 @@ public sealed class FilterWidgetsBuiltinPlugin : IDashSpecPlugin
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<Components.IFilterSelectorOverride>(new Components.DefaultFilterSelectorOverride());
     }
 
     public void RegisterContributors(IDashSpecContributorRegistry registry)
