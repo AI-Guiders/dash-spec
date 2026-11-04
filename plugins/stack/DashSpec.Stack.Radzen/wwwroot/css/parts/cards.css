@@ -306,6 +306,24 @@
   min-height: 2rem;
 }
 
+/* The stack-bound chrome button (RadzenButton carrying a plugin's svg glyph):
+   Radzen sizes its button-box by text content — an svg-only child collapses to
+   zero without an explicit icon size. */
+.card-chrome-btn .card-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+
+.card-chrome-btn.rz-button {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .card-icon-btn .card-icon {
   width: 1.1rem;
   height: 1.1rem;
