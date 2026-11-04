@@ -2,15 +2,40 @@
 @using Radzen.Blazor
 
 @* ADR-0112: the Radzen stack's card chrome button — RadzenButton, the theme paints
-   it. Surface: Label, Disabled, Clicked. *@
+   it. Surface: Label (aria/tooltip), Disabled, Clicked, optional Pressed (toggle
+   buttons, aria-pressed), optional Icon (a RenderFragment — the plugin owns its
+   glyph, the stack owns the button). *@
 
-<RadzenButton Text="@Label"
-              Click="@(() => Clicked.InvokeAsync())"
-              Disabled="@Disabled"
-              ButtonType="ButtonType.Button"
-              Size="ButtonSize.Small"
-              Variant="Variant.Text"
-              AriaLabel="@Label" />
+@{
+    var extra = Pressed is { } pressed
+        ? new Dictionary<string, object> { ["aria-pressed"] = pressed ? "true" : "false" }
+        : new Dictionary<string, object>();
+}
+
+@if (Icon is null)
+{
+    <RadzenButton @attributes="extra"
+                  Text="@Label"
+                  Click="@(() => Clicked.InvokeAsync())"
+                  Disabled="@Disabled"
+                  ButtonType="ButtonType.Button"
+                  Size="ButtonSize.Small"
+                  Variant="Variant.Text"
+                  AriaLabel="@Label" />
+}
+else
+{
+    <RadzenButton @attributes="extra"
+                  Click="@(() => Clicked.InvokeAsync())"
+                  Disabled="@Disabled"
+                  ButtonType="ButtonType.Button"
+                  Size="ButtonSize.Small"
+                  Variant="Variant.Text"
+                  Title="@Label"
+                  AriaLabel="@Label">
+      <ChildContent>@Icon</ChildContent>
+    </RadzenButton>
+}
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
@@ -18,4 +43,11 @@
     [Parameter] public bool Disabled { get; set; }
 
     [Parameter] public EventCallback Clicked { get; set; }
+
+    /// <summary>Toggle buttons (aria-pressed); null — a plain button.</summary>
+    [Parameter] public bool? Pressed { get; set; }
+
+    /// <summary>The plugin's own glyph (svg) — the role declares WHAT the button does,
+    /// the stack paints the button around it.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
 }

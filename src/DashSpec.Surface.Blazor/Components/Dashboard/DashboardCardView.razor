@@ -13,6 +13,7 @@
 @using Radzen
 @using Radzen.Blazor
 @inject DashboardLocalizer Loc
+@inject DashSpec.Viz.ICardChromeControlsOverride ChromeControls
 @implements IDisposable
 
 <RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
@@ -228,15 +229,38 @@
             }
             @if (showFullscreenToggle && CanFullscreen)
             {
-                <button type="button"
-                        class="secondary card-icon-btn card-fullscreen-btn"
-                        title="@Loc.T("Expand diagram")"
-                        disabled="@Card.Loading"
-                        aria-pressed="@_fullscreen"
-                        aria-label="@Loc.T("Expand diagram")"
-                        @onclick="ToggleFullscreen">
-                    <CardIcon Kind="CardIconKind.Expand" />
-                </button>
+                var stackFullscreen = ChromeControls.ResolveButton();
+                if (stackFullscreen is not null)
+                {
+                    @* ADR-0112: the stack paints the button; the role (expand) and the
+                       action stay surface-owned. *@
+                    <DynamicComponent Type="stackFullscreen"
+                                      Parameters="@(new Dictionary<string, object?>
+                                      {
+                                          ["Label"] = Loc.T("Expand diagram"),
+                                          ["Disabled"] = Card.Loading,
+                                          ["Pressed"] = _fullscreen,
+                                          ["Clicked"] = EventCallback.Factory.Create(this, ToggleFullscreen),
+                                          ["Icon"] = (RenderFragment)(builder =>
+                                          {
+                                              builder.OpenComponent<CardIcon>(0);
+                                              builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Expand);
+                                              builder.CloseComponent();
+                                          }),
+                                      })" />
+                }
+                else
+                {
+                    <button type="button"
+                            class="secondary card-icon-btn card-fullscreen-btn"
+                            title="@Loc.T("Expand diagram")"
+                            disabled="@Card.Loading"
+                            aria-pressed="@_fullscreen"
+                            aria-label="@Loc.T("Expand diagram")"
+                            @onclick="ToggleFullscreen">
+                        <CardIcon Kind="CardIconKind.Expand" />
+                    </button>
+                }
             }
             <CardExtensionChrome Blocks="Card.ExtensionBlocks"
                                    Card="Card"

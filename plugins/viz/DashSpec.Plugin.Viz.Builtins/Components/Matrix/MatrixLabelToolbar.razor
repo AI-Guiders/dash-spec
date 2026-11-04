@@ -5,48 +5,42 @@
 @implements IDisposable
 @inject ICardVizDisplayState VizDisplayState
 @inject IStringLocalizer<VizStrings> Loc
+@inject ICardChromeControlsOverride ChromeControls
 
 @if (Context.Card.MatrixPresentation is not null)
 {
+    var stackButton = ChromeControls.ResolveButton();
+
     <div class="card-matrix-glyph-group" role="group" aria-label="@Loc["Matrix display"]">
-        <button type="button"
-                class="@GlyphBtnClass(MatrixValueLabelsVisible)"
-                title="@ValueLabelsTitle"
-                aria-label="@ValueLabelsTitle"
-                aria-pressed="@(MatrixValueLabelsVisible ? "true" : "false")"
-                disabled="@Context.Card.Loading"
-                @onclick="ToggleMatrixValueLabelsAsync">
-            <MatrixGlyphIcon Glyph="D" Filled="@MatrixValueLabelsVisible" />
-        </button>
-        <button type="button"
-                class="@GlyphBtnClass(MatrixAxisLabelsXVisible)"
-                title="@AxisLabelsXTitle"
-                aria-label="@AxisLabelsXTitle"
-                aria-pressed="@(MatrixAxisLabelsXVisible ? "true" : "false")"
-                disabled="@Context.Card.Loading"
-                @onclick="ToggleMatrixAxisLabelsXAsync">
-            <MatrixGlyphIcon Glyph="X" Filled="@MatrixAxisLabelsXVisible" />
-        </button>
-        <button type="button"
-                class="@GlyphBtnClass(MatrixAxisLabelsYVisible)"
-                title="@AxisLabelsYTitle"
-                aria-label="@AxisLabelsYTitle"
-                aria-pressed="@(MatrixAxisLabelsYVisible ? "true" : "false")"
-                disabled="@Context.Card.Loading"
-                @onclick="ToggleMatrixAxisLabelsYAsync">
-            <MatrixGlyphIcon Glyph="Y" Filled="@MatrixAxisLabelsYVisible" />
-        </button>
+        @* Toggle roles (values / axis-x / axis-y / legend): the toolbar owns the
+           semantics — state, action wiring, glyph; the stack paints the button
+           (ADR-0112). Absent a stack binding — the native button. *@
+        <ChromeGlyphToggle StackButton="stackButton"
+                           Label="@ValueLabelsTitle"
+                           Pressed="@MatrixValueLabelsVisible"
+                           Disabled="@Context.Card.Loading"
+                           Glyph="D"
+                           OnClick="ToggleMatrixValueLabelsAsync" />
+        <ChromeGlyphToggle StackButton="stackButton"
+                           Label="@AxisLabelsXTitle"
+                           Pressed="@MatrixAxisLabelsXVisible"
+                           Disabled="@Context.Card.Loading"
+                           Glyph="X"
+                           OnClick="ToggleMatrixAxisLabelsXAsync" />
+        <ChromeGlyphToggle StackButton="stackButton"
+                           Label="@AxisLabelsYTitle"
+                           Pressed="@MatrixAxisLabelsYVisible"
+                           Disabled="@Context.Card.Loading"
+                           Glyph="Y"
+                           OnClick="ToggleMatrixAxisLabelsYAsync" />
         @if (MatrixSpec?.ShowsGradientLegend == true)
         {
-            <button type="button"
-                    class="@GlyphBtnClass(MatrixLegendVisible)"
-                    title="@LegendTitle"
-                    aria-label="@LegendTitle"
-                    aria-pressed="@(MatrixLegendVisible ? "true" : "false")"
-                    disabled="@Context.Card.Loading"
-                    @onclick="ToggleMatrixLegendAsync">
-                <MatrixGlyphIcon Glyph="L" Filled="@MatrixLegendVisible" />
-            </button>
+            <ChromeGlyphToggle StackButton="stackButton"
+                               Label="@LegendTitle"
+                               Pressed="@MatrixLegendVisible"
+                               Disabled="@Context.Card.Loading"
+                               Glyph="L"
+                               OnClick="ToggleMatrixLegendAsync" />
         }
     </div>
 }
