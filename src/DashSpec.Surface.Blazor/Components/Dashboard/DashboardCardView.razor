@@ -23,17 +23,41 @@
             <div class="card-head-title">
                 @if (CanFoldBody)
                 {
-                    <button type="button"
-                            class="secondary card-icon-btn card-fold-btn"
-                            title="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
-                            aria-expanded="@(!BodyFolded)"
-                            aria-label="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
-                            @onclick="ToggleBodyFoldAsync"
-                            @onclick:stopPropagation="true">
-                        <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                    </button>
+                    // ADR-0112: the fold chevron is a chrome role — the stack paints the
+                    // button, the surface owns the fold state and the glyph.
+                    var stackFold = ChromeControls.ResolveButton();
+                    var foldLabel = BodyFolded ? Loc.T("Expand") : Loc.T("Collapse");
+                    if (stackFold is not null)
+                    {
+                        <DynamicComponent Type="stackFold"
+                                          Parameters="@(new Dictionary<string, object?>
+                                          {
+                                              ["Label"] = foldLabel,
+                                              ["Disabled"] = false,
+                                              ["Clicked"] = EventCallback.Factory.Create(this, ToggleBodyFoldAsync),
+                                              ["Icon"] = (RenderFragment)(builder =>
+                                              {
+                                                  builder.OpenComponent<CardIcon>(0);
+                                                  builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.ChevronDown);
+                                                  builder.AddAttribute(2, nameof(CardIcon.Collapsed), BodyFolded);
+                                                  builder.CloseComponent();
+                                              }),
+                                          })" />
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="secondary card-icon-btn card-fold-btn"
+                                title="@foldLabel"
+                                aria-expanded="@(!BodyFolded)"
+                                aria-label="@foldLabel"
+                                @onclick="ToggleBodyFoldAsync"
+                                @onclick:stopPropagation="true">
+                            <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+                    }
                 }
                 @if (Card.ShowChromeTitle)
                 {

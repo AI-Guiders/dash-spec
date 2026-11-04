@@ -1,7 +1,7 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @* Card chrome icons — one component, currentColor theming (an <img> svg asset would
    lose stroke="currentColor" and freeze the icon to one color per theme). *@
-<svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<svg class="card-icon @(Collapsed ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     @switch (Kind)
     {
         case CardIconKind.Expand:
@@ -16,9 +16,16 @@
             <path d="M3 16h3a2 2 0 0 1 2 2v3" />
             <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
             break;
+        case CardIconKind.ChevronDown:
+            <polyline points="6 9 12 15 18 9" />
+            break;
     }
 </svg>
 
 @code {
     [Parameter, EditorRequired] public CardIconKind Kind { get; set; }
+
+    /// <summary>Fold-state rotation hook (the css turns the chevron when the card
+    /// body folds); false — no rotation for the other icons.</summary>
+    [Parameter] public bool Collapsed { get; set; }
 }
