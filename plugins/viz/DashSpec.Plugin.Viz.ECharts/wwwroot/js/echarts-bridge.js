@@ -32,7 +32,7 @@
   }
 
   window.dashspecECharts = {
-    render: function (host, optionJson, ctxJson, dotnet) {
+    render: function (hostArg, optionJson, ctxJson, dotnet) {
       const previous = charts.get(dotnet);
       if (previous) {
         previous.chart.dispose();
@@ -55,10 +55,29 @@
         });
       });
 
-      const chart = echarts.init(host, null, { renderer: 'canvas' });
+      // The host arrives as a DOM id string (the .NET side no longer ships the
+      // ElementReference: cached across renders it becomes the {__internalId}
+      // wrapper, and echarts cannot mount on it — the "getContext" class of deaths).
+      const host = typeof hostArg === 'string'
+        ? document.getElementById(hostArg)
+        : hostArg;
+      if (!host || typeof host.appendChild !== 'function') {
+        // The host div is not in the DOM (inactive view, detached card) — there is
+        // nothing to mount on; skipping is the correct outcome, a thrown error here
+        // kills the whole circuit.
+        return false;
+      }
+      host.innerHTML = '';
+      const container = document.createElement('div');
+      container.style.width = '100%';
+      container.style.height = '100%';
+      host.appendChild(container);
+
+      const chart = echarts.init(container, null, { renderer: 'canvas' });
       chart.setOption(option);
       wireClicks(chart, ctx, dotnet);
       charts.set(dotnet, { chart: chart, ctx: ctx, option: option, selected: null });
+      return true;
 
       // Fill the pane: compute the cell side from the actual body size — squares by
       // construction, dead space below disappears. The floor is the widest date label
@@ -89,6 +108,11 @@
         // body's own height, and reading it back would feed back into the snap.
         const availH = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
         frame.style.setProperty('--ech-cell', side + 'px');
+        // The bridge owns the host box: the component's inline size is a 28px-era
+        // snapshot — without this the canvas outgrew its container and sat shifted
+        // (the dead gap between the axis strip and the data).
+        host.style.width = ctx.cols * side + 'px';
+        host.style.height = ctx.rows * side + 'px';
         chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
         // Whole-row fold: never slice the last visible row at the scroll edge — a
         // half row there reads as the legend riding onto the matrix. Snap only when

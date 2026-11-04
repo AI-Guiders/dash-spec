@@ -89,7 +89,10 @@
             </div>
         </div>
         <div @ref="_body" class="ech-body">
-            <div @ref="_host" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
+            @* The bridge receives this div's ID, not the ElementReference: a cached
+               reference travels through JSInterop as the {__internalId} wrapper, and
+               echarts dies on it. The id is stable and resolvable from anywhere. *@
+            <div id="@HostDomId" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
         </div>
     }
 </div>
@@ -145,7 +148,11 @@
     /// <summary>The viz-state key (ADR-0062): the display toolbar's toggles land here.</summary>
     private string VizStateCardId => Context.ResolveVizStateCardId();
 
-    private ElementReference _host;
+    /// <summary>The bridge resolves this id with getElementById — an ElementReference
+    /// cached across renders travels through JSInterop as the {__internalId} wrapper,
+    /// which echarts cannot mount on (the "getContext is not a function" class).</summary>
+    private string HostDomId => $"ech-host-{Context.Card.Id}";
+
     private ElementReference _body;
     private ElementReference _xInner;
     private ElementReference _yInner;
@@ -230,6 +237,11 @@
 
     private bool HasChart => UnsupportedPlacement is null && !Empty;
 
+    /// <summary>The heatmap branch is the card's ACTIVE view — its host div is in the
+    /// DOM. Other views (line, table) render their own viz; mounting echarts then
+    /// would target a nonexistent host (the "host not found" class).</summary>
+    private bool HasChartMarkup => HasChart && AlignmentError is null;
+
     /// <summary>Gradient legend (canvas parity): visible when the spec declares
     /// min/max labels and the viewer has not toggled it off (ADR-0062 session state).</summary>
     private bool ShowLegend =>
@@ -287,8 +299,10 @@
     /// option-rebuild key is evaluated on every render, here.</summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Empty)
+        if (Empty || !HasChartMarkup)
         {
+            // HasChartMarkup false = this card's current view is not the heatmap —
+            // the host div is not in the DOM and there is nothing to mount on.
             return;
         }
 
@@ -318,7 +332,7 @@
 
         await JS.InvokeVoidAsync(
             "dashspecECharts.render",
-            _host,
+            HostDomId,
             JsonSerializer.Serialize(option, jsonOptions),
             JsonSerializer.Serialize(ctx, jsonOptions),
             _self);

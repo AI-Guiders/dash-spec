@@ -129,10 +129,16 @@
   min-height: var(--ech-cell, 28px);
 }
 
-/* A matrix narrower than the pane centers; a wider one scrolls (margin auto keeps
-   the left edge reachable, unlike flex centering). */
+/* Left-pinned: margin auto here sized the host off the canvas's INITIAL width
+   (the 28px-era value) and never re-resolved after the bridge resized it — the
+   canvas sat shifted one cell right of its labels. Centering is the spec's
+   align = center (ech-frame--center), never an auto margin. */
 .ech-host {
   display: block;
+  margin: 0;
+}
+
+.ech-frame--center .ech-host {
   margin: 0 auto;
 }
 
