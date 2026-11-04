@@ -68,12 +68,12 @@
       const body = host.parentElement;
       const xStrip = frame.querySelector('.ech-x-strip');
       const fit = function () {
-        // The cell side fills the pane with squares: width/columns vs height/rows,
-        // whichever is smaller — the chart occupies its slot instead of huddling in
-        // a corner. Floor: the widest x-label plus breathing room. Measure the TEXT
-        // (Range), never the box: the label box stretches to the cell, so
-        // scrollWidth fed the previous side back in — the cell ratcheted wider on
-        // every fit (the 544px runaway).
+        // The agreed contract: the TOP strip defines the square's side — the widest
+        // x-label plus breathing room. No fill clamp: the pane scrolls right, and
+        // clamping to a shrunken fill re-merged the date labels ("06.1007.10").
+        // Measure the TEXT (Range), never the box: the label box stretches to the
+        // cell, so scrollWidth feeds the previous side back in — the cell ratchets
+        // wider on every fit (the 544px runaway).
         let labelWidth = 32;
         frame.querySelectorAll('.ech-x-label').forEach(function (l) {
           if (l.textContent.trim()) {
@@ -83,34 +83,11 @@
             labelWidth = Math.max(labelWidth, textW + 12);
           }
         });
+        const side = labelWidth;
         // The pane's available height comes from the frame (its max-height cap or the
         // fill slot) — read it there, not from the body: the snap below sets the
         // body's own height, and reading it back would feed back into the snap.
         const availH = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
-        // Width fills the SLOT, not the body: the frame is fit-content, so the body's
-        // own width follows the content — measuring it keeps the chart small forever.
-        const slot = frame.parentElement;
-        const availW = (slot?.clientWidth ?? body.clientWidth) - (frame.querySelector('.ech-y-strip')?.offsetWidth ?? 0);
-        // Clamp: dense data fills the slot; sparse data caps at CAP — squares beyond
-        // it turn into monsters on a 1-row matrix. The chart anchors left-top; the
-        // empty remainder is the card's own surface (rows just disappear when the
-        // operator deselects products — nothing recenters).
-        const CAP = 96;
-        const fill = Math.floor(Math.min(availW / ctx.cols, availH / ctx.rows));
-        const side = Math.max(labelWidth, Math.min(CAP, fill));
-        // Horizontal fold: the body pane snaps to whole columns — scrolling never
-        // slices a square at the clip edge (the vertical whole-row fold's twin).
-        const contentW = ctx.cols * side;
-        if (contentW > availW) {
-          const snappedW = Math.floor(availW / side) * side;
-          if (body.__dashspecSnapW !== snappedW) {
-            body.__dashspecSnapW = snappedW;
-            body.style.width = snappedW + 'px';
-          }
-        } else if (body.style.width !== '') {
-          body.__dashspecSnapW = null;
-          body.style.width = '';
-        }
         frame.style.setProperty('--ech-cell', side + 'px');
         chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
         // Whole-row fold: never slice the last visible row at the scroll edge — a
@@ -135,10 +112,6 @@
       }
       frame.__dashspecFitObserver = new ResizeObserver(fit);
       frame.__dashspecFitObserver.observe(body);
-      if (slot) {
-        frame.__dashspecSlotObserver = new ResizeObserver(fit);
-        frame.__dashspecSlotObserver.observe(slot);
-      }
     },
 
     // Frozen panes: the body pane is the only scroller; the fixed axis strips mirror
@@ -202,15 +175,6 @@
         return;
       }
       entry.chart.dispose();
-      const frame = document.querySelector('.ech-frame');
-      if (frame?.__dashspecFitObserver) {
-        frame.__dashspecFitObserver.disconnect();
-        frame.__dashspecFitObserver = null;
-      }
-      if (frame?.__dashspecSlotObserver) {
-        frame.__dashspecSlotObserver.disconnect();
-        frame.__dashspecSlotObserver = null;
-      }
       charts.delete(dotnet);
     },
   };

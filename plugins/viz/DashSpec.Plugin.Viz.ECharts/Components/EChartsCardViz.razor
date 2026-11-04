@@ -24,6 +24,10 @@
     {
         <p class="ech-empty">@message</p>
     }
+    else if (AlignmentError is { } alignMessage)
+    {
+        <p class="ech-empty">@alignMessage</p>
+    }
     else if (Empty)
     {
         @* ADR-0106 when-table: the author's wording for an empty result. *@
@@ -191,9 +195,18 @@
     /// the bridge computes the cell side from the actual pane size.</summary>
     private bool IsFill => Presentation is { StretchMode: VizStretchMode.Fill };
 
-    /// <summary><c>align = left|center</c>. Unspecified (null) is the stack's own natural
-    /// layout — left-pinned, canvas parity — a renderer decision (ADR-0112 expression),
-    /// not a language default; explicit values come from the spec presentation presets.</summary>
+    /// <summary><c>align = left|center</c>. The author declares the alignment — there is
+    /// no host-side default: an absent or unknown value is a loud authoring error
+    /// (the same contract as KnownWidgetRoles), the card says so instead of guessing.</summary>
+    private string? AlignmentError => Presentation?.Align?.Trim().ToLowerInvariant() switch
+    {
+        "left" or "center" => null,
+        null or "" =>
+            "align is not declared — the renderer does not guess. Set align = left|center in the presentation.",
+        var other =>
+            $"align = '{other}' is not a renderer word — use align = left|center.",
+    };
+
     private bool IsCenterAligned => Presentation is { Align: "center" };
 
     /// <summary>The frozen-pane frame speaks top/left; bottom/right are not silently
