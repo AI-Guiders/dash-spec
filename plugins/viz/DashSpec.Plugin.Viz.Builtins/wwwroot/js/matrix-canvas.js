@@ -110,14 +110,17 @@ window.dashSpecMatrix = {
       naturalW > gridW ||
       naturalH > gridH
     ) {
-      return { cellW: preferredCellW, cellH: preferredCellH };
+      // Same square rule on the early-exit path: the preferred cell is ONE side.
+      return { cellW: preferredCellW, cellH: preferredCellW };
     }
 
     let cellW = Math.floor((gridW - gap * (xCount + 1)) / Math.max(1, xCount));
-    cellW = Math.min(52, Math.max(preferredCellW, cellW));
     let cellH = Math.floor((gridH - gap * (yCount + 1)) / Math.max(1, yCount));
-    cellH = Math.min(48, Math.max(preferredCellH, cellH));
-    return { cellW, cellH };
+    // The square is the form: the LIMITING dimension rules both sides — a heatmap
+    // cell is never a rectangle (independent width/height fits turned the sparse
+    // activity matrix into tall rectangles while the peak matrix stayed square).
+    const side = Math.max(preferredCellW, Math.min(Math.min(cellW, cellH), 52));
+    return { cellW: side, cellH: side };
   },
 
   render(canvas, payload) {
