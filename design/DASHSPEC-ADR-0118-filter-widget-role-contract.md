@@ -3,7 +3,7 @@ type: ADR
 id: DASHSPEC-ADR-0118
 title: "Контракт ролей фильтров — skin уходит стеку, реализации становятся замещаемыми"
 status: "Accepted"
-implementation: "done"
+implementation: "partial"
 date: 2026-11-03
 tags: [dashspec, adr, filters, render-stack, adr-0112]
 language: ru

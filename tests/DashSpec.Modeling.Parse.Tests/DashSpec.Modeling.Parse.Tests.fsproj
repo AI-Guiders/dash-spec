@@ -35,7 +35,6 @@
     <Compile Include="CommentTriviaTests.fs" />
     <Compile Include="ModuleHeaderParserTests.fs" />
     <Compile Include="ModelBehaviorTests.fs" />
-    <Compile Include="SelectorDensityParseTests.fs" />
     
   </ItemGroup>
   <ItemGroup>

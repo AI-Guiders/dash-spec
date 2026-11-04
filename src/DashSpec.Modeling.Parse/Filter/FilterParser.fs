@@ -11,15 +11,6 @@ open DashSpec.Modeling.Parse.Lexing
 /// Filter declaration grammar (ADR-0010 legacy kind-first; ADR-0037 structured id-first bind/show).
 module FilterParser =
 
-    /// ADR-0118: widget role words registered by plugins (kernel feeds this from the
-    /// widget registry when mapping parse options). Empty = legacy per-kind word
-    /// lists validate; non-empty = words must be registered (loud, with the list).
-    let mutable knownWidgetRoles: IReadOnlySet<string> =
-        HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<string>
-
-    let configureKnownWidgetRoles (roles: IReadOnlySet<string>) =
-        knownWidgetRoles <- roles
-
     let private defaultsHint (filterName: string) =
         $"defaults block: filter.{filterName}.<property> = … (e.g. range, scale, limit)"
 
@@ -147,11 +138,6 @@ module FilterParser =
             match widget with
             | Some w when w.Equals("day", StringComparison.OrdinalIgnoreCase) ->
                 DateDefaultRange.validateSingleDayDefault expr
-            | Some w when
-                knownWidgetRoles.Count > 0 && not (knownWidgetRoles.Contains w)
-                ->
-                let registered = String.Join(", ", knownWidgetRoles)
-                raise (DashSpecParseException($"Date filter '{name}' widget must be one of the registered roles ({registered}), got '{w}' (ADR-0118)."))
             | Some w when not (w.Equals("range", StringComparison.OrdinalIgnoreCase)) ->
                 raise (DashSpecParseException($"Date filter '{name}' widget must be 'day' or 'range', got '{w}'."))
             | _ -> ()
@@ -162,13 +148,7 @@ module FilterParser =
         | FilterKind.Field ->
             match widget with
             | Some w when
-                knownWidgetRoles.Count > 0 && not (knownWidgetRoles.Contains w)
-                ->
-                let registered = String.Join(", ", knownWidgetRoles)
-                raise (DashSpecParseException($"Field filter '{name}' widget must be one of the registered roles ({registered}), got '{w}' (ADR-0118)."))
-            | Some w when
-                knownWidgetRoles.Count = 0
-                && not (w.Equals("combobox", StringComparison.OrdinalIgnoreCase))
+                not (w.Equals("combobox", StringComparison.OrdinalIgnoreCase))
                 && not (w.Equals("chips", StringComparison.OrdinalIgnoreCase))
                 && not (w.Equals("select", StringComparison.OrdinalIgnoreCase))
                 ->

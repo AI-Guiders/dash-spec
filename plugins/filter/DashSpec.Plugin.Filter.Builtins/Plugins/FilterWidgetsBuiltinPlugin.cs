@@ -15,10 +15,6 @@ public sealed class FilterWidgetsBuiltinPlugin : IDashSpecPlugin
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
-        // ADR-0118: stack-registered overrides (IFilterDateInputOverride) replace this
-        // default when the stack ships its own date controls (last registration wins).
-        services.AddSingleton<Components.IFilterDateInputOverride>(
-            new Components.DefaultFilterDateInputOverride());
     }
 
     public void RegisterContributors(IDashSpecContributorRegistry registry)

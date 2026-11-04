@@ -34,9 +34,6 @@ type DashSpecParseOptions =
       PhraseTemplates: IReadOnlyList<PhraseTemplateDescriptor>
       KnownActionHandlers: IReadOnlySet<string>
       KnownInteractionHandlers: IReadOnlySet<string>
-      /// Filter widget role words (ADR-0118: combobox/select/chips for values, day/range
-      /// for dates, top for numbers). Empty set skips word validation (dev/test convenience).
-      KnownWidgetRoles: IReadOnlySet<string>
       /// Click sources declared by viz plugins (ADR-0107: matrix renders `cell`, `category item`).
       /// Empty set skips source validation (dev/test convenience, same rule as action handlers).
       KnownClickSources: IReadOnlySet<string> }
@@ -50,5 +47,4 @@ module DashSpecParseOptions =
           PhraseTemplates = Array.empty
           KnownActionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
           KnownInteractionHandlers = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
-          KnownWidgetRoles = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_>
           KnownClickSources = HashSet<string>(StringComparer.OrdinalIgnoreCase) :> IReadOnlySet<_> }

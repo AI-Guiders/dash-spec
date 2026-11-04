@@ -27,7 +27,6 @@ public static class DashSpecCompilerServicesHost
         PhraseTemplates = DashSpecParseOptions.Editor.PhraseTemplates,
         KnownActionHandlers = DashSpecParseOptions.Editor.KnownActionHandlers,
         KnownInteractionHandlers = DashSpecParseOptions.Editor.KnownInteractionHandlers,
-        KnownWidgetRoles = DashSpecParseOptions.Editor.KnownWidgetRoles,
         KnownClickSources = DashSpecParseOptions.Editor.KnownClickSources,
     };
 

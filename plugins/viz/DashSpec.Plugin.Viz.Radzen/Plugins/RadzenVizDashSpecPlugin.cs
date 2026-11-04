@@ -46,6 +46,7 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
         services.AddRadzenComponents();
         // Russian chrome for Radzen's built-in strings (ADR-0115 §3): no ru satellites upstream.
         services.AddSingleton<ILocalizer, RadzenRuLocalizer>();
+<<<<<<< HEAD
         // ADR-0118: the stack binds the selector and selector/dates roles to its own
         // controls (RadzenDropDown / RadzenDatePicker / RadzenDateRangePicker) — but ONLY
         // when this stack is the active one. The factory resolves lazily: on other stacks
@@ -65,6 +66,8 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
                 ? new StackFilterControlsOverride()
                 : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterSelectorOverride();
         });
+=======
+>>>>>>> parent of dbd15883 (feat(filters): ADR-0118 full rollout on the branch - date controls bind to the stack)
     }
 
     private sealed class RadzenVizBackend : IVizPlugin
