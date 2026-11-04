@@ -122,8 +122,11 @@
 
 .ech-body {
   overflow: auto;
-  min-width: 0;
-  min-height: 0;
+  /* Always at least one square visible (operator rule): removing rows/columns must
+     not collapse the pane below a single cell — the matrix stays readable while it
+     grows back. */
+  min-width: var(--ech-cell, 28px);
+  min-height: var(--ech-cell, 28px);
 }
 
 /* A matrix narrower than the pane centers; a wider one scrolls (margin auto keeps
