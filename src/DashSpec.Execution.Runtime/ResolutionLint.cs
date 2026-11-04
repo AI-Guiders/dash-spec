@@ -28,6 +28,7 @@ public static class ResolutionLint
         "flow.unfiltered",            // DS0580
         "diagram.column_not_in_type", // DS0581
         "bundle.renderer_missing",    // DS0582 (VizPluginRegistry fallback announcements)
+        "filter.grain_default_missing", // DS0583 (grain_filter target declares no default)
     ];
 
     private static string CodeFor(string slot)
@@ -67,7 +68,42 @@ public static class ResolutionLint
         findings.AddRange(AnalyzeFilterUsage(document));
         findings.AddRange(AnalyzeFlowFilterUsage(document));
         findings.AddRange(AnalyzeColumnTypeCoverage(document));
+        findings.AddRange(AnalyzeGrainDefaultResolution(document));
         return findings;
+    }
+
+    /// <summary>
+    /// DS0583: a date filter binds <c>grain_filter</c> to a field filter that declares
+    /// no default (nothing in the defaults block). The grain is then unresolved at
+    /// runtime and the date input silently degrades — the spec must state the grain
+    /// (ADR-0011: <c>filter field … default day</c>; defaults: <c>filter.X.scale = …</c>).
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeGrainDefaultResolution(
+        DashboardDocument document)
+    {
+        var filterIndex = document.Filters
+            .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var filter in document.Filters)
+        {
+            var grainFilterName = filter.GrainFilterName?.Value;
+            if (string.IsNullOrWhiteSpace(grainFilterName) ||
+                !filterIndex.TryGetValue(grainFilterName, out var grainFilter) ||
+                HasText(grainFilter.DefaultExpression?.Value))
+            {
+                continue;
+            }
+
+            yield return Finding(
+                "filter.grain_default_missing",
+                null,
+                $"filter.{grainFilterName}",
+                $"filter.{filter.Name}.grain_filter",
+                $"date filter '{filter.Name}' binds grain_filter '{grainFilterName}' but " +
+                $"'{grainFilterName}' declares no default — the grain is unresolved. " +
+                $"Declare it in the spec: defaults block 'filter.{grainFilterName}.scale = day|month|year'.");
+        }
     }
 
     /// <summary>

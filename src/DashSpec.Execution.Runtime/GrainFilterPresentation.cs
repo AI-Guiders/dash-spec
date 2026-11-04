@@ -35,7 +35,9 @@ public static class GrainFilterPresentation
             return grainFilter.DefaultExpression?.Value;
         }
 
-        return "day";
+        // No hidden fallback: the grain default is the spec's business (DS0583 warns
+        // when it is missing). Null means unresolved — callers degrade explicitly.
+        return null;
     }
 
     public static string DisplayLabel(
