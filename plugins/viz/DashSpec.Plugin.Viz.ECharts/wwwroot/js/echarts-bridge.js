@@ -136,6 +136,45 @@
         strip.__dashspecPaneWheel = forward;
         strip.addEventListener('wheel', forward, { passive: false });
       });
+
+      // Whole-row fold, restored carefully: the body pane shows only whole matrix rows.
+      // A fractional pane height (499px = 17 rows + 23px) slices the edge row in half —
+      // and since the legend sits right below the frame, the sliced row reads as "the
+      // legend covers the row". The size is measured from the FRAME, never from the
+      // body itself: height set on the body cannot feed back into the measurement
+      // (the old label-width fit died of exactly that ratchet). The ±1px guard keeps
+      // the ResizeObserver at a fixed point.
+      const foldRows = function () {
+        const frame = body.closest('.ech-frame');
+        if (!frame) {
+          return;
+        }
+        const side = parseFloat(getComputedStyle(frame).getPropertyValue('--ech-cell')) || 28;
+        // rows are derived from the y-strip content height — bindPanes has no ctx.
+        const rows = Math.round(yInner.getBoundingClientRect().height / side);
+        const xStrip = frame.querySelector('.ech-x-strip');
+        const avail = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
+        if (avail <= 0 || rows * side <= avail) {
+          // Short matrix: the natural height shows whole rows already.
+          if (body.__dashspecFoldH) {
+            body.__dashspecFoldH = null;
+            body.style.height = '';
+          }
+          return;
+        }
+        const snapped = Math.floor(avail / side) * side;
+        if (Math.abs(body.offsetHeight - snapped) <= 1) {
+          return;
+        }
+        body.__dashspecFoldH = snapped;
+        body.style.height = snapped + 'px';
+      };
+      foldRows();
+      if (frame.__dashspecFoldObserver) {
+        frame.__dashspecFoldObserver.disconnect();
+      }
+      frame.__dashspecFoldObserver = new ResizeObserver(foldRows);
+      frame.__dashspecFoldObserver.observe(frame);
     },
 
     // Viewer selection (ADR-0116) lives server-side now: the selected cell is baked
