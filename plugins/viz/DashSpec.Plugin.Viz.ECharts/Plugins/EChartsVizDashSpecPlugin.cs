@@ -25,7 +25,7 @@ public sealed class EChartsVizDashSpecPlugin : VizDashSpecPluginBase
 
     protected override string RendererDisplayName => "ECharts";
 
-    protected override Type CardVizComponentType => typeof(EChartsCardViz);
+    protected override Type CardVizComponentType => typeof(MatrixEChartsCardViz);
 
     /// <summary>The matrix display toolbar (D/X/Y label glyphs) — the same family-semantics
     /// widget the builtin and Radzen stacks use; stack-agnostic by design.</summary>
