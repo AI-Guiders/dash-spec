@@ -2,6 +2,12 @@
 // instance. The .NET side owns the option; this file owns the chart lifecycle, the
 // tooltip formatter (payload tooltips), the value-label formatter and the click→indices
 // mapping (ADR-0107). Keyed by the DotNetObjectReference identity — one chart per ref.
+//
+// Geometry contract: the component ships the host box as an inline snapshot (cells at
+// --ech-cell, cols/rows × side); the bridge mounts into it and never re-fits. The old
+// label-width fit was cut deliberately (runaway ratchet 544px, merged date labels,
+// canvas-container gap) — do not restore it; a new fill-mode fit, if ever designed,
+// starts from the pane size, never from the label box.
 (function () {
   'use strict';
 
@@ -78,64 +84,6 @@
       wireClicks(chart, ctx, dotnet);
       charts.set(dotnet, { chart: chart, ctx: ctx, option: option, selected: null });
       return true;
-
-      // Fill the pane: compute the cell side from the actual body size — squares by
-      // construction, dead space below disappears. The floor is the widest date label
-      // (the label defines its column; 30px label — 30px cell), the fill is capped at
-      // 64px. Re-fit on pane resize.
-      const frame = host.closest('.ech-frame');
-      const body = host.parentElement;
-      const xStrip = frame.querySelector('.ech-x-strip');
-      const fit = function () {
-        // The agreed contract: the TOP strip defines the square's side — the widest
-        // x-label plus breathing room. No fill clamp: the pane scrolls right, and
-        // clamping to a shrunken fill re-merged the date labels ("06.1007.10").
-        // Measure the TEXT (Range), never the box: the label box stretches to the
-        // cell, so scrollWidth feeds the previous side back in — the cell ratchets
-        // wider on every fit (the 544px runaway).
-        let labelWidth = 32;
-        frame.querySelectorAll('.ech-x-label').forEach(function (l) {
-          if (l.textContent.trim()) {
-            const range = document.createRange();
-            range.selectNodeContents(l);
-            const textW = Math.ceil(range.getBoundingClientRect().width);
-            labelWidth = Math.max(labelWidth, textW + 12);
-          }
-        });
-        const side = labelWidth;
-        // The pane's available height comes from the frame (its max-height cap or the
-        // fill slot) — read it there, not from the body: the snap below sets the
-        // body's own height, and reading it back would feed back into the snap.
-        const availH = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
-        frame.style.setProperty('--ech-cell', side + 'px');
-        // The bridge owns the host box: the component's inline size is a 28px-era
-        // snapshot — without this the canvas outgrew its container and sat shifted
-        // (the dead gap between the axis strip and the data).
-        host.style.width = ctx.cols * side + 'px';
-        host.style.height = ctx.rows * side + 'px';
-        chart.resize({ width: ctx.cols * side, height: ctx.rows * side });
-        // Whole-row fold: never slice the last visible row at the scroll edge — a
-        // half row there reads as the legend riding onto the matrix. Snap only when
-        // the content actually overflows; a short matrix keeps its natural height
-        // (snapping it would spiral the frame's content height down).
-        const contentH = ctx.rows * side;
-        if (contentH > availH) {
-          const snapped = Math.floor(availH / side) * side;
-          if (body.__dashspecSnapH !== snapped) {
-            body.__dashspecSnapH = snapped;
-            body.style.height = snapped + 'px';
-          }
-        } else if (body.style.height !== '') {
-          body.__dashspecSnapH = null;
-          body.style.height = '';
-        }
-      };
-      fit();
-      if (frame.__dashspecFitObserver) {
-        frame.__dashspecFitObserver.disconnect();
-      }
-      frame.__dashspecFitObserver = new ResizeObserver(fit);
-      frame.__dashspecFitObserver.observe(body);
     },
 
     // Frozen panes: the body pane is the only scroller; the fixed axis strips mirror
