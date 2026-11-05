@@ -32,8 +32,11 @@ else
     {
         <div class="card-slot-title">@Slot.SlotTitle</div>
     }
-    <div data-testid="viz-@(Slot is null ? Card.Id : $"{Card.Id}:{Slot.SlotRef}")">
-    <DynamicComponent Type="_componentType" Parameters="_parameters" />
+    @* The testid is a stable DOM handle for automation, not a layout box: display:contents
+       keeps the flex chain intact (stack → viz root) — a plain block wrapper here grew to
+       the frame's content height and punched through the card (724px vs 560px slot). *@
+    <div data-testid="viz-@(Slot is null ? Card.Id : $"{Card.Id}:{Slot.SlotRef}")" style="display:contents">
+        <DynamicComponent Type="_componentType" Parameters="_parameters" />
     </div>
 }
 

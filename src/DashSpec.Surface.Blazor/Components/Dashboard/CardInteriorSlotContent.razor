@@ -46,12 +46,16 @@ else if (Owner is not null)
                 // the component receives it; otherwise the card's own chart is the payload.
                 @if (HasSlotPayload)
                 {
-                    <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                    <div data-testid="viz-@(Owner.Card.Id):@(Slot.Node.Id)" style="display:contents">
+                        <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                    </div>
                 }
                 else
                 {
                     <div class="card-viz-stack">
-                        <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                        <div data-testid="viz-@(Owner.Card.Id):@(Slot.Node.Id)" style="display:contents">
+                            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
+                        </div>
                         @Owner.RenderSelectionDetail()
                     </div>
                 }
