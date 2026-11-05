@@ -31,7 +31,7 @@ else
          style="@HostStyle"
          data-stretch="@StretchWire"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
-        <div class="matrix-canvas-scroll">
+        <div class="matrix-canvas-scroll" data-testid="@ScrollTestId">
             <div class="matrix-canvas-layout">
                 <div class="matrix-canvas-corner">
                     @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
@@ -99,6 +99,10 @@ else
     [Parameter, EditorRequired] public string CanvasId { get; set; } = string.Empty;
 
     [Parameter] public int HeightPx { get; set; } = 320;
+
+    /// <summary>Automation handle for the scroll pane — the ONE scroller of this viz.
+    /// Null keeps it anonymous (the role caller owns the name).</summary>
+    [Parameter] public string? ScrollTestId { get; set; }
 
     /// <summary>stretch_mode = fill: the matrix takes the slot height (WPF Stretch vocabulary).</summary>
     [Parameter] public VizStretchMode StretchMode { get; set; } = VizStretchMode.None;

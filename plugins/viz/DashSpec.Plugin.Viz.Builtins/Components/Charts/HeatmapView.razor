@@ -25,7 +25,7 @@ else
 {
     <div class="heatmap-wrap @WrapCssClass"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
-        <div class="heatmap-scroll" style="@ScrollStyle">
+        <div class="heatmap-scroll" style="@ScrollStyle" data-testid="@ScrollTestId">
         <div class="heatmap-grid" style="@GridStyle()">
             <div class="heatmap-corner" style="grid-row:1;grid-column:1">
                 @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(YAxisLabel))
@@ -131,6 +131,10 @@ else
 
     [Parameter]
     public int HeightPx { get; set; } = 320;
+
+    /// <summary>Automation handle for the scroll pane — the ONE scroller of this viz.</summary>
+    [Parameter]
+    public string? ScrollTestId { get; set; }
 
     /// <summary>stretch_mode = fill: the heatmap takes the slot height (WPF Stretch vocabulary).</summary>
     [Parameter]

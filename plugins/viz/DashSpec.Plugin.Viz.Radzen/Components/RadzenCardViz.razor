@@ -52,7 +52,7 @@ else if (IsEmptyForFamily)
 }
 else if (IsChartFamily)
 {
-    <div class="rviz-chart-wrap rviz-chart-wrap--fixed" style="@ChartWrapStyle">
+    <div class="rviz-chart-wrap rviz-chart-wrap--fixed" style="@ChartWrapStyle" data-testid="scroll-viz-@Context.EffectiveCard.Id">
         @* The legend is a pie's only label surface (Radzen lists category labels for a pie
            series there — chartjs parity: slices are named in the legend, never on the chart).
            Categorical charts show it for real multi-series splits only — a single-series
@@ -151,7 +151,7 @@ else if (IsChartFamily)
 else
 {
     <div class="rviz-chart-wrap @((NeedsFixedHeight && !MatrixFill) ? "rviz-chart-wrap--fixed" : null) @(MatrixFill ? "rviz-chart-wrap--fill" : null)"
-         style="@MatrixWrapStyle">
+         style="@MatrixWrapStyle" data-testid="scroll-viz-@Context.EffectiveCard.Id">
         @switch (DiagramKind)
         {
             @* Kind heatmap no longer routes here: the stack delegates it to the ECharts

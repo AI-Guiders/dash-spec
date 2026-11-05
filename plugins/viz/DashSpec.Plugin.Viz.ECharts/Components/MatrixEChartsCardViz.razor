@@ -88,10 +88,12 @@
                 }
             </div>
         </div>
-        <div @ref="_body" class="ech-body">
+        <div @ref="_body" class="ech-body" data-testid="scroll-viz-@Context.Card.Id">
             @* The bridge receives this div's ID, not the ElementReference: a cached
                reference travels through JSInterop as the {__internalId} wrapper, and
-               echarts dies on it. The id is stable and resolvable from anywhere. *@
+               echarts dies on it. The id is stable and resolvable from anywhere. The
+               testid is the scroll handle: this pane is the ONLY scroller, the axis
+               strips follow it. *@
             <div id="@HostDomId" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
         </div>
     }
