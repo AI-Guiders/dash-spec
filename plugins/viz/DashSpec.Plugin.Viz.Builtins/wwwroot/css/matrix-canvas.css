@@ -272,13 +272,16 @@
 
 .card-matrix-glyph-char.is-off {
   color: transparent;
-  -webkit-text-stroke: 1.85px rgba(248, 250, 252, 0.92);
+  -webkit-text-stroke: 1.85px color-mix(in srgb, currentColor 88%, transparent);
   paint-order: stroke fill;
 }
 
 .card-matrix-glyph-char.is-on {
-  color: #fff;
-  -webkit-text-stroke: 1.85px #fff;
+  /* currentColor, not hardcoded ink: the glyph rides the themed toolbar button —
+     dark themes paint it light, light themes dark. Hardcoded #fff vanished on
+     every light surface. */
+  color: currentColor;
+  -webkit-text-stroke: 1.85px currentColor;
   paint-order: stroke fill;
 }
 
