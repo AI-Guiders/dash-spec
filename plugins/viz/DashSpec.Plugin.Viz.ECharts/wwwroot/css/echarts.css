@@ -20,7 +20,9 @@
 }
 
 /* Stretch fill (ADR-0073): the height comes from the card boundary through the flex
-   chain — the frame and its slot wrapper grow into the card, visible_rows steps aside. */
+   chain — the frame lands in the flex stack through a display:contents testid handle,
+   so flex:1 + min-height:0 bound it to the slot; the legend below keeps its natural
+   height. visible_rows steps aside. */
 .ech-frame--fill {
   flex: 1 1 auto;
   min-height: 0;
