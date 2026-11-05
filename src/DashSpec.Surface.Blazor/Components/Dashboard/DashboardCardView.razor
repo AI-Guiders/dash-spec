@@ -316,8 +316,49 @@
                     </PlacementSlot>
                 }
             </CardInteriorGrid>
+            @if (CardLegendVisible)
+            {
+                @* The card's own legend slot (ADR-0073 chrome): the diagram pane never
+                   shares space with the legend — the legend lives below the interior,
+                   at the card level, and keeps that place whether the matrix scrolls,
+                   folds or fills. *@
+                <div class="card-legend-slot" data-testid="legend-@Card.Id"
+                     data-color-scale="@HeatmapColorScale.Normalize(Card.MatrixPresentation?.ColorScale)">
+                    @if (!string.IsNullOrWhiteSpace(CardLegendMinText))
+                    {
+                        <span><RichTextView Text="@CardLegendMinText" /></span>
+                    }
+                    <span class="card-legend-bar" aria-hidden="true"></span>
+                    @if (!string.IsNullOrWhiteSpace(CardLegendMaxText))
+                    {
+                        <span><RichTextView Text="@CardLegendMaxText" /></span>
+                    }
+                </div>
+            }
         </CascadingValue>
     };
+
+    /// <summary>The card's own legend slot: visible when the matrix declares a
+    /// gradient legend and the viewer has not toggled it off (ADR-0062 state).
+    /// Lives at the card level — the viz component no longer owns legend space.</summary>
+    private MatrixPresentation? LegendPresentation =>
+        Card.Matrix is not null ? Card.MatrixPresentation : null;
+
+    private bool CardLegendVisible =>
+        LegendPresentation is not null &&
+        VizLabelDisplayResolver.EffectiveLegendVisible(
+            LegendPresentation.ShowsGradientLegend,
+            VizDisplayState.GetLegendOverride(Card.Id));
+
+    private string? CardLegendMinText =>
+        LegendPresentation is not null
+            ? LegendPresentation.FormatLegendMin(Card.Matrix!.Min, Card.Matrix!.Max)
+            : null;
+
+    private string? CardLegendMaxText =>
+        LegendPresentation is not null
+            ? LegendPresentation.FormatLegendMax(Card.Matrix!.Min, Card.Matrix!.Max)
+            : null;
 
     private bool HasHeadToolbar =>
         _vizToolbarType is not null ||
@@ -429,7 +470,8 @@
             FieldOptionsRevision,
             VizDisplayState.GetValueLabelsOverride(Card.Id),
             VizDisplayState.GetAxisLabelsXOverride(Card.Id),
-            VizDisplayState.GetAxisLabelsYOverride(Card.Id));
+            VizDisplayState.GetAxisLabelsYOverride(Card.Id),
+            VizDisplayState.GetLegendOverride(Card.Id));
         if (_renderSnapshot.Equals(snapshot))
         {
             return false;
@@ -456,7 +498,8 @@
         int FieldOptionsRevision,
         bool? MatrixValueLabelsOverride,
         bool? MatrixAxisLabelsXOverride,
-        bool? MatrixAxisLabelsYOverride);
+        bool? MatrixAxisLabelsYOverride,
+        bool? MatrixLegendOverride);
 
     protected override void OnInitialized()
     {

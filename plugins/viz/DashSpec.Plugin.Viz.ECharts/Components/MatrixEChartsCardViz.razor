@@ -114,23 +114,6 @@
             </div>
         }
     </div>
-    @if (HasChart && ShowsLegendRow)
-    {
-        @* Gradient legend (canvas parity): min/max templates ride RichTextView — the spec
-           labels may carry creole (**bold**), same as the builtin stack. The bar flexes
-           between the texts and spans the card's full slot width. *@
-        <div class="ech-legend" data-color-scale="@ColorScale">
-            @if (!string.IsNullOrWhiteSpace(LegendMinText))
-            {
-                <span><RichTextView Text="@LegendMinText" /></span>
-            }
-            <span class="ech-legend-bar" aria-hidden="true"></span>
-            @if (!string.IsNullOrWhiteSpace(LegendMaxText))
-            {
-                <span><RichTextView Text="@LegendMaxText" /></span>
-            }
-        </div>
-    }
 </div>
 
 @code {
@@ -259,22 +242,6 @@
     /// would target a nonexistent host (the "host not found" class).</summary>
     private bool HasChartMarkup => HasChart && AlignmentError is null;
 
-    /// <summary>Gradient legend (canvas parity): visible when the spec declares
-    /// min/max labels and the viewer has not toggled it off (ADR-0062 session state).</summary>
-    private bool ShowLegend =>
-        VizLabelDisplayResolver.EffectiveLegendVisible(
-            Presentation?.ShowsGradientLegend == true,
-            VizDisplayState.GetLegendOverride(VizStateCardId ?? string.Empty));
-
-    private string? LegendMinText =>
-        ShowLegend ? Presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null;
-
-    private string? LegendMaxText =>
-        ShowLegend ? Presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null;
-
-    private bool ShowsLegendRow =>
-        ShowLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText));
-
     private int ViewportHeightPx
     {
         get
@@ -347,15 +314,30 @@
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
-        await JS.InvokeVoidAsync(
-            "dashspecECharts.render",
-            HostDomId,
-            JsonSerializer.Serialize(option, jsonOptions),
-            JsonSerializer.Serialize(ctx, jsonOptions),
-            _self);
+        // Circuit guard (defense line 1, .NET side): a JSInterop failure here must not
+        // terminate the circuit — Blazor Server kills it on any unhandled exception.
+        // The bridge catches its own side too; this catches disconnects and anything
+        // that slips through. A degraded chart beats a dead page.
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "dashspecECharts.render",
+                HostDomId,
+                JsonSerializer.Serialize(option, jsonOptions),
+                JsonSerializer.Serialize(ctx, jsonOptions),
+                _self);
 
-        // Frozen panes: the body is the only scroller; the axis strips shift in sync.
-        await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner);
+            // Frozen panes: the body is the only scroller; the axis strips shift in sync.
+            await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is already gone — nothing to render on.
+        }
+        catch (JSException ex)
+        {
+            Console.Error.WriteLine($"[MatrixEChartsCardViz] JS interop failed (chart degrades, circuit survives): {ex.Message}");
+        }
     }
 
     private string _renderedKey = string.Empty;
