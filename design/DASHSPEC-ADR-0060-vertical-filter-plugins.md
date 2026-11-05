@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0060: Vertical filter widget plugins
+---
+type: ADR
+id: DASHSPEC-ADR-0060
+title: "Vertical filter widget plugins"
+status: "Accepted"
+date: 2026-09-28
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0035
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0022
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-28 |
-| **Relates to** | [ADR-0035](DASHSPEC-ADR-0035-chrome-and-filter-widget-families.md), [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md) |
+# DASHSPEC-ADR-0060: Vertical filter widget plugins
 
 ## Context
 

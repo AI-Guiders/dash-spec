@@ -1,6 +1,6 @@
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Parsing;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 
 using DashSpec.Compiler.Contract;
 

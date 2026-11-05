@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0040: Chart recipes — coords / channels / marks (narrow)
+---
+type: ADR
+id: DASHSPEC-ADR-0040
+title: "Chart recipes — coords / channels / marks (narrow)"
+status: "Accepted"
+date: 2026-08-10
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0003
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0016
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-10 |
-| **Relates to** | [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md), [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0016](DASHSPEC-ADR-0016-bar-reference-markers.md) |
+# DASHSPEC-ADR-0040: Chart recipes — coords / channels / marks (narrow)
 
 ## Контекст
 

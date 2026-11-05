@@ -3,7 +3,7 @@ using DashSpec.Abstractions.Connectors;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Runtime;
 using DashSpec.Modeling.Parse.Card;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz;
 using DashSpec.Viz.Platform;
@@ -73,6 +73,7 @@ public sealed class CardRenderService(
             var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
             var effective = resolved.Card;
             var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(effective);
+            var flowPath = ResolveFlowPath(document, effective);
             return await RenderSecondarySlotsAsync(
                 effective,
                 document,
@@ -82,11 +83,34 @@ public sealed class CardRenderService(
                 connector,
                 specDirectory,
                 primarySlotRef,
+                flowPath,
                 cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             LabelFormat.ClearReportDefaults();
+        }
+    }
+
+    /// <summary>Граф (G) получения данных карточки, если у неё есть flow-вход; иначе null.</summary>
+    private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition effective)
+    {
+        if (document.Dashflow is null || effective.FlowInput?.Value is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return FlowCardExecution.ResolvePath(document, effective.FlowInput.Value);
+        }
+        catch (DashSpecParseException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
         }
     }
 
@@ -113,6 +137,7 @@ public sealed class CardRenderService(
             reportTimePolicy: reportTime);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
+        var flowPath = ResolveFlowPath(document, effective);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
             ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -145,6 +170,7 @@ public sealed class CardRenderService(
             connector,
             specDirectory,
             primarySlotRef,
+            flowPath,
             cancellationToken).ConfigureAwait(false);
 
         CardRenderResult AttachSlots(CardRenderResult result)
@@ -155,6 +181,7 @@ public sealed class CardRenderService(
             {
                 LocalFilterChromePlacements = localFilterChromePlacements,
                 FormatDefaults = document.ResolvedFormatDefaults,
+                FlowPath = flowPath,
             };
             return interiorSlotRenders.Count == 0
                 ? result
@@ -196,6 +223,7 @@ public sealed class CardRenderService(
                 kind.DataFamily,
                 renderPluginId,
                 Number: FormatNumber(rows, effective.Diagram),
+                NumberScale: effective.Diagram.Properties.TryGetValue("scale_value", out var numberScale) ? numberScale : null,
                 NumberDelta: numberDelta,
                 NumberDeltaTone: numberDeltaTone,
                 Placement: card.Placement?.Value,
@@ -208,7 +236,8 @@ public sealed class CardRenderService(
                 LocalFiltersManualApply: card.LocalFiltersManualApply,
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                 MatrixLimits: card.MatrixLimits?.Value,
-                OversizeMessage: card.OversizeMessage?.Value));
+                OversizeMessage: card.OversizeMessage?.Value,
+                EmptyMessage: card.EmptyMessage?.Value));
         }
 
         return AttachSlots(kind.DataFamily switch
@@ -236,6 +265,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -259,6 +289,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -285,6 +316,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -310,6 +342,7 @@ public sealed class CardRenderService(
                 LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
                     MatrixLimits: card.MatrixLimits?.Value,
                     OversizeMessage: card.OversizeMessage?.Value,
+                    EmptyMessage: card.EmptyMessage?.Value,
                     FilterLinkHint: filterLinkHint,
                     FilterLinkCssClass: filterLinkCssClass,
                     TopFilterScopeHint: topFilterScopeHint),
@@ -326,6 +359,7 @@ public sealed class CardRenderService(
         IDataSourceConnector connector,
         string? specDirectory,
         string primarySlotRef,
+        DashflowExecutionPath? flowPath,
         CancellationToken cancellationToken)
     {
         var slots = CardDiagramSlotCatalog.ResolveSlots(card);
@@ -502,6 +536,9 @@ public sealed class CardRenderService(
                         effective.Diagram.Properties.GetValueOrDefault("title"),
                         slotOverlay),
                     FormatDefaults = document.ResolvedFormatDefaults,
+                    // Клик-значения слота живут в display-кадре родительской оси (to_zone):
+                    // для фильтров по storage-колонкам они конвертируются инверсией графа.
+                    FlowPath = flowPath,
                 };
             }
             catch (Exception ex)
@@ -510,7 +547,7 @@ public sealed class CardRenderService(
                     slotRef,
                     slot.Diagram.Kind,
                     DiagramDataFamily.Table,
-                    string.Empty,
+                    vizPlugins.Resolve(DiagramDataFamily.Table, slot.Diagram.Kind),
                     Error: RenderErrorFormatter.ForCard(ex, errorContext, slotRef),
                     FormatDefaults: document.ResolvedFormatDefaults);
             }
@@ -570,6 +607,18 @@ public sealed class CardRenderService(
         var preferInteger =
             diagram.Properties.TryGetValue("scale_value", out var scale) &&
             scale.Equals("integer", StringComparison.OrdinalIgnoreCase);
+        var preferPercent =
+            diagram.Properties.TryGetValue("scale_value", out var percentScale) &&
+            percentScale.Equals("percent", StringComparison.OrdinalIgnoreCase);
+
+        if (preferPercent)
+        {
+            return value switch
+            {
+                IFormattable formattable => formattable.ToString("N1", culture) + " %",
+                _ => Convert.ToString(value, culture) + " %",
+            };
+        }
 
         if (preferInteger)
         {

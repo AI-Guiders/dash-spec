@@ -13,7 +13,7 @@ public sealed class LayerDependencyTests
     private static readonly Assembly FiltersAssembly = typeof(DashSpec.Filters.FilterWidgetRenderContext).Assembly;
     private static readonly Assembly CompilationAssembly = typeof(DashSpec.Execution.Compilation.ReportCompiler).Assembly;
     private static readonly Assembly SurfaceBlazorAssembly = typeof(DashSpec.Surface.Blazor.Configuration.ViewerSurfaceServiceCollectionExtensions).Assembly;
-    private static readonly Assembly ViewerAssembly = typeof(DashSpec.Viewer.ViewerPluginHost).Assembly;
+    private static readonly Assembly CompositionAssembly = typeof(DashSpec.Composition.ViewerPluginHost).Assembly;
 
     [Fact]
     public void Host_must_not_reference_Presentation()
@@ -126,13 +126,52 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
-    public void Viewer_must_not_reference_Host()
+    public void Composition_must_not_reference_Host()
     {
-        var result = Types.InAssembly(ViewerAssembly)
+        var result = Types.InAssembly(CompositionAssembly)
             .ShouldNot()
             .HaveDependencyOn("DashSpec.Host")
             .GetResult();
 
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));
+    }
+
+    /// <summary>
+    /// ADR-0117: the composition kernel does not OWN a UI dependency — no FrameworkReference,
+    /// no AspNetCore package in its csproj, no AspNetCore types in its code. The transitive
+    /// closure still reaches AspNetCore by design (builtin viz plugins are Razor libraries;
+    /// DashSpec.Viz/Filters render contexts are Blazor-shaped) — that layer split is out of
+    /// this ADR's scope, so the guard asserts ownership, not closure.
+    /// </summary>
+    [Fact]
+    public void Composition_must_not_own_AspNetCore_dependency()
+    {
+        var repoRoot = FindRepoRoot();
+        var csproj = Path.Combine(repoRoot, "src", "DashSpec.Composition", "DashSpec.Composition.csproj");
+        Assert.True(File.Exists(csproj), $"csproj not found: {csproj}");
+        Assert.DoesNotContain("AspNetCore", File.ReadAllText(csproj), StringComparison.OrdinalIgnoreCase);
+
+        var kernelCs = Directory.EnumerateFiles(
+            Path.Combine(repoRoot, "src", "DashSpec.Composition"),
+            "*.cs", SearchOption.AllDirectories);
+        foreach (var file in kernelCs)
+        {
+            Assert.DoesNotContain(
+                "Microsoft.AspNetCore",
+                File.ReadAllText(file),
+                StringComparison.Ordinal);
+        }
+    }
+
+    static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "DashSpec.slnx")))
+        {
+            dir = dir.Parent;
+        }
+
+        Assert.True(dir is not null, "DashSpec.slnx not found upward from test bin");
+        return dir!.FullName;
     }
 }

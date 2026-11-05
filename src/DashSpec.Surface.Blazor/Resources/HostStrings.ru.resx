@@ -240,4 +240,10 @@
   <data name="View" xml:space="preserve">
     <value>Представление</value>
   </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Тема</value>
+  </data>
+  <data name="Theme: host default" xml:space="preserve">
+    <value>Тема: общая</value>
+  </data>
 </root>

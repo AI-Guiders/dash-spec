@@ -166,6 +166,7 @@ module CardDiagramSlotBuilder =
           SqlCarrier = None
           Sheet = None
           RowsType = ""
+          TimeZone = ""
           ProviderInfer = false
           ProviderId = None }
 

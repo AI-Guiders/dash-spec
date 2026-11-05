@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0003: Diagram kinds — registry вместо enum
+---
+type: ADR
+id: DASHSPEC-ADR-0003
+title: "Diagram kinds — registry вместо enum"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0002
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), demo heatmap cards |
+# DASHSPEC-ADR-0003: Diagram kinds — registry вместо enum
 
 ## Контекст
 

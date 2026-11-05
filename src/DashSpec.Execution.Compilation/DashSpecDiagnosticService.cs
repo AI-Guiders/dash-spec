@@ -87,7 +87,8 @@ public static class DashSpecDiagnosticService
     }
 
     /// <summary>
-    /// A `.ds` file is routed by the kind in its module header (ADR-0101); anything else is treated as a document.
+    /// A `.ds` file is routed by the kind in its module header (ADR-0101). There is no
+    /// legacy document path anymore: flat formats are retired, unknown kinds are errors.
     /// </summary>
     private static IReadOnlyList<DashSpecDiagnostic> ValidateByFileKind(
         string text,
@@ -97,8 +98,11 @@ public static class DashSpecDiagnosticService
     {
         if (!Path.GetExtension(filePath).Equals(".ds", StringComparison.OrdinalIgnoreCase))
         {
-            var document = DashSpecParser.Parse(text, specDirectory, parseOptions);
-            return ToDiagnostics(ResolutionLint.Analyze(document));
+            return
+            [
+                new DashSpecDiagnostic(0, 0, 0, 1,
+                    $"'{Path.GetFileName(filePath)}' is not a .ds unit — legacy document formats are retired (ADR-0101)."),
+            ];
         }
 
         var (unitKind, _) = FsharpDocument.UnitSource.tryKindAndId(text);
@@ -135,11 +139,15 @@ public static class DashSpecDiagnosticService
                 return [];
             case "dashboard":
                 return ValidateAssembledRoot(text, filePath, specDirectory, parseOptions);
-            case "tab":
+            case "section":
                 return ValidateTabAssembled(text, filePath, specDirectory, parseOptions);
             default:
-                var document = DashSpecParser.Parse(text, specDirectory, parseOptions);
-                return ToDiagnostics(ResolutionLint.Analyze(document));
+                return
+                [
+                    new DashSpecDiagnostic(0, 0, 0, 1, string.IsNullOrWhiteSpace(unitKind)
+                        ? "No module header — a .ds unit starts with 'module <kind> <id>' (ADR-0101)."
+                        : $"Unknown module kind '{unitKind}' (ADR-0101)."),
+                ];
         }
     }
 
@@ -213,7 +221,7 @@ public static class DashSpecDiagnosticService
             var diagnostics = ValidateStandalone(text, filePath, specDirectory, parseOptions).ToList();
             diagnostics.Add(new DashSpecDiagnostic(
                 0, 0, 0, 1,
-                $"Tab is not imported by any root — standalone validation only. Import it: import tabs from {tabNamespace} in a dashboard.",
+                $"Tab is not imported by any root — standalone validation only. Import it: import sections from {tabNamespace} in a dashboard.",
                 DashSpecDiagnosticSeverity.Warning));
             return diagnostics;
         }
@@ -335,16 +343,74 @@ public static class DashSpecDiagnosticService
         DashSpecParseOptions parseOptions)
     {
         var catalog = CatalogReader.Parse(text);
-        var findings = new List<ResolutionLintFinding>();
+        var result = new List<DashSpecDiagnostic>();
         foreach (var entry in catalog.Entries)
         {
             var specPath = CatalogReader.ResolveEntrySpecPath(catalogPath, entry.DashspecPath);
             var specDirectoryForEntry = Path.GetDirectoryName(specPath)!;
-            var document = DashSpecParser.Parse(File.ReadAllText(specPath), specDirectoryForEntry, parseOptions);
-            findings.AddRange(ResolutionLint.Analyze(document, entry));
+            var specText = File.ReadAllText(specPath);
+            var (unitKind, _) = FsharpDocument.UnitSource.tryKindAndId(specText);
+
+            if (!string.Equals(unitKind, "dashboard", StringComparison.OrdinalIgnoreCase))
+            {
+                // Non-dashboard entries (sections, legacy documents): full per-file kind
+                // routing — sections validate assembled by their importing roots.
+                result.AddRange(ValidateText(specText, specPath, specDirectoryForEntry, parseOptions));
+                continue;
+            }
+
+            // Dashboard entries validate the way the runtime assembles them: imports merged,
+            // root filters visible to section cards. The naive standalone parse used to fire
+            // false "bind references unknown filter" errors on cards imported from sections.
+            var corpus = DashSpecCompilerServicesHost.GetCorpus(specDirectoryForEntry);
+            if (corpus.TryGetMemberText(specPath, out var diskText)
+                && string.Equals(specText, diskText, StringComparison.Ordinal))
+            {
+                if (!corpus.TryGetAssembledRoot(specPath, out var assembled, out var error, out _))
+                {
+                    result.Add(new DashSpecDiagnostic(0, 0, 0, 1, $"{Path.GetFileName(specPath)}: {error}"));
+                    continue;
+                }
+
+                AddAssembledCatalogFindings(result, assembled, entry);
+            }
+            else
+            {
+                try
+                {
+                    var assembled = DashSpecParser.Parse(specText, specDirectoryForEntry, corpus.AssembledOptions);
+                    AddAssembledCatalogFindings(result, assembled, entry);
+                }
+                catch (DashSpecParseException ex)
+                {
+                    result.Add(TextPositions.ToDiagnostic(specText, ex.Message, ex.SourceOffset));
+                }
+                catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+                {
+                    result.Add(MissingFileDiagnostic(specText, ex));
+                }
+                catch (Exception ex)
+                {
+                    result.Add(new DashSpecDiagnostic(0, 0, 0, 1, ex.Message));
+                }
+            }
         }
 
-        return ToDiagnostics(findings);
+        return result;
+    }
+
+    /// <summary>Graph validation + entry-context resolution lint over an assembled root.</summary>
+    private static void AddAssembledCatalogFindings(
+        List<DashSpecDiagnostic> result,
+        FsharpDocument.DashboardDocument document,
+        CatalogEntryDefinition entry)
+    {
+        foreach (var message in DashboardValidationCollector.Collect(document))
+        {
+            result.Add(new DashSpecDiagnostic(0, 0, 0, 1, message));
+        }
+
+        result.AddRange(ToDiagnostics(ResolutionLint.Analyze(document, entry)));
     }
 
     private static IReadOnlyList<DashSpecDiagnostic> ToDiagnostics(IReadOnlyList<ResolutionLintFinding> findings)

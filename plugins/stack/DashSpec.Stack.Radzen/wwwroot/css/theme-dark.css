@@ -99,3 +99,82 @@
   /* Shape */
   --rz-border-radius: 6px;
 }
+
+/* №2e: the drill table header rides one step above the card surface (base-700,
+   not the stock base-900 floor) so it reads as a header band, not the void. */
+:root {
+  --rz-grid-header-background-color: var(--rz-base-700);
+}
+
+/* ADR-0118: the date widgets' skin belongs to the stack (the plugin ships flatpickr
+   structural css only). The navy repaint: surfaces, text, borders — the accent days
+   (today/selected/range) keep Radzen primary so the calendar reads as part of the UI. */
+.flatpickr-calendar {
+  background: var(--rz-base-800, #131e37);
+  color: var(--rz-on-base, #f4f7fd);
+  box-shadow: var(--rz-box-shadow, 0 4px 16px rgba(0, 0, 0, 0.45));
+}
+
+.flatpickr-calendar *, .flatpickr-calendar *:before, .flatpickr-calendar *:after {
+  box-sizing: content-box;
+}
+
+.flatpickr-calendar .flatpickr-months .flatpickr-month,
+.flatpickr-calendar .flatpickr-current-month,
+.flatpickr-calendar .flatpickr-weekdays,
+.flatpickr-calendar span.flatpickr-weekday {
+  background: var(--rz-base-800, #131e37);
+  color: var(--rz-on-base, #f4f7fd);
+  fill: var(--rz-on-base, #f4f7fd);
+}
+
+.flatpickr-calendar .flatpickr-day {
+  color: var(--rz-on-base, #f4f7fd);
+}
+
+.flatpickr-calendar .flatpickr-day:hover {
+  background: var(--rz-base-600, #2a3a5e);
+  border-color: var(--rz-base-600, #2a3a5e);
+}
+
+.flatpickr-calendar .flatpickr-day.today {
+  border-color: var(--rz-primary, #0891b2);
+}
+
+.flatpickr-calendar .flatpickr-day.today:hover {
+  background: var(--rz-primary, #0891b2);
+  color: var(--rz-on-primary, #ffffff);
+}
+
+.flatpickr-calendar .flatpickr-day.selected,
+.flatpickr-calendar .flatpickr-day.startRange,
+.flatpickr-calendar .flatpickr-day.endRange,
+.flatpickr-calendar .flatpickr-day.inRange {
+  background: var(--rz-primary, #0891b2);
+  border-color: var(--rz-primary, #0891b2);
+  color: var(--rz-on-primary, #ffffff);
+}
+
+.flatpickr-calendar .flatpickr-day.flatpickr-disabled,
+.flatpickr-calendar .flatpickr-day.prevMonthDay,
+.flatpickr-calendar .flatpickr-day.nextMonthDay {
+  color: var(--rz-base-400, #5a6c92);
+}
+
+.flatpickr-calendar .flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-calendar .flatpickr-months .flatpickr-next-month svg {
+  fill: var(--rz-on-base, #f4f7fd);
+}
+
+.flatpickr-calendar .flatpickr-monthDropdown-months,
+.flatpickr-calendar .numInputWrapper input {
+  color: var(--rz-on-base, #f4f7fd);
+}
+
+.flatpickr-calendar .numInputWrapper span.arrowUp:after {
+  border-bottom-color: var(--rz-on-base, #f4f7fd);
+}
+
+.flatpickr-calendar .numInputWrapper span.arrowDown:after {
+  border-top-color: var(--rz-on-base, #f4f7fd);
+}

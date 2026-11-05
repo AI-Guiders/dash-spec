@@ -1,9 +1,14 @@
-# DASHSPEC-ADR-0084: Matrix heatmap — sticky axis scroll
+---
+type: ADR
+id: DASHSPEC-ADR-0084
+title: "Matrix heatmap — sticky axis scroll"
+status: "Accepted"
+date: 2026-10-02
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-02 |
+# DASHSPEC-ADR-0084: Matrix heatmap — sticky axis scroll
 
 ## Context
 

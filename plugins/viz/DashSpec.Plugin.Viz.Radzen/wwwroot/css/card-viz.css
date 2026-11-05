@@ -1,7 +1,9 @@
 /* Radzen viz plugin — its own render surface (ADR-0111 render layer).
    Every class this plugin renders lives here, not in the host css hub.
    Selectors carry the rviz- prefix: the host parts and sibling plugins never
-   share authority over the same selector. */
+   share authority over the same selector.
+   (The square heatmap is gone: kind heatmap delegates to the ECharts guest,
+   ADR-0112 — its css lives in the ECharts plugin.) */
 
 .rviz-chart-wrap {
   position: relative;
@@ -24,117 +26,31 @@
   padding: 0.05rem 0.5rem 0.05rem 0;
 }
 
-/* Radzen heatmap/gantt measure their container on first render — a zero-height
+/* Radzen gantt measures its container on first render — a zero-height
    host bakes a zero viewBox (squashed card). The fixed height rides this
    class instead of inline styles scattered through the razor. */
 .rviz-chart-wrap--fixed {
   height: 320px;
 }
 
+/* stretch_mode = fill (WPF Stretch vocabulary): the wrap takes the slot instead of
+   the fixed px cap; the filling diagram owns its floor/cap via its own styles. */
+.rviz-chart-wrap--fill {
+  min-height: 0;
+}
+
+/* the stack wrapper around a filling diagram must pass the height through */
+.card-viz-stack:has(> .rviz-chart-wrap--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .rviz-empty-state {
   margin: 2rem 0;
   text-align: center;
   color: var(--rz-text-secondary-color, var(--muted, #8fa0b3));
-}
-
-/* Square heatmap (rviz-shm): the grid fills the card width, cells stay square via
-   aspect-ratio, rows scroll when they outrun the card. Theme colors ride Radzen's
-   dark/light css variables with neutral fallbacks — the stack owns the look. */
-.rviz-shm-scroll {
-  overflow: auto;
-}
-
-.rviz-shm-grid {
-  display: grid;
-  gap: 2px;
-  width: max-content;
-  min-width: 100%;
-}
-
-.rviz-shm-corner {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-height: 1.6rem;
-  /* sticky axis chrome (ADR-0084 parity): the corner pins both ways */
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 3;
-  background: var(--rz-base-background-color, #141d2c);
-}
-
-.rviz-shm-axis-y,
-.rviz-shm-axis-x {
-  font-size: 0.72rem;
-  color: var(--rz-text-secondary-color, #8fa0b3);
-  white-space: nowrap;
-}
-
-.rviz-shm-x-label {
-  font-size: 0.72rem;
-  text-align: center;
-  color: var(--rz-text-secondary-color, #8fa0b3);
-  white-space: nowrap;
-  align-self: end;
-  padding-bottom: 0.15rem;
-  /* sticky axis chrome: the day row pins to the top while rows scroll under it;
-     no overflow clipping here — the column sizes from the label's own width
-     (auto track minimum), a wider date format widens the column by itself */
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--rz-base-background-color, #141d2c);
-}
-
-.rviz-shm-x-label-sparse {
-  color: transparent;
-}
-
-.rviz-shm-y-label {
-  font-size: 0.75rem;
-  text-align: right;
-  padding: 0 0.4rem 0 0;
-  border: 0;
-  color: var(--rz-text-secondary-color, #8fa0b3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  align-self: center;
-  justify-self: stretch;
-  min-height: 1.7rem;
-  /* sticky axis chrome: the product column pins left while columns scroll under it */
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--rz-base-background-color, #141d2c);
-}
-
-button.rviz-shm-y-label {
-  cursor: pointer;
-}
-
-button.rviz-shm-y-label:hover {
-  color: var(--rz-text-color, #e6ecf3);
-}
-
-.rviz-shm-y-label-spacer {
-  pointer-events: none;
-}
-
-.rviz-shm-cell {
-  height: 1.7rem;
-  width: 100%;
-  min-width: 1.3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 2px;
-  padding: 0;
-  font-size: 0.68rem;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Table header copy island (ADR-0115 §4): a quiet glyph next to the header text —
@@ -173,39 +89,26 @@ button.rviz-shm-y-label:hover {
   opacity: 1;
 }
 
-.rviz-shm-cell-filled {
-  cursor: pointer;
+/* KPI number (native Radzen reading of the scalar family): percent values ride a
+   RadialGauge with the value under it; counts/dates are a plain value tile. */
+.rviz-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 96px;
+  padding: 0.4rem 0.6rem;
 }
 
-.rviz-shm-cell-filled:hover {
-  outline: 2px solid var(--rz-base-200, #4a5568);
-  outline-offset: -2px;
+.rviz-kpi-value {
+  font-size: 1.9rem;
+  font-weight: 650;
+  line-height: 1.1;
+  color: var(--rz-text-color, #e2e8f0);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Viewer selection (ADR-0116): the clicked cell keeps an accent outline until the
-   payload changes; a selected category row highlights its Y label the same way. */
-.rviz-shm-cell-selected {
-  outline: 2px solid var(--rz-primary, #f0a30a);
-  outline-offset: -2px;
-  z-index: 1;
-}
-
-.rviz-shm-y-label-selected {
-  color: var(--rz-text-color, #e6ecf3);
-  font-weight: 600;
-}
-
-.rviz-shm-cell-empty {
-  background: var(--rz-base-background-color, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rz-text-disabled-color, #64748b) 28%, transparent);
-  cursor: default;
-}
-
-.rviz-shm--hide-y .rviz-shm-y-label {
-  display: none;
-}
-
-.rviz-shm--hide-x .rviz-shm-x-label,
-.rviz-shm--hide-x .rviz-shm-corner .rviz-shm-axis-x {
-  display: none;
+.rviz-kpi--gauge .rviz-kpi-value {
+  font-size: 1.45rem;
 }

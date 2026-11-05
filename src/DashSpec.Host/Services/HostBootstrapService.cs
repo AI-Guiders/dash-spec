@@ -2,7 +2,9 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Composition.Shell;
 using DashSpec.Host.Configuration;
+using DashSpec.Stack.Radzen;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
@@ -13,7 +15,8 @@ public sealed class HostBootstrapService(
     IDashSpecTomlLoader tomlLoader,
     IHostPathResolver pathResolver,
     IHostSettingsOverlay settingsOverlay,
-    IGitCatalogSynchronizer gitCatalogSynchronizer) : IHostBootstrap
+    IGitCatalogSynchronizer gitCatalogSynchronizer,
+    Microsoft.Extensions.Logging.ILogger<HostBootstrapService> logger) : IHostBootstrap
 {
     public DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
         LoadBootstrapWithHost(environment).Bootstrap;
@@ -52,9 +55,10 @@ public sealed class HostBootstrapService(
         var document = HostModuleParser.ParseFile(dashhostPath);
         var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
         ApplyHostShell(bootstrap, hostShell);
-        RegisterGridDefault(hostShell);
+        DashSpecDefaultShell.RegisterGridDefault();
 
         settingsOverlay.Apply(bootstrap);
+        WarnUnknownColorScheme(bootstrap);
         gitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
         return (bootstrap, hostShell);
@@ -98,15 +102,6 @@ public sealed class HostBootstrapService(
         ValidateRuntimeConfig(runtime, configPath);
         return runtime;
     }
-
-    /// <summary>
-    /// Register the host default grid ([ADR-0111] §2): the embedded <c>host.ds</c> grid drawing
-    /// serves every document that draws no grid of its own — documents draw, the host defaults, code stays silent.
-    /// </summary>
-    private static void RegisterGridDefault(HostShellBootstrap hostShell) =>
-        DashSpec.Modeling.Parse.Layout.GridDefaultBridge.Default =
-            Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Layout.LayoutDefinition>.Some(
-                hostShell.DefaultGrid());
 
     private void ApplyHostShell(DashSpecTomlRoot bootstrap, HostShellBootstrap hostShell)
     {
@@ -164,6 +159,31 @@ public sealed class HostBootstrapService(
         {
             bootstrap.Plugins.DefaultProviderId = providerDefault;
         }
+    }
+
+    /// <summary>ADR-0112 §2: an unknown theme word is the stack default + a loud
+    /// warning — never a silent wrong theme (the old "High contrast" admin option
+    /// rendered plain dark). The dictionary belongs to the Radzen stack; selfmade
+    /// does not read the token.</summary>
+    private void WarnUnknownColorScheme(DashSpecTomlRoot bootstrap)
+    {
+        var stack = (bootstrap.Presentation.RenderStack ?? string.Empty).Trim();
+        if (!string.Equals(stack, "radzen", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var scheme = (bootstrap.Presentation.ColorScheme ?? string.Empty).Trim();
+        if (RadzenColorSchemes.Find(scheme) is not null)
+        {
+            return;
+        }
+
+        logger.LogWarning(
+            "color_scheme '{Scheme}' is not in the Radzen stack theme dictionary ({Words}) — rendering '{Default}' instead (ADR-0112 §2).",
+            scheme,
+            string.Join(", ", RadzenColorSchemes.All.Select(t => t.Token)),
+            RadzenColorSchemes.DefaultToken);
     }
 
     private static bool ShouldSkipLocalHostOverlay(IHostEnvironment environment) =>

@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0024: Document grammar — blocks, `.dashinclude`, `report`
+---
+type: ADR
+id: DASHSPEC-ADR-0024
+title: "Document grammar — blocks, `.dashinclude`, `report`"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0011
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0019
+  - DASHSPEC-ADR-0023
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0019](DASHSPEC-ADR-0019-runtime-directive.md), [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md) |
+# DASHSPEC-ADR-0024: Document grammar — blocks, `.dashinclude`, `report`
 
 ## Context
 

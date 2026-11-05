@@ -1,10 +1,24 @@
-# DASHSPEC-ADR-0112: Рендер-стек — выбор визуального фреймворка и тема как токен
+---
+type: ADR
+id: DASHSPEC-ADR-0112
+title: "Рендер-стек — выбор визуального фреймворка и тема как токен"
+status: "Proposed"
+date: 2026-10-22
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0111
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0060
+  - DASHSPEC-ADR-0081
+  - DASHSPEC-ADR-0074
+  - DASHSPEC-ADR-0110
+  - DASHSPEC-ADR-0012
+  - DASHSPEC-ADR-0077
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-10-22 |
-| **Relates to** | [ADR-0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) (собранная плоскость — вход рендера), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) (семьи плагинов, микроядро), [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md) / [ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md) (вертикальные плагины), [ADR-0081](DASHSPEC-ADR-0081-type-plugins.md) (плагины расширяют язык), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md), [ADR-0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md), [ADR-0077](DASHSPEC-ADR-0077-host-ui-copy-ssot.md) |
+# DASHSPEC-ADR-0112: Рендер-стек — выбор визуального фреймворка и тема как токен
 
 ## Context
 
@@ -114,4 +128,4 @@ end host
 2. Куда едет theme-токен: поле документа/спеки или атрибут плоскости ([ADR-0111] SlotPlane) — решить при первом прохождении.
 3. Механика подключения ассетов стеком в Blazor (HeadOutlet vs изоляция сборок) — спайк в рамках ветки.
 4. ~~Маппинг семей на стеки: per-family vs per-surface~~ — решено (2026-10-23): per-surface — стек выбирается `presentation.render` (host-модуль → спека); маршрутизация семей — внутри стека, с делегатами гостям; автор рендер не выбирает.
-5. Граница «filter-плагин vs стек» для виджетов ([ADR-0060]): что несёт плагин (семантика, bind-контракт, тексты) и что стек (компоненты, CSS); допустимы ли per-stack переопределения в плагине; дефолт стека для неизвестной виджет-семьи.
+5. ~~Граница «filter-плагин vs стек» для виджетов~~ — закрыто [ADR-0118] (контракт ролей: skin уходит стеку, реализации замещаемы; per-stack биндинги отложены).

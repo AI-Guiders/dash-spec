@@ -3,6 +3,13 @@
 @using System.Globalization
 @using DashSpec.Execution.Runtime
 @using DashSpec.Presentation.Filters
+@inject DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride DateInputOverride
+
+@{
+    // ADR-0118: the stack may bind the single-date input per grain (enum seam);
+    // absent an override the flatpickr builtins render below — unchanged path.
+    var stackDateInput = DateInputOverride.ResolveDateInput(ResolvedGrain);
+}
 
 @if (Filter.IsDayWidget)
 {
@@ -12,7 +19,12 @@
     }
 
     <div class="date-range date-range-day">
-        @if (HasGrainFilter)
+        @if (stackDateInput is not null)
+        {
+            <DynamicComponent Type="stackDateInput"
+                              Parameters="@SingleInputParameters(WireValueFor(ResolvedGrain), SingleWireChanged)" />
+        }
+        else if (HasGrainFilter)
         {
             @switch (Grain)
             {
@@ -107,6 +119,36 @@ else
     private string? Grain => HasGrainFilter
         ? GrainFilterPresentation.ResolveGrain(Filter, FilterIndex, SelectedFields)
         : null;
+
+    /// <summary>The resolved grain as the enum — the DSL edge already parsed it via
+    /// <see cref="GrainFilterPresentation"/>; an unresolved grain degrades to Day
+    /// (DS0583 warns at authoring time when the spec forgot the default).</summary>
+    private DateGrain ResolvedGrain =>
+        Grain is not null && DateGrainText.TryParse(Grain, out var grain) ? grain : DateGrain.Day;
+
+    private string WireValueFor(DateGrain grain) => grain switch
+    {
+        DateGrain.Month => MonthValue,
+        DateGrain.Year => YearValue,
+        _ => DayValue,
+    };
+
+    private Task SingleWireChanged(string wire) => ResolvedGrain switch
+    {
+        DateGrain.Month => OnMonthWireChanged(wire),
+        DateGrain.Year => OnYearWireChanged(wire),
+        _ => OnDayWireChanged(wire),
+    };
+
+    private Dictionary<string, object?> SingleInputParameters(string value, Func<string, Task> changed) => new()
+    {
+        ["Grain"] = ResolvedGrain,
+        ["Value"] = value,
+        ["ValueChanged"] = EventCallback.Factory.Create<string>(this, changed),
+        ["InputClass"] = "filter-grain-input",
+        ["AriaLabel"] = Label,
+        ["Disabled"] = Disabled,
+    };
 
     private string DayValue => DateValueCodec.FormatWireDay(DateFrom[Filter.Name]);
 

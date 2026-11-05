@@ -84,7 +84,7 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_MissingImport_EditorMode_ReportsMissingImport()
     {
         const string text = """
-            module tab sample
+            module section sample
 
             import layouts from Missing.Layout
             """;
@@ -96,7 +96,7 @@ public sealed class DashSpecDiagnosticServiceTests
         {
             var diagnostics = DashSpecDiagnosticService.ValidateText(
                 text,
-                "sample.dashspec",
+                "sample.ds",
                 specDirectory,
                 DashSpecParseOptions.Editor);
 
@@ -116,7 +116,7 @@ public sealed class DashSpecDiagnosticServiceTests
     public void ValidateText_MissingImport_PointsToImportLine()
     {
         const string text = """
-            module tab sample
+            module section sample
 
             import layouts from Missing.Layout
 
@@ -132,7 +132,7 @@ public sealed class DashSpecDiagnosticServiceTests
         {
             var diagnostics = DashSpecDiagnosticService.ValidateText(
                 text,
-                "sample.dashspec",
+                "sample.ds",
                 specDirectory,
                 DashSpecParseOptions.Editor);
 

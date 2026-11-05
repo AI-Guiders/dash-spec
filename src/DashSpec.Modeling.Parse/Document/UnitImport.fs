@@ -115,7 +115,7 @@ module UnitImport =
         (state: ModuleImportState)
         (importKind: ImportKind option)
         =
-        if not (File.Exists path) then
+        if not (UnitSource.existsUnit path) then
             raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
         let text = UnitSource.readUnit path
@@ -137,7 +137,7 @@ module UnitImport =
             | Palette ->
                 let palette = Palette.PaletteModuleParser.parsePaletteFile text
                 state.RegisterPalette(palette.Id, palette)
-            | Tab -> state.RegisterTabModule(unitIdOf "tab" path text, path)
+            | Tab -> state.RegisterTabModule(unitIdOf "section" path text, path)
             | Unsupported _ ->
                 // Mixed module (module <name> without kind) — dispatch by import kind
                 match importKind with

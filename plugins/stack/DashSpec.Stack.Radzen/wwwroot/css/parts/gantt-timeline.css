@@ -140,7 +140,7 @@
   bottom: 0;
   width: 2px;
   transform: translateX(-50%);
-  background: color-mix(in srgb, #a855f7 85%, #fff);
+  background: color-mix(in srgb, #a855f7 85%, #fff); /* gantt task bar — domain semantic, not theme */
   z-index: 3;
   pointer-events: none;
 }

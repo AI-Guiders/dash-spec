@@ -1,10 +1,20 @@
-# DASHSPEC-ADR-0031: Display vocabulary — remove `as`
+---
+type: ADR
+id: DASHSPEC-ADR-0031
+title: "Display vocabulary — remove `as`"
+status: "Proposed"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+  - DASHSPEC-ADR-0023
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0028
+  - DASHSPEC-ADR-0030
+---
 
-| | |
-|---|---|
-| **Status** | Proposed |
-| **Date** | 2026-07-05 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0023](DASHSPEC-ADR-0023-dashcatalog.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md), [ADR-0030](DASHSPEC-ADR-0030-report-scale-pages-gates-and-suites.md) |
+# DASHSPEC-ADR-0031: Display vocabulary — remove `as`
 
 ## Context
 

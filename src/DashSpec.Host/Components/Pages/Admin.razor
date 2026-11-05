@@ -158,11 +158,18 @@
                     <div class="field">
                         <label>Color scheme (remark 24)</label>
                         <InputSelect @bind-Value="_presentation.ColorScheme" class="input">
-                            <option value="">Dark (default)</option>
-                            <option value="light">Light</option>
-                            <option value="contrast">High contrast</option>
+                            @* ADR-0112 §2: the options ARE the Radzen stack's dictionary
+                               (RadzenColorSchemes) — the admin never drifts from what the
+                               stack actually renders. Empty value = the dictionary default. *@
+                            @foreach (var theme in DashSpec.Stack.Radzen.RadzenColorSchemes.All)
+                            {
+                                var value = theme.Token == DashSpec.Stack.Radzen.RadzenColorSchemes.DefaultToken
+                                    ? ""
+                                    : theme.Token;
+                                <option value="@value">@theme.Label</option>
+                            }
                         </InputSelect>
-                        <span class="muted">Applies immediately after save.</span>
+                        <span class="muted">Applies on the next page load (reload after save).</span>
                     </div>
                     <div class="field">
                         <label>Long product filter lists (&gt;80 items; remark 7)</label>

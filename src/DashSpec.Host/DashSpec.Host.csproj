@@ -68,7 +68,7 @@
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
     <ProjectReference Include="..\..\plugins\stack\DashSpec.Stack.SelfMade\DashSpec.Stack.SelfMade.csproj" />
     <ProjectReference Include="..\..\plugins\stack\DashSpec.Stack.Radzen\DashSpec.Stack.Radzen.csproj" />
-    <ProjectReference Include="..\DashSpec.Viewer\DashSpec.Viewer.csproj" />
+    <ProjectReference Include="..\DashSpec.Composition\DashSpec.Composition.csproj" />
     <ProjectReference Include="..\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
@@ -80,8 +80,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Embedded default shell board ([ADR-0111] §2): a regular ds file — no synthesized shell in code. -->
-    <EmbeddedResource Include="Resources\host.ds" />
     <None Update="Catalog\dash.catalog.gdl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>

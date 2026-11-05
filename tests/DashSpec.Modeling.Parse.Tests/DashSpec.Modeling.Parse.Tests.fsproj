@@ -13,6 +13,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="StdlibFromRepoRegistration.fs" />
     <Compile Include="BlockFormatterTests.fs" />
     <Compile Include="GridDefaultTestBootstrap.fs" />
     <Compile Include="SyntaxClassifierTests.fs" />

@@ -1,0 +1,17 @@
+# Normalize everything to LF (repo canonical form already LF; autocrlf=false).
+# Prevents whole-file "diffs" when an editor rewrites files as CRLF.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.exe binary
+*.dll binary
+*.zip binary

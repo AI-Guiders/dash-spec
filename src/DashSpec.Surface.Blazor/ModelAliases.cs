@@ -4,6 +4,7 @@ global using LayoutDefinition = DashSpec.Modeling.Parse.Layout.LayoutDefinition;
 global using PlacementDefinition = DashSpec.Modeling.Parse.Layout.PlacementDefinition;
 global using CardBoundFilterChrome = DashSpec.Modeling.Parse.Card.CardBoundFilterChrome;
 global using CardFoldMode = DashSpec.Modeling.Parse.Card.CardFoldMode;
+global using CardSlotExpand = DashSpec.Modeling.Parse.Card.CardSlotExpand;
 global using CardsFoldPolicy = DashSpec.Modeling.Parse.Card.CardsFoldPolicy;
 global using ExtensionBlockNode = DashSpec.Modeling.Parse.Card.ExtensionBlockNode;
 global using CatalogGroupDefinition = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;

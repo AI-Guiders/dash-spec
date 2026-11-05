@@ -1,22 +1,24 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 
-<section class="dash-toolbar">
-    @if (ShowUpload)
-    {
-    <label class="dash-upload-btn secondary @(Busy ? "dash-upload-btn-busy" : null)">
-        @if (Busy)
-        {
-            <span class="spinner spinner-inline" aria-hidden="true"></span>
-            <span>Загрузка…</span>
-        }
-        else
-        {
-            <span>Загрузить .ds</span>
-        }
-        <InputFile OnChange="OnUpload" accept=".ds" disabled="@Busy" />
-    </label>
-    }
-</section>
+@* Dev-only upload strip: in production there is nothing to place here, so the
+   section itself does not render — no empty bar above the dashboard. *@
+@if (ShowUpload)
+{
+    <section class="dash-toolbar">
+        <label class="dash-upload-btn secondary @(Busy ? "dash-upload-btn-busy" : null)">
+            @if (Busy)
+            {
+                <span class="spinner spinner-inline" aria-hidden="true"></span>
+                <span>Загрузка…</span>
+            }
+            else
+            {
+                <span>Загрузить .ds</span>
+            }
+            <InputFile OnChange="OnUpload" accept=".ds" disabled="@Busy" />
+        </label>
+    </section>
+}
 
 @code {
     [Parameter] public bool Busy { get; set; }

@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse
 
 open System
+open System.Collections.Generic
 
 /// Property schemas for Modeling.Parse (ADR-0048 SSOT).
 module PropertySchemas =
@@ -23,12 +24,17 @@ module PropertySchemas =
           spec "max" Scalar
           spec "other" String ]
 
-    let presentation =
+    /// Core presentation vocabulary — engine-owned semantics only. Renderer plugins
+    /// declare their own knobs (IDashSpecPlugin.PresentationProperties) and the kernel
+    /// extends this list through the bridge: one knob, one owner.
+    let private presentationCore =
         [ spec "use" Scalar
           spec "legend" Scalar
           spec "height" Scalar
           spec "max_height" Scalar
           spec "visible_rows" Scalar
+          spec "stretch_mode" Scalar
+          spec "stretch_direction" Scalar
           spec "stacked" Scalar
           spec "fill" Scalar
           spec "color_mode" Scalar
@@ -39,6 +45,24 @@ module PropertySchemas =
           spec "width" Scalar
           spec "density" Scalar
           spec "column_filters" Scalar ]
+
+    let private extraPresentationProperties = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+    /// Plugin-declared presentation knobs join the vocabulary (bridge pattern — the
+    /// kernel registers them when it builds parse options from active plugins).
+    let registerPresentationProperties (properties: seq<string>) =
+        for property in properties do
+            if not (String.IsNullOrWhiteSpace property) then
+                extraPresentationProperties.Add(property.Trim()) |> ignore
+
+    /// The effective presentation schema: core + plugin-declared, all Scalar.
+    let presentation () =
+        let extras =
+            extraPresentationProperties
+            |> Seq.filter (fun name -> presentationCore |> List.exists (fun s -> String.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)) |> not)
+            |> Seq.map (fun name -> spec name Scalar)
+            |> List.ofSeq
+        presentationCore @ extras
 
     let layoutGroup = [ spec "title" String ]
 
@@ -53,12 +77,13 @@ module PropertySchemas =
 
     let filterDate =
         [ spec "column" ColumnBinding
-          spec "widget" Scalar
+          spec "widget" Scalar // date-domain function (day | range), ADR-0118
           spec "grain_filter" Scalar ]
 
     let filterField =
         [ spec "column" ColumnBinding
-          spec "widget" Scalar
+          spec "widget" Scalar // legacy hint, migrates to density (ADR-0118)
+          spec "density" Scalar // selector expression: inline | collapsed (ADR-0118)
           spec "single" Scalar ]
 
     let filterTop =
@@ -77,7 +102,8 @@ module PropertySchemas =
     let filterShow =
         [ spec "apply" Scalar
           spec "label" String
-          spec "widget" Scalar
+          spec "widget" Scalar // legacy hint (ADR-0118)
+          spec "density" Scalar // selector expression: inline | collapsed (ADR-0118)
           spec "ref" Scalar
           spec "bind_scope" Scalar ]
 
@@ -95,7 +121,8 @@ module PropertySchemas =
     let cardChrome =
         [ spec "bound_filters" Scalar
           spec "title" Scalar
-          spec "fold" Scalar ]
+          spec "fold" Scalar
+          spec "slot_expand" Scalar ]
 
     let cardsChrome = [ spec "fold" Scalar ]
 
@@ -130,6 +157,12 @@ module PropertySchemas =
           spec "color_scheme" Scalar
           spec "large_field_filter_layout" Scalar
           spec "render" Scalar ]
+
+    /// <summary>Host `menu` block (ADR-0073 nav surface): sidebar composition policy.
+    /// Rides to the shell chrome as `menu_*` presentation keys.</summary>
+    let hostMenu =
+        [ spec "sections" Scalar
+          spec "collapse_duplicate" Scalar ]
 
     /// <summary>Settings home block (`host … end host`, ADR-0112 §6): single-token keys of the block
     /// grammar (`render`, `color_scheme` — established names), folded over the legacy blocks at bootstrap.</summary>

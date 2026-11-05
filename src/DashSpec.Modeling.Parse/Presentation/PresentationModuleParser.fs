@@ -27,7 +27,7 @@ module PresentationModuleParser =
             let props =
                 PropertyBlockParser.parse
                     reader
-                    PropertySchemas.presentation
+                    (PropertySchemas.presentation ())
                     "presentation"
                     false
                     false
@@ -36,7 +36,7 @@ module PresentationModuleParser =
             let props =
                 PropertyBlockParser.parseFlatProperties
                     reader
-                    PropertySchemas.presentation
+                    (PropertySchemas.presentation ())
                     "@presentation module"
                     false
                     false

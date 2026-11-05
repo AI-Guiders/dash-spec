@@ -1,7 +1,33 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components.Shared
 @inject IStringLocalizer<FilterStrings> Loc
+@inject DashSpec.Plugin.Filter.Builtins.Components.IFilterSelectorOverride SelectorControls
+@using DashSpec.Plugin.Filter.Builtins.Components
 @using DashSpec.Presentation.Filters
 
+@* ADR-0118: when the stack binds its own selector/values control (RadzenDropDown on
+   the Radzen stack), the whole body is replaced by the override component — the
+   parameter surface (Options/Selected/SelectedChanged/Disabled/SingleSelect/Density)
+   is the contract. Absent override — the builtin markup controls render. *@
+@if (SelectorControls.ResolveSelector(Combobox ? "collapsed" : "inline", SingleSelect) is { } selectorOverride)
+{
+    // The stack control carries its own visible label (RadzenDropDown's placeholder),
+    // so the widget-level label row is dropped here — Label still rides the parameters
+    // as aria-label/placeholder. The scope hint stays reachable when there is no label.
+    <div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
+        @if (string.IsNullOrWhiteSpace(Hint))
+        {
+        }
+        else if (!Compact || !ShowLabel)
+        {
+            <FilterScopeHintTrigger Text="@Hint" AriaLabel="@Hint" />
+        }
+
+        <DynamicComponent Type="selectorOverride"
+                          Parameters="@SelectorParams" />
+    </div>
+}
+else
+{
 <div class="filter filter-field @(Compact ? "filter-inline" : null) @(Combobox ? "filter-combobox-wrap" : null) @(NativeSelect ? "filter-select-wrap" : null) @(DashSpec.Presentation.Filters.FilterLargeListOptions.IsLargeList(Options.Count) ? "filter-large-list" : null)">
     @if (NativeSelect)
     {
@@ -163,9 +189,23 @@
         }
     }
 </div>
+}
 
 @code {
     private string SearchPlaceholder => Loc["Search…"];
+
+    /// <summary>ADR-0118: parameter surface for the stack-bound selector control.
+    /// Keys match the override component's parameter names.</summary>
+    private Dictionary<string, object?> SelectorParams => new()
+    {
+        ["Options"] = Options,
+        ["Selected"] = Selected,
+        ["SelectedChanged"] = SelectedChanged,
+        ["Disabled"] = Disabled,
+        ["SingleSelect"] = SingleSelect,
+        ["Density"] = Combobox ? "collapsed" : "inline",
+        ["Label"] = Label,
+    };
 
     [Parameter, EditorRequired]
     public string Label { get; set; } = string.Empty;

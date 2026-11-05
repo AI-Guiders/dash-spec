@@ -4,11 +4,16 @@
 
 <PlacementSlotGrid CssClass="card-interior-grid"
                    Scope="LayoutSlotScope.CardInterior"
-                   GridColumns="@GridColumns">
+                   GridColumns="@GridColumns"
+                   ExtraStyle="@ExtraStyle">
     @ChildContent
 </PlacementSlotGrid>
 
 @code {
     [Parameter] public int GridColumns { get; set; } = 12;
+
+    /// <summary>Card-level variables appended to the grid (e.g. <c>--fill-h</c> so
+    /// sibling slots can cap to the fill diagram's frame).</summary>
+    [Parameter] public string? ExtraStyle { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

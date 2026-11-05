@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0106: Multi-form constructs — `Construct.declare`
+---
+type: ADR
+id: DASHSPEC-ADR-0106
+title: "Multi-form constructs — `Construct.declare`"
+status: "Accepted"
+date: 2026-10-20
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0104
+  - DASHSPEC-ADR-0105
+  - DASHSPEC-ADR-0071
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-20 |
-| **Relates to** | [ADR-0104](DASHSPEC-ADR-0104-table-columns-pipe-table.md) / [ADR-0105](DASHSPEC-ADR-0105-filters-pipe-table.md) (pipe-table family), [ADR-0071](DASHSPEC-ADR-0071-block-and-member-grammar.md) |
+# DASHSPEC-ADR-0106: Multi-form constructs — `Construct.declare`
 
 ## Context
 

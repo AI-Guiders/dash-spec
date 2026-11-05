@@ -49,7 +49,20 @@ module CardChromeParser =
             | true, raw -> parseFoldMode cardId raw
             | false, _ -> CardFoldMode.None
 
-        { BoundFilters = boundFilters; HideTitle = hideTitle; Fold = fold }
+        /// Per-slot maximize is author intent (chrome slot_expand = on|off): whether the
+        /// hover expand button rides on interior slots. Absent = Unspecified (the surface
+        /// default, on); an unknown word is loud — no silent fallbacks.
+        let slotExpand =
+            match props.TryGetValue "slot_expand" with
+            | true, raw ->
+                match raw.Trim().ToLowerInvariant() with
+                | "on" | "true" -> CardSlotExpand.On
+                | "off" | "false" -> CardSlotExpand.Off
+                | other ->
+                    raise (DashSpecParseException($"Card '{cardId}': chrome slot_expand must be on or off; got '{other}'."))
+            | false, _ -> CardSlotExpand.Unspecified
+
+        { BoundFilters = boundFilters; HideTitle = hideTitle; Fold = fold; SlotExpand = slotExpand }
 
 module CardsChromeParser =
 

@@ -2,41 +2,17 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
-if (args is ["validate", var validatePath, ..])
+if (args is ["validate", ..])
 {
-    try
-    {
-        var fullPath = Path.GetFullPath(validatePath);
-        if (fullPath.EndsWith(".dashcatalog", StringComparison.OrdinalIgnoreCase))
-        {
-            DashSpecValidator.ValidateCatalog(fullPath);
-        }
-        else if (fullPath.EndsWith(".dashhost", StringComparison.OrdinalIgnoreCase))
-        {
-            DashSpecParser.EnsureModuleParsersRegistered();
-            HostModuleParser.ParseFile(fullPath);
-        }
-        else
-        {
-            DashSpecParser.EnsureModuleParsersRegistered();
-            var registry = DashSpecBuiltinContributorRegistrar.RegisterBuiltins();
-            var parseOptions = new DashSpecParseOptionsProvider(registry).CreateOptions();
-            var specDirectory = Path.GetDirectoryName(fullPath)!;
-            DashSpecValidator.ValidateSpec(fullPath, specDirectory, parseOptions);
-        }
-
-        Console.WriteLine($"OK: {fullPath}");
-        return;
-    }
-    catch (Exception ex)
-    {
-        Console.Error.WriteLine(ex.Message);
-        Environment.ExitCode = 1;
-        return;
-    }
+    // validate moved to dsc (DASHSPEC-ADR-0117 steps 3–4): the CLI is the second
+    // composition root with full plugin-vocabulary parity; the web Host no longer
+    // carries a builtins-only validator that saw a different language than the runtime.
+    Console.Error.WriteLine("validate moved to dsc (DASHSPEC-ADR-0117). Run: dsc validate <path> [--toml <dash-spec.toml>]");
+    Environment.ExitCode = 2;
+    return;
 }
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,5 +24,13 @@ builder.WebHost.UseStaticWebAssets();
 _ = await builder.AddDashSpecHostAsync();
 
 var app = builder.Build();
+
+// DS0582: the viz registry announces silent renderer fallbacks (stack pick missing
+// from the bundle) — log them once; an operator decision to revisit, not noise.
+var vizRegistry = app.Services.GetRequiredService<global::DashSpec.Composition.Plugins.VizPluginRegistry>();
+var vizLogger = app.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+    .CreateLogger("DashSpec.VizPluginRegistry");
+vizRegistry.SilentFallback += message => vizLogger.LogWarning("{Message}", message);
+
 app.UseDashSpecHost();
 app.Run();

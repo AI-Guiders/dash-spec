@@ -1,10 +1,16 @@
-# DASHSPEC-ADR-0044: Date filter value constructor (CCL)
+---
+type: ADR
+id: DASHSPEC-ADR-0044
+title: "Date filter value constructor (CCL)"
+status: "Accepted"
+date: 2026-08-31
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0043
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-31 |
-| **Relates to** | [ADR-0043](DASHSPEC-ADR-0043-filter-command-palette.md), [GUIDERS-ADR-0035](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0035-slash-value-constructors.md), [GUIDERS-ADR-0012](https://github.com/AI-Guiders/guiders-platform/blob/main/docs/adr/GUIDERS-ADR-0012-arg-picker-completion.md) |
+# DASHSPEC-ADR-0044: Date filter value constructor (CCL)
 
 ## Context
 

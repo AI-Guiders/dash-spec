@@ -31,7 +31,7 @@ module CardParser =
         | false, _ -> None
 
     let private parsePresentation (reader: TokenReader) =
-        let props = PropertyBlockParser.parse reader PropertySchemas.presentation "presentation" false false
+        let props = PropertyBlockParser.parse reader (PropertySchemas.presentation ()) "presentation" false false
         let usePreset = propValue props "use"
         let inlineProps =
             let map = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -405,6 +405,7 @@ module CardParser =
         let visibility = ref None
         let matrixLimits = ref None
         let oversizeMessage = ref (None: string option)
+        let emptyMessage = ref (None: string option)
         let chrome = ref None
         let extensionBlocks = ResizeArray<ExtensionBlockNode>()
         let localFiltersManualApply = ref false
@@ -430,11 +431,29 @@ module CardParser =
             reader.SkipNewlines()
 
         let onWhen () =
+            // Table surface of the when construct (ADR-0106): both forms fill the
+            // same cells; the block forms below stay valid per the family rule.
+            if reader.CurrentKind = TokenKind.TableRow then
+                let rows = BlockGrammar.readPipeTableRows reader "when" $"Card '{id}': when"
+
+                let setOversize (message: string) =
+                    if oversizeMessage.Value.IsSome then
+                        raise (DashSpecParseException($"Card '{id}': duplicate when state 'oversize'."))
+                    oversizeMessage.Value <- Some message
+
+                let setNoData (message: string) =
+                    if emptyMessage.Value.IsSome then
+                        raise (DashSpecParseException($"Card '{id}': duplicate when state 'no data'."))
+                    emptyMessage.Value <- Some message
+
+                CardVisibilityParser.applyWhenTableRows id setOversize setNoData rows
+            else
             let whenTarget = reader.ReadIdent()
             if String.Equals(whenTarget, "oversize", StringComparison.OrdinalIgnoreCase) then
                 if oversizeMessage.Value.IsSome then
                     raise (DashSpecParseException($"Card '{id}': duplicate when oversize block."))
                 oversizeMessage.Value <- Some(CardVisibilityParser.parseOversizeWhen reader id)
+
             else
                 if visibility.Value.IsSome then
                     raise (DashSpecParseException($"Card '{id}': duplicate when block."))
@@ -658,6 +677,7 @@ module CardParser =
         let title = title.Value
         let useCardPreset = useCardPreset.Value
         let oversizeMessage = oversizeMessage.Value
+        let emptyMessage = emptyMessage.Value
         let localFiltersManualApply = localFiltersManualApply.Value
         let localFiltersApplySplitIndex = localFiltersApplySplitIndex.Value
         let localFiltersChromeBoard = localFiltersChromeBoard.Value
@@ -760,6 +780,7 @@ module CardParser =
               SqlCarrier = None
               Sheet = None
               RowsType = ""
+              TimeZone = ""
               ProviderInfer = true
               ProviderId = None }
 
@@ -885,6 +906,7 @@ module CardParser =
           PageId = pageId
           MatrixLimits = matrixLimits.Value
           OversizeMessage = oversizeMessage
+          EmptyMessage = emptyMessage
           Chrome = chrome.Value
           Inspect = inspect.Value
           Tooltip = tooltip.Value

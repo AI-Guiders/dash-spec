@@ -414,11 +414,28 @@
 }
 
 .card-interior-grid {
-  display: grid;
-  /* [ADR-0111] §7: track counts per viewport class ride as custom properties. */
-  grid-template-columns: var(--card-tracks, repeat(12, minmax(0, 1fr)));
+  /* [ADR-0116]: the interior is a flex flow — the declared span rides as flex-grow
+     weight (--fx), the browser lays slots side by side and wraps them when they
+     stop fitting. Overlaps are impossible by construction; no viewport classes. */
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+.card-interior-grid > .card-interior-slot {
+  flex: var(--fx-grow, 1) 1 0;
+  min-width: 0;
+}
+
+/* filter slots are content-sized: no local filters on the card — no reserved space */
+.card-interior-grid > .card-filter-slot {
+  flex: 0 0 auto;
+}
+
+/* the diagram slot keeps a readable floor: below it, the drill slot wraps underneath */
+.card-interior-grid > .card-diagram-slot {
+  min-width: min(100%, 380px);
 }
 
 .card-interior-filter-slot {

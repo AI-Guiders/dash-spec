@@ -7,47 +7,24 @@
 @using Radzen.Blazor
 @inject DashboardLocalizer Loc
 
-@* Radzen-stack chrome (ADR-0112 §5): one left menu instead of the top strip + the
-   catalog combobox — every report is visible in place, grouped by catalog group;
-   the active report's sections (tabs) ride beneath. Styles: the Radzen stack's
-   chrome.css (the stack owns its chrome look). SelfMade keeps its top strip. *@
+@* ADR-0073 navigation surface: one tree — catalog groups → entries; the active entry
+   carries its sections (the former separate sections block) as children. No synthetic
+   roots. Styles: the Radzen stack's chrome (the stack owns its chrome look). *@
 
 <aside class="dash-sidebar" aria-label="@SidebarText">
     <RadzenPanelMenu>
-        <RadzenPanelMenuItem Text="@CatalogText" Icon="library_books" Expanded="true">
-            @foreach (var group in Groups)
-            {
-                <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)" Expanded="true">
-                    @foreach (var entry in EntriesOf(group))
-                    {
-                        var entryId = entry.Id;
-                        <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)"
-                                             Selected="@IsEntryActive(entry)"
-                                             Disabled="@Busy"
-                                             Click="@(() => OnSelectEntry.InvokeAsync(entryId))" />
-                    }
-                </RadzenPanelMenuItem>
-            }
-            @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId?.Value)))
-            {
-                var entryId = entry.Id;
-                <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)"
-                                     Selected="@IsEntryActive(entry)"
-                                     Disabled="@Busy"
-                                     Click="@(() => OnSelectEntry.InvokeAsync(entryId))" />
-            }
-        </RadzenPanelMenuItem>
-        @if (Tabs is { Count: > 1 })
+        @foreach (var group in Groups)
         {
-            <RadzenPanelMenuItem Text="@SectionsText" Icon="dashboard" Expanded="true">
-                @foreach (var tab in Tabs)
+            <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogGroupTitle(group)" Expanded="true">
+                @foreach (var entry in EntriesOf(group))
                 {
-                    var tabId = tab.Id;
-                    <RadzenPanelMenuItem Text="@(ResolveTabLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)"
-                                         Selected="@string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase)"
-                                         Click="@(() => OnSelectTab.InvokeAsync(tabId))" />
+                    @EntryNode(entry)
                 }
             </RadzenPanelMenuItem>
+        }
+        @foreach (var entry in Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId?.Value)))
+        {
+            @EntryNode(entry)
         }
     </RadzenPanelMenu>
 </aside>
@@ -68,10 +45,6 @@
     [Parameter] public string? SidebarLabel { get; set; }
 
     /// <summary>UI copy SSOT (ADR-0077): labels come from the localizer, parameters override.</summary>
-    private string CatalogText => CatalogLabel ?? Loc.T("Reports");
-
-    private string SectionsText => SectionsLabel ?? Loc.T("Sections");
-
     private string SidebarText => SidebarLabel ?? Loc.T("Navigation");
 
     [Parameter] public IReadOnlyList<TabDefinition> Tabs { get; set; } = [];
@@ -84,9 +57,69 @@
 
     [Parameter] public EventCallback<string> OnSelectTab { get; set; }
 
+    /// <summary>Menu policy (the host module's `menu` block, ADR-0073/0074: explicit,
+    /// never host heuristics).</summary>
+    [Parameter] public ViewerMenuSectionsMode SectionsMode { get; set; } = ViewerMenuSectionsMode.All;
+
+    [Parameter] public bool CollapseDuplicateSection { get; set; }
+
+    /// <summary>An entry node; the active entry carries its sections as children.</summary>
+    private RenderFragment EntryNode(CatalogEntryDefinition entry) => __builder =>
+    {
+        var entryId = entry.Id;
+        var isActive = IsEntryActive(entry);
+        var sections = SectionsFor(entry, isActive);
+        <RadzenPanelMenuItem Text="@DisplayResolutionHost.ResolveCatalogEntryTitle(entry)"
+                             Selected="@isActive"
+                             Disabled="@Busy"
+                             Click="@(() => OnSelectEntry.InvokeAsync(entryId))">
+            @foreach (var tab in sections)
+            {
+                var tabId = tab.Id;
+                <RadzenPanelMenuItem Text="@(ResolveTabLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)"
+                                     Selected="@string.Equals(tab.Id, ActiveTabId, StringComparison.OrdinalIgnoreCase)"
+                                     Click="@(() => OnSelectTab.InvokeAsync(tabId))" />
+            }
+        </RadzenPanelMenuItem>
+    };
+
+    /// <summary>Sections nested under an entry, per the menu policy:
+    /// siblings-only drops the pinned section (the entry represents it);
+    /// collapse-duplicate folds a single same-named section into the entry.</summary>
+    private IReadOnlyList<TabDefinition> SectionsFor(CatalogEntryDefinition entry, bool isActive)
+    {
+        if (!isActive || SectionsMode is ViewerMenuSectionsMode.None || Tabs is not { Count: > 0 })
+        {
+            return [];
+        }
+
+        var pinned = entry.InitialTabId?.Value;
+        IEnumerable<TabDefinition> sections = Tabs;
+        if (SectionsMode is ViewerMenuSectionsMode.Siblings && !string.IsNullOrWhiteSpace(pinned))
+        {
+            sections = sections.Where(tab =>
+                !string.Equals(tab.Id, pinned, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var list = sections.ToList();
+        if (CollapseDuplicateSection &&
+            list.Count == 1 &&
+            string.Equals(
+                ResolveTabLabel?.Invoke(list[0]) ?? list[0].Label?.Value ?? list[0].Id,
+                DisplayResolutionHost.ResolveCatalogEntryTitle(entry),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return [];
+        }
+
+        return list;
+    }
+
     private bool IsEntryActive(CatalogEntryDefinition entry)
     {
-        var active = ActiveEntryId ?? Entries.FirstOrDefault()?.Id;
+        var active = string.IsNullOrWhiteSpace(ActiveEntryId)
+            ? Entries.FirstOrDefault()?.Id
+            : ActiveEntryId;
         return string.Equals(entry.Id, active, StringComparison.OrdinalIgnoreCase);
     }
 

@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0107: Sourced clicks — `on <source> click` + the click table
+---
+type: ADR
+id: DASHSPEC-ADR-0107
+title: "Sourced clicks — `on <source> click` + the click table"
+status: "Accepted"
+date: 2026-10-20
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0106
+  - DASHSPEC-ADR-0033
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-20 |
-| **Relates to** | [ADR-0106](DASHSPEC-ADR-0106-multi-form-constructs.md) (construct declaration), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md) (plugin vocabulary) |
+# DASHSPEC-ADR-0107: Sourced clicks — `on <source> click` + the click table
 
 ## Context
 

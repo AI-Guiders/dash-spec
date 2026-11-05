@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Host.Configuration;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 

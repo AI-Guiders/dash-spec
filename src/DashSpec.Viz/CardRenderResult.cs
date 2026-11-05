@@ -12,6 +12,7 @@ public sealed record CardRenderResult(
     ChartPayload? DetailChart = null,
     TablePayload? Table = null,
     string? Number = null,
+    string? NumberScale = null,
     string? NumberDelta = null,
     string? NumberDeltaTone = null,
     string? Error = null,
@@ -36,13 +37,20 @@ public sealed record CardRenderResult(
     string? VisibilityMessage = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,
     string? OversizeMessage = null,
+    string? EmptyMessage = null,
     string? FilterLinkHint = null,
     string? FilterLinkCssClass = null,
     string? TopFilterScopeHint = null,
     bool ShowChromeTitle = true,
-    CardFoldMode FoldMode = CardFoldMode.None,
+    /// <summary>The card's chrome — the domain definition passed through (fold,
+    /// slot_expand, bound_filters, hide_title), not splatted into loose fields.
+    /// ShowChromeTitle stays separate: it is the resolved title bit (catalog-prod
+    /// suppression, ResolvedCardChrome) — not expressible from the definition alone.</summary>
+    CardChromeDefinition? Chrome = null,
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
-    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null)
+    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null,
+    /// <summary>Граф (G), которым получены данные карточки: клик-значения конвертируются его инверсией.</summary>
+    DashflowExecutionPath? FlowPath = null)
 {
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 

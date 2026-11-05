@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0039: Chart chrome merge (`chrome { use … }`)
+---
+type: ADR
+id: DASHSPEC-ADR-0039
+title: "Chart chrome merge (`chrome { use … }`)"
+status: "Accepted"
+date: 2026-07-08
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0017
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-08 |
-| **Relates to** | [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md) |
+# DASHSPEC-ADR-0039: Chart chrome merge (`chrome { use … }`)
 
 ## Context
 

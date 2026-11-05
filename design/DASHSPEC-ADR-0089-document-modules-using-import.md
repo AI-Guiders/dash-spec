@@ -1,10 +1,21 @@
-# DASHSPEC-ADR-0089: Document modules — `using` / `import` instead of preprocessor `!include`
+---
+type: ADR
+id: DASHSPEC-ADR-0089
+title: "Document modules — `using` / `import` instead of preprocessor `!include`"
+status: "Accepted (Phase 1 in code; Phase 2 project membership specified)"
+date: 2026-10-06
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0017
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0048
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0079
+  - DASHSPEC-ADR-0088
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (Phase 1 in code; Phase 2 project membership specified) |
-| **Date** | 2026-10-06 (amended 2026-10-07) |
-| **Relates to** | [ADR-0017](DASHSPEC-ADR-0017-file-includes-and-stdlib.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0079](DASHSPEC-ADR-0079-dashflow-type-system.md), [ADR-0088](DASHSPEC-ADR-0088-flow-composition-subprocess.md) |
+# DASHSPEC-ADR-0089: Document modules — `using` / `import` instead of preprocessor `!include`
 
 ## Context
 

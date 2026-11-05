@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0063: Layout board nest (cell as grid)
+---
+type: ADR
+id: DASHSPEC-ADR-0063
+title: "Layout board nest (cell as grid)"
+status: "Accepted"
+date: 2026-09-28
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0056
+  - DASHSPEC-ADR-0061
+  - DASHSPEC-ADR-0020
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-28 |
-| **Relates to** | [ADR-0056](DASHSPEC-ADR-0056-layout-card-groups.md), [ADR-0061](DASHSPEC-ADR-0061-layout-board-weights-and-filter-place.md), [ADR-0020](DASHSPEC-ADR-0020-card-ref-and-layout-board.md) |
+# DASHSPEC-ADR-0063: Layout board nest (cell as grid)
 
 ## Context
 

@@ -11,7 +11,8 @@ public static class ChartChromeProperties
 
         foreach (var legacyKey in new[]
         {
-            "legend", "height", "max_height", "visible_rows", "stacked", "orientation", "fill",
+            "legend", "height", "max_height", "visible_rows", "stretch_mode", "stretch_direction",
+            "stacked", "orientation", "fill",
             "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
             "y_max", "value_axis_max", "color_mode", "default", "colors",
             "width", "density", "column_filters",

@@ -31,7 +31,7 @@ public class DocumentModuleParserTests
                 """);
 
             const string text = """
-                module tab t
+                module section t
                   import diagrams from Test.Diagrams
                   import palettes from Test.Palettes
                   runtime
@@ -64,7 +64,7 @@ public class DocumentModuleParserTests
                   end bind
                   end card
                   end report
-                end tab
+                end section
                 """;
 
             var doc = DashSpecTestRowTypes.ParseDashboard(text, dir);

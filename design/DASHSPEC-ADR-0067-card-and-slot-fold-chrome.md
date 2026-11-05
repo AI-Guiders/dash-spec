@@ -1,11 +1,18 @@
-# DASHSPEC-ADR-0067: Card fold chrome (BI viewport)
+---
+type: ADR
+id: DASHSPEC-ADR-0067
+title: "Card fold chrome (BI viewport)"
+status: "Accepted (v1: card body fold)"
+date: 2026-09-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0065
+  - DASHSPEC-ADR-0035
+  - DASHSPEC-ADR-0028
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (v1: card body fold) |
-| **Date** | 2026-09-29 |
-| **Audience** | Authors: `chrome` / `cards chrome` in `.dashspec`; Host engineers: session fold state |
-| **Relates to** | [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md), [ADR-0035](DASHSPEC-ADR-0035-chrome-and-filter-widget-families.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) |
+# DASHSPEC-ADR-0067: Card fold chrome (BI viewport)
 
 ## Context
 

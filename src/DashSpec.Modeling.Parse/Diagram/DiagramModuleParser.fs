@@ -25,7 +25,7 @@ module DiagramModuleParser =
 
     let private parseChartChrome (reader: TokenReader) blockName =
         let props =
-            PropertyBlockParser.parse reader PropertySchemas.presentation blockName false false
+            PropertyBlockParser.parse reader (PropertySchemas.presentation ()) blockName false false
         toPresentationBlock props
 
     let private parseSeriesTransform (reader: TokenReader) : DashSpec.Modeling.Parse.Transform.SeriesTransformBlock =

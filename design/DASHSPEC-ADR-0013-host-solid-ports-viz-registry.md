@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0013: Host SOLID ports and viz plugin registry
+---
+type: ADR
+id: DASHSPEC-ADR-0013
+title: "Host SOLID ports and viz plugin registry"
+status: "Accepted"
+date: 2026-06-24
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0008
+  - DASHSPEC-ADR-0012
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-06-24 |
-| **Relates to** | [ADR-0008](DASHSPEC-ADR-0008-viz-render-plugins.md), [ADR-0012](DASHSPEC-ADR-0012-host-presentation-layering.md) |
+# DASHSPEC-ADR-0013: Host SOLID ports and viz plugin registry
 
 ## Context
 

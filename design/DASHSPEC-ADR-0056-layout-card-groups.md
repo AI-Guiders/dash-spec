@@ -1,7 +1,14 @@
-# ADR-0056: Layout card groups (GroupBox)
+---
+type: ADR
+id: DASHSPEC-ADR-0056
+title: "Layout card groups (GroupBox)"
+status: "Accepted"
+date: 2026-09-25
+tags: [dashspec, adr]
+language: en
+---
 
-**Status:** Accepted  
-**Date:** 2026-09-25
+# DASHSPEC-ADR-0056: Layout card groups (GroupBox)
 
 ## Context
 

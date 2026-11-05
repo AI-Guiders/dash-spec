@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0055: Gantt timeline renderer (`gantt-timeline`)
+---
+type: ADR
+id: DASHSPEC-ADR-0055
+title: "Gantt timeline renderer (`gantt-timeline`)"
+status: "Accepted"
+date: 2026-09-25
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0033
+  - DASHSPEC-ADR-0030
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-25 |
-| **Relates to** | [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0030](DASHSPEC-ADR-0030-report-scale-pages-gates-and-suites.md) |
+# DASHSPEC-ADR-0055: Gantt timeline renderer (`gantt-timeline`)
 
 ## Context
 

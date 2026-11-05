@@ -1,5 +1,5 @@
 using DashSpec.Execution.Runtime;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Viz.Platform;
 using DashSpec.Viz;
@@ -420,7 +420,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
             render,
             filterDisplay,
             PageDisplayBindings);
-        return enriched with { FoldMode = card.Chrome?.Value?.Fold ?? CardFoldMode.None };
+        return enriched with { Chrome = card.Chrome?.Value };
     }
 
     private HashSet<string> ResolveTargetCardIds(IReadOnlyList<string>? cardIds)

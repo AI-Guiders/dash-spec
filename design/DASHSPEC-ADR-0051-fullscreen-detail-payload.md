@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0051: Fullscreen detail payload (без Other)
+---
+type: ADR
+id: DASHSPEC-ADR-0051
+title: "Fullscreen detail payload (без Other)"
+status: "Accepted"
+date: 2026-09-10
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0007
+  - DASHSPEC-ADR-0002
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-10 |
-| **Relates to** | [ADR-0007](DASHSPEC-ADR-0007-presentation-transform-diagramlibrary.md), [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), GUIDERS-ADR-0020 (DetailTier) |
+# DASHSPEC-ADR-0051: Fullscreen detail payload (без Other)
 
 ## Context
 

@@ -1,10 +1,14 @@
-# DASHSPEC-ADR-0034: Phrase templates and document scopes
+---
+type: ADR
+id: DASHSPEC-ADR-0034
+title: "Phrase templates and document scopes"
+status: "Accepted"
+date: 2026-07-05
+tags: [dashspec, adr]
+language: ru
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-05 |
-| **Extends** | [ADR-0032](DASHSPEC-ADR-0032-extension-blocks-and-plugins.md), [ADR-0033](DASHSPEC-ADR-0033-plugin-families-and-microkernel-host.md), [ADR-0028](DASHSPEC-ADR-0028-bounded-card-click-interactions.md) |
+# DASHSPEC-ADR-0034: Phrase templates and document scopes
 
 ## Context
 

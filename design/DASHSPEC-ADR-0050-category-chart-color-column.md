@@ -1,11 +1,19 @@
-# DASHSPEC-ADR-0050: Category chart color — column binding
+---
+type: ADR
+id: DASHSPEC-ADR-0050
+title: "Category chart color — column binding"
+status: "Accepted"
+date: 2026-09-10
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0004
+  - DASHSPEC-ADR-0014
+  - DASHSPEC-ADR-0015
+  - DASHSPEC-ADR-0016
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-09-10 |
-| **Relates to** | [ADR-0004](DASHSPEC-ADR-0004-diagram-column-as.md), [ADR-0014](DASHSPEC-ADR-0014-chart-series-colors.md), [ADR-0015](DASHSPEC-ADR-0015-dev-spec-resolve-dashboard-palette.md), [ADR-0016](DASHSPEC-ADR-0016-bar-reference-markers.md) |
-| **Amends** | ADR-0014 (category charts; palette demoted to fallback) |
+# DASHSPEC-ADR-0050: Category chart color — column binding
 
 ## Контекст
 

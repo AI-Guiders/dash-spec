@@ -13,7 +13,6 @@
 .cards > *,
 .card-nest-cards > *,
 .card-group-cards > *,
-.card-interior-grid > *,
 .card-head-toolbar-filters--grid > * {
   grid-column: var(--gc, auto);
   grid-row: var(--gr, auto);
@@ -26,7 +25,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-mid, auto);
     grid-row: var(--gr-mid, auto);
@@ -40,7 +38,6 @@
   .cards > *,
   .card-nest-cards > *,
   .card-group-cards > *,
-  .card-interior-grid > *,
   .card-head-toolbar-filters--grid > * {
     grid-column: var(--gc-narrow, auto);
     grid-row: var(--gr-narrow, auto);
@@ -109,6 +106,39 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* stretch_mode = fill: the card is the frame — the fill slot rides the authored px
+   height (--fill-h rides inline from the spec), its content fills and scrolls inside;
+   sibling diagram/table slots stretch to the same frame and scroll instead of
+   growing the row. */
+.card-interior-grid > .card-diagram-slot--fill {
+  height: var(--fill-h, auto);
+}
+
+.card-interior-grid:has(> .card-diagram-slot--fill) > .card-diagram-slot:not(.card-diagram-slot--fill) {
+  min-height: 0;
+  max-height: var(--fill-h, none);
+  overflow: auto;
+}
+
+/* the maximized panel becomes the frame: the fixed slot height uncap and stretch
+   (source order wins over the rule above at equal specificity) */
+.card-fullscreen-body .card-diagram-slot--fill {
+  height: auto;
+  min-height: 0;
+}
+
+/* fullscreen: sibling caps lift too — the panel body is the scroller there */
+.card-fullscreen-body .card-diagram-slot:not(.card-diagram-slot--fill) {
+  max-height: none;
+}
+
+/* fullscreen: slots stretch to the panel, not their content — a content-sized
+   slot lets a fill diagram (frame + legend chrome) overflow the panel bottom
+   and ride onto whatever follows the fold */
+.card-fullscreen-body .card-interior-grid {
+  align-items: stretch;
 }
 
 .card-diagram-slot .chart-wrap {
@@ -283,15 +313,17 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 1rem;
+  padding: 0;
 }
 
+/* true fullscreen: the maximized card owns the whole viewport */
 .card-fullscreen-panel {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  width: min(96vw, 1400px);
-  max-height: calc(100vh - 2rem);
+  border: none;
+  border-radius: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
   display: flex;
   flex-direction: column;
   outline: none;
@@ -305,6 +337,7 @@
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
 }
 
 .card-fullscreen-head h2 {
@@ -317,16 +350,41 @@
   min-height: 0;
   padding: 0.75rem 1rem 1rem;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.card-fullscreen-body .chart-wrap,
-.card-fullscreen-body .matrix-wrap {
-  min-height: min(72vh, 720px);
-}
-
-.card-fullscreen-body .chart-wrap-detail,
-.card-fullscreen-body .matrix-wrap-detail {
+/* the maximized card keeps its interior slot plan; slots share the panel height */
+.card-fullscreen-body .card-interior-grid {
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+.card-fullscreen-body .card-interior-grid > .card-diagram-slot {
+  flex: var(--fx-grow, 1) 1 0;
+}
+
+/* per-slot maximize (hover): the shell pins the button to the slot's corner */
+.card-slot-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.slot-maximize-btn {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  z-index: 30;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.card-slot-shell:hover .slot-maximize-btn,
+.slot-maximize-btn:focus-visible {
+  opacity: 1;
 }
 
 .card-kpi .card-head {

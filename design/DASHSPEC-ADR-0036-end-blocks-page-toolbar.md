@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0036: End blocks, page toolbar, filter derive, presentation scale
+---
+type: ADR
+id: DASHSPEC-ADR-0036
+title: "End blocks, page toolbar, filter derive, presentation scale"
+status: "Accepted"
+date: 2026-07-08
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0031
+  - DASHSPEC-ADR-0026
+  - DASHSPEC-ADR-0022
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-07-08 |
-| **Relates to** | [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md), [ADR-0026](DASHSPEC-ADR-0026-layout-module-scope.md), [ADR-0022](DASHSPEC-ADR-0022-toolbar-ref-and-layout-board.md) |
+# DASHSPEC-ADR-0036: End blocks, page toolbar, filter derive, presentation scale
 
 ## Context
 

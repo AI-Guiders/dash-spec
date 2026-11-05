@@ -34,7 +34,31 @@ module UnitSource =
             |> Array.mapi (fun index line -> if index > start && index < headerEnd then String.replicate line.Length " " else line)
             |> String.concat "\n"
 
-    let readUnit (path: string) = blankHeader (File.ReadAllText path)
+    /// Embedded units (stdlib, ADR-0017): product content ships inside the assembly and
+    /// is registered here by the owner (Execution.Core reads its manifest — well-known
+    /// logical names <c>stdlib/&lt;folder&gt;/&lt;name&gt;.ds</c> are the unit paths). Registered
+    /// units flow through the same pipeline as files on disk; the registry stores RAW
+    /// text — headers are blanked per-read (same as files).
+    let private embeddedUnits = System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+    let registerEmbeddedUnits (units: seq<string * string>) =
+        for (path, text) in units do
+            embeddedUnits.[path] <- text
+
+    let embeddedUnitPaths () : string list = List.ofSeq embeddedUnits.Keys
+
+    let existsUnit (path: string) = embeddedUnits.ContainsKey path || File.Exists path
+
+    /// Raw unit text (header intact) — for index/metadata reads; parsers get readUnit.
+    let tryReadRaw (path: string) =
+        match embeddedUnits.TryGetValue path with
+        | true, text -> Some text
+        | false, _ -> if File.Exists path then Some(File.ReadAllText path) else None
+
+    let readUnit (path: string) =
+        match tryReadRaw path with
+        | Some text -> blankHeader text
+        | None -> raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
     /// Module id of a unit file: the third word of the `module <kind> <id>` line.
     let moduleIdOf (text: string) : string option =

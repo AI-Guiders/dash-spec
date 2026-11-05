@@ -1,10 +1,19 @@
-# DASHSPEC-ADR-0103: Surfaces read the F# IR; they must not parse
+---
+type: ADR
+id: DASHSPEC-ADR-0103
+title: "Surfaces read the F# IR; they must not parse"
+status: "Accepted"
+date: 2026-10-16
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0048
+  - DASHSPEC-ADR-0076
+  - DASHSPEC-ADR-0099
+  - DASHSPEC-ADR-0102
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-16 |
-| **Relates to** | [ADR-0048](DASHSPEC-ADR-0048-modeling-execution-split-fsharp.md) · [ADR-0076](DASHSPEC-ADR-0076-architecture-build-guards.md) · [ADR-0099](DASHSPEC-ADR-0099-surface-blazor-contract-testing.md) · [ADR-0102](DASHSPEC-ADR-0102-one-language.md) · [ADR-0048 model migration map](DASHSPEC-ADR-0048-model-migration-map.md) |
+# DASHSPEC-ADR-0103: Surfaces read the F# IR; they must not parse
 
 ## Context
 

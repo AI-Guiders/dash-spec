@@ -110,14 +110,17 @@ window.dashSpecMatrix = {
       naturalW > gridW ||
       naturalH > gridH
     ) {
-      return { cellW: preferredCellW, cellH: preferredCellH };
+      // Same square rule on the early-exit path: the preferred cell is ONE side.
+      return { cellW: preferredCellW, cellH: preferredCellW };
     }
 
     let cellW = Math.floor((gridW - gap * (xCount + 1)) / Math.max(1, xCount));
-    cellW = Math.min(52, Math.max(preferredCellW, cellW));
     let cellH = Math.floor((gridH - gap * (yCount + 1)) / Math.max(1, yCount));
-    cellH = Math.min(48, Math.max(preferredCellH, cellH));
-    return { cellW, cellH };
+    // The square is the form: the LIMITING dimension rules both sides — a heatmap
+    // cell is never a rectangle (independent width/height fits turned the sparse
+    // activity matrix into tall rectangles while the peak matrix stayed square).
+    const side = Math.max(preferredCellW, Math.min(Math.min(cellW, cellH), 52));
+    return { cellW: side, cellH: side };
   },
 
   render(canvas, payload) {
@@ -232,16 +235,31 @@ window.dashSpecMatrix = {
     const gapPx = payload.gap ?? 2;
     const scroll = host.querySelector(".matrix-canvas-scroll") || host;
     const width = scroll.clientWidth || host.getBoundingClientRect().width || 800;
-    const maxHeight = payload.maxHeight ?? 420;
+    // stretch_mode = fill: the slot (CSS) sizes the scroll box — fit cells to the real
+    // height instead of the resolved px floor/cap.
+    const measured = scroll.clientHeight || 0;
+    const availableHeight = payload.stretchFill && measured > 0 ? measured : payload.maxHeight ?? 420;
     const labelCol = this.yLabelCol(host);
-    const { cellW, cellH } = this.fitCellSize(
+    const fitted = this.fitCellSize(
       payload.xCount,
       payload.yCount,
       width,
-      maxHeight,
+      availableHeight,
       gapPx,
       labelCol,
       payload.visibleRows ?? null);
+    let cellW = fitted.cellW;
+    let cellH = fitted.cellH;
+    // fill only: when the rows already fit, grow the cells to eat the spare height
+    // (fitCellSize keeps preferred sizes for wide matrices; fill grows without a cap).
+    if (payload.stretchFill) {
+      const gap = gapPx;
+      const naturalH = payload.yCount * (cellH + gap) + gap;
+      if (naturalH <= availableHeight && payload.yCount > 0) {
+        const grown = Math.floor((availableHeight - 28 - 16 - gap * (payload.yCount + 1)) / payload.yCount);
+        cellH = Math.max(cellH, grown);
+      }
+    }
     host.style.setProperty("--matrix-cell-w", `${cellW}px`);
     host.style.setProperty("--matrix-cell-h", `${cellH}px`);
     return this.render(canvas, {

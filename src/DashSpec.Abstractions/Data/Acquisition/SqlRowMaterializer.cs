@@ -62,7 +62,7 @@ public static class SqlRowMaterializer
         return names;
     }
 
-    public static DashValue[] ReadRow(DbDataReader reader, RowTypeSchema schema, int[] columnOrdinals)
+    public static DashValue[] ReadRow(DbDataReader reader, RowTypeSchema schema, int[] columnOrdinals, string? dateTimeFrame = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(schema);
@@ -84,13 +84,13 @@ public static class SqlRowMaterializer
                 continue;
             }
 
-            cells[i] = ConvertCell(reader.GetValue(ordinal), field.Kind);
+            cells[i] = ConvertCell(reader.GetValue(ordinal), field.Kind, dateTimeFrame);
         }
 
         return cells;
     }
 
-    public static TypedRowBatch ReadAll(DbDataReader reader, int maxRows, RowTypeSchema schema)
+    public static TypedRowBatch ReadAll(DbDataReader reader, int maxRows, RowTypeSchema schema, string? dateTimeFrame = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(schema);
@@ -104,7 +104,7 @@ public static class SqlRowMaterializer
                 throw new InvalidOperationException($"SQL result exceeded max_rows ({maxRows}).");
             }
 
-            rows.Add(ReadRow(reader, schema, columnOrdinals));
+            rows.Add(ReadRow(reader, schema, columnOrdinals, dateTimeFrame));
         }
 
         return TypedRowBatch.Create(schema, rows);
@@ -131,7 +131,7 @@ public static class SqlRowMaterializer
         };
     }
 
-    private static DashValue ConvertCell(object raw, DashPrimitiveKind kind)
+    private static DashValue ConvertCell(object raw, DashPrimitiveKind kind, string? dateTimeFrame)
     {
         return kind switch
         {
@@ -157,14 +157,30 @@ public static class SqlRowMaterializer
                 TimeSpan ts => TimeOnly.FromTimeSpan(ts),
                 _ => TimeOnly.Parse(Convert.ToString(raw)!),
             }),
-            DashPrimitiveKind.DateTime => DashValue.FromDateTimeUtc(raw switch
-            {
-                DateTime dt => dt.ToUniversalTime(),
-                DateTimeOffset dto => dto.UtcDateTime,
-                DateOnly d => d.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
-                _ => DateTime.SpecifyKind(DateTime.Parse(Convert.ToString(raw)!), DateTimeKind.Utc),
-            }),
+            // Storage contract: *_utc columns hold UTC. datetime2 arrives Kind=Unspecified — the source's
+            // time_zone declaration decides: "local" converts; "utc" (or undeclared) keeps the wall value as UTC.
+            // ToUniversalTime() on Unspecified would treat it as server-local and silently shift it (MSK host: −3h).
+            DashPrimitiveKind.DateTime => DashValue.FromDateTimeUtc(NormalizeStoredDateTime(raw, dateTimeFrame)),
             _ => DashValue.FromString(Convert.ToString(raw) ?? string.Empty),
         };
+    }
+
+    private static DateTime NormalizeStoredDateTime(object raw, string? dateTimeFrame)
+    {
+        var dt = raw switch
+        {
+            DateTime dtValue => dtValue,
+            DateTimeOffset dto => dto.UtcDateTime,
+            _ => DateTime.Parse(Convert.ToString(raw)!, System.Globalization.CultureInfo.InvariantCulture),
+        };
+
+        if (dt.Kind == DateTimeKind.Utc)
+        {
+            return dt;
+        }
+
+        return dateTimeFrame == "local"
+            ? dt.ToUniversalTime()
+            : DateTime.SpecifyKind(dt, DateTimeKind.Utc);
     }
 }

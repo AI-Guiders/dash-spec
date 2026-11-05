@@ -1,0 +1,61 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using Radzen.Blazor
+
+@* ADR-0112: the Radzen stack's card chrome button — RadzenButton, the theme paints
+   it. Surface: Label (aria/tooltip), Disabled, Clicked, optional Pressed (toggle
+   buttons, aria-pressed), optional Icon (a RenderFragment — the plugin owns its
+   glyph, the stack owns the button). *@
+
+@{
+    var extra = Pressed is { } pressed
+        ? new Dictionary<string, object> { ["aria-pressed"] = pressed ? "true" : "false" }
+        : new Dictionary<string, object>();
+    // null TestId → the attribute is dropped by the renderer, no branch needed.
+    extra["data-testid"] = TestId;
+}
+
+@if (Icon is null)
+{
+    <RadzenButton @attributes="extra"
+                  Text="@Label"
+                  Click="@(() => Clicked.InvokeAsync())"
+                  Disabled="@Disabled"
+                  ButtonType="ButtonType.Button"
+                  Size="ButtonSize.Small"
+                  Variant="Variant.Text"
+                  class="card-chrome-btn"
+                  AriaLabel="@Label" />
+}
+else
+{
+    <RadzenButton @attributes="extra"
+                  Click="@(() => Clicked.InvokeAsync())"
+                  Disabled="@Disabled"
+                  ButtonType="ButtonType.Button"
+                  Size="ButtonSize.Small"
+                  Variant="Variant.Text"
+                  class="card-chrome-btn"
+                  Title="@Label"
+                  AriaLabel="@Label">
+      <ChildContent>@Icon</ChildContent>
+    </RadzenButton>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public EventCallback Clicked { get; set; }
+
+    /// <summary>Toggle buttons (aria-pressed); null — a plain button.</summary>
+    [Parameter] public bool? Pressed { get; set; }
+
+    /// <summary>The plugin's own glyph (svg) — the role declares WHAT the button does,
+    /// the stack paints the button around it.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Automation handle (data-testid); null — the button stays anonymous.
+    /// The role caller owns the name, the stack just paints it onto the element.</summary>
+    [Parameter] public string? TestId { get; set; }
+}

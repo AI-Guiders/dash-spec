@@ -32,6 +32,7 @@ public sealed class FlowCardExecutionTests
                 DashflowSourceFromKind.View,
                 fromValue,
                 Microsoft.FSharp.Core.FSharpOption<string>.None),
+            string.Empty,
             outputPort,
             outputRowType,
             Microsoft.FSharp.Core.FSharpOption<string>.None);

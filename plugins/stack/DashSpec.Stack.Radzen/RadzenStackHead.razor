@@ -1,24 +1,21 @@
 @* Radzen stack head (ADR-0112): the stack reads the author's theme token and
-   links its own reading of it. No stack has "own css" — the stack IS the visual
-   language; this is how the Radzen stack expresses the theme intent. The host
-   passes the token, never the link. Unknown token → stack default (loud later,
-   ADR-0112 Open). Rendered in place — the cascade position is the stack's call.
-   Dark = the stock dark.css base + this stack's palette override (theme-dark.css):
-   deep navy + cyan, the BI surface — not the stock gray. Light = stock light. *@
-@if (IsDark)
+   links its own reading of it — the dictionary lives in RadzenColorSchemes. No
+   stack has "own css" — the stack IS the visual language. The host passes the
+   token, never the link. Unknown token -> the stack default here; the loud
+   warning fires once at bootstrap (HostBootstrapService). Dark = the stock
+   dark.css base + this stack's palette override (theme-dark.css): deep navy +
+   cyan, the BI surface — not the stock gray. *@
+<link rel="stylesheet" href="@ThemeReading.BaseCss" />
+@if (ThemeReading.OverrideCss is { } overrideCss)
 {
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/dark.css?v=12.1.5-4" />
-    <link rel="stylesheet" href="_content/DashSpec.Stack.Radzen/css/theme-dark.css?v=0.1.0" />
+    <link rel="stylesheet" href="@overrideCss" />
 }
-else
-{
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/light.css?v=12.1.5-4" />
-}
-<link rel="stylesheet" href="_content/DashSpec.Stack.Radzen/css/chrome.css?v=2026102603" />
+<link rel="stylesheet" href="_content/DashSpec.Stack.Radzen/css/chrome.css?v=20261104a" />
 
 @code {
     /// <summary>Theme token (ADR-0112 §2): the author's intent, not a palette.</summary>
-    [Parameter] public string Theme { get; set; } = "dark";
+    [Parameter] public string Theme { get; set; } = RadzenColorSchemes.DefaultToken;
 
-    private bool IsDark => !string.Equals((Theme ?? "dark").Trim(), "light", StringComparison.OrdinalIgnoreCase);
+    private RadzenTheme ThemeReading =>
+        RadzenColorSchemes.Find(Theme) ?? RadzenColorSchemes.All[0];
 }

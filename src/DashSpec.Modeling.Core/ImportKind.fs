@@ -24,6 +24,8 @@ module ImportKindRegistry =
           /// Unit file keyword: `module <module-keyword> <id>`.
           ModuleKeyword: string }
 
+    /// Author navigation surface (ADR-0073): `section` is the only word for the
+    /// report's navigation unit (`tab` from ADR-0011 is removed).
     let private definitions: ImportKindDefinition[] =
         [|
             { Kind = ImportKind.Diagrams; Keyword = "diagrams"; ModuleKeyword = "diagram" }
@@ -33,12 +35,12 @@ module ImportKindRegistry =
             { Kind = ImportKind.Types; Keyword = "types"; ModuleKeyword = "types" }
             { Kind = ImportKind.Flows; Keyword = "flows"; ModuleKeyword = "flow" }
             { Kind = ImportKind.Palettes; Keyword = "palettes"; ModuleKeyword = "palette" }
-            { Kind = ImportKind.Tabs; Keyword = "tabs"; ModuleKeyword = "tab" }
+            { Kind = ImportKind.Tabs; Keyword = "sections"; ModuleKeyword = "section" }
         |]
 
     let allDefinitions = definitions
 
-    let allKinds = definitions |> Array.map (fun d -> d.Kind)
+    let allKinds = definitions |> Array.map (fun d -> d.Kind) |> Array.distinct
 
     let tryFindByKeyword (keyword: string) =
         definitions

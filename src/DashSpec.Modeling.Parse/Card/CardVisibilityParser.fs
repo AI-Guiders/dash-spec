@@ -75,3 +75,52 @@ module CardVisibilityParser =
     let parseOversizeWhen (reader: TokenReader) (cardId: string) =
         reader.SkipNewlines()
         readMessageBody reader cardId "oversize"
+
+    /// <summary>State words for the when construct (the message states; filter
+    /// conditions keep their block form). Constants, not free text — the same
+    /// word-registry discipline as click sources (ADR-0107).</summary>
+    module WhenStates =
+        /// <summary>The card's payload came back empty — the author's wording
+        /// replaces the generic "no data for the period".</summary>
+        let NoData = "no data"
+
+        /// <summary>The matrix oversize protection tripped (when oversize block form).</summary>
+        let Oversize = "oversize"
+
+    /// <summary>
+    /// The when construct's table surface (ADR-0106: one vocabulary, two surfaces, one
+    /// semantics). Rows: <c>| state | message |</c>; the block forms (when oversize,
+    /// when &lt;filter&gt;) stay valid and fill the same cells per the family rule.
+    /// </summary>
+    let applyWhenTableRows
+        (cardId: string)
+        (setOversize: string -> unit)
+        (setNoData: string -> unit)
+        (rows: string list)
+        =
+        let cellsToRow (m: Map<string, string>) : string * string =
+            let state =
+                match Construct.tryCell m "state" with
+                | Some s -> s.Trim().ToLowerInvariant()
+                | None -> raise (DashSpecParseException($"Card '{cardId}': when table row requires a 'state' cell."))
+            let message =
+                match Construct.tryCell m "message" with
+                | Some msg when msg.Length > 0 -> msg
+                | _ -> raise (DashSpecParseException($"Card '{cardId}': when table row '{state}' requires a 'message' cell."))
+            (state, message)
+
+        let applyRow ((state, message): string * string) =
+            match state with
+            | s when String.Equals(s, WhenStates.Oversize, StringComparison.Ordinal) -> setOversize message
+            | s when String.Equals(s, WhenStates.NoData, StringComparison.Ordinal) -> setNoData message
+            | other ->
+                let words = String.Join(" | ", [ WhenStates.NoData; WhenStates.Oversize ])
+                raise (DashSpecParseException($"Card '{cardId}': unknown when state '{other}' ({words})."))
+
+        let declaration: Construct.Declaration<string * string> =
+            { Name = "when"
+              Vocabulary = [ "state"; "message" ]
+              CellsToRow = cellsToRow
+              ConstructRow = applyRow }
+
+        Construct.applyTableRows declaration rows

@@ -37,9 +37,34 @@ internal static class ModuleParseRegistration
         RegisterPalette();
         RegisterPresentation();
         RegisterDiagram();
+        RegisterEmbeddedStdlib();
     }
 
     internal static void EnsureRegistered() => _ = typeof(ModuleParseRegistration);
+
+    internal static void EnsureStdlibRegistered() => RegisterEmbeddedStdlib();
+
+    /// <summary>Stdlib units are EmbeddedResources of this assembly (ADR-0017) with
+    /// well-known logical names (<c>stdlib/presentation/heatmap_tall.ds</c> — the
+    /// LogicalName metadata in the csproj): the manifest name IS the virtual unit path,
+    /// no runtime name surgery. Registered on assembly load — the stdlib is always
+    /// available, exactly like the old filesystem walk was.</summary>
+    private static void RegisterEmbeddedStdlib()
+    {
+        const string prefix = "stdlib/";
+        var assembly = typeof(ModuleParseRegistration).Assembly;
+        var units = assembly
+            .GetManifestResourceNames()
+            .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(name =>
+            {
+                using var stream = assembly.GetManifestResourceStream(name)
+                    ?? throw new InvalidOperationException($"Embedded stdlib unit '{name}' not found in manifest.");
+                using var reader = new System.IO.StreamReader(stream);
+                return System.Tuple.Create(name, reader.ReadToEnd());
+            });
+        DashSpec.Modeling.Parse.Document.UnitSource.registerEmbeddedUnits(units);
+    }
 
     /// <summary>Bridge entry for unit text: a `.ds` unit still carries its ADR-0098 header (`namespace` / `import`)
     /// while every unit parser reads only the body, so the header is blanked here once — same length, same offsets.</summary>

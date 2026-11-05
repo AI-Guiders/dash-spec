@@ -1,10 +1,17 @@
-# DASHSPEC-ADR-0007: `presentation`, `transform` и `@diagramlibrary`
+---
+type: ADR
+id: DASHSPEC-ADR-0007
+title: "`presentation`, `transform` и `@diagramlibrary`"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0002
+  - DASHSPEC-ADR-0003
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · v0.4 |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0002](DASHSPEC-ADR-0002-layout-and-presentation.md), [ADR-0003](DASHSPEC-ADR-0003-diagram-kinds-registry.md) |
+# DASHSPEC-ADR-0007: `presentation`, `transform` и `@diagramlibrary`
 
 ## Context
 

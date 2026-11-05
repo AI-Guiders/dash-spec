@@ -19,6 +19,9 @@ type FilterDefinition =
       ColumnReference: string option
       Label: string option
       Widget: string option
+      /// ADR-0118: selector expression density (inline | collapsed); legacy `widget =`
+      /// migrates: combobox/select -> collapsed, chips -> inline.
+      Density: string option
       MinValue: int option
       MaxValue: int option
       GrainFilterName: string option
@@ -37,6 +40,9 @@ type FilterDefinition =
 
     member this.IsSelectWidget =
         String.Equals(this.Widget |> Option.toObj, "select", StringComparison.OrdinalIgnoreCase)
+
+    member this.IsInlineDensity =
+        String.Equals(this.Density |> Option.toObj, "inline", StringComparison.OrdinalIgnoreCase)
 
     member this.IsSingleSelectField =
         this.SingleSelect || this.IsSelectWidget

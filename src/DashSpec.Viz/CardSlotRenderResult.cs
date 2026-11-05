@@ -17,4 +17,5 @@ public sealed record CardSlotRenderResult(
     bool AwaitingClick = false,
     string? AwaitingSource = null,
     string? Error = null,
-    ReportFormatDefaults? FormatDefaults = null);
+    ReportFormatDefaults? FormatDefaults = null,
+    DashflowExecutionPath? FlowPath = null);

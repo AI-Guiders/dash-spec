@@ -59,6 +59,7 @@ public static class QueryCompiler
         ArgumentNullException.ThrowIfNull(dialect);
 
         var rowSchema = rowTypes.GetRequired(card.DataSource.RowsType);
+        var dateTimeFrame = string.IsNullOrWhiteSpace(card.DataSource.TimeZone) ? null : card.DataSource.TimeZone;
 
         var fromClause = card.DataSource.Kind switch
         {
@@ -90,7 +91,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         if (TryBuildCategoryAggregateSelect(card.Diagram, out var aggregateSelect, out var groupBy))
@@ -106,7 +108,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         if (TryBuildTableAggregateSelect(card.Diagram, out var tableSelect, out var tableGroupBy))
@@ -122,7 +125,8 @@ public static class QueryCompiler
                     tableLimit,
                     dialect),
                 parameters,
-                rowSchema);
+                rowSchema,
+                dateTimeFrame);
         }
 
         return new CompiledQuery(
@@ -135,7 +139,8 @@ public static class QueryCompiler
                 tableLimit,
                 dialect),
             parameters,
-            rowSchema);
+            rowSchema,
+                dateTimeFrame);
     }
 
     private static string BuildSelectSql(
@@ -681,6 +686,8 @@ public static class QueryCompiler
     {
         return definition.Kind switch
         {
+            FilterKind.Date when cellDrillOverlay?.TryGetDateTimeRange(definition.Name, out var drillRange) == true =>
+                BuildDateTimeRangeClause(definition, drillRange, parameters),
             FilterKind.Date when cellDrillOverlay?.TryGetDate(definition.Name, out var drillDate) == true =>
                 BuildDateClause(drillDate, definition, filters, parameters, dialect),
             FilterKind.Field when cellDrillOverlay?.TryGetField(definition.Name, out var drillField) == true =>
@@ -700,6 +707,25 @@ public static class QueryCompiler
 
         var lastDot = columnReference.LastIndexOf('.');
         return lastDot >= 0 ? columnReference[(lastDot + 1)..] : columnReference;
+    }
+
+    private static string BuildDateTimeRangeClause(
+        FilterDefinition definition,
+        (DateTime From, DateTime To) range,
+        List<QueryParameter> parameters)
+    {
+        var variable = definition.Name;
+        var column = ResolveColumnName(definition.ColumnReference?.Value, variable);
+
+        var fromParam = $"@{variable}_from";
+        var toParam = $"@{variable}_to";
+        parameters.Add(new QueryParameter(fromParam, range.From));
+        parameters.Add(new QueryParameter(toParam, range.To));
+
+        // Диапазон ячейки heatmap — точный полуинтервал [from, to): верхняя граница — уже
+        // эксклюзивный инстант (следующий бакет вида). Суточный сдвиг диалекта
+        // (FormatDateRangeUpperExclusive) здесь не нужен — тот смысл для DateOnly-дней.
+        return $"{column} >= {fromParam} AND {column} < {toParam}";
     }
 
     private static string? BuildDateClause(

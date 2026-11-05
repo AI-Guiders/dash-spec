@@ -1,0 +1,107 @@
+/* Radzen stack — the stack's own reading of the `light` theme token (ADR-0112 §2).
+   The marine pair's light side: the same navy + cyan family as theme-dark.css on
+   light surfaces — deep navy structure (topbar, headers), cyan accent, sea-tinted
+   grays instead of stock neutral. Loaded after default.css: only the variable
+   scales are overridden, derived component variables cascade from them. */
+
+:root {
+  /* Base scale — sea-tinted light ramp, navy structure */
+  --rz-base-50: #ffffff;
+  --rz-base-100: #f6f9fc;
+  --rz-base-200: #eaf0f7;
+  --rz-base-300: #d8e2ef;
+  --rz-base-400: #b7c7dd;
+  --rz-base-500: #8fa3c0;
+  --rz-base-600: #64789b;
+  --rz-base-700: #46587c;
+  --rz-base-800: #34425f;
+  --rz-base-900: #1f2a44;
+  --rz-base: #3b4d74;
+  --rz-base-light: #64789b;
+  --rz-base-lighter: #eaf0f7;
+  --rz-base-dark: #46587c;
+  --rz-base-darker: #1f2a44;
+  --rz-on-base: #f4f7fd;
+  --rz-on-base-light: #1f2a44;
+  --rz-on-base-lighter: #1f2a44;
+  --rz-on-base-dark: #eaf0f7;
+  --rz-on-base-darker: #eaf0f7;
+
+  /* Primary — deep cyan (readable on white); secondary — blue */
+  --rz-primary: #0e7490;
+  --rz-primary-light: #0891b2;
+  --rz-primary-lighter: rgba(8, 145, 178, 0.12);
+  --rz-primary-dark: #155e75;
+  --rz-primary-darker: #0f4c5f;
+  --rz-on-primary: #ffffff;
+  --rz-on-primary-light: #ffffff;
+  --rz-on-primary-lighter: #0f4c5f;
+  --rz-on-primary-dark: #ffffff;
+  --rz-on-primary-darker: #ffffff;
+
+  --rz-secondary: #2563eb;
+  --rz-secondary-light: #3b82f6;
+  --rz-secondary-lighter: rgba(37, 99, 235, 0.12);
+  --rz-secondary-dark: #1d4ed8;
+  --rz-secondary-darker: #1e3fae;
+
+  /* Accents — the dark pair's dark-variants as mains: light-surface contrast */
+  --rz-info: #0d9488;
+  --rz-info-light: #14b8a6;
+  --rz-info-lighter: rgba(13, 148, 136, 0.12);
+  --rz-info-dark: #0f766e;
+  --rz-info-darker: #115e59;
+
+  --rz-success: #059669;
+  --rz-success-light: #10b981;
+  --rz-success-lighter: rgba(5, 150, 105, 0.12);
+  --rz-success-dark: #047857;
+  --rz-success-darker: #065f46;
+
+  --rz-warning: #b45309;
+  --rz-warning-light: #d97706;
+  --rz-warning-lighter: rgba(180, 83, 9, 0.12);
+  --rz-warning-dark: #92400e;
+  --rz-warning-darker: #78350f;
+
+  --rz-danger: #be123c;
+  --rz-danger-light: #e11d48;
+  --rz-danger-lighter: rgba(190, 18, 60, 0.12);
+  --rz-danger-dark: #9f1239;
+  --rz-danger-darker: #881337;
+
+  /* Chart series — the BI palette on light: same families, deeper water */
+  --rz-series-1: #0891b2;
+  --rz-series-2: #0d9488;
+  --rz-series-3: #2563eb;
+  --rz-series-4: #7c3aed;
+  --rz-series-5: #d97706;
+  --rz-series-6: #e11d48;
+  --rz-series-7: #16a34a;
+  --rz-series-8: #3b82f6;
+  --rz-series-9: #0284c7;
+  --rz-series-10: #06b6d4;
+  --rz-series-11: #f43f5e;
+  --rz-series-12: #8b5cf6;
+  --rz-series-13: #f59e0b;
+  --rz-series-14: #0d9488;
+  --rz-series-15: #60a5fa;
+  --rz-series-16: #a855f7;
+  --rz-series-17: #0ea5e9;
+  --rz-series-18: #0f766e;
+  --rz-series-19: #ea580c;
+  --rz-series-20: #6d28d9;
+  --rz-series-21: #65a30d;
+  --rz-series-22: #db2777;
+  --rz-series-23: #15803d;
+  --rz-series-24: #94a3b8;
+
+  /* Shape */
+  --rz-border-radius: 6px;
+}
+
+/* №2e light counterpart: the drill table header rides one step below the card
+   surface — a tinted band, not a gray slab. */
+:root {
+  --rz-grid-header-background-color: var(--rz-base-200);
+}

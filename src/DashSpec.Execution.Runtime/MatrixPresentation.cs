@@ -19,11 +19,16 @@ public sealed record MatrixPresentation(
     bool AxisLabelsX = true,
     bool AxisLabelsY = true,
     MatrixAxisScrollMode AxisScroll = MatrixAxisScrollMode.Sticky,
-    string? ToolbarValueLabels = null,
-    string? ToolbarAxisLabelsX = null,
-    string? ToolbarAxisLabelsY = null,
-    LegendDefinition? Legend = null,
-    bool HasTooltip = false) : IVizAxisPresentationSpec
+        string? ToolbarValueLabels = null,
+        string? ToolbarAxisLabelsX = null,
+        string? ToolbarAxisLabelsY = null,
+        LegendDefinition? Legend = null,
+        bool HasTooltip = false,
+        VizStretchMode StretchMode = VizStretchMode.None,
+        VizStretchDirection StretchDirection = VizStretchDirection.UpOnly,
+        string? XAxisPlacement = null,
+        string? YAxisPlacement = null,
+        string? Align = null) : IVizAxisPresentationSpec
 {
     public static MatrixPresentation FromCard(CardDefinition card, SpecLibrary? library = null)
     {
@@ -47,6 +52,8 @@ public sealed record MatrixPresentation(
         var toolbarAxisLabelsY = VizAxisPresentationParser.ParseToolbarLabel(diagram.Properties, "toolbar_axis_labels_y");
         var axisScroll = VizAxisPresentationParser.ParseAxisScroll(diagram.Properties);
 
+        var stretchProps = ChartChromeProperties.Merge(card, library);
+
         return new MatrixPresentation(
             height,
             visibleRows,
@@ -68,7 +75,33 @@ public sealed record MatrixPresentation(
             toolbarAxisLabelsX,
             toolbarAxisLabelsY,
             card.Legend?.Value,
-            card.Tooltip is not null);
+            card.Tooltip is not null,
+            VizStretch.ResolveMode(stretchProps),
+            VizStretch.ResolveDirection(stretchProps),
+            ParsePlacement(diagram.Properties.GetValueOrDefault("x_axis_placement"), "x_axis_placement", "top", "bottom"),
+            ParsePlacement(diagram.Properties.GetValueOrDefault("y_axis_placement"), "y_axis_placement", "left", "right"),
+            ParsePlacement(diagram.Properties.GetValueOrDefault("align"), "align", "left", "center"));
+    }
+
+    /// <summary>Placement knobs (<c>x_axis_placement = top|bottom</c>,
+    /// <c>y_axis_placement = left|right</c>, <c>align = left|center</c>): no silent
+    /// fallbacks — absent stays null (the renderer's documented natural layout applies),
+    /// an unknown word is a loud parse error. Explicit defaults live in the spec
+    /// presentation presets (stdlib heatmap_tall), not in code.</summary>
+    private static string? ParsePlacement(string? raw, string property, string first, string second)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var value = raw.Trim().ToLowerInvariant();
+        return value switch
+        {
+            var v when v == first || v == second => v,
+            _ => throw new DashSpecParseException(
+                $"diagram: unknown {property} '{raw.Trim()}' — expected {first} or {second}."),
+        };
     }
 
     public bool ShowsGradientLegend =>

@@ -1,10 +1,26 @@
-# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `view` → `diagram`
+---
+type: ADR
+id: DASHSPEC-ADR-0073
+title: "Author navigation surface — `report` → `section` → `page` → `card` → `view` → `diagram`"
+status: "Accepted (grammar + composer: planned; Host: align incrementally)"
+date: 2026-10-01
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0011
+  - DASHSPEC-ADR-0024
+  - DASHSPEC-ADR-0030
+  - DASHSPEC-ADR-0031
+  - DASHSPEC-ADR-0035
+  - DASHSPEC-ADR-0038
+  - DASHSPEC-ADR-0059
+  - DASHSPEC-ADR-0060
+  - DASHSPEC-ADR-0065
+  - DASHSPEC-ADR-0072
+  - DASHSPEC-ADR-0074
+---
 
-| | |
-|---|---|
-| **Status** | Accepted (grammar + composer: planned; Host: align incrementally) |
-| **Date** | 2026-10-01 |
-| **Relates to** | [ADR-0011](DASHSPEC-ADR-0011-tab-modules.md), [ADR-0024](DASHSPEC-ADR-0024-document-authoring-layers.md), [ADR-0030](DASHSPEC-ADR-0030-report-scale-pages-gates-and-suites.md), [ADR-0031](DASHSPEC-ADR-0031-display-vocabulary-no-as.md), [ADR-0035](DASHSPEC-ADR-0035-chrome-and-filter-widget-families.md), [ADR-0038](DASHSPEC-ADR-0038-structured-card-and-report-composition.md), [ADR-0059](DASHSPEC-ADR-0059-vertical-viz-plugins.md), [ADR-0060](DASHSPEC-ADR-0060-vertical-filter-plugins.md), [ADR-0065](DASHSPEC-ADR-0065-card-interior-multi-slot.md), [ADR-0072](DASHSPEC-ADR-0072-unified-layout-slot-plane.md), [ADR-0074](DASHSPEC-ADR-0074-host-shell-composed-view.md) |
+# DASHSPEC-ADR-0073: Author navigation surface — `report` → `section` → `page` → `card` → `view` → `diagram`
 
 ## Context
 

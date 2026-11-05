@@ -6,7 +6,42 @@ namespace DashSpec.Execution.Runtime;
 /// <summary>ADR-0057 P2 — warn when multiple chain sources compete on one slot.</summary>
 public static class ResolutionLint
 {
-    public const string CodeDuplicateStrongSource = "DS0571";
+    /// <summary>Append-only lint rule registry — the resolution layer's mirror of
+    /// <c>DashSpecRules</c> (parse layer): one rule = one slot, the code derives from
+    /// registration order (DS0570 + position). Append new rules at the END — the code
+    /// lands automatically and never changes meaning. DS0571 was the original
+    /// duplicate-strong-source code (that analyzer lives on in composition shadow
+    /// warnings); a stamping bug printed it for every rule — the registry gives each
+    /// rule its own stable code, with preset_not_found = DS0572 and filter.unused =
+    /// DS0573 exactly as originally documented.</summary>
+    private static readonly string[] RuleRegistry =
+    [
+        "report.header_title",        // DS0571
+        "diagram.preset_not_found",   // DS0572
+        "filter.unused",              // DS0573
+        "card.fill_height_default",   // DS0574
+        "tab.label",                  // DS0575
+        "card.chrome_title",          // DS0576
+        "diagram.chart_chrome",       // DS0577
+        "diagram.series_transform",   // DS0578
+        "tab.card_placement",         // DS0579
+        "flow.unfiltered",            // DS0580
+        "diagram.column_not_in_type", // DS0581
+        "bundle.renderer_missing",    // DS0582 (VizPluginRegistry fallback announcements)
+        "filter.grain_default_missing", // DS0583 (grain_filter target declares no default)
+    ];
+
+    private static string CodeFor(string slot)
+    {
+        var index = Array.IndexOf(RuleRegistry, slot);
+        if (index < 0)
+        {
+            throw new InvalidOperationException(
+                $"Lint slot '{slot}' is not in the rule registry — append it at the end (codes derive from order).");
+        }
+
+        return "DS" + (571 + index).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(4, '0');
+    }
 
     private static readonly string[] LegacyChartChromeKeys =
     [
@@ -29,8 +64,318 @@ public static class ResolutionLint
 
         findings.AddRange(AnalyzeComposition(document));
         findings.AddRange(AnalyzePlacement(document));
+        findings.AddRange(AnalyzePresetResolution(document));
+        findings.AddRange(AnalyzeFilterUsage(document));
+        findings.AddRange(AnalyzeFlowFilterUsage(document));
+        findings.AddRange(AnalyzeColumnTypeCoverage(document));
+        findings.AddRange(AnalyzeGrainDefaultResolution(document));
         return findings;
     }
+
+    /// <summary>
+    /// DS0583: a date filter binds <c>grain_filter</c> to a field filter that declares
+    /// no default (nothing in the defaults block). The grain is then unresolved at
+    /// runtime and the date input silently degrades — the spec must state the grain
+    /// (ADR-0011: <c>filter field … default day</c>; defaults: <c>filter.X.scale = …</c>).
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeGrainDefaultResolution(
+        DashboardDocument document)
+    {
+        var filterIndex = document.Filters
+            .GroupBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var filter in document.Filters)
+        {
+            var grainFilterName = filter.GrainFilterName?.Value;
+            if (string.IsNullOrWhiteSpace(grainFilterName) ||
+                !filterIndex.TryGetValue(grainFilterName, out var grainFilter) ||
+                HasText(grainFilter.DefaultExpression?.Value))
+            {
+                continue;
+            }
+
+            yield return Finding(
+                "filter.grain_default_missing",
+                null,
+                $"filter.{grainFilterName}",
+                $"filter.{filter.Name}.grain_filter",
+                $"date filter '{filter.Name}' binds grain_filter '{grainFilterName}' but " +
+                $"'{grainFilterName}' declares no default — the grain is unresolved. " +
+                $"Declare it in the spec: defaults block 'filter.{grainFilterName}.scale = day|month|year'.");
+        }
+    }
+
+    /// <summary>
+    /// DS0572: a diagram module's chrome <c>use &lt;preset&gt;</c> must resolve in the
+    /// document's library — otherwise height/colors silently fall to defaults.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzePresetResolution(
+        DashboardDocument document)
+    {
+        var availablePresets = document.ResolvedChartChromePresets;
+
+        foreach (var moduleDiagram in document.ResolvedModuleDiagrams.Values)
+        {
+            var presetName = moduleDiagram.Presentation?.Value?.UsePreset?.Value;
+            if (!string.IsNullOrWhiteSpace(presetName) &&
+                !availablePresets.ContainsKey(presetName))
+            {
+                yield return Finding(
+                    "diagram.preset_not_found",
+                    null,
+                    $"diagram.use.{presetName}",
+                    "library.chart_chrome_presets",
+                    $"diagram module '{moduleDiagram.Diagram.Kind}' uses preset '{presetName}' " +
+                    "which is not in the library — height/colors fall to defaults. " +
+                    "Import the preset namespace (import presentations from <ns>) " +
+                    "or declare the preset inline.");
+            }
+        }
+
+        // stretch_mode = fill with default height: the fill floor silently becomes
+        // the presentation default (280/320) instead of the authored preset value.
+        foreach (var card in document.Cards)
+        {
+            var props = card.Diagram.Properties;
+            if (props.TryGetValue("stretch_mode", out var stretch) &&
+                string.Equals(stretch, "fill", StringComparison.OrdinalIgnoreCase))
+            {
+                var presetName = card.Presentation?.Value?.UsePreset?.Value ??
+                    moduleDiagramPresetFor(card, document);
+                if (!string.IsNullOrWhiteSpace(presetName) &&
+                    !availablePresets.ContainsKey(presetName))
+                {
+                    yield return Finding(
+                        "card.fill_height_default",
+                        null,
+                        $"card.{card.Id}.stretch_mode",
+                        "library.chart_chrome_presets",
+                        $"card '{card.Id}': stretch_mode = fill but preset '{presetName}' not resolved — " +
+                        "fill floor falls to the default height (280/320). " +
+                        "This is almost certainly not what you want.");
+                }
+            }
+        }
+    }
+
+    private static string? moduleDiagramPresetFor(CardDefinition card, DashboardDocument document)
+    {
+        // Cards reference module diagrams by name; find the matching module's preset
+        foreach (var (id, moduleDiagram) in document.ResolvedModuleDiagrams)
+        {
+            if (string.Equals(moduleDiagram.Diagram.Kind, card.Diagram.Kind, StringComparison.OrdinalIgnoreCase))
+            {
+                return moduleDiagram.Presentation?.Value?.UsePreset?.Value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// DS0573: a report-level filter declared in <c>filters</c> that no card binds
+    /// is dead weight — the widget renders but filters nothing.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeFilterUsage(
+        DashboardDocument document)
+    {
+        var usedFilterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var card in document.Cards)
+        {
+            foreach (var name in card.BoundFilters)
+            {
+                usedFilterNames.Add(name);
+            }
+
+            foreach (var name in card.LocalFilters)
+            {
+                usedFilterNames.Add(name);
+            }
+        }
+
+        foreach (var tab in document.Tabs)
+        {
+            foreach (var cardId in tab.CardIds)
+            {
+                var card = document.Cards.FirstOrDefault(c =>
+                    string.Equals(c.Id, cardId, StringComparison.OrdinalIgnoreCase));
+                if (card is null) continue;
+                foreach (var name in card.BoundFilters)
+                {
+                    usedFilterNames.Add(name);
+                }
+            }
+        }
+
+        foreach (var filter in document.Filters)
+        {
+            if (!usedFilterNames.Contains(filter.Name))
+            {
+                yield return Finding(
+                    "filter.unused",
+                    null,
+                    $"filter.{filter.Name}",
+                    "report.filters",
+                    $"filter '{filter.Name}' is declared but not bound to any card — " +
+                    "it renders a widget that filters nothing.",
+                    informational: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// DS0580: a card whose data flow consumes none of the report filters while sibling
+    /// cards consume some — the toolbar will not affect this card. The wiring line
+    /// (<c>filter -&gt; [column] slot</c>) is missing and the change is silent.
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeFlowFilterUsage(
+        DashboardDocument document)
+    {
+        var filterNames = document.Filters
+            .Select(f => f.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (filterNames.Count == 0)
+        {
+            yield break;
+        }
+
+        var consumedAnywhere = false;
+        var cardsWithoutFilters = new List<CardDefinition>();
+
+        foreach (var card in document.Cards)
+        {
+            var consumed = CountFlowFilterLinks(card, filterNames);
+            if (consumed > 0)
+            {
+                consumedAnywhere = true;
+            }
+            else
+            {
+                cardsWithoutFilters.Add(card);
+            }
+        }
+
+        if (!consumedAnywhere)
+        {
+            // The whole document ignores its filters — filter.unused (DS0573) covers that.
+            yield break;
+        }
+
+        foreach (var card in cardsWithoutFilters)
+        {
+            yield return Finding(
+                "flow.unfiltered",
+                null,
+                $"card.{card.Id}.data_flow",
+                "report.filters",
+                $"card '{card.Id}': the data flow consumes none of the report filters that " +
+                "drive sibling cards — the toolbar will not affect it. Wire the filters " +
+                "(filter -> [column] slot) or confirm the card is intentionally global.");
+        }
+    }
+
+    private static int CountFlowFilterLinks(CardDefinition card, HashSet<string> filterNames)
+    {
+        // FSharpOption from C#: None == null; Value carries Some.
+        if (card.InteriorFlow is not { } flow)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        if (flow.Value.Sections.Sections.TryGetValue(
+                DashSpec.Modeling.Core.FlowGraphKind.Data,
+                out var links))
+        {
+            foreach (var link in links)
+            {
+                if (filterNames.Contains(link.FromNode))
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// DS0581: a diagram binding (value/x/y/color…) references a column that is not a
+    /// field of the slot's declared row type — the value is silently dropped at the
+    /// typed stream boundary and arrives null (the empty-KPI class).
+    /// </summary>
+    private static IEnumerable<ResolutionLintFinding> AnalyzeColumnTypeCoverage(
+        DashboardDocument document)
+    {
+        var schemas = document.ResolvedRowTypeSchemas;
+        if (schemas is not { Count: > 0 })
+        {
+            yield break;
+        }
+
+        foreach (var card in document.Cards)
+        {
+            if (card.DiagramSlots is not { Count: > 0 })
+            {
+                var single = CheckColumnCoverage(card.Id, "__diagram__", card.Diagram, card.DataSource, schemas);
+                if (single is not null)
+                {
+                    yield return single;
+                }
+
+                continue;
+            }
+
+            foreach (var slot in card.DiagramSlots.Values)
+            {
+                var finding = CheckColumnCoverage(card.Id, slot.SlotRef, slot.Diagram, slot.DataSource, schemas);
+                if (finding is not null)
+                {
+                    yield return finding;
+                }
+            }
+        }
+    }
+
+    private static ResolutionLintFinding? CheckColumnCoverage(
+        string cardId,
+        string slotRef,
+        DiagramDefinition diagram,
+        DataSourceDefinition dataSource,
+        IReadOnlyDictionary<string, DashSpec.Abstractions.Data.RowTypeSchema> schemas)
+    {
+        if (string.IsNullOrWhiteSpace(dataSource.RowsType) ||
+            !schemas.TryGetValue(dataSource.RowsType.Trim(), out var schema))
+        {
+            return null;
+        }
+
+        var fields = schema.Fields
+            .Select(f => f.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var role in DiagramBindingRoles)
+        {
+            if (DiagramBindings.TryGetColumn(diagram, role, out var column) &&
+                !fields.Contains(column))
+            {
+                return Finding(
+                    "diagram.column_not_in_type",
+                    null,
+                    $"card.{cardId}.{slotRef}.{role}",
+                    $"type.{dataSource.RowsType}",
+                    $"card '{cardId}' slot '{slotRef}': diagram {role} column '{column}' is not a field of " +
+                    $"row type '{dataSource.RowsType}' — the value is dropped at the typed stream boundary " +
+                    "and arrives null. Extend the row type or fix the binding.");
+            }
+        }
+
+        return null;
+    }
+
+    private static readonly string[] DiagramBindingRoles = ["value", "category", "x", "y", "color"];
 
     private static IEnumerable<ResolutionLintFinding> AnalyzeCatalogProd(
         DashboardDocument document,
@@ -287,7 +632,7 @@ public static class ResolutionLint
         string message,
         bool informational = false) =>
         new(
-            CodeDuplicateStrongSource,
+            CodeFor(slot),
             slot,
             mode,
             loser,

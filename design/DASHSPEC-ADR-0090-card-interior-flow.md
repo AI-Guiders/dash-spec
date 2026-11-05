@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0090: Card wiring (links only)
+---
+type: ADR
+id: DASHSPEC-ADR-0090
+title: "Card wiring (links only)"
+status: "Accepted"
+date: 2026-10-06
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0091
+  - DASHSPEC-ADR-0078
+  - DASHSPEC-ADR-0009
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-10-06 |
-| **Relates to** | [ADR-0091](DASHSPEC-ADR-0091-unified-graph-flow-and-routing.md), [ADR-0078](DASHSPEC-ADR-0078-dashflow-data-plane.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md) |
+# DASHSPEC-ADR-0090: Card wiring (links only)
 
 ## Context
 

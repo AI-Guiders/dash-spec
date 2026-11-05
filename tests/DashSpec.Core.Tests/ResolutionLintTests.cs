@@ -34,6 +34,69 @@ public sealed class ResolutionLintTests
                     []),
             ]);
 
+
+    [Fact]
+    public void Registry_codes_are_per_rule_not_the_shared_stamp()
+    {
+        // The stamping bug printed DS0571 for every rule; the registry restores the
+        // documented per-rule codes (ADR-0057 P2): preset = DS0572, filter.unused = DS0573.
+        var entry = new CatalogEntryDefinition("c", "Entry Title", "c.dashspec", null, null, null);
+        var doc = DocumentTestData.Create(
+            "r",
+            "Report Title",
+            "sqlserver",
+            SqlDialect.TSql,
+            null,
+            null,
+            null,
+            new LayoutDefinition { Columns = 12 },
+            TestModelDefaults.FiltersChrome,
+            [FilterTestData.Create(FilterKind.Field, "f1", null, "f1")],
+            [],
+            [new TabDefinition(
+                "t",
+                Microsoft.FSharp.Core.FSharpOption<string>.None,
+                ["c"],
+                Microsoft.FSharp.Core.FSharpOption<string>.None,
+                Microsoft.FSharp.Core.FSharpOption<LayoutBoardDefinition>.None)],
+            [
+                CardTestData.Create(
+                    "c",
+                    "",
+                    new DiagramDefinition("bar", new Dictionary<string, string>(), null),
+                    DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "dbo.t"),
+                    [],
+                    []),
+            ]);
+
+        var findings = ResolutionLint.Analyze(doc, entry);
+
+        Assert.Contains(findings, f => f.Slot == "report.header_title" && f.Code == "DS0571");
+        Assert.Contains(findings, f => f.Slot == "filter.unused" && f.Code == "DS0573");
+        Assert.DoesNotContain(findings, f => f.Slot == "filter.unused" && f.Code == "DS0571");
+    }
+
+    [Fact]
+    public void Demo_corpus_is_clean_of_flow_and_type_lints()
+    {
+        var path = Path.Combine(
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
+            "samples", "demo", "demo-soak.ds");
+        if (!File.Exists(path))
+        {
+            return; // sample tree absent in trimmed packaging
+        }
+
+        var diagnostics = DashSpec.Execution.Compilation.DashSpecDiagnosticService.ValidateFile(path);
+
+        // The demo corpus row types cover the diagram bindings and every filtered card
+        // is wired: the two lints (DS0580/DS0581) must stay silent on a clean corpus.
+        Assert.DoesNotContain(diagnostics, d =>
+            d.Message.Contains("DS0580 flow.unfiltered", StringComparison.Ordinal));
+        Assert.DoesNotContain(diagnostics, d =>
+            d.Message.Contains("DS0581 diagram.column_not_in_type", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void CatalogProd_warns_when_report_and_entry_titles_both_set()
     {

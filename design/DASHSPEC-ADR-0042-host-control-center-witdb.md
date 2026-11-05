@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0042: Host Control Center + WitDB settings SSOT
+---
+type: ADR
+id: DASHSPEC-ADR-0042
+title: "Host Control Center + WitDB settings SSOT"
+status: "Accepted"
+date: 2026-08-27
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0049
+  - DASHSPEC-ADR-0041
+  - DASHSPEC-ADR-0057
+---
 
-| | |
-|---|---|
-| **Status** | Accepted |
-| **Date** | 2026-08-27 |
-| **Relates to** | [ADR-0049](DASHSPEC-ADR-0049-git-catalog.md), [ADR-0041](DASHSPEC-ADR-0041-git-catalog-push-sync.md), Forge [ADR-0057](https://github.com/AI-Guiders/agent-forge/blob/main/design/FORGE-ADR-0057-instance-settings-and-control-center.md) |
+# DASHSPEC-ADR-0042: Host Control Center + WitDB settings SSOT
 
 ## Context
 

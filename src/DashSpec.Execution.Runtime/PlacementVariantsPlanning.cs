@@ -4,11 +4,12 @@ using DashSpec.Modeling.Parse.Layout;
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>
-/// Viewport-class variant planning ([ADR-0111] §7): the same placement under each viewport
-/// class, derived once at assembly. The wide class keeps the author's grid as declared;
-/// mid re-scales spans into half the columns and lets the grid auto-flow (dense) — the
-/// declared absolute cells are a wide-viewport intent; narrow stacks everything full width.
-/// The browser switches variants by media query — pure CSS, zero runtime computation.
+/// Viewport-class variant planning ([ADR-0111] §7) for **declared boards** (page/tab grids
+/// with explicit cells): the wide class keeps the author's grid as declared; mid re-scales
+/// spans into half the columns and lets the grid auto-flow (dense) — dense never overlaps,
+/// so declared boards need no packing; narrow stacks everything full width. Card interiors
+/// are not this path — auto interiors are a flex flow ([ADR-0116]). The browser switches
+/// variants by media query — pure CSS, zero runtime computation.
 /// </summary>
 public static class PlacementVariantsPlanning
 {

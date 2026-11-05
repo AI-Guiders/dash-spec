@@ -8,7 +8,7 @@ public sealed class EndSyntaxTests
     public void Parse_end_card_and_page_scoped_layout()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "R"
               page peak_util
@@ -20,7 +20,7 @@ public sealed class EndSyntaxTests
               end card
               end page
               end report
-            end tab
+            end section
             """);
 
         Assert.Single(doc.Cards);
@@ -31,7 +31,7 @@ public sealed class EndSyntaxTests
     public void Parse_end_syntax_card_with_title()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
             
             report
               title = "R"
@@ -53,7 +53,7 @@ public sealed class EndSyntaxTests
     public void Parse_page_toolbar_and_derive()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "R"
               standalone
@@ -96,7 +96,7 @@ public sealed class EndSyntaxTests
               end card
               end page
               end report
-            end tab
+            end section
             """);
 
         var page = doc.Pages!.Value.Single(p => p.Id == "p");

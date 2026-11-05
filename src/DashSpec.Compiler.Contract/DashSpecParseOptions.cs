@@ -34,4 +34,10 @@ public sealed class DashSpecParseOptions
     /// <summary>Click sources declared by viz plugins (ADR-0107): the `on &lt;source&gt; click` vocabulary.</summary>
     public IReadOnlySet<string> KnownClickSources { get; init; } =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Presentation properties declared by plugins (the plugin vocabulary for
+    /// <c>presentation</c>/<c>chrome</c> blocks — on top of the engine's core list).
+    /// A property unknown to the engine AND every active plugin is a loud parse error.</summary>
+    public IReadOnlySet<string> KnownPresentationProperties { get; init; } =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 }

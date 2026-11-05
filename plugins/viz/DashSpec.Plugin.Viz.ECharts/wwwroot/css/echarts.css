@@ -1,0 +1,188 @@
+/* ECharts plugin (spike): frozen panes — the frame is a fixed 2×2 grid (corner, X strip,
+   Y strip, body). The body pane is the ONLY scroller; the axis strips are overflow:hidden
+   and their inner content shifts in sync (JS transforms). Axes never move and nothing
+   ever scrolls under them (ADR-0084: the reader always sees both axes). Square cells are
+   geometry: every data track is exactly CellPx wide/tall. */
+.ech-frame {
+  display: grid;
+  /* The whole block (axes + body) sizes to the data as one — the Y labels can never
+     detach from the cells. Left-pinned by default: a time matrix grows rightward, so
+     the reading anchor stays put when a period is added (align = center opts out).
+     Wider than the card → the frame caps and the body pane scrolls. */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ech-frame--center {
+  margin: 0 auto;
+}
+
+/* Stretch fill (ADR-0073): the height comes from the card boundary through the flex
+   chain — the frame lands in the flex stack through a display:contents testid handle,
+   so flex:1 + min-height:0 bound it to the slot; the legend below keeps its natural
+   height. visible_rows steps aside. */
+.ech-frame--fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.card-viz-stack:has(.ech-frame--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ech-empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--rviz-text-muted, #94a3b8);
+}
+
+.ech-corner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-axis-y,
+.ech-axis-x {
+  font-size: 0.72rem;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+}
+
+.ech-x-strip {
+  overflow: hidden;
+  display: flex;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-x-inner {
+  display: grid;
+  height: 100%;
+  align-items: end;
+  margin: 0 auto;
+  will-change: transform;
+}
+
+.ech-x-label {
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+  padding-bottom: 0.15rem;
+  cursor: pointer;
+}
+
+.ech-x-label:hover {
+  color: var(--rz-text-color, #e2e8f0);
+}
+
+.ech-x-label-sparse {
+  color: transparent;
+  cursor: default;
+}
+
+.ech-y-strip {
+  overflow: hidden;
+  background: var(--rz-base-background-color, #141d2c);
+}
+
+.ech-y-inner {
+  display: grid;
+  will-change: transform;
+}
+
+.ech-y-label {
+  font-size: 0.75rem;
+  text-align: right;
+  padding: 0 0.4rem 0 0;
+  border: 0;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  /* Vertically centered against its row: line-height rides the cell side. */
+  height: var(--ech-cell, 28px);
+  line-height: var(--ech-cell, 28px);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ech-y-label:hover {
+  color: var(--rz-text-color, #e6ecf3);
+}
+
+.ech-y-label-selected {
+  color: var(--rz-text-color, #e6ecf3);
+  font-weight: 600;
+}
+
+.ech-body {
+  overflow: auto;
+  /* Always at least one square visible (operator rule): removing rows/columns must
+     not collapse the pane below a single cell — the matrix stays readable while it
+     grows back. */
+  min-width: var(--ech-cell, 28px);
+  min-height: var(--ech-cell, 28px);
+}
+
+/* Left-pinned: margin auto here sized the host off the canvas's INITIAL width
+   (the 28px-era value) and never re-resolved after the bridge resized it — the
+   canvas sat shifted one cell right of its labels. Centering is the spec's
+   align = center (ech-frame--center), never an auto margin. */
+.ech-host {
+  display: block;
+  margin: 0;
+}
+
+.ech-frame--center .ech-host {
+  margin: 0 auto;
+}
+
+/* Gradient legend (canvas parity: .heatmap-legend): a sibling below the frame —
+   the frame is fit-content of the matrix, the legend stretches to the card's slot
+   width and the bar flexes between the texts (min-width keeps it a gradient,
+   not a sliver, on narrow slots). The bar gradient mirrors HeatmapColorScale
+   per declared scale. */
+.ech-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  /* Breathing room from the scroll fold above: the fold is whole-row (bridge snaps
+     the pane), the gap keeps the legend from reading as riding onto the matrix. */
+  padding-top: 0.6rem;
+  max-width: 100%;
+}
+
+.ech-legend-bar {
+  flex: 1;
+  min-width: 96px;
+  height: 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.35));
+}
+
+.ech-legend[data-color-scale="heat"] .ech-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(215, 55%, 32%) 0%,
+    hsl(145, 60%, 42%) 35%,
+    hsl(45, 90%, 52%) 68%,
+    hsl(0, 75%, 50%) 100%
+  );
+}
+
+.ech-legend[data-color-scale="mono"] .ech-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(210, 65%, 28%) 0%,
+    hsl(210, 65%, 52%) 100%
+  );
+}

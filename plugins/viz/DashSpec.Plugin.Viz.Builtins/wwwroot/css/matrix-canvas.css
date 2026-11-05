@@ -41,6 +41,38 @@
   background: color-mix(in srgb, var(--accent, #3b82f6) 55%, #94a3b8);
 }
 
+/* stretch_mode = fill (WPF Stretch vocabulary): the slot sizes the matrix.
+   --matrix-max-height keeps the resolved px height as the floor (up_only) / cap (down_only). */
+.matrix-canvas-host--fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.matrix-canvas-host--fill .matrix-canvas-scroll {
+  flex: 1 1 auto;
+}
+
+.matrix-canvas-host--fill[data-stretch="up_only"] .matrix-canvas-scroll {
+  max-height: none;
+  min-height: var(--matrix-max-height, 420px);
+}
+
+.matrix-canvas-host--fill[data-stretch="down_only"] .matrix-canvas-scroll {
+  max-height: var(--matrix-max-height, 420px);
+}
+
+.matrix-canvas-host--fill[data-stretch="both"] .matrix-canvas-scroll {
+  max-height: none;
+}
+
+/* the stack wrapper around a filling diagram must pass the height through */
+.card-viz-stack:has(> .matrix-canvas-host--fill) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .matrix-canvas-layout {
   display: grid;
   grid-template-columns: var(--matrix-y-label-width, max-content) max-content;

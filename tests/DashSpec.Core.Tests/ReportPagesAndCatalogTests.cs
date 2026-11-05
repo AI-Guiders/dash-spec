@@ -11,7 +11,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_report_page_assigns_page_id_to_cards()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               page overview
@@ -32,7 +32,7 @@ public sealed class ReportPagesAndCatalogTests
               end card
               end page
               end report
-            end tab
+            end section
             """);
 
         Assert.NotNull(doc.Pages);
@@ -46,7 +46,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_page_and_entry()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card nav as "Nav"
@@ -60,7 +60,7 @@ public sealed class ReportPagesAndCatalogTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
@@ -76,7 +76,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_entry_preserving_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               filter user_name
@@ -98,7 +98,7 @@ public sealed class ReportPagesAndCatalogTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effects = doc.Cards[0].ClickBehaviour!.Value.Effects;
@@ -114,7 +114,7 @@ public sealed class ReportPagesAndCatalogTests
     public void Parse_goto_entry_preserving_matching_filters()
     {
         var doc = DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               card nav as "Nav"
@@ -127,7 +127,7 @@ public sealed class ReportPagesAndCatalogTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """);
 
         var effect = doc.Cards[0].ClickBehaviour!.Value.Effects[0];
@@ -173,7 +173,7 @@ public sealed class ReportPagesAndCatalogTests
         try
         {
             File.WriteAllText(Path.Combine(dir, "overview.ds"), """
-                module tab overview
+                module section overview
                 namespace Paged.Tabs
                 report
                 title = "Overview"
@@ -184,11 +184,11 @@ public sealed class ReportPagesAndCatalogTests
                 data flow { fixture_src [rows] -> [rows] __diagram__ }
                 end card
                 end report
-                end tab
+                end section
                 """);
 
             File.WriteAllText(Path.Combine(dir, "paged.ds"), """
-                module tab paged_reports
+                module section paged_reports
                 namespace Paged.Tabs
                 report
                 title = "Paged reports"
@@ -201,17 +201,17 @@ public sealed class ReportPagesAndCatalogTests
                 end card
                 end page
                 end report
-                end tab
+                end section
                 """);
 
             var doc = DashSpecTestRowTypes.ParseDashboard("""
                 module dashboard soak
                   import types from Fixtures.QueryRowTypes
-                  import tabs from Paged.Tabs
+                  import sections from Paged.Tabs
                   report
                   title = "Soak"
-                  tab overview as "Overview"
-                  tab paged_reports as "Paged reports"
+                  section overview as "Overview"
+                  section paged_reports as "Paged reports"
                   end report
                 end dashboard
                 """, dir);
@@ -246,7 +246,7 @@ public sealed class ReportPagesAndCatalogTests
     public void ValidateSpec_rejects_card_outside_page_when_pages_declared()
     {
         Assert.Throws<DashSpecParseException>(() => DashSpecTestRowTypes.ParseDashboard("""
-            module tab t
+            module section t
               report
               title = "T"
               page overview
@@ -264,7 +264,7 @@ public sealed class ReportPagesAndCatalogTests
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
               end report
-            end tab
+            end section
             """));
     }
 }

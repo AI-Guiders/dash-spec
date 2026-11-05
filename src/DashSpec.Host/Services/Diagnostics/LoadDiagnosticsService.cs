@@ -4,7 +4,7 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Resolution;
 using DashSpec.Host.Configuration;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Connectors;

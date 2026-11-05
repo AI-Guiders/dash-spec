@@ -1,0 +1,63 @@
+@namespace DashSpec.Plugin.Viz.Builtins.Components.Matrix
+@using DashSpec.Viz
+
+@* One toggle role of the matrix toolbar, two paints: the stack button (Icon = the
+   glyph as a RenderFragment) or the native builtin button. The role's semantics —
+   state, title, action — stay with the toolbar. *@
+
+@if (StackButton is not null)
+{
+    <DynamicComponent Type="StackButton"
+                      Parameters="@(new Dictionary<string, object?>
+                      {
+                          ["Label"] = Label,
+                          ["Disabled"] = Disabled,
+                          ["Pressed"] = Pressed,
+                          ["Clicked"] = EventCallback.Factory.Create(this, OnClick),
+                          ["TestId"] = TestId,
+                          ["Icon"] = (RenderFragment)(builder =>
+                          {
+                              builder.OpenComponent<MatrixGlyphIcon>(0);
+                              builder.AddAttribute(1, nameof(MatrixGlyphIcon.Glyph), Glyph);
+                              builder.AddAttribute(2, nameof(MatrixGlyphIcon.Filled), Pressed);
+                              builder.CloseComponent();
+                          }),
+                      })" />
+}
+else
+{
+    <button type="button"
+            class="@GlyphBtnClass(Pressed)"
+            title="@Label"
+            aria-label="@Label"
+            aria-pressed="@(Pressed ? "true" : "false")"
+            disabled="@Disabled"
+            data-testid="@TestId"
+            @onclick="OnClick">
+        <MatrixGlyphIcon Glyph="@Glyph" Filled="@Pressed" />
+    </button>
+}
+
+@code {
+    /// <summary>The stack's button component; null — the native builtin paints.</summary>
+    [Parameter] public Type? StackButton { get; set; }
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter] public bool Pressed { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter, EditorRequired] public string Glyph { get; set; } = string.Empty;
+
+    /// <summary>Automation handle — lands on the painted button whatever the stack;
+    /// null keeps the button anonymous.</summary>
+    [Parameter] public string? TestId { get; set; }
+
+    [Parameter, EditorRequired] public Func<Task> OnClick { get; set; } = default!;
+
+    private static string GlyphBtnClass(bool on) =>
+        on
+            ? "secondary card-icon-btn card-matrix-glyph-btn is-on"
+            : "secondary card-icon-btn card-matrix-glyph-btn is-off";
+}

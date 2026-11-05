@@ -1,10 +1,18 @@
-# DASHSPEC-ADR-0006: `@sqldialect` и семантика SQL-источников
+---
+type: ADR
+id: DASHSPEC-ADR-0006
+title: "`@sqldialect` и семантика SQL-источников"
+status: "Accepted"
+date: 2026-06-29
+tags: [dashspec, adr]
+language: ru
+relates:
+  - DASHSPEC-ADR-0001
+  - DASHSPEC-ADR-0009
+  - DASHSPEC-ADR-0018
+---
 
-| | |
-|---|---|
-| **Status** | Accepted · v0.3 — **синтаксис объявления `datasource sql`** см. [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) |
-| **Date** | 2026-06-29 |
-| **Relates to** | [ADR-0001](DASHSPEC-ADR-0001-connectors-as-plugins.md), [ADR-0009](DASHSPEC-ADR-0009-bind-only-filters.md), [ADR-0018](DASHSPEC-ADR-0018-sql-datasource-carriers.md) |
+# DASHSPEC-ADR-0006: `@sqldialect` и семантика SQL-источников
 
 ## Context
 

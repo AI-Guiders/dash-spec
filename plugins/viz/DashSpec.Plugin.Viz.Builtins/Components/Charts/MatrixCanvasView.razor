@@ -29,6 +29,7 @@ else
     <div id="@HostId"
          class="matrix-canvas-host @HostCssClass"
          style="@HostStyle"
+         data-stretch="@StretchWire"
          data-color-scale="@HeatmapColorScale.Normalize(ColorScale)">
         <div class="matrix-canvas-scroll">
             <div class="matrix-canvas-layout">
@@ -99,6 +100,11 @@ else
 
     [Parameter] public int HeightPx { get; set; } = 320;
 
+    /// <summary>stretch_mode = fill: the matrix takes the slot height (WPF Stretch vocabulary).</summary>
+    [Parameter] public VizStretchMode StretchMode { get; set; } = VizStretchMode.None;
+
+    [Parameter] public VizStretchDirection StretchDirection { get; set; } = VizStretchDirection.UpOnly;
+
     [Parameter] public int? VisibleRows { get; set; }
 
     [Parameter] public string? XAxisLabel { get; set; }
@@ -108,6 +114,9 @@ else
     [Parameter] public string? ValueLabel { get; set; }
 
     [Parameter] public string XFormat { get; set; } = "date.short";
+
+    /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹ в storage-кадр.</summary>
+    [Parameter] public DashSpec.Execution.Runtime.DashflowExecutionPath? FlowPath { get; set; }
 
     [Parameter] public string YFormat { get; set; } = "user.short";
 
@@ -161,6 +170,11 @@ else
                 parts.Add("matrix-canvas-host--axis-sticky");
             }
 
+            if (StretchMode is VizStretchMode.Fill)
+            {
+                parts.Add("matrix-canvas-host--fill");
+            }
+
             return string.Join(' ', parts);
         }
     }
@@ -171,6 +185,16 @@ else
     private const int TargetVisibleXLabels = 14;
 
     private string HostStyle => $"--matrix-max-height:{HeightPx}px";
+
+    private string StretchWire =>
+        StretchMode is not VizStretchMode.Fill
+            ? "none"
+            : StretchDirection switch
+            {
+                VizStretchDirection.DownOnly => "down_only",
+                VizStretchDirection.Both => "both",
+                _ => "up_only",
+            };
 
     private MatrixPayload? _lastSeenPayload;
 
@@ -222,6 +246,7 @@ else
             colMaxs = Payload.ColMaxs,
             colorScale = ColorScale,
             maxHeight = HeightPx,
+            stretchFill = StretchMode is VizStretchMode.Fill,
             visibleRows = VisibleRows,
             showValues = ValueLabelsWire,
             valueLabelsThreshold = ValueLabelsThresholdPx,
@@ -254,7 +279,7 @@ else
     }
 
     private string BuildPayloadKey() =>
-        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}:{ActiveCellKey()}";
+        $"{string.Join('|', Payload.YLabels)}::{string.Join('|', Payload.XLabels)}::{Payload.Min}:{Payload.Max}:{MatrixColorNormalizeParser.ToWire(Payload.ColorNormalize)}:{ComputeCellHash()}:{ColorScale}:{HeightPx}:{StretchWire}:{VisibleRows}:{ValueLabelsWire}:{ValueLabelsThresholdPx}:{ShowAxisLabelsX}:{ShowAxisLabelsY}:{ActiveCellKey()}";
 
     private string ActiveCellKey() => _activeCell is { } cell ? $"{cell.Yi},{cell.Xi}" : "-";
 
@@ -293,9 +318,14 @@ else
         _activeCell = (hit.Yi, hit.Xi);
         await InvokeAsync(StateHasChanged);
 
-        var xBucket = Payload.XBucketStarts is { Count: > 0 } buckets && hit.Xi >= 0 && hit.Xi < buckets.Count
-            ? buckets[hit.Xi]
-            : (DateTime?)null;
+        DateTime? xBucket = null;
+        DateTime? xBucketEnd = null;
+        if (Payload.XBucketStarts is { Count: > 0 } buckets && hit.Xi >= 0 && hit.Xi < buckets.Count)
+        {
+            xBucket = buckets[hit.Xi];
+            xBucketEnd = hit.Xi + 1 < buckets.Count ? buckets[hit.Xi + 1] : null;
+        }
+
         var context = new HeatmapCellContext(
             hit.Yi,
             hit.Xi,
@@ -304,9 +334,11 @@ else
             hit.Value,
             Payload.Tooltips?[hit.Yi][hit.Xi],
             xBucket,
+            xBucketEnd,
             // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
             // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
-            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.Cell);
+            DashSpec.Abstractions.Viz.MatrixClickSources.Cell,
+            FlowPath);
 
         await OnCellSelected.InvokeAsync(context);
     }
@@ -331,7 +363,9 @@ else
             null,
             null,
             null,
-            DashSpec.Plugin.Viz.Builtins.Components.MatrixCanvas.MatrixClickSources.CategoryItem);
+            null,
+            ClickSource: DashSpec.Abstractions.Viz.MatrixClickSources.CategoryItem,
+            FlowPath: FlowPath);
 
         await OnCategoryItemSelected.InvokeAsync(context);
     }

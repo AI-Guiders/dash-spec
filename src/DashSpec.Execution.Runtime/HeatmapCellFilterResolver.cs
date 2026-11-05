@@ -32,6 +32,43 @@ public static class HeatmapCellFilterResolver
             }
         }
 
+        // Ячейка heatmap несёт точный интервал: Date-фильтр drill-карточки по той же datetime-колонке
+        // (bucket_start_utc) связывается с интервалом ячейки — grain таблицы следует за видом.
+        if (context.XBucketUtc is { } bucketStart && context.XBucketEndUtc is { } bucketEnd)
+        {
+            foreach (var filter in filterIndex.Values)
+            {
+                if (filter.Kind != FilterKind.Date)
+                {
+                    continue;
+                }
+
+                var filterColumn = filter.ColumnReference?.Value ?? filter.Name;
+                if (!filterColumn.Contains("bucket_start_utc", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var storageFrom = bucketStart;
+                var storageTo = bucketEnd;
+                if (context.FlowPath is { } flow)
+                {
+                    try
+                    {
+                        var inverse = flow.Invert();
+                        storageFrom = inverse.ApplyToDateTime(storageFrom);
+                        storageTo = inverse.ApplyToDateTime(storageTo);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // Граф необратим — фильтр по интервалу не накладываем.
+                    }
+                }
+
+                overlay.SetDateTimeRange(filter.Name, storageFrom, storageTo);
+            }
+        }
+
         foreach (var bind in binds)
         {
             var (filterName, field) = bind.TryGetFilterBind!.Value;
@@ -48,6 +85,8 @@ public static class HeatmapCellFilterResolver
 
             switch (filter.Kind)
             {
+                case FilterKind.Date when TryOverlayBucketRange(filter, context, overlay, filterName):
+                    break;
                 case FilterKind.Date when TryParseHeatmapDateFilter(raw, filterName, filters, out var day):
                     overlay.SetDate(filterName, day, day);
                     break;
@@ -56,6 +95,7 @@ public static class HeatmapCellFilterResolver
                     if (!string.IsNullOrWhiteSpace(wire))
                     {
                         overlay.SetField(filterName, wire);
+                        overlay.SetFieldDisplay(filterName, raw);
                     }
 
                     break;
@@ -209,13 +249,56 @@ public static class HeatmapCellFilterResolver
             return storageBucket.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         }
 
-        if (column.Contains("bucket_hour_hhmm", StringComparison.OrdinalIgnoreCase))
+        if (column.Contains("bucket_hour", StringComparison.OrdinalIgnoreCase))
         {
-            var hourFloor = new TimeOnly(time.Hour, 0);
+            // Метка оси — в display-кадре графа (to_zone), колонка в базе — в storage-кадре.
+            // G⁻¹ возвращает значение в кадр базы (08:00 МСК → 05:00 UTC).
+            var storage = context.FlowPath is { } flow
+                ? flow.Invert().ApplyToTime(time)
+                : time;
+            var hourFloor = new TimeOnly(storage.Hour, 0);
             return hourFloor.ToString("HH:mm", CultureInfo.InvariantCulture);
         }
 
         return raw;
+    }
+
+    /// <summary>
+    /// Клик по ячейке с datetime-осью превращается в точный диапазон storage-времени
+    /// [бакет, бакет + шаг вида): данные drill-таблицы совпадают с ячейкой на любом grain.
+    /// </summary>
+    private static bool TryOverlayBucketRange(
+        FilterDefinition filter,
+        HeatmapCellContext context,
+        CardCellDrillOverlay overlay,
+        string filterName)
+    {
+        var column = filter.ColumnReference?.Value ?? filter.Name;
+        if (!column.Contains("bucket_start_utc", StringComparison.OrdinalIgnoreCase) ||
+            context.XBucketUtc is not { } start ||
+            context.XBucketEndUtc is not { } end)
+        {
+            return false;
+        }
+
+        var storageFrom = start;
+        var storageTo = end;
+        if (context.FlowPath is { } flow)
+        {
+            try
+            {
+                var inverse = flow.Invert();
+                storageFrom = inverse.ApplyToDateTime(storageFrom);
+                storageTo = inverse.ApplyToDateTime(storageTo);
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+        }
+
+        overlay.SetDateTimeRange(filterName, storageFrom, storageTo);
+        return true;
     }
 
     private static DateOnly? ResolveAnchorDay(IEnumerable<string>? anchorDateFilterNames, FilterState filters)

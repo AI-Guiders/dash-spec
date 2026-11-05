@@ -1,0 +1,165 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using System.Globalization
+@using Radzen.Blazor
+@implements IDisposable
+
+@* ADR-0118: the Radzen stack's selector/dates range control - ONE native
+   RadzenDateRangePicker (official bind pattern: TValue DateTime?, Value = [start, end]).
+   Same wire surface as RangeDateInput (From/To wire strings yyyy-MM-dd,
+   RangePicked (From, To), Disabled, InputClass, AriaLabel): the swap is invisible
+   to the wrapper's echo protection. Theme paints it - no extra skin. *@
+
+<RadzenDateRangePicker @bind-Value="@CurrentRange"
+                       DateFormat="@Culture.DateTimeFormat.ShortDatePattern"
+                       Culture="@Culture"
+                       ShowTime="false"
+                       Disabled="@Disabled"
+                       @key="@($"range:{From}:{To}")"
+                       Placeholder="@AriaLabel"
+                       Style="width:100%"
+                       class="@InputClass"
+                       AriaLabel="@AriaLabel" />
+
+@code {
+    /// <summary>Wire from: yyyy-MM-dd, empty = unset (ADR-0118 wire).</summary>
+    [Parameter, EditorRequired] public string From { get; set; } = string.Empty;
+
+    /// <summary>Wire to: yyyy-MM-dd, empty = unset.</summary>
+    [Parameter, EditorRequired] public string To { get; set; } = string.Empty;
+
+    /// <summary>Both ends as wires; the wrapper sorts and commits once.</summary>
+    [Parameter] public EventCallback<(string From, string To)> RangePicked { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string InputClass { get; set; } = string.Empty;
+
+    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+
+    private CultureInfo Culture => LabelFormat.ResolveReportCulture();
+
+    private static DateTime? ParseWire(string wire) =>
+        DateTime.TryParseExact(
+            wire.Trim(),
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed
+            : null;
+
+    private Radzen.DateRange? _value;
+
+    /// <summary>@bind-Value target with real storage: the bind reads it back after
+    /// every Radzen internal render — a computed getter tied to the wires would reset
+    /// the user's in-progress selection on each click (the "can't select anything"
+    /// bug). Resyncs from the wires when they change externally (OnParametersSet).
+    /// Named CurrentRange: a razor property named Range collides with the
+    /// Radzen.DateRange type.</summary>
+    private Radzen.DateRange CurrentRange
+    {
+        get => _value ?? new Radzen.DateRange(ParseWire(From), ParseWire(To));
+        set
+        {
+            // First click of a gesture: Radzen reports Start only (End null/null-equal).
+            // Hold it — dropping it here resets the in-progress selection and the picker
+            // "returns to one value" (the operator-visible bug).
+            if (value is null || value.Start is null)
+            {
+                return;
+            }
+
+            if (value.End is null)
+            {
+                _value = new Radzen.DateRange(value.Start, null);
+                return;
+            }
+
+            if (_value is { } current &&
+                current.Start == value.Start &&
+                current.End == value.End)
+            {
+                return;
+            }
+
+            _value = value;
+
+            // Radzen fires ValueChanged on EVERY click of the gesture — the first click
+            // arrives as (d, d). Committing immediately kills the popup mid-gesture and
+            // the range "returns to one value". Debounce: clicks within the window
+            // replace the pending commit; the commit lands after the gesture settles.
+            _pending = value;
+            // The timer must actually exist: a bare "?." on a null field armed nothing,
+            // the debounce never fired and the gesture never committed.
+            if (_commitTimer is null)
+            {
+                _commitTimer = new System.Threading.Timer(CommitPending, null,
+                    1200, System.Threading.Timeout.Infinite);
+            }
+            else
+            {
+                _commitTimer.Change(1200, System.Threading.Timeout.Infinite);
+            }
+        }
+    }
+
+    private Radzen.DateRange? _pending;
+    private System.Threading.Timer? _commitTimer;
+
+    private void CommitPending(object? state)
+    {
+        var pending = _pending;
+        _pending = null;
+        if (pending is null || pending.Start is null || pending.End is null)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(async () =>
+        {
+            await RangePicked.InvokeAsync((
+                pending.Start.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                pending.End.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        });
+    }
+
+    /// <summary>The apply pipeline committed the wires — clear the pending gesture and
+    /// stop its timer so the reload doesn't double-fire. Guarded: OnParametersSet runs
+    /// on EVERY render, and Radzen re-renders mid-gesture (its own selection highlight)
+    /// — an unconditional reset here destroyed the in-progress gesture on the picker's
+    /// own echo render, and the commit never landed (the "диаграмма не меняется" bug).
+    /// Only wires that actually changed may reset the gesture.</summary>
+    private string _seenFrom = string.Empty;
+    private string _seenTo = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        var wiresChanged =
+            !string.Equals(_seenFrom, From, StringComparison.Ordinal) ||
+            !string.Equals(_seenTo, To, StringComparison.Ordinal);
+        _seenFrom = From;
+        _seenTo = To;
+
+        if (!wiresChanged)
+        {
+            return;
+        }
+
+        var from = ParseWire(From);
+        var to = ParseWire(To);
+
+        if (_value is { } v && (v.Start != from || v.End != to))
+        {
+            _value = null;
+        }
+
+        _pending = null;
+        _commitTimer?.Dispose();
+        _commitTimer = null;
+    }
+
+    public void Dispose()
+    {
+        _commitTimer?.Dispose();
+    }}

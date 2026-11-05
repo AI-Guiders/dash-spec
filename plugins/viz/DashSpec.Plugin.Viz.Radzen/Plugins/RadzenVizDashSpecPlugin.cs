@@ -1,6 +1,6 @@
+using DashSpec.Abstractions.Plugins;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Plugin.Viz.Builtins.Components.Matrix;
-using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Plugin.Viz.RadzenUI.Components;
 using DashSpec.Plugin.Viz.RadzenUI.Resources;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +46,34 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
         services.AddRadzenComponents();
         // Russian chrome for Radzen's built-in strings (ADR-0115 §3): no ru satellites upstream.
         services.AddSingleton<ILocalizer, RadzenRuLocalizer>();
+        // ADR-0118: the stack binds the selector/values and date-domain roles to its
+        // own controls (RadzenDropDown / RadzenDatePicker) — but ONLY when this stack
+        // is the active one. The factories resolve lazily: on other stacks the builtin
+        // flatpickr/markup controls stay (a Radzen-bound control without the Radzen
+        // assets can't open).
+        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterDateInputOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackFilterControlsOverride()
+                : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterDateInputOverride();
+        });
+        services.AddSingleton<DashSpec.Plugin.Filter.Builtins.Components.IFilterSelectorOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackFilterControlsOverride()
+                : new DashSpec.Plugin.Filter.Builtins.Components.DefaultFilterSelectorOverride();
+        });
+        // ADR-0112: the card chrome (view switcher, extension buttons) binds to native
+        // Radzen controls on this stack; other stacks keep the surface's native markup.
+        services.AddSingleton<DashSpec.Viz.ICardChromeControlsOverride>(sp =>
+        {
+            var settings = sp.GetRequiredService<DashSpec.Abstractions.Viz.IRenderStackSettings>();
+            return string.Equals(settings.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase)
+                ? new StackCardChromeOverride()
+                : new DashSpec.Viz.DefaultCardChromeControlsOverride();
+        });
     }
 
     private sealed class RadzenVizBackend : IVizPlugin

@@ -5,7 +5,8 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Core.Interaction;
 using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Viewer;
-using DashSpec.Viewer.Plugins;
+using DashSpec.Composition.Plugins;
+using DashSpec.Surface.Blazor.Composition;
 using DashSpec.Modeling.Core;
 using DashSpec.Modeling.Parse.Layout;
 using DashSpec.Surface.Blazor.Commands;
@@ -620,6 +621,21 @@ public sealed class DashboardPageController : IDisposable
             .ThenBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    /// <summary>[ADR-0111] P1: the toolbar slice projected through the session-visible
+    /// filter set — placements come from the plane (defaults recorded at assembly); the
+    /// section places these as given, no planner call on render. The (0,0,1) fallback
+    /// mirrors the old per-render planner for a filter absent from the slice.</summary>
+    public IReadOnlyList<LayoutSlotDescriptor> VisibleToolbarSlots =>
+        VisibleToolbarFilters()
+            .Select(name => new LayoutSlotDescriptor(
+                name,
+                ToolbarPlacements.TryGetValue(name, out var placement)
+                    ? placement
+                    : new PlacementDefinition(0, 0, 1),
+                LayoutSlotScope.HostPageToolbar,
+                LayoutSlotContentKind.Filter))
+            .ToList();
 
     public async Task SelectCatalogEntryAsync(string entryId)
     {

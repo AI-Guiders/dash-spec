@@ -4,7 +4,8 @@
 @using DashSpec.Core.Interaction
 @using DashSpec.Filters
 @using DashSpec.Viz
-@using DashSpec.Viewer.Plugins
+@using DashSpec.Composition.Plugins
+@using DashSpec.Surface.Blazor.Composition
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Surface.Blazor.Services.Localization
 @using DashSpec.Plugin.Filter.Builtins.Components
@@ -12,26 +13,51 @@
 @using Radzen
 @using Radzen.Blazor
 @inject DashboardLocalizer Loc
+@inject DashSpec.Viz.ICardChromeControlsOverride ChromeControls
 @implements IDisposable
 
-<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle">
+<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
     <div class="card-head">
         @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
         {
             <div class="card-head-title">
                 @if (CanFoldBody)
                 {
-                    <button type="button"
-                            class="secondary card-icon-btn card-fold-btn"
-                            title="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
-                            aria-expanded="@(!BodyFolded)"
-                            aria-label="@(BodyFolded ? Loc.T("Expand") : Loc.T("Collapse"))"
-                            @onclick="ToggleBodyFoldAsync"
-                            @onclick:stopPropagation="true">
-                        <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                    </button>
+                    // ADR-0112: the fold chevron is a chrome role — the stack paints the
+                    // button, the surface owns the fold state and the glyph.
+                    var stackFold = ChromeControls.ResolveButton();
+                    var foldLabel = BodyFolded ? Loc.T("Expand") : Loc.T("Collapse");
+                    if (stackFold is not null)
+                    {
+                        <DynamicComponent Type="stackFold"
+                                          Parameters="@(new Dictionary<string, object?>
+                                          {
+                                              ["Label"] = foldLabel,
+                                              ["Disabled"] = false,
+                                              ["Clicked"] = EventCallback.Factory.Create(this, ToggleBodyFoldAsync),
+                                              ["Icon"] = (RenderFragment)(builder =>
+                                              {
+                                                  builder.OpenComponent<CardIcon>(0);
+                                                  builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.ChevronDown);
+                                                  builder.AddAttribute(2, nameof(CardIcon.Collapsed), BodyFolded);
+                                                  builder.CloseComponent();
+                                              }),
+                                          })" />
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="secondary card-icon-btn card-fold-btn"
+                                title="@foldLabel"
+                                aria-expanded="@(!BodyFolded)"
+                                aria-label="@foldLabel"
+                                @onclick="ToggleBodyFoldAsync"
+                                @onclick:stopPropagation="true">
+                            <svg class="card-icon card-fold-icon @(BodyFolded ? "card-fold-icon--collapsed" : null)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+                    }
                 }
                 @if (Card.ShowChromeTitle)
                 {
@@ -45,63 +71,7 @@
         }
         @if (HasHeadToolbar && !BodyFolded)
         {
-            <div class="card-head-toolbar" role="toolbar" aria-label="@Loc.T("Card actions")">
-            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
-            {
-                <CardLocalFilterChrome Card="Card"
-                                       GridColumns="GridColumns"
-                                       FieldOptionsRevision="FieldOptionsRevision"
-                                       ApplyLabel="@Loc.T("Apply")"
-                                       FilterIndex="FilterIndex"
-                                       DateFrom="CardLocalDateFrom"
-                                       DateTo="CardLocalDateTo"
-                                       SelectedFields="CardLocalSelectedFields"
-                                       TopLimits="CardLocalTopLimits"
-                                       GetFieldOptions="GetFieldOptions"
-                                       AutoApply="AutoApply"
-                                       OnApplyCard="OnApplyCard"
-                                       OnScheduleCardApply="OnScheduleCardApply"
-                                       OnCardDayChanged="OnCardDayChanged"
-                                       OnCardFieldChanged="OnCardFieldChanged" />
-            }
-            @if (_vizToolbarType is not null)
-            {
-                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
-            }
-            @foreach (var chromeType in _cardChromeTypes)
-            {
-                <DynamicComponent Type="chromeType" Parameters="_cardChromeParameters" />
-            }
-            @if (CanFullscreen)
-            {
-                <button type="button"
-                        class="secondary card-icon-btn card-fullscreen-btn"
-                        title="@Loc.T("Expand diagram")"
-                        disabled="@Card.Loading"
-                        aria-pressed="@_fullscreen"
-                        aria-label="@Loc.T("Expand diagram")"
-                        @onclick="ToggleFullscreen">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-                        <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-                        <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-                    </svg>
-                </button>
-            }
-            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
-                                   Card="Card"
-                                   ActiveViewId="@ActiveViewId"
-                                   OnAction="OnCardAction" />
-            @if (Card.Loading)
-            {
-                <span class="card-status muted">@Loc.T("Loading…")</span>
-            }
-            else if (!string.IsNullOrEmpty(Card.Error))
-            {
-                <span class="card-status card-status-error">@Loc.T("Error")</span>
-            }
-            </div>
+            @CardToolbarChrome(showFullscreenToggle: true)
         }
         @if (HasHeadMeta && !BodyFolded)
         {
@@ -146,18 +116,7 @@
     }
     else if (!BodyFolded)
     {
-        <CascadingValue Value="this" IsFixed="true">
-            <CardInteriorGrid GridColumns="GridColumns">
-                @* [ADR-0111] P1: the render reads the assembled interior slice — no per-render planning. *@
-                @foreach (var slot in InteriorSlots)
-                {
-                    <PlacementSlot Placement="slot.Placement"
-                                   CssClass="@InteriorSlotClass(slot.Node.Kind)">
-                        <CardInteriorSlotContent Slot="slot" />
-                    </PlacementSlot>
-                }
-            </CardInteriorGrid>
-        </CascadingValue>
+        @InteriorPlan()
     }
 </RadzenCard>
 
@@ -174,25 +133,38 @@
              @onkeydown="OnFullscreenKeyDown">
             <header class="card-fullscreen-head">
                 <h2><RichTextView Text="@Card.Title" /></h2>
+                @if (_fullscreenSlotId is not null)
+                {
+                    <span class="muted card-fullscreen-slot-hint">@_fullscreenSlotId</span>
+                }
                 <button type="button"
                         class="secondary card-icon-btn card-fullscreen-close"
                         title="@Loc.T("Collapse")"
                         aria-label="@Loc.T("Collapse")"
                         @onclick="CloseFullscreen">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M8 3v3a2 2 0 0 1-2 2H3" />
-                        <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
-                        <path d="M3 16h3a2 2 0 0 1 2 2v3" />
-                        <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
-                    </svg>
+                    <CardIcon Kind="CardIconKind.Collapse" />
                 </button>
             </header>
-            <div class="card-fullscreen-body">
-                @if (_cardBodyType is not null)
+            @* The maximized card IS the card (ADR-0111 P1): toolbar and interior plan
+               ride along — the same fragments the inline card renders, only the frame
+               grows. Slot-maximize (the hover button) still shows that slot alone. *@
+            <CascadingValue Value="this" IsFixed="true">
+                @if (_fullscreenSlotId is null)
                 {
-                    <DynamicComponent Type="_cardBodyType" Parameters="_cardBodyParameters" />
+                    @CardToolbarChrome(showFullscreenToggle: false)
                 }
-            </div>
+                <div class="card-fullscreen-body">
+                    @if (_fullscreenSlotId is { } slotId &&
+                        InteriorSlots.FirstOrDefault(slot => slot.Node.Id == slotId) is { } fsSlot)
+                    {
+                        <CardInteriorSlotContent Slot="fsSlot" />
+                    }
+                    else
+                    {
+                        @InteriorPlan()
+                    }
+                </div>
+            </CascadingValue>
         </div>
     </div>
 }
@@ -228,7 +200,7 @@
     [Parameter] public EventCallback OnToggleBodyFold { get; set; }
 
     private bool CanFoldBody =>
-        Card.FoldMode is not CardFoldMode.None && !Card.IsVisibilityPlaceholder;
+        Card.Chrome is { Fold: not CardFoldMode.None } && !Card.IsVisibilityPlaceholder;
 
     private Task ToggleBodyFoldAsync() =>
         OnToggleBodyFold.HasDelegate ? OnToggleBodyFold.InvokeAsync() : Task.CompletedTask;
@@ -236,11 +208,120 @@
     private HeatmapCellContext? _selection;
     private RenderSnapshot _renderSnapshot;
     private bool _fullscreen;
+    private string? _fullscreenSlotId;
     private ElementReference _fullscreenPanel;
+
+    /// <summary>The card's action row — local filters, viz toolbar (view switch),
+    /// chrome, fullscreen toggle, extension blocks. One fragment, two frames: the
+    /// inline card and the fullscreen panel render the same row.</summary>
+    private RenderFragment CardToolbarChrome(bool showFullscreenToggle) => __builder =>
+    {
+        @* Chrome is the stack's (ADR-0112): the action row is a Radzen stack —
+           layout and rhythm from the theme, content stays ours. *@
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     AlignItems="AlignItems.Center"
+                     Wrap="FlexWrap.Wrap"
+                     Gap="0.4rem"
+                     class="card-head-toolbar"
+                     role="toolbar"
+                     aria-label="@Loc.T("Card actions")">
+            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+            {
+                <CardLocalFilterChrome Card="Card"
+                                       GridColumns="GridColumns"
+                                       FieldOptionsRevision="FieldOptionsRevision"
+                                       ApplyLabel="@Loc.T("Apply")"
+                                       FilterIndex="FilterIndex"
+                                       DateFrom="CardLocalDateFrom"
+                                       DateTo="CardLocalDateTo"
+                                       SelectedFields="CardLocalSelectedFields"
+                                       TopLimits="CardLocalTopLimits"
+                                       GetFieldOptions="GetFieldOptions"
+                                       AutoApply="AutoApply"
+                                       OnApplyCard="OnApplyCard"
+                                       OnScheduleCardApply="OnScheduleCardApply"
+                                       OnCardDayChanged="OnCardDayChanged"
+                                       OnCardFieldChanged="OnCardFieldChanged" />
+            }
+            @if (_vizToolbarType is not null)
+            {
+                <DynamicComponent Type="_vizToolbarType" Parameters="_vizToolbarParameters" />
+            }
+            @foreach (var chromeType in _cardChromeTypes)
+            {
+                <DynamicComponent Type="chromeType" Parameters="_cardChromeParameters" />
+            }
+            @if (showFullscreenToggle && CanFullscreen)
+            {
+                var stackFullscreen = ChromeControls.ResolveButton();
+                if (stackFullscreen is not null)
+                {
+                    @* ADR-0112: the stack paints the button; the role (expand) and the
+                       action stay surface-owned. *@
+                    <DynamicComponent Type="stackFullscreen"
+                                      Parameters="@(new Dictionary<string, object?>
+                                      {
+                                          ["Label"] = Loc.T("Expand diagram"),
+                                          ["Disabled"] = Card.Loading,
+                                          ["Pressed"] = _fullscreen,
+                                          ["Clicked"] = EventCallback.Factory.Create(this, ToggleFullscreen),
+                                          ["Icon"] = (RenderFragment)(builder =>
+                                          {
+                                              builder.OpenComponent<CardIcon>(0);
+                                              builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Expand);
+                                              builder.CloseComponent();
+                                          }),
+                                      })" />
+                }
+                else
+                {
+                    <button type="button"
+                            class="secondary card-icon-btn card-fullscreen-btn"
+                            title="@Loc.T("Expand diagram")"
+                            disabled="@Card.Loading"
+                            aria-pressed="@_fullscreen"
+                            aria-label="@Loc.T("Expand diagram")"
+                            @onclick="ToggleFullscreen">
+                        <CardIcon Kind="CardIconKind.Expand" />
+                    </button>
+                }
+            }
+            <CardExtensionChrome Blocks="Card.ExtensionBlocks"
+                                   Card="Card"
+                                   ActiveViewId="@ActiveViewId"
+                                   OnAction="OnCardAction" />
+            @if (Card.Loading)
+            {
+                <span class="card-status muted">@Loc.T("Loading…")</span>
+            }
+            else if (!string.IsNullOrEmpty(Card.Error))
+            {
+                <span class="card-status card-status-error">@Loc.T("Error")</span>
+            }
+        </RadzenStack>
+    };
+
+    /// <summary>The interior slot plan — the SSOT render (ADR-0111 P1). The inline
+    /// card and the fullscreen panel render the same grid; only the frame differs.</summary>
+    private RenderFragment InteriorPlan() => __builder =>
+    {
+        <CascadingValue Value="this" IsFixed="true">
+            <CardInteriorGrid GridColumns="GridColumns" ExtraStyle="@InteriorGridFillStyle()">
+                @foreach (var slot in InteriorSlots)
+                {
+                    <PlacementSlot Placement="slot.Placement"
+                                   CssClass="@InteriorSlotCssClass(slot)"
+                                   ExtraStyle="@InteriorSlotExtraStyle(slot)">
+                        <CardInteriorSlotContent Slot="slot" />
+                    </PlacementSlot>
+                }
+            </CardInteriorGrid>
+        </CascadingValue>
+    };
 
     private bool HasHeadToolbar =>
         _vizToolbarType is not null ||
-        CanFullscreen ||        CanFullscreen ||
+        CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
         (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
         Card.Loading ||
@@ -253,6 +334,7 @@
 
     private bool CanFullscreen =>
         !Card.IsVisibilityPlaceholder &&
+        InteriorSlots.Count > 0 &&
         Card.DataFamily is DiagramDataFamily.Chart or DiagramDataFamily.Matrix or DiagramDataFamily.Table or DiagramDataFamily.Gantt;
 
     [Inject] private VizCardToolbarRegistry VizToolbars { get; set; } = default!;
@@ -265,25 +347,31 @@
     private Dictionary<string, object?> _vizToolbarParameters = new();
     private IReadOnlyList<Type> _cardChromeTypes = [];
     private Dictionary<string, object?> _cardChromeParameters = new();
-    private Type? _cardBodyType;
-    private Dictionary<string, object?> _cardBodyParameters = new();
     private Type? _filterWidgetType;
-
-    private double DetailMatrixMin => Card.ForView(true).Matrix?.Min ?? Card.Matrix?.Min ?? 0;
-
-    private double DetailMatrixMax => Card.ForView(true).Matrix?.Max ?? Card.Matrix?.Max ?? 0;
-
 
     private void ToggleFullscreen()
     {
         _fullscreen = !_fullscreen;
+        _fullscreenSlotId = null;
         if (_fullscreen)
         {
             _ = FocusFullscreenAsync();
         }
     }
 
-    private void CloseFullscreen() => _fullscreen = false;
+    /// <summary>Per-slot maximize (hover button on a slot): the panel shows only this slot.</summary>
+    internal void OpenSlotFullscreen(string slotId)
+    {
+        _fullscreenSlotId = slotId;
+        _fullscreen = true;
+        _ = FocusFullscreenAsync();
+    }
+
+    private void CloseFullscreen()
+    {
+        _fullscreen = false;
+        _fullscreenSlotId = null;
+    }
 
     private async Task FocusFullscreenAsync()
     {
@@ -335,6 +423,7 @@
             _selection?.Xi,
             _selection?.Yi,
             _fullscreen,
+            _fullscreenSlotId,
             BodyFolded,
             LocalFieldOptionsToken(),
             FieldOptionsRevision,
@@ -361,6 +450,7 @@
         int? SelectionXi,
         int? SelectionYi,
         bool Fullscreen,
+        string? FullscreenSlotId,
         bool BodyFolded,
         int LocalFieldOptionsToken,
         int FieldOptionsRevision,
@@ -411,23 +501,7 @@
                 },
             };
 
-        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.CardDiagram, out _cardBodyType);
         Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.FilterWidget, out _filterWidgetType);
-        _cardBodyParameters = _cardBodyType is null
-            ? new Dictionary<string, object?>()
-            : new Dictionary<string, object?>
-            {
-                ["Card"] = Card,
-                ["DetailView"] = true,
-                ["MatrixMin"] = DetailMatrixMin,
-                ["MatrixMax"] = DetailMatrixMax,
-                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                    this,
-                    HandleHeatmapCellSelectedAsync),
-                ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                    this,
-                    HandleHeatmapCategoryItemSelectedAsync),
-            };
 
         _cardChromeTypes = Card.IsVisibilityPlaceholder ||
                            Card.Loading ||
@@ -552,9 +626,48 @@
             ? "card-interior-slot card-filter-slot"
             : "card-interior-slot card-diagram-slot";
 
+    /// <summary>stretch_mode = fill diagram slot: the card is the frame — the authored px
+    /// height fixes the slot, the content fills it and scrolls inside; siblings stretch
+    /// to the same frame instead of dictating heights to each other (ADR-0116 flex row).</summary>
+    private bool IsFillDiagramSlot(DashSpec.Modeling.Parse.Layout.Slot slot)
+    {
+        if (slot.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter ||
+            Card.InteriorSlotRenders?.ContainsKey(slot.Node.Id) == true)
+        {
+            return false;
+        }
+
+        return Card.ChartPresentation is { StretchMode: VizStretchMode.Fill } ||
+               Card.MatrixPresentation is { StretchMode: VizStretchMode.Fill };
+    }
+
+    private string InteriorSlotExtraStyle(DashSpec.Modeling.Parse.Layout.Slot slot) =>
+        IsFillDiagramSlot(slot)
+            ? $"--fill-h:{EffectiveFillFloorPx}px;"
+            : string.Empty;
+
+    /// <summary>The fill height rides the grid container too: sibling slots cap to it
+    /// (ADR-0073 — the card is the frame; a drill table paginates/scrolls inside its
+    /// slot instead of growing the card).</summary>
+    private string InteriorGridFillStyle() =>
+        InteriorSlots.Any(IsFillDiagramSlot)
+            ? $"--fill-h:{EffectiveFillFloorPx}px;"
+            : string.Empty;
+
+    private int EffectiveFillFloorPx =>
+        Card.ChartPresentation is { StretchMode: VizStretchMode.Fill } chart ? chart.HeightPx
+        : Card.MatrixPresentation is { StretchMode: VizStretchMode.Fill } matrix ? matrix.HeightPx
+        : 320;
+
+    private string InteriorSlotCssClass(DashSpec.Modeling.Parse.Layout.Slot slot)
+    {
+        var kindClass = InteriorSlotClass(slot.Node.Kind);
+        return IsFillDiagramSlot(slot) ? $"{kindClass} card-diagram-slot--fill" : kindClass;
+    }
+
     internal string InteriorSlotStyle(string slotKey) =>
         Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
-            ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement!, GridColumns))
+            ? Services.Presentation.DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns)
             : string.Empty;
 
     private bool LocalFiltersAutoApply =>
