@@ -328,7 +328,7 @@
                 _self);
 
             // Frozen panes: the body is the only scroller; the axis strips shift in sync.
-            await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner);
+            await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner, _self, HostDomId);
         }
         catch (JSDisconnectedException)
         {
