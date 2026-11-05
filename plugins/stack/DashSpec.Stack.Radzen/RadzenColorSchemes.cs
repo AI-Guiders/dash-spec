@@ -40,7 +40,6 @@ public static class RadzenColorSchemes
         Light,
         new RadzenTheme("material", "Material (светлая)", $"_content/Radzen.Blazor/css/material.css?v={V}"),
         new RadzenTheme("material_dark", "Material (тёмная)", $"_content/Radzen.Blazor/css/material-dark.css?v={V}"),
-        new RadzenTheme("contrast", "Высокий контраст (WCAG)", $"_content/Radzen.Blazor/css/dark-wcag.css?v={V}"),
     ];
 
     /// <summary>The stack's reading of the token: empty/null → the default; a known
