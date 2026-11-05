@@ -271,17 +271,19 @@
 }
 
 .card-matrix-glyph-char.is-off {
+  /* Ink from the theme TEXT color, not the button's accent: the toolbar button
+     paints its text in the stack accent (cyan on marine dark), and a filled
+     accent glyph on a dark surface merges into the background. --rz-text-color
+     is theme-managed and always contrasts with surfaces (white-ish on dark
+     themes, dark on light) — no per-theme override files. */
   color: transparent;
-  -webkit-text-stroke: 1.85px color-mix(in srgb, currentColor 88%, transparent);
+  -webkit-text-stroke: 1.85px var(--rz-text-color, #f8fafc);
   paint-order: stroke fill;
 }
 
 .card-matrix-glyph-char.is-on {
-  /* currentColor, not hardcoded ink: the glyph rides the themed toolbar button —
-     dark themes paint it light, light themes dark. Hardcoded #fff vanished on
-     every light surface. */
-  color: currentColor;
-  -webkit-text-stroke: 1.85px currentColor;
+  color: var(--rz-text-color, #f8fafc);
+  -webkit-text-stroke: 1.85px var(--rz-text-color, #f8fafc);
   paint-order: stroke fill;
 }
 
