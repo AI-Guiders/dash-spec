@@ -2,15 +2,15 @@
    the parts are this stack's copy of the plane projection (tokens read --rz-*),
    the rules below are the stack's own chrome (left menu + board column). Colors
    ride the --rz-* theme variables — the theme file owns the palette. */
-@import url("parts/tokens.css?v=20261029a");
-@import url("parts/layout.css?v=20261029a");
-@import url("parts/filters.css?v=20261029a");
-@import url("parts/cards.css?v=20261029a");
-@import url("parts/charts.css?v=20261029a");
-@import url("parts/viz-misc.css?v=20261029a");
-@import url("parts/gantt-timeline.css?v=20261029a");
-@import url("parts/spec-inspector.css?v=20261029a");
-@import url("parts/command-palette.css?v=20261029a");
+@import url("parts/tokens.css?v=20261106a");
+@import url("parts/layout.css?v=20261106a");
+@import url("parts/filters.css?v=20261106a");
+@import url("parts/cards.css?v=20261106a");
+@import url("parts/charts.css?v=20261106a");
+@import url("parts/viz-misc.css?v=20261106a");
+@import url("parts/gantt-timeline.css?v=20261106a");
+@import url("parts/spec-inspector.css?v=20261106a");
+@import url("parts/command-palette.css?v=20261106a");
 
 .dash-home-flow-radzen {
   display: flex;
