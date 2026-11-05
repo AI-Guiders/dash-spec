@@ -96,7 +96,13 @@
     // Frozen panes: the body pane is the only scroller; the fixed axis strips mirror
     // its scroll via transforms. Wheel over a strip drives the body — nothing ever
     // slides under the axes.
-    bindPanes: function (body, xInner, yInner) {
+    bindPanes: function (body, xInner, yInner, dotnet, hostId) {
+      // chart/ctx come from the render-time registry entry — bindPanes runs right
+      // after render under the same DotNetObjectReference.
+      const entry = charts.get(dotnet);
+      const chart = entry ? entry.chart : null;
+      const ctx = entry ? entry.ctx : null;
+      const host = typeof hostId === 'string' ? document.getElementById(hostId) : hostId;
       // Circuit guard (Blazor Server): an exception here surfaces in .NET and kills the
       // whole page's circuit — every button on every card goes dead. The bridge is a
       // render helper: it fails loudly in the console, but never throws across the wire.
@@ -157,16 +163,25 @@
       // the ResizeObserver at a fixed point.
       const foldFrame = body.closest('.ech-frame');
       const foldRows = function () {
-        if (!foldFrame) {
+        if (!foldFrame || !chart) {
           return;
         }
-        const side = parseFloat(getComputedStyle(foldFrame).getPropertyValue('--ech-cell')) || 28;
+        const isFill = foldFrame.classList.contains('ech-frame--fill');
+        const baseSide = 28;
+        const side = parseFloat(foldFrame.style.getPropertyValue('--ech-cell')) || baseSide;
         // rows are derived from the y-strip content height — bindPanes has no ctx.
         const rows = Math.round(yInner.getBoundingClientRect().height / side);
         const xStrip = foldFrame.querySelector('.ech-x-strip');
         const avail = foldFrame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
-        if (avail <= 0 || rows * side <= avail) {
-          // Short matrix: the natural height shows whole rows already.
+        if (avail <= 0) {
+          return;
+        }
+
+        // Cells stay at their authored size: a short matrix (few products selected)
+        // shows a few 28px rows at the pane top — readable as-is. No vertical
+        // growth: the row must be visible, not inflated.
+        if (rows * side <= avail) {
+          // Short matrix without fill-fit headroom: natural height, whole rows already.
           if (body.__dashspecFoldH) {
             body.__dashspecFoldH = null;
             body.style.height = '';
