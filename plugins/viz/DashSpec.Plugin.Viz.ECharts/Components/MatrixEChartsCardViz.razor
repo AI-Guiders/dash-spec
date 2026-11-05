@@ -70,6 +70,8 @@
                                  role="button"
                                  tabindex="0"
                                  title="@FormatXLabel(XLabel(xIndex))"
+                                 data-xi="@xIndex"
+                                 data-testid="viz-xlabel-@Context.Card.Id-@FormatXLabel(XLabel(xIndex))"
                                  @onclick="() => SelectXLabel(xIndex)"
                                  @onclick:stopPropagation="true">
                                 @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
@@ -88,6 +90,8 @@
                             <button type="button"
                                     class="ech-y-label @(_selectedRow == rowIndex ? "ech-y-label-selected" : null)"
                                     title="@FormatYLabel(YLabel(rowIndex))"
+                                    data-yi="@rowIndex"
+                                    data-testid="viz-ylabel-@Context.Card.Id-@FormatYLabel(YLabel(rowIndex))"
                                     @onclick="() => SelectCategory(rowIndex)"
                                     @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
                         }
@@ -100,7 +104,13 @@
                    echarts dies on it. The id is stable and resolvable from anywhere. The
                    testid is the scroll handle: this pane is the ONLY scroller, the axis
                    strips follow it. *@
-                <div id="@HostDomId" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
+                @* Cells are canvas — no DOM per cell. The geometry triple (cell, cols,
+                   rows) plus the axis labels' data-xi/data-yi turn a named cell into a
+                   pixel: (xi, yi) → center (xi*cell + cell/2, yi*cell + cell/2). *@
+                <div id="@HostDomId" class="ech-host"
+                     data-testid="viz-canvas-@Context.Card.Id"
+                     data-cell="@CellPx" data-cols="@Cols" data-rows="@Rows"
+                     style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
             </div>
         }
     </div>
