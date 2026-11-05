@@ -39,6 +39,9 @@
 
   window.dashspecECharts = {
     render: function (hostArg, optionJson, ctxJson, dotnet) {
+      // Circuit guard — see bindPanes. Returns false: the .NET side treats it as
+      // "nothing mounted", same as a missing host.
+      try {
       const previous = charts.get(dotnet);
       if (previous) {
         previous.chart.dispose();
@@ -84,12 +87,20 @@
       wireClicks(chart, ctx, dotnet);
       charts.set(dotnet, { chart: chart, ctx: ctx, option: option, selected: null });
       return true;
+      } catch (e) {
+        console.error('[dashspecECharts] render failed (chart degrades, circuit survives):', e);
+        return false;
+      }
     },
 
     // Frozen panes: the body pane is the only scroller; the fixed axis strips mirror
     // its scroll via transforms. Wheel over a strip drives the body — nothing ever
     // slides under the axes.
     bindPanes: function (body, xInner, yInner) {
+      // Circuit guard (Blazor Server): an exception here surfaces in .NET and kills the
+      // whole page's circuit — every button on every card goes dead. The bridge is a
+      // render helper: it fails loudly in the console, but never throws across the wire.
+      try {
       const sync = function () {
         xInner.style.transform = 'translateX(' + -body.scrollLeft + 'px)';
         yInner.style.transform = 'translateY(' + -body.scrollTop + 'px)';
@@ -144,16 +155,16 @@
       // body itself: height set on the body cannot feed back into the measurement
       // (the old label-width fit died of exactly that ratchet). The ±1px guard keeps
       // the ResizeObserver at a fixed point.
+      const foldFrame = body.closest('.ech-frame');
       const foldRows = function () {
-        const frame = body.closest('.ech-frame');
-        if (!frame) {
+        if (!foldFrame) {
           return;
         }
-        const side = parseFloat(getComputedStyle(frame).getPropertyValue('--ech-cell')) || 28;
+        const side = parseFloat(getComputedStyle(foldFrame).getPropertyValue('--ech-cell')) || 28;
         // rows are derived from the y-strip content height — bindPanes has no ctx.
         const rows = Math.round(yInner.getBoundingClientRect().height / side);
-        const xStrip = frame.querySelector('.ech-x-strip');
-        const avail = frame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
+        const xStrip = foldFrame.querySelector('.ech-x-strip');
+        const avail = foldFrame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
         if (avail <= 0 || rows * side <= avail) {
           // Short matrix: the natural height shows whole rows already.
           if (body.__dashspecFoldH) {
@@ -170,11 +181,16 @@
         body.style.height = snapped + 'px';
       };
       foldRows();
-      if (frame.__dashspecFoldObserver) {
-        frame.__dashspecFoldObserver.disconnect();
+      if (foldFrame) {
+        if (foldFrame.__dashspecFoldObserver) {
+          foldFrame.__dashspecFoldObserver.disconnect();
+        }
+        foldFrame.__dashspecFoldObserver = new ResizeObserver(foldRows);
+        foldFrame.__dashspecFoldObserver.observe(foldFrame);
       }
-      frame.__dashspecFoldObserver = new ResizeObserver(foldRows);
-      frame.__dashspecFoldObserver.observe(frame);
+      } catch (e) {
+        console.error('[dashspecECharts] bindPanes failed (panes degrade, circuit survives):', e);
+      }
     },
 
     // Viewer selection (ADR-0116) lives server-side now: the selected cell is baked
