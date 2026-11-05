@@ -10,6 +10,8 @@
     var extra = Pressed is { } pressed
         ? new Dictionary<string, object> { ["aria-pressed"] = pressed ? "true" : "false" }
         : new Dictionary<string, object>();
+    // null TestId → the attribute is dropped by the renderer, no branch needed.
+    extra["data-testid"] = TestId;
 }
 
 @if (Icon is null)
@@ -52,4 +54,8 @@ else
     /// <summary>The plugin's own glyph (svg) — the role declares WHAT the button does,
     /// the stack paints the button around it.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Automation handle (data-testid); null — the button stays anonymous.
+    /// The role caller owns the name, the stack just paints it onto the element.</summary>
+    [Parameter] public string? TestId { get; set; }
 }

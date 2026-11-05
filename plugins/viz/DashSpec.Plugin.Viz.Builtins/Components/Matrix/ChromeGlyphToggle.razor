@@ -14,6 +14,7 @@
                           ["Disabled"] = Disabled,
                           ["Pressed"] = Pressed,
                           ["Clicked"] = EventCallback.Factory.Create(this, OnClick),
+                          ["TestId"] = TestId,
                           ["Icon"] = (RenderFragment)(builder =>
                           {
                               builder.OpenComponent<MatrixGlyphIcon>(0);
@@ -31,6 +32,7 @@ else
             aria-label="@Label"
             aria-pressed="@(Pressed ? "true" : "false")"
             disabled="@Disabled"
+            data-testid="@TestId"
             @onclick="OnClick">
         <MatrixGlyphIcon Glyph="@Glyph" Filled="@Pressed" />
     </button>
@@ -47,6 +49,10 @@ else
     [Parameter] public bool Disabled { get; set; }
 
     [Parameter, EditorRequired] public string Glyph { get; set; } = string.Empty;
+
+    /// <summary>Automation handle — lands on the painted button whatever the stack;
+    /// null keeps the button anonymous.</summary>
+    [Parameter] public string? TestId { get; set; }
 
     [Parameter, EditorRequired] public Func<Task> OnClick { get; set; } = default!;
 
