@@ -7,10 +7,10 @@
    glyph, the stack owns the button). *@
 
 @{
+    // object? values: a null TestId renders no attribute — the renderer drops it.
     var extra = Pressed is { } pressed
-        ? new Dictionary<string, object> { ["aria-pressed"] = pressed ? "true" : "false" }
-        : new Dictionary<string, object>();
-    // null TestId → the attribute is dropped by the renderer, no branch needed.
+        ? new Dictionary<string, object?> { ["aria-pressed"] = pressed ? "true" : "false" }
+        : new Dictionary<string, object?>();
     extra["data-testid"] = TestId;
 }
 

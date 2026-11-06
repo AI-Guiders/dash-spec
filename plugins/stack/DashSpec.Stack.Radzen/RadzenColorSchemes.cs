@@ -26,22 +26,21 @@ public static class RadzenColorSchemes
     /// parameter pins the cache to the package version.</summary>
     private const string V = "12.1.5-4";
 
-    public static readonly RadzenTheme Dark = new(
-        "dark", "Морская (тёмная)", $"_content/Radzen.Blazor/css/dark.css?v={V}",
-        $"_content/DashSpec.Stack.Radzen/css/theme-dark.css?v=0.1.0");
-
-    public static readonly RadzenTheme Light = new(
-        "light", "Морская (светлая)", $"_content/Radzen.Blazor/css/default.css?v={V}",
-        $"_content/DashSpec.Stack.Radzen/css/theme-light.css?v=0.1.0");
-
+    /// <summary>The whole dictionary — one uniform list, no named side fields. The
+    /// default is reachable through <see cref="Default"/>; nothing else addresses a
+    /// theme individually.</summary>
     public static readonly IReadOnlyList<RadzenTheme> All =
     [
-        Dark,
-        Light,
-        new RadzenTheme("material", "Material (светлая)", $"_content/Radzen.Blazor/css/material.css?v={V}"),
-        new RadzenTheme("material_dark", "Material (тёмная)", $"_content/Radzen.Blazor/css/material-dark.css?v={V}"),
-        new RadzenTheme("contrast", "Высокий контраст (WCAG)", $"_content/Radzen.Blazor/css/dark-wcag.css?v={V}"),
+        new("dark", "Морская (тёмная)", $"_content/Radzen.Blazor/css/dark.css?v={V}",
+            $"_content/DashSpec.Stack.Radzen/css/theme-dark.css?v=0.1.0"),
+        new("light", "Морская (светлая)", $"_content/Radzen.Blazor/css/default.css?v={V}",
+            $"_content/DashSpec.Stack.Radzen/css/theme-light.css?v=0.1.0"),
+        new("material", "Material (светлая)", $"_content/Radzen.Blazor/css/material.css?v={V}"),
+        new("material_dark", "Material (тёмная)", $"_content/Radzen.Blazor/css/material-dark.css?v={V}"),
     ];
+
+    /// <summary>The empty-token default — the theme <see cref="DefaultToken"/> names.</summary>
+    public static RadzenTheme Default => All.First(t => string.Equals(t.Token, DefaultToken, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The stack's reading of the token: empty/null → the default; a known
     /// token → its theme; anything else → null (the caller decides the loud path).</summary>
@@ -49,7 +48,7 @@ public static class RadzenColorSchemes
     {
         var normalized = (token ?? string.Empty).Trim();
         return normalized.Length == 0
-            ? Dark
+            ? Default
             : All.FirstOrDefault(t => string.Equals(t.Token, normalized, StringComparison.OrdinalIgnoreCase));
     }
 }

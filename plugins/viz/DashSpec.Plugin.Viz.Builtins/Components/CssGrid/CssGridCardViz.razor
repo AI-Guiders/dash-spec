@@ -21,6 +21,7 @@
     var flowPath = Context.Card.FlowPath;
 
     <HeatmapView Payload="Context.Card.Matrix"
+                 ScrollTestId="@($"scroll-viz-{Context.Card.Id}")"
                  HeightPx="@spec.HeightPx"
                  StretchMode="@spec.StretchMode"
                  StretchDirection="@spec.StretchDirection"

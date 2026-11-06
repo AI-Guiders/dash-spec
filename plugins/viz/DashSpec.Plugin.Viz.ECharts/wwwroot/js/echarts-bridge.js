@@ -39,6 +39,9 @@
 
   window.dashspecECharts = {
     render: function (hostArg, optionJson, ctxJson, dotnet) {
+      // Circuit guard — see bindPanes. Returns false: the .NET side treats it as
+      // "nothing mounted", same as a missing host.
+      try {
       const previous = charts.get(dotnet);
       if (previous) {
         previous.chart.dispose();
@@ -84,12 +87,26 @@
       wireClicks(chart, ctx, dotnet);
       charts.set(dotnet, { chart: chart, ctx: ctx, option: option, selected: null });
       return true;
+      } catch (e) {
+        console.error('[dashspecECharts] render failed (chart degrades, circuit survives):', e);
+        return false;
+      }
     },
 
     // Frozen panes: the body pane is the only scroller; the fixed axis strips mirror
     // its scroll via transforms. Wheel over a strip drives the body — nothing ever
     // slides under the axes.
-    bindPanes: function (body, xInner, yInner) {
+    bindPanes: function (body, xInner, yInner, dotnet, hostId) {
+      // chart/ctx come from the render-time registry entry — bindPanes runs right
+      // after render under the same DotNetObjectReference.
+      const entry = charts.get(dotnet);
+      const chart = entry ? entry.chart : null;
+      const ctx = entry ? entry.ctx : null;
+      const host = typeof hostId === 'string' ? document.getElementById(hostId) : hostId;
+      // Circuit guard (Blazor Server): an exception here surfaces in .NET and kills the
+      // whole page's circuit — every button on every card goes dead. The bridge is a
+      // render helper: it fails loudly in the console, but never throws across the wire.
+      try {
       const sync = function () {
         xInner.style.transform = 'translateX(' + -body.scrollLeft + 'px)';
         yInner.style.transform = 'translateY(' + -body.scrollTop + 'px)';
@@ -136,6 +153,59 @@
         strip.__dashspecPaneWheel = forward;
         strip.addEventListener('wheel', forward, { passive: false });
       });
+
+      // Whole-row fold, restored carefully: the body pane shows only whole matrix rows.
+      // A fractional pane height (499px = 17 rows + 23px) slices the edge row in half —
+      // and since the legend sits right below the frame, the sliced row reads as "the
+      // legend covers the row". The size is measured from the FRAME, never from the
+      // body itself: height set on the body cannot feed back into the measurement
+      // (the old label-width fit died of exactly that ratchet). The ±1px guard keeps
+      // the ResizeObserver at a fixed point.
+      const foldFrame = body.closest('.ech-frame');
+      const foldRows = function () {
+        if (!foldFrame || !chart) {
+          return;
+        }
+        const isFill = foldFrame.classList.contains('ech-frame--fill');
+        const baseSide = 28;
+        const side = parseFloat(foldFrame.style.getPropertyValue('--ech-cell')) || baseSide;
+        // rows are derived from the y-strip content height — bindPanes has no ctx.
+        const rows = Math.round(yInner.getBoundingClientRect().height / side);
+        const xStrip = foldFrame.querySelector('.ech-x-strip');
+        const avail = foldFrame.clientHeight - (xStrip ? xStrip.offsetHeight : 0);
+        if (avail <= 0) {
+          return;
+        }
+
+        // Cells stay at their authored size: a short matrix (few products selected)
+        // shows a few 28px rows at the pane top — readable as-is. No vertical
+        // growth: the row must be visible, not inflated.
+        if (rows * side <= avail) {
+          // Short matrix without fill-fit headroom: natural height, whole rows already.
+          if (body.__dashspecFoldH) {
+            body.__dashspecFoldH = null;
+            body.style.height = '';
+          }
+          return;
+        }
+        const snapped = Math.floor(avail / side) * side;
+        if (Math.abs(body.offsetHeight - snapped) <= 1) {
+          return;
+        }
+        body.__dashspecFoldH = snapped;
+        body.style.height = snapped + 'px';
+      };
+      foldRows();
+      if (foldFrame) {
+        if (foldFrame.__dashspecFoldObserver) {
+          foldFrame.__dashspecFoldObserver.disconnect();
+        }
+        foldFrame.__dashspecFoldObserver = new ResizeObserver(foldRows);
+        foldFrame.__dashspecFoldObserver.observe(foldFrame);
+      }
+      } catch (e) {
+        console.error('[dashspecECharts] bindPanes failed (panes degrade, circuit survives):', e);
+      }
     },
 
     // Viewer selection (ADR-0116) lives server-side now: the selected cell is baked

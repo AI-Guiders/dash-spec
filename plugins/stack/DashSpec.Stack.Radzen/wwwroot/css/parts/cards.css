@@ -484,3 +484,42 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Card-level legend slot: the diagram pane never shares space with the legend —
+   the legend is card chrome below the interior, styled like the matrix renderers'
+   gradient bars (same scale vocabulary, data-color-scale). */
+.card-legend-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--rz-text-secondary-color, #8fa0b3);
+  padding: 0.6rem 0.25rem 0;
+  max-width: 100%;
+}
+
+.card-legend-slot .card-legend-bar {
+  flex: 1;
+  min-width: 96px;
+  height: 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--rz-border-color, rgba(148, 163, 184, 0.35));
+}
+
+.card-legend-slot[data-color-scale="heat"] .card-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(215, 55%, 32%) 0%,
+    hsl(145, 60%, 42%) 35%,
+    hsl(45, 90%, 52%) 68%,
+    hsl(0, 75%, 50%) 100%
+  );
+}
+
+.card-legend-slot[data-color-scale="mono"] .card-legend-bar {
+  background: linear-gradient(
+    90deg,
+    hsl(210, 65%, 28%) 0%,
+    hsl(210, 65%, 52%) 100%
+  );
+}

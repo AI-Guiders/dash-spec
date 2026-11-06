@@ -12,6 +12,7 @@
             title="@Loc.T("Theme")"
             aria-label="@Loc.T("Theme")"
             data-theme-picker
+            data-testid="theme-picker"
             onchange="dashspecTheme.set(this.value)">
         <option value="">@Loc.T("Theme: host default")</option>
         @foreach (var theme in RenderStackSettings.Themes)

@@ -80,12 +80,14 @@
     }
     @if (contentSlot is not null)
     {
-        <main class="shell-content">
+        <main class="shell-content" data-testid="scroll-page">
             @if (ShowCommandBar)
             {
                 <HostCommandBar />
             }
-            @Body
+<ErrorBoundary>
+                    @Body
+                </ErrorBoundary>
         </main>
     }
 </div>

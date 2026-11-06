@@ -17,104 +17,104 @@
    ADR-0084 parity). ECharts paints the cells only. Payload contracts ride the same
    ADR-0107 wires as every matrix renderer: cell / category item / X-label clicks,
    bucket intervals, per-cell color normalization. *@
-<div class="ech-frame @(IsFill ? "ech-frame--fill" : null) @(IsCenterAligned ? "ech-frame--center" : null)"
-     data-color-scale="@ColorScale"
-     style="@FrameStyle">
-    @if (UnsupportedPlacement is { } message)
-    {
-        <p class="ech-empty">@message</p>
-    }
-    else if (AlignmentError is { } alignMessage)
-    {
-        <p class="ech-empty">@alignMessage</p>
-    }
-    else if (Empty)
-    {
-        @* ADR-0106 when-table: the author's wording for an empty result. *@
-        @if (!string.IsNullOrWhiteSpace(EmptyMessage))
+<div class="ech-root">
+    @* One root, two blocks: the heatmap (its own scroll viewport) and the legend
+       below it, separated by a gap. The legend must never read as an extra matrix
+       row — it is its own container with its own whitespace. In fill mode the root
+       is the flex child of card-viz-stack: the frame flexes, the legend keeps its
+       natural height. *@
+    <div class="ech-frame @(IsFill ? "ech-frame--fill" : null) @(IsCenterAligned ? "ech-frame--center" : null)"
+         data-color-scale="@ColorScale"
+         style="@FrameStyle">
+        @if (UnsupportedPlacement is { } message)
         {
-            <p class="ech-empty"><RichTextView Text="@EmptyMessage" /></p>
+            <p class="ech-empty">@message</p>
+        }
+        else if (AlignmentError is { } alignMessage)
+        {
+            <p class="ech-empty">@alignMessage</p>
+        }
+        else if (Empty)
+        {
+            @* ADR-0106 when-table: the author's wording for an empty result. *@
+            if (!string.IsNullOrWhiteSpace(EmptyMessage))
+            {
+                <p class="ech-empty"><RichTextView Text="@EmptyMessage" /></p>
+            }
+            else
+            {
+                <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
+            }
         }
         else
         {
-            <p class="ech-empty">@Loc["NoDataForPeriod"]</p>
-        }
-    }
-    else
-    {
-        <div class="ech-corner">
-            @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(Presentation?.YLabel))
-            {
-                <span class="ech-axis-y">@Presentation!.YLabel</span>
-            }
-            @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(Presentation?.XLabel))
-            {
-                <span class="ech-axis-x">@Presentation!.XLabel →</span>
-            }
-        </div>
-        <div class="ech-x-strip">
-            <div @ref="_xInner" class="ech-x-inner" style="@XInnerStyle">
-                @if (ShowAxisLabelsX)
+            <div class="ech-corner">
+                @if (ShowAxisLabelsY && !string.IsNullOrWhiteSpace(Presentation?.YLabel))
                 {
-                    @for (var xi = 0; xi < Cols; xi++)
-                    {
-                        var xIndex = xi;
-                        var showXLabel = ShouldShowXLabel(xi);
-                        <div class="ech-x-label @(showXLabel ? null : "ech-x-label-sparse")"
-                             role="button"
-                             tabindex="0"
-                             title="@FormatXLabel(XLabel(xIndex))"
-                             @onclick="() => SelectXLabel(xIndex)"
-                             @onclick:stopPropagation="true">
-                            @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
-                        </div>
-                    }
+                    <span class="ech-axis-y">@Presentation!.YLabel</span>
+                }
+                @if (ShowAxisLabelsX && !string.IsNullOrWhiteSpace(Presentation?.XLabel))
+                {
+                    <span class="ech-axis-x">@Presentation!.XLabel →</span>
                 }
             </div>
-        </div>
-        <div class="ech-y-strip">
-            <div @ref="_yInner" class="ech-y-inner" style="@YInnerStyle">
-                @if (ShowAxisLabelsY)
-                {
-                    @for (var yi = 0; yi < Rows; yi++)
+            <div class="ech-x-strip">
+                <div @ref="_xInner" class="ech-x-inner" style="@XInnerStyle">
+                    @if (ShowAxisLabelsX)
                     {
-                        var rowIndex = yi;
-                        <button type="button"
-                                class="ech-y-label @(_selectedRow == rowIndex ? "ech-y-label-selected" : null)"
-                                title="@FormatYLabel(YLabel(rowIndex))"
-                                @onclick="() => SelectCategory(rowIndex)"
-                                @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
+                        @for (var xi = 0; xi < Cols; xi++)
+                        {
+                            var xIndex = xi;
+                            var showXLabel = ShouldShowXLabel(xi);
+                            <div class="ech-x-label @(showXLabel ? null : "ech-x-label-sparse")"
+                                 role="button"
+                                 tabindex="0"
+                                 title="@FormatXLabel(XLabel(xIndex))"
+                                 data-xi="@xIndex"
+                                 data-testid="viz-xlabel-@Context.Card.Id-@FormatXLabel(XLabel(xIndex))"
+                                 @onclick="() => SelectXLabel(xIndex)"
+                                 @onclick:stopPropagation="true">
+                                @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
+                            </div>
+                        }
                     }
-                }
+                </div>
             </div>
-        </div>
-        <div @ref="_body" class="ech-body">
-            @* The bridge receives this div's ID, not the ElementReference: a cached
-               reference travels through JSInterop as the {__internalId} wrapper, and
-               echarts dies on it. The id is stable and resolvable from anywhere. *@
-            <div id="@HostDomId" class="ech-host" style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
-        </div>
-    }
-</div>
-@if (HasChart && ShowsLegendRow)
-{
-    @* Gradient legend (canvas parity): min/max templates ride RichTextView — the spec
-       labels may carry creole (**bold**), same as the builtin stack. A sibling below
-       the frame, not a grid row: the frame is fit-content of the matrix (a narrow
-       matrix would starve the bar), the legend spans the card's full slot width and
-       the bar flexes between the texts. *@
-    <div class="ech-legend" data-color-scale="@ColorScale">
-        @if (!string.IsNullOrWhiteSpace(LegendMinText))
-        {
-            <span><RichTextView Text="@LegendMinText" /></span>
-        }
-        <span class="ech-legend-bar" aria-hidden="true"></span>
-        @if (!string.IsNullOrWhiteSpace(LegendMaxText))
-        {
-            <span><RichTextView Text="@LegendMaxText" /></span>
+            <div class="ech-y-strip">
+                <div @ref="_yInner" class="ech-y-inner" style="@YInnerStyle">
+                    @if (ShowAxisLabelsY)
+                    {
+                        @for (var yi = 0; yi < Rows; yi++)
+                        {
+                            var rowIndex = yi;
+                            <button type="button"
+                                    class="ech-y-label @(_selectedRow == rowIndex ? "ech-y-label-selected" : null)"
+                                    title="@FormatYLabel(YLabel(rowIndex))"
+                                    data-yi="@rowIndex"
+                                    data-testid="viz-ylabel-@Context.Card.Id-@FormatYLabel(YLabel(rowIndex))"
+                                    @onclick="() => SelectCategory(rowIndex)"
+                                    @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
+                        }
+                    }
+                </div>
+            </div>
+            <div @ref="_body" class="ech-body" data-testid="scroll-viz-@Context.Card.Id">
+                @* The bridge receives this div's ID, not the ElementReference: a cached
+                   reference travels through JSInterop as the {__internalId} wrapper, and
+                   echarts dies on it. The id is stable and resolvable from anywhere. The
+                   testid is the scroll handle: this pane is the ONLY scroller, the axis
+                   strips follow it. *@
+                @* Cells are canvas — no DOM per cell. The geometry triple (cell, cols,
+                   rows) plus the axis labels' data-xi/data-yi turn a named cell into a
+                   pixel: (xi, yi) → center (xi*cell + cell/2, yi*cell + cell/2). *@
+                <div id="@HostDomId" class="ech-host"
+                     data-testid="viz-canvas-@Context.Card.Id"
+                     data-cell="@CellPx" data-cols="@Cols" data-rows="@Rows"
+                     style="width:@(Cols * CellPx)px;height:@(Rows * CellPx)px"></div>
+            </div>
         }
     </div>
-}
+</div>
 
 @code {
     private const int CellPx = 28;
@@ -242,22 +242,6 @@
     /// would target a nonexistent host (the "host not found" class).</summary>
     private bool HasChartMarkup => HasChart && AlignmentError is null;
 
-    /// <summary>Gradient legend (canvas parity): visible when the spec declares
-    /// min/max labels and the viewer has not toggled it off (ADR-0062 session state).</summary>
-    private bool ShowLegend =>
-        VizLabelDisplayResolver.EffectiveLegendVisible(
-            Presentation?.ShowsGradientLegend == true,
-            VizDisplayState.GetLegendOverride(VizStateCardId ?? string.Empty));
-
-    private string? LegendMinText =>
-        ShowLegend ? Presentation?.FormatLegendMin(Context.MatrixMin, Context.MatrixMax) : null;
-
-    private string? LegendMaxText =>
-        ShowLegend ? Presentation?.FormatLegendMax(Context.MatrixMin, Context.MatrixMax) : null;
-
-    private bool ShowsLegendRow =>
-        ShowLegend && (!string.IsNullOrWhiteSpace(LegendMinText) || !string.IsNullOrWhiteSpace(LegendMaxText));
-
     private int ViewportHeightPx
     {
         get
@@ -330,15 +314,30 @@
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
 
-        await JS.InvokeVoidAsync(
-            "dashspecECharts.render",
-            HostDomId,
-            JsonSerializer.Serialize(option, jsonOptions),
-            JsonSerializer.Serialize(ctx, jsonOptions),
-            _self);
+        // Circuit guard (defense line 1, .NET side): a JSInterop failure here must not
+        // terminate the circuit — Blazor Server kills it on any unhandled exception.
+        // The bridge catches its own side too; this catches disconnects and anything
+        // that slips through. A degraded chart beats a dead page.
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "dashspecECharts.render",
+                HostDomId,
+                JsonSerializer.Serialize(option, jsonOptions),
+                JsonSerializer.Serialize(ctx, jsonOptions),
+                _self);
 
-        // Frozen panes: the body is the only scroller; the axis strips shift in sync.
-        await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner);
+            // Frozen panes: the body is the only scroller; the axis strips shift in sync.
+            await JS.InvokeVoidAsync("dashspecECharts.bindPanes", _body, _xInner, _yInner, _self, HostDomId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is already gone — nothing to render on.
+        }
+        catch (JSException ex)
+        {
+            Console.Error.WriteLine($"[MatrixEChartsCardViz] JS interop failed (chart degrades, circuit survives): {ex.Message}");
+        }
     }
 
     private string _renderedKey = string.Empty;

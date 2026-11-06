@@ -22,6 +22,7 @@
         && handlers.Any(h => string.Equals(h.Source, MatrixClickSources.CategoryItem, System.StringComparison.OrdinalIgnoreCase));
 
     <MatrixCanvasView HostId="@DashboardVizDomIds.MatrixHostDomId(Context.Card.Id, Context.DetailView)"
+                      ScrollTestId="@($"scroll-viz-{Context.Card.Id}")"
                       CanvasId="@DashboardVizDomIds.MatrixCanvasDomId(Context.Card.Id, Context.DetailView)"
                       Payload="Context.EffectiveCard.Matrix"
                       HeightPx="@ResolveMatrixHeightPx()"
