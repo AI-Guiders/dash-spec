@@ -32,7 +32,8 @@ relates:
 | видимость | `toolbar` / `page toolbar` / `card filters` → `DashboardFilters` vs `LocalFilters` |
 | layout | `card layout [...]` |
 
-Цена этой архитектуры — не абстрактная. Конкретный кейс (Обзор LUS, 2026-11-06,
+Цена этой архитектуры — не абстрактная. Конкретный кейс (внутренний отчёт из
+закрытого контент-репо, 2026-11-06,
 полную трассу см. [ADR-0119](DASHSPEC-ADR-0119-filter-options-data-domain.md)):
 выбор продукта из фильтра схлопывает матрицу, потому что опции фильтра грузятся
 без скоупа (`SELECT DISTINCT` по словарю таблицы на бутстрапе), а данные
@@ -52,8 +53,8 @@ ADR-0119 разбирал этот кейс и пришёл к скоуп-мод
 типизированный параметр (значение виджета). Всё, что сегодня выражено осями
 ADR-0037, в терминах dashflow (ADR-0078/0079/0094) выражается естественнее:
 
-- **bind** → входное ребро. Подключил `activity_tz [rows] -> [rows]
-  app_name_filter` — фильтруешь тот поток, который подключил. Колонка берётся из
+- **bind** → входное ребро. Подключил `events_tz [rows] -> [rows]
+  event_type_filter` — фильтруешь тот поток, который подключил. Колонка берётся из
   типа, а не по имени: несовместимость параметра с полем UDT — compile-time
   диагностик со спаном (готовая механика ADR-0079).
 - **скоуп** → размещение узла в графе. Узел на report-flow — report-scope
@@ -74,11 +75,11 @@ ADR-0037, в терминах dashflow (ADR-0078/0079/0094) выражается
 **Фильтр = типизированный transform-узел графа.** Декларация:
 
 ```text
-transformer app_name_filter {
+transformer event_type_filter {
   ports
-    input  rows: ActivityBucketRow      // поток, который фильтруем
-    output rows: ActivityBucketRow      // отфильтрованный
-    param  app_name: string = all       // значение виджета — типизированный скаляр
+    input  rows: EventRow               // поток, который фильтруем
+    output rows: EventRow               // отфильтрованный
+    param  event_type: string = all     // значение виджета — типизированный скаляр
   end ports
 }
 ```
@@ -88,8 +89,8 @@ transformer app_name_filter {
 ```text
 report
   data flow
-    activity_tz [rows] -> [rows] app_name_filter [rows] -> [rows] card.activity.diagram
-    app_name_filter -> [toolbar] chrome.card.activity          // презентация: где виджет
+    events_tz [rows] -> [rows] event_type_filter [rows] -> [rows] card.events.diagram
+    event_type_filter -> [toolbar] chrome.card.events          // презентация: где виджет
   end data flow
 end report
 ```
@@ -99,8 +100,8 @@ Card-scope — тот же узел, объявленный/подключённ
 ```text
 card activity
   data flow
-    local app_name_filter [rows] -> [rows] diagram
-    app_name_filter -> [toolbar] chrome.card.activity
+    local event_type_filter [rows] -> [rows] diagram
+    event_type_filter -> [toolbar] chrome.card.events
   end data flow
 end card
 ```
@@ -156,7 +157,7 @@ end card
 - `−` большой рефактор: парсер, IR, сессия значений, тулбары, Data Flow
   Designer. Компенсируется отсутствием промежуточной заплатки, которую потом
   пришлось бы выкидывать.
-- `−` миграция существующих спек (LUS и др.) — транспиляция legacy-синтаксиса
+- `−` миграция существующих спек — транспиляция legacy-синтаксиса
   на чтении; спеки мигрируют на узловый синтаксис в авторском темпе.
 - `?` спецификация «периода» на уровне узла: сегодня период живёт в bind date —
   в новой модели это, вероятно, тоже param-узел (typed scalar в поток), что
