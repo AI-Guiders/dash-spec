@@ -1,0 +1,21 @@
+# dash-spec leak gate — default secret rules + private-content-domain rules.
+# Rationale: this is an open repo; traces of the closed content repo (LUS /
+# LicenseUsage) must not appear here — neither in HEAD nor in history.
+# Baseline: history rewrite (filter-repo) on 2026-11-06; commits before it that
+# matched these rules were purged. New hits = regressions, fix before push.
+useDefault = true
+
+[[rules]]
+id = "private-content-domain"
+description = "Closed content repo traces (LUS / LicenseUsage domain)"
+regex = '''(?i)(lus\.[a-z_]|LicenseUsage|v_daily_active|v_five_minute|v_event_users|v_daily_peak)'''
+
+[[rules]]
+id = "private-product-names"
+description = "Closed content repo product/vendor names"
+regex = '''(?i)(AppThree|AppTwo|AppOne)'''
+
+[[rules]]
+id = "private-spec-filenames"
+description = "Closed content repo spec/runtime filenames"
+regex = '''(?i)(demo-dev|demo-prod|sscad-luf|demo-runtime)'''
