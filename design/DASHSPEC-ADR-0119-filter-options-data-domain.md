@@ -1,7 +1,7 @@
 type: ADR
 id: DASHSPEC-ADR-0119
 title: "Опции field-фильтра — из скоупа экземпляра (домен данных владельца)"
-status: "Proposed"
+status: "Superseded by DASHSPEC-ADR-0120"
 implementation: "none"
 date: 2026-11-06
 tags: [dashspec, adr, filters, field-options, filter-scopes, adr-0037, adr-0099, adr-0118]
