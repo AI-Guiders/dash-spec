@@ -1,25 +1,26 @@
 # dash-spec leak gate — default secret rules + private-content-domain rules.
-# Rationale: open repo; traces of the closed content repo must not appear here —
-# neither in HEAD nor in history. History rewritten (filter-repo) on 2026-11-06.
-# Generic demo domain (demo.v_daily_active_events etc.) is LEGITIMATE — do not
-# broaden rules to prefixes that match it.
+# Rationale: open repo; traces of the closed content repo (LUS / LicenseUsage)
+# must not appear here — neither in HEAD nor in history. History rewritten
+# (filter-repo) on 2026-11-06. Generic demo domain (demo.v_daily_active_events,
+# demo.v_daily_peak_concurrent_proxy) is LEGITIMATE — rules below pin exact
+# LUS-era names so they fire only on real regressions. This config quotes the
+# blocked words in its own regexes — it is allowlisted below.
 useDefault = true
 
 [[rules]]
 id = "private-content-domain"
 description = "Closed content repo traces (LUS domain)"
-regex = '''(?i)(lus\.[a-z_]|LicenseUsage|v_daily_active_users|v_five_minute_activity|v_activity_users_by_app_proxy_heatmap)'''
+regex = '''(?i)(lus\.[a-z_]|LicenseUsage|v_daily_active_users|v_five_minute_activity|v_activity_users_by_app|v_daily_peak_concurrent_proxy_heatmap)'''
 
 [[rules]]
 id = "private-product-names"
 description = "Closed content repo product/vendor names"
 regex = '''(?i)(AliveColors|Autodesk|ANSYS)'''
-paths = ['''(?i)\.(cs|fs|ds|dashspec|sql|toml|md|json|dashflow|csproj|fsproj)$''']
 
 [[rules]]
 id = "private-spec-filenames"
 description = "Closed content repo spec/runtime filenames"
-regex = '''(?i)(demo-dev|demo-prod|sscad-luf|demo-runtime|lus-report)'''
+regex = '''(?i)(lus-dev|lus-prod|sscad-luf|lus-runtime|lus-report)'''
 
 [[allowlists]]
 description = "This config quotes the blocked words in its own regexes"
