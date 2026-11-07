@@ -128,5 +128,13 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
+  <!-- A rebuild while a host instance from THIS output dir is running fails on
+       MSB3027 (locked DLLs). Stop that instance first — path-filtered, so hosts
+       from other checkouts/configurations survive. -->
+  <Target Name="StopRunningHostInstance" BeforeTargets="PrepareForBuild" Condition="'$(OS)' == 'Windows_NT'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\..\build\Stop-RunningHost.ps1&quot; -HostExePath &quot;$(TargetDir)DashSpec.Host.exe&quot;"
+          IgnoreExitCode="true" />
+  </Target>
+
 </Project>
 
