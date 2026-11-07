@@ -43,6 +43,7 @@ public sealed class DashboardSpecLoader(
         IDataSourceConnector connector,
         string runtimeConfigPath,
         CancellationToken cancellationToken,
-        TimeSpan? timeout) =>
-        bootstrap.LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout);
+        TimeSpan? timeout,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections) =>
+        bootstrap.LoadFieldOptionsAsync(document, connector, runtimeConfigPath, cancellationToken, timeout, currentSelections);
 }
