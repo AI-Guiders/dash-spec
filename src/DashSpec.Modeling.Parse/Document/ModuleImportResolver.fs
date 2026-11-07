@@ -85,13 +85,18 @@ module ModuleImportResolver =
         let implicitImports = appendImplicitImports header specDirectory
         let allImports : IReadOnlyList<ModuleImportDirective> =
             if List.isEmpty implicitImports then header.Imports
-            else (header.Imports |> Seq.toList) @ implicitImports
+            else implicitImports @ (header.Imports |> Seq.toList)
 
         if allImports.Count = 0 then ()
         else
             match specDirectory with
             | Some dir ->
                 let index = UnitIndex.build dir
+
+                // Phase 0 — resolve EVERY directive first: missing imports are loud
+                // regardless of order, and the full unit list is known before any
+                // unit registers.
+                let resolvedUnits = ResizeArray<string * ImportKind option>()
 
                 for directive in allImports do
                     let keyword = ImportKindRegistry.keyword directive.Kind
@@ -114,7 +119,7 @@ module ModuleImportResolver =
                         )
 
                     for entry in entries do
-                        UnitImport.registerUnitFile entry.Path moduleKind includes (Some directive.Kind)
+                        resolvedUnits.Add(entry.Path, Some directive.Kind)
 
                     if directive.Kind = ImportKind.Flows then
                         let namespaceName = directive.Namespace
@@ -128,6 +133,15 @@ module ModuleImportResolver =
                         match directive.Alias with
                         | Some alias -> includes.RegisterFlowImportQualifier alias
                         | None -> ()
+
+                // Phase 1+2 — the compiler owns the registration order: declarations
+                // (presentations/types/palettes/tooltips/layouts) build the symbol
+                // table first, consumers (diagrams/flows/tabs) fold against it. The
+                // author's directive order stops deciding visibility.
+                UnitImport.registerUnitsInDependencyOrder
+                    (List.ofSeq resolvedUnits)
+                    moduleKind
+                    includes
             | _ ->
                 raise (
                     DashSpecParseException(

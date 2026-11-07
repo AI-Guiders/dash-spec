@@ -88,6 +88,13 @@ type ModuleImportState() =
             raise (DashSpecParseException($"Duplicate chart chrome preset '{id}' in module imports."))
         chartChromePresets.[id] <- block
 
+    member _.TryGetChartChromePreset(id: string, block: outref<PresentationBlock>) =
+        match chartChromePresets.TryGetValue id with
+        | true, value ->
+            block <- value
+            true
+        | false, _ -> false
+
     member this.AssignLayoutBoard(board: LayoutBoardDefinition, context: string) =
         if layoutBoard.IsSome then
             raise (DashSpecParseException($"{context} declares more than one card layout board."))

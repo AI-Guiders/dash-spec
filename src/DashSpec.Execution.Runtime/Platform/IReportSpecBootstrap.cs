@@ -17,6 +17,7 @@ public interface IReportSpecBootstrap
         IDataSourceConnector connector,
         string runtimeConfigPath,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null);
+        TimeSpan? timeout = null,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections = null);
 }
 

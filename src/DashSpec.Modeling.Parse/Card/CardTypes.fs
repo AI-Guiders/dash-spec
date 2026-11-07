@@ -227,6 +227,9 @@ type CardChromeDefinition =
 type CardVisibilityMode =
     | WhenEmpty = 0
     | WhenSet = 1
+    /// ADR-0120: the option domain of the filter's param node came back empty
+    /// (distinct over its input stream returned no rows).
+    | WhenNoData = 2
 
 [<CLIMutable>]
 type CardVisibilityRule =

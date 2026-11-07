@@ -30,7 +30,11 @@ type FilterDefinition =
       BindScopeHint: string option
       GrainLabels: IReadOnlyDictionary<string, string> option
       ApplyMode: string
-      Placement: PlacementDefinition option }
+      Placement: PlacementDefinition option
+      /// ADR-0120 cascade domains (filters-table `depends` column): this filter's
+      /// option domain is constrained by the referenced filter's current value
+      /// (`platform` for a sibling, `report.<id>` for a report-scope filter).
+      DependsOn: string option }
 
     member this.IsDayWidget =
         String.Equals(this.Widget |> Option.toObj, "day", StringComparison.OrdinalIgnoreCase)

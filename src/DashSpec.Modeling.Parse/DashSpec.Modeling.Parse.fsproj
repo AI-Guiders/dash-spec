@@ -93,6 +93,8 @@
     <Compile Include="DataFlow\QualifiedFlowBlockParser.fs" />
     <Compile Include="DataFlow\TransformStepParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
+    <Compile Include="DataFlow\FilterNodeSynthesis.fs" />
+    <Compile Include="DataFlow\FilterFlowHoisting.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
@@ -143,6 +145,7 @@
     <Compile Include="Document\ReportScopeFlowApplicator.fs" />
     <Compile Include="Document\ReportScopeDataFlowApplicator.fs" />
     <Compile Include="Document\ReportScopePlacementApplicator.fs" />
+    <Compile Include="Document\FilterFlowSynthesis.fs" />
     <Compile Include="Document\DocumentWiringGraphBuilder.fs" />
     <Compile Include="Document\DocumentCompilePipeline.fs" />
     <Compile Include="Document\ReportScopeFlowPipeline.fs" />

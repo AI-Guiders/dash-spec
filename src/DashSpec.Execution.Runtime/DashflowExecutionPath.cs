@@ -29,6 +29,7 @@ public sealed record DashflowExecutionPath(
                 transformer.Id,
                 transformer.Inputs,
                 transformer.Outputs,
+                transformer.Params,
                 transformer.DefaultInputPort,
                 transformer.DefaultOutputPort,
                 steps.ToArray()));

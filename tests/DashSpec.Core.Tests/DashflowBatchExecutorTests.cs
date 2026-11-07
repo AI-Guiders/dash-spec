@@ -53,6 +53,7 @@ public sealed class DashflowBatchExecutorTests
                 "local",
                 [],
                 [System.Tuple.Create("out", "PeakRow")],
+                [],
                 Microsoft.FSharp.Core.FSharpOption<string>.Some("in"),
                 Microsoft.FSharp.Core.FSharpOption<string>.Some("out"),
                 [

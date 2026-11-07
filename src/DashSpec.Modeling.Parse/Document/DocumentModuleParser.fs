@@ -164,9 +164,10 @@ module rec DocumentModuleParser =
               DashflowPath = dashflowPath
               Dashflow = dashflow
               ReportScopeFlow = result.Context.ReportScopeFlow
+              FilterFlowPlan = None
               WiringGraph = WiringGraph.empty }
 
-        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
+        DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
     let private resolveTabModules (includes: ModuleImportState) (tabs: IReadOnlyList<TabDefinition>) : IReadOnlyList<TabDefinition> =
         let resolved =
@@ -221,9 +222,10 @@ module rec DocumentModuleParser =
               DashflowPath = dashflowPath
               Dashflow = dashflow
               ReportScopeFlow = dashShell.ReportScopeFlow
+              FilterFlowPlan = None
               WiringGraph = WiringGraph.empty }
 
-        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
+        DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
     let parseDocumentWithDiagnostics
         (text: string)
@@ -1120,7 +1122,8 @@ module rec DocumentModuleParser =
                           BindScopeHint = strAttr "bind_scope"
                           GrainLabels = None
                           ApplyMode = "auto"
-                          Placement = None }
+                          Placement = None
+                          DependsOn = strAttr "depends" }
 
                     filter
                 | None -> raise (DashSpecParseException("filters table row requires a non-empty 'id' cell."))
@@ -1128,7 +1131,7 @@ module rec DocumentModuleParser =
             let declaration : Construct.Declaration<FilterDefinition> =
                 { Name = "filters"
                   Vocabulary =
-                    [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit" ]
+                    [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit"; "depends" ]
                   CellsToRow = cellsToFilter
                   ConstructRow = addFilter }
 

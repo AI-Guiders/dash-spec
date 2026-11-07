@@ -86,6 +86,7 @@ public sealed class SlotPlaneBuilderTests
             import diagrams from Demo.Diagrams
             import types from Demo.Types
             import flows from Demo.Flows as demo_report_flow
+            import presentations from DashSpec.Std
 
             runtime
                 manifest = "demo.toml"

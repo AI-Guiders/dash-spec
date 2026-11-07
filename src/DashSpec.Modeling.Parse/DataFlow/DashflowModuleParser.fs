@@ -142,6 +142,7 @@ module DashflowModuleParser =
         reader.SkipNewlines()
         let inputs = ResizeArray<DashflowInputDecl>()
         let outputs = ResizeArray<string * string>()
+        let paramsDecls = ResizeArray<DashflowParamPortDef>()
         let steps = ResizeArray<DashflowTransformStepDef>()
         let mutable defaultInputPort = None
         let mutable defaultOutputPort = None
@@ -162,6 +163,13 @@ module DashflowModuleParser =
 
                 for decl in ports.Outputs do
                     outputs.Add((decl.Name, decl.ValueType))
+
+                for decl in ports.Params do
+                    paramsDecls.Add(
+                        { Name = decl.Name
+                          ValueType = decl.ValueType
+                          Default = decl.Default
+                          DependsOn = None })
             elif reader.TryKeyword "transform" then
                 steps.Add(TransformStepParser.parseTransformUseBlock reader transformerId)
             else
@@ -174,6 +182,7 @@ module DashflowModuleParser =
         { Id = transformerId
           Inputs = inputs.ToArray()
           Outputs = outputs.ToArray()
+          Params = paramsDecls.ToArray()
           DefaultInputPort = defaultInputPort
           DefaultOutputPort = defaultOutputPort
           Steps = steps.ToArray() }

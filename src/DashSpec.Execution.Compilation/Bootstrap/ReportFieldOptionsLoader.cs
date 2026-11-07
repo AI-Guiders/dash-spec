@@ -17,7 +17,8 @@ public sealed class ReportFieldOptionsLoader(
         IDataSourceConnector connector,
         string runtimeConfigPath,
         CancellationToken cancellationToken,
-        TimeSpan timeout)
+        TimeSpan timeout,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections = null)
     {
         var fieldFilters = document.Filters.Where(x => x.Kind is FilterKind.Field).ToList();
         if (fieldFilters.Count == 0)
@@ -25,14 +26,18 @@ public sealed class ReportFieldOptionsLoader(
             return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         }
 
+        var definitions = document.Filters.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
+
         var tasks = fieldFilters.Select(filter =>
-            LoadOneAsync(filter, connector, runtimeConfigPath, timeout, cancellationToken));
+            LoadOneAsync(filter, definitions, currentSelections, connector, runtimeConfigPath, timeout, cancellationToken));
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
         return results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase);
     }
 
     private async Task<(string Name, IReadOnlyList<string> Values)> LoadOneAsync(
         FilterDefinition filter,
+        IReadOnlyDictionary<string, FilterDefinition> definitions,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections,
         IDataSourceConnector connector,
         string runtimeKey,
         TimeSpan timeout,
@@ -47,7 +52,15 @@ public sealed class ReportFieldOptionsLoader(
             return (filter.Name, []);
         }
 
-        var sql = QueryCompiler.BuildDistinctFieldSql(filter);
+        // ADR-0120 cascade domains: the option domain of a `depends` filter is
+        // constrained by the depended filter's current selection (field → equality).
+        // Bootstrap (no selections yet) keeps the full domain; reload after a value
+        // change narrows it. The predicate rides the SQL, so the cache key
+        // distinguishes domains automatically.
+        var sql =
+            filter.DependsOn is { } dependsOn && !string.IsNullOrWhiteSpace(dependsOn.Value)
+                ? QueryCompiler.BuildDistinctFieldSql(filter, definitions, ResolveSelection(definitions, currentSelections, dependsOn.Value))
+                : QueryCompiler.BuildDistinctFieldSql(filter);
         var cacheKey = $"{runtimeKey}:{connector.Id}:{sql}";
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -84,5 +97,24 @@ public sealed class ReportFieldOptionsLoader(
             logger.LogWarning(ex, "Failed to load field options for filter {FilterName}", filter.Name);
             return (filter.Name, []);
         }
+    }
+
+    /// <summary>Selection of the depended filter: `report.&lt;id&gt;` strips the prefix,
+    /// a bare id is the sibling name. No selection yet (bootstrap) → null → full domain.</summary>
+    private static IReadOnlyList<string>? ResolveSelection(
+        IReadOnlyDictionary<string, FilterDefinition> definitions,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections,
+        string dependsOn)
+    {
+        var targetName = dependsOn.StartsWith("report.", StringComparison.OrdinalIgnoreCase)
+            ? dependsOn["report.".Length..]
+            : dependsOn;
+
+        if (currentSelections is null || !currentSelections.TryGetValue(targetName, out var selection))
+        {
+            return null;
+        }
+
+        return selection.Count == 0 ? null : selection;
     }
 }

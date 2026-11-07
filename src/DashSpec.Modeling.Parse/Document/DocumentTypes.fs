@@ -154,6 +154,9 @@ type DashboardDocument =
       DashflowPath: string option
       Dashflow: DashflowModule option
       ReportScopeFlow: ScopeFlowDefinition option
+      /// ADR-0120: synthesized filter param nodes + data edges routed through
+      /// them (scope by placement). Additive IR — legacy consumers unaffected.
+      FilterFlowPlan: FilterNodeSynthesis.FilterFlowPlan option
       WiringGraph: WiringGraph }
 
 [<RequireQualifiedAccess>]

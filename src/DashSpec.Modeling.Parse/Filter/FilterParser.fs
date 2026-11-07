@@ -417,7 +417,8 @@ module FilterParser =
               BindScopeHint = bindScope
               ApplyMode = applyMode
               GrainLabels = grainLabels
-              Placement = placement }
+              Placement = placement
+              DependsOn = None }
 
     let private tryParseTopLabel (reader: TokenReader) (kind: FilterKind) =
         if kind <> FilterKind.Top || not (reader.TryKeyword "as") then
@@ -613,7 +614,8 @@ module FilterParser =
           BindScopeHint = None
           ApplyMode = "auto"
           GrainLabels = grainLabels
-          Placement = placement }
+          Placement = placement
+          DependsOn = None }
 
     let parse (reader: TokenReader) (resolveProperty: string -> string -> string option) =
         match reader.TryPeekIdent() with

@@ -81,11 +81,13 @@ public sealed class ReportSpecBootstrap(
         IDataSourceConnector connector,
         string runtimeConfigPath,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null) =>
+        TimeSpan? timeout = null,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? currentSelections = null) =>
         fieldOptionsLoader.LoadAsync(
             document,
             connector,
             runtimeConfigPath,
             cancellationToken,
-            timeout ?? TimeSpan.FromSeconds(20));
+            timeout ?? TimeSpan.FromSeconds(20),
+            currentSelections);
 }

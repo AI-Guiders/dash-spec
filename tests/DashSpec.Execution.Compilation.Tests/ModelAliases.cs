@@ -6,4 +6,5 @@ global using SqlDialect = DashSpec.Modeling.Parse.Document.SqlDialect;
 global using CardsChromeDefinition = DashSpec.Modeling.Parse.Card.CardsChromeDefinition;
 global using TooltipDefinition = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
 global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
+global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
 global using ReportFormatDefaults = DashSpec.Modeling.Parse.Document.ReportFormatDefaults;
