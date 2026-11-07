@@ -39,6 +39,11 @@ public static class DashflowBatchExecutor
             return batch;
         }
 
+        if (step.PluginId.Equals(BuiltinScalarTransformIds.Reduce, StringComparison.OrdinalIgnoreCase))
+        {
+            return ReduceBatchTransform.Apply(batch, step.Parameters);
+        }
+
         throw new NotSupportedException(
             $"Dashflow transform '{step.PluginId}' on transformer '{transformerId}' is not supported at runtime yet.");
     }
