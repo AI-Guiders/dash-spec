@@ -97,6 +97,7 @@ public sealed class DemoCatalogRegressionTests
             import diagrams from Demo.Diagrams
             import flows from Demo.Flows as demo_report_flow
             import types from Demo.Types
+            import presentations from DashSpec.Std
 
             configuration
               sqldialect = tsql

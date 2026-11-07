@@ -562,7 +562,10 @@ public class SpecModulesTests
             var card = doc.Cards.Single();
             Assert.Equal("heatmap", card.Diagram.Kind);
             Assert.Equal("bucket_start_utc", card.Diagram.Properties["x"]);
-            Assert.Equal("heatmap_tall", card.Presentation!.Value.UsePreset?.Value);
+            // The compiler resolves `use heatmap_tall` at unit registration: the card
+            // chrome carries the effective bag, not a dangling preset name.
+            Assert.Null(card.Presentation!.Value.UsePreset?.Value);
+            Assert.Equal("420", card.Presentation!.Value.Properties["height"]);
             Assert.Equal("420", doc.ResolvedChartChromePresets["heatmap_tall"].Properties["height"]);
         }
         finally

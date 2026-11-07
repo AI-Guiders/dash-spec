@@ -40,6 +40,8 @@
     <Compile Include="FilterFlowSynthesisTests.fs" />
     <Compile Include="FilterFlowHoistingTests.fs" />
     <Compile Include="TailReduceAndNoDataTests.fs" />
+    <Compile Include="ImportOrderIndependenceTests.fs" />
+    <Compile Include="DiagramChromePresetResolutionTests.fs" />
 
   </ItemGroup>
   <ItemGroup>
