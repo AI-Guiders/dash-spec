@@ -24,7 +24,8 @@ module ModelBehaviorTests =
           BindScopeHint = bindScope
           GrainLabels = None
           ApplyMode = "manual"
-          Placement = None }
+          Placement = None
+          DependsOn = None }
 
     [<Fact>]
     let ``filter widget and bind scope predicates preserve authoring semantics`` () =

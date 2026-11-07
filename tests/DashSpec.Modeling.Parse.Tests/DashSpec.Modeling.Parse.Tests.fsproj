@@ -35,7 +35,8 @@
     <Compile Include="CommentTriviaTests.fs" />
     <Compile Include="ModuleHeaderParserTests.fs" />
     <Compile Include="ModelBehaviorTests.fs" />
-    
+    <Compile Include="FilterTableDependsTests.fs" />
+
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
