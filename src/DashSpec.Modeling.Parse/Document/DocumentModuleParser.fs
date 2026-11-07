@@ -164,9 +164,10 @@ module rec DocumentModuleParser =
               DashflowPath = dashflowPath
               Dashflow = dashflow
               ReportScopeFlow = result.Context.ReportScopeFlow
+              FilterFlowPlan = None
               WiringGraph = WiringGraph.empty }
 
-        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
+        DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
     let private resolveTabModules (includes: ModuleImportState) (tabs: IReadOnlyList<TabDefinition>) : IReadOnlyList<TabDefinition> =
         let resolved =
@@ -221,9 +222,10 @@ module rec DocumentModuleParser =
               DashflowPath = dashflowPath
               Dashflow = dashflow
               ReportScopeFlow = dashShell.ReportScopeFlow
+              FilterFlowPlan = None
               WiringGraph = WiringGraph.empty }
 
-        DocumentCompilePipeline.attachWiringGraphAndValidate documentWithoutGraph
+        DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
     let parseDocumentWithDiagnostics
         (text: string)

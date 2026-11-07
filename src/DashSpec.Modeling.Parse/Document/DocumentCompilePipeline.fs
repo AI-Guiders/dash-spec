@@ -49,6 +49,7 @@ module DocumentCompilePipeline =
     [<RequireQualifiedAccess>]
     type DocumentPhase =
         | MaterializeDashflow
+        | SynthesizeFilterFlow
         | BuildWiringGraph
         | ValidateDocument
 
@@ -62,6 +63,9 @@ module DocumentCompilePipeline =
             { Phase = DocumentPhase.MaterializeDashflow
               Keyword = "materialize"
               Transform = DocumentFlowMaterializer.materialize }
+            { Phase = DocumentPhase.SynthesizeFilterFlow
+              Keyword = "filter_flow"
+              Transform = FilterFlowSynthesis.apply }
             { Phase = DocumentPhase.BuildWiringGraph
               Keyword = "wiring_graph"
               Transform =
@@ -107,6 +111,17 @@ module DocumentCompilePipeline =
     /// <summary>Wiring graph + validation without dashflow materialize (parse-time finish).</summary>
     let attachWiringGraphAndValidate (document: DashboardDocument) =
         runDocumentPhases document graphAndValidatePhases
+
+    let private filterFlowGraphAndValidatePhases =
+        documentPhaseDefinitions
+        |> Array.filter (fun d ->
+            d.Phase = DocumentPhase.SynthesizeFilterFlow
+            || d.Phase = DocumentPhase.BuildWiringGraph
+            || d.Phase = DocumentPhase.ValidateDocument)
+
+    /// <summary>Dashboard parse-time finish: filter flow synthesis + wiring + validation.</summary>
+    let attachFilterFlowWiringAndValidate (document: DashboardDocument) =
+        runDocumentPhases document filterFlowGraphAndValidatePhases
 
     /// <summary>Materialize module datasources, rebuild graph, validate.</summary>
     let completeDocument (document: DashboardDocument) = runAllDocumentPhases document

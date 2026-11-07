@@ -11,6 +11,14 @@ open DashSpec.Modeling.Parse.Filter
 /// </summary>
 module FilterNodeSynthesis =
 
+    /// <summary>ADR-0120 compile artifact: synthesized filter param nodes plus
+    /// the re-routed Data edges (producer → filters in bind order → card
+    /// anchor). Additive IR — legacy consumers unaffected.</summary>
+    [<CLIMutable>]
+    type FilterFlowPlan =
+        { Nodes: DashflowTransformerDef[]
+          Edges: FlowLinkDef[] }
+
     /// Where the synthesized node lives: report flow (one state, all consumers
     /// below) or card flow (own instance, own input stream).
     [<RequireQualifiedAccess>]
