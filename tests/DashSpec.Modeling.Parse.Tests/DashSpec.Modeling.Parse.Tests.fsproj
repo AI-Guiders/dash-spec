@@ -38,6 +38,7 @@
     <Compile Include="FilterTableDependsTests.fs" />
     <Compile Include="FilterNodeSynthesisTests.fs" />
     <Compile Include="FilterFlowSynthesisTests.fs" />
+    <Compile Include="FilterFlowHoistingTests.fs" />
 
   </ItemGroup>
   <ItemGroup>

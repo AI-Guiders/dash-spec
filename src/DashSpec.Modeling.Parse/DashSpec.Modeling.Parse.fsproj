@@ -94,6 +94,7 @@
     <Compile Include="DataFlow\TransformStepParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
     <Compile Include="DataFlow\FilterNodeSynthesis.fs" />
+    <Compile Include="DataFlow\FilterFlowHoisting.fs" />
     <Compile Include="DataSource\DataSourceTypes.fs" />
     <Compile Include="DataSource\SqlReadOnlyValidator.fs" />
     <Compile Include="DataSource\DataSourceParser.fs" />
