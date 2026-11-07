@@ -14,6 +14,54 @@ public sealed class FilterState
     public void SetField(string name, IReadOnlyList<string> values) =>
         _fields[name] = new FieldFilterValue(values);
 
+    /// <summary>ADR-0120 inert selection: revalidate a stored selection against the
+    /// current option domain. Active values outside the domain move to inert (kept
+    /// grey with <paramref name="reason"/>, excluded from the compiled query);
+    /// inert values back inside the domain return to active. Nothing is silently
+    /// dropped and nothing silently applies.</summary>
+    public void ApplyDomain(string name, IReadOnlyList<string> domain, string reason)
+    {
+        if (!_fields.TryGetValue(name, out var current))
+        {
+            return;
+        }
+
+        var domainSet = new HashSet<string>(domain, StringComparer.OrdinalIgnoreCase);
+
+        var active = current.Values.Where(v => domainSet.Contains(v)).ToList();
+        var inert = current.Values.Where(v => !domainSet.Contains(v)).ToList();
+
+        if (current.InertValues is { Count: > 0 })
+        {
+            inert.AddRange(current.InertValues.Where(v => !domainSet.Contains(v)));
+            active.AddRange(current.InertValues.Where(v => domainSet.Contains(v)));
+        }
+
+        // order-stable dedup (a value may appear in both stores after a compose)
+        active = active.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        inert = inert.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        _fields[name] = new FieldFilterValue(
+            active,
+            inert.Count > 0 ? inert : null,
+            inert.Count > 0 ? reason : null);
+    }
+
+    /// <summary>One click: drop the inert residue entirely.</summary>
+    public void ClearInert(string name)
+    {
+        if (!_fields.TryGetValue(name, out var current) || !current.HasInert)
+        {
+            return;
+        }
+
+        _fields[name] = new FieldFilterValue(current.Values);
+    }
+
+    /// <summary>Inert residue for the widget (grey entries + tooltip reason).</summary>
+    public FieldFilterValue? GetFieldWithInert(string name) =>
+        _fields.TryGetValue(name, out var value) ? value : null;
+
     public void SetTop(string name, int limit) =>
         _topLimits[name] = limit;
 
@@ -40,7 +88,8 @@ public sealed class FilterState
 
         foreach (var (name, field) in _fields)
         {
-            copy.SetField(name, field.Values.ToList());
+            // full record: the inert residue survives cloning (stored-but-not-applied)
+            copy._fields[name] = field;
         }
 
         foreach (var (name, limit) in _topLimits)
