@@ -127,6 +127,7 @@ public sealed class CardRenderService(
         var resolved = CardResolver.Resolve(card, library, document.DashboardFilters);
         var effective = DocumentFlowBinder.MaterializeCard(resolved.Card, document);
         var reportTime = ResolveReportTime(document);
+        var flowPath = ResolveFlowPath(document, effective);
         var query = QueryCompiler.Compile(
             effective,
             filters,
@@ -134,10 +135,10 @@ public sealed class CardRenderService(
             document,
             document.SqlDialect,
             specDirectory,
-            reportTimePolicy: reportTime);
+            reportTimePolicy: reportTime,
+            groupByStep: GroupByStepSpec.Find(flowPath));
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
-        var flowPath = ResolveFlowPath(document, effective);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
             ? CompositionResolution.ResolveChartPresentation(effective, library)
@@ -471,7 +472,8 @@ public sealed class CardRenderService(
                     document.SqlDialect,
                     specDirectory,
                     slotOverlay,
-                    ResolveReportTime(document));
+                    ResolveReportTime(document),
+                    groupByStep: GroupByStepSpec.Find(ResolveFlowPath(document, effective)));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);

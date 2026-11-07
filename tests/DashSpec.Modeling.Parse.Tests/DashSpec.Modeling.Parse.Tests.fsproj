@@ -43,6 +43,7 @@
     <Compile Include="ImportOrderIndependenceTests.fs" />
     <Compile Include="DiagramChromePresetResolutionTests.fs" />
     <Compile Include="DefaultFlowWiringTests.fs" />
+    <Compile Include="GroupByBranchTests.fs" />
 
   </ItemGroup>
   <ItemGroup>

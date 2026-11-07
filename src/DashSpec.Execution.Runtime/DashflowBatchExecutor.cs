@@ -44,6 +44,13 @@ public static class DashflowBatchExecutor
             return ReduceBatchTransform.Apply(batch, step.Parameters);
         }
 
+        if (step.PluginId.Equals(GroupByStepSpec.PluginIdName, StringComparison.OrdinalIgnoreCase))
+        {
+            // ADR-0121: group_by is a database-transform — the renderer compiled it
+            // into the slot's SQL (SELECT … GROUP BY), the rows arrive already grouped.
+            return batch;
+        }
+
         throw new NotSupportedException(
             $"Dashflow transform '{step.PluginId}' on transformer '{transformerId}' is not supported at runtime yet.");
     }

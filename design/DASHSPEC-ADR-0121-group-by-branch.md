@@ -1,8 +1,8 @@
 type: ADR
 id: DASHSPEC-ADR-0121
 title: "Группировка — ветка графа в отдельный порт карточки (database-transform)"
-status: "Proposed"
-implementation: "none"
+status: "Accepted"
+implementation: "first slice: SQL push-down of the group_by step (escape-hatch transform node), typed output ports, [raw]/[grouped] branch slots; param-driven by and interactive grouping widget remain"
 date: 2026-11-07
 tags: [dashspec, adr, dashflow, transforms, adr-0078, adr-0079, adr-0120]
 language: ru

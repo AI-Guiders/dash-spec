@@ -19,8 +19,9 @@ public static class QueryCompiler
         SqlDialect? sqlDialect = null,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
-        ReportTimePolicy? reportTimePolicy = null) =>
-        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy);
+        ReportTimePolicy? reportTimePolicy = null,
+        GroupByStepSpec? groupByStep = null) =>
+        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy, groupByStep: groupByStep);
 
     public static CompiledQuery Compile(
         CardDefinition card,
@@ -30,7 +31,8 @@ public static class QueryCompiler
         SqlDialect? sqlDialect = null,
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
-        ReportTimePolicy? reportTimePolicy = null) =>
+        ReportTimePolicy? reportTimePolicy = null,
+        GroupByStepSpec? groupByStep = null) =>
         Compile(
             card,
             filters,
@@ -40,7 +42,8 @@ public static class QueryCompiler
             specDirectory,
             cellDrillOverlay,
             reportTimePolicy,
-            ResolveFilterDerives(document));
+            ResolveFilterDerives(document),
+            groupByStep);
 
     public static CompiledQuery Compile(
         CardDefinition card,
@@ -51,7 +54,8 @@ public static class QueryCompiler
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null,
-        IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives = null)
+        IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives = null,
+        GroupByStepSpec? groupByStep = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -79,6 +83,26 @@ public static class QueryCompiler
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
             ? ResolveTableLimit(card, filters, filterDefinitions)
             : 0;
+
+        // ADR-0121: a group_by step of the slot's flow path compiles into the query —
+        // SELECT by, AGG(value) … GROUP BY by. The step itself is a batch no-op: the
+        // rows arrive already grouped. Diagram aggregate branches never mix with it.
+        if (groupByStep is not null)
+        {
+            var groupedSelect = AppendOrderByAggregates(groupByStep.SelectList, card.Diagram, groupByStep.GroupByClause);
+            return new CompiledQuery(
+                BuildSelectSql(
+                    groupedSelect,
+                    fromClause,
+                    whereBuilder.ToString(),
+                    groupByStep.GroupByClause,
+                    ResolveOrderBy(card),
+                    tableLimit,
+                    dialect),
+                parameters,
+                rowSchema,
+                dateTimeFrame);
+        }
 
         if (TryBuildScalarAggregateSelect(card.Diagram, out var scalarSelect))
         {
