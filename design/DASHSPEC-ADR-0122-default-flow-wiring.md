@@ -2,8 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0122
 title: "Default flow wiring — компилятор синтезирует линейные дуги карточек"
-status: "Proposed"
-implementation: "none"
+status: "Accepted"
+implementation: "complete (ReportScopeDataFlowApplicator.synthesizeDefaultWiring)"
 date: 2026-11-08
 tags: [dashspec, adr, dashflow, sugar, adr-0120, adr-0107]
 language: ru
