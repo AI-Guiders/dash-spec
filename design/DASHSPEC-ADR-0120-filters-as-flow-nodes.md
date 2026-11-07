@@ -54,8 +54,7 @@ ADR-0119 разбирал этот кейс и пришёл к скоуп-мод
 типизированный параметр (значение виджета). Всё, что сегодня выражено осями
 ADR-0037, в терминах dashflow (ADR-0078/0079/0094) выражается естественнее:
 
-- **bind** → входное ребро. Подключил `events_tz [rows] -> [rows]
-  event_type_filter` — фильтруешь тот поток, который подключил. Колонка берётся из
+- **bind** → входное ребро. Подключил `events_tz -> event_type_filter` — фильтруешь тот поток, который подключил. Колонка берётся из
   типа, а не по имени: несовместимость параметра с полем UDT — compile-time
   диагностик со спаном (готовая механика ADR-0079).
 - **скоуп** → размещение узла в графе. Узел на report-flow — report-scope
@@ -90,7 +89,7 @@ transformer event_type_filter {
 ```text
 report
   data flow
-    events_tz [rows] -> [rows] event_type_filter [rows] -> [rows] card.events.diagram
+    events_tz -> event_type_filter -> card.events.diagram
     event_type_filter -> [toolbar] chrome.card.events          // презентация: где виджет
   end data flow
 end report
@@ -101,7 +100,7 @@ Card-scope — тот же узел, объявленный/подключённ
 ```text
 card activity
   data flow
-    local event_type_filter [rows] -> [rows] diagram
+    local event_type_filter -> diagram
     event_type_filter -> [toolbar] chrome.card.events
   end data flow
 end card
@@ -142,7 +141,7 @@ end card
 становится явным агрегирующим transform-узлом:
 
 ```text
-events_tz [rows] -> [rows] event_type_filter -> [rows] tail_reduce -> [rows] card.events.diagram
+events_tz -> event_type_filter -> tail_reduce -> card.events.diagram
 
 tail_reduce:
   transform use reduce { by = series, top = 12, tail = "Другие (N)" }
@@ -233,6 +232,12 @@ DataFlow — это ETL, и граф стоит **над источником д
 фильтров. Молча сбрасывать нельзя (пользователь теряет контекст), молча
 оставлять активным нельзя (скрытое состояние, худший вариант).
 
+
+Замечание по эргономике рёбер (дискуссия 2026-11-07): скобочная форма
+`A[rows] -> [rows]B` — не типы, а **уточнение имени порта** (у узла может быть
+несколько портов, например `default` + `stream`); типы объявляются в
+определении трансформера. Рёбра с дефолтным портом пишутся голыми —
+mermaid-конвенции: типы живут в узлах, рёбра читаются как картина.
 ## Alternatives considered
 
 - **Скоуп-модель поверх текущей механики** (ADR-0119): ось «видимость» → ось
