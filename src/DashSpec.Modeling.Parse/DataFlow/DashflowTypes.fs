@@ -47,10 +47,21 @@ type DashflowTransformStepDef =
     { PluginId: string
       Parameters: DashflowTransformParam[] }
 
+/// <summary>Typed widget-value port of a filter transformer (ADR-0120):
+/// <c>param event_type: string = all</c>. <c>DependsOn</c> carries the
+/// cascade-domain edge (<c>depends</c> column of the filters table): the
+/// option domain of this parameter is constrained by that parameter's value.</summary>
+type DashflowParamPortDef =
+    { Name: string
+      ValueType: string
+      Default: string option
+      DependsOn: string option }
+
 type DashflowTransformerDef =
     { Id: string
       Inputs: DashflowInputDecl[]
       Outputs: (string * string)[]
+      Params: DashflowParamPortDef[]
       DefaultInputPort: string option
       DefaultOutputPort: string option
       Steps: DashflowTransformStepDef[] }

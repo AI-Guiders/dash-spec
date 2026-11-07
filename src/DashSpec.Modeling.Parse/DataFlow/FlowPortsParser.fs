@@ -19,9 +19,16 @@ module FlowPortsParser =
           ValueType: string
           Shape: PortShape }
 
+    /// <summary><c>param name: type = default</c> — typed widget-value port (ADR-0120).</summary>
+    type ParsedParamDecl =
+        { Name: string
+          ValueType: string
+          Default: string option }
+
     type ParsedPorts =
         { Inputs: ParsedPortDecl[]
           Outputs: ParsedPortDecl[]
+          Params: ParsedParamDecl[]
           DefaultInput: string option
           DefaultOutput: string option }
 
@@ -73,6 +80,36 @@ module FlowPortsParser =
         let valueType = readValueTypeName reader
         { Name = portName; ValueType = valueType; Shape = shape }
 
+    /// <summary><c>param name: type = default</c>. The default accepts a string
+    /// literal or a bare word (<c>all</c>, <c>today</c>, numbers) — stored raw,
+    /// typed binding happens downstream.</summary>
+    let private readParamLine (reader: TokenReader) =
+        let paramName = reader.ReadIdent()
+
+        if String.IsNullOrWhiteSpace paramName then
+            raise (DashSpecParseException("param declaration requires a name."))
+
+        reader.Expect TokenKind.Colon
+        let valueType = readValueTypeName reader
+
+        let defaultValue =
+            if reader.IsAt TokenKind.Eq then
+                reader.Expect TokenKind.Eq |> ignore
+
+                if reader.IsAt TokenKind.String then
+                    Some(reader.ReadString())
+                else
+                    let word = reader.ReadIdent()
+
+                    if String.IsNullOrWhiteSpace word then
+                        raise (DashSpecParseException($"param '{paramName}': '=' requires a default value."))
+
+                    Some word
+            else
+                None
+
+        { Name = paramName; ValueType = valueType; Default = defaultValue }
+
     let private validateDefaultPort (role: string) (name: string) (decls: ParsedPortDecl[]) =
         if String.IsNullOrWhiteSpace name then
             raise (DashSpecParseException($"default {role} requires a port name."))
@@ -85,6 +122,7 @@ module FlowPortsParser =
         reader.SkipNewlines()
         let inputs = ResizeArray<ParsedPortDecl>()
         let outputs = ResizeArray<ParsedPortDecl>()
+        let paramsDecls = ResizeArray<ParsedParamDecl>()
         let mutable defaultInput: string option = None
         let mutable defaultOutput: string option = None
 
@@ -107,8 +145,10 @@ module FlowPortsParser =
             elif reader.TryKeyword "output" then
                 let decl = readPortLine reader readOutputShape
                 outputs.Add decl
+            elif reader.TryKeyword "param" then
+                paramsDecls.Add(readParamLine reader)
             else
-                raise (reader.Unexpected "default, input, or output in ports block")
+                raise (reader.Unexpected "default, input, param, or output in ports block")
 
             reader.SkipNewlines()
 
@@ -122,5 +162,6 @@ module FlowPortsParser =
 
         { Inputs = inputsArr
           Outputs = outputsArr
+          Params = paramsDecls.ToArray()
           DefaultInput = defaultInput
           DefaultOutput = defaultOutput }
