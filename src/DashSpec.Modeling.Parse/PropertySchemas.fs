@@ -44,7 +44,8 @@ module PropertySchemas =
           spec "colors" Scalar
           spec "width" Scalar
           spec "density" Scalar
-          spec "column_filters" Scalar ]
+          spec "column_filters" Scalar
+          spec "align" Scalar ]
 
     let private extraPresentationProperties = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
