@@ -804,11 +804,20 @@ module CardParser =
         let anySlotFlowInput =
             diagramSlotsFinal.Values |> Seq.exists (fun slot -> slot.FlowInput.IsSome)
 
+        // ADR-0122: with a connected flow the card may still receive wiring later —
+        // report/page scope links, or default-flow synthesis. The loud "no wiring at
+        // all" check lives in that phase (ReportScopeDataFlowApplicator).
+        let scopeFlowAvailable =
+            includes
+            |> Option.bind (fun state -> state.DashflowModule)
+            |> Option.isSome
+
         if dataSource.Value.IsNone
            && useCardPreset.IsNone
            && flowInput.Value.IsNone
            && cardInputs.Count = 0
-           && not anySlotFlowInput then
+           && not anySlotFlowInput
+           && not scopeFlowAvailable then
             raise (DashSpecParseException("Card requires data flow wiring, report/page data flow, or use <card-preset>."))
 
         let resolvedCardFlowInput =

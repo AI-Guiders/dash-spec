@@ -141,6 +141,53 @@ module ReportScopeDataFlowApplicator =
             | true, slot when slot.FlowInput.IsSome -> { card with FlowInput = slot.FlowInput }
             | _ -> card
 
+    /// <summary>ADR-0122: default flow wiring. A card with no explicit wiring of any
+    /// kind gets its arc synthesized when the connected flow has exactly one source
+    /// and the card has exactly one payload-less diagram slot: the default port of
+    /// that source feeds the slot. One source + one slot — no guessing; several
+    /// sources stay loud (declare <c>data flow</c> explicitly), and zero sources fall
+    /// through to <c>validateCards</c>'s "no module data flow".</summary>
+    let private synthesizeDefaultWiring (shell: ReportCompileContext) =
+        let sources =
+            match shell.Includes.DashflowModule with
+            | Some flowModule -> flowModule.Sources |> Array.toList
+            | None -> []
+
+        for i in 0 .. shell.Cards.Count - 1 do
+            let card = shell.Cards.[i]
+
+            let isCandidate =
+                card.UseCardPreset.IsNone
+                && card.FlowInput.IsNone
+                && card.DiagramSlots.Count = 1
+                && (let slot = (card.DiagramSlots |> Seq.exactlyOne).Value in
+                    slot.FlowInput.IsNone
+                    && String.IsNullOrWhiteSpace slot.DataSource.Value
+                    && slot.Payloads.Count = 0)
+
+            if isCandidate then
+                let slotRef = card.DiagramSlots.Keys |> Seq.exactlyOne
+
+                match sources with
+                | [ source ] ->
+                    let flowInput =
+                        { Alias = slotRef
+                          NodeId = source.Id
+                          PortName =
+                            (match source.DefaultOutputPort with
+                             | Some port when not (String.IsNullOrWhiteSpace port) -> port
+                             | _ -> source.OutputPort) }
+
+                    shell.Cards.[i] <-
+                        updateSlot card slotRef (fun slot -> { slot with FlowInput = Some flowInput })
+                | many ->
+                    let sourceIds = many |> List.map (fun s -> s.Id) |> String.concat ", "
+                    raise (
+                        DashSpecParseException(
+                            $"Card '{card.Id}': default flow wiring is ambiguous — the connected flow has {many.Length} sources ({sourceIds}); declare data flow explicitly (src [port] -> [rows] card.{card.Id}.{slotRef})."
+                        )
+                    )
+
     let private validateCards (cards: ResizeArray<CardDefinition>) =
         for i in 0 .. cards.Count - 1 do
             let card = syncPrimaryFlowInput cards.[i]
@@ -173,4 +220,5 @@ module ReportScopeDataFlowApplicator =
                 applySections $"Page '{page.Id}'" shell.Cards (shell.Filters :> IReadOnlyList<_>) flow.Sections
             | None -> ()
 
+        synthesizeDefaultWiring shell
         validateCards shell.Cards

@@ -42,6 +42,7 @@
     <Compile Include="TailReduceAndNoDataTests.fs" />
     <Compile Include="ImportOrderIndependenceTests.fs" />
     <Compile Include="DiagramChromePresetResolutionTests.fs" />
+    <Compile Include="DefaultFlowWiringTests.fs" />
 
   </ItemGroup>
   <ItemGroup>
