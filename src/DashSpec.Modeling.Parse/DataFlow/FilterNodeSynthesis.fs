@@ -67,3 +67,28 @@ module FilterNodeSynthesis =
     /// Synthesize the card-scope filters of one card (own instance per card).
     let synthesizeCardScope (cardId: string) (filters: FilterDefinition seq) =
         filters |> Seq.map (synthesize (FilterNodeScope.Card cardId)) |> Array.ofSeq
+
+    /// <summary>ADR-0120: the author's <c>series max = N</c> sugar becomes a
+    /// <c>reduce</c> transform instance on the card path (no special node kind —
+    /// the tail is just the transform's <c>tail</c> parameter). Options tap before
+    /// it (full domain), the matrix consumes its output ("as on the diagram").</summary>
+    let synthesizeReduce
+        (cardId: string)
+        (max: int)
+        (otherLabel: string option)
+        : DashflowTransformerDef =
+        let parameters =
+            [ { DashflowTransformParam.Key = "by"; DashflowTransformParam.Value = "series" }
+              { DashflowTransformParam.Key = "top"; DashflowTransformParam.Value = string max } ]
+            @ (match otherLabel with
+               | Some label -> [ { DashflowTransformParam.Key = "tail"; DashflowTransformParam.Value = label } ]
+               | None -> [])
+            |> Array.ofList
+
+        { Id = $"card.{cardId}.reduce"
+          Inputs = [| { Name = "rows"; PortType = None } |]
+          Outputs = [| ("rows", "") |]
+          Params = [||]
+          DefaultInputPort = Some "rows"
+          DefaultOutputPort = Some "rows"
+          Steps = [| { PluginId = "reduce"; Parameters = parameters } |] }

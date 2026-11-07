@@ -50,7 +50,18 @@ module CardVisibilityParser =
         if String.IsNullOrWhiteSpace filterName then
             raise (DashSpecParseException($"Card '{cardId}': when requires filter name or oversize."))
 
-        if reader.TryKeyword "empty" then
+        // ADR-0120: `when <filter>.no_data` — the param node's option domain is empty.
+        if reader.IsAt TokenKind.Dot then
+            reader.Advance()
+            let state = reader.ReadIdent()
+
+            if not (String.Equals(state, "no_data", StringComparison.OrdinalIgnoreCase)) then
+                raise (DashSpecParseException($"Card '{cardId}': when '{filterName}' supports only .no_data, got '.{state}'."))
+
+            reader.SkipNewlines()
+            let message = tryReadMessageBody reader cardId filterName
+            { FilterName = filterName; Mode = CardVisibilityMode.WhenNoData; Message = message }
+        elif reader.TryKeyword "empty" then
             { FilterName = filterName; Mode = CardVisibilityMode.WhenEmpty; Message = None }
         elif reader.TryKeyword "set" then
             reader.SkipNewlines()

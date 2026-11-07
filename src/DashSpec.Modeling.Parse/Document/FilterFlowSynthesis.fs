@@ -6,6 +6,7 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Card
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Filter
+open DashSpec.Modeling.Parse.Transform
 
 /// <summary>
 /// ADR-0120 compile phase: filters transpile into typed param nodes and the
@@ -131,33 +132,59 @@ module FilterFlowSynthesis =
         for link in scopeFlowLinks document do
             match targetCardId link.ToNode with
             | None -> edges.Add(link)
-            | Some card when card.BoundFilters.Count = 0 -> edges.Add(link)
             | Some card ->
-                let scopes =
-                    card.BoundFilters
-                    |> Seq.map (fun name ->
-                        match resolveScope document card name with
-                        | Some scope -> scope, name
-                        | None ->
-                            raise (
-                                DashSpecParseException(
-                                    $"Card '{card.Id}' binds filter '{name}' that is neither a dashboard filter nor a card local filter."
-                                )
-                            ))
-                    |> List.ofSeq
+                // ADR-0120 tail reduce: `series max` sugar becomes a reduce node at
+                // the chain's end — options tap before it, the matrix consumes its output.
+                let tailId =
+                    match card.SeriesTransform with
+                    | Some block when block.Max.IsSome ->
+                        let node = FilterNodeSynthesis.synthesizeReduce card.Id block.Max.Value block.OtherLabel
+                        if not (nodeById.ContainsKey node.Id) then
+                            nodeById.[node.Id] <- node
+                            nodes.Add(node, ())
+                        Some node.Id
+                    | _ -> None
 
-                let nodeIds = scopes |> List.map (fun (scope, name) -> ensureNode scope name)
+                if card.BoundFilters.Count = 0 then
+                    match tailId with
+                    | Some tail ->
+                        edges.Add(edge link.FromNode link.FromPort tail None)
+                        edges.Add(edge tail None link.ToNode link.ToPort)
+                    | None -> edges.Add(link)
+                else
+                    let scopes =
+                        card.BoundFilters
+                        |> Seq.map (fun name ->
+                            match resolveScope document card name with
+                            | Some scope -> scope, name
+                            | None ->
+                                raise (
+                                    DashSpecParseException(
+                                        $"Card '{card.Id}' binds filter '{name}' that is neither a dashboard filter nor a card local filter."
+                                    )
+                                ))
+                        |> List.ofSeq
 
-                let chain =
-                    let head = edge link.FromNode link.FromPort (List.head nodeIds) None
-                    let middle =
-                        nodeIds
-                        |> List.pairwise
-                        |> List.map (fun (a, b) -> edge a None b None)
-                    let last = edge (List.last nodeIds) None link.ToNode link.ToPort
-                    head :: middle @ [ last ]
+                    let nodeIds = scopes |> List.map (fun (scope, name) -> ensureNode scope name)
 
-                edges.AddRange chain
+                    let chain =
+                        let head = edge link.FromNode link.FromPort (List.head nodeIds) None
+                        let middle =
+                            nodeIds
+                            |> List.pairwise
+                            |> List.map (fun (a, b) -> edge a None b None)
+                        let last = edge (List.last nodeIds) None link.ToNode link.ToPort
+                        head :: middle @ [ last ]
+
+                    edges.AddRange chain
+
+                    // re-route the chain tail through the reduce node: last filter → reduce → anchor
+                    match tailId with
+                    | Some tail ->
+                        edges.RemoveAt(edges.Count - 1)
+                        edges.Add(edge (List.last nodeIds) None tail None)
+                        edges.Add(edge tail None link.ToNode link.ToPort)
+                    | None -> ()
 
         { Nodes = Seq.toArray nodes.Keys
           Edges = edges.ToArray() }

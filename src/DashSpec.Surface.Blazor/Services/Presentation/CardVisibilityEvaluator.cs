@@ -14,7 +14,18 @@ public static class CardVisibilityEvaluator
     public static CardVisibilityOutcome Evaluate(
         CardDefinition card,
         IReadOnlyDictionary<string, HashSet<string>> selectedFields,
-        string? activePhaseId)
+        string? activePhaseId) =>
+        Evaluate(card, selectedFields, activePhaseId, fieldDomainCounts: null);
+
+    /// <summary>ADR-0120: <c>when &lt;filter&gt;.no_data</c> fires on an empty option
+    /// domain (distinct over the param node's input stream returned nothing) —
+    /// the author's message becomes the placeholder; without a message the card
+    /// stays visible with its honest empty state.</summary>
+    public static CardVisibilityOutcome Evaluate(
+        CardDefinition card,
+        IReadOnlyDictionary<string, HashSet<string>> selectedFields,
+        string? activePhaseId,
+        IReadOnlyDictionary<string, int>? fieldDomainCounts)
     {
         var phaseId = card.PhaseId?.Value;
         if (phaseId is not null &&
@@ -38,9 +49,20 @@ public static class CardVisibilityEvaluator
             CardVisibilityMode.WhenSet when !string.IsNullOrWhiteSpace(visibility.Message?.Value)
                 => CardVisibilityOutcome.Placeholder,
             CardVisibilityMode.WhenSet => CardVisibilityOutcome.Hidden,
+            CardVisibilityMode.WhenNoData when DomainIsEmpty(visibility.FilterName, fieldDomainCounts)
+                && !string.IsNullOrWhiteSpace(visibility.Message?.Value)
+                => CardVisibilityOutcome.Placeholder,
+            CardVisibilityMode.WhenNoData => CardVisibilityOutcome.Visible,
             _ => CardVisibilityOutcome.Visible,
         };
     }
+
+    private static bool DomainIsEmpty(
+        string filterName,
+        IReadOnlyDictionary<string, int>? fieldDomainCounts) =>
+        fieldDomainCounts is not null &&
+        fieldDomainCounts.TryGetValue(filterName, out var count) &&
+        count == 0;
 
     public static string? PlaceholderMessage(
         CardDefinition card,

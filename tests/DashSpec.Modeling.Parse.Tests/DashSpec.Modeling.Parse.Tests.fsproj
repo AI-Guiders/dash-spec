@@ -39,6 +39,7 @@
     <Compile Include="FilterNodeSynthesisTests.fs" />
     <Compile Include="FilterFlowSynthesisTests.fs" />
     <Compile Include="FilterFlowHoistingTests.fs" />
+    <Compile Include="TailReduceAndNoDataTests.fs" />
 
   </ItemGroup>
   <ItemGroup>
