@@ -82,6 +82,9 @@ public static class SpecResolveExporter
                 ["tooltip_split"] = matrix.TooltipSplit,
                 ["stretch_mode"] = matrix.StretchMode.ToString().ToLowerInvariant(),
                 ["stretch_direction"] = StretchDirectionWire(matrix.StretchDirection),
+                ["align"] = matrix.Align ?? string.Empty,
+                ["x_axis_placement"] = matrix.XAxisPlacement ?? string.Empty,
+                ["y_axis_placement"] = matrix.YAxisPlacement ?? string.Empty,
             };
         }
 

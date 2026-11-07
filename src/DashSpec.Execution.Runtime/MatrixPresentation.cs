@@ -78,9 +78,29 @@ public sealed record MatrixPresentation(
             card.Tooltip is not null,
             VizStretch.ResolveMode(stretchProps),
             VizStretch.ResolveDirection(stretchProps),
-            ParsePlacement(diagram.Properties.GetValueOrDefault("x_axis_placement"), "x_axis_placement", "top", "bottom"),
-            ParsePlacement(diagram.Properties.GetValueOrDefault("y_axis_placement"), "y_axis_placement", "left", "right"),
-            ParsePlacement(diagram.Properties.GetValueOrDefault("align"), "align", "left", "center"));
+            ParsePlacement(ResolveKnob(stretchProps, diagram.Properties, "x_axis_placement"), "x_axis_placement", "top", "bottom"),
+            ParsePlacement(ResolveKnob(stretchProps, diagram.Properties, "y_axis_placement"), "y_axis_placement", "left", "right"),
+            ParsePlacement(ResolveKnob(stretchProps, diagram.Properties, "align"), "align", "left", "center"));
+    }
+
+    /// <summary>Placement knobs resolve from the presentation preset (stdlib heatmap_tall
+    /// carries the explicit defaults) with the per-diagram property as an override —
+    /// the same precedence as height/visible_rows. Without the preset lookup the knob
+    /// never reaches the renderer and the loud "align is not declared" gate fires on
+    /// every spec that only uses the preset.</summary>
+    private static string? ResolveKnob(
+        IReadOnlyDictionary<string, string> chromeProps,
+        IReadOnlyDictionary<string, string> diagramProps,
+        string key)
+    {
+        if (chromeProps.TryGetValue(key, out var fromChrome) && !string.IsNullOrWhiteSpace(fromChrome))
+        {
+            return fromChrome;
+        }
+
+        return diagramProps.TryGetValue(key, out var fromDiagram) && !string.IsNullOrWhiteSpace(fromDiagram)
+            ? fromDiagram
+            : null;
     }
 
     /// <summary>Placement knobs (<c>x_axis_placement = top|bottom</c>,
