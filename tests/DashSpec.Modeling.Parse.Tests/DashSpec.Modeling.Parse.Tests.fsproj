@@ -36,6 +36,7 @@
     <Compile Include="ModuleHeaderParserTests.fs" />
     <Compile Include="ModelBehaviorTests.fs" />
     <Compile Include="FilterTableDependsTests.fs" />
+    <Compile Include="FilterNodeSynthesisTests.fs" />
 
   </ItemGroup>
   <ItemGroup>

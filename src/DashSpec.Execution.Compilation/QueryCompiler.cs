@@ -1,5 +1,6 @@
 using System.Text;
 using DashSpec.Abstractions.Data;
+
 using DashSpec.Abstractions.Query;
 using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Compilation.Dialects;
@@ -444,6 +445,19 @@ public static class QueryCompiler
 
     public static string BuildDistinctFieldSql(FilterDefinition filter)
     {
+        return BuildDistinctFieldSql(filter, null);
+    }
+
+    /// <summary>ADR-0120 cascade domains: when the filter declares
+    /// <c>depends</c>, the option domain is constrained by the depended filter's
+    /// current selection — the predicate derived from types (field → equality on
+    /// the depended filter's column). An empty selection means "nothing chosen
+    /// yet": no predicate, the domain stays the full distinct.</summary>
+    public static string BuildDistinctFieldSql(
+        FilterDefinition filter,
+        IReadOnlyDictionary<string, FilterDefinition>? filterDefinitions,
+        IReadOnlyList<string>? dependedSelection = null)
+    {
         if (!CanLoadDistinctFieldOptions(filter))
         {
             var columnReference = filter.ColumnReference?.Value;
@@ -459,7 +473,54 @@ public static class QueryCompiler
 
         var table = columnRef[..lastDot];
         var column = columnRef[(lastDot + 1)..];
-        return $"SELECT DISTINCT {column} AS value FROM {table} WHERE {column} IS NOT NULL ORDER BY {column}";
+
+        var predicate = BuildDependsPredicate(filter, filterDefinitions, dependedSelection);
+        var where = predicate is null
+            ? $"{column} IS NOT NULL"
+            : $"{column} IS NOT NULL AND {predicate}";
+
+        return $"SELECT DISTINCT {column} AS value FROM {table} WHERE {where} ORDER BY {column}";
+    }
+
+    private static string? BuildDependsPredicate(
+        FilterDefinition filter,
+        IReadOnlyDictionary<string, FilterDefinition>? filterDefinitions,
+        IReadOnlyList<string>? dependedSelection)
+    {
+        if (filter.DependsOn is not { } dependsOn || string.IsNullOrWhiteSpace(dependsOn.Value))
+        {
+            return null;
+        }
+
+        // `report.<id>` resolves against the report-scope dictionary; a bare id is a sibling.
+        var targetName = dependsOn.Value.StartsWith("report.", StringComparison.OrdinalIgnoreCase)
+            ? dependsOn.Value["report.".Length..]
+            : dependsOn.Value;
+
+        if (filterDefinitions is null
+            || !filterDefinitions.TryGetValue(targetName, out var target)
+            || target is null)
+        {
+            throw new ArgumentException(
+                $"Filter '{filter.Name}' depends on '{dependsOn.Value}', but no such filter is declared.",
+                nameof(filter));
+        }
+
+        var targetColumn = target.ColumnReference?.Value;
+        if (target.Kind != FilterKind.Field || string.IsNullOrWhiteSpace(targetColumn))
+        {
+            throw new ArgumentException(
+                $"Filter '{filter.Name}' depends on '{target.Name}', which is not a field filter with a column reference.",
+                nameof(filter));
+        }
+
+        if (dependedSelection is null || dependedSelection.Count == 0)
+        {
+            return null;
+        }
+
+        var values = string.Join(", ", dependedSelection.Select(v => "'" + v.Replace("'", "''") + "'"));
+        return $"{targetColumn} IN ({values})";
     }
 
     private static string ResolveSelectColumns(CardDefinition card)

@@ -17,6 +17,7 @@ internal static class FilterTestData
         bool singleSelect = false,
         string? layoutRef = null,
         string? bindScopeHint = null,
+        string? dependsOn = null,
         IReadOnlyDictionary<string, string>? grainLabels = null,
         string applyMode = "auto",
         PlacementDefinition? placement = null) =>
@@ -34,6 +35,7 @@ internal static class FilterTestData
             SingleSelect = singleSelect,
             LayoutRef = ToOption(layoutRef),
             BindScopeHint = ToOption(bindScopeHint),
+            DependsOn = ToOption(dependsOn),
             GrainLabels = grainLabels is null
                 ? FSharpOption<IReadOnlyDictionary<string, string>>.None
                 : FSharpOption<IReadOnlyDictionary<string, string>>.Some(grainLabels),
