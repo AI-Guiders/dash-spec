@@ -528,6 +528,18 @@ public sealed class DashboardPageController : IDisposable
     public Task ApplyCardClickNavigationAsync((CardRenderResult Card, HeatmapCellContext Context) args) =>
         ApplyCardClickNavigationAsync(args.Card, args.Context);
 
+    /// <summary>Drill UX (ADR-0107): the ✕ on a loaded drill slot — drop the card's cell
+    /// overlay and re-render the interior slots; the drill target returns to its
+    /// awaiting-click hint.</summary>
+    public Task ClearCardCellDrillAsync(CardRenderResult card) =>
+        ClearCardCellDrillAsync(card, CancellationToken.None);
+
+    public async Task ClearCardCellDrillAsync(CardRenderResult card, CancellationToken cancellationToken)
+    {
+        _cellDrill.Clear(card.Id);
+        await _refresh.RefreshCardInteriorSlotsAsync(card.Id, cancellationToken).ConfigureAwait(false);
+    }
+
     public Task ExecuteCardActionAsync(CardActionRequest request) =>
         ExecuteCardActionAsync(request, CancellationToken.None);
 

@@ -14,6 +14,7 @@
 @using Radzen.Blazor
 @inject DashboardLocalizer Loc
 @inject DashSpec.Viz.ICardChromeControlsOverride ChromeControls
+@inject ICardCellDrillState CellDrill
 @implements IDisposable
 
 <RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
@@ -195,6 +196,9 @@
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
     [Parameter] public EventCallback<(CardRenderResult Card, HeatmapCellContext Context)> OnCellClickNavigate { get; set; }
+    /// <summary>Drill UX (ADR-0107): the drill slot's ✕ — the page drops the cell overlay
+    /// and refreshes the interior slots.</summary>
+    [Parameter] public EventCallback<CardRenderResult> OnDrillClear { get; set; }
     [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
     [Parameter] public bool BodyFolded { get; set; }
     [Parameter] public EventCallback OnToggleBodyFold { get; set; }
@@ -609,6 +613,12 @@
             ShowSource.Cell,
             true,
             Microsoft.FSharp.Core.FSharpOption<string>.None);
+
+    /// <summary>A cell-drill overlay is active on this card — its drill slot shows the ✕.</summary>
+    internal bool CellDrillActive => CellDrill.Get(Card.Id) is not null;
+
+    /// <summary>The drill slot's ✕ — the page clears the overlay and refreshes interiors.</summary>
+    internal Task CloseCellDrillAsync() => OnDrillClear.InvokeAsync(Card);
 
     internal async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
     {

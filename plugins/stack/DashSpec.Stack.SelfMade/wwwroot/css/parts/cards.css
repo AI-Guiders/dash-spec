@@ -387,6 +387,16 @@
   opacity: 1;
 }
 
+/* Drill ✕ (ADR-0107): the loaded drill table's close affordance — always visible
+   (not hover-gated like maximize): dismissal must be discoverable. */
+.slot-drill-clear-btn {
+  position: absolute;
+  top: 0.2rem;
+  right: 2.3rem;
+  z-index: 30;
+}
+
+
 .card-kpi .card-head {
   flex-shrink: 0;
   margin-bottom: 0.35rem;

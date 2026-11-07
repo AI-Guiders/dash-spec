@@ -246,4 +246,7 @@
   <data name="Theme: host default" xml:space="preserve">
     <value>Тема: общая</value>
   </data>
+  <data name="Close drill table" xml:space="preserve">
+    <value>Закрыть таблицу детализации</value>
+  </data>
 </root>

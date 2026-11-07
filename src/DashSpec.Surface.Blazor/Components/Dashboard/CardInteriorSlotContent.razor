@@ -1,5 +1,6 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Execution.Runtime
+@using DashSpec.Viz
 @using DashSpec.Core.Interaction
 @using DashSpec.Abstractions.Plugins
 @using DashSpec.Composition.Plugins
@@ -39,6 +40,25 @@ else if (Owner is not null)
                     <CardIcon Kind="CardIconKind.Expand" />
                 </button>
             }
+            @if (DrillLoaded)
+            {
+                @* Drill UX (ADR-0107): the ✕ dismisses the loaded drill table — the
+                   slot returns to its awaiting-click hint; without it a drill could
+                   only be replaced by another click, never closed. *@
+                <button type="button"
+                        class="secondary card-icon-btn slot-drill-clear-btn"
+                        title="@Loc.T("Close drill table")"
+                        aria-label="@(Loc.T("Close drill table") + ": " + Slot.Node.Id)"
+                        data-testid="drill-clear-@(Owner.Card.Id)"
+                        @onclick="() => Owner.CloseCellDrillAsync()"
+                        @onclick:stopPropagation="true">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            }
             @if (_diagramType is not null)
             {
                 // [ADR-0111] P1: a diagram is a diagram — no primary/secondary in the plane.
@@ -76,6 +96,17 @@ else if (Owner is not null)
         Slot.Node.Kind == WiringNodeKind.Slot
         && Owner?.Card.InteriorSlotRenders is not null
         && Owner.Card.InteriorSlotRenders.ContainsKey(Slot.Node.Id);
+
+    /// <summary>This slot shows a loaded cell-drill table (ADR-0107) — it gets the ✕.
+    /// A table payload plus an active cell overlay on the card; awaiting-click and
+    /// non-drill tables keep their hint/no chrome.</summary>
+    private bool DrillLoaded =>
+        Owner is not null
+        && HasSlotPayload
+        && Owner.CellDrillActive
+        && Owner.Card.InteriorSlotRenders!.TryGetValue(Slot.Node.Id, out var payload)
+        && payload.DataFamily == DiagramDataFamily.Table
+        && payload.Table is not null;
 
     protected override void OnParametersSet()
     {
