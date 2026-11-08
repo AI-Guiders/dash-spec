@@ -94,6 +94,9 @@ type DashflowModule =
       /// ADR-0127: row types synthesized by port type inference (projection
       /// steps). Merge into the document's type catalog alongside declared types.
       InferredRowTypes: RowTypeDef[]
+      /// ADR-0125: the `module flow <id> view` marker — the explicit opt-in for
+      /// emitting the module's chains as managed views (dsc build views).
+      EmitViews: bool
       Diagnostics: FlowGraphDiagnostic[] }
 
     member this.WithSources(sources: DashflowSourceDef[]) =

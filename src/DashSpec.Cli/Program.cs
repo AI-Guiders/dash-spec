@@ -36,23 +36,37 @@ public static class Program
     }
 
     /// <summary>dsc build types &lt;dir&gt; — ADR-0124: compile the corpus's row types into
-    /// TypedRows.dll next to the catalog (Roslyn, no runtime generation).</summary>
+    /// TypedRows.dll next to the catalog (Roslyn, no runtime generation).
+    /// dsc build views &lt;dir&gt; — ADR-0125: emit managed views from `module flow … view`
+    /// chains; --print (default) reviews the DDL, --connection applies it (the publishing
+    /// account owns the DDL rights, the host stays a read-only client).</summary>
     private static int Build(string[] rest)
     {
         if (rest.Length is 0 || rest[0] is "--help" or "-h")
         {
             Console.Error.WriteLine("usage: dsc build types <corpus-dir> [--out <dir>]");
+            Console.Error.WriteLine("       dsc build views <corpus-dir> [--dialect tsql|postgres] [--project-uid <id>] [--connection <conn-str>]");
             return 2;
         }
 
-        if (!string.Equals(rest[0], "types", StringComparison.OrdinalIgnoreCase))
+        return rest[0].ToLowerInvariant() switch
         {
-            Console.Error.WriteLine($"unknown build target '{rest[0]}' — expected: types");
-            return 2;
-        }
+            "types" => BuildTypes(rest.Skip(1).ToArray()),
+            "views" => BuildViews(rest.Skip(1).ToArray()),
+            var unknown => UnknownBuildTarget(unknown),
+        };
+    }
 
-        var dir = rest.Length > 1 ? rest[1] : ".";
-        var outDir = rest.Length > 3 && rest[2] is "--out" ? rest[3] : dir;
+    private static int UnknownBuildTarget(string target)
+    {
+        Console.Error.WriteLine($"unknown build target '{target}' — expected: types | views");
+        return 2;
+    }
+
+    private static int BuildTypes(string[] rest)
+    {
+        var dir = rest.Length > 0 ? rest[0] : ".";
+        var outDir = rest.Length > 2 && rest[1] is "--out" ? rest[2] : dir;
         var fullPath = Path.GetFullPath(dir);
         if (!Directory.Exists(fullPath))
         {
@@ -70,6 +84,114 @@ public static class Program
         var result = TypedRowsCompiler.Compile(types, Path.GetFullPath(outDir));
         Console.WriteLine($"OK: {result.AssemblyPath} ({result.TypeNames.Count} row types: {string.Join(", ", result.TypeNames)})");
         return 0;
+    }
+
+    private static int BuildViews(string[] rest)
+    {
+        string? dir = null;
+        string? connection = null;
+        string dialect = "tsql";
+        string projectUid = "dsc-cli";
+        for (var i = 0; i < rest.Length; i++)
+        {
+            if (rest[i] is "--connection" && i + 1 < rest.Length)
+            {
+                connection = rest[++i];
+            }
+            else if (rest[i] is "--dialect" && i + 1 < rest.Length)
+            {
+                dialect = rest[++i];
+            }
+            else if (rest[i] is "--project-uid" && i + 1 < rest.Length)
+            {
+                projectUid = rest[++i];
+            }
+            else
+            {
+                dir ??= rest[i];
+            }
+        }
+
+        var fullPath = Path.GetFullPath(dir ?? ".");
+        if (!Directory.Exists(fullPath))
+        {
+            Console.Error.WriteLine($"Directory not found: {fullPath}");
+            return 2;
+        }
+
+        var views = TypedRowsCompiler.LoadCorpusViews(fullPath, dialect);
+        if (views.Count == 0)
+        {
+            Console.Error.WriteLine($"No view-marked flow units (module flow … view) found under {fullPath}");
+            return 1;
+        }
+
+        foreach (var view in views)
+        {
+            Console.WriteLine($"-- {view.ViewName}");
+            Console.WriteLine(view.Ddl);
+            Console.WriteLine();
+        }
+
+        if (connection is null)
+        {
+            Console.WriteLine($"OK: {views.Count} managed view(s) (print mode — pass --connection to apply)");
+            return 0;
+        }
+
+        if (!dialect.Equals("tsql", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"apply mode supports tsql so far (dialect '{dialect}' prints only)");
+            return 1;
+        }
+
+        ApplyViews(views, connection, projectUid);
+        Console.WriteLine($"OK: {views.Count} managed view(s) applied + leased to '{projectUid}'");
+        return 0;
+    }
+
+    /// <summary>Publish-time DDL (ADR-0125): CREATE OR ALTER each view and refresh this
+    /// project's leases — the reference-counting that makes a future --prune safe.</summary>
+    private static void ApplyViews(
+        IReadOnlyList<DashSpec.Execution.Compilation.Views.ManagedView> views,
+        string connection,
+        string projectUid)
+    {
+        using var conn = new Microsoft.Data.SqlClient.SqlConnection(connection);
+        conn.Open();
+
+        using (var leaseTable = conn.CreateCommand())
+        {
+            leaseTable.CommandText = """
+                IF OBJECT_ID('dashspec_view_leases') IS NULL
+                CREATE TABLE dashspec_view_leases (
+                    view_name NVARCHAR(256) NOT NULL,
+                    project_uid NVARCHAR(128) NOT NULL,
+                    updated_at_utc DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                    CONSTRAINT PK_dashspec_view_leases PRIMARY KEY (view_name, project_uid)
+                )
+                """;
+            leaseTable.ExecuteNonQuery();
+        }
+
+        foreach (var view in views)
+        {
+            using var ddl = conn.CreateCommand();
+            ddl.CommandText = view.Ddl;
+            ddl.ExecuteNonQuery();
+
+            using var lease = conn.CreateCommand();
+            lease.CommandText = """
+                MERGE dashspec_view_leases AS target
+                USING (SELECT @view AS view_name, @project AS project_uid) AS src
+                ON target.view_name = src.view_name AND target.project_uid = src.project_uid
+                WHEN MATCHED THEN UPDATE SET updated_at_utc = SYSUTCDATETIME()
+                WHEN NOT MATCHED THEN INSERT (view_name, project_uid) VALUES (src.view_name, src.project_uid);
+                """;
+            lease.Parameters.AddWithValue("@view", view.ViewName);
+            lease.Parameters.AddWithValue("@project", projectUid);
+            lease.ExecuteNonQuery();
+        }
     }
 
     private static int Validate(string[] rest)

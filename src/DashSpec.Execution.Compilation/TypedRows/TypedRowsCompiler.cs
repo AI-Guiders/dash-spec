@@ -144,6 +144,32 @@ public static class TypedRowsCompiler
         return definitions.Values.ToList();
     }
 
+    /// <summary>Scans a corpus for view-marked flow units (<c>module flow &lt;id&gt; view</c>,
+    /// ADR-0125) and emits their chains as managed views. Types are loaded first so the
+    /// emitter can render explicit column lists and inference (ADR-0127) can contribute
+    /// synthesized row types.</summary>
+    public static IReadOnlyList<Views.ManagedView> LoadCorpusViews(string directory, string dialect = "tsql")
+    {
+        var types = LoadCorpusTypes(directory);
+        var catalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(types);
+        var views = new List<Views.ManagedView>();
+
+        foreach (var file in Directory.EnumerateFiles(directory, "*.ds", SearchOption.AllDirectories))
+        {
+            var header = FirstLines(file, 2);
+            if (!header.Contains("module flow", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(
+                DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file), catalog);
+            views.AddRange(Views.ManagedViewsEmitter.Emit(module, catalog, dialect));
+        }
+
+        return views;
+    }
+
     private static IEnumerable<RowTypeDef> ParseTypes(string text) =>
         DashSpec.Modeling.Parse.Types.TypeModuleParser.parseTypesModule(text);
 

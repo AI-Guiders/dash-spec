@@ -2,8 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0127
 title: "Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов"
-status: "Proposed"
-implementation: "none"
+status: "Accepted"
+implementation: "core: type_effect contract (identity/projection/opaque; extend/compose declared, awaiting their transforms), scope inference, BaseSummaryRow synthesis with hand-written twin preference, transform-typecheck DFLOW010, dsc build types integration"
 date: 2026-11-08
 tags: [dashspec, adr, dashflow, type-inference, row-types, adr-0122, adr-0124, adr-0126]
 language: ru-RU

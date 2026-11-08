@@ -3,7 +3,7 @@ type: ADR
 id: DASHSPEC-ADR-0125
 title: "DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views)"
 status: "Proposed"
-implementation: "none"
+implementation: "slice 1: ManagedViewsEmitter + dsc build views (--print / --connection apply with dashspec_view_leases; tsql live-verified) — reader integration, iTVF emission and --prune pending (open questions 1, 3-5)"
 date: 2026-11-08
 tags: [dashspec, adr, sql, views, publish-pipeline, adr-0121, adr-0123, adr-0124]
 language: ru

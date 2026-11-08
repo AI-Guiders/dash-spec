@@ -780,6 +780,7 @@ module DashflowModuleParser =
           Links = links
           Graph = graph
           InferredRowTypes = inferred |> List.toArray
+          EmitViews = false
           Diagnostics = diagnostics |> List.toArray }
 
     /// Body after <c>@flow &lt;id&gt;</c> until <c>end flow</c> (optional matching id on <c>end</c>).
@@ -832,5 +833,10 @@ module DashflowModuleParser =
         if String.IsNullOrWhiteSpace flowId then
             raise (DashSpecParseException("@flow requires an id."))
 
+        // ADR-0125: the explicit opt-in marker — `module flow <id> view` emits the
+        // module's chains into the database as managed views (dsc build views).
+        let emitViews = reader.TryKeyword "view"
+
         reader.SkipNewlines()
-        parseFlowEnvelope reader flowId typeCatalog
+        let parsed = parseFlowEnvelope reader flowId typeCatalog
+        if emitViews then { parsed with EmitViews = true } else parsed

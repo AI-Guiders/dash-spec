@@ -16,4 +16,11 @@
     <ProjectReference Include="..\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- ADR-0125: dsc build views with a connection applies the publish-time DDL (tsql) -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
+    <!-- transitive pin: NuGet audit fails the build on the vulnerable default -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+
 </Project>
