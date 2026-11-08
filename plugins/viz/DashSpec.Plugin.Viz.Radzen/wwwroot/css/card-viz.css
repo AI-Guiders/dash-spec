@@ -113,7 +113,8 @@
   font-size: 1.45rem;
 }
 
-/* Table grouping (the fold, not the summary): rows under collapsible group headers. */
+/* Table grouping (the fold, not the summary): rows under collapsible group headers.
+   All colors ride the active Radzen theme variables — no own palette. */
 .rviz-groups {
   display: flex;
   flex-direction: column;
@@ -124,19 +125,24 @@
 .rviz-group-head {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--rz-spacing, 0.5rem);
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  background: var(--rz-base-200, rgba(128, 128, 128, 0.12));
-  border: none;
-  border-radius: 4px;
-  color: inherit;
+  padding: var(--rz-spacing-xs, 0.25rem) var(--rz-spacing, 0.5rem);
+  background: var(--rz-base-200);
+  color: var(--rz-text-title-color, inherit);
+  border: var(--rz-border-radius, 1px) solid var(--rz-base-300, transparent);
+  border-radius: var(--rz-border-radius-4, 4px);
   cursor: pointer;
   text-align: left;
+  font: inherit;
+}
+.rviz-group-head:hover {
+  background: var(--rz-base-300);
 }
 .rviz-group-chev {
   width: 1rem;
   height: 1rem;
+  color: var(--rz-text-secondary-color);
   transition: transform 0.12s ease;
 }
 .rviz-group-chev--folded {
@@ -144,32 +150,40 @@
 }
 .rviz-group-key {
   font-weight: 600;
+  color: var(--rz-text-title-color, inherit);
 }
 .rviz-group-count {
   margin-left: auto;
-  opacity: 0.7;
+  color: var(--rz-text-secondary-color);
   font-variant-numeric: tabular-nums;
 }
-.rviz-group-rows {
+.rviz-group-nested {
+  padding-left: 1.2rem;
+}
+.rviz-group-levels {
   display: flex;
-  flex-direction: column;
-  padding: 0 0.25rem 0.25rem 1.9rem;
+  flex-wrap: wrap;
+  gap: var(--rz-spacing-xs, 0.35rem);
+  padding: var(--rz-spacing-xs, 0.25rem) 0;
 }
-.rviz-group-row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(6rem, 1fr);
-  gap: 0.5rem;
-  padding: 0.2rem 0.4rem;
-  border-bottom: 1px solid var(--rz-base-200, rgba(128, 128, 128, 0.1));
+.rviz-group-chip {
+  display: inline-flex;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--rz-border-radius-round, 999px);
+  border: 1px solid var(--rz-base-300);
+  background: var(--rz-base-100);
+  color: var(--rz-text-color, inherit);
+  cursor: pointer;
+  font-size: 0.85em;
 }
-.rviz-group-cell {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.rviz-group-chip:hover {
+  background: var(--rz-base-200);
 }
 .rviz-grid-group--on {
-  color: var(--rz-primary, inherit);
+  color: var(--rz-primary);
+}
+erit);
 }
 
 .rviz-group-levels {

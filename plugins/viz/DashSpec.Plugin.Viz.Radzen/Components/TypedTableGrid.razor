@@ -1,0 +1,26 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@typeparam TItem
+@using DashSpec.Plugin.Viz.RadzenUI.Resources
+@inject IStringLocalizer<RadzenVizStrings> Loc
+
+<RadzenDataGrid TItem="TItem" Data="@Items" style="--typed:1" data-testid="typed-grid" Wrap="true"
+                AllowSorting="true" AllowFiltering="@ColumnFilters" FilterMode="FilterMode.Simple"
+                AllowPaging="true" PageSize="15" AllowColumnResize="true"
+                AllowGrouping="true"
+                GroupIndent="16">
+    <GroupHeaderTemplate>
+        <span class="rviz-typed-group">
+            <strong>@(context.GroupDescriptor?.GetTitle() ?? ""):</strong> @(context.Data.Key?.ToString() ?? Loc["(empty)"])
+            <span class="rviz-group-count">@(context.Data.Count)</span>
+        </span>
+    </GroupHeaderTemplate>
+    <Columns>
+        @for (var c = 0; c < Fields.Count; c++)
+        {
+            var index = c;
+            <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name" Title="@Fields[index].Header"
+                                  TextAlign="TextAlign.Left"
+                                  Frozen="@(index < FrozenColumns)" />
+        }
+    </Columns>
+</RadzenDataGrid>

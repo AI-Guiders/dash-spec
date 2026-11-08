@@ -102,6 +102,13 @@ public sealed class CardRenderService(
         return step is not null && OrderByStepSpec.CanPushDown(flowPath) ? step : null;
     }
 
+    /// <summary>ADR-0124: the wire row type name — present only when the slot's data source
+    /// is a flow (RowsType rides the source).</summary>
+    private static string? RowsTypeNameOf(CardDefinition card) =>
+        string.IsNullOrWhiteSpace(card.DataSource.RowsType)
+            ? null
+            : card.DataSource.RowsType;
+
     private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition effective)
     {
         if (document.Dashflow is null || effective.FlowInput?.Value is null)
@@ -287,7 +294,7 @@ public sealed class CardRenderService(
                     effective.Diagram.Kind,
                     kind.DataFamily,
                     renderPluginId,
-                    Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
+                    Table: ChartDataBuilder.BuildTable(rows, effective.Diagram, RowsTypeNameOf(effective)),
                     Placement: card.Placement?.Value,
                     InteriorPlacements: interiorPlacements,
                     TablePresentation: tablePresentation,
@@ -506,7 +513,7 @@ public sealed class CardRenderService(
                         effective.Diagram.Kind,
                         kind.DataFamily,
                         renderPluginId,
-                        Table: ChartDataBuilder.BuildTable(rows, effective.Diagram),
+                        Table: ChartDataBuilder.BuildTable(rows, effective.Diagram, RowsTypeNameOf(effective)),
                         TablePresentation: tablePresentation),
                     DiagramDataFamily.Matrix => new CardSlotRenderResult(
                         slotRef,

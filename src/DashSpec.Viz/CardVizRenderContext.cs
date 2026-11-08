@@ -22,6 +22,11 @@ public sealed class CardVizRenderContext
     /// <summary>Category-item (axis label) clicks — ADR-0107; the context carries ClickSource.</summary>
     public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; init; }
 
+    /// <summary>Card-level actions from inside the viz (ADR-0062 channel): interactive
+    /// grouping (table.group_by) and other per-card requests ride the same pipeline as the
+    /// toolbar toggles.</summary>
+    public EventCallback<CardActionRequest> OnCardAction { get; init; }
+
     /// <summary>Граф (G) получения данных: клик-значения фильтров конвертируются через G⁻¹.</summary>
     public DashflowExecutionPath? FlowPath { get; init; }
 

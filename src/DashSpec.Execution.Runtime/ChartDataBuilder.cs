@@ -63,18 +63,42 @@ public static class ChartDataBuilder
 
     public static TablePayload BuildTable(
         TypedRowBatch rows,
-        DiagramDefinition diagram)
+        DiagramDefinition diagram,
+        string? rowsTypeName = null)
     {
         var payload = TablePayloadBuilder.Build(rows, diagram);
         // ADR-0123: the runtime group transform's organization rides the payload —
         // the renderer draws runs, it does not build them.
-        return rows.Groups is { Count: > 0 } runs
+        payload = rows.Groups is { Count: > 0 } runs
             ? payload with
             {
                 GroupRuns = runs.Select(r => new TableGroupRun(r.Key, r.Offset, r.Count)).ToArray(),
                 GroupFieldName = rows.GroupFieldName,
             }
             : payload;
+        if (rowsTypeName is null)
+        {
+            return payload;
+        }
+
+        // ADR-0124: materialization lives in the conveyor, not the renderer — the payload
+        // carries ready CLR rows (a typed array, covariantly IReadOnlyList<object>) plus the
+        // row's Type for the grid's generic instantiation. The renderer resolves nothing;
+        // a row type missing from TypedRows is loud (the pipeline always compiles it).
+        if (!CompiledRowTypes.Contains(rowsTypeName))
+        {
+            throw new InvalidOperationException(
+                $"Row type '{rowsTypeName}' is not compiled into TypedRows — run `dsc build types` next to the catalog.");
+        }
+
+        var fieldNames = payload.Fields.Select(f => f.Name).ToArray();
+        var items = Array.CreateInstance(CompiledRowTypes.TypeOf(rowsTypeName), payload.Rows.Count);
+        for (var i = 0; i < payload.Rows.Count; i++)
+        {
+            items.SetValue(CompiledRowTypes.Create(rowsTypeName, payload.Rows[i], fieldNames), i);
+        }
+
+        return payload with { RowType = items.GetType().GetElementType(), TypedItems = (IReadOnlyList<object>)items };
     }
 
     public static MatrixPayload BuildHeatmap(
@@ -131,11 +155,17 @@ public sealed record TableField(
 /// strings no longer cross the payload boundary (ADR-0064: tabular rows, not strings).</summary>
 /// <remarks>Runtime grouping (ADR-0123): <see cref="GroupRuns"/> carries the transform's
 /// organization — contiguous runs the renderer only draws.</remarks>
+/// <remarks>ADR-0124: the conveyor materializes the compiled row type — <see cref="RowType"/>
+/// + <see cref="TypedItems"/> (a real TItem[] array) ride the payload; the renderer displays
+/// what it is given and resolves nothing. <see cref="Rows"/> stays the internal DashValue wire
+/// for runtime transforms (to_zone, grouping) and filters.</remarks>
 public sealed record TablePayload(
     IReadOnlyList<TableField> Fields,
     IReadOnlyList<DashValue[]> Rows,
     IReadOnlyList<TableGroupRun>? GroupRuns = null,
-    string? GroupFieldName = null);
+    string? GroupFieldName = null,
+    Type? RowType = null,
+    IReadOnlyList<object>? TypedItems = null);
 
 /// <summary>One contiguous group of table rows: display key + offset/length into Rows.</summary>
 public sealed record TableGroupRun(string Key, int Offset, int Count);

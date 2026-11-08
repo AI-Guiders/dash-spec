@@ -68,6 +68,16 @@ public sealed class HostBootstrapService(
     {
         DashSpecParser.EnsureModuleParsersRegistered();
         var catalogPath = pathResolver.ResolveCatalogPath(contentRoot, bootstrap.Dashboard.CatalogPath);
+        // ADR-0124: compiled row types ride next to the catalog (dsc build types). Absent
+        // assembly = the wire mode; present = the renderer gets honest CLR TItems.
+        // ADR-0124: the compiled row types ride next to the catalog — one convention,
+        // no upward searching.
+        var catalogDir = Path.GetDirectoryName(catalogPath) ?? contentRoot;
+        var typedRowsPath = Path.Combine(catalogDir, "DashSpec.TypedRows.dll");
+        if (File.Exists(typedRowsPath))
+        {
+            DashSpec.Execution.Runtime.CompiledRowTypes.Load(typedRowsPath);
+        }
         return new CatalogBootstrap(CatalogReader.ParseFile(catalogPath), catalogPath);
     }
 

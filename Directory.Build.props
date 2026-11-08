@@ -10,6 +10,12 @@
 
     <FSharpCoreImplicitPackageVersion>10.1.401</FSharpCoreImplicitPackageVersion>
 
+    <!-- Local platform resolution (sibling guiders-platform): enabled by the
+         "SSCAD (LUS prod)" launch profile via DASHSPEC_LOCAL_PLATFORM=true.
+         Plain dotnet run without the profile keeps the nuget-package path. -->
+    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' and '$(DASHSPEC_LOCAL_PLATFORM)' == 'true'">true</UseLocalGuidersPlatform>
+    <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == '' and '$(DASHSPEC_LOCAL_PLATFORM)' == 'true'">$(MSBuildThisFileDirectory)..\guiders-platform</GuidersPlatformRoot>
+
   </PropertyGroup>
 
 </Project>

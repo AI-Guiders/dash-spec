@@ -30,8 +30,46 @@ public static class Program
         return args[0].ToLowerInvariant() switch
         {
             "validate" => Validate(args.Skip(1).ToArray()),
+            "build" => Build(args.Skip(1).ToArray()),
             var unknown => Unknown(unknown),
         };
+    }
+
+    /// <summary>dsc build types &lt;dir&gt; — ADR-0124: compile the corpus's row types into
+    /// TypedRows.dll next to the catalog (Roslyn, no runtime generation).</summary>
+    private static int Build(string[] rest)
+    {
+        if (rest.Length is 0 || rest[0] is "--help" or "-h")
+        {
+            Console.Error.WriteLine("usage: dsc build types <corpus-dir> [--out <dir>]");
+            return 2;
+        }
+
+        if (!string.Equals(rest[0], "types", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"unknown build target '{rest[0]}' — expected: types");
+            return 2;
+        }
+
+        var dir = rest.Length > 1 ? rest[1] : ".";
+        var outDir = rest.Length > 3 && rest[2] is "--out" ? rest[3] : dir;
+        var fullPath = Path.GetFullPath(dir);
+        if (!Directory.Exists(fullPath))
+        {
+            Console.Error.WriteLine($"Directory not found: {fullPath}");
+            return 2;
+        }
+
+        var types = TypedRowsCompiler.LoadCorpusTypes(fullPath);
+        if (types.Count == 0)
+        {
+            Console.Error.WriteLine($"No types-units (module types …) found under {fullPath}");
+            return 1;
+        }
+
+        var result = TypedRowsCompiler.Compile(types, Path.GetFullPath(outDir));
+        Console.WriteLine($"OK: {result.AssemblyPath} ({result.TypeNames.Count} row types: {string.Join(", ", result.TypeNames)})");
+        return 0;
     }
 
     private static int Validate(string[] rest)

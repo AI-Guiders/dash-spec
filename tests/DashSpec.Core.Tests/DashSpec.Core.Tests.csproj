@@ -19,7 +19,7 @@
     </PackageReference>
     <PackageReference Include="FsCheck" />
     <PackageReference Include="FsCheck.Xunit" />
-  </ItemGroup>
+    </ItemGroup>
 
   <ItemGroup>
     <Using Include="DashSpec.Modeling.Parse.Lexing" />
