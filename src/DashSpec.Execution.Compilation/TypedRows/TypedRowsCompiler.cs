@@ -103,21 +103,41 @@ public static class TypedRowsCompiler
     }
 
     /// <summary>Scans a corpus directory for types-units (<c>module types &lt;id&gt;</c>) and
-    /// parses them with the F# SSOT parser.</summary>
+    /// parses them with the F# SSOT parser. Flow units (<c>module flow &lt;id&gt;</c>) ride
+    /// along (ADR-0127): their port type inference may synthesize row types, and those
+    /// compile into the same TypedRows.dll — hand-written and inferred types are
+    /// indistinguishable for the runtime.</summary>
     public static IReadOnlyList<RowTypeDef> LoadCorpusTypes(string directory)
     {
         var definitions = new Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase);
+        var flowFiles = new List<string>();
         foreach (var file in Directory.EnumerateFiles(directory, "*.ds", SearchOption.AllDirectories))
         {
             var header = FirstLines(file, 2);
-            if (!header.Contains("module types", StringComparison.Ordinal))
+            if (header.Contains("module types", StringComparison.Ordinal))
             {
-                continue;
+                foreach (var definition in ParseTypes(DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file)))
+                {
+                    definitions[definition.Name] = definition;
+                }
             }
-
-            foreach (var definition in ParseTypes(DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file)))
+            else if (header.Contains("module flow", StringComparison.Ordinal))
             {
-                definitions[definition.Name] = definition;
+                flowFiles.Add(file);
+            }
+        }
+
+        if (flowFiles.Count > 0)
+        {
+            var catalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(definitions.Values);
+            foreach (var file in flowFiles)
+            {
+                var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(
+                    DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file), catalog);
+                foreach (var inferred in module.InferredRowTypes)
+                {
+                    definitions[inferred.Name] = inferred;
+                }
             }
         }
 

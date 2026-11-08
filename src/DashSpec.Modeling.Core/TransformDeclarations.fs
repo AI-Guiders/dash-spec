@@ -22,12 +22,60 @@ module TransformDeclarations =
         Hint: string
     }
 
+    /// <summary>
+    /// The type-effect algebra (ADR-0127 §1.1): how a transform's step changes the
+    /// row type flowing through it. The algebra is CLOSED — five combinators cover
+    /// everything expressible over rows (relational algebra is closed); the
+    /// transform VOCABULARY is open (stdlib units, plugin declarations), and every
+    /// new transform must pick one of these effects or declare <c>Opaque</c>
+    /// (inference disabled for that node, explicit output type required).
+    /// Adding a sixth combinator is an ADR-level decision, not a walk-by.
+    /// </summary>
+    type TransformTypeEffect =
+        /// <c>T -> T</c> — schema unchanged, the same RowTypeDef flows on.
+        | Identity
+        /// <c>T -> T'</c> — relational aggregation: keeps the group-by field,
+        /// produces the aggregate column (SQL contract: the result column is
+        /// always <c>value</c> — count → int, else the value column's type).
+        | Projection
+        /// <c>T -> T ∪ col</c> — all fields kept, one column added.
+        | Extend
+        /// <c>T_left, T_right -> T'</c> — schema composition (join).
+        | Compose
+        /// <c>T, T -> T</c> — both inputs must be structurally equal.
+        | RequireEqual
+        /// No inference — the node requires an explicit output row type.
+        | Opaque
+
+    module TransformTypeEffect =
+        let tryParse (name: string) =
+            match name.Trim().ToLowerInvariant() with
+            | "identity" -> Some Identity
+            | "projection" -> Some Projection
+            | "extend" -> Some Extend
+            | "compose" -> Some Compose
+            | "require_equal" -> Some RequireEqual
+            | "opaque" -> Some Opaque
+            | _ -> None
+
+        let toString (effect: TransformTypeEffect) =
+            match effect with
+            | Identity -> "identity"
+            | Projection -> "projection"
+            | Extend -> "extend"
+            | Compose -> "compose"
+            | RequireEqual -> "require_equal"
+            | Opaque -> "opaque"
+
     type TransformDecl = {
         Id: string
         /// "database" | "runtime" — the layering invariant's input.
         Locality: string
         Params: ParamDecl list
         RequiresParameterBlock: bool
+        /// ADR-0127: the declared type-effect (defaults to Opaque for plugin
+        /// declarations that predate the field — inference skips them).
+        TypeEffect: TransformTypeEffect
     }
 
     let private byId = ConcurrentDictionary<string, TransformDecl>(StringComparer.OrdinalIgnoreCase)
@@ -51,6 +99,13 @@ module TransformDeclarations =
         match tryFind id with
         | Some decl -> decl.Locality
         | None -> "database"
+
+    /// ADR-0127: the declared type-effect; undeclared ids default to Opaque
+    /// (inference never runs for an unknown transform).
+    let effectOf (id: string) =
+        match tryFind id with
+        | Some decl -> decl.TypeEffect
+        | None -> Opaque
 
     /// The literal requirement for a parameter key of a transform; unlisted keys
     /// fall back to the generic assignment reader (empty literals list).

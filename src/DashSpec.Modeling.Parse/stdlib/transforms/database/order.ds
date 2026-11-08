@@ -1,6 +1,7 @@
 module transform order
 namespace DashSpec.Std.Transformations.Database
 
+type_effect = identity
 locality = database
 param by: ident
 param direction: ident

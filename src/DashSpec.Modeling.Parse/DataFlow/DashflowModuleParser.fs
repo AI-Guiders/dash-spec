@@ -693,6 +693,74 @@ module DashflowModuleParser =
             (links.ToArray())
             typeCatalog
 
+    /// <summary>ADR-0127 §4: a ports-less transformer gets the default unary
+    /// ports — input <c>raw</c>, output <c>rows</c> — with the output type left
+    /// empty for inference to fill. Binary transforms (join/union) are not in the
+    /// vocabulary yet; they will default to left/right/rows when declared.</summary>
+    let private applyDefaultPorts (transformers: DashflowTransformerDef[]) =
+        transformers
+        |> Array.map (fun transformer ->
+            if transformer.Inputs.Length > 0 || transformer.Outputs.Length > 0 then
+                transformer
+            else
+                { transformer with
+                    Inputs = [| { Name = "raw"; PortType = None } |]
+                    Outputs = [| ("rows", "") |]
+                    DefaultInputPort = Some "raw"
+                    DefaultOutputPort = Some "rows" })
+
+    /// <summary>ADR-0127: run port type inference, patch untyped outputs with
+    /// inferred names, and typecheck against the catalog extended with the
+    /// synthesized types.</summary>
+    let private inferAndCheck
+        (sources: DashflowSourceDef[])
+        (transformers: DashflowTransformerDef[])
+        (nestedFlows: DashflowNestedFlowDef[])
+        (links: FlowLinkDef[])
+        (typeCatalog: TypeCatalog)
+        =
+        let outcome = TypeInference.inferScope sources transformers links typeCatalog
+
+        // patch untyped outputs with the inferred names (declared outputs keep their names —
+        // they were verified by the transform-typecheck inside the inference)
+        let patchedTransformers =
+            transformers
+            |> Array.map (fun transformer ->
+                let outputs =
+                    transformer.Outputs
+                    |> Array.map (fun (name, declared) ->
+                        if not (String.IsNullOrWhiteSpace declared) then
+                            (name, declared)
+                        else
+                            match outcome.OutputTypes.TryGetValue((transformer.Id, name)) with
+                            | true, inferred -> (name, inferred)
+                            | false, _ -> (name, declared))
+
+                { transformer with Outputs = outputs })
+
+        let extendedCatalog =
+            if outcome.Synthesized.IsEmpty then
+                typeCatalog
+            else
+                TypeCatalog.ofDefinitions (
+                    seq {
+                        yield! typeCatalog.Definitions.Values
+                        yield! outcome.Synthesized
+                    }
+                )
+
+        let patchedGraph = buildScopeGraph sources patchedTransformers nestedFlows links
+        let diagnostics = FlowGraph.typeCheck patchedGraph extendedCatalog
+
+        let inferenceDiagnostics =
+            outcome.Diagnostics
+            |> List.map (fun d ->
+                { Code = d.Code
+                  Message = d.Message
+                  Edge = None })
+
+        patchedGraph, patchedTransformers, outcome.Synthesized, inferenceDiagnostics @ diagnostics
+
     let private finishModule
         (flowId: string)
         (sources: DashflowSourceDef[])
@@ -701,9 +769,9 @@ module DashflowModuleParser =
         (links: FlowLinkDef[])
         (typeCatalog: TypeCatalog)
         =
-        let graph = buildScopeGraph sources transformers nestedFlows links
+        let transformers = applyDefaultPorts transformers
         checkStepLayering transformers links
-        let diagnostics = FlowGraph.typeCheck graph typeCatalog
+        let graph, transformers, inferred, diagnostics = inferAndCheck sources transformers nestedFlows links typeCatalog
 
         { FlowId = flowId
           Sources = sources
@@ -711,6 +779,7 @@ module DashflowModuleParser =
           NestedFlows = nestedFlows
           Links = links
           Graph = graph
+          InferredRowTypes = inferred |> List.toArray
           Diagnostics = diagnostics |> List.toArray }
 
     /// Body after <c>@flow &lt;id&gt;</c> until <c>end flow</c> (optional matching id on <c>end</c>).

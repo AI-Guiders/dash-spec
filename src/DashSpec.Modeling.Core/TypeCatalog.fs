@@ -39,6 +39,20 @@ module TypeCatalog =
         | true, def -> Some def
         | false, _ -> None
 
+    /// <summary>Structural equality of row types (ADR-0127): field order ignored,
+    /// names case-insensitive, types must match. The basis of inferred-type reuse
+    /// (a hand-written structural twin is preferred over synthesis) and of
+    /// transform-typecheck (declared output vs inferred).</summary>
+    let rowTypesStructurallyEqual (left: RowTypeDef) (right: RowTypeDef) =
+        let fieldKey (field: RowFieldDef) =
+            (field.Name.ToLowerInvariant(), field.Optional, field.Type)
+
+        let leftFields = left.Fields |> Array.map fieldKey |> Set.ofArray
+        let rightFields = right.Fields |> Array.map fieldKey |> Set.ofArray
+        Set.count leftFields = left.Fields.Length
+        && Set.count rightFields = right.Fields.Length
+        && leftFields = rightFields
+
     let rec private visitType
         (catalog: TypeCatalog)
         (visiting: HashSet<string>)

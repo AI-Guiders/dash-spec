@@ -44,6 +44,7 @@
     <Compile Include="DiagramChromePresetResolutionTests.fs" />
     <Compile Include="DefaultFlowWiringTests.fs" />
     <Compile Include="GroupByBranchTests.fs" />
+    <Compile Include="TypeInferenceTests.fs" />
 
   </ItemGroup>
   <ItemGroup>

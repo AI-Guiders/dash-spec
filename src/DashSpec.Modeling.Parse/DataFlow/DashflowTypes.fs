@@ -91,6 +91,9 @@ type DashflowModule =
       NestedFlows: DashflowNestedFlowDef[]
       Links: FlowLinkDef[]
       Graph: FlowGraph
+      /// ADR-0127: row types synthesized by port type inference (projection
+      /// steps). Merge into the document's type catalog alongside declared types.
+      InferredRowTypes: RowTypeDef[]
       Diagnostics: FlowGraphDiagnostic[] }
 
     member this.WithSources(sources: DashflowSourceDef[]) =

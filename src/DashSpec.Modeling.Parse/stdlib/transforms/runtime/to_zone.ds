@@ -1,6 +1,7 @@
 module transform to_zone
 namespace DashSpec.Std.Transformations.Runtime
 
+type_effect = identity
 locality = runtime
 requires_block = true
 param zone: timeshift

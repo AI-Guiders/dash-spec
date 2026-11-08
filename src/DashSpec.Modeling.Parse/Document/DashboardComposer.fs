@@ -200,6 +200,19 @@ module rec DashboardComposer =
                 match tabModule.Dashflow with
                 | None -> ()
                 | Some moduleFlow ->
+                    // ADR-0127: synthesized row types ride the flow module into the
+                    // document's catalog — a hand-written structural twin was already
+                    // preferred at synthesis, so a same-name collision here means a
+                    // genuinely different structure under a taken name.
+                    for inferred in moduleFlow.InferredRowTypes do
+                        match rowTypes.TryGetValue inferred.Name with
+                        | true, existing when not (TypeCatalog.rowTypesStructurallyEqual existing inferred) ->
+                            raise (
+                                DashSpecParseException(
+                                    $"Tab module '{tab.Id}': inferred row type '{inferred.Name}' collides with a declared type of a different structure."))
+                        | true, _ -> ()
+                        | false, _ -> rowTypes.[inferred.Name] <- inferred
+
                     match dashflow with
                     | None ->
                         dashflow <- Some moduleFlow

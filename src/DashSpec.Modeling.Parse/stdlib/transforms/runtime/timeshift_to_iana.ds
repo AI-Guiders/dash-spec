@@ -1,6 +1,7 @@
 module transform timeshift_to_iana
 namespace DashSpec.Std.Transformations.Runtime
 
+type_effect = identity
 locality = runtime
 param zone: timeshift
 hint = "timeshift_to_iana requires a TimeShift literal (UTC+…)."

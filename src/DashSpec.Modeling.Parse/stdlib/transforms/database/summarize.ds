@@ -1,6 +1,7 @@
 module transform summarize
 namespace DashSpec.Std.Transformations.Database
 
+type_effect = projection
 locality = database
 param by: ident
 param agg: ident

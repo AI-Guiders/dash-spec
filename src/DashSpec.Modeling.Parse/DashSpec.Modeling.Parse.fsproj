@@ -93,6 +93,7 @@
     <Compile Include="DataFlow\QualifiedFlowBlockParser.fs" />
     <Compile Include="DataFlow\TransformDeclarationParser.fs" />
     <Compile Include="DataFlow\TransformStepParser.fs" />
+    <Compile Include="DataFlow\TypeInference.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
     <Compile Include="DataFlow\FilterNodeSynthesis.fs" />
     <Compile Include="DataFlow\FilterFlowHoisting.fs" />

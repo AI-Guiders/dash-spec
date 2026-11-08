@@ -39,6 +39,7 @@ module TransformDeclarationParser =
         let mutable locality = "runtime"
         let mutable requiresBlock = false
         let mutable hint = ""
+        let mutable effect = TransformDeclarations.TransformTypeEffect.Opaque
         let params' = ResizeArray<TransformDeclarations.ParamDecl>()
 
         while not reader.IsEof do
@@ -47,6 +48,16 @@ module TransformDeclarationParser =
             elif reader.TryKeyword "locality" then
                 reader.Expect TokenKind.Eq |> ignore
                 locality <- reader.ReadIdent()
+            elif reader.TryKeyword "type_effect" then
+                reader.Expect TokenKind.Eq |> ignore
+                let name = reader.ReadIdent()
+
+                match TransformDeclarations.TransformTypeEffect.tryParse name with
+                | Some parsed -> effect <- parsed
+                | None ->
+                    raise (
+                        DashSpecParseException(
+                            $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque (ADR-0127)."))
             elif reader.TryKeyword "requires_block" then
                 reader.Expect TokenKind.Eq |> ignore
                 requiresBlock <- reader.ReadIdent().Equals("true", StringComparison.OrdinalIgnoreCase)
@@ -64,7 +75,8 @@ module TransformDeclarationParser =
         { Id = id
           Locality = locality
           Params = List.ofSeq params'
-          RequiresParameterBlock = requiresBlock }
+          RequiresParameterBlock = requiresBlock
+          TypeEffect = effect }
 
     let private stdlibLoaded = ref false
 
