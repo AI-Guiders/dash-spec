@@ -10,7 +10,7 @@ useDefault = true
 [[rules]]
 id = "private-content-domain"
 description = "Closed content repo traces (LUS domain)"
-regex = '''(?i)(lus\.[a-z_]|LicenseUsage|v_daily_active_users|v_five_minute_activity|v_activity_users_by_app|v_daily_peak_concurrent_proxy_heatmap)'''
+regex = '''(?i)(lus\.[a-z_]|luf\.[a-z_]|luf_report|LogUseFunc|LicenseUsage|v_daily_active_users|v_five_minute_activity|v_activity_users_by_app|v_daily_peak_concurrent_proxy_heatmap|v_launches_by_(hour|form|location|project|program|user)|Launch(Hour|Location|Project|Program|User|Utility|Form)Row)'''
 
 [[rules]]
 id = "private-product-names"
