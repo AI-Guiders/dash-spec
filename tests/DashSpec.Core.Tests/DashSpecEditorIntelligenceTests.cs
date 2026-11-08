@@ -124,7 +124,7 @@ public sealed class DashSpecEditorIntelligenceTests
             """);
         Write("diagrams/overview/app-list.ds", """
             module diagram lus_users_app_list
-            namespace Luf.Users.Diagrams
+            namespace Demo.Users.Diagrams
 
             table
               columns = app_name
@@ -132,7 +132,7 @@ public sealed class DashSpecEditorIntelligenceTests
             """);
         var dashboard = Write("demo-users.ds", """
             module section users
-            namespace Luf.Users
+            namespace Demo.Users
 
             report
               title = "Пользователи"
@@ -149,7 +149,7 @@ public sealed class DashSpecEditorIntelligenceTests
 
         var diagram = index.UnitsById["lus_users_app_list"];
         Assert.Equal("diagram", diagram.Kind);
-        Assert.Equal("Luf.Users.Diagrams", diagram.Namespace);
+        Assert.Equal("Demo.Users.Diagrams", diagram.Namespace);
         Assert.EndsWith("app-list.ds", diagram.Path.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase);
 
         var tab = index.UnitsById["users"];
@@ -167,13 +167,13 @@ public sealed class DashSpecEditorIntelligenceTests
             """);
         var diagramPath = Write("diagrams/app-list.ds", """
             module diagram lus_users_app_list
-            namespace Luf.Users.Diagrams
+            namespace Demo.Users.Diagrams
             """);
         Write("demo-users.ds", """
             module section users
-            namespace Luf.Users
+            namespace Demo.Users
 
-            import diagrams from Luf.Users.Diagrams
+            import diagrams from Demo.Users.Diagrams
             import flows from EventsReport
 
             report
@@ -223,7 +223,7 @@ public sealed class DashSpecEditorIntelligenceTests
     {
         Write("diagrams/app-list.ds", """
             module diagram lus_users_app_list
-            namespace Luf.Users.Diagrams
+            namespace Demo.Users.Diagrams
             """);
         Write("demo-users.ds", """
             module section users

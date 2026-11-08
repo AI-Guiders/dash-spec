@@ -14,12 +14,12 @@ public class FilterStateInertSelectionTests
     public void domain_shrink_moves_out_of_domain_values_to_inert_with_reason()
     {
         var state = new FilterState();
-        state.SetField("product", ["nanoCAD", "AliveColors", "DeadProduct"]);
+        state.SetField("product", ["nanoCAD", "AcmeDraw", "DeadProduct"]);
 
-        state.ApplyDomain("product", ["nanoCAD", "AliveColors"], Reason);
+        state.ApplyDomain("product", ["nanoCAD", "AcmeDraw"], Reason);
 
         var value = state.GetFieldWithInert("product")!.Value;
-        Assert.Equal(["nanoCAD", "AliveColors"], value.Values);             // active — rides SQL
+        Assert.Equal(["nanoCAD", "AcmeDraw"], value.Values);             // active — rides SQL
         Assert.Equal(["DeadProduct"], value.InertValues);                   // grey
         Assert.Equal(Reason, value.InertReason);                            // tooltip
     }
@@ -71,7 +71,7 @@ public class FilterStateInertSelectionTests
         state.SetField("product", ["nanoCAD", "DeadProduct"]);
         state.ApplyDomain("product", ["nanoCAD"], Reason);
 
-        state.SetField("product", ["AliveColors"]);
+        state.SetField("product", ["AcmeDraw"]);
 
         var value = state.GetFieldWithInert("product")!.Value;
         Assert.False(value.HasInert);

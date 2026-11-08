@@ -732,7 +732,7 @@ public class QueryCompilerTests
                 ["value"] = "launch_count",
                 ["order_by"] = "launch_count DESC, form",
             }, null),
-            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_launches_by_form", rowsType: "FixtureRow"),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_usage_by_form", rowsType: "FixtureRow"),
             ["usage_date"],
             []);
 

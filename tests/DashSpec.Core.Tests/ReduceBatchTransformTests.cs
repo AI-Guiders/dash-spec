@@ -40,15 +40,15 @@ public sealed class ReduceBatchTransformTests
     {
         var batch = Batch(
             ("nanoCAD", 50), ("nanoCAD", 10),
-            ("AliveColors", 30),
+            ("AcmeDraw", 30),
             ("DeadOne", 5), ("DeadTwo", 3), ("DeadThree", 1));
 
         var reduced = ReduceBatchTransform.Apply(batch, Params);
 
-        // weight ranking: nanoCAD 60, AliveColors 30 survive; the rest folds
+        // weight ranking: nanoCAD 60, AcmeDraw 30 survive; the rest folds
         var apps = reduced.Rows.Select(r => r.Get("app_name").ToClr()?.ToString()).ToList();
         Assert.Equal(2, apps.Count(a => a == "nanoCAD"));            // both rows intact
-        Assert.Single(apps, a => a == "AliveColors");
+        Assert.Single(apps, a => a == "AcmeDraw");
         Assert.Equal(3, apps.Count(a => a == "Другие"));             // 3 dead rows folded into the tail
     }
 

@@ -62,7 +62,7 @@ dashhost = "../../samples/demo/demo.dashhost"
 DashSpec хорошо дружит с **готовыми view**, где уже есть зерно и меры:
 
 ```sql
-CREATE OR ALTER VIEW dbo.v_launches_by_app
+CREATE OR ALTER VIEW dbo.v_usage_by_app
 AS
 SELECT
   CAST(EventTime AS date) AS usage_date,
@@ -99,7 +99,7 @@ card by_app
   title = "Запуски по приложениям"
 
   data
-    datasource view dbo.v_launches_by_app
+    datasource view dbo.v_usage_by_app
     bind usage_date
   end data
 
@@ -155,7 +155,7 @@ toolbar usage_date, app_name
 card by_app
   …
   data
-    datasource view dbo.v_launches_by_app
+    datasource view dbo.v_usage_by_app
     bind usage_date, app_name
   end data
 end card
@@ -200,21 +200,21 @@ Category-chart всё равно схлопнет в `SUM(launch_count) GROUP BY
 ```text
 card by_project
   data
-    datasource view product.v_launches_by_project
+    datasource view product.v_usage_by_project
     bind usage_date, program, location, user_name   -- свой project обычно не bind'ят как обязательный
   end data
 end card
 
 card by_user
   data
-    datasource view product.v_launches_by_user
+    datasource view product.v_usage_by_user
     bind usage_date, program, location, project
   end data
 end card
 
 card by_form
   data
-    datasource view product.v_launches_by_form
+    datasource view product.v_usage_by_form
     bind usage_date, program, location, project, user_name
   end data
 end card
@@ -254,7 +254,7 @@ card by_location
   end click
 
   data
-    datasource view product.v_launches_by_location
+    datasource view product.v_usage_by_location
     bind usage_date, program, project, user_name
   end data
 

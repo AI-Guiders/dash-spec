@@ -155,7 +155,7 @@ default = -30d..today
 
 ```text
 data
-  datasource view product.v_launches_by_form
+  datasource view product.v_usage_by_form
   bind usage_date, program, location, project, user_name
 end data
 
