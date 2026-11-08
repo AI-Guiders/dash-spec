@@ -32,3 +32,4 @@ window.dashSpecRadzenTableCopy = async function (text) {
     return false;
   }
 };
+

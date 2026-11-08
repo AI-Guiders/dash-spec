@@ -313,6 +313,9 @@ else
 
     private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
 
+    /// <summary>Interactive grouping knob (table presentation <c>grouping = on</c>).</summary>
+    private bool AllowGrouping => Context.Card.TablePresentation?.AllowGrouping ?? false;
+
 
     private Dictionary<string, object?> TypedGridParameters() => new()
     {
@@ -320,6 +323,7 @@ else
         ["Items"] = Table.TypedItems,
         ["ColumnFilters"] = ColumnFilters,
         ["FrozenColumns"] = FrozenColumns,
+        ["AllowGrouping"] = AllowGrouping,
         ["FormatDefaults"] = Context.Card.FormatDefaults,
         ["RowClickEnabled"] = RowClickEnabled,
         ["OnRowClick"] = EventCallback.Factory.Create<string>(this, OnTableRowClicked),

@@ -5,16 +5,21 @@
 @inject IStringLocalizer<RadzenVizStrings> Loc
 @inject IJSRuntime Js
 
+
 @* The same table grid as before (ADR-0115/0107 chrome: header menu, copy, row click,
    LabelFormat cells) — ADR-0124 only changed the payload: rows arrive as CLR objects
    (compiled row types), so Radzen's native machinery works on real properties:
    sorting, filters, and its own grouping (drag the header into the panel). *@
+@* The header stays Radzen's own (title, sort, filter menu icon live there — a custom
+   HeaderTemplate would bury them); the column context menu rides the grid-level
+   contextmenu event and resolves the column from the th[data-column-index]. *@
 <RadzenDataGrid @ref="_grid" TItem="TItem" Data="@Items" data-testid="typed-grid"
                 Wrap="true" Density="Density.Compact" Style="width:100%;--typed:1"
-                AllowSorting="true" AllowFiltering="@ColumnFilters" FilterMode="FilterMode.Simple"
+                AllowSorting="true" AllowFiltering="@ColumnFilters" FilterMode="FilterMode.SimpleWithMenu"
+                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
                 AllowColumnPicking="true" AllowColumnReorder="true"
-                AllowGrouping="true" GroupIndent="16"
+                AllowGrouping="@AllowGrouping" GroupIndent="16"
                 RowClick="@OnRowClicked">
     <GroupHeaderTemplate>
         <span class="rviz-typed-group">
@@ -30,13 +35,14 @@
                                   Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
                                   Width="auto" Sortable="true" Filterable="@ColumnFilters"
                                   Frozen="@(index < FrozenColumns)">
-                <HeaderTemplate>
-                    <div class="rviz-grid-head" @oncontextmenu="args => OpenColumnMenu(args, index)"
+                <Template Context="row">
+                    @* The column menu rides the cell itself — the column index is known
+                       here at render time, no DOM round-trip. *@
+                    <div class="rviz-cell" @oncontextmenu="args => OpenColumnMenu(args, index)"
                          @oncontextmenu:preventDefault="true">
-                        <span>@Fields[index].Header</span>
+                        @FormatCell(PropertyOf(row, index), index)
                     </div>
-                </HeaderTemplate>
-                <Template Context="row">@FormatCell(PropertyOf(row, index), index)</Template>
+                </Template>
             </RadzenDataGridColumn>
         }
     </Columns>

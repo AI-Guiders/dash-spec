@@ -32,6 +32,11 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
     /// is not trustworthy outside the payload-building flow.</summary>
     [Parameter] public ReportFormatDefaults? FormatDefaults { get; set; }
 
+    /// <summary>Interactive grouping knob (table presentation <c>grouping = on</c>):
+    /// the column menu grows the Group/Then by/Ungroup items. They drive the grid's
+    /// native group descriptors — same machinery as the drag-into-panel gesture.</summary>
+    [Parameter] public bool AllowGrouping { get; set; }
+
     /// <summary>ADR-0107: the card declares a `row`-sourced click handler → rows are clickable.</summary>
     [Parameter] public bool RowClickEnabled { get; set; }
 
@@ -82,35 +87,66 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
     private async Task OpenColumnMenu(Microsoft.AspNetCore.Components.Web.MouseEventArgs args, int columnIndex)
     {
         _menuColumn = columnIndex;
+
         if (_columnMenu is null)
         {
             return;
         }
 
-        var items = new List<ContextMenuItem>
+        var items = new List<ContextMenuItem>();
+
+        if (AllowGrouping)
         {
-            new() { Text = Loc["Sort ascending"], Value = "sort-asc" },
-            new() { Text = Loc["Sort descending"], Value = "sort-desc" },
-            new() { Text = Loc["Copy column"], Value = "copy" },
-        };
+            var column = Fields[columnIndex].Name;
+            items.Add(new ContextMenuItem
+            {
+                // "Then by" when a grouping already exists — the descriptor stacks natively.
+                Text = (_grid?.Groups.Count ?? 0) == 0
+                    ? $"{Loc["Group by this column"]}: {Fields[columnIndex].Header}"
+                    : $"{Loc["Then by this column"]}: {Fields[columnIndex].Header}",
+                Value = "group",
+            });
+
+            if (IsGroupedBy(column))
+            {
+                items.Add(new ContextMenuItem { Text = Loc["Ungroup by this column"], Value = "ungroup" });
+            }
+        }
+
+        items.Add(new ContextMenuItem { Text = Loc["Copy column"], Value = "copy" });
 
         await _columnMenu.Open(args, new ContextMenuOptions { Items = items, Click = OnColumnMenuClick });
     }
+
+    private bool IsGroupedBy(string column) =>
+        _grid?.Groups.Any(g => string.Equals(g.Property, column, StringComparison.OrdinalIgnoreCase)) == true;
 
     private void OnColumnMenuClick(MenuItemEventArgs args)
     {
         var column = Fields[_menuColumn].Name;
         switch (args.Value as string)
         {
-            case "sort-asc":
-            case "sort-desc":
+            case "group":
+            case "ungroup":
                 _ = InvokeAsync(async () =>
                 {
-                    if (_grid is not null)
+                    if (_grid is null)
                     {
-                        _grid.OrderBy($"{column} {(string.Equals(args.Value as string, "sort-desc") ? "desc" : "asc")}");
-                        await _grid.Reload();
+                        return;
                     }
+
+                    var descriptor = _grid.Groups
+                        .FirstOrDefault(g => string.Equals(g.Property, column, StringComparison.OrdinalIgnoreCase));
+                    if (descriptor is null)
+                    {
+                        _grid.Groups.Add(new GroupDescriptor { Property = column, SortOrder = SortOrder.Ascending });
+                    }
+                    else
+                    {
+                        _grid.Groups.Remove(descriptor);
+                    }
+
+                    await _grid.Reload();
                 });
                 break;
             case "copy":
