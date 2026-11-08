@@ -91,7 +91,11 @@ ApplyToDateTime` обходят дерево; инверсия через fan-in
   partition, нарастающие агрегаты/ранги) для смешанных путей — **если** выбран вариант
   с фолбэком (см. открытый вопрос); `join`/`union` при недоступности пушдауна →
   NotSupportedException «database-only transform».
-- `readParameterValue` — расширить под параметры новых шагов.
+- `readParameterValue` — **сделано (b5421044)**: парсер не знает имён плагинов; каждый
+  плагин декларирует parse-time контракт (`BuiltinScalarTransforms.paramContract`,
+  нейтральные `ParamLiteral` + hint + RequiresParameterBlock). Новые шаги 0126 приносят
+  свои контракты с собой; для `order = col asc` останется расширить generic-читатель
+  (ident + опциональное направление тем же токеном строки).
 
 ### 6. DSL и типизация
 Output row-type автор объявляет руками (существующая конвенция); edge-typecheck ловит
