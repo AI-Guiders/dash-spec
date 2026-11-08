@@ -1,0 +1,7 @@
+module transform summarize
+namespace DashSpec.Std.Transformations.Database
+
+locality = database
+param by: ident
+param agg: ident
+param value: ident

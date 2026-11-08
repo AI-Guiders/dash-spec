@@ -91,6 +91,7 @@
     <Compile Include="DataFlow\FlowGraphSections.fs" />
     <Compile Include="DataFlow\FlowGraphLinkRules.fs" />
     <Compile Include="DataFlow\QualifiedFlowBlockParser.fs" />
+    <Compile Include="DataFlow\TransformDeclarationParser.fs" />
     <Compile Include="DataFlow\TransformStepParser.fs" />
     <Compile Include="DataFlow\DashflowModuleParser.fs" />
     <Compile Include="DataFlow\FilterNodeSynthesis.fs" />
@@ -155,6 +156,10 @@
     <Compile Include="Document\DashboardComposer.fs" />
     <Compile Include="Document\DashSpecCompiler.fs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="stdlib\transforms\\**\*.ds">
+      <LogicalName>stdlib/transforms/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
-
-

@@ -6,20 +6,16 @@ open DashSpec.Modeling.Parse.Lexing
 
 module TransformStepParser =
 
-    let private literalTokenKind =
+    /// Declared param kinds → lexer token kinds ("ident" covers column names,
+    /// enum values, slash chains). "string" is universal: every declared kind also
+    /// accepts a plain string (the old contracts did the same).
+    let private declaredTokenKind =
         function
-        | BuiltinScalarTransforms.ParamLiteral.TimeShiftZone -> TokenKind.TimeShift
-        | BuiltinScalarTransforms.ParamLiteral.IanaZoneName -> TokenKind.IanaZone
-        | BuiltinScalarTransforms.ParamLiteral.AnyString -> TokenKind.String
-
-    let private readLiteralValue (reader: TokenReader) =
-        reader.SkipNewlines()
-
-        match reader.CurrentKind with
-        | TokenKind.String -> reader.ReadString()
-        | TokenKind.TimeShift -> reader.ReadTimeShift()
-        | TokenKind.IanaZone -> reader.ReadIanaZone()
-        | _ -> raise (reader.Unexpected "assignment value")
+        | "timeshift" -> Some TokenKind.TimeShift
+        | "iana" -> Some TokenKind.IanaZone
+        | "string" -> Some TokenKind.String
+        | "ident" -> Some TokenKind.Ident
+        | _ -> None
 
     let private readAssignmentValue (reader: TokenReader) =
         reader.SkipNewlines()
@@ -41,36 +37,39 @@ module TransformStepParser =
 
         sb.ToString()
 
-    /// Generic: each plugin declares its parameter contract next to its implementation
-    /// (BuiltinScalarTransforms.paramContract, neutral literal kinds). The parser maps
-    /// the contract to token kinds; no contract → free-form assignment reader. The
-    /// parser knows no plugin names.
+    /// The stdlib declares each transform's parameters (stdlib/transforms/**.ds,
+    /// registered lazily — TransformDeclarationParser.ensureStdlibRegistered).
+    /// A declared param's kind gates the literal; anything else → the generic
+    /// assignment reader. The parser knows no transform names.
     let private readParameterValue (pluginId: string) (key: string) (reader: TokenReader) =
-        let spec =
-            BuiltinScalarTransforms.paramContract pluginId
-            |> Option.bind (fun contract ->
-                contract.Params
-                |> List.tryFind (fun p -> String.Equals(p.Key, key, StringComparison.OrdinalIgnoreCase)))
+        match TransformDeclarations.requirementFor pluginId key with
+        | Some (kinds, hint) ->
+            let accepts kind =
+                kind = TokenKind.String
+                || kinds |> List.exists (fun declared -> declaredTokenKind declared = Some kind)
 
-        match spec with
-        | Some spec ->
             match reader.CurrentKind with
-            | kind when spec.Literals |> List.exists (fun literal -> literalTokenKind literal = kind) ->
-                readLiteralValue reader
-            | _ -> raise (DashSpecParseException(spec.Hint))
+            | kind when accepts kind -> readAssignmentValue reader
+            | _ -> raise (DashSpecParseException(hint))
         | None -> readAssignmentValue reader
 
     let parseTransformUseBlock (reader: TokenReader) (transformerId: string) : DashflowTransformStepDef =
-        reader.ExpectKeyword "use"
+        TransformDeclarationParser.ensureStdlibRegistered ()
+        reader.ExpectKeyword "use" |> ignore
         let pluginId = reader.ReadIdent()
 
-        // The transform vocabulary is closed (BuiltinScalarTransforms.knownPluginIds):
-        // a typo or a dead keyword fails here, at parse time — never at render.
-        if not (BuiltinScalarTransforms.isKnownPluginId pluginId) then
+        // The vocabulary is the stdlib's declarations (ADR-0126): a typo or a dead
+        // keyword fails here, at parse time — never at render.
+        if not (TransformDeclarations.isKnown pluginId) then
+            let known =
+                TransformDeclarations.registered ()
+                |> List.map (fun d -> d.Id)
+                |> Array.ofList
+                |> fun ids -> String.Join("|", ids)
+
             raise (
                 DashSpecParseException(
-                    $"transformer '{transformerId}': unknown transform '{pluginId}' — expected one of "
-                    + String.Join("|", BuiltinScalarTransforms.knownPluginIds)))
+                    $"transformer '{transformerId}': unknown transform '{pluginId}' — declared: {known}"))
 
         if reader.IsAt TokenKind.LBrace then
             reader.Expect TokenKind.LBrace
@@ -97,8 +96,8 @@ module TransformStepParser =
 
             { PluginId = pluginId; Parameters = normalized }
         else
-            match BuiltinScalarTransforms.paramContract pluginId with
-            | Some contract when contract.RequiresParameterBlock ->
+            match TransformDeclarations.tryFind pluginId with
+            | Some decl when decl.RequiresParameterBlock ->
                 raise (
                     DashSpecParseException(
                         $"transformer '{transformerId}': transform use {pluginId} requires a parameter block."))

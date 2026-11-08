@@ -23,6 +23,7 @@
     <Compile Include="IanaZoneConverter.fs" />
     <Compile Include="TimeShiftToIanaResolver.fs" />
     <Compile Include="ZoneResolveReference.fs" />
+    <Compile Include="TransformDeclarations.fs" />
     <Compile Include="BuiltinScalarTransforms.fs" />
   </ItemGroup>
 </Project>

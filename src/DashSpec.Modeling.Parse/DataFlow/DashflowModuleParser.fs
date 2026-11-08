@@ -567,13 +567,15 @@ module DashflowModuleParser =
     /// one transformer's step sequence nor across a link between transformers.
     /// </summary>
     let private checkStepLayering (transformers: DashflowTransformerDef[]) (links: FlowLinkDef[]) =
+        let locality (pluginId: string) = TransformDeclarations.localityOf pluginId
+
         for transformer in transformers do
             let mutable seenRuntime = false
 
             for step in transformer.Steps do
-                match BuiltinScalarTransforms.localityOf step.PluginId with
-                | BuiltinScalarTransforms.TransformLocality.Runtime -> seenRuntime <- true
-                | BuiltinScalarTransforms.TransformLocality.Database when seenRuntime ->
+                match locality step.PluginId with
+                | "runtime" -> seenRuntime <- true
+                | "database" when seenRuntime ->
                     raise (
                         DashSpecParseException(
                             $"transformer '{transformer.Id}': '{step.PluginId}' is a database transform and must precede runtime transforms (to_zone, group, reduce…)."))
@@ -581,13 +583,11 @@ module DashflowModuleParser =
 
         let hasDatabaseStep (transformer: DashflowTransformerDef) =
             transformer.Steps
-            |> Array.exists (fun step ->
-                BuiltinScalarTransforms.localityOf step.PluginId = BuiltinScalarTransforms.TransformLocality.Database)
+            |> Array.exists (fun step -> locality step.PluginId = "database")
 
         let hasRuntimeStep (transformer: DashflowTransformerDef) =
             transformer.Steps
-            |> Array.exists (fun step ->
-                BuiltinScalarTransforms.localityOf step.PluginId = BuiltinScalarTransforms.TransformLocality.Runtime)
+            |> Array.exists (fun step -> locality step.PluginId = "runtime")
 
         let byId =
             transformers

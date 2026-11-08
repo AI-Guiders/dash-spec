@@ -1,0 +1,8 @@
+module transform iana_to_timeshift
+namespace DashSpec.Std.Transformations.Runtime
+
+locality = runtime
+requires_block = true
+param iana: iana
+param zone: iana
+hint = "iana_to_timeshift requires an IANA zone literal (e.g. Europe/Moscow)."
