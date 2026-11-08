@@ -46,12 +46,39 @@ ADR-0125 («Expressive power») зафиксировал: словарь db-тр
 
 ## План работ (порядок = порядок коммитов)
 
+### 0.5. Трансформы переезжают в Std.Transformations (словарь из стдлиба, без сидов)
+
+Декларации трансформов — stdlib-юниты продукта (embedded-механика ADR-0017:
+манифест + саморегистрация `StdlibEmbeddedInitializer`, видимость везде),
+сгруппированные по локальности:
+
+```
+stdlib/transforms/database/summarize.ds   → Std.Transformations.Database
+stdlib/transforms/database/order_by.ds    → Std.Transformations.Database (locality = any)
+stdlib/transforms/runtime/to_zone.ds      → Std.Transformations.Runtime
+stdlib/transforms/runtime/group.ds        → Std.Transformations.Runtime
+stdlib/transforms/runtime/reduce.ds       → Std.Transformations.Runtime
+```
+
+- Словарь парсера = зарегистрированные декларации Std.Transformations.*; builtin-сидов
+  нет — источник истины один. Неизвестный id = «не объявлен» (диагностика со списком).
+- Декларация несёт: `locality = database|runtime|any`, параметры (ключ, тип литерала /
+  enum значений, required). Расхождение локальности с подпространством (Database-юнит с
+  `locality = runtime`) — линт-диагностика. `order_by` — единственный `any`
+  (SQL-лицо первично, рантайм-сортировка — фолбэк).
+- F#-валидаторы и батч-трансформы остаются реализацией; `checkStepLayering`,
+  контракт литералов и словарь читают декларации (F# `knownPluginIds`/`localityOf`/
+  `ParamContract` из среза 0 переходят в производное состояние / удаляются).
+- Новые шаги 0126 (window/join/union) рождаются сразу декларациями в
+  Std.Transformations.Database — словарь, локальность и параметры одним юнитом.
+
 ### 1. ADR-0126 (Proposed)
 `design/DASHSPEC-ADR-0126-db-transforms-full-coverage.md`: window/union/join
-(`kind = inner|left|right|full`); путь → дерево; window dual-face (SQL-пушдаун +
-runtime-фолбэк) **или** только-позиционное — см. открытый вопрос; join/union
-database-only; один коннектор на запрос — инвариант рантайма; инверсия G⁻¹ через
-fan-in не определена (задокументировать). Индекс — `scripts/gen-adr-index.py`.
+(`kind = inner|left|right|full`); путь → дерево; послойный инвариант (срез 0) и
+словарь Std.Transformations (срез 0.5) как фундамент; join/union/window —
+database-only, объявлены в Std.Transformations.Database; один коннектор на запрос —
+инвариант рантайма; инверсия G⁻¹ через fan-in не определена (задокументировать).
+Индекс — `scripts/gen-adr-index.py`.
 
 ### 2. Дерево пути (рефакторинг ядра)
 `DashflowExecutionPath` → дерево: `DashflowPathNode = Source(def) | Steps(transformer,
