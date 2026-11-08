@@ -1,0 +1,6 @@
+#!/bin/sh
+# dash-spec leak gate: scan the staged diff before every commit.
+# Installed via: git config core.hooksPath scripts/hooks
+GL="$LOCALAPPDATA/Microsoft/WinGet/Packages/Gitleaks.Gitleaks_Microsoft.Winget.Source_8wekyb3d8bbwe/gitleaks.exe"
+[ -x "$GL" ] || GL="$(command -v gitleaks)"
+exec "$GL" protect --staged --source . -v
