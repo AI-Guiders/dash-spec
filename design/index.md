@@ -1,14 +1,14 @@
 ---
 type: Index
 title: "ADR index — dash-spec"
-description: "Автоматический индекс ADR (125 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
+description: "Автоматический индекс ADR (126 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
 tags: [adr, index, dashspec]
 ---
 
 # ADR index
 
 Производное состояние (OKF): таблица ниже собирается скриптом из frontmatter
-файлов ADR. Следующий номер — **0126**. Ручные правки будут перезаписаны:
+файлов ADR. Следующий номер — **0128**. Ручные правки будут перезаписаны:
 `python scripts/gen-adr-index.py` (CI-проверка актуальности: `--check`).
 
 | ADR | Title | Status |
@@ -138,3 +138,4 @@ tags: [adr, index, dashspec]
 | [0123](DASHSPEC-ADR-0123-runtime-grouping.md) | Группировка и порядок — runtime-трансформеры payload→payload; сводка остаётся database group_by | Proposed |
 | [0124](DASHSPEC-ADR-0124-row-types-compiled-by-dsc.md) | Row types компилируются в CLR-типы (dsc build types, Roslyn) — доменный объект доезжает до рендера | Proposed |
 | [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Proposed |
+| [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Proposed |

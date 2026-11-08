@@ -124,9 +124,9 @@ ApplyToDateTime` обходят дерево; инверсия через fan-in
   свои контракты с собой; для `order = col asc` останется расширить generic-читатель
   (ident + опциональное направление тем же токеном строки).
 
-### 6. DSL и типизация
-Output row-type автор объявляет руками (существующая конвенция); edge-typecheck ловит
-рассинхрон. Примеры DSL — в ADR-0126, стиль `GroupByBranchTests`.
+### 6. DSL и типизация (см. `DASHSPEC-ADR-0127-transform-port-type-inference.md`)
+- **Явные типы на границах + вывод типов внутри цепочки (`ADR-0127`):** `source` явно декларирует входной `row-type`, а промежуточные и выходные типы портов трансформеров (`to_zone`, `order`, `sort`, `reduce`, `summarize`, `window`, `join`, `union`) выводятся компилятором детерминированно из входных рёбер и алгебры шага и материализуются в `RowTypeDef` для `dsc build types` (`ADR-0124`).
+- **Явная аннотация `output stream rows: MyType` работает как верифицируемый контракт:** если автор указал именованный тип, компилятор проверяет совпадение `T_inferred` с `MyType` (transform-typecheck + edge-typecheck).
 
 ### 7. Тесты
 - Parse (F#): multi-input transformer; параметры join/window/union.
