@@ -1,0 +1,102 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using Radzen.Blazor
+@using DashSpec.Execution.Runtime
+@using DashSpec.Viz
+
+@* ADR-0111: the Radzen stack's own heatmap — RadzenChart + RadzenHeatmapSeries
+   (the 12.1.11 native series), the theme paints it. The matrix payload maps to
+   index pairs; the axes format the indices back into the payload's labels. The
+   color gradient mirrors the matrix legend stops (blue -> green -> yellow -> red);
+   Radzen interpolates per band from the payload's global min/max. *@
+
+<RadzenChart Style="width:100%;height:100%;">
+    <RadzenHeatmapSeries Data="_cells"
+                         CategoryProperty="X"
+                         ValueProperty="Y"
+                         IntensityProperty="Value"
+                         ColorRange="_ranges"
+                         Stroke="@StrokeColor"
+                         StrokeWidth="1" />
+    <RadzenCategoryAxis Formatter="FormatX" />
+    <RadzenValueAxis Formatter="FormatY" />
+</RadzenChart>
+
+@code {
+    /// <summary>The card render context — the host passes exactly this one parameter
+    /// (CardVizHost convention).</summary>
+    [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
+
+    private MatrixPayload? Matrix => Context.Card.Matrix;
+
+    private sealed record HeatCell(double X, double Y, double Value);
+
+    private List<HeatCell>? _cells;
+    private List<SeriesColorRange>? _ranges;
+
+    private string StrokeColor => "var(--surface, rgba(0,0,0,0.35))";
+
+    protected override void OnParametersSet()
+    {
+        var matrix = Matrix;
+        if (matrix is null)
+        {
+            _cells = null;
+            _ranges = null;
+            return;
+        }
+
+        var cells = new List<HeatCell>();
+        for (var yi = 0; yi < matrix.YLabels.Count; yi++)
+        {
+            for (var xi = 0; xi < matrix.XLabels.Count; xi++)
+            {
+                var value = matrix.Cells[yi][xi];
+                if (value is { })
+                {
+                    cells.Add(new HeatCell(xi, yi, value.Value));
+                }
+            }
+        }
+
+        _cells = cells;
+        _ranges = BuildGradientStops(matrix.Min, matrix.Max);
+    }
+
+    /// <summary>The matrix legend's stops as Radzen color bands: blue -> green ->
+    /// yellow -> red across [min..max].</summary>
+    private static List<SeriesColorRange> BuildGradientStops(double min, double max)
+    {
+        var span = max - min;
+        if (span <= 0)
+        {
+            span = 1;
+        }
+
+        (double Offset, string Color)[] stops =
+        [
+            (0.00, "#3b82f6"),
+            (0.33, "#22c55e"),
+            (0.66, "#eab308"),
+            (1.00, "#ef4444"),
+        ];
+
+        var ranges = new List<SeriesColorRange>();
+        for (var i = 0; i < stops.Length - 1; i++)
+        {
+            ranges.Add(new SeriesColorRange
+            {
+                Min = min + span * stops[i].Offset,
+                Max = min + span * stops[i + 1].Offset,
+                Color = stops[i + 1].Color,
+            });
+        }
+
+        return ranges;
+    }
+
+    private string FormatX(object value) =>
+        Matrix is { } m && value is double d && d >= 0 && d < m.XLabels.Count ? m.XLabels[(int)d] : string.Empty;
+
+    private string FormatY(object value) =>
+        Matrix is { } m && value is double d && d >= 0 && d < m.YLabels.Count ? m.YLabels[(int)d] : string.Empty;
+}

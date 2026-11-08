@@ -54,6 +54,26 @@ public sealed class CardVizDisplayStateService : ICardVizDisplayState
     public void ToggleLegend(string cardId, bool currentlyVisible) =>
         SetLegendOverride(cardId, !currentlyVisible);
 
+    private readonly Dictionary<string, string?> _groupByColumn =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public string? GetGroupByOverride(string cardId) =>
+        _groupByColumn.TryGetValue(cardId, out var column) ? column : null;
+
+    public void SetGroupByOverride(string cardId, string? column)
+    {
+        if (column is null)
+        {
+            _groupByColumn.Remove(cardId);
+        }
+        else
+        {
+            _groupByColumn[cardId] = column;
+        }
+
+        Changed?.Invoke(cardId);
+    }
+
     public void ClearAll()
     {
         _valueLabels.Clear();

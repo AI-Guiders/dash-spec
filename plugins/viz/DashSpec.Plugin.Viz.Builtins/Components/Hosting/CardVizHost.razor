@@ -51,6 +51,7 @@ else
     [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
     [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; set; }
     [Parameter] public bool DetailView { get; set; }
+    [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
 
     private Type? _componentType;
     private Dictionary<string, object?> _parameters = new();
@@ -80,6 +81,7 @@ else
                 MatrixMax = MatrixMax,
                 OnHeatmapCellSelected = OnHeatmapCellSelected,
                 OnHeatmapCategoryItemSelected = OnHeatmapCategoryItemSelected,
+                OnCardAction = OnCardAction,
                 VizStateCardId = Slot is null ? null : Card.Id,
                 FlowPath = Slot?.FlowPath ?? Card.FlowPath,
             },

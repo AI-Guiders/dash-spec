@@ -9,7 +9,7 @@ namespace DashSpec.Execution.Runtime;
 /// timeshift metadata steps). Branch, not mutation: the raw sibling slot keeps its
 /// own ungrouped query.
 /// </summary>
-public sealed record GroupByStepSpec(string By, string Agg, string? Value)
+public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
 {
     public const string PluginIdName = "group_by";
 
@@ -17,8 +17,9 @@ public sealed record GroupByStepSpec(string By, string Agg, string? Value)
 
     private static readonly string[] KnownAggregates = ["count", "sum", "max", "min", "avg"];
 
-    /// <summary>First <c>group_by</c> step of the path, if any. Later steps cannot exist —
-    /// a grouped stream has a different row type, the compiler would have rejected the wiring.</summary>
+    /// <summary>First <c>group_by</c> step with an explicit <c>agg</c> — the database face
+    /// (ADR-0123 §4: agg present ⇒ SQL summary; agg absent ⇒ runtime grouping, which does
+    /// not ride the query at all and is handled by the batch executor).</summary>
     public static GroupByStepSpec? Find(DashflowExecutionPath? path)
     {
         if (path is null)
@@ -32,7 +33,8 @@ public sealed record GroupByStepSpec(string By, string Agg, string? Value)
             {
                 if (string.Equals(step.PluginId, PluginIdName, StringComparison.OrdinalIgnoreCase))
                 {
-                    return Parse(step.Parameters);
+                    var spec = Parse(step.Parameters);
+                    return spec.Agg is null ? null : spec;
                 }
             }
         }
@@ -68,7 +70,14 @@ public sealed record GroupByStepSpec(string By, string Agg, string? Value)
             throw new DashSpecParseException("group_by: the 'by' parameter is required (the grouping column).");
         }
 
-        agg = string.IsNullOrWhiteSpace(agg) ? "count" : agg.Trim().ToLowerInvariant();
+        // ADR-0123 §4: agg absent ⇒ the runtime face (grouping, rows stay rows) — no
+        // default aggregate is invented here; only an explicit agg makes a SQL summary.
+        if (string.IsNullOrWhiteSpace(agg))
+        {
+            return new GroupByStepSpec(by.Trim(), null, null);
+        }
+
+        agg = agg.Trim().ToLowerInvariant();
 
         if (!KnownAggregates.Contains(agg))
         {
@@ -92,7 +101,7 @@ public sealed record GroupByStepSpec(string By, string Agg, string? Value)
     public string SqlAggregate =>
         Agg == "count"
             ? $"COUNT({Value ?? "*"})"
-            : $"{Agg.ToUpperInvariant()}({Value})";
+            : $"{Agg!.ToUpperInvariant()}({Value})";
 
     public string SelectList => $"{By} AS {By}, {SqlAggregate} AS {AggregateColumn}";
 

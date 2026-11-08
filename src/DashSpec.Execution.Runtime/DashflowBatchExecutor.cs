@@ -44,11 +44,22 @@ public static class DashflowBatchExecutor
             return ReduceBatchTransform.Apply(batch, step.Parameters);
         }
 
+        if (step.PluginId.Equals(OrderByStepSpec.PluginIdName, StringComparison.OrdinalIgnoreCase))
+        {
+            // ADR-0123: the runtime face of order_by — a stable sort over what arrived
+            // (the step rode the query only over a purely database path).
+            return OrderByBatchTransform.Apply(batch, step.Parameters);
+        }
+
         if (step.PluginId.Equals(GroupByStepSpec.PluginIdName, StringComparison.OrdinalIgnoreCase))
         {
-            // ADR-0121: group_by is a database-transform — the renderer compiled it
-            // into the slot's SQL (SELECT … GROUP BY), the rows arrive already grouped.
-            return batch;
+            // ADR-0121 (database summary): the renderer compiled it into the slot's SQL —
+            // the rows arrive already collapsed. ADR-0123 (runtime grouping, by only):
+            // the batch gains contiguous group runs; rows stay rows.
+            var hasAgg = Array.Exists(step.Parameters, p =>
+                string.Equals(p.Key, "agg", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(p.Value));
+            return hasAgg ? batch : GroupByBatchTransform.Apply(batch, step.Parameters);
         }
 
         throw new NotSupportedException(

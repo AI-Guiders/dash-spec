@@ -20,7 +20,8 @@ public static class QueryCompiler
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null,
-        GroupByStepSpec? groupByStep = null) =>
+        GroupByStepSpec? groupByStep = null,
+        OrderByStepSpec? orderByStep = null) =>
         Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy, groupByStep: groupByStep);
 
     public static CompiledQuery Compile(
@@ -32,7 +33,8 @@ public static class QueryCompiler
         string? specDirectory = null,
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null,
-        GroupByStepSpec? groupByStep = null) =>
+        GroupByStepSpec? groupByStep = null,
+        OrderByStepSpec? orderByStep = null) =>
         Compile(
             card,
             filters,
@@ -55,7 +57,8 @@ public static class QueryCompiler
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null,
         IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives = null,
-        GroupByStepSpec? groupByStep = null)
+        GroupByStepSpec? groupByStep = null,
+        OrderByStepSpec? orderByStep = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -96,7 +99,7 @@ public static class QueryCompiler
                     fromClause,
                     whereBuilder.ToString(),
                     groupByStep.GroupByClause,
-                    ResolveOrderBy(card),
+                    orderByStep?.SqlOrderBy ?? ResolveOrderBy(card),
                     tableLimit,
                     dialect),
                 parameters,
@@ -129,7 +132,7 @@ public static class QueryCompiler
                     fromClause,
                     whereBuilder.ToString(),
                     groupBy,
-                    ResolveOrderBy(card),
+                    orderByStep?.SqlOrderBy ?? ResolveOrderBy(card),
                     tableLimit,
                     dialect),
                 parameters,
@@ -146,7 +149,7 @@ public static class QueryCompiler
                     fromClause,
                     whereBuilder.ToString(),
                     tableGroupBy,
-                    ResolveOrderBy(card),
+                    orderByStep?.SqlOrderBy ?? ResolveOrderBy(card),
                     tableLimit,
                     dialect),
                 parameters,
@@ -160,7 +163,7 @@ public static class QueryCompiler
                 fromClause,
                 whereBuilder.ToString(),
                 groupBy: null,
-                ResolveOrderBy(card),
+                orderByStep?.SqlOrderBy ?? ResolveOrderBy(card),
                 tableLimit,
                 dialect),
             parameters,

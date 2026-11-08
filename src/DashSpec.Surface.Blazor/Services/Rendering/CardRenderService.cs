@@ -93,6 +93,15 @@ public sealed class CardRenderService(
     }
 
     /// <summary>Граф (G) получения данных карточки, если у неё есть flow-вход; иначе null.</summary>
+
+    /// <summary>ADR-0123 §5: an order_by step rides the query only over a purely database
+    /// path — otherwise the executor sorts what arrived (it stays runtime).</summary>
+    private static OrderByStepSpec? ResolvePushedOrderBy(DashflowExecutionPath? flowPath)
+    {
+        var step = OrderByStepSpec.Find(flowPath);
+        return step is not null && OrderByStepSpec.CanPushDown(flowPath) ? step : null;
+    }
+
     private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition effective)
     {
         if (document.Dashflow is null || effective.FlowInput?.Value is null)
@@ -136,7 +145,8 @@ public sealed class CardRenderService(
             document.SqlDialect,
             specDirectory,
             reportTimePolicy: reportTime,
-            groupByStep: GroupByStepSpec.Find(flowPath));
+            groupByStep: GroupByStepSpec.Find(flowPath),
+            orderByStep: ResolvePushedOrderBy(flowPath));
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
@@ -473,7 +483,8 @@ public sealed class CardRenderService(
                     specDirectory,
                     slotOverlay,
                     ResolveReportTime(document),
-                    groupByStep: GroupByStepSpec.Find(ResolveFlowPath(document, effective)));
+                    groupByStep: GroupByStepSpec.Find(ResolveFlowPath(document, effective)),
+                    orderByStep: ResolvePushedOrderBy(ResolveFlowPath(document, effective)));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);

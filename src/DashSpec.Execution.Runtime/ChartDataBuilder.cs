@@ -63,8 +63,19 @@ public static class ChartDataBuilder
 
     public static TablePayload BuildTable(
         TypedRowBatch rows,
-        DiagramDefinition diagram) =>
-        TablePayloadBuilder.Build(rows, diagram);
+        DiagramDefinition diagram)
+    {
+        var payload = TablePayloadBuilder.Build(rows, diagram);
+        // ADR-0123: the runtime group transform's organization rides the payload —
+        // the renderer draws runs, it does not build them.
+        return rows.Groups is { Count: > 0 } runs
+            ? payload with
+            {
+                GroupRuns = runs.Select(r => new TableGroupRun(r.Key, r.Offset, r.Count)).ToArray(),
+                GroupFieldName = rows.GroupFieldName,
+            }
+            : payload;
+    }
 
     public static MatrixPayload BuildHeatmap(
         TypedRowBatch rows,
@@ -118,9 +129,16 @@ public sealed record TableField(
 /// <summary>Typed table dataset (ADR-0079/0087): DashValue cells + field descriptors. The present
 /// layer formats via LabelFormat with the report defaults carried on the render result — display
 /// strings no longer cross the payload boundary (ADR-0064: tabular rows, not strings).</summary>
+/// <remarks>Runtime grouping (ADR-0123): <see cref="GroupRuns"/> carries the transform's
+/// organization — contiguous runs the renderer only draws.</remarks>
 public sealed record TablePayload(
     IReadOnlyList<TableField> Fields,
-    IReadOnlyList<DashValue[]> Rows);
+    IReadOnlyList<DashValue[]> Rows,
+    IReadOnlyList<TableGroupRun>? GroupRuns = null,
+    string? GroupFieldName = null);
+
+/// <summary>One contiguous group of table rows: display key + offset/length into Rows.</summary>
+public sealed record TableGroupRun(string Key, int Offset, int Count);
 
 public sealed record MatrixPayload(
     IReadOnlyList<string> XLabels,

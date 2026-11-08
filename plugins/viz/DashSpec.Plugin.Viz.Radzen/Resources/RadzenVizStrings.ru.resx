@@ -24,4 +24,10 @@
   <data name="Copied" xml:space="preserve">
     <value>Скопировано</value>
   </data>
+  <data name="Group by this column" xml:space="preserve">
+    <value>Сгруппировать по столбцу</value>
+  </data>
+  <data name="Ungroup by this column" xml:space="preserve">
+    <value>Разгруппировать</value>
+  </data>
 </root>

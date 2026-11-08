@@ -24,4 +24,10 @@
   <data name="Copied" xml:space="preserve">
     <value>Copied</value>
   </data>
+  <data name="Group by this column" xml:space="preserve">
+    <value>Group by this column</value>
+  </data>
+  <data name="Ungroup by this column" xml:space="preserve">
+    <value>Ungroup by this column</value>
+  </data>
 </root>

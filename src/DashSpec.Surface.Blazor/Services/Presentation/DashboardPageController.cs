@@ -547,6 +547,7 @@ public sealed class DashboardPageController : IDisposable
         CardActionRequest request,
         CancellationToken cancellationToken = default)
     {
+
         var card = _refresh.Cards.FirstOrDefault(c =>
             string.Equals(c.Id, request.CardId, StringComparison.OrdinalIgnoreCase));
         if (card is null)
@@ -560,7 +561,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
-        var outcome = await _actions.ExecuteAsync(
+                var outcome = await _actions.ExecuteAsync(
             request.ActionId,
             card,
             request.Args,

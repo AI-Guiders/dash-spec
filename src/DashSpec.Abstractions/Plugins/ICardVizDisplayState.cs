@@ -29,5 +29,12 @@ public interface ICardVizDisplayState
 
     void ToggleLegend(string cardId, bool currentlyVisible);
 
+    /// <summary>Interactive grouping (server-side, like WHERE): the column the table card is
+    /// currently grouped by — the re-render compiles it into the slot's SQL (GROUP BY),
+    /// the way bound filters ride the same request. Null = ungrouped.</summary>
+    string? GetGroupByOverride(string cardId);
+
+    void SetGroupByOverride(string cardId, string? column);
+
     void ClearAll();
 }

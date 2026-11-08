@@ -17,6 +17,23 @@ public sealed class TypedRowBatch
 
     public IReadOnlyList<TypedDataRow> Rows { get; }
 
+    /// <summary>Grouping organization (ADR-0120 runtime locality — a payload→payload
+    /// transform like to_zone): rows stay rows, the batch additionally carries contiguous
+    /// group runs over <see cref="GroupFieldName"/>. Null = the flat view.</summary>
+    public IReadOnlyList<RowGroupRun>? Groups { get; private set; }
+
+    public string? GroupFieldName { get; private set; }
+
+    public TypedRowBatch WithGroups(
+        string fieldName,
+        IReadOnlyList<RowGroupRun> groups,
+        IReadOnlyList<DashValue[]>? orderedRows = null)
+    {
+        ArgumentNullException.ThrowIfNull(groups);
+        var batch = orderedRows is null ? this : Create(Schema, orderedRows);
+        return new TypedRowBatch(batch.Schema, batch.Rows) { Groups = groups, GroupFieldName = fieldName };
+    }
+
     public int Count => Rows.Count;
 
     public bool IsEmpty => Rows.Count == 0;
@@ -48,3 +65,7 @@ public sealed class TypedRowBatch
         return new TypedRowBatch(schema, rows);
     }
 }
+
+/// <summary>One contiguous group of rows over the group field: the key's display form,
+/// the run's offset and length in <see cref="TypedRowBatch.Rows"/>.</summary>
+public sealed record RowGroupRun(string Key, int Offset, int Count);

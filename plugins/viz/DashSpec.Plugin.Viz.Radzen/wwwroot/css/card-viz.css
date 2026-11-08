@@ -112,3 +112,62 @@
 .rviz-kpi--gauge .rviz-kpi-value {
   font-size: 1.45rem;
 }
+
+/* Table grouping (the fold, not the summary): rows under collapsible group headers. */
+.rviz-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: var(--rviz-table-max, 420px);
+  overflow: auto;
+}
+.rviz-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  background: var(--rz-base-200, rgba(128, 128, 128, 0.12));
+  border: none;
+  border-radius: 4px;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.rviz-group-chev {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.12s ease;
+}
+.rviz-group-chev--folded {
+  transform: rotate(-90deg);
+}
+.rviz-group-key {
+  font-weight: 600;
+}
+.rviz-group-count {
+  margin-left: auto;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.rviz-group-rows {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.25rem 0.25rem 1.9rem;
+}
+.rviz-group-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(6rem, 1fr);
+  gap: 0.5rem;
+  padding: 0.2rem 0.4rem;
+  border-bottom: 1px solid var(--rz-base-200, rgba(128, 128, 128, 0.1));
+}
+.rviz-group-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rviz-grid-group--on {
+  color: var(--rz-primary, inherit);
+}

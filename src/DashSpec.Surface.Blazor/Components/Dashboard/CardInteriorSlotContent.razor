@@ -129,6 +129,9 @@ else if (Owner is not null)
             ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
                 this,
                     Owner.HandleHeatmapCategoryItemSelectedAsync),
+            ["OnCardAction"] = EventCallback.Factory.Create<CardActionRequest>(
+                this,
+                Owner.HandleCardActionAsync),
         };
 
         if (HasSlotPayload)

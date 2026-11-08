@@ -165,6 +165,43 @@ else
                 break;
             case "table":
             case "browse":
+                @if (Table.GroupRuns is { Count: > 0 } runs)
+                {
+                    @* ADR-0123: the transform already grouped the rows (payload→payload);
+                       this only draws the runs — headers and the rows they cover. *@
+                    <div class="rviz-groups" data-testid="table-groups">
+                        @foreach (var run in runs)
+                        {
+                            <div class="rviz-group">
+                                <button type="button" class="rviz-group-head" data-testid="group-head"
+                                        @onclick="() => ToggleGroup(run.Key)">
+                                    <svg class="card-icon rviz-group-chev @((GroupExpanded(run.Key) ? null : "rviz-group-chev--folded"))" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    <span class="rviz-group-key">@run.Key</span>
+                                    <span class="rviz-group-count">@(run.Count)</span>
+                                </button>
+                                @if (GroupExpanded(run.Key))
+                                {
+                                    <div class="rviz-group-rows">
+                                        @for (var r = 0; r < run.Count; r++)
+                                        {
+                                            var row = Table.Rows[run.Offset + r];
+                                            <div class="rviz-group-row" data-testid="group-row">
+                                                @for (var c = 0; c < Table.Fields.Count; c++)
+                                                {
+                                                    var index = c;
+                                                    <span class="rviz-group-cell">@FormatCell(row[index], index)</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    break;
+                }
                 @* Radzen v12: columns live in the <Columns> template (the default ChildContent
                    is never rendered). Sort/filter/pager/picking/reorder are Radzen's own —
                    LoadData mode maps them onto the typed dataset; columns bind by the field's
@@ -174,7 +211,6 @@ else
                                 AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
                                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
                                 AllowColumnPicking="true" AllowColumnReorder="true"
-                                AllowGrouping="@(AllowGrouping)" Groupable="@AllowGrouping"
                                 RowClick="@OnRowClicked"
                                 Wrap="true" Density="Density.Compact" Style="width:100%">
                     <Columns>
@@ -184,8 +220,7 @@ else
                             <RadzenDataGridColumn TItem="RadzenRow" Property="@Table.Fields[index].Name"
                                                   Title="@Table.Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
                                                   Width="auto" Sortable="true" Filterable="@ColumnFilters"
-                                                  Frozen="@(index < FrozenColumns)"
-                                                  Groupable="@AllowGrouping">
+                                                  Frozen="@(index < FrozenColumns)">
                                 <HeaderTemplate>
                                     <div class="rviz-grid-head">
                                         <span>@Table.Fields[index].Header</span>
@@ -395,10 +430,35 @@ else
 
     private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
 
-    /// <summary>Interactive grouping (table presentation <c>grouping = on</c>): the grid
-    /// grows the group drop-zone — drag a column header to group, in-memory over the
-    /// loaded page. Static SQL grouping stays the group_by branch (ADR-0121).</summary>
+    /// <summary>Interactive grouping (table presentation <c>grouping = on</c>): the column
+    /// header grows a group button — a click asks the server to GROUP BY that column (the
+    /// override rides the re-compiled slot SQL, ADR-0121's user-facing face); a click on the
+    /// active column clears it. No in-memory grouping: the database aggregates.</summary>
     private bool AllowGrouping => Context.Card.TablePresentation?.AllowGrouping ?? false;
+
+    private string? _groupColumn;
+
+    private Task ToggleGroupingAsync(string column)
+    {
+        _groupColumn = string.Equals(_groupColumn, column, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : column;
+        _expandedGroups.Clear();
+        VizDisplayState.SetGroupByOverride(Context.Card.Id, _groupColumn);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private readonly HashSet<string> _expandedGroups = new(StringComparer.Ordinal);
+
+    private bool GroupExpanded(string key) => _expandedGroups.Contains(key);
+
+    private void ToggleGroup(string key)
+    {
+        if (!_expandedGroups.Remove(key))
+        {
+            _expandedGroups.Add(key);
+        }
+    }
 
     private ReportFormatDefaults? FormatDefaults => Context.Card.FormatDefaults;
 

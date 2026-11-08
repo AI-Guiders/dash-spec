@@ -620,6 +620,10 @@
     /// <summary>The drill slot's ✕ — the page clears the overlay and refreshes interiors.</summary>
     internal Task CloseCellDrillAsync() => OnDrillClear.InvokeAsync(Card);
 
+    /// <summary>Viz-originated card actions (ADR-0062): the slot's table grouping button and
+    /// other in-viz requests ride the page action pipeline.</summary>
+    internal Task HandleCardActionAsync(CardActionRequest request) => OnCardAction.InvokeAsync(request);
+
     internal async Task HandleHeatmapCellSelectedAsync(HeatmapCellContext context)
     {
         if (EffectiveShowSelection is not null)
