@@ -210,7 +210,7 @@ module PropertySchemas =
 
     let tableDiagram =
         [ spec "columns" CommaList
-          spec "order_by" RestOfLine
+          spec "sort" RestOfLine
           spec "limit" Scalar
           spec "title" String
           spec "value" ColumnBinding
@@ -237,7 +237,7 @@ module PropertySchemas =
           spec "to" ColumnBinding
           spec "color" ColumnBinding
           spec "height" Scalar
-          spec "order_by" RestOfLine
+          spec "sort" RestOfLine
           spec "limit" Scalar ]
 
     /// Mirrors Core PropertyBlockParser.ResolveEndKind for block containers.

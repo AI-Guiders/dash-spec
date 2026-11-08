@@ -17,6 +17,6 @@ namespace Demo.Diagrams
     category = app_name as "Product"
     value = distinct_users as "Users"
     scale_value = integer
-    order_by = "distinct_users DESC, app_name"
+    sort = "distinct_users DESC, app_name"
 
     end donut

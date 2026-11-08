@@ -54,14 +54,14 @@ module BuiltinScalarTransforms =
     /// <summary>
     /// Execution locality of a transform step — the layering invariant (ADR-0126):
     /// database steps compile into the query (head of the chain, source frame),
-    /// runtime steps work over the loaded batch (tail; to_zone is a display concern).
-    /// A Database step may never follow a Runtime one. AnyPosition = the compiler
-    /// chooses the execution site without semantic change (order_by's SQL pushdown).
+    /// runtime steps work over the loaded batch (tail; to_zone/sort are display
+    /// concerns). A Database step may never follow a Runtime one. The old dual-face
+    /// order_by died: query order is <c>order</c> (database), display sort is
+    /// <c>sort</c> (runtime) — the BI three-layer split.
     /// </summary>
     type TransformLocality =
         | Database
         | Runtime
-        | AnyPosition
 
     /// The closed vocabulary of transform plugin ids. An unknown id does not compile —
     /// a typo or a dead keyword must fail at parse time, not at render. New transforms
@@ -70,7 +70,8 @@ module BuiltinScalarTransforms =
         [
             "summarize"
             "group"
-            "order_by"
+            "order"
+            "sort"
             "to_zone"
             "iana_to_timeshift"
             "timeshift_to_iana"
@@ -81,18 +82,21 @@ module BuiltinScalarTransforms =
         knownPluginIds
         |> List.exists (fun id -> String.Equals(id, pluginId, StringComparison.OrdinalIgnoreCase))
 
-    /// Locality by plugin id; unknown ids are AnyPosition (free steps, safe default).
+    /// Locality by plugin id; unknown ids never reach here (closed vocabulary at parse).
     let localityOf (pluginId: string) =
-        if String.Equals(pluginId, "summarize", StringComparison.OrdinalIgnoreCase) then
+        if String.Equals(pluginId, "summarize", StringComparison.OrdinalIgnoreCase)
+           || String.Equals(pluginId, "order", StringComparison.OrdinalIgnoreCase) then
             Database
-        elif String.Equals(pluginId, "group", StringComparison.OrdinalIgnoreCase)
+        elif String.Equals(pluginId, "sort", StringComparison.OrdinalIgnoreCase)
+             || String.Equals(pluginId, "group", StringComparison.OrdinalIgnoreCase)
              || String.Equals(pluginId, "to_zone", StringComparison.OrdinalIgnoreCase)
              || String.Equals(pluginId, "iana_to_timeshift", StringComparison.OrdinalIgnoreCase)
              || String.Equals(pluginId, "timeshift_to_iana", StringComparison.OrdinalIgnoreCase)
              || String.Equals(pluginId, "reduce", StringComparison.OrdinalIgnoreCase) then
             Runtime
         else
-            AnyPosition
+            // Unknown ids never reach here: the parse-time vocabulary check rejects them.
+            Database
 
     /// The plugin's declared parameter contract, if any (case-insensitive id).
     let paramContract (pluginId: string) : ParamContract option =

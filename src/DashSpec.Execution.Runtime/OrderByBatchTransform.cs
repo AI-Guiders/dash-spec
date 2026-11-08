@@ -3,7 +3,7 @@ using DashSpec.Modeling.Core;
 
 namespace DashSpec.Execution.Runtime;
 
-/// <summary>Runtime face of the <c>order_by</c> step (ADR-0123): a stable sort of the
+/// <summary>The <c>sort</c> display transform (ADR-0126): a stable sort of the
 /// arrived rows over a DashValue column — the same wire, a different order (payload→payload,
 /// the to_zone pattern). Sort keys are the values' CLR forms; nulls sort first.</summary>
 public static class OrderByBatchTransform
@@ -41,7 +41,7 @@ public static class OrderByBatchTransform
         var column = parameters.FirstOrDefault(p =>
                 string.Equals(p.Key, "by", StringComparison.OrdinalIgnoreCase))?.Value
             ?? throw new DashSpecParseException(
-                "order_by: the 'by' parameter is required (the sort column).");
+                "sort: the 'by' parameter is required (the sort column).");
 
         var fieldName = column.Trim();
         for (var i = 0; i < batch.Schema.Fields.Count; i++)
@@ -53,7 +53,7 @@ public static class OrderByBatchTransform
         }
 
         throw new DashSpecParseException(
-            $"order_by: unknown column '{column}' — not in the row schema.");
+            $"sort: unknown column '{column}' — not in the row schema.");
     }
 
     private static bool ResolveDirection(Modeling.Parse.DataFlow.DashflowTransformParam[] parameters)

@@ -14,7 +14,7 @@ open DashSpec.Modeling.Parse.Lexing
 module TableDiagramParser =
 
     /// Desugars the `columns` pipe table into IR properties:
-    /// `columns` (ids in row order), `column_formats`, `column_labels` (newline map), `order_by` (sorting cells in row order).
+    /// `columns` (ids in row order), `column_formats`, `column_labels` (newline map), `sort` (sorting cells in row order).
     let private applyColumnsTable (rows: string list) (values: Dictionary<string, string>) =
         if rows.IsEmpty then
             ()
@@ -91,10 +91,10 @@ module TableDiagramParser =
                 values.["column_labels"] <- BlockGrammar.serializeColumnLabelMap labels
 
             if sorting.Count > 0 then
-                if values.ContainsKey "order_by" then
-                    raise (DashSpecParseException("diagram order_by is declared both as a flat property and as sorting in the columns table; pick one."))
+                if values.ContainsKey "sort" then
+                    raise (DashSpecParseException("diagram sort is declared both as a flat property and as sorting in the columns table; pick one."))
 
-                values.["order_by"] <- String.Join(", ", sorting)
+                values.["sort"] <- String.Join(", ", sorting)
 
             if alignments.Count > 0 then
                 values.["column_alignments"] <- BlockGrammar.serializeColumnFormatMap alignments

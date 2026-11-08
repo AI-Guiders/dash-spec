@@ -67,9 +67,9 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
-    public void IsBlockEnd_after_order_by_rest_of_line()
+    public void IsBlockEnd_after_sort_rest_of_line()
     {
-        var reader = ParserUtilities.CreateReader("order_by = occurred_at_utc\nend table\n");
+        var reader = ParserUtilities.CreateReader("sort = occurred_at_utc\nend table\n");
         _ = reader.ReadIdent();
         reader.Expect(TokenKind.Eq);
         _ = reader.ReadRestOfLine();
@@ -77,59 +77,59 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
-    public void Parse_table_diagram_order_by_inline()
+    public void Parse_table_diagram_sort_inline()
     {
         var text = """
             module diagram t
             table
               columns = a, b
-              order_by = occurred_at_utc
+              sort = occurred_at_utc
             end table
             """;
 
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
-        Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["order_by"]);
+        Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["sort"]);
     }
 
     [Fact]
-    public void Tokenize_table_order_by()
+    public void Tokenize_table_sort()
     {
-        var text = "order_by = occurred_at_utc\nend table\n";
+        var text = "sort = occurred_at_utc\nend table\n";
         var tokens = DashSpecLexer.tokenize(text);
-        Assert.Contains(tokens, t => t.Value == "order_by");
+        Assert.Contains(tokens, t => t.Value == "sort");
         Assert.Contains(tokens, t => t.Value == "end");
         Assert.Contains(tokens, t => t.Value == "table");
     }
 
     [Fact]
-    public void Parse_table_diagram_order_by_without_desc()
+    public void Parse_table_diagram_sort_without_desc()
     {
         var text = """
             module diagram t
             table
               columns = a, b
-              order_by = occurred_at_utc
+              sort = occurred_at_utc
             end table
             """;
 
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
-        Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["order_by"]);
+        Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["sort"]);
     }
 
     [Fact]
-    public void Parse_table_diagram_with_order_by()
+    public void Parse_table_diagram_with_sort()
     {
         var text = """
             module diagram t
             table
               columns = occurred_at_utc, app_name
-              order_by = occurred_at_utc DESC
+              sort = occurred_at_utc DESC
             end table
             """;
 
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("table", fragment.Diagram!.Kind);
-        Assert.Equal("occurred_at_utc DESC", fragment.Diagram.Properties["order_by"]);
+        Assert.Equal("occurred_at_utc DESC", fragment.Diagram.Properties["sort"]);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class DemoSpecsSyntaxTests
         Assert.Equal("host_name, user_sam, peak_bucket_start_utc", props["columns"]);
         Assert.Equal("peak_bucket_start_utc:datetime.short", props["column_formats"]);
         Assert.Equal("host_name = Хост\nuser_sam = Пользователь\npeak_bucket_start_utc = Момент пика", props["column_labels"]);
-        Assert.Equal("host_name ASC, user_sam ASC, peak_bucket_start_utc DESC", props["order_by"]);
+        Assert.Equal("host_name ASC, user_sam ASC, peak_bucket_start_utc DESC", props["sort"]);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class DemoSpecsSyntaxTests
         Assert.Equal("Запуски: {app_name}", props["title"]);
         Assert.Equal("usage_date, user_sam, launches", props["columns"]);
         Assert.Equal("usage_date:date.short", props["column_formats"]);
-        Assert.Equal("usage_date DESC, launches DESC", props["order_by"]);
+        Assert.Equal("usage_date DESC, launches DESC", props["sort"]);
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public class DemoSpecsSyntaxTests
         Assert.Equal("host_name, bucket_start_utc", props["columns"]);
         Assert.Equal("host_name = Хост", props["column_labels"]);
         Assert.False(props.ContainsKey("column_formats"));
-        Assert.False(props.ContainsKey("order_by"));
+        Assert.False(props.ContainsKey("sort"));
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
-    public void Parse_table_diagram_columns_pipe_table_rejects_flat_order_by_with_sorting()
+    public void Parse_table_diagram_columns_pipe_table_rejects_flat_sort_with_sorting()
     {
         var text = """
             module diagram t
@@ -305,13 +305,13 @@ public class DemoSpecsSyntaxTests
                 | id | sorting |
                 | host_name | ASC |
               end columns
-              order_by = host_name ASC
+              sort = host_name ASC
             end table
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
             DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
-        Assert.Contains("order_by", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("sort", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -390,18 +390,18 @@ public class DemoSpecsSyntaxTests
     }
 
     [Fact]
-    public void Parse_table_diagram_order_by_with_comma()
+    public void Parse_table_diagram_sort_with_comma()
     {
         var text = """
             module diagram t
             table
               columns = host_name, user_sam
-              order_by = host_name ASC, user_sam ASC
+              sort = host_name ASC, user_sam ASC
             end table
             """;
 
         var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
-        Assert.Equal("host_name ASC, user_sam ASC", fragment.Diagram!.Properties["order_by"]);
+        Assert.Equal("host_name ASC, user_sam ASC", fragment.Diagram!.Properties["sort"]);
     }
 
     [Fact]

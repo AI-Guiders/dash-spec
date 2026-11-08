@@ -12,6 +12,6 @@ namespace Demo.Diagrams
     category = app_name
     value = peak_concurrent_proxy
     scale_value = integer
-    order_by = "peak_concurrent_proxy DESC, app_name"
+    sort = "peak_concurrent_proxy DESC, app_name"
 
     end bar

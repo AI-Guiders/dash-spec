@@ -358,7 +358,7 @@ public static class QueryCompiler
         DiagramDefinition diagram,
         string groupBy)
     {
-        if (!diagram.Properties.TryGetValue("order_by", out var orderBy) ||
+        if (!diagram.Properties.TryGetValue("sort", out var orderBy) ||
             string.IsNullOrWhiteSpace(orderBy))
         {
             return selectList;
@@ -578,7 +578,7 @@ public static class QueryCompiler
 
     private static string ResolveOrderBy(CardDefinition card)
     {
-        if (card.Diagram.Properties.TryGetValue("order_by", out var orderBy))
+        if (card.Diagram.Properties.TryGetValue("sort", out var orderBy))
         {
             return $"ORDER BY {orderBy}";
         }

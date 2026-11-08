@@ -94,13 +94,10 @@ public sealed class CardRenderService(
 
     /// <summary>Граф (G) получения данных карточки, если у неё есть flow-вход; иначе null.</summary>
 
-    /// <summary>ADR-0123 §5: an order_by step rides the query only over a purely database
-    /// path — otherwise the executor sorts what arrived (it stays runtime).</summary>
-    private static OrderByStepSpec? ResolvePushedOrderBy(DashflowExecutionPath? flowPath)
-    {
-        var step = OrderByStepSpec.Find(flowPath);
-        return step is not null && OrderByStepSpec.CanPushDown(flowPath) ? step : null;
-    }
+    /// <summary>ADR-0126: an order step always rides the query — it is the database
+    /// query order; the layering invariant has already guaranteed its position.</summary>
+    private static OrderByStepSpec? ResolvePushedOrderBy(DashflowExecutionPath? flowPath) =>
+        OrderByStepSpec.Find(flowPath);
 
     /// <summary>ADR-0124: the wire row type name — present only when the slot's data source
     /// is a flow (RowsType rides the source).</summary>

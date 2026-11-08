@@ -33,7 +33,7 @@ public sealed class DiagramBuiltinPlugin : IDashSpecPlugin
         RegisterKind(registry, Id, "gauge", "Chart", ["value", "aggregate", "min", "max"]);
         RegisterKind(registry, Id, "windrose", "Chart", ["x", "y", "category", "value"], supportsTopLimit: true);
         RegisterKind(registry, Id, "wind_rose", "Chart", ["x", "y", "category", "value"], supportsTopLimit: true);
-        RegisterKind(registry, Id, "table", "Table", ["columns", "order_by", "limit"], supportsTopLimit: true);
+        RegisterKind(registry, Id, "table", "Table", ["columns", "sort", "limit"], supportsTopLimit: true);
         RegisterKind(registry, Id, "number", "Scalar", ["value", "aggregate", "scale_value", "delta"]);
         RegisterKind(registry, Id, "heatmap", "Matrix", ["x", "y", "value"]);
         RegisterKind(registry, Id, "gantt", "Gantt", ["y", "from", "to", "color"], supportsTopLimit: true);

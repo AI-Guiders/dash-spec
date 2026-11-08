@@ -8,4 +8,5 @@ public static class BuiltinScalarTransformIds
     public const string Reduce = "reduce";
     public const string Summarize = "summarize";
     public const string Group = "group";
+    public const string Sort = "sort";
 }

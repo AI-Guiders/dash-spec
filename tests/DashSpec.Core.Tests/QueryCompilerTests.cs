@@ -140,7 +140,7 @@ public class QueryCompilerTests
               card users as "Users"
               diagram table
               columns = user_sam, launches
-              order_by = launches DESC
+              sort = launches DESC
               value = launches
               aggregate = sum
               end table
@@ -172,7 +172,7 @@ public class QueryCompilerTests
               card users as "Users"
               diagram table
               columns = user_sam, launches
-              order_by = launches DESC
+              sort = launches DESC
               value = launches
               end table
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -686,7 +686,7 @@ public class QueryCompilerTests
     }
 
     [Fact]
-    public void Compile_bar_applies_bound_top_filter_with_order_by()
+    public void Compile_bar_applies_bound_top_filter_with_sort()
     {
         var card = CardTestData.Create(
             "over",
@@ -696,7 +696,7 @@ public class QueryCompilerTests
                 ["category"] = "app_name",
                 ["value"] = "peak_concurrent_proxy",
                 ["reference"] = "purchased_seats",
-                ["order_by"] = "utilization_pct DESC, app_name",
+                ["sort"] = "utilization_pct DESC, app_name",
             }, null),
             DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "demo.v_peak_over_limit", rowsType: "FixtureRow"),
             ["chart_top"],
@@ -730,7 +730,7 @@ public class QueryCompilerTests
             {
                 ["category"] = "form",
                 ["value"] = "launch_count",
-                ["order_by"] = "launch_count DESC, form",
+                ["sort"] = "launch_count DESC, form",
             }, null),
             DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, "product.v_usage_by_form", rowsType: "FixtureRow"),
             ["usage_date"],

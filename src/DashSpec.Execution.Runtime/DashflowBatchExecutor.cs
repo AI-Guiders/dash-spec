@@ -46,8 +46,14 @@ public static class DashflowBatchExecutor
 
         if (step.PluginId.Equals(OrderByStepSpec.PluginIdName, StringComparison.OrdinalIgnoreCase))
         {
-            // ADR-0123: the runtime face of order_by — a stable sort over what arrived
-            // (the step rode the query only over a purely database path).
+            // The database query order compiled into the slot's SQL (ADR-0126) — a no-op
+            // here; the layering invariant guarantees its position.
+            return batch;
+        }
+
+        if (step.PluginId.Equals(BuiltinScalarTransformIds.Sort, StringComparison.OrdinalIgnoreCase))
+        {
+            // Display sort (ADR-0126): a stable sort over what arrived.
             return OrderByBatchTransform.Apply(batch, step.Parameters);
         }
 

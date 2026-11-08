@@ -3,6 +3,6 @@ namespace Demo.Diagrams
 
     table
     columns = occurred_at_utc, app_name, user_name, product_version, window_title
-    order_by = occurred_at_utc DESC
+    sort = occurred_at_utc DESC
 
     end table

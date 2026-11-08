@@ -44,3 +44,5 @@ scripts/migrate_file.py
 src/DashSpec.Host/dash-spec.local.host.ds
 .zcode/
 .cdp/
+src/DashSpec.Host/host.log
+src/DashSpec.Host/host.err
