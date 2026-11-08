@@ -320,7 +320,38 @@ else
         ["Items"] = Table.TypedItems,
         ["ColumnFilters"] = ColumnFilters,
         ["FrozenColumns"] = FrozenColumns,
+        ["FormatDefaults"] = Context.Card.FormatDefaults,
+        ["RowClickEnabled"] = RowClickEnabled,
+        ["OnRowClick"] = EventCallback.Factory.Create<string>(this, OnTableRowClicked),
     };
+
+    /// <summary>ADR-0107 row click: the card declares a `row`-sourced handler → rows are
+    /// clickable; the first column's formatted value rides YLabel — the same contract as
+    /// the builtin table (value-based, a re-render can't make it stale).</summary>
+    private bool RowClickEnabled =>
+        Context.EffectiveCard.ClickHandlers is { Count: > 0 } handlers &&
+        handlers.Any(h => string.Equals(h.Source, TableClickSources.Row, StringComparison.OrdinalIgnoreCase));
+
+    private async Task OnTableRowClicked(string value)
+    {
+        if (!Context.OnHeatmapCategoryItemSelected.HasDelegate)
+        {
+            return;
+        }
+
+        var context = new HeatmapCellContext(
+            -1,
+            -1,
+            string.Empty,
+            value,
+            null,
+            null,
+            null,
+            ClickSource: TableClickSources.Row);
+
+        await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
+    }
+
     private static bool IsEmpty(ChartPayload chart) =>
         chart.Points is { Count: > 0 }
             ? false

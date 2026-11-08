@@ -1,13 +1,21 @@
 @namespace DashSpec.Plugin.Viz.RadzenUI.Components
 @typeparam TItem
 @using DashSpec.Plugin.Viz.RadzenUI.Resources
+@using Microsoft.JSInterop
 @inject IStringLocalizer<RadzenVizStrings> Loc
+@inject IJSRuntime Js
 
-<RadzenDataGrid TItem="TItem" Data="@Items" style="--typed:1" data-testid="typed-grid" Wrap="true"
+@* The same table grid as before (ADR-0115/0107 chrome: header menu, copy, row click,
+   LabelFormat cells) — ADR-0124 only changed the payload: rows arrive as CLR objects
+   (compiled row types), so Radzen's native machinery works on real properties:
+   sorting, filters, and its own grouping (drag the header into the panel). *@
+<RadzenDataGrid @ref="_grid" TItem="TItem" Data="@Items" data-testid="typed-grid"
+                Wrap="true" Density="Density.Compact" Style="width:100%;--typed:1"
                 AllowSorting="true" AllowFiltering="@ColumnFilters" FilterMode="FilterMode.Simple"
-                AllowPaging="true" PageSize="15" AllowColumnResize="true"
-                AllowGrouping="true"
-                GroupIndent="16">
+                AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
+                AllowColumnPicking="true" AllowColumnReorder="true"
+                AllowGrouping="true" GroupIndent="16"
+                RowClick="@OnRowClicked">
     <GroupHeaderTemplate>
         <span class="rviz-typed-group">
             <strong>@(context.GroupDescriptor?.GetTitle() ?? ""):</strong> @(context.Data.Key?.ToString() ?? Loc["(empty)"])
@@ -18,9 +26,20 @@
         @for (var c = 0; c < Fields.Count; c++)
         {
             var index = c;
-            <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name" Title="@Fields[index].Header"
-                                  TextAlign="TextAlign.Left"
-                                  Frozen="@(index < FrozenColumns)" />
+            <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
+                                  Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                  Width="auto" Sortable="true" Filterable="@ColumnFilters"
+                                  Frozen="@(index < FrozenColumns)">
+                <HeaderTemplate>
+                    <div class="rviz-grid-head" @oncontextmenu="args => OpenColumnMenu(args, index)"
+                         @oncontextmenu:preventDefault="true">
+                        <span>@Fields[index].Header</span>
+                    </div>
+                </HeaderTemplate>
+                <Template Context="row">@FormatCell(PropertyOf(row, index), index)</Template>
+            </RadzenDataGridColumn>
         }
     </Columns>
 </RadzenDataGrid>
+
+<RadzenContextMenu @ref="_columnMenu" />
