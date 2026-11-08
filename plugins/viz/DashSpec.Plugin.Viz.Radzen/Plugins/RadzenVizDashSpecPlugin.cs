@@ -35,6 +35,11 @@ public sealed class RadzenVizDashSpecPlugin : VizDashSpecPluginBase
 
     protected override IVizPlugin CreateBackend() => new RadzenVizBackend();
 
+    /// <summary>The renderer's presentation knobs (ADR-0121's unblocked table-grouping
+    /// feature): <c>grouping = on</c> turns the Radzen grid's interactive grouping on —
+    /// the user drags column headers to group, in-memory over the loaded page.</summary>
+    public override IEnumerable<string> PresentationProperties => ["grouping"];
+
     /// <summary>
     /// Radzen component services (tooltip/dialog/notification): RadzenChart injects
     /// Radzen.TooltipService — without it the component render fails on property injection.

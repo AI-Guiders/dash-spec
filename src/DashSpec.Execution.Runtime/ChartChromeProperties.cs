@@ -15,7 +15,7 @@ public static class ChartChromeProperties
             "stacked", "orientation", "fill",
             "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
             "y_max", "value_axis_max", "color_mode", "default", "colors",
-            "width", "density", "column_filters",
+            "width", "density", "column_filters", "grouping",
         })
         {
             if (!merged.ContainsKey(legacyKey) &&

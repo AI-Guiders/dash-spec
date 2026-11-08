@@ -19,7 +19,8 @@ public sealed record TablePresentation(
     TableDensity Density = TableDensity.Comfortable,
     int MaxHeightPx = 420,
     bool ColumnFilters = true,
-    int FrozenColumns = 0)
+    int FrozenColumns = 0,
+    bool AllowGrouping = false)
 {
     public static TablePresentation FromProperties(IReadOnlyDictionary<string, string> properties)
     {
@@ -69,7 +70,16 @@ public sealed record TablePresentation(
             frozenColumns = Math.Clamp(parsedFrozen, 0, 8);
         }
 
-        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns);
+        // Interactive grouping (the blocked table-grouping feature, unblocked by ADR-0121's
+        // carrier): author intent knob — the Radzen grid turns it into AllowGrouping
+        // (drag-a-column-to-group, in-memory over the loaded page); the self-made table ignores it.
+        var allowGrouping = false;
+        if (properties.TryGetValue("grouping", out var rawGrouping))
+        {
+            allowGrouping = rawGrouping is "true" or "yes" or "1" or "on";
+        }
+
+        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns, allowGrouping);
     }
 
     public static TablePresentation Resolve(CardDefinition card, SpecLibrary? library) =>
