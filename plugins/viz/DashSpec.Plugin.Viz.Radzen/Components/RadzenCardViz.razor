@@ -433,8 +433,8 @@ else
         var column = Table.Fields[columnIndex].Name;
         var items = new List<ContextMenuItem>
         {
-            new() { Text = Loc["Sort ascending"], Value = "sort-asc", Icon = "arrow_upward" },
-            new() { Text = Loc["Sort descending"], Value = "sort-desc", Icon = "arrow_downward" },
+            new() { Text = Loc["Sort ascending"], Value = "sort-asc" },
+            new() { Text = Loc["Sort descending"], Value = "sort-desc" },
         };
 
         if (AllowGrouping)
@@ -444,17 +444,16 @@ else
                 Text = _groupLevels.Count == 0
                     ? $"{Loc["Group by this column"]}: {Table.Fields[columnIndex].Header}"
                     : $"{Loc["Then by this column"]}: {Table.Fields[columnIndex].Header}",
-                Value = "group",
-                Icon = "outline_stack",
+                Value = "group"
             });
 
             if (_groupLevels.Any(c => string.Equals(c, column, StringComparison.OrdinalIgnoreCase)))
             {
-                items.Add(new ContextMenuItem { Text = Loc["Ungroup by this column"], Value = "ungroup", Icon = "close" });
+                items.Add(new ContextMenuItem { Text = Loc["Ungroup by this column"], Value = "ungroup" });
             }
         }
 
-        items.Add(new ContextMenuItem { Text = Loc["Copy column"], Value = "copy", Icon = "content_copy" });
+        items.Add(new ContextMenuItem { Text = Loc["Copy column"], Value = "copy" });
 
         await _columnMenu.Open(args, new ContextMenuOptions { Items = items, Click = OnColumnMenuClick });
     }
