@@ -51,15 +51,17 @@ public static class DashflowBatchExecutor
             return OrderByBatchTransform.Apply(batch, step.Parameters);
         }
 
-        if (step.PluginId.Equals(GroupByStepSpec.PluginIdName, StringComparison.OrdinalIgnoreCase))
+        if (step.PluginId.Equals(BuiltinScalarTransformIds.Summarize, StringComparison.OrdinalIgnoreCase))
         {
-            // ADR-0121 (database summary): the renderer compiled it into the slot's SQL —
-            // the rows arrive already collapsed. ADR-0123 (runtime grouping, by only):
-            // the batch gains contiguous group runs; rows stay rows.
-            var hasAgg = Array.Exists(step.Parameters, p =>
-                string.Equals(p.Key, "agg", StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(p.Value));
-            return hasAgg ? batch : GroupByBatchTransform.Apply(batch, step.Parameters);
+            // The database summary compiled into the slot's SQL (ADR-0121) — the rows
+            // arrive already collapsed; the batch executor sees a no-op.
+            return batch;
+        }
+
+        if (step.PluginId.Equals(BuiltinScalarTransformIds.Group, StringComparison.OrdinalIgnoreCase))
+        {
+            // Runtime display grouping (ADR-0123): contiguous group runs; rows stay rows.
+            return GroupByBatchTransform.Apply(batch, step.Parameters);
         }
 
         throw new NotSupportedException(

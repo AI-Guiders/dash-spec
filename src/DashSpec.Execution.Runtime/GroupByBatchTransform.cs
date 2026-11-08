@@ -3,7 +3,7 @@ using DashSpec.Modeling.Core;
 
 namespace DashSpec.Execution.Runtime;
 
-/// <summary>Runtime face of the <c>group_by { by }</c> step (ADR-0123): grouping, not a
+/// <summary>The <c>group { by }</c> runtime transform (ADR-0123/0126): grouping, not a
 /// summary — rows stay rows. The batch is ordered by the group key (stable) and gains
 /// contiguous group runs over that key; the renderer only draws the organization.</summary>
 public static class GroupByBatchTransform
@@ -17,7 +17,7 @@ public static class GroupByBatchTransform
         var column = parameters.FirstOrDefault(p =>
                 string.Equals(p.Key, "by", StringComparison.OrdinalIgnoreCase))?.Value
             ?? throw new DashSpecParseException(
-                "group_by: the 'by' parameter is required (the grouping column).");
+                "group: the 'by' parameter is required (the grouping column).");
 
         var fieldName = column.Trim();
         RowFieldSchema? field = null;
@@ -33,7 +33,7 @@ public static class GroupByBatchTransform
         if (field is null)
         {
             throw new DashSpecParseException(
-                $"group_by: unknown column '{column}' — not in the row schema.");
+                $"group: unknown column '{column}' — not in the row schema.");
         }
 
         // ORDER BY key + один проход по результатам (ADR-0123): stable order, then runs.

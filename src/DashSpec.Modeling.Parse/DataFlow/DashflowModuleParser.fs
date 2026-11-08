@@ -560,6 +560,50 @@ module DashflowModuleParser =
 
         seen.Add id |> ignore
 
+    /// <summary>
+    /// The layering invariant (ADR-0126): database steps are the head of the chain
+    /// (they compile into the query), runtime steps are the tail (they work over the
+    /// loaded batch). A Database step may never follow a Runtime one — neither inside
+    /// one transformer's step sequence nor across a link between transformers.
+    /// </summary>
+    let private checkStepLayering (transformers: DashflowTransformerDef[]) (links: FlowLinkDef[]) =
+        for transformer in transformers do
+            let mutable seenRuntime = false
+
+            for step in transformer.Steps do
+                match BuiltinScalarTransforms.localityOf step.PluginId with
+                | BuiltinScalarTransforms.TransformLocality.Runtime -> seenRuntime <- true
+                | BuiltinScalarTransforms.TransformLocality.Database when seenRuntime ->
+                    raise (
+                        DashSpecParseException(
+                            $"transformer '{transformer.Id}': '{step.PluginId}' is a database transform and must precede runtime transforms (to_zone, group, reduce…)."))
+                | _ -> ()
+
+        let hasDatabaseStep (transformer: DashflowTransformerDef) =
+            transformer.Steps
+            |> Array.exists (fun step ->
+                BuiltinScalarTransforms.localityOf step.PluginId = BuiltinScalarTransforms.TransformLocality.Database)
+
+        let hasRuntimeStep (transformer: DashflowTransformerDef) =
+            transformer.Steps
+            |> Array.exists (fun step ->
+                BuiltinScalarTransforms.localityOf step.PluginId = BuiltinScalarTransforms.TransformLocality.Runtime)
+
+        let byId =
+            transformers
+            |> Array.map (fun t -> t.Id.ToUpperInvariant(), t)
+            |> dict
+
+        for link in links do
+            match byId.TryGetValue(link.FromNode.ToUpperInvariant()),
+                  byId.TryGetValue(link.ToNode.ToUpperInvariant()) with
+            | (true, producer), (true, consumer) when hasRuntimeStep producer && hasDatabaseStep consumer ->
+                raise (
+                    DashSpecParseException(
+                        $"flow link '{link.FromNode} -> {link.ToNode}': '{consumer.Id}' holds a database transform, "
+                        + "which must run before runtime transforms — reorder the chain."))
+            | _ -> ()
+
     let private finishNestedFlow
         (flowId: string)
         (sources: DashflowSourceDef[])
@@ -569,6 +613,7 @@ module DashflowModuleParser =
         (typeCatalog: TypeCatalog)
         =
         let innerGraph = buildScopeGraph sources transformers nestedFlows links
+        checkStepLayering transformers links
         let diagnostics = FlowGraph.typeCheck innerGraph typeCatalog
 
         let externalInputs, externalOutputs =
@@ -657,6 +702,7 @@ module DashflowModuleParser =
         (typeCatalog: TypeCatalog)
         =
         let graph = buildScopeGraph sources transformers nestedFlows links
+        checkStepLayering transformers links
         let diagnostics = FlowGraph.typeCheck graph typeCatalog
 
         { FlowId = flowId

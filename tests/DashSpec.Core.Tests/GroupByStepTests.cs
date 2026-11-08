@@ -4,7 +4,7 @@ using Xunit;
 
 namespace DashSpec.Core.Tests;
 
-/// <summary>ADR-0121: a group_by database-transform step compiles into the slot's
+/// <summary>ADR-0121/0126: a summarize database-transform step compiles into the slot's
 /// SQL — branch into a separate port, aggregation stays in the database.</summary>
 public class GroupByStepTests
 {
@@ -46,7 +46,7 @@ public class GroupByStepTests
     }
 
     [Fact]
-    public void Compile_pushes_group_by_into_sql()
+    public void Compile_pushes_summarize_into_sql()
     {
         var (document, card) = Card();
         var query = QueryCompiler.Compile(

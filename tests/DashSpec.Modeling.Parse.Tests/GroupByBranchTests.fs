@@ -10,9 +10,9 @@ open DashSpec.Modeling.Parse.Document
 [<Xunit.Collection("GridDefault")>]
 module GroupByBranchTests =
 
-    /// ADR-0121: group_by is a graph BRANCH into a separate card port — the raw
+    /// ADR-0121: summarize is a graph BRANCH into a separate card port — the raw
     /// stream keeps its own slot, the grouped stream is a transformer output port
-    /// with its own row type. Grammar needs no changes: `transform use group_by`
+    /// with its own row type. Grammar needs no changes: `transform use summarize`
     /// is a step; the compiler owns what it means.
     let private flowText =
         """
@@ -34,7 +34,7 @@ transformer by_app {
     input stream rows: EventRow
     output stream grouped: AppCountRow
   end ports
-  transform use group_by {
+  transform use summarize {
     by = app_name
     agg = count
   }
@@ -46,7 +46,7 @@ end flow
 """
 
     [<Fact>]
-    let ``group_by branch parses with typed ports and per-slot wiring`` () =
+    let ``summarize branch parses with typed ports and per-slot wiring`` () =
         let dir = Path.Combine(Path.GetTempPath(), "group-by-branch-" + Guid.NewGuid().ToString("N"))
         Directory.CreateDirectory dir |> ignore
         File.WriteAllText(Path.Combine(dir, "flow.ds"), flowText)
@@ -139,10 +139,130 @@ end section group_by_branch
             let transformer =
                 flow.Value.Transformers |> Array.find (fun t -> t.Id = "by_app")
             let step = transformer.Steps |> Array.exactlyOne
-            Assert.Equal("group_by", step.PluginId)
+            Assert.Equal("summarize", step.PluginId)
             Assert.Equal("app_name", step.Parameters |> Array.find (fun p -> p.Key = "by") |> fun p -> p.Value)
         finally
             try
                 Directory.Delete(dir, true)
             with _ ->
                 ()
+
+
+open System
+open System.IO
+open DashSpec.Modeling.Core
+open DashSpec.Modeling.Parse.Types
+open DashSpec.Modeling.Parse.DataFlow
+open Xunit
+
+/// ADR-0126: the split — summarize (database, agg required) vs group (runtime display
+/// grouping); the layering invariant — a database step never follows a runtime one.
+module SummarizeGroupSplitTests =
+
+    let private parseFlow (flowText: string) =
+        let typesText =
+            """
+type EventRow
+  string app_name
+  int cnt
+end type
+"""
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        DashflowModuleParser.parseModule flowText catalog
+
+    [<Fact>]
+    let ``group transform parses as a runtime step`` () =
+        let flowText =
+            """
+module flow grouping_flow
+
+source events {
+  use provider infer
+  from view demo.v_events
+  ports
+    output stream rows: EventRow
+  end ports
+}
+
+transformer grouped {
+  ports
+    input stream rows: EventRow
+    output stream grouped: EventRow
+  end ports
+  transform use group {
+    by = app_name
+  }
+}
+
+events [rows] -> [rows] grouped
+
+end flow grouping_flow
+"""
+        let module' = parseFlow flowText
+        let step = module'.Transformers.[0].Steps |> Array.exactlyOne
+        Assert.Equal("group", step.PluginId)
+
+    [<Fact>]
+    let ``unknown transform id does not compile`` () =
+        let flowText =
+            """
+module flow dead_keyword
+
+source events {
+  use provider infer
+  from view demo.v_events
+  ports
+    output stream rows: EventRow
+  end ports
+}
+
+transformer stale {
+  ports
+    input stream rows: EventRow
+    output stream rows: EventRow
+  end ports
+  transform use group_by {
+    by = app_name
+    agg = count
+  }
+}
+
+events [rows] -> [rows] stale
+
+end flow dead_keyword
+"""
+        let ex = Assert.Throws<DashSpecParseException>(fun () -> parseFlow flowText |> ignore)
+        Assert.Contains("unknown transform 'group_by'", ex.Message)
+
+    [<Fact>]
+    let ``layering is loud when a database step follows a runtime one`` () =
+        let flowText =
+            """
+module flow bad_layering
+
+source events {
+  use provider infer
+  from view demo.v_events
+  ports
+    output stream rows: EventRow
+  end ports
+}
+
+transformer shift_then_summarize {
+  ports
+    input stream rows: EventRow
+    output stream rows: EventRow
+  end ports
+  transform use to_zone { zone = UTC+3 }
+  transform use summarize {
+    by = app_name
+    agg = count
+  }
+}
+
+events [rows] -> [rows] shift_then_summarize
+
+end flow bad_layering
+"""
+        let ex = Assert.Throws<DashSpecParseException>(fun () -> parseFlow flowText |> ignore)
+        Assert.Contains("must precede runtime transforms", ex.Message)

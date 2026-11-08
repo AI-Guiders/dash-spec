@@ -64,6 +64,14 @@ module TransformStepParser =
         reader.ExpectKeyword "use"
         let pluginId = reader.ReadIdent()
 
+        // The transform vocabulary is closed (BuiltinScalarTransforms.knownPluginIds):
+        // a typo or a dead keyword fails here, at parse time — never at render.
+        if not (BuiltinScalarTransforms.isKnownPluginId pluginId) then
+            raise (
+                DashSpecParseException(
+                    $"transformer '{transformerId}': unknown transform '{pluginId}' — expected one of "
+                    + String.Join("|", BuiltinScalarTransforms.knownPluginIds)))
+
         if reader.IsAt TokenKind.LBrace then
             reader.Expect TokenKind.LBrace
             let parameters = ResizeArray<DashflowTransformParam>()

@@ -3,7 +3,7 @@ using DashSpec.Modeling.Core;
 namespace DashSpec.Execution.Runtime;
 
 /// <summary>
-/// ADR-0121: a <c>group_by</c> database-transform step riding the slot's flow path.
+/// ADR-0121/0126: a <c>summarize</c> database-transform step riding the slot's flow path.
 /// The step compiles into the slot's SQL — <c>SELECT by, AGG(value) … GROUP BY by</c> —
 /// and never executes in memory (the batch executor sees it as a no-op, like the
 /// timeshift metadata steps). Branch, not mutation: the raw sibling slot keeps its
@@ -11,15 +11,14 @@ namespace DashSpec.Execution.Runtime;
 /// </summary>
 public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
 {
-    public const string PluginIdName = "group_by";
+    public const string PluginIdName = "summarize";
 
     private const string AggregateColumn = "value";
 
     private static readonly string[] KnownAggregates = ["count", "sum", "max", "min", "avg"];
 
-    /// <summary>First <c>group_by</c> step with an explicit <c>agg</c> — the database face
-    /// (ADR-0123 §4: agg present ⇒ SQL summary; agg absent ⇒ runtime grouping, which does
-    /// not ride the query at all and is handled by the batch executor).</summary>
+    /// <summary>The <c>summarize</c> step — the database summary face. The split
+    /// (ADR-0126): display grouping is a separate runtime transform (<c>group</c>).</summary>
     public static GroupByStepSpec? Find(DashflowExecutionPath? path)
     {
         if (path is null)
@@ -33,8 +32,7 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
             {
                 if (string.Equals(step.PluginId, PluginIdName, StringComparison.OrdinalIgnoreCase))
                 {
-                    var spec = Parse(step.Parameters);
-                    return spec.Agg is null ? null : spec;
+                    return Parse(step.Parameters);
                 }
             }
         }
@@ -67,14 +65,14 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
 
         if (string.IsNullOrWhiteSpace(by))
         {
-            throw new DashSpecParseException("group_by: the 'by' parameter is required (the grouping column).");
+            throw new DashSpecParseException("summarize: the 'by' parameter is required (the grouping column).");
         }
 
-        // ADR-0123 §4: agg absent ⇒ the runtime face (grouping, rows stay rows) — no
-        // default aggregate is invented here; only an explicit agg makes a SQL summary.
         if (string.IsNullOrWhiteSpace(agg))
         {
-            return new GroupByStepSpec(by.Trim(), null, null);
+            throw new DashSpecParseException(
+                "summarize: the 'agg' parameter is required (count|sum|max|min|avg); "
+                + "for runtime display grouping use the 'group' transform.");
         }
 
         agg = agg.Trim().ToLowerInvariant();
@@ -82,7 +80,7 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
         if (!KnownAggregates.Contains(agg))
         {
             throw new DashSpecParseException(
-                $"group_by: unknown agg '{agg}' — expected one of {string.Join("|", KnownAggregates)}.");
+                $"summarize: unknown agg '{agg}' — expected one of {string.Join("|", KnownAggregates)}.");
         }
 
         var needsValue = agg != "count";
@@ -90,7 +88,7 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
         if (needsValue && string.IsNullOrWhiteSpace(value))
         {
             throw new DashSpecParseException(
-                $"group_by: the 'value' parameter (the aggregate's argument column) is required for agg = {agg}.");
+                $"summarize: the 'value' parameter (the aggregate's argument column) is required for agg = {agg}.");
         }
 
         return new GroupByStepSpec(by.Trim(), agg, string.IsNullOrWhiteSpace(value) ? null : value.Trim());
