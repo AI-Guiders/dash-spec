@@ -30,4 +30,19 @@
   <data name="Ungroup by this column" xml:space="preserve">
     <value>Разгруппировать</value>
   </data>
+  <data name="Group by" xml:space="preserve">
+    <value>Группировать по</value>
+  </data>
+  <data name="Then by" xml:space="preserve">
+    <value>Затем по</value>
+  </data>
+  <data name="Sort ascending" xml:space="preserve">
+    <value>Сортировать по возрастанию</value>
+  </data>
+  <data name="Sort descending" xml:space="preserve">
+    <value>Сортировать по убыванию</value>
+  </data>
+  <data name="Then by this column" xml:space="preserve">
+    <value>Затем по этому столбцу</value>
+  </data>
 </root>

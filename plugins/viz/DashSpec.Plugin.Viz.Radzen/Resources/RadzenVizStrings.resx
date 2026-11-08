@@ -30,4 +30,19 @@
   <data name="Ungroup by this column" xml:space="preserve">
     <value>Ungroup by this column</value>
   </data>
+  <data name="Group by" xml:space="preserve">
+    <value>Group by</value>
+  </data>
+  <data name="Then by" xml:space="preserve">
+    <value>Then by</value>
+  </data>
+  <data name="Sort ascending" xml:space="preserve">
+    <value>Sort ascending</value>
+  </data>
+  <data name="Sort descending" xml:space="preserve">
+    <value>Sort descending</value>
+  </data>
+  <data name="Then by this column" xml:space="preserve">
+    <value>Then by this column</value>
+  </data>
 </root>

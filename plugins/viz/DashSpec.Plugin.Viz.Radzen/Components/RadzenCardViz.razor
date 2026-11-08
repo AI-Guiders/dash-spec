@@ -165,46 +165,22 @@ else
                 break;
             case "table":
             case "browse":
-                var localRuns = _groupColumn is null ? null : LocalRuns();
-                var payloadRuns = localRuns is null && Table.GroupRuns is { Count: > 0 } pr
-                    ? pr.Select(r => (r.Key, r.Offset, r.Count)).ToArray()
-                    : null;
-                var runs = localRuns ?? payloadRuns;
-                var runRows = _groupColumn is null ? Table.Rows : _groupedRows;
-                if (runs is { Length: > 0 })
+                var topLevelRuns = _groupLevels.Count > 0 ? BuildRuns(GridRows.Select(r => r.Cells).ToList(), 0) : null;
+                if (topLevelRuns is { Count: > 0 })
                 {
-                    @* ADR-0123: runs ride the payload (authored flow step) or fold right here
-                       (the user's dynamic pick) — either way this only draws them. *@
                     <div class="rviz-groups" data-testid="table-groups">
-                        @foreach (var run in runs)
-                        {
-                            <div class="rviz-group">
-                                <button type="button" class="rviz-group-head" data-testid="group-head"
-                                        @onclick="() => ToggleGroup(run.Key)">
-                                    <svg class="card-icon rviz-group-chev @((GroupExpanded(run.Key) ? null : "rviz-group-chev--folded"))" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                    <span class="rviz-group-key">@run.Key</span>
-                                    <span class="rviz-group-count">@(run.Count)</span>
+                        @* уровень-чипы: Then by — клик снимает уровень и всё выше *@
+                        <div class="rviz-group-levels" data-testid="group-levels">
+                            @for (var lv = 0; lv < _groupLevels.Count; lv++)
+                            {
+                                var column = _groupLevels[lv];
+                                <button type="button" class="rviz-group-chip" data-testid="group-chip"
+                                        @onclick="() => ToggleGrouping(column)">
+                                    @(lv == 0 ? Loc["Group by"] : Loc["Then by"]) @column ✕
                                 </button>
-                                @if (GroupExpanded(run.Key))
-                                {
-                                    <div class="rviz-group-rows">
-                                        @for (var r = 0; r < run.Count; r++)
-                                        {
-                                            var row = runRows[run.Offset + r];
-                                            <div class="rviz-group-row" data-testid="group-row">
-                                                @for (var c = 0; c < Table.Fields.Count; c++)
-                                                {
-                                                    var index = c;
-                                                    <span class="rviz-group-cell">@FormatCell(row[index], index)</span>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
+                            }
+                        </div>
+                        @RenderRuns(topLevelRuns)
                     </div>
                     break;
                 }
@@ -212,7 +188,7 @@ else
                    is never rendered). Sort/filter/pager/picking/reorder are Radzen's own —
                    LoadData mode maps them onto the typed dataset; columns bind by the field's
                    wire Name. Copy-per-column rides our header island (ADR-0115 §4). *@
-                <RadzenDataGrid TItem="RadzenRow" Data="@GridRows" Count="@GridCount"
+                <RadzenDataGrid @ref="_grid" TItem="RadzenRow" Data="@GridRows" Count="@GridCount"
                                 LoadData="@OnGridLoadData"
                                 AllowSorting="true" AllowFiltering="@(ColumnFilters)" FilterMode="FilterMode.Simple"
                                 AllowPaging="true" PageSize="@GridPageSize" AllowColumnResize="true"
@@ -228,34 +204,9 @@ else
                                                   Width="auto" Sortable="true" Filterable="@ColumnFilters"
                                                   Frozen="@(index < FrozenColumns)">
                                 <HeaderTemplate>
-                                    <div class="rviz-grid-head">
+                                    <div class="rviz-grid-head" @oncontextmenu="args => OpenColumnMenu(args, index)"
+                                         @oncontextmenu:preventDefault="true">
                                         <span>@Table.Fields[index].Header</span>
-                                        @if (AllowGrouping)
-                                        {
-                                            <button type="button"
-                                                    class="rviz-grid-copy rviz-grid-group @(_groupColumn == Table.Fields[index].Name ? "rviz-grid-group--on" : null)"
-                                                    title="@Loc["Group by this column"]"
-                                                    aria-label="@(Loc["Group by this column"] + ": " + Table.Fields[index].Name)"
-                                                    data-testid="group-by-@(Table.Fields[index].Name)"
-                                                    @onclick="() => ToggleGrouping(Table.Fields[index].Name)"
-                                                    @onclick:stopPropagation="true">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                    <rect x="3" y="3" width="18" height="5" rx="1" />
-                                                    <rect x="3" y="13" width="12" height="5" rx="1" />
-                                                </svg>
-                                            </button>
-                                        }
-                                        <button type="button"
-                                                class="rviz-grid-copy @(_copiedColumn == index ? "rviz-grid-copy--done" : null)"
-                                                title="@(_copiedColumn == index ? Loc["Copied"] : Loc["Copy column"])"
-                                                aria-label="@(_copiedColumn == index ? Loc["Copied"] : Loc["Copy column"])"
-                                                @onclick="() => CopyColumnAsync(index)"
-                                                @onclick:stopPropagation="true">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <rect x="9" y="9" width="13" height="13" rx="2" />
-                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                            </svg>
-                                        </button>
                                     </div>
                                 </HeaderTemplate>
                                 <Template Context="row">@FormatCell(row.Cells[index], index)</Template>
@@ -267,6 +218,9 @@ else
         }
     </div>
 }
+
+    <RadzenContextMenu @ref="_columnMenu" />
+
 
 @code {
     [Parameter, EditorRequired]
@@ -455,65 +409,209 @@ else
     /// the column headers grow the group button.</summary>
     private bool AllowGrouping => Context.Card.TablePresentation?.AllowGrouping ?? false;
 
+
+    private RadzenDataGrid<RadzenRow>? _grid;
+
+    private string GroupMenuText()
+    {
+        var header = Table.Fields[_menuColumn].Header;
+        return _groupLevels.Count == 0
+            ? $"{Loc["Group by this column"]}: {header}"
+            : $"{Loc["Then by this column"]}: {header}";
+    }
+    private RadzenContextMenu? _columnMenu;
+    private int _menuColumn;
+
+    private async Task OpenColumnMenu(Microsoft.AspNetCore.Components.Web.MouseEventArgs args, int columnIndex)
+    {
+        _menuColumn = columnIndex;
+        if (_columnMenu is null)
+        {
+            return;
+        }
+
+        var column = Table.Fields[columnIndex].Name;
+        var items = new List<ContextMenuItem>
+        {
+            new() { Text = Loc["Sort ascending"], Value = "sort-asc", Icon = "arrow_upward" },
+            new() { Text = Loc["Sort descending"], Value = "sort-desc", Icon = "arrow_downward" },
+        };
+
+        if (AllowGrouping)
+        {
+            items.Add(new ContextMenuItem
+            {
+                Text = _groupLevels.Count == 0
+                    ? $"{Loc["Group by this column"]}: {Table.Fields[columnIndex].Header}"
+                    : $"{Loc["Then by this column"]}: {Table.Fields[columnIndex].Header}",
+                Value = "group",
+                Icon = "outline_stack",
+            });
+
+            if (_groupLevels.Any(c => string.Equals(c, column, StringComparison.OrdinalIgnoreCase)))
+            {
+                items.Add(new ContextMenuItem { Text = Loc["Ungroup by this column"], Value = "ungroup", Icon = "close" });
+            }
+        }
+
+        items.Add(new ContextMenuItem { Text = Loc["Copy column"], Value = "copy", Icon = "content_copy" });
+
+        await _columnMenu.Open(args, new ContextMenuOptions { Items = items, Click = OnColumnMenuClick });
+    }
+
+    private void OnColumnMenuClick(MenuItemEventArgs args)
+    {
+        var column = Table.Fields[_menuColumn].Name;
+        switch (args.Value as string)
+        {
+            case "sort-asc":
+            case "sort-desc":
+                _ = InvokeAsync(async () =>
+                {
+                    if (_grid is not null)
+                    {
+                        _grid.OrderBy($"{column} {(string.Equals(args.Value as string, "sort-desc") ? "desc" : "asc")}");
+                        await _grid.Reload();
+                    }
+                });
+                break;
+            case "group":
+            case "ungroup":
+                ToggleGrouping(column);
+                break;
+            case "copy":
+                _ = InvokeAsync(() => CopyColumnAsync(_menuColumn));
+                break;
+        }
+
+        _columnMenu?.Close();
+    }
+
     private readonly HashSet<string> _expandedGroups = new(StringComparer.Ordinal);
 
-    private string? _groupColumn;
+    private readonly List<string> _groupLevels = [];
 
-    /// <summary>Dynamic grouping (ADR-0123's interactive face): the user picks the column —
-    /// the runs fold the loaded rows right here (the spec declares the knob with
-    /// <c>grouping = on</c>; the static flow-step face stays for authored pipelines).</summary>
+    /// <summary>Dynamic grouping (ADR-0123's interactive face), "Then by" included: each
+    /// column click pushes a grouping level; clicking a level's chip pops it and everything
+    /// above. The runs fold the loaded rows right here.</summary>
     private void ToggleGrouping(string column)
     {
-        _groupColumn = string.Equals(_groupColumn, column, StringComparison.OrdinalIgnoreCase)
-            ? null
-            : column;
+        var level = _groupLevels.FindIndex(c => string.Equals(c, column, StringComparison.OrdinalIgnoreCase));
+        if (level >= 0)
+        {
+            _groupLevels.RemoveRange(level, _groupLevels.Count - level);
+        }
+        else
+        {
+            _groupLevels.Add(column);
+        }
+
         _expandedGroups.Clear();
         StateHasChanged();
     }
 
-    private (string Key, int Offset, int Count)[] LocalRuns()
-    {
-        var fieldIndex = -1;
-        for (var i = 0; i < Table.Fields.Count; i++)
-        {
-            if (string.Equals(Table.Fields[i].Name, _groupColumn, StringComparison.OrdinalIgnoreCase))
-            {
-                fieldIndex = i;
-                break;
-            }
-        }
+    private bool IsGroupedBy(string column) =>
+        _groupLevels.Any(c => string.Equals(c, column, StringComparison.OrdinalIgnoreCase));
 
-        if (fieldIndex < 0)
+    private IReadOnlyList<DashValue[]> _groupedRows = [];
+
+    /// <summary>Recursive runs over the grouping levels ("Then by" — level N groups inside
+    /// level N-1): a single ordered pass per level, LINQ IGrouping semantics with DashValue keys.</summary>
+    private List<GroupRun> BuildRuns(IReadOnlyList<DashValue[]> rows, int level)
+    {
+        if (level >= _groupLevels.Count)
         {
             return [];
         }
 
-        var rows = GridRows;
-        var indexed = rows
-            .Select((row, i) => (i, key: FormatCell(row.Cells[fieldIndex], fieldIndex)))
-            .OrderBy(p => p.key, StringComparer.Ordinal)
-            .ThenBy(p => p.i)
-            .ToList();
-
-        var runs = new List<(string, int, int)>();
-        for (var o = 0; o < indexed.Count;)
+        var fieldName = _groupLevels[level];
+        var fieldIndex = FieldIndex(fieldName);
+        var runs = new List<GroupRun>();
+        for (var o = 0; o < rows.Count;)
         {
-            var key = indexed[o].key;
+            var key = FormatCell(rows[o][fieldIndex], fieldIndex);
             var len = 1;
-            while (o + len < indexed.Count && string.Equals(indexed[o + len].key, key, StringComparison.Ordinal))
+            while (o + len < rows.Count && string.Equals(FormatCell(rows[o + len][fieldIndex], fieldIndex), key, StringComparison.Ordinal))
             {
                 len++;
             }
 
-            runs.Add((key, o, len));
+            var slice = rows.Skip(o).Take(len).ToList();
+            runs.Add(new GroupRun(key, level, slice, BuildRuns(slice, level + 1)));
             o += len;
         }
 
-        _groupedRows = indexed.Select(p => rows[p.i].Cells).ToList();
-        return runs.ToArray();
+        return runs.OrderBy(r => r.Key, StringComparer.Ordinal).ToList();
     }
 
-    private IReadOnlyList<DashValue[]> _groupedRows = [];
+    private int FieldIndex(string fieldName)
+    {
+        for (var i = 0; i < Table.Fields.Count; i++)
+        {
+            if (string.Equals(Table.Fields[i].Name, fieldName, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
+    private sealed record GroupRun(string Key, int Level, List<DashValue[]> Rows, List<GroupRun> Subruns);
+
+    private RenderFragment RenderRuns(List<GroupRun> runs) => __builder =>
+    {
+        foreach (var run in runs)
+        {
+            var key = run.Key;
+            <div class="rviz-group">
+                <button type="button" class="rviz-group-head" data-testid="group-head"
+                        @onclick="() => ToggleGroup(key)">
+                    <svg class="card-icon rviz-group-chev @((GroupExpanded(key) ? null : "rviz-group-chev--folded"))" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                    <span class="rviz-group-key">@run.Key</span>
+                    <span class="rviz-group-count">@(run.Rows.Count)</span>
+                </button>
+                @if (GroupExpanded(key))
+                {
+                    if (run.Subruns.Count > 0)
+                    {
+                        <div class="rviz-group-nested">
+                            @RenderRuns(run.Subruns)
+                        </div>
+                    }
+                    else
+                    {
+                        // Тот же компонент (договор не менялся): RadzenDataGrid на строках группы.
+                        var groupRows = run.Rows.Select(cells => new RadzenRow(cells)).ToList();
+                        <RadzenDataGrid TItem="RadzenRow" Data="@groupRows"
+                                        AllowSorting="false" AllowFiltering="false" AllowPaging="false"
+                                        AllowColumnResize="true" AllowColumnPicking="false"
+                                        Wrap="true" Density="Density.Compact" Style="width:100%">
+                            <Columns>
+                                @for (var c = 0; c < Table.Fields.Count; c++)
+                                {
+                                    var index = c;
+                                    <RadzenDataGridColumn TItem="RadzenRow" Property="@Table.Fields[index].Name"
+                                                          Title="@Table.Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                                          Width="auto" Frozen="@(index < FrozenColumns)">
+                                        <HeaderTemplate>
+                                            <div class="rviz-grid-head" @oncontextmenu="args => OpenColumnMenu(args, index)"
+                                                 @oncontextmenu:preventDefault="true">
+                                                <span>@Table.Fields[index].Header</span>
+                                            </div>
+                                        </HeaderTemplate>
+                                        <Template Context="row">@FormatCell(row.Cells[index], index)</Template>
+                                    </RadzenDataGridColumn>
+                                }
+                            </Columns>
+                        </RadzenDataGrid>
+                    }
+                }
+            </div>
+        }
+    };
 
     private bool GroupExpanded(string key) => _expandedGroups.Contains(key);
 
