@@ -66,6 +66,34 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
     private string FormatCell(object? value, int fieldIndex) =>
         LabelFormat.FormatObject(value, Fields[fieldIndex].Format, FormatDefaults);
 
+    private bool IsDateTimeColumn(int index) =>
+        Fields[index].Kind is DashPrimitiveKind.DateTime or DashPrimitiveKind.Date;
+
+    private readonly Dictionary<string, DateTime?> _dateFilters = new();
+
+    private DateTime? DateFilterOf(int index) =>
+        _dateFilters.TryGetValue(Fields[index].Name, out var value) ? value : null;
+
+    /// <summary>The date filter is the whole picked day: [day, day+1) as a custom
+    /// expression (the built-in «равно» compares the timestamp at midnight and never
+    /// matches a datetime column with times).</summary>
+    private async Task OnDateFilterChanged(RadzenDataGridColumn<TItem> column, int index, DateTime? value)
+    {
+        var name = Fields[index].Name;
+        if (value is { } day)
+        {
+            _dateFilters[name] = day;
+            var next = day.Date.AddDays(1);
+            await column.SetCustomFilterExpressionAsync(
+                $"it.{name} >= DateTime({day.Year}, {day.Month}, {day.Day}) && it.{name} < DateTime({next.Year}, {next.Month}, {next.Day})");
+        }
+        else
+        {
+            _dateFilters.Remove(name);
+            await column.SetCustomFilterExpressionAsync(null);
+        }
+    }
+
     private TextAlign ColumnTextAlign(int index) =>
         Fields[index].Alignment switch
         {

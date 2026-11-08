@@ -31,21 +31,46 @@
         @for (var c = 0; c < Fields.Count; c++)
         {
             var index = c;
-            <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
-                                  Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
-                                  Width="auto" Sortable="true" Filterable="@ColumnFilters"
-                                  Frozen="@(index < FrozenColumns)">
-                <Template Context="row">
-                    @* The column menu rides the cell itself — the column index is known
-                       here at render time, no DOM round-trip. *@
-                    <div class="rviz-cell" @oncontextmenu="args => OpenColumnMenu(args, index)"
-                         @oncontextmenu:preventDefault="true">
-                        @FormatCell(PropertyOf(row, index), index)
-                    </div>
-                </Template>
-            </RadzenDataGridColumn>
+            @* A picked day filters that whole day — timestamp equality never matches
+               (Radzen's built-in «равно» compares 00:00:00 against 18:25). A custom
+               expression gives the [day, day+1) range; other columns keep the native
+               operator menu. *@
+            if (IsDateTimeColumn(index) && ColumnFilters)
+            {
+                <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
+                                      Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                      Width="auto" Sortable="true" Filterable="true"
+                                      Frozen="@(index < FrozenColumns)">
+                    <FilterTemplate Context="column">
+                        <RadzenDatePicker TValue="DateTime?" Value="@DateFilterOf(index)"
+                                          Change="@(v => OnDateFilterChanged(column, index, v))"
+                                          ShowTime="false" AllowClear="true"
+                                          Style="width:100%" Placeholder="@Loc["Date"]" />
+                    </FilterTemplate>
+                    <Template Context="row">@CellFragment(row, index)</Template>
+                </RadzenDataGridColumn>
+            }
+            else
+            {
+                <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
+                                      Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                      Width="auto" Sortable="true" Filterable="@ColumnFilters"
+                                      Frozen="@(index < FrozenColumns)">
+                    <Template Context="row">@CellFragment(row, index)</Template>
+                </RadzenDataGridColumn>
+            }
         }
     </Columns>
 </RadzenDataGrid>
 
 <RadzenContextMenu @ref="_columnMenu" />
+
+@code {
+    /// <summary>The cell body: formatted value + the column context menu (the column
+    /// index is known at render time — no DOM round-trip).</summary>
+    private RenderFragment CellFragment(TItem row, int index) => __builder =>
+    {
+        <div class="rviz-cell" @oncontextmenu="args => OpenColumnMenu(args, index)"
+             @oncontextmenu:preventDefault="true">@FormatCell(PropertyOf(row, index), index)</div>
+    };
+}
