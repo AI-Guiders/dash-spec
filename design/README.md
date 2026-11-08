@@ -1,6 +1,6 @@
 # Architecture Decision Records — dash-spec
 
-ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0118**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
+ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный индекс ниже; новый ADR — `DASHSPEC-ADR-NNNN-short-title.md`, следующий номер — **0126**. Статусы: [status-lifecycle.md](status-lifecycle.md) (индекс — lifecycle; **Implemented** / **частично** — в шапке ADR, как в Cascade IDE).
 
 **Merge / SSOT precedence:** [ADR-0057](DASHSPEC-ADR-0057-resolution-registry.md) — единый реестр «кто побеждает»; остальные ADR ссылаются §, не дублируют chain.
 
@@ -120,3 +120,11 @@ ADR хранятся в `design/` (префикс `DASHSPEC-ADR-`). Полный
 | [0115](DASHSPEC-ADR-0115-radzen-table-grid-extras.md) | Radzen-таблица — фичи грида: picking, reorder, frozen, copy | Accepted |
 | [0116](DASHSPEC-ADR-0116-radzen-heatmap-feedback.md) | Radzen-тепловая карта — выделение, цифры без эвристик, `cell_size` | Accepted |
 | [0117](DASHSPEC-ADR-0117-dsc-cli-composition-root.md) | dsc — CLI composition root; компилятор — библиотека за контрактом | Proposed |
+| [0118](DASHSPEC-ADR-0118-filter-widget-role-contract.md) | Контракт ролей фильтров — skin уходит стеку, реализации замещаемы | Accepted |
+| [0119](DASHSPEC-ADR-0119-filter-options-data-domain.md) | Опции field-фильтра — из скоупа экземпляра | Superseded by 0120 |
+| [0120](DASHSPEC-ADR-0120-filters-as-flow-nodes.md) | Фильтры — узлы графа потоков | Proposed |
+| [0121](DASHSPEC-ADR-0121-group-by-branch.md) | Группировка — database-ветка графа в отдельный порт карточки | Accepted |
+| [0122](DASHSPEC-ADR-0122-default-flow-wiring.md) | Default flow wiring — компилятор синтезирует линейные дуги | Accepted |
+| [0123](DASHSPEC-ADR-0123-runtime-grouping.md) | Группировка/порядок — runtime-трансформеры payload→payload | Proposed |
+| [0124](DASHSPEC-ADR-0124-row-types-compiled-by-dsc.md) | Row types компилируются в CLR-типы (dsc build types, Roslyn) | Proposed |
+| [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа | Proposed |

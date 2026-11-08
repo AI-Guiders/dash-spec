@@ -13,7 +13,7 @@ relates:
 
 ---
 
-# DASHSPEC-ADR-0124: Row types становятся CLR-типами через Source Generators
+# DASHSPEC-ADR-0124: Row types становятся CLR-типами через dsc build types (Roslyn CSharpCompilation)
 
 ## Context
 
