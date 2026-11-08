@@ -6,27 +6,20 @@ open DashSpec.Modeling.Parse.Lexing
 
 module TransformStepParser =
 
-    let private readTimeShiftZoneValue (reader: TokenReader) =
+    let private literalTokenKind =
+        function
+        | BuiltinScalarTransforms.ParamLiteral.TimeShiftZone -> TokenKind.TimeShift
+        | BuiltinScalarTransforms.ParamLiteral.IanaZoneName -> TokenKind.IanaZone
+        | BuiltinScalarTransforms.ParamLiteral.AnyString -> TokenKind.String
+
+    let private readLiteralValue (reader: TokenReader) =
         reader.SkipNewlines()
 
         match reader.CurrentKind with
+        | TokenKind.String -> reader.ReadString()
         | TokenKind.TimeShift -> reader.ReadTimeShift()
-        | TokenKind.String -> reader.ReadString()
-        | TokenKind.IanaZone ->
-            raise (
-                DashSpecParseException(
-                    "to_zone requires a TimeShift literal (UTC±…); use transform use iana_to_timeshift for IANA zones."))
-        | _ -> raise (reader.Unexpected "TimeShift zone literal (e.g. UTC+3)")
-
-    let private readIanaZoneValue (reader: TokenReader) =
-        reader.SkipNewlines()
-
-        match reader.CurrentKind with
         | TokenKind.IanaZone -> reader.ReadIanaZone()
-        | TokenKind.String -> reader.ReadString()
-        | TokenKind.TimeShift ->
-            raise (DashSpecParseException("iana_to_timeshift requires an IANA zone literal (e.g. Europe/Moscow)."))
-        | _ -> raise (reader.Unexpected "IANA zone literal")
+        | _ -> raise (reader.Unexpected "assignment value")
 
     let private readAssignmentValue (reader: TokenReader) =
         reader.SkipNewlines()
@@ -48,19 +41,24 @@ module TransformStepParser =
 
         sb.ToString()
 
+    /// Generic: each plugin declares its parameter contract next to its implementation
+    /// (BuiltinScalarTransforms.paramContract, neutral literal kinds). The parser maps
+    /// the contract to token kinds; no contract → free-form assignment reader. The
+    /// parser knows no plugin names.
     let private readParameterValue (pluginId: string) (key: string) (reader: TokenReader) =
-        if String.Equals(pluginId, "to_zone", StringComparison.OrdinalIgnoreCase)
-           && String.Equals(key, "zone", StringComparison.OrdinalIgnoreCase) then
-            readTimeShiftZoneValue reader
-        elif String.Equals(pluginId, "iana_to_timeshift", StringComparison.OrdinalIgnoreCase)
-                 && (String.Equals(key, "iana", StringComparison.OrdinalIgnoreCase)
-                     || String.Equals(key, "zone", StringComparison.OrdinalIgnoreCase)) then
-            readIanaZoneValue reader
-        elif String.Equals(pluginId, "timeshift_to_iana", StringComparison.OrdinalIgnoreCase)
-                 && String.Equals(key, "zone", StringComparison.OrdinalIgnoreCase) then
-            readTimeShiftZoneValue reader
-        else
-            readAssignmentValue reader
+        let spec =
+            BuiltinScalarTransforms.paramContract pluginId
+            |> Option.bind (fun contract ->
+                contract.Params
+                |> List.tryFind (fun p -> String.Equals(p.Key, key, StringComparison.OrdinalIgnoreCase)))
+
+        match spec with
+        | Some spec ->
+            match reader.CurrentKind with
+            | kind when spec.Literals |> List.exists (fun literal -> literalTokenKind literal = kind) ->
+                readLiteralValue reader
+            | _ -> raise (DashSpecParseException(spec.Hint))
+        | None -> readAssignmentValue reader
 
     let parseTransformUseBlock (reader: TokenReader) (transformerId: string) : DashflowTransformStepDef =
         reader.ExpectKeyword "use"
@@ -91,14 +89,9 @@ module TransformStepParser =
 
             { PluginId = pluginId; Parameters = normalized }
         else
-            if String.Equals(pluginId, "to_zone", StringComparison.OrdinalIgnoreCase) then
+            match BuiltinScalarTransforms.paramContract pluginId with
+            | Some contract when contract.RequiresParameterBlock ->
                 raise (
                     DashSpecParseException(
-                        $"transformer '{transformerId}': transform use to_zone requires a parameter block (zone = UTC±…)."))
-
-            if String.Equals(pluginId, "iana_to_timeshift", StringComparison.OrdinalIgnoreCase) then
-                raise (
-                    DashSpecParseException(
-                        $"transformer '{transformerId}': transform use iana_to_timeshift requires a parameter block (iana = …)."))
-
-            { PluginId = pluginId; Parameters = [||] }
+                        $"transformer '{transformerId}': transform use {pluginId} requires a parameter block."))
+            | _ -> { PluginId = pluginId; Parameters = [||] }

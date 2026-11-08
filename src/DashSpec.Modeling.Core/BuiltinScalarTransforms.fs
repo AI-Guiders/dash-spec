@@ -4,6 +4,64 @@ open System
 
 module BuiltinScalarTransforms =
 
+    /// <summary>
+    /// Parse-time parameter contract, declared by each transform plugin next to its
+    /// validate/normalize code: which literal kinds a parameter accepts and the hint
+    /// that rides the diagnostic on mismatch. Layering: Core speaks in neutral literal
+    /// terms; the parser maps them to its token kinds. No schema for a key → the
+    /// generic free-form assignment reader.
+    /// </summary>
+    type ParamLiteral =
+        | TimeShiftZone
+        | IanaZoneName
+        | AnyString
+
+    type ParamSpec = {
+        Key: string
+        Literals: ParamLiteral list
+        Hint: string
+    }
+
+    type ParamContract = {
+        RequiresParameterBlock: bool
+        Params: ParamSpec list
+    }
+
+    let private contract (requiresBlock: bool) (params': ParamSpec list) =
+        { RequiresParameterBlock = requiresBlock; Params = params' }
+
+    // Each plugin declares its own contract right where it is implemented.
+    let private toZoneContract =
+        contract true [
+            { Key = "zone"
+              Literals = [ TimeShiftZone; AnyString ]
+              Hint = "to_zone requires a TimeShift literal (UTC±…); for IANA zones use transform use iana_to_timeshift." }
+        ]
+
+    let private ianaToTimeShiftContract =
+        contract true [
+            { Key = "iana"; Literals = [ IanaZoneName; AnyString ]; Hint = "iana_to_timeshift requires an IANA zone literal (e.g. Europe/Moscow)." }
+            { Key = "zone"; Literals = [ IanaZoneName; AnyString ]; Hint = "iana_to_timeshift requires an IANA zone literal (e.g. Europe/Moscow)." }
+        ]
+
+    let private timeShiftToIanaContract =
+        // Historical asymmetry, preserved: a bare step parses; validate* demands
+        // zone/offset_minutes only when a parameter block exists.
+        contract false [
+            { Key = "zone"; Literals = [ TimeShiftZone; AnyString ]; Hint = "timeshift_to_iana requires a TimeShift literal (UTC±…)." }
+        ]
+
+    /// The plugin's declared parameter contract, if any (case-insensitive id).
+    let paramContract (pluginId: string) : ParamContract option =
+        if String.Equals(pluginId, "to_zone", StringComparison.OrdinalIgnoreCase) then
+            Some toZoneContract
+        elif String.Equals(pluginId, "iana_to_timeshift", StringComparison.OrdinalIgnoreCase) then
+            Some ianaToTimeShiftContract
+        elif String.Equals(pluginId, "timeshift_to_iana", StringComparison.OrdinalIgnoreCase) then
+            Some timeShiftToIanaContract
+        else
+            None
+
     let private findParam (parameters: (string * string)[]) key =
         parameters
         |> Array.tryFind (fun (k, _) -> String.Equals(k, key, StringComparison.OrdinalIgnoreCase))
