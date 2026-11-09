@@ -94,19 +94,6 @@ public sealed class CardRenderService(
 
     /// <summary>Граф (G) получения данных карточки, если у неё есть flow-вход; иначе null.</summary>
 
-    /// <summary>ADR-0126: an order step always rides the query — it is the database
-    /// query order; the layering invariant has already guaranteed its position.</summary>
-    private static OrderByStepSpec? ResolvePushedOrderBy(DashflowExecutionPath? flowPath) =>
-        OrderByStepSpec.Find(flowPath);
-
-    /// <summary>ADR-0125: a card reading a managed view (the dashspec_ prefix) must not
-    /// re-apply the summarize step — the GROUP BY already lives inside the physical view;
-    /// re-pushing it would aggregate the aggregates.</summary>
-    private static GroupByStepSpec? ResolveGroupBy(CardDefinition card, DashflowExecutionPath? flowPath) =>
-        card.DataSource.Value.StartsWith("dashspec_", StringComparison.OrdinalIgnoreCase)
-            ? null
-            : GroupByStepSpec.Find(flowPath);
-
     /// <summary>ADR-0124: the wire row type name — present only when the slot's data source
     /// is a flow (RowsType rides the source).</summary>
     private static string? RowsTypeNameOf(CardDefinition card) =>
@@ -156,9 +143,7 @@ public sealed class CardRenderService(
             document,
             document.SqlDialect,
             specDirectory,
-            reportTimePolicy: reportTime,
-            groupByStep: ResolveGroupBy(effective, flowPath),
-            orderByStep: ResolvePushedOrderBy(flowPath));
+            reportTimePolicy: reportTime);
         var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
         rows = DashflowCardDataPipeline.ApplyTransforms(document, effective, rows);
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
@@ -494,9 +479,7 @@ public sealed class CardRenderService(
                     document.SqlDialect,
                     specDirectory,
                     slotOverlay,
-                    ResolveReportTime(document),
-                    groupByStep: GroupByStepSpec.Find(ResolveFlowPath(document, effective)),
-                    orderByStep: ResolvePushedOrderBy(ResolveFlowPath(document, effective)));
+                    ResolveReportTime(document));
                 var rows = await connector.QueryAsync(query, cancellationToken).ConfigureAwait(false);
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);

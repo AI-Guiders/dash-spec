@@ -188,34 +188,39 @@ public static class Program
         using var conn = new Microsoft.Data.SqlClient.SqlConnection(connection);
         conn.Open();
 
-        var orphans = new List<string>();
+        var orphans = new List<(string Name, string Type)>();
         using (var find = conn.CreateCommand())
         {
             find.CommandText = """
-                SELECT v.name
-                FROM sys.views v
-                WHERE v.name LIKE 'dashspec[_]%'
+                SELECT o.name, RTRIM(o.type)
+                FROM sys.objects o
+                WHERE o.name LIKE 'dashspec[_]%'
+                  AND o.type IN ('V', 'IF', 'TF', 'FN')
                   AND NOT EXISTS (
                     SELECT 1 FROM dashspec_view_leases l
-                    WHERE l.view_name = v.name AND l.project_uid <> @project
+                    WHERE l.view_name = o.name AND l.project_uid <> @project
                   )
                 """;
             find.Parameters.AddWithValue("@project", projectUid);
             using var reader = find.ExecuteReader();
             while (reader.Read())
             {
-                if (!current.Contains(reader.GetString(0)))
+                var name = reader.GetString(0);
+                var objType = reader.GetString(1);
+                if (!current.Contains(name))
                 {
-                    orphans.Add(reader.GetString(0));
+                    orphans.Add((name, objType));
                 }
             }
         }
 
-        foreach (var orphan in orphans)
+        foreach (var (orphan, objType) in orphans)
         {
             var safeName = orphan.Replace("]", "]]");
             using var drop = conn.CreateCommand();
-            drop.CommandText = $"DROP VIEW IF EXISTS [{safeName}]";
+            drop.CommandText = objType == "V"
+                ? $"DROP VIEW IF EXISTS [{safeName}]"
+                : $"DROP FUNCTION IF EXISTS [{safeName}]";
             drop.ExecuteNonQuery();
 
             using var clearLease = conn.CreateCommand();
@@ -260,6 +265,13 @@ public static class Program
                 )
                 """;
             leaseTable.ExecuteNonQuery();
+        }
+
+        using (var clearOwn = conn.CreateCommand())
+        {
+            clearOwn.CommandText = "DELETE FROM dashspec_view_leases WHERE project_uid = @project;";
+            clearOwn.Parameters.AddWithValue("@project", projectUid);
+            clearOwn.ExecuteNonQuery();
         }
 
         foreach (var view in views)

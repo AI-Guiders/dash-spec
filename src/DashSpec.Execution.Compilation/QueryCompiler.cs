@@ -22,7 +22,7 @@ public static class QueryCompiler
         ReportTimePolicy? reportTimePolicy = null,
         GroupByStepSpec? groupByStep = null,
         OrderByStepSpec? orderByStep = null) =>
-        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy, groupByStep: groupByStep);
+        Compile(card, filters, filterDefinitions, rowTypes, SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql), specDirectory, cellDrillOverlay, reportTimePolicy, groupByStep: groupByStep, orderByStep: orderByStep);
 
     public static CompiledQuery Compile(
         CardDefinition card,
@@ -34,8 +34,12 @@ public static class QueryCompiler
         CardCellDrillOverlay? cellDrillOverlay = null,
         ReportTimePolicy? reportTimePolicy = null,
         GroupByStepSpec? groupByStep = null,
-        OrderByStepSpec? orderByStep = null) =>
-        Compile(
+        OrderByStepSpec? orderByStep = null)
+    {
+        var flowPath = ResolveFlowPath(document, card);
+        var effectiveGroupBy = groupByStep ?? ResolveGroupBy(card, flowPath);
+        var effectiveOrderBy = orderByStep ?? OrderByStepSpec.Find(flowPath);
+        return Compile(
             card,
             filters,
             filterDefinitions,
@@ -45,7 +49,37 @@ public static class QueryCompiler
             cellDrillOverlay,
             reportTimePolicy,
             ResolveFilterDerives(document),
-            groupByStep);
+            effectiveGroupBy,
+            effectiveOrderBy);
+    }
+
+    private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition card)
+    {
+        if (document.Dashflow is null || card.FlowInput?.Value is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return FlowCardExecution.ResolvePath(document, card.FlowInput.Value);
+        }
+        catch (DashSpecParseException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>ADR-0125: a card reading a managed view already has its summarize step
+    /// baked into the physical view; only raw/unmanaged sources push GROUP BY at query time.</summary>
+    private static GroupByStepSpec? ResolveGroupBy(CardDefinition card, DashflowExecutionPath? flowPath) =>
+        card.DataSource.Value.StartsWith("dashspec_", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : GroupByStepSpec.Find(flowPath);
 
     public static CompiledQuery Compile(
         CardDefinition card,
