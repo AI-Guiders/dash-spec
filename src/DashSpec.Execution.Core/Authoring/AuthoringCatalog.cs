@@ -27,10 +27,7 @@ public static class AuthoringCatalog
     /// | `module catalog &lt;id&gt;` | каталог entry → dashspec |
     /// | `module host &lt;id&gt;` | host shell (layouts) |
     ///
-    /// Юниты ссылаются друг на друга импортом по namespace: `import &lt;kind&gt; from &lt;Namespace&gt; [as &lt;alias&gt;]`.
-    ///
-    /// ADR: 0024 (document layers), 0011 (tab modules), 0039 (chart chrome), 0098 (import by namespace),
-    /// 0101 (единый тип юнита), 0102 (один язык).
+    /// Юниты ссылаются друг друга импортом по namespace: `import &lt;kind&gt; from &lt;Namespace&gt; [as &lt;alias&gt;]`.
     /// </summary>
     [AuthoringTopic("overview", 10)]
     public static class Overview { }

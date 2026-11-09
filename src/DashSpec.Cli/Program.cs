@@ -454,13 +454,16 @@ public static class Program
     private static void PrintHelp()
     {
         Console.WriteLine("""
-            dsc — DashSpec CLI (DASHSPEC-ADR-0117)
+            dsc — DashSpec CLI
 
             Usage:
               dsc validate <path> [--toml <dash-spec.toml>]
                   Validate a .ds spec, host module or catalog. Content-first: the module
-                  root classifies the unit. Plugin vocabulary mirrors the web Host: the
-                  same kernel, the same dash-spec.toml policy (ADR-0117 decision 3).
+                  root classifies the unit. Plugin vocabulary mirrors the web Host.
+              dsc build types <dir>
+                  Compile row types from .ds units into TypedRows.dll.
+              dsc build views <dir> [--print] [--connection <connStr>] [--prune]
+                  Emit or apply managed views from 'module flow <id> view' units.
             """);
     }
 

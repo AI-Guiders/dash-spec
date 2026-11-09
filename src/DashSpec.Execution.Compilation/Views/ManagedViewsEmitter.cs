@@ -77,8 +77,8 @@ public static class ManagedViewsEmitter
                     var unbound = allParams.First(p => p.ColumnBinding is not { Value: not null and not "" });
                     throw new InvalidOperationException(
                         $"flow '{module.FlowId}': param port '{unbound.Name}' has no column binding — a flat VIEW " +
-                        "cannot carry a runtime filter and an iTVF needs the bound column (ADR-0125 §3). " +
-                        "Bind the filter's column or drop the param port from the view chain.");
+                        "cannot carry a runtime filter and an inline function requires the bound column. " +
+                        "Add 'bind <column>' to the param port or remove the param port from the view chain.");
                 }
 
                 if (boundParams.Count > 0)
@@ -98,8 +98,7 @@ public static class ManagedViewsEmitter
                 var flatSelect = BuildSelect(module, source, chain, from, catalog, whereClause: null)
                     ?? throw new InvalidOperationException(
                         $"flow '{module.FlowId}': chain from source '{source.Id}' cannot compile into a flat VIEW " +
-                        "(a runtime-parameterized step without a column binding is in the chain — the binding rides " +
-                        "the ADR-0120 param port; see DASHSPEC-ADR-0125 §3).");
+                        "(add 'bind <column>' to parameterized ports in the chain).");
 
                 var flatName = $"dashspec_{Slug(module.FlowId)}_{Slug(chainId)}_{Sha12(flatSelect ?? throw new InvalidOperationException("unreachable — null handled above"))}";
                 views.Add(new ManagedView(flatName, module.FlowId, chainId, rowType, flatSelect, DdlFor(flatName, flatSelect, dialect)));

@@ -74,7 +74,7 @@ public static class QueryCompiler
         }
     }
 
-    /// <summary>ADR-0125: a card reading a managed view already has its summarize step
+    /// <summary>A card reading a managed view already has its summarize step
     /// baked into the physical view; only raw/unmanaged sources push GROUP BY at query time.</summary>
     private static GroupByStepSpec? ResolveGroupBy(CardDefinition card, DashflowExecutionPath? flowPath) =>
         card.DataSource.Value.StartsWith("dashspec_", StringComparison.OrdinalIgnoreCase)
