@@ -219,20 +219,23 @@ summarize/order): `type_effect = extend` (новая колонка), `locality 
 | | db | runtime |
 |---|---|---|
 | сортировка | `order` | `sort` |
-| первые N | **`take`** | **`head`** |
+| первые N | **`limit`** | **`take`** |
 
-- `database/take.ds` — `locality = database`, `param n: int`; SQL-лицо —
-  `TOP N` / `LIMIT N` в компилируемой цепи. В view-цепи пара `order` + `take`
+Закономерность пары: db-слово — SQL-естественное (order → ORDER BY, limit →
+LIMIT/TOP), runtime-слово — бытовое (sort, take).
+
+- `database/limit.ds` — `locality = database`, `param n: int`; SQL-лицо —
+  `TOP N` / `LIMIT N` в компилируемой цепи. В view-цепи пара `order` + `limit`
   уходит во внутренний подзапрос (VIEW не несёт ни ORDER BY, ни осмысленный LIMIT).
-- `runtime/head.ds` — `locality = runtime`, `param n: int`; первые N строк батча,
+- `runtime/take.ds` — `locality = runtime`, `param n: int`; первые N строк батча,
   когда SQL-лица нет.
 - **Не путать с интерактивным top-фильтром**: `filter … top` — виджет читателя,
   его query-time TOP остаётся в `ResolveTableLimit` (`QueryCompiler.cs:120-122`);
-  `take n` — авторская трансформация, фиксированное свойство цепи. Одна ось —
+  `limit n` — авторская трансформация, фиксированное свойство цепи. Одна ось —
   автор ↔ пользователь, в отличие от оси db ↔ runtime.
-- `take` без предшествующего `order` — легально: «первые N» по естественному
+- `limit` без предшествующего `order` — легально: «первые N» по естественному
   порядку хранения источника — законное намерение (какие именно строки — забота
-  автора, не языка). Пара `order` + `take` — для осмысленного топа.
+  автора, не языка). Пара `order` + `limit` — для осмысленного топа.
 
 ### 4. G⁻¹ и drill — решено конструктивно, запрета нет
 
