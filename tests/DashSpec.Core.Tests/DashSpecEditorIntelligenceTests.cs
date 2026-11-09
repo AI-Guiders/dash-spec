@@ -79,7 +79,8 @@ public sealed class DashSpecEditorIntelligenceTests
     public void GetCompletions_use_flow_completes_flow_ids()
     {
         var index = new DashSpecWorkspaceIndex();
-        index.RegisterUnit(new DashSpecUnitDeclaration("flow", "EventsReport", Path.Combine(Path.GetTempPath(), "demo-report.ds"), 1));
+        // prefix "Lic" must match the registered id — BuildIdItems filters StartsWith(prefix)
+        index.RegisterUnit(new DashSpecUnitDeclaration("flow", "LicenseReport", Path.Combine(Path.GetTempPath(), "demo-report.ds"), 1));
 
         var text = """
             module section users
@@ -100,7 +101,7 @@ public sealed class DashSpecEditorIntelligenceTests
             column: 31,
             index);
 
-        Assert.Contains(items, item => item.Label.Equals("EventsReport", StringComparison.Ordinal));
+        Assert.Contains(items, item => item.Label.Equals("LicenseReport", StringComparison.Ordinal));
     }
 
     [Fact]
