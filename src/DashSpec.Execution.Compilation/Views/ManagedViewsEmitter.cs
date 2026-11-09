@@ -49,6 +49,14 @@ public static class ManagedViewsEmitter
             return views;
         }
 
+        // ADR-0127: composite row types are synthesized at parse time and ride the
+        // module — the emitter resolves them like any declared type (SSOT: the module).
+        if (module.InferredRowTypes is { Length: > 0 })
+        {
+            catalog = TypeCatalogModule.ofDefinitions(
+                [.. catalog.Definitions.Values, .. module.InferredRowTypes]);
+        }
+
         foreach (var source in module.Sources)
         {
             var from = ResolveFrom(module, source, catalog);
@@ -75,7 +83,7 @@ public static class ManagedViewsEmitter
                 if (allParams.Count > boundParams.Count)
                 {
                     var unbound = allParams.First(p => p.ColumnBinding is not { Value: not null and not "" });
-                    throw new InvalidOperationException(
+                    throw new DashSpecFlowException(
                         $"flow '{module.FlowId}': param port '{unbound.Name}' has no column binding — a flat VIEW " +
                         "cannot carry a runtime filter and an inline function requires the bound column. " +
                         "Add 'bind <column>' to the param port or remove the param port from the view chain.");
@@ -85,7 +93,7 @@ public static class ManagedViewsEmitter
                 {
                     var (parameters, where) = BuildParameters(boundParams);
                     var select = BuildSelect(module, source, chain, from, catalog, where)
-                        ?? throw new InvalidOperationException(
+                        ?? throw new DashSpecFlowException(
                             $"flow '{module.FlowId}': parameterized chain from '{source.Id}' failed to compile.");
                     var name = $"dashspec_{Slug(module.FlowId)}_{Slug(chainId)}_{Sha12(select)}";
                     views.Add(new ManagedView(name, module.FlowId, chainId, rowType, select, FunctionDdl(name, parameters, select, dialect))
@@ -96,7 +104,7 @@ public static class ManagedViewsEmitter
                 }
 
                 var flatSelect = BuildSelect(module, source, chain, from, catalog, whereClause: null)
-                    ?? throw new InvalidOperationException(
+                    ?? throw new DashSpecFlowException(
                         $"flow '{module.FlowId}': chain from source '{source.Id}' cannot compile into a flat VIEW " +
                         "(add 'bind <column>' to parameterized ports in the chain).");
 
@@ -215,12 +223,18 @@ public static class ManagedViewsEmitter
         // ADR-0126 slice 3: composite origins compose into SQL here —
         // join sides aliased l/r, union branches project the union row type
         // (canonical column order — a managed union never rides SELECT *).
-        return CompositeSourceSql.FromClause(
-                module,
-                source,
-                source.Origin is SourceOrigin.UnionAll ? ColumnList(source, catalog) : null)
-            ?? throw new InvalidOperationException(
-                $"Dashflow source '{source.Id}': composite origin has no SQL material (ADR-0126).");
+        // Composition is the F# CompositeSql SSOT in Modeling.Parse.
+        var unionColumns = source.Origin is SourceOrigin.UnionAll
+            ? Microsoft.FSharp.Core.FSharpOption<string>.Some(ColumnList(source, catalog))
+            : null;
+        var from = CompositeSql.fromClause(module, source, unionColumns);
+        if (from is null)
+        {
+            throw new DashSpecFlowException(
+                $"flow '{module.FlowId}': composite source '{source.Id}' has no SQL material — sql-file/xlsx sides cannot compose server-side.");
+        }
+
+        return from.Value;
     }
 
     private static string? BuildSelect(
@@ -290,8 +304,9 @@ public static class ManagedViewsEmitter
     {
         var compositeOption = TypeCatalogModule.tryGet(catalog, source.OutputRowType);
         var compositeDef = compositeOption?.Value
-            ?? throw new InvalidOperationException(
-                $"flow '{module.FlowId}': composite source '{source.Id}' row type '{source.OutputRowType}' is not defined (ADR-0126 §1.1).");
+            ?? throw new DashSpecFlowException(
+                $"flow '{module.FlowId}': composite source '{source.Id}' row type '{source.OutputRowType}' is not defined " +
+                "— annotate the join sides or the join itself with a row type so the merge has a contract.");
 
         var (leftId, rightId) = source.Origin switch
         {

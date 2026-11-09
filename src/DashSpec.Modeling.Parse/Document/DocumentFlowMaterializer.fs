@@ -2,6 +2,7 @@ namespace DashSpec.Modeling.Parse.Document
 
 open System
 open System.Collections.Generic
+open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse.Card
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.DataSource
@@ -31,7 +32,7 @@ module DocumentFlowMaterializer =
                 |> Seq.tryFind (fun (name, _) -> String.Equals(name, portName, StringComparison.OrdinalIgnoreCase))
                 |> Option.map (fun (_, rowType) -> rowType))
 
-    let private toDataSource (source: DashflowSourceDef) (rowsType: string) =
+    let private toDataSource (flow: DashflowModule) (source: DashflowSourceDef) (rowsType: string) =
         let providerInfer = DashflowProviderBridge.isInfer source.Provider
         let providerId = DashflowProviderBridge.tryNamedId source.Provider
 
@@ -73,9 +74,23 @@ module DocumentFlowMaterializer =
               ProviderInfer = providerInfer
               ProviderId = providerId }
         | _ ->
-            raise (
-                InvalidOperationException(
-                    $"dashflow source '{source.Id}' has a composite origin (ADR-0126): composite sources cannot materialize into a legacy card datasource yet."))
+            // ADR-0126 slice 3: a composite source materializes as a Sql/Query
+            // datasource whose body is a SELECT over the composed FROM — the same
+            // CompositeSql the managed-view emitter rides (SSOT in Parse).
+            match CompositeSql.selectBody flow source with
+            | Some body ->
+                { Kind = DataSourceKind.Sql
+                  Value = body
+                  SqlCarrier = Some DataSourceSqlCarrier.Query
+                  Sheet = None
+                  RowsType = rowsType
+                  TimeZone = source.TimeZone
+                  ProviderInfer = providerInfer
+                  ProviderId = providerId }
+            | None ->
+                raise (
+                    DashSpecFlowException(
+                        $"flow source '{source.Id}' has a composite origin with no SQL material — sql-file/xlsx sides cannot compose server-side."))
 
     let private toInputRef (input: CardFlowInput) : DashflowPathResolver.CardInputRef =
         { Alias = input.Alias
@@ -87,7 +102,7 @@ module DocumentFlowMaterializer =
         let rowType =
             portRowType flow input.NodeId input.PortName
             |> Option.defaultValue path.Source.OutputRowType
-        toDataSource path.Source rowType
+        toDataSource flow path.Source rowType
 
     /// <summary>ADR-0125 reader path: a view-marked module whose chain has a
     /// manifest entry reads the physical managed view by its deterministic name —

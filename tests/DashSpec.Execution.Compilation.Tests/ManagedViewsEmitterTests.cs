@@ -16,6 +16,11 @@ public sealed class ManagedViewsEmitterTests
           string app_name
           int sessions
         end type
+
+        type UserRow
+          string user_id
+          string user_name
+        end type
         """;
 
     private static TypeCatalog Catalog() =>
@@ -198,11 +203,11 @@ public sealed class ManagedViewsEmitterTests
     private const string JoinFlow = """
         module flow usage_join view
 
-        source events = View(dbo.events) {
+        source events : EventRow = View(dbo.events) {
           use provider infer
         }
 
-        source users = View(dbo.users) {
+        source users : UserRow = View(dbo.users) {
           use provider infer
         }
 

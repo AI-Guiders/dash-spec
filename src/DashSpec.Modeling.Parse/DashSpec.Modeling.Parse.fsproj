@@ -85,6 +85,7 @@
     <Compile Include="Types\RowTypeSchemaBridge.fs" />
     <Compile Include="Document\DashflowViewManifest.fs" />
     <Compile Include="DataFlow\DashflowTypes.fs" />
+    <Compile Include="DataFlow\CompositeSql.fs" />
     <Compile Include="DataFlow\DashflowProviderBridge.fs" />
     <Compile Include="DataFlow\FlowPortsParser.fs" />
     <Compile Include="DataFlow\FlowLinkParser.fs" />

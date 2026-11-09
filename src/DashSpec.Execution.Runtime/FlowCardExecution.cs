@@ -54,7 +54,7 @@ public static class FlowCardExecution
     {
         if (card.FlowInput is not null && string.IsNullOrWhiteSpace(card.DataSource.Value))
         {
-            throw new InvalidOperationException(
+            throw new DashSpec.Modeling.Core.DashSpecFlowException(
                 $"Card '{card.Id}' has flow input but no materialized datasource; call DocumentFlowBinder.MaterializeCard first.");
         }
 
@@ -65,7 +65,7 @@ public static class FlowCardExecution
     {
         if (document.Dashflow is null)
         {
-            throw new InvalidOperationException("Dashboard document has no resolved dashflow module.");
+            throw new DashSpec.Modeling.Core.DashSpecFlowException("Dashboard document has no resolved dashflow module.");
         }
 
         return DashflowPathResolver.Resolve(document.Dashflow!.Value, input);
@@ -105,15 +105,15 @@ public static class FlowCardExecution
 
     private static DataSourceDefinition ToDataSource(DashflowModuleDefinition flow, DashflowSourceDefinition source)
     {
-        if (CompositeSourceSql.SelectBody(flow, source) is { } body)
+        if (FSharpDataFlow.CompositeSql.selectBody(flow, source) is { } body)
         {
             // ADR-0126 slice 3: a composite source materializes as a Sql/Query
-            // datasource whose body is a SELECT over the composed FROM
-            // (join sides l/r, union derived table u).
+            // datasource whose body is a SELECT over the composed FROM — the
+            // F# CompositeSql SSOT (join sides l/r, union derived table u).
             return new DataSourceDefinition
             {
                 Kind = DataSourceKind.Sql,
-                Value = body,
+                Value = body.Value,
                 SqlCarrier = Microsoft.FSharp.Core.FSharpOption<DataSourceSqlCarrier>.Some(DataSourceSqlCarrier.Query),
                 Sheet = Microsoft.FSharp.Core.FSharpOption<string>.None,
                 RowsType = source.OutputRowType,
