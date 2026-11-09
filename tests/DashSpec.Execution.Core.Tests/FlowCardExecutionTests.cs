@@ -28,7 +28,7 @@ public sealed class FlowCardExecutionTests
         new(
             id,
             DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding.NewNamed("postgres"),
-            new DashSpec.Modeling.Parse.DataFlow.SourceFrom(
+            DashSpec.Modeling.Parse.DataFlow.SourceOrigin.NewLeaf(
                 DashflowSourceFromKind.View,
                 fromValue,
                 Microsoft.FSharp.Core.FSharpOption<string>.None),

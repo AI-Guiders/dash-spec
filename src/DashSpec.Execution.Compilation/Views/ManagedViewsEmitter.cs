@@ -196,17 +196,26 @@ public static class ManagedViewsEmitter
 
     private static string? ResolveFrom(DashflowSourceDef source)
     {
-        if (source.From.Kind.Equals(SourceFromKind.View))
+        if (source.Origin is SourceOrigin.Leaf leaf)
         {
-            return source.From.Value;
+            if (leaf.kind.Equals(SourceFromKind.View))
+            {
+                return leaf.value;
+            }
+
+            if (leaf.kind.Equals(SourceFromKind.SqlQuery))
+            {
+                return $"(\n{leaf.value}\n)";
+            }
+
+            // SqlFile / Xlsx leaves are not managed-view material (as before).
+            return null;
         }
 
-        if (source.From.Kind.Equals(SourceFromKind.SqlQuery))
-        {
-            return $"(\n{source.From.Value}\n)";
-        }
-
-        return null;
+        // ADR-0126: composite origins (InnerJoin/UnionAll/…) carry constituent
+        // references as data — SQL composition lands in the next slice.
+        throw new InvalidOperationException(
+            $"Dashflow source '{source.Id}' has a composite origin: SQL composition for composite sources lands in the next slice (ADR-0126).");
     }
 
     private static string? BuildSelect(

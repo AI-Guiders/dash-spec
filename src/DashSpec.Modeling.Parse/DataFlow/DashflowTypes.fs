@@ -8,6 +8,24 @@ type SourceFromKind =
     | SqlFile
     | Xlsx
 
+/// <summary>Origin of a flow source (ADR-0126 §1): leaf storage constructors
+/// (legacy <c>from view/sql/xlsx</c> blocks transpile into Leaf on read) or
+/// source composition (<c>InnerJoin(a, b)</c>, <c>UnionAll(a, b)</c> …).
+/// Composite references are data inside the source definition — not FlowLink
+/// edges, not graph nodes (ADR-0126 §1.1).</summary>
+type JoinCondition =
+    { On: string list
+      LeftKey: string list
+      RightKey: string list }
+
+type SourceOrigin =
+    | Leaf of kind: SourceFromKind * value: string * sheet: string option
+    | InnerJoin of left: string * right: string * cond: JoinCondition
+    | LeftJoin of left: string * right: string * cond: JoinCondition
+    | RightJoin of left: string * right: string * cond: JoinCondition
+    | FullJoin of left: string * right: string * cond: JoinCondition
+    | UnionAll of left: string * right: string
+
 type SourceFrom =
     { Kind: SourceFromKind
       Value: string
@@ -22,7 +40,9 @@ type DashflowProviderBinding =
 type DashflowSourceDef =
     { Id: string
       Provider: DashflowProviderBinding
-      From: SourceFrom
+      /// <summary>Where the source comes from (ADR-0126 §1): a leaf storage
+      /// constructor or a composition of two other sources.</summary>
+      Origin: SourceOrigin
       /// <summary>Хранение времени в источнике: "utc" | "local". Пусто — не заявлено (по умолчанию UTC).</summary>
       TimeZone: string
       OutputPort: string

@@ -104,7 +104,7 @@ end flow demo_peak_report
         Assert.Equal("demo_peak_report", module'.FlowId)
         Assert.Empty(module'.Diagnostics)
         Assert.Equal(1, module'.Sources.Length)
-        Assert.Equal("demo.v_daily_peak", module'.Sources.[0].From.Value)
+        Assert.Equal(SourceOrigin.Leaf(SourceFromKind.View, "demo.v_daily_peak", None), module'.Sources.[0].Origin)
         Assert.Equal(1, module'.Links.Length)
         Assert.Equal(Some "utilization", module'.Links.[0].FromPort)
         Assert.Equal(Some "raw", module'.Links.[0].ToPort)
@@ -655,3 +655,254 @@ end flow minutes_only
         let module' = DashflowModuleParser.parseModule flowText catalog
         let step = module'.Transformers.[0].Steps |> Array.exactlyOne
         Assert.Equal("180", step.Parameters |> Array.exactlyOne |> fun p -> p.Value)
+
+    [<Fact>]
+    let ``legacy from view source parses to Leaf origin`` () =
+        let typesText =
+            """
+type UtilizationRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+module flow legacy_leaf
+
+source utilization {
+  use provider infer
+  from view demo.v_daily_peak
+  ports
+    output stream utilization: UtilizationRow
+  end ports
+}
+
+end flow legacy_leaf
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Equal(
+            SourceOrigin.Leaf(SourceFromKind.View, "demo.v_daily_peak", None),
+            module'.Sources.[0].Origin)
+        Assert.Equal("UtilizationRow", module'.Sources.[0].OutputRowType)
+        Assert.Equal("utilization", module'.Sources.[0].OutputPort)
+
+    [<Fact>]
+    let ``new-form source with annotation and View origin parses`` () =
+        let typesText =
+            """
+type MyRow
+  string UserSam
+end type
+"""
+
+        let flowText =
+            """
+module flow new_form_leaf
+
+source s1: MyRow = View(demo.v_a) {
+  use provider infer
+}
+
+end flow new_form_leaf
+"""
+
+        let catalog = TypeCatalog.ofDefinitions(TypeModuleParser.parseTypesModule typesText)
+        let module' = DashflowModuleParser.parseModule flowText catalog
+        let source = module'.Sources.[0]
+
+        Assert.Equal("s1", source.Id)
+        Assert.Equal(SourceOrigin.Leaf(SourceFromKind.View, "demo.v_a", None), source.Origin)
+        Assert.Equal("MyRow", source.OutputRowType)
+        Assert.Equal(DashflowProviderBinding.Infer, source.Provider)
+
+    [<Fact>]
+    let ``new-form InnerJoin source parses with join condition`` () =
+        let flowText =
+            """
+module flow new_form_join
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+  time_zone = utc
+}
+
+source b: RowB = View(demo.v_b) {
+  use provider infer
+  time_zone = utc
+}
+
+source j: JR = InnerJoin(a, b) {
+  on = user_id, usage_day
+}
+
+end flow new_form_join
+"""
+
+        let catalog = TypeCatalog.empty
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Equal(3, module'.Sources.Length)
+        let join = module'.Sources.[2]
+        Assert.Equal(SourceOrigin.InnerJoin("a", "b", { On = [ "user_id"; "usage_day" ]; LeftKey = []; RightKey = [] }), join.Origin)
+        Assert.Equal("JR", join.OutputRowType)
+        // provider/time_zone are inherited from the constituents
+        Assert.Equal(DashflowProviderBinding.Infer, join.Provider)
+        Assert.Equal("utc", join.TimeZone)
+
+    [<Fact>]
+    let ``composite with mismatched provider raises parse error`` () =
+        let flowText =
+            """
+module flow provider_mismatch
+
+source a: RowA = View(demo.v_a) {
+  use provider postgres
+}
+
+source b: RowB = View(demo.v_b) {
+  use provider sqlserver
+}
+
+source j: JR = InnerJoin(a, b) {
+  on = user_id
+}
+
+end flow provider_mismatch
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)
+
+    [<Fact>]
+    let ``composite with mismatched time_zone raises parse error`` () =
+        let flowText =
+            """
+module flow tz_mismatch
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+  time_zone = utc
+}
+
+source b: RowB = View(demo.v_b) {
+  use provider infer
+  time_zone = local
+}
+
+source j: JR = InnerJoin(a, b) {
+  on = user_id
+}
+
+end flow tz_mismatch
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)
+
+    [<Fact>]
+    let ``composite referencing a composite source raises parse error`` () =
+        let flowText =
+            """
+module flow nested_composition
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+}
+
+source b: RowB = View(demo.v_b) {
+  use provider infer
+}
+
+source j: JR = InnerJoin(a, b) {
+  on = user_id
+}
+
+source k: KR = InnerJoin(j, b) {
+  on = user_id
+}
+
+end flow nested_composition
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)
+
+    [<Fact>]
+    let ``new-form UnionAll source parses with empty body`` () =
+        let flowText =
+            """
+module flow union_all
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+}
+
+source b: RowA = View(demo.v_b) {
+  use provider infer
+}
+
+source all_events = UnionAll(a, b)
+
+end flow union_all
+"""
+
+        let catalog = TypeCatalog.empty
+        let module' = DashflowModuleParser.parseModule flowText catalog
+
+        Assert.Equal(SourceOrigin.UnionAll("a", "b"), module'.Sources.[2].Origin)
+
+    [<Fact>]
+    let ``leaf source with on condition raises parse error`` () =
+        let flowText =
+            """
+module flow leaf_condition
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+  on = user_id
+}
+
+end flow leaf_condition
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)
+
+    [<Fact>]
+    let ``composite source with unknown constituent raises parse error`` () =
+        let flowText =
+            """
+module flow unknown_constituent
+
+source a: RowA = View(demo.v_a) {
+  use provider infer
+}
+
+source j: JR = InnerJoin(a, ghost) {
+  on = user_id
+}
+
+end flow unknown_constituent
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)
+
+    [<Fact>]
+    let ``source without origin raises parse error`` () =
+        let flowText =
+            """
+module flow no_origin
+
+source a: RowA {
+  use provider infer
+}
+
+end flow no_origin
+"""
+
+        let catalog = TypeCatalog.empty
+        Assert.Throws<DashSpecParseException>(fun () -> DashflowModuleParser.parseModule flowText catalog |> ignore)

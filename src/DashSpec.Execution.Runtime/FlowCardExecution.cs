@@ -105,21 +105,29 @@ public static class FlowCardExecution
 
     private static DataSourceDefinition ToDataSource(DashflowSourceDefinition source)
     {
-        var kind = source.From.Kind.Equals(DashflowSourceFromKind.View)
+        if (source.Origin is not FSharpDataFlow.SourceOrigin.Leaf leaf)
+        {
+            // ADR-0126: a composite source (InnerJoin/UnionAll/…) cannot
+            // materialize into a legacy card datasource yet.
+            throw new InvalidOperationException(
+                $"Dashflow source '{source.Id}' has a composite origin (ADR-0126): composite sources cannot materialize into a legacy card datasource yet.");
+        }
+
+        var kind = leaf.kind.Equals(DashflowSourceFromKind.View)
             ? DataSourceKind.View
             : DataSourceKind.Sql;
-        DataSourceSqlCarrier? carrier = source.From.Kind switch
+        DataSourceSqlCarrier? carrier = leaf.kind switch
         {
             { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.View) => null,
             { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlQuery) => DataSourceSqlCarrier.Query,
             { } carrierKind when carrierKind.Equals(DashflowSourceFromKind.SqlFile) => DataSourceSqlCarrier.File,
-            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{source.From.Kind}'."),
+            _ => throw new InvalidOperationException($"Unsupported dashflow source carrier '{leaf.kind}'."),
         };
 
         return new DataSourceDefinition
         {
             Kind = kind,
-            Value = source.From.Value,
+            Value = leaf.value,
             SqlCarrier = carrier is { } value
                 ? FSharpOption<DataSourceSqlCarrier>.Some(value)
                 : FSharpOption<DataSourceSqlCarrier>.None,

@@ -46,3 +46,4 @@ src/DashSpec.Host/dash-spec.local.host.ds
 .cdp/
 src/DashSpec.Host/host.log
 src/DashSpec.Host/host.err
+.hybrid-codebase-index/

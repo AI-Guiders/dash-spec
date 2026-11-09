@@ -35,43 +35,47 @@ module DocumentFlowMaterializer =
         let providerInfer = DashflowProviderBridge.isInfer source.Provider
         let providerId = DashflowProviderBridge.tryNamedId source.Provider
 
-        match source.From.Kind with
-        | SourceFromKind.View ->
+        match source.Origin with
+        | SourceOrigin.Leaf(SourceFromKind.View, value, _) ->
             { Kind = DataSourceKind.View
-              Value = source.From.Value
+              Value = value
               SqlCarrier = None
               Sheet = None
               RowsType = rowsType
               TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
-        | SourceFromKind.SqlQuery ->
+        | SourceOrigin.Leaf(SourceFromKind.SqlQuery, value, _) ->
             { Kind = DataSourceKind.Sql
-              Value = source.From.Value
+              Value = value
               SqlCarrier = Some DataSourceSqlCarrier.Query
               Sheet = None
               RowsType = rowsType
               TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
-        | SourceFromKind.SqlFile ->
+        | SourceOrigin.Leaf(SourceFromKind.SqlFile, value, _) ->
             { Kind = DataSourceKind.Sql
-              Value = source.From.Value
+              Value = value
               SqlCarrier = Some DataSourceSqlCarrier.File
               Sheet = None
               RowsType = rowsType
               TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
-        | SourceFromKind.Xlsx ->
+        | SourceOrigin.Leaf(SourceFromKind.Xlsx, value, sheet) ->
             { Kind = DataSourceKind.Xlsx
-              Value = source.From.Value
+              Value = value
               SqlCarrier = None
-              Sheet = source.From.Sheet
+              Sheet = sheet
               RowsType = rowsType
               TimeZone = source.TimeZone
               ProviderInfer = providerInfer
               ProviderId = providerId }
+        | _ ->
+            raise (
+                InvalidOperationException(
+                    $"dashflow source '{source.Id}' has a composite origin (ADR-0126): composite sources cannot materialize into a legacy card datasource yet."))
 
     let private toInputRef (input: CardFlowInput) : DashflowPathResolver.CardInputRef =
         { Alias = input.Alias
