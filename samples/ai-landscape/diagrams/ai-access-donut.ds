@@ -1,0 +1,13 @@
+﻿module diagram ai_access_donut
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use kpi_compact
+
+    end chrome
+
+    donut
+    category = accessibility
+    value = value
+
+    end donut

@@ -1,0 +1,163 @@
+module dashboard ai_report
+    namespace Ai.Landscape.Report
+    import diagrams from Ai.Landscape.Diagrams
+    import types from Ai.Landscape.Types
+    import flows from Ai.Landscape.Flows as ai_flows
+    import presentations from DashSpec.Std
+    runtime
+        manifest = "ai.toml"
+    end runtime
+
+    configuration
+        sqldialect = tsql
+
+    end configuration
+
+    connect
+        use flow ai_flows
+    end connect
+
+    report
+        title = "AI Landscape 2023-2024 — Epoch AI open data"
+        defaults
+            filter.models_top.limit = 50
+        end defaults
+        filter domain
+          bind field
+            column = domain
+          end bind
+          show
+            label = "Direction"
+            widget = combobox
+          end show
+        end filter
+        filter accessibility
+          bind field
+            column = accessibility
+          end bind
+          show
+            label = "Weights"
+            widget = combobox
+          end show
+        end filter
+        filter models_top
+          bind top
+          end bind
+          show
+            label = "Rows (TOP)"
+          end show
+        end filter
+        toolbar chrome
+            layout = bar
+            sticky = line
+            apply = auto
+            debounce_ms = 400
+        end chrome
+
+        show flow
+            domain -> [toolbar] chrome.dashboard
+            accessibility -> [toolbar] chrome.dashboard
+        end show flow
+
+        section overview as "Обзор"
+            cards
+                kpi_cost
+                kpi_params
+                releases_line
+            end cards
+        end section
+
+        section directions as "Что делают"
+            cards
+                domain_bar
+                access_donut
+            end cards
+        end section
+
+        section countries as "Кто делает"
+            cards
+                country_bar_2023
+                country_bar_2024
+            end cards
+        end section
+
+        section registry as "Реестр моделей"
+            cards
+                models_table
+            end cards
+        end section
+
+        card kpi_cost as "Max training cost, $M"
+            data flow
+                models [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_kpi_cost
+                bind
+                    domain, accessibility
+                end bind
+            end card
+
+        card kpi_params as "Max parameters, B"
+            data flow
+                models [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_kpi_params
+                bind
+                    domain, accessibility
+                end bind
+            end card
+
+        card releases_line as "Releases per day"
+            data flow
+                by_release_day [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_releases_line
+                bind
+                    domain, accessibility
+                end bind
+            end card
+
+        card domain_bar as "Models by direction"
+            data flow
+                by_domain [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_domain_bar
+                bind
+                    accessibility
+                end bind
+            end card
+
+        card access_donut as "Open vs closed weights"
+            data flow
+                by_access [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_access_donut
+            end card
+
+        card country_bar_2023 as "Models by country, 2023"
+            data flow
+                by_country_2023 [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_country_bar_2023
+            end card
+
+        card country_bar_2024 as "Models by country, 2024"
+            data flow
+                by_country_2024 [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_country_bar_2024
+            end card
+
+        card models_table as "Model registry"
+            show flow
+                models_top -> [toolbar] chrome.card.models_table
+            end show flow
+            data flow
+                models [rows] -> [rows] __diagram__
+            end data flow
+            diagram ai_models_table
+                bind
+                    domain, accessibility
+                end bind
+            end card
+    end report

@@ -1,0 +1,14 @@
+﻿module diagram ai_kpi_cost
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use kpi_compact
+
+    end chrome
+
+    number
+    value = cost_musd as "Max training cost, $M"
+    aggregate = max
+    scale_value = integer
+
+    end number

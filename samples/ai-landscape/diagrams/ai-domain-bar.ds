@@ -1,0 +1,17 @@
+﻿module diagram ai_domain_bar
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use bar_horizontal_360
+
+    end chrome
+
+    bar
+    render = "chartjs"
+    orientation = horizontal
+    category = domain
+    value = value
+    scale_value = integer
+    sort = "value DESC, domain"
+
+    end bar

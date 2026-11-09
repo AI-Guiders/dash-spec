@@ -1,0 +1,17 @@
+﻿module diagram ai_country_bar_2023
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use bar_horizontal_360
+
+    end chrome
+
+    bar
+    render = "chartjs"
+    orientation = horizontal
+    category = country
+    value = value
+    scale_value = integer
+    sort = "value DESC, country"
+
+    end bar

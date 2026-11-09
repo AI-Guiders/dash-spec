@@ -1033,7 +1033,24 @@ module DashflowModuleParser =
         (links: FlowLinkDef[])
         (typeCatalog: TypeCatalog)
         =
-        let outcome = TypeInference.inferScope sources transformers links typeCatalog
+        // ADR-0126 §1.1: composite sources type first — their synthesized row types
+        // join the catalog before the transformer walk so consumers can resolve them.
+        let sources, compositeSynthesized, compositeDiagnostics =
+            TypeInference.resolveCompositeSources sources typeCatalog
+
+        let compositeCatalog =
+            if compositeSynthesized.IsEmpty then
+                typeCatalog
+            else
+                TypeCatalog.ofDefinitions (
+                    seq {
+                        yield! typeCatalog.Definitions.Values
+                        yield! compositeSynthesized
+                    }
+                )
+
+        let outcome = TypeInference.inferScope sources transformers links compositeCatalog
+        let allSynthesized = compositeSynthesized @ outcome.Synthesized
 
         // patch untyped outputs with the inferred names (declared outputs keep their names —
         // they were verified by the transform-typecheck inside the inference)
@@ -1053,12 +1070,12 @@ module DashflowModuleParser =
                 { transformer with Outputs = outputs })
 
         let extendedCatalog =
-            if outcome.Synthesized.IsEmpty then
-                typeCatalog
+            if allSynthesized.IsEmpty then
+                compositeCatalog
             else
                 TypeCatalog.ofDefinitions (
                     seq {
-                        yield! typeCatalog.Definitions.Values
+                        yield! compositeCatalog.Definitions.Values
                         yield! outcome.Synthesized
                     }
                 )
@@ -1073,7 +1090,7 @@ module DashflowModuleParser =
                   Message = d.Message
                   Edge = None })
 
-        patchedGraph, patchedTransformers, outcome.Synthesized, inferenceDiagnostics @ diagnostics
+        patchedGraph, sources, patchedTransformers, allSynthesized, inferenceDiagnostics @ diagnostics
 
     let private finishModule
         (flowId: string)
@@ -1086,7 +1103,7 @@ module DashflowModuleParser =
         let transformers = applyDefaultPorts transformers
         checkStepLayering transformers links
         let sources = validateCompositeOrigins sources
-        let graph, transformers, inferred, diagnostics = inferAndCheck sources transformers nestedFlows links typeCatalog
+        let graph, sources, transformers, inferred, diagnostics = inferAndCheck sources transformers nestedFlows links typeCatalog
 
         { FlowId = flowId
           Sources = sources

@@ -1,0 +1,71 @@
+module flow ai_landscape view
+namespace Ai.Landscape.Flows
+
+// Leaf sources — Epoch AI open data ingested into SQL (ADR-0126 NOTE: files → db → dashspec)
+source models_2023: ModelRow = View(ai_landscape.models_2023) {
+  use provider infer
+}
+
+source models_2024: ModelRow = View(ai_landscape.models_2024) {
+  use provider infer
+}
+
+source orgs: OrgRow = View(ai_landscape.orgs) {
+  use provider infer
+}
+
+// Composite: the unified model stream of the last two years (UnionAll of leaves)
+source models: ModelRow = UnionAll(models_2023, models_2024) {
+}
+
+// Composite: who builds what — models joined with organizations (InnerJoin of leaves)
+source landscape_2023 = InnerJoin(models_2023, orgs) {
+  on = org_id
+}
+
+source landscape_2024 = InnerJoin(models_2024, orgs) {
+  on = org_id
+}
+
+transformer by_domain {
+  transform use summarize {
+    by = domain
+    agg = count
+  }
+}
+
+transformer by_access {
+  transform use summarize {
+    by = accessibility
+    agg = count
+  }
+}
+
+transformer by_release_day {
+  transform use summarize {
+    by = released
+    agg = count
+  }
+}
+
+transformer by_country_2023 {
+  transform use summarize {
+    by = country
+    agg = count
+  }
+}
+
+transformer by_country_2024 {
+  transform use summarize {
+    by = country
+    agg = count
+  }
+}
+
+models [rows] -> [rows] by_domain
+models [rows] -> [rows] by_access
+models [rows] -> [rows] by_release_day
+landscape_2023 [rows] -> [rows] by_country_2023
+landscape_2024 [rows] -> [rows] by_country_2024
+
+end flow

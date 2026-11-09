@@ -47,3 +47,4 @@ src/DashSpec.Host/dash-spec.local.host.ds
 src/DashSpec.Host/host.log
 src/DashSpec.Host/host.err
 .hybrid-codebase-index/
+samples/ai-landscape/ai.local.toml

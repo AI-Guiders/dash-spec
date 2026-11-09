@@ -1,0 +1,14 @@
+﻿module diagram ai_releases_line
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use kpi_compact
+
+    end chrome
+
+    line
+    category = released
+    value = value
+    scale_value = integer
+
+    end line

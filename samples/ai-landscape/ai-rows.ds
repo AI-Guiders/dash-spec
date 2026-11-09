@@ -1,0 +1,34 @@
+module types ai_rows
+namespace Ai.Landscape.Types
+
+type ModelRow
+  optional int model_id
+  optional int org_id
+  optional string name
+  optional string domain
+  optional date released
+  optional decimal parameters_b
+  optional decimal training_flop
+  optional decimal cost_musd
+  optional string accessibility
+end type
+
+type DomainStatRow
+  optional string domain
+  optional decimal value
+end type
+
+type AccessStatRow
+  optional string accessibility
+  optional decimal value
+end type
+
+type ReleaseRow
+  optional date released
+  optional decimal value
+end type
+
+type CountryStatRow
+  optional string country
+  optional decimal value
+end type

@@ -286,7 +286,7 @@ public static class ManagedViewsEmitter
 
         var columns = def.Fields
             .Where(f => f.Type.IsPrimitive)
-            .Select(f => f.Name)
+            .Select(f => f.Name.Contains('.') ? $"{f.Name} AS [{f.Name}]" : f.Name)
             .ToList();
 
         return columns.Count > 0 ? string.Join(", ", columns) : "*";

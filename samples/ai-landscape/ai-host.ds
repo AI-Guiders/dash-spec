@@ -1,0 +1,19 @@
+﻿module host ai_landscape
+import layouts from Demo.Layouts
+
+catalog "ai-catalog.ds"
+
+host
+  language = "ru-RU"
+  display_timezone = "Europe/Moscow"
+  product_title = "AI Landscape"
+  catalog_label = "Отчёт"
+  color_scheme = dark
+  render = radzen
+end host
+
+surfaces
+  show help, settings, spec_dev
+end surfaces
+
+end host

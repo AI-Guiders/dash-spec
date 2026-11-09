@@ -1,0 +1,13 @@
+﻿# Runtime manifest for ai-landscape (@runtime)
+# Copy to ai.local.toml and set your connection_string (gitignored).
+
+[providers.sqlserver]
+connection_string = "Server=localhost;Database=dashspec_views_test;Trusted_Connection=True;TrustServerCertificate=True"
+
+[plugins]
+default_provider_id = "sqlserver"
+
+[[plugins.load]]
+id = "sqlserver"
+assembly = "DashSpec.Connector.SqlServer.dll"
+is_provider = true

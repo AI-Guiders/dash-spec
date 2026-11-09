@@ -1,0 +1,14 @@
+﻿module diagram ai_kpi_params
+namespace Ai.Landscape.Diagrams
+
+    chrome
+        use kpi_compact
+
+    end chrome
+
+    number
+    value = parameters_b as "Max parameters, B"
+    aggregate = max
+    scale_value = integer
+
+    end number

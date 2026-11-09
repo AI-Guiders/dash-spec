@@ -172,6 +172,111 @@ module TypeInference =
         | TransformTypeEffect.Opaque
         | _ -> None
 
+    // --- composite source typing (ADR-0126 §1.1) -------------------------------
+
+    /// <summary>Composite sources type from the constituent merge algebra:
+    /// union — the sides must be structurally equal (fields of the left side);
+    /// join — left fields plain, right fields colliding with left names qualify
+    /// (<c>r.name</c>, the ADR's owner-qualification convention). A declared
+    /// annotation is the verified contract (DFLOW013 on mismatch); an untyped
+    /// composite synthesizes a deterministic name (<c>ModelRowJoinOrgRow</c>).</summary>
+    let resolveCompositeSources
+        (sources: DashflowSourceDef[])
+        (catalog: TypeCatalog)
+        : DashflowSourceDef[] * RowTypeDef list * InferenceDiagnostic list =
+        let synthesized = ResizeArray<RowTypeDef>()
+        let diagnostics = ResizeArray<InferenceDiagnostic>()
+        let takenNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+        for def in catalog.Definitions.Values do
+            takenNames.Add def.Name |> ignore
+
+        let fieldsOf (typeName: string) : RowTypeDef option =
+            if String.IsNullOrWhiteSpace typeName then None
+            else TypeCatalog.tryGet catalog typeName
+
+        let sourceById (id: string) =
+            sources |> Array.tryFind (fun s -> String.Equals(s.Id, id, StringComparison.OrdinalIgnoreCase))
+
+        let sideIds (origin: SourceOrigin) =
+            match origin with
+            | SourceOrigin.InnerJoin (l, r, _)
+            | SourceOrigin.LeftJoin (l, r, _)
+            | SourceOrigin.RightJoin (l, r, _)
+            | SourceOrigin.FullJoin (l, r, _) -> Some(l, r, true)
+            | SourceOrigin.UnionAll (l, r) -> Some(l, r, false)
+            | SourceOrigin.Leaf _ -> None
+
+        let patched =
+            sources
+            |> Array.map (fun source ->
+                match sideIds source.Origin with
+                | None -> source
+                | Some (leftId, rightId, isJoin) ->
+                    match sourceById leftId, sourceById rightId with
+                    | Some left, Some right ->
+                        match fieldsOf left.OutputRowType, fieldsOf right.OutputRowType with
+                        | Some leftDef, Some rightDef ->
+                            let mergedFields =
+                                if isJoin then
+                                    leftDef.Fields
+                                    |> Array.append (
+                                        rightDef.Fields
+                                        |> Array.map (fun field ->
+                                            let collides =
+                                                leftDef.Fields
+                                                |> Array.exists (fun lf ->
+                                                    String.Equals(lf.Name, field.Name, StringComparison.OrdinalIgnoreCase))
+
+                                            if collides then { field with Name = "r." + field.Name } else field))
+                                else
+                                    if not (TypeCatalog.rowTypesStructurallyEqual leftDef rightDef) then
+                                        diagnostics.Add(
+                                            diag "DFLOW013"
+                                                $"source '{source.Id}': union sides '{left.OutputRowType}' and '{right.OutputRowType}' are not structurally equal (ADR-0126 §1).")
+
+                                    leftDef.Fields
+
+                            let candidate = { Name = ""; Fields = mergedFields }
+                            let declared = source.OutputRowType
+
+                            if not (String.IsNullOrWhiteSpace declared) then
+                                match TypeCatalog.tryGet catalog declared with
+                                | Some declaredDef
+                                    when not (TypeCatalog.rowTypesStructurallyEqual declaredDef candidate) ->
+                                    diagnostics.Add(
+                                        diag "DFLOW013"
+                                            $"source '{source.Id}': declared type '{declared}' does not match the composite merge of '{left.OutputRowType}' and '{right.OutputRowType}' (ADR-0127 transform-typecheck).")
+                                | _ -> ()
+
+                                source
+                            else
+                                let stemL = stemOf left.OutputRowType
+                                let stemR = stemOf right.OutputRowType
+                                let combiner = if isJoin then "Join" else "Union"
+                                let baseName = $"{stemL}{combiner}{stemR}Row"
+
+                                let mutable name = baseName
+                                let mutable index = 2
+
+                                while takenNames.Contains name do
+                                    name <- $"{baseName}{index}"
+                                    index <- index + 1
+
+                                takenNames.Add name |> ignore
+                                let named = { candidate with Name = name }
+                                synthesized.Add named
+                                { source with OutputRowType = name }
+                        | _ ->
+                            diagnostics.Add(
+                                diag "DFLOW013"
+                                    $"source '{source.Id}': composite side '{leftId}'/'{rightId}' has no row type — annotate the leaf source (ADR-0126 §1).")
+
+                            source
+                    | _ -> source)
+
+        patched, List.ofSeq synthesized, List.ofSeq diagnostics
+
     // --- scope walk --------------------------------------------------------
 
     /// <summary>Infer port types for one flow scope (module or nested flow):
