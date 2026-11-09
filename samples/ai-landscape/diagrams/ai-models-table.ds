@@ -1,10 +1,5 @@
-﻿module diagram ai_models_table
+module diagram ai_models_table
 namespace Ai.Landscape.Diagrams
-
-    chrome
-        use table_scroll_x
-
-    end chrome
 
     table
     columns = name, org_name, domain, released, parameters_b, training_flop, cost_musd, accessibility
