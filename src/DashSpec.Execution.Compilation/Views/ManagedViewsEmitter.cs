@@ -51,7 +51,7 @@ public static class ManagedViewsEmitter
 
         foreach (var source in module.Sources)
         {
-            var from = ResolveFrom(source);
+            var from = ResolveFrom(module, source);
             if (from is null)
             {
                 continue; // xlsx / sql-file chains do not emit views (v1)
@@ -194,7 +194,7 @@ public static class ManagedViewsEmitter
         }
     }
 
-    private static string? ResolveFrom(DashflowSourceDef source)
+    private static string? ResolveFrom(DashflowModule module, DashflowSourceDef source)
     {
         if (source.Origin is SourceOrigin.Leaf leaf)
         {
@@ -212,10 +212,11 @@ public static class ManagedViewsEmitter
             return null;
         }
 
-        // ADR-0126: composite origins (InnerJoin/UnionAll/…) carry constituent
-        // references as data — SQL composition lands in the next slice.
-        throw new InvalidOperationException(
-            $"Dashflow source '{source.Id}' has a composite origin: SQL composition for composite sources lands in the next slice (ADR-0126).");
+        // ADR-0126 slice 3: composite origins compose into SQL here —
+        // join sides aliased l/r, union wrapped as derived table u.
+        return CompositeSourceSql.FromClause(module, source)
+            ?? throw new InvalidOperationException(
+                $"Dashflow source '{source.Id}': composite origin has no SQL material (ADR-0126).");
     }
 
     private static string? BuildSelect(

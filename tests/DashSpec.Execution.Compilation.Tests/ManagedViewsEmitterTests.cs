@@ -192,4 +192,91 @@ public sealed class ManagedViewsEmitterTests
         // ADR-0127 inference filled the grouped output type at parse time
         Assert.Equal("EventSummaryRow", view.RowType);
     }
+
+    // === ADR-0126 slice 3: composite sources compose into SQL ===
+
+    private const string JoinFlow = """
+        module flow usage_join view
+
+        source events = View(dbo.events) {
+          use provider infer
+        }
+
+        source users = View(dbo.users) {
+          use provider infer
+        }
+
+        source joined = InnerJoin(events, users) {
+          on = user_id
+        }
+
+        end flow
+        """;
+
+    [Fact]
+    public void Composite_join_emits_native_join_from()
+    {
+        var views = ManagedViewsEmitter.Emit(ParseFlow(JoinFlow), Catalog());
+        var joined = Assert.Single(views, v => v.Select.Contains("JOIN"));
+
+        Assert.Contains("FROM dbo.events AS l INNER JOIN dbo.users AS r", joined.Select);
+        Assert.Contains("ON l.user_id = r.user_id", joined.Select);
+        Assert.StartsWith("dashspec_usage_join_joined_", joined.ViewName);
+    }
+
+    [Fact]
+    public void Composite_join_kind_maps_to_sql_kind()
+    {
+        var flow = ParseFlow(JoinFlow.Replace("InnerJoin(events, users)", "LeftJoin(events, users)"));
+        var joined = Assert.Single(ManagedViewsEmitter.Emit(flow, Catalog()), v => v.Select.Contains("JOIN"));
+        Assert.Contains("LEFT JOIN", joined.Select);
+    }
+
+    private const string UnionFlow = """
+        module flow usage_union view
+
+        source e1 = View(dbo.events_2025) {
+          use provider infer
+        }
+
+        source e2 = View(dbo.events_2026) {
+          use provider infer
+        }
+
+        source all_events = UnionAll(e1, e2) {
+        }
+
+        end flow
+        """;
+
+    [Fact]
+    public void Composite_union_wraps_into_derived_table()
+    {
+        var views = ManagedViewsEmitter.Emit(ParseFlow(UnionFlow), Catalog());
+        var union = Assert.Single(views, v => v.Select.Contains("UNION ALL"));
+
+        Assert.Contains("FROM (\nSELECT * FROM dbo.events_2025\nUNION ALL\nSELECT * FROM dbo.events_2026\n) AS u", union.Select);
+        Assert.StartsWith("dashspec_usage_union_all_events_", union.ViewName);
+    }
+
+    [Fact]
+    public void Bound_filter_over_composite_join_rides_an_itvf()
+    {
+        var parsed = ParseFlow(JoinFlow);
+        var withFilter = parsed
+            .WithTransformers([.. parsed.Transformers, FilterNode("string", "l.app_name")])
+            .WithLinks(
+            [
+                new DashSpec.Modeling.Parse.DataFlow.FlowLinkDef(
+                    "joined",
+                    "rows",
+                    "filter.product",
+                    "rows"),
+            ]);
+
+        var view = Assert.Single(ManagedViewsEmitter.Emit(withFilter, Catalog()), v => v.IsFunction);
+        Assert.Contains("INNER JOIN", view.Select);
+        Assert.Contains("WHERE l.app_name = @product", view.Select);
+        Assert.StartsWith("CREATE OR ALTER FUNCTION", view.Ddl);
+    }
 }

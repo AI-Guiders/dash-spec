@@ -47,7 +47,7 @@ public static class FlowCardExecution
         var source = ResolveBackingSource(flow, input);
         var rowType = ResolvePortRowType(flow, input.NodeId, input.PortName)
             ?? source.OutputRowType;
-        return ToDataSource(source).WithRowsType(rowType);
+        return ToDataSource(flow, source).WithRowsType(rowType);
     }
 
     public static string? ResolveProviderId(CardDefinition card)
@@ -103,15 +103,24 @@ public static class FlowCardExecution
     private static bool PortMatches(string expected, string actual) =>
         string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase);
 
-    private static DataSourceDefinition ToDataSource(DashflowSourceDefinition source)
+    private static DataSourceDefinition ToDataSource(DashflowModuleDefinition flow, DashflowSourceDefinition source)
     {
-        if (source.Origin is not FSharpDataFlow.SourceOrigin.Leaf leaf)
+        if (CompositeSourceSql.SelectBody(flow, source) is { } body)
         {
-            // ADR-0126: a composite source (InnerJoin/UnionAll/…) cannot
-            // materialize into a legacy card datasource yet.
-            throw new InvalidOperationException(
-                $"Dashflow source '{source.Id}' has a composite origin (ADR-0126): composite sources cannot materialize into a legacy card datasource yet.");
+            // ADR-0126 slice 3: a composite source materializes as a Sql/Query
+            // datasource whose body is a SELECT over the composed FROM
+            // (join sides l/r, union derived table u).
+            return new DataSourceDefinition
+            {
+                Kind = DataSourceKind.Sql,
+                Value = body,
+                SqlCarrier = Microsoft.FSharp.Core.FSharpOption<DataSourceSqlCarrier>.Some(DataSourceSqlCarrier.Query),
+                Sheet = Microsoft.FSharp.Core.FSharpOption<string>.None,
+                RowsType = source.OutputRowType,
+            };
         }
+
+        var leaf = (FSharpDataFlow.SourceOrigin.Leaf)source.Origin;
 
         var kind = leaf.kind.Equals(DashflowSourceFromKind.View)
             ? DataSourceKind.View

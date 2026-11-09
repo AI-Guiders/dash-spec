@@ -292,4 +292,51 @@ public sealed class FlowCardExecutionTests
         Assert.Equal("demo.v_drill", materialized.DiagramSlots!["drill"].DataSource.Value);
         Assert.Equal("demo.v_daily_peak", materialized.DataSource.Value);
     }
+
+    // === ADR-0126 slice 3: composite source materialization ===
+
+    private static DashflowSourceDefinition CompositeSource(
+        string id,
+        DashSpec.Modeling.Parse.DataFlow.SourceOrigin origin) =>
+        new(
+            id,
+            DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding.NewNamed("postgres"),
+            origin,
+            string.Empty,
+            "rows",
+            string.Empty,
+            Microsoft.FSharp.Core.FSharpOption<string>.None);
+
+    [Fact]
+    public void Composite_source_materializes_as_sql_query_datasource()
+    {
+        var on = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { "user_id" });
+        var condition = new DashSpec.Modeling.Parse.DataFlow.JoinCondition(
+            on,
+            Microsoft.FSharp.Collections.FSharpList<string>.Empty,
+            Microsoft.FSharp.Collections.FSharpList<string>.Empty);
+        var joinOrigin = DashSpec.Modeling.Parse.DataFlow.SourceOrigin.NewInnerJoin(
+            "utilization",
+            "users",
+            condition);
+
+        var sources = new[]
+        {
+            Source("utilization", "demo.v_utilization", "rows", "UtilizationRow"),
+            Source("users", "demo.v_users", "rows", "UserRow"),
+            CompositeSource("joined", joinOrigin),
+        };
+
+        var flow = CreateModule(sources, [], []);
+        var dataSource = FlowCardExecution.MaterializeDataSource(
+            flow,
+            new CardFlowInputDefinition("rows", "joined", "rows"));
+
+        Assert.Equal(DataSourceKind.Sql, dataSource.Kind);
+        Assert.Equal(
+            DashSpec.Modeling.Parse.DataSource.DataSourceSqlCarrier.Query,
+            dataSource.SqlCarrier.Value);
+        Assert.Contains("SELECT * FROM demo.v_utilization AS l INNER JOIN demo.v_users AS r", dataSource.Value);
+        Assert.Contains("ON l.user_id = r.user_id", dataSource.Value);
+    }
 }
