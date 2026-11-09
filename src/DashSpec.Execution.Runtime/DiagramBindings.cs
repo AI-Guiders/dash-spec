@@ -38,6 +38,27 @@ public static class DiagramBindings
             _ => ["x", "y", "series", "value"],
         };
 
+    /// <summary>Roles a diagram kind cannot render without — from the kind registry
+    /// (Modeling.Parse SSOT). A kind without a registry spec declares no mandatory
+    /// bindings; the renderer stays the loud backstop.</summary>
+    public static IReadOnlyList<string> RequiredRoles(string? kind) =>
+        [.. DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.requiredRoles(kind ?? string.Empty)];
+
+    /// <summary>Compile-time contract check: every required role must have a bound
+    /// column. Throws DashSpecFlowException with the card context on the first gap.</summary>
+    public static void ValidateRequiredBindings(string context, DiagramDefinition diagram)
+    {
+        foreach (var role in RequiredRoles(diagram.Kind))
+        {
+            if (!TryGetColumn(diagram, role, out _))
+            {
+                throw new DashSpec.Modeling.Core.DashSpecFlowException(
+                    $"{context}: diagram kind '{diagram.Kind}' requires a binding for '{role}' " +
+                    $"({DescribeExpected(role, diagram.Kind)}).");
+            }
+        }
+    }
+
     public static IEnumerable<string> SelectedSqlColumns(
         DiagramDefinition diagram,
         TooltipDefinition? tooltip = null)
@@ -80,9 +101,25 @@ public static class DiagramBindings
 
     private static IEnumerable<string> PropertyKeysForRole(string? kind, string role)
     {
+        var r = role.ToLowerInvariant();
+
+        // Line-family charts speak the same category/value dialect as category
+        // charts (the line DSL block accepts category=/value= and the QueryCompiler
+        // groups by them) — the role lookup must accept both spellings, or the
+        // render dies on a diagram the compiler happily accepted.
+        if (kind?.ToLowerInvariant() is "line" or "area" or "sparkline" or "scatter")
+        {
+            return r switch
+            {
+                "x" => ["x", "category"],
+                "y" => ["y", "value", "measure"],
+                _ => [role],
+            };
+        }
+
         if (IsCategoryChart(kind))
         {
-            return role.ToLowerInvariant() switch
+            return r switch
             {
                 "x" or "category" => ["category", "x"],
                 "y" or "value" or "measure" => ["value", "measure", "y"],

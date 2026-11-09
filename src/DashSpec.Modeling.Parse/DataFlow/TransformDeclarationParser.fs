@@ -79,18 +79,22 @@ module TransformDeclarationParser =
           TypeEffect = effect }
 
     let private stdlibLoaded = ref false
+    let private stdlibLock = obj ()
 
     /// <summary>Lazy stdlib self-registration: on the first call, every embedded
     /// <c>stdlib/transforms/**.ds</c> unit of this assembly is parsed and registered.
-    /// Idempotent; safe under races (worst case a declaration re-registers).</summary>
+    /// Idempotent; the flag flips inside the lock — a concurrent first parse must
+    /// never observe a half-empty vocabulary (Blazor prerender + circuit parse the
+    /// document in parallel).</summary>
     let ensureStdlibRegistered () =
-        if not stdlibLoaded.Value then
-            stdlibLoaded.Value <- true
-            let assembly = Reflection.Assembly.GetExecutingAssembly()
-            let prefix = "stdlib/transforms/"
+        lock stdlibLock (fun () ->
+            if not stdlibLoaded.Value then
+                stdlibLoaded.Value <- true
+                let assembly = Reflection.Assembly.GetExecutingAssembly()
+                let prefix = "stdlib/transforms/"
 
-            for name in assembly.GetManifestResourceNames() do
-                if name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) then
-                    use stream = assembly.GetManifestResourceStream name
-                    use textReader = new IO.StreamReader(stream)
-                    TransformDeclarations.register (parseDeclaration (textReader.ReadToEnd()))
+                for name in assembly.GetManifestResourceNames() do
+                    if name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) then
+                        use stream = assembly.GetManifestResourceStream name
+                        use textReader = new IO.StreamReader(stream)
+                        TransformDeclarations.register (parseDeclaration (textReader.ReadToEnd())))

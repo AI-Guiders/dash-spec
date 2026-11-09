@@ -88,6 +88,13 @@ module dashboard ai_report
         end section
 
         card kpi_cost as "Max training cost, $M"
+            layout
+                place
+                    row = 1
+                    col = 1
+                    span = 6
+                end place
+            end layout
             data flow
                 models [rows] -> [rows] __diagram__
             end data flow
@@ -98,6 +105,13 @@ module dashboard ai_report
             end card
 
         card kpi_params as "Max parameters, B"
+            layout
+                place
+                    row = 1
+                    col = 7
+                    span = 6
+                end place
+            end layout
             data flow
                 models [rows] -> [rows] __diagram__
             end data flow
@@ -108,6 +122,13 @@ module dashboard ai_report
             end card
 
         card releases_line as "Releases per day"
+            layout
+                place
+                    row = 2
+                    col = 1
+                    span = 12
+                end place
+            end layout
             data flow
                 by_release_day [rows] -> [rows] __diagram__
             end data flow
@@ -118,6 +139,13 @@ module dashboard ai_report
             end card
 
         card domain_bar as "Models by direction"
+            layout
+                place
+                    row = 3
+                    col = 1
+                    span = 6
+                end place
+            end layout
             data flow
                 by_domain [rows] -> [rows] __diagram__
             end data flow
@@ -128,6 +156,13 @@ module dashboard ai_report
             end card
 
         card access_donut as "Open vs closed weights"
+            layout
+                place
+                    row = 3
+                    col = 7
+                    span = 6
+                end place
+            end layout
             data flow
                 by_access [rows] -> [rows] __diagram__
             end data flow
@@ -135,6 +170,13 @@ module dashboard ai_report
             end card
 
         card country_bar_2023 as "Models by country, 2023"
+            layout
+                place
+                    row = 4
+                    col = 1
+                    span = 6
+                end place
+            end layout
             data flow
                 by_country_2023 [rows] -> [rows] __diagram__
             end data flow
@@ -142,6 +184,13 @@ module dashboard ai_report
             end card
 
         card country_bar_2024 as "Models by country, 2024"
+            layout
+                place
+                    row = 4
+                    col = 7
+                    span = 6
+                end place
+            end layout
             data flow
                 by_country_2024 [rows] -> [rows] __diagram__
             end data flow
@@ -149,6 +198,13 @@ module dashboard ai_report
             end card
 
         card models_table as "Model registry"
+            layout
+                place
+                    row = 5
+                    col = 1
+                    span = 12
+                end place
+            end layout
             show flow
                 models_top -> [toolbar] chrome.card.models_table
             end show flow

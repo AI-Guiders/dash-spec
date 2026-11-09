@@ -11,6 +11,7 @@ internal static class RowTypeAnalyzer
         foreach (var card in document.Cards)
         {
             ValidateDataSource(card.Id, card.DataSource, catalog);
+            DiagramBindings.ValidateRequiredBindings(card.Id, card.Diagram);
 
             if (card.DiagramSlots is null)
             {
@@ -20,6 +21,7 @@ internal static class RowTypeAnalyzer
             foreach (var slot in card.DiagramSlots.Values)
             {
                 ValidateDataSource($"{card.Id}/{slot.SlotRef}", slot.DataSource, catalog);
+                DiagramBindings.ValidateRequiredBindings($"{card.Id}/{slot.SlotRef}", slot.Diagram);
             }
         }
     }

@@ -19,6 +19,10 @@ module DiagramKindRegistry =
         { Id: string
           DataFamily: DiagramDataFamily
           Properties: PropertySpec list
+          /// Roles a diagram of this kind cannot render without (role vocabulary:
+          /// x/y/value/from/to — resolved through the role→key mapping at the
+          /// compile-time binding check). Empty = no mandatory bindings.
+          RequiredRoles: string list
           SupportsTopLimit: bool
           AllowExtensionProperties: bool }
 
@@ -32,31 +36,38 @@ module DiagramKindRegistry =
 
     let private ganttProperties = PropertySchemas.ganttDiagram
 
+    let private chartRequired = [ "x"; "y" ]
+
     let private specs =
         dict
-            [ "line", { Id = "line"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "area", { Id = "area"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "sparkline", { Id = "sparkline"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "bar", { Id = "bar"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "pie", { Id = "pie"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "donut", { Id = "donut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "doughnut", { Id = "doughnut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "scatter", { Id = "scatter"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "histogram", { Id = "histogram"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "box", { Id = "box"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "boxplot", { Id = "boxplot"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "treemap", { Id = "treemap"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "gauge", { Id = "gauge"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "windrose", { Id = "windrose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "wind_rose", { Id = "wind_rose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; SupportsTopLimit = true; AllowExtensionProperties = true }
-              "table", { Id = "table"; DataFamily = DiagramDataFamily.Table; Properties = tableProperties; SupportsTopLimit = true; AllowExtensionProperties = false }
-              "number", { Id = "number"; DataFamily = DiagramDataFamily.Scalar; Properties = numberProperties; SupportsTopLimit = false; AllowExtensionProperties = false }
-              "heatmap", { Id = "heatmap"; DataFamily = DiagramDataFamily.Matrix; Properties = heatmapProperties; SupportsTopLimit = false; AllowExtensionProperties = true }
-              "gantt", { Id = "gantt"; DataFamily = DiagramDataFamily.Gantt; Properties = ganttProperties; SupportsTopLimit = true; AllowExtensionProperties = true } ]
+            [ "line", { Id = "line"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "area", { Id = "area"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "sparkline", { Id = "sparkline"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "bar", { Id = "bar"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "pie", { Id = "pie"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "donut", { Id = "donut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "doughnut", { Id = "doughnut"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "scatter", { Id = "scatter"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "histogram", { Id = "histogram"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "box", { Id = "box"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "boxplot", { Id = "boxplot"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "treemap", { Id = "treemap"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "gauge", { Id = "gauge"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "windrose", { Id = "windrose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "wind_rose", { Id = "wind_rose"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = true; AllowExtensionProperties = true }
+              "table", { Id = "table"; DataFamily = DiagramDataFamily.Table; Properties = tableProperties; RequiredRoles = []; SupportsTopLimit = true; AllowExtensionProperties = false }
+              "number", { Id = "number"; DataFamily = DiagramDataFamily.Scalar; Properties = numberProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = false }
+              "heatmap", { Id = "heatmap"; DataFamily = DiagramDataFamily.Matrix; Properties = heatmapProperties; RequiredRoles = [ "x"; "y"; "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
+              "gantt", { Id = "gantt"; DataFamily = DiagramDataFamily.Gantt; Properties = ganttProperties; RequiredRoles = [ "y"; "from"; "to" ]; SupportsTopLimit = true; AllowExtensionProperties = true } ]
 
     let tryResolve kind = specs.TryGetValue kind
 
     let knownKinds () = specs.Keys |> Seq.sort |> Seq.toList
+
+    /// <summary>Mandatory binding roles of a kind; unknown kinds carry none.</summary>
+    let requiredRoles (kind: string) : string list =
+        let found, spec = tryResolve kind
+        if found then spec.RequiredRoles else []
 
     let getProperties kind = specs.[kind].Properties
 
