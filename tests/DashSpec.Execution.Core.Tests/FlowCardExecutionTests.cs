@@ -64,6 +64,7 @@ public sealed class FlowCardExecutionTests
             DashSpec.Modeling.Core.FlowGraphModule.empty,
             [],
             false,
+            [],
             []);
 
     [Fact]

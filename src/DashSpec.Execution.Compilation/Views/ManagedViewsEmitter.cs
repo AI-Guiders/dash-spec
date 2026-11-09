@@ -8,7 +8,22 @@ namespace DashSpec.Execution.Compilation.Views;
 
 /// <summary>One emitted managed view (ADR-0125): a deterministic content-addressed
 /// name, the SELECT it is a function of, and the dialect DDL.</summary>
-public sealed record ManagedView(string ViewName, string Select, string Ddl);
+public sealed record ManagedView(
+    string ViewName,
+    string FlowId,
+    string ChainId,
+    string? RowType,
+    string Select,
+    string Ddl)
+{
+    /// <summary>A parameterized inline table-valued function (the §3 boundary:
+    /// a filter must apply BEFORE aggregation — a flat VIEW cannot carry it).</summary>
+    public bool IsFunction { get; init; }
+}
+
+/// <summary>One filter parameter of an emitted iTVF: the port name, its SQL type,
+/// and the bound predicate column.</summary>
+public sealed record ManagedViewParam(string Name, string SqlType, string Column, string Match);
 
 /// <summary>
 /// ADR-0125: emits <c>module flow &lt;id&gt; view</c> chains into managed views.
@@ -44,19 +59,100 @@ public static class ManagedViewsEmitter
 
             foreach (var chain in ChainsFrom(module, source.Id))
             {
-                var select = BuildSelect(module, source, chain, from, catalog);
-                if (select is null)
+                var chainId = chain.Count > 0 ? chain[^1].Id : source.Id;
+                var rowType = ChainRowType(module, source, chain);
+
+                // A parametrized node with a column binding (ADR-0120 filter port +
+                // ADR-0125 §3 binding) turns the chain into an iTVF: the filter applies
+                // BEFORE aggregation inside the database, as an inlinable function.
+                // An UNBOUND param port is a runtime filter with nowhere to push —
+                // the §3 boundary is loud: neither a flat VIEW nor an iTVF can carry it.
+                var allParams = chain.SelectMany(t => t.Params).ToList();
+                var boundParams = allParams
+                    .Where(p => p.ColumnBinding is { Value: not null and not "" })
+                    .ToList();
+
+                if (allParams.Count > boundParams.Count)
                 {
+                    var unbound = allParams.First(p => p.ColumnBinding is not { Value: not null and not "" });
+                    throw new InvalidOperationException(
+                        $"flow '{module.FlowId}': param port '{unbound.Name}' has no column binding — a flat VIEW " +
+                        "cannot carry a runtime filter and an iTVF needs the bound column (ADR-0125 §3). " +
+                        "Bind the filter's column or drop the param port from the view chain.");
+                }
+
+                if (boundParams.Count > 0)
+                {
+                    var (parameters, where) = BuildParameters(boundParams);
+                    var select = BuildSelect(module, source, chain, from, catalog, where)
+                        ?? throw new InvalidOperationException(
+                            $"flow '{module.FlowId}': parameterized chain from '{source.Id}' failed to compile.");
+                    var name = $"dashspec_{Slug(module.FlowId)}_{Slug(chainId)}_{Sha12(select)}";
+                    views.Add(new ManagedView(name, module.FlowId, chainId, rowType, select, FunctionDdl(name, parameters, select, dialect))
+                    {
+                        IsFunction = true,
+                    });
                     continue;
                 }
 
-                var chainId = chain.Count > 0 ? chain[^1].Id : source.Id;
-                var name = $"dashspec_{Slug(module.FlowId)}_{Slug(chainId)}_{Sha12(select)}";
-                views.Add(new ManagedView(name, select, DdlFor(name, select, dialect)));
+                var flatSelect = BuildSelect(module, source, chain, from, catalog, whereClause: null)
+                    ?? throw new InvalidOperationException(
+                        $"flow '{module.FlowId}': chain from source '{source.Id}' cannot compile into a flat VIEW " +
+                        "(a runtime-parameterized step without a column binding is in the chain — the binding rides " +
+                        "the ADR-0120 param port; see DASHSPEC-ADR-0125 §3).");
+
+                var flatName = $"dashspec_{Slug(module.FlowId)}_{Slug(chainId)}_{Sha12(flatSelect ?? throw new InvalidOperationException("unreachable — null handled above"))}";
+                views.Add(new ManagedView(flatName, module.FlowId, chainId, rowType, flatSelect, DdlFor(flatName, flatSelect, dialect)));
             }
         }
 
         return views;
+    }
+
+    /// <summary>The chain's terminal row type — the inferred (ADR-0127) or declared
+    /// output of the last transformer; the source type for raw chains.</summary>
+    private static string? ChainRowType(DashflowModule module, DashflowSourceDef source, List<DashflowTransformerDef> chain)
+    {
+        if (chain.Count == 0)
+        {
+            return source.OutputRowType;
+        }
+
+        return chain[^1].Outputs.Length > 0 ? chain[^1].Outputs[0].Item2 : null;
+    }
+
+    /// <summary>iTVF parameters + the WHERE fragment they produce. daterange ports
+    /// expand into a half-open [from, to) pair — the same shape the reader pushes.</summary>
+    private static (IReadOnlyList<ManagedViewParam> Parameters, string Where) BuildParameters(
+        IReadOnlyList<DashSpec.Modeling.Parse.DataFlow.DashflowParamPortDef> bound)
+    {
+        var parameters = new List<ManagedViewParam>();
+        var predicates = new List<string>();
+
+        foreach (var port in bound)
+        {
+            var column = port.ColumnBinding.Value.Trim();
+            var name = Slug(port.Name);
+
+            switch (port.ValueType)
+            {
+                case "daterange":
+                    parameters.Add(new ManagedViewParam($"{name}_from", "DATE", column, "range"));
+                    parameters.Add(new ManagedViewParam($"{name}_to", "DATE", column, "range"));
+                    predicates.Add($"{column} >= @{name}_from AND {column} < @{name}_to");
+                    break;
+                case "int":
+                    parameters.Add(new ManagedViewParam(name, "INT", column, "eq"));
+                    predicates.Add($"{column} = @{name}");
+                    break;
+                default:
+                    parameters.Add(new ManagedViewParam(name, "NVARCHAR(400)", column, "eq"));
+                    predicates.Add($"{column} = @{name}");
+                    break;
+            }
+        }
+
+        return (parameters, string.Join(" AND ", predicates));
     }
 
     /// <summary>All transformer paths from a source to terminal nodes (each terminal = one view).</summary>
@@ -119,10 +215,18 @@ public static class ManagedViewsEmitter
         DashflowSourceDef source,
         List<DashflowTransformerDef> chain,
         string from,
-        TypeCatalog catalog)
+        TypeCatalog catalog,
+        string? whereClause)
     {
         var columns = ColumnList(source, catalog);
         var current = $"SELECT {columns}\nFROM {from}";
+
+        if (whereClause is not null)
+        {
+            // The filter applies BEFORE aggregation (ADR-0125 §3) — it rides the
+            // innermost SELECT over the base table, never the post-aggregate result.
+            current = $"{current}\nWHERE {whereClause}";
+        }
 
         foreach (var transformer in chain)
         {
@@ -212,4 +316,30 @@ public static class ManagedViewsEmitter
         dialect.Equals("postgres", StringComparison.OrdinalIgnoreCase)
             ? $"CREATE OR REPLACE VIEW {name} AS\n{select};"
             : $"CREATE OR ALTER VIEW {name} AS\n{select};";
+
+    /// <summary>Inline table-valued function DDL — the inlinable parameterized view
+    /// (tsql: RETURNS TABLE AS RETURN; postgres: LANGUAGE sql STABLE function).</summary>
+    private static string FunctionDdl(
+        string name,
+        IReadOnlyList<ManagedViewParam> parameters,
+        string select,
+        string dialect)
+    {
+        var signature = string.Join(", ", parameters.Select(p => $"@{p.Name} {p.SqlType}"));
+
+        if (dialect.Equals("postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            var pgSignature = string.Join(", ", parameters.Select(p => $"{p.Name.Replace("@", "")} {PgType(p.SqlType)}"));
+            return $"CREATE OR REPLACE FUNCTION {name}({pgSignature})\nRETURNS TABLE AS $$\n{select}\n$$ LANGUAGE sql STABLE;";
+        }
+
+        return $"CREATE OR ALTER FUNCTION {name}({signature})\nRETURNS TABLE\nAS RETURN\n(\n{select}\n);";
+    }
+
+    private static string PgType(string sqlType) => sqlType switch
+    {
+        "INT" => "integer",
+        "DATE" => "date",
+        _ => "text",
+    };
 }

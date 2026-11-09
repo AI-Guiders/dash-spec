@@ -38,6 +38,9 @@ module FilterNodeSynthesisTests =
         Assert.Equal(Some "all", param.Default)
         Assert.Equal(Some "platform", param.DependsOn)
 
+        // ADR-0125 §3: the column binding rides the param port — iTVF emission's input.
+        Assert.Equal(Some "v_activity.product", param.ColumnBinding)
+
     [<Fact>]
     let ``date filter param is daterange, top is int — no special kinds`` () =
         let date = FilterNodeSynthesis.synthesize FilterNodeSynthesis.FilterNodeScope.Report (mkFilter FilterKind.Date "usage_date" None (Some "-7d..today"))

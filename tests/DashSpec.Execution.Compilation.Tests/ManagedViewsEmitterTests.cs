@@ -124,4 +124,72 @@ public sealed class ManagedViewsEmitterTests
         var view = Assert.Single(ManagedViewsEmitter.Emit(ParseFlow(ViewFlow), Catalog(), "postgres"));
         Assert.StartsWith("CREATE OR REPLACE VIEW", view.Ddl);
     }
+
+    private static DashSpec.Modeling.Parse.DataFlow.DashflowModule WithFilterBefore(
+        DashSpec.Modeling.Parse.DataFlow.DashflowModule module,
+        string paramType,
+        string column) =>
+        module.WithTransformers([.. module.Transformers, FilterNode(paramType, column)])
+            .WithLinks(
+            [
+                new DashSpec.Modeling.Parse.DataFlow.FlowLinkDef(
+                    "events",
+                    "rows",
+                    "filter.product",
+                    "raw"),
+                new DashSpec.Modeling.Parse.DataFlow.FlowLinkDef(
+                    "filter.product",
+                    "rows",
+                    "by_app",
+                    "raw"),
+            ]);
+
+    private static DashSpec.Modeling.Parse.DataFlow.DashflowTransformerDef FilterNode(string paramType, string column) =>
+        new(
+            "filter.product",
+            [],
+            [System.Tuple.Create("rows", "")],
+            [new DashSpec.Modeling.Parse.DataFlow.DashflowParamPortDef(
+                "product",
+                paramType,
+                null,
+                null,
+                Microsoft.FSharp.Core.FSharpOption<string>.Some(column))],
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("rows"),
+            Microsoft.FSharp.Core.FSharpOption<string>.Some("rows"),
+            []);
+
+    [Fact]
+    public void Bound_filter_param_turns_the_chain_into_an_itvf()
+    {
+        var withFilter = WithFilterBefore(ParseFlow(ViewFlow), "string", "app_name");
+        var view = Assert.Single(ManagedViewsEmitter.Emit(withFilter, Catalog()));
+        Assert.True(view.IsFunction);
+        Assert.StartsWith("CREATE OR ALTER FUNCTION", view.Ddl);
+        Assert.Contains("@product NVARCHAR(400)", view.Ddl);
+        Assert.Contains("RETURNS TABLE", view.Ddl);
+        Assert.Contains("WHERE app_name = @product", view.Select);
+        // the filter rides the innermost select — BEFORE the GROUP BY
+        Assert.True(view.Select.IndexOf("WHERE", StringComparison.Ordinal) < view.Select.IndexOf("GROUP BY", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Daterange_binding_expands_into_half_open_pair()
+    {
+        var withFilter = WithFilterBefore(ParseFlow(ViewFlow), "daterange", "usage_date");
+        // binding: usage_date column, daterange param
+        var view = Assert.Single(ManagedViewsEmitter.Emit(withFilter, Catalog()));
+        Assert.Contains("@product_from DATE", view.Ddl);
+        Assert.Contains("@product_to DATE", view.Ddl);
+        Assert.Contains("usage_date >= @product_from AND usage_date < @product_to", view.Select);
+    }
+
+    [Fact]
+    public void Chain_id_and_row_type_ride_the_view()
+    {
+        var view = Assert.Single(ManagedViewsEmitter.Emit(ParseFlow(ViewFlow), Catalog()));
+        Assert.Equal("by_app", view.ChainId);
+        // ADR-0127 inference filled the grouped output type at parse time
+        Assert.Equal("EventSummaryRow", view.RowType);
+    }
 }

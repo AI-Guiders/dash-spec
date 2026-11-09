@@ -23,7 +23,8 @@ module FlowPortsParser =
     type ParsedParamDecl =
         { Name: string
           ValueType: string
-          Default: string option }
+          Default: string option
+          ColumnBinding: string option }
 
     type ParsedPorts =
         { Inputs: ParsedPortDecl[]
@@ -80,9 +81,10 @@ module FlowPortsParser =
         let valueType = readValueTypeName reader
         { Name = portName; ValueType = valueType; Shape = shape }
 
-    /// <summary><c>param name: type = default</c>. The default accepts a string
-    /// literal or a bare word (<c>all</c>, <c>today</c>, numbers) — stored raw,
-    /// typed binding happens downstream.</summary>
+    /// <summary><c>param name: type = default [bind column]</c>. The default accepts
+    /// a string literal or a bare word (<c>all</c>, <c>today</c>, numbers) — stored
+    /// raw, typed binding happens downstream. <c>bind &lt;column&gt;</c> (ADR-0125 §3)
+    /// declares the pushed-down predicate column — the iTVF emission's input.</summary>
     let private readParamLine (reader: TokenReader) =
         let paramName = reader.ReadIdent()
 
@@ -108,7 +110,18 @@ module FlowPortsParser =
             else
                 None
 
-        { Name = paramName; ValueType = valueType; Default = defaultValue }
+        let columnBinding =
+            if reader.TryKeyword "bind" then
+                let column = reader.ReadIdent()
+
+                if String.IsNullOrWhiteSpace column then
+                    raise (DashSpecParseException($"param '{paramName}': bind requires a column name."))
+
+                Some column
+            else
+                None
+
+        { Name = paramName; ValueType = valueType; Default = defaultValue; ColumnBinding = columnBinding }
 
     let private validateDefaultPort (role: string) (name: string) (decls: ParsedPortDecl[]) =
         if String.IsNullOrWhiteSpace name then

@@ -2,8 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0125
 title: "DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views)"
-status: "Proposed"
-implementation: "slice 1: ManagedViewsEmitter + dsc build views (--print / --connection apply with dashspec_view_leases; tsql live-verified) — reader integration, iTVF emission and --prune pending (open questions 1, 3-5)"
+status: "Accepted"
+implementation: "core: module flow <id> view marker; ManagedViewsEmitter (flat views + iTVF for bound filter params, param bind <column> rides the port); dsc build views --print/--connection/--prune with dashspec_view_leases; dashspec.views.json manifest — the reader materializes cards onto the physical views (groupBy not re-pushed, dashspec_ prefix); tsql live-verified (view + inline TVF + prune). Open: cascading view-on-view (q4), index recommendations (future)"
 date: 2026-11-08
 tags: [dashspec, adr, sql, views, publish-pipeline, adr-0121, adr-0123, adr-0124]
 language: ru
@@ -222,8 +222,10 @@ per-dialect сужение той же границы из п.3.
 
 ## Status
 
-Proposed — идея оператора (2026-11-08); синтаксис `module flow <name> view`
-закреплён (граница ручных view закрыта). Версионирование закрыто
-content-addressing (open question 1). Реализован slice 1 (эмиттер + dsc build
-views + leases, tsql live-verified); до Accepted — reader-интеграция, iTVF,
-`--prune` (вопросы 3–5).
+Accepted (2026-11-09) — идея оператора (2026-11-08); синтаксис
+`module flow <name> view` закреплён; версионирование закрыто content-addressing
+(q1). Реализовано: эмиттер (плоские view + iTVF для забинженных filter-портов,
+`param … bind <column>`), `dsc build views --print/--connection/--prune` +
+leases, манифест `dashspec.views.json` и reader-интеграция (карточки читают
+физические view; summarize не пушится повторно). Открыты: каскад view-on-view
+(q4), вывод индексов (future).

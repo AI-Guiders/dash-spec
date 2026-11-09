@@ -50,12 +50,16 @@ type DashflowTransformStepDef =
 /// <summary>Typed widget-value port of a filter transformer (ADR-0120):
 /// <c>param event_type: string = all</c>. <c>DependsOn</c> carries the
 /// cascade-domain edge (<c>depends</c> column of the filters table): the
-/// option domain of this parameter is constrained by that parameter's value.</summary>
+/// option domain of this parameter is constrained by that parameter's value.
+/// <c>ColumnBinding</c> (ADR-0125 §3) is the pushed-down predicate column —
+/// the binding the placement resolver carries on the edge; iTVF emission
+/// turns it into <c>WHERE col @param</c>.</summary>
 type DashflowParamPortDef =
     { Name: string
       ValueType: string
       Default: string option
-      DependsOn: string option }
+      DependsOn: string option
+      ColumnBinding: string option }
 
 type DashflowTransformerDef =
     { Id: string
@@ -97,6 +101,9 @@ type DashflowModule =
       /// ADR-0125: the `module flow <id> view` marker — the explicit opt-in for
       /// emitting the module's chains as managed views (dsc build views).
       EmitViews: bool
+      /// ADR-0125: the managed-views manifest entries for this flow (loaded from
+      /// dashspec.views.json next to the corpus by the document resolver).
+      ViewManifest: DashSpec.Modeling.Parse.Document.DashflowViewManifest.DashflowViewEntry list
       Diagnostics: FlowGraphDiagnostic[] }
 
     member this.WithSources(sources: DashflowSourceDef[]) =
@@ -104,3 +111,6 @@ type DashflowModule =
 
     member this.WithTransformers(transformers: DashflowTransformerDef[]) =
         { this with Transformers = transformers }
+
+    member this.WithLinks(links: FlowLinkDef[]) =
+        { this with Links = links }

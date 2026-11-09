@@ -92,9 +92,14 @@ public static class Program
         string? connection = null;
         string dialect = "tsql";
         string projectUid = "dsc-cli";
+        var prune = false;
         for (var i = 0; i < rest.Length; i++)
         {
-            if (rest[i] is "--connection" && i + 1 < rest.Length)
+            if (rest[i] is "--prune")
+            {
+                prune = true;
+            }
+            else if (rest[i] is "--connection" && i + 1 < rest.Length)
             {
                 connection = rest[++i];
             }
@@ -146,8 +151,91 @@ public static class Program
         }
 
         ApplyViews(views, connection, projectUid);
-        Console.WriteLine($"OK: {views.Count} managed view(s) applied + leased to '{projectUid}'");
+        WriteManifest(views, fullPath);
+        if (prune)
+        {
+            var dropped = PruneOrphans(connection, projectUid, views.Select(v => v.ViewName).ToHashSet(StringComparer.OrdinalIgnoreCase));
+            Console.WriteLine($"prune: dropped {dropped} orphaned view(s)");
+        }
+
+        Console.WriteLine($"OK: {views.Count} managed view(s) applied + leased to '{projectUid}', manifest written");
         return 0;
+    }
+
+    /// <summary>The compiled artifact ships with the catalog (ADR-0125, the ADR-0124
+    /// symmetry): the manifest maps chain terminals to physical view names — the
+    /// reader's lookup at compile time.</summary>
+    private static void WriteManifest(IReadOnlyList<DashSpec.Execution.Compilation.Views.ManagedView> views, string corpusDir)
+    {
+        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        var entries = views.Select(v => new
+        {
+            flow = v.FlowId,
+            chain = v.ChainId,
+            viewName = v.ViewName,
+            rowType = v.RowType ?? "",
+            isFunction = v.IsFunction,
+        });
+        var path = Path.Combine(corpusDir, "dashspec.views.json");
+        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(entries, options));
+    }
+
+    /// <summary>Drop dashspec_ views with no leases from other projects and absent
+    /// from the current revision (the current set was just re-leased). Views leased
+    /// by other projects survive — the whole point of leases (ADR-0125 §2).</summary>
+    private static int PruneOrphans(string connection, string projectUid, HashSet<string> current)
+    {
+        using var conn = new Microsoft.Data.SqlClient.SqlConnection(connection);
+        conn.Open();
+
+        var orphans = new List<string>();
+        using (var find = conn.CreateCommand())
+        {
+            find.CommandText = """
+                SELECT v.name
+                FROM sys.views v
+                WHERE v.name LIKE 'dashspec[_]%'
+                  AND NOT EXISTS (
+                    SELECT 1 FROM dashspec_view_leases l
+                    WHERE l.view_name = v.name AND l.project_uid <> @project
+                  )
+                """;
+            find.Parameters.AddWithValue("@project", projectUid);
+            using var reader = find.ExecuteReader();
+            while (reader.Read())
+            {
+                if (!current.Contains(reader.GetString(0)))
+                {
+                    orphans.Add(reader.GetString(0));
+                }
+            }
+        }
+
+        foreach (var orphan in orphans)
+        {
+            var safeName = orphan.Replace("]", "]]");
+            using var drop = conn.CreateCommand();
+            drop.CommandText = $"DROP VIEW IF EXISTS [{safeName}]";
+            drop.ExecuteNonQuery();
+
+            using var clearLease = conn.CreateCommand();
+            clearLease.CommandText = "DELETE FROM dashspec_view_leases WHERE view_name = @view";
+            clearLease.Parameters.AddWithValue("@view", orphan);
+            clearLease.ExecuteNonQuery();
+        }
+
+        // stale lease rows for views that no longer exist (e.g. an interrupted run)
+        using (var sweep = conn.CreateCommand())
+        {
+            sweep.CommandText = """
+                DELETE l FROM dashspec_view_leases l
+                WHERE NOT EXISTS (SELECT 1 FROM sys.views v WHERE v.name = l.view_name)
+                  AND NOT EXISTS (SELECT 1 FROM sys.objects o WHERE o.name = l.view_name AND o.type IN ('IF', 'TF', 'FN'))
+                """;
+            sweep.ExecuteNonQuery();
+        }
+
+        return orphans.Count;
     }
 
     /// <summary>Publish-time DDL (ADR-0125): CREATE OR ALTER each view and refresh this

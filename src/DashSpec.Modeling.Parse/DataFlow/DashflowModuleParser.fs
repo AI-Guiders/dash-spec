@@ -169,7 +169,8 @@ module DashflowModuleParser =
                         { Name = decl.Name
                           ValueType = decl.ValueType
                           Default = decl.Default
-                          DependsOn = None })
+                          DependsOn = None
+                          ColumnBinding = decl.ColumnBinding })
             elif reader.TryKeyword "transform" then
                 steps.Add(TransformStepParser.parseTransformUseBlock reader transformerId)
             else
@@ -781,6 +782,7 @@ module DashflowModuleParser =
           Graph = graph
           InferredRowTypes = inferred |> List.toArray
           EmitViews = false
+          ViewManifest = []
           Diagnostics = diagnostics |> List.toArray }
 
     /// Body after <c>@flow &lt;id&gt;</c> until <c>end flow</c> (optional matching id on <c>end</c>).
