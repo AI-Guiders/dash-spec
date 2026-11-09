@@ -153,7 +153,7 @@ source events_raw {
   from view demo.v_events_detail
   ports
     default output raw
-    output stream raw: FixtureRow
+    output stream raw: EventDetailRow
   end ports
 }
 
@@ -161,8 +161,8 @@ transformer events_tz {
   ports
     default input raw
     default output rows
-    input stream raw: FixtureRow
-    output stream rows: FixtureRow
+    input stream raw: EventDetailRow
+    output stream rows: EventDetailRow
   end ports
   transform use to_zone { zone = UTC+3 }
 }

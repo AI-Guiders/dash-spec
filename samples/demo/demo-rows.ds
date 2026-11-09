@@ -27,3 +27,12 @@ type FixtureRow
   optional string event_type
   optional datetime occurred_at
 end type
+
+type EventDetailRow
+  optional datetime occurred_at_utc
+  optional string app_name
+  optional string user_id
+  optional string user_name
+  optional string product_version
+  optional string window_title
+end type

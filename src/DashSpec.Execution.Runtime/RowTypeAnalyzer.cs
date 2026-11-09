@@ -11,7 +11,7 @@ internal static class RowTypeAnalyzer
         foreach (var card in document.Cards)
         {
             ValidateDataSource(card.Id, card.DataSource, catalog);
-            DiagramBindings.ValidateRequiredBindings(card.Id, card.Diagram);
+            ValidateDiagram(card.Id, card.Diagram, card.DataSource, catalog);
 
             if (card.DiagramSlots is null)
             {
@@ -21,7 +21,36 @@ internal static class RowTypeAnalyzer
             foreach (var slot in card.DiagramSlots.Values)
             {
                 ValidateDataSource($"{card.Id}/{slot.SlotRef}", slot.DataSource, catalog);
-                DiagramBindings.ValidateRequiredBindings($"{card.Id}/{slot.SlotRef}", slot.Diagram);
+                ValidateDiagram($"{card.Id}/{slot.SlotRef}", slot.Diagram, slot.DataSource, catalog);
+            }
+        }
+    }
+
+    private static void ValidateDiagram(
+        string context,
+        DiagramDefinition diagram,
+        DataSourceDefinition source,
+        IReadOnlyDictionary<string, RowTypeSchema> catalog)
+    {
+        DiagramBindings.ValidateRequiredBindings(context, diagram);
+
+        // A table's column list is a contract against the row type — a typo there
+        // is a spec defect visible at compile, not an SQL error at first render.
+        if (diagram.Kind.Equals("table", StringComparison.OrdinalIgnoreCase)
+            && diagram.Properties.TryGetValue("columns", out var columns)
+            && !string.IsNullOrWhiteSpace(columns)
+            && !string.IsNullOrWhiteSpace(source.RowsType)
+            && catalog.TryGetValue(source.RowsType, out var schema))
+        {
+            var known = new HashSet<string>(schema.Fields.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
+            foreach (var column in columns.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!known.Contains(column))
+                {
+                    throw new DashSpec.Modeling.Core.DashSpecFlowException(
+                        $"Card '{context}': table column '{column}' is not a field of row type " +
+                        $"'{source.RowsType}' (fields: {string.Join(", ", schema.Fields.Select(f => f.Name))}).");
+                }
             }
         }
     }
@@ -38,8 +67,9 @@ internal static class RowTypeAnalyzer
 
         if (!catalog.ContainsKey(source.RowsType))
         {
-            throw new InvalidOperationException(
-                $"Card '{context}': row type '{source.RowsType}' is not defined (Modeling SSOT).");
+            throw new DashSpec.Modeling.Core.DashSpecFlowException(
+                $"Card '{context}': row type '{source.RowsType}' is not defined in the document catalog " +
+                "— declare it among the document types or check the spelling.");
         }
     }
 }

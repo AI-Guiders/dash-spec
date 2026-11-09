@@ -2,6 +2,6 @@ module diagram ai_models_table
 namespace Ai.Landscape.Diagrams
 
     table
-    columns = name, org_name, domain, released, parameters_b, training_flop, cost_musd, accessibility
+    columns = name, org_id, domain, released, parameters_b, training_flop, cost_musd, accessibility
 
     end table
