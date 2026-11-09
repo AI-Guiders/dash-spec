@@ -57,19 +57,46 @@ JOIN (inner/left/right/full).
 `source`-блок получает вторую форму — композицию двух уже объявленных источников:
 
 ```
-source activity_joined {
-  from join activity_raw + users_raw
-    kind = inner
-    on = user_id            // или left_key = … / right_key = …
+// листовые источники — происхождение конструктором, тип обязателен
+source activity_raw: FiveMinActivityRow = View(demo.v_activity_buckets) {
+  use provider infer
+  time_zone = utc
 }
 
-source all_activity {
-  from union activity_a + activity_b
+source users_raw: UserRow = View(demo.v_users) {
+  use provider infer
+  time_zone = utc
 }
+
+// композитные — конструктор склейки в origin-позиции, тело несёт условие
+source activity_joined: InnerJoin(activity_raw, users_raw) {
+  on = user_id                    // колонка есть в схемах обеих сторон
+}
+
+source enriched: LeftJoin(launches_raw, apps_ref) {
+  left_key = app_guid
+  right_key = app_id
+}
+
+source by_host_day: InnerJoin(usage_raw, hosts_ref) {
+  on = host_name, usage_date      // составной ключ — список
+}
+
+// симметричное слияние: тип = контракт соответствия сторон; тело опционально
+source all_events: UnionAll(events_2025, events_2026)
 ```
 
-(точечный синтаксис фиксируется при реализации в стиле существующих key-value строк
-source-блока; здесь — поверхность решения, не лексер)
+Единая поверхность: `source <id> [: RowType] = <Origin> { params }`, где
+`Origin ::= View(dotted) | SqlQuery(raw) | SqlFile(path) | Xlsx(path) | InnerJoin(a, b) | LeftJoin(a, b) | RightJoin(a, b) | FullJoin(a, b) | UnionAll(a, b)`.
+Одна грамматическая продукция вместо `from view/sql/xlsx` и композитной формы;
+ключевое слово `from` исчезает. Листья: аннотация `: RowType` обязательна,
+`use provider` и `time_zone` — в теле. Композиты: аннотация опциональна (тип
+синтезируется по ADR-0127; явная — верифицируемый контракт), provider/time_zone
+наследуются от constituent'ов с assert'ами, тело — только условие склейки
+(`on`, `left_key`/`right_key`); аргументы композитных конструкторов — только
+простые источники (v1-граница, проверяется при разборе типового выражения).
+Легаси `from view … / from sql … / ports { output stream raw: T }` транспилируется
+при чтении (ADR-0119 OQ1), миграция корпуса механическая.
 
 Семантика:
 
@@ -98,14 +125,15 @@ source-блока; здесь — поверхность решения, не л
   аннотация на нём — верифицируемый контракт. Join требует: колонка `on` существует
   по обе стороны, типы ключей сравнимы.
 
-- **Авторская поверхность** (предложение Argon, 2026-11-09): объявление источника
-  упрощается до `source <id>: <Type> { … }`. У source по определению нет input'ов и
-  ровно один output (парсер уже запрещает иное), поэтому тип выводится из аннотации
-  (заодно `rows` обязателен синтаксически), а порт-блок на source исчезает: имя
+- **Авторская поверхность** (предложение Argon, 2026-11-09; расширено — `from
+  view`/`from sql` тоже дографовой эры): единая форма `source <id> [: RowType] =
+  <Origin> { params }`, Origin — конструкторы (`View`, `SqlQuery`, `SqlFile`,
+  `Xlsx`, `InnerJoin`, `LeftJoin`, `RightJoin`, `FullJoin`, `UnionAll`) — см. эскиз
+  ниже. У source по определению нет input'ов и ровно один output (парсер уже
+  запрещает иное), поэтому тип несёт аннотация, а порт-блок исчезает: имя
   единственного порта — украшение, ссылки на source в линках работают без
-  порт-скобки. Легаси `ports { output stream raw: T }` на source транспилируется
-  при чтении (прецедент ADR-0119 OQ1 — transpile legacy on read, без dual support);
-  миграция корпуса механическая.
+  порт-скобки. Легаси-формы транспилируются при чтении (прецедент ADR-0119 OQ1 —
+  transpile legacy on read, без dual support); миграция корпуса механическая.
 
 - **Словарь: `join` — только db** (по образцу order/sort-сплита). Join живёт ниже
   слоя трансформаций (конструктор источника) и в `Std.Transformations` декларации
