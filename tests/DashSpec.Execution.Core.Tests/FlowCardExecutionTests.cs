@@ -297,14 +297,15 @@ public sealed class FlowCardExecutionTests
 
     private static DashflowSourceDefinition CompositeSource(
         string id,
-        DashSpec.Modeling.Parse.DataFlow.SourceOrigin origin) =>
+        DashSpec.Modeling.Parse.DataFlow.SourceOrigin origin,
+        string rowsType = "") =>
         new(
             id,
             DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding.NewNamed("postgres"),
             origin,
             string.Empty,
             "rows",
-            string.Empty,
+            rowsType,
             Microsoft.FSharp.Core.FSharpOption<string>.None);
 
     [Fact]
@@ -338,5 +339,80 @@ public sealed class FlowCardExecutionTests
             dataSource.SqlCarrier.Value);
         Assert.Contains("SELECT * FROM demo.v_utilization AS l INNER JOIN demo.v_users AS r", dataSource.Value);
         Assert.Contains("ON l.user_id = r.user_id", dataSource.Value);
+    }
+
+    [Fact]
+    public void Composite_source_compiles_through_query_compiler()
+    {
+        var on = Microsoft.FSharp.Collections.ListModule.OfSeq(new[] { "user_id" });
+        var condition = new DashSpec.Modeling.Parse.DataFlow.JoinCondition(
+            on,
+            Microsoft.FSharp.Collections.FSharpList<string>.Empty,
+            Microsoft.FSharp.Collections.FSharpList<string>.Empty);
+        var joinOrigin = DashSpec.Modeling.Parse.DataFlow.SourceOrigin.NewInnerJoin(
+            "utilization",
+            "users",
+            condition);
+
+        var sources = new[]
+        {
+            Source("utilization", "demo.v_utilization", "rows", "UtilizationRow"),
+            Source("users", "demo.v_users", "rows", "UserRow"),
+            CompositeSource("joined", joinOrigin, "JoinedRow"),
+        };
+        var flow = CreateModule(sources, [], []);
+
+        var card = CardTestData.Create(
+            "c",
+            "C",
+            new DiagramDefinition("table", new Dictionary<string, string>(), null),
+            DashSpec.Execution.Parsing.DataSourceDefinitionFactory.Create(DataSourceKind.View, string.Empty, rowsType: string.Empty),
+            ["app_name"],
+            [],
+            flowInput: new CardFlowInputDefinition("rows", "joined", "rows"));
+        var document = DocumentTestData.Create(
+            "t",
+            "T",
+            null,
+            SqlDialect.TSql,
+            null,
+            null,
+            null,
+            new LayoutDefinition { Columns = 12 },
+            TestModelDefaults.FiltersChrome,
+            [],
+            [],
+            [],
+            [card],
+            dashflow: flow);
+
+        // The card materializes the composite as a Sql/Query datasource, then
+        // QueryCompiler compiles it through its existing Sql branch — no parallel
+        // machinery: WHERE pushdown, parameters and limits ride as before.
+        var materialized = FlowCardExecution.ApplyFlowInput(document.Cards[0], document);
+        var rowTypes = new RowTypeCatalog(new Dictionary<string, RowTypeSchema>
+        {
+            ["JoinedRow"] = new RowTypeSchema("JoinedRow", [
+                new RowFieldSchema("user_id", DashPrimitiveKind.String),
+                new RowFieldSchema("app_name", DashPrimitiveKind.String),
+            ]),
+        });
+        var filters = new FilterState();
+        filters.SetField("app_name", ["AcmeDraw"]);
+        var index = new Dictionary<string, DashSpec.Modeling.Parse.Filter.FilterDefinition>
+        {
+            ["app_name"] = new()
+            {
+                Kind = DashSpec.Modeling.Parse.Filter.FilterKind.Field,
+                Name = "app_name",
+                ColumnReference = Microsoft.FSharp.Core.FSharpOption<string>.Some("app_name"),
+            },
+        };
+
+        var query = DashSpec.Execution.Compilation.QueryCompiler.Compile(materialized, filters, index, rowTypes);
+
+        Assert.Contains("(SELECT * FROM demo.v_utilization AS l INNER JOIN demo.v_users AS r", query.Sql);
+        Assert.Contains("ON l.user_id = r.user_id) AS _dashspec_q", query.Sql);
+        Assert.Contains("WHERE 1=1 AND app_name = @app_name_0", query.Sql);
     }
 }
