@@ -95,6 +95,10 @@ module dashboard ai_report
                     span = 6
                 end place
             end layout
+            when
+                | state | message |
+                | no data | Training cost is not disclosed for any model in this slice |
+            end when
             data flow
                 models [rows] -> [rows] __diagram__
             end data flow

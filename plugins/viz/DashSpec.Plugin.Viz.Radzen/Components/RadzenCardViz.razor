@@ -17,7 +17,7 @@
    The render is a vertical slice (ADR-0077): rviz-* classes live in this plugin's css,
    the copy rides RadzenVizStrings — the renderer owns the whole render. *@
 
-@if (IsNumberFamily)
+@if (IsNumberFamily && !IsEmptyForFamily)
 {
     @* KPI number (ADR-0112: Radzen speaks it natively): a percent rides a RadialGauge
        with traffic ranges, everything else (counts, dates) is a value tile. The value
