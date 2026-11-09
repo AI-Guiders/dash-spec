@@ -1,4 +1,4 @@
-module types ai_rows
+﻿module types ai_rows
 namespace Ai.Landscape.Types
 
 type ModelRow
@@ -11,6 +11,13 @@ type ModelRow
   optional decimal training_flop
   optional decimal cost_musd
   optional string accessibility
+end type
+
+type OrgRow
+  optional int org_id
+  optional string name
+  optional string country
+  optional string kind
 end type
 
 type DomainStatRow

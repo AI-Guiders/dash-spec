@@ -51,7 +51,7 @@ public static class ManagedViewsEmitter
 
         foreach (var source in module.Sources)
         {
-            var from = ResolveFrom(module, source);
+            var from = ResolveFrom(module, source, catalog);
             if (from is null)
             {
                 continue; // xlsx / sql-file chains do not emit views (v1)
@@ -194,7 +194,7 @@ public static class ManagedViewsEmitter
         }
     }
 
-    private static string? ResolveFrom(DashflowModule module, DashflowSourceDef source)
+    private static string? ResolveFrom(DashflowModule module, DashflowSourceDef source, TypeCatalog catalog)
     {
         if (source.Origin is SourceOrigin.Leaf leaf)
         {
@@ -213,8 +213,12 @@ public static class ManagedViewsEmitter
         }
 
         // ADR-0126 slice 3: composite origins compose into SQL here —
-        // join sides aliased l/r, union wrapped as derived table u.
-        return CompositeSourceSql.FromClause(module, source)
+        // join sides aliased l/r, union branches project the union row type
+        // (canonical column order — a managed union never rides SELECT *).
+        return CompositeSourceSql.FromClause(
+                module,
+                source,
+                source.Origin is SourceOrigin.UnionAll ? ColumnList(source, catalog) : null)
             ?? throw new InvalidOperationException(
                 $"Dashflow source '{source.Id}': composite origin has no SQL material (ADR-0126).");
     }
@@ -227,7 +231,10 @@ public static class ManagedViewsEmitter
         TypeCatalog catalog,
         string? whereClause)
     {
-        var columns = ColumnList(source, catalog);
+        var columns = source.Origin is SourceOrigin.InnerJoin or SourceOrigin.LeftJoin
+            or SourceOrigin.RightJoin or SourceOrigin.FullJoin
+            ? CompositeColumnList(module, source, catalog)
+            : ColumnList(source, catalog);
         var current = $"SELECT {columns}\nFROM {from}";
 
         if (whereClause is not null)
@@ -273,6 +280,64 @@ public static class ManagedViewsEmitter
         }
 
         return current;
+    }
+
+    /// <summary>ADR-0126 §2: composite join select list — every column rides a
+    /// side-qualified expression over the l/r aliases; the composite row type is the
+    /// schema contract (right collisions carry the qualified name r.col). Loud when
+    /// the synthesized type is missing — a join view with SELECT * is SQL-invalid.</summary>
+    private static string CompositeColumnList(DashflowModule module, DashflowSourceDef source, TypeCatalog catalog)
+    {
+        var compositeOption = TypeCatalogModule.tryGet(catalog, source.OutputRowType);
+        var compositeDef = compositeOption?.Value
+            ?? throw new InvalidOperationException(
+                $"flow '{module.FlowId}': composite source '{source.Id}' row type '{source.OutputRowType}' is not defined (ADR-0126 §1.1).");
+
+        var (leftId, rightId) = source.Origin switch
+        {
+            SourceOrigin.InnerJoin j => (j.left, j.right),
+            SourceOrigin.LeftJoin j => (j.left, j.right),
+            SourceOrigin.RightJoin j => (j.left, j.right),
+            SourceOrigin.FullJoin j => (j.left, j.right),
+            _ => (null, null)
+        };
+
+        var leftDef = RowTypeDefOf(module, catalog, leftId);
+        var rightDef = RowTypeDefOf(module, catalog, rightId);
+
+        var parts = new List<string>();
+        foreach (var field in compositeDef.Fields.Where(f => f.Type.IsPrimitive))
+        {
+            if (field.Name.StartsWith("r.", StringComparison.OrdinalIgnoreCase))
+            {
+                parts.Add($"{field.Name} AS [{field.Name}]");
+            }
+            else if (leftDef is not null && leftDef.Fields.Any(f => string.Equals(f.Name, field.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                parts.Add($"l.{field.Name}");
+            }
+            else if (rightDef is not null && rightDef.Fields.Any(f => string.Equals(f.Name, field.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                parts.Add($"r.{field.Name}");
+            }
+            else
+            {
+                parts.Add(field.Name);
+            }
+        }
+
+        return string.Join(", ", parts);
+    }
+
+    private static RowTypeDef? RowTypeDefOf(
+        DashflowModule module, TypeCatalog catalog, string? sourceId)
+    {
+        if (sourceId is null) return null;
+        var source = module.Sources.FirstOrDefault(s =>
+            string.Equals(s.Id, sourceId, StringComparison.OrdinalIgnoreCase));
+        var typeName = source?.OutputRowType;
+        if (string.IsNullOrWhiteSpace(typeName)) return null;
+        return TypeCatalogModule.tryGet(catalog, typeName)?.Value;
     }
 
     private static string ColumnList(DashflowSourceDef source, TypeCatalog catalog)

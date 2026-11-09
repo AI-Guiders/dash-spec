@@ -15,8 +15,13 @@ public static class CompositeSourceSql
 {
     /// <summary>The FROM-body of a source: a table name, a parenthesized SQL body,
     /// an aliased join, or a union derived table. Null = the source has no SQL
-    /// material (an xlsx / sql-file leaf) — callers skip it.</summary>
-    public static string? FromClause(FSharpDataFlow.DashflowModule module, FSharpDataFlow.DashflowSourceDef source)
+    /// material (an xlsx / sql-file leaf) — callers skip it. <paramref name="unionColumns"/>
+    /// is the canonical projection (fields of the union row type, ADR-0126 §1) —
+    /// a managed union never rides SELECT *.</summary>
+    public static string? FromClause(
+        FSharpDataFlow.DashflowModule module,
+        FSharpDataFlow.DashflowSourceDef source,
+        string? unionColumns = null)
     {
         if (source.Origin is FSharpDataFlow.SourceOrigin.Leaf leaf)
         {
@@ -33,7 +38,7 @@ public static class CompositeSourceSql
             FSharpDataFlow.SourceOrigin.RightJoin => Join(left, "RIGHT", right, JoinCondition(source, source.Origin)),
             FSharpDataFlow.SourceOrigin.FullJoin => Join(left, "FULL", right, JoinCondition(source, source.Origin)),
             FSharpDataFlow.SourceOrigin.UnionAll =>
-                $"(\nSELECT * FROM {left}\nUNION ALL\nSELECT * FROM {right}\n) AS u",
+                $"(\nSELECT {unionColumns ?? "*"} FROM {left}\nUNION ALL\nSELECT {unionColumns ?? "*"} FROM {right}\n) AS u",
             _ => throw new InvalidOperationException(
                 $"Dashflow source '{source.Id}': unsupported composite origin (ADR-0126)."),
         };

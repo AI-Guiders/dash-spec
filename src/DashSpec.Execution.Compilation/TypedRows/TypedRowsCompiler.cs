@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using DashSpec.Abstractions.Data;
 using DashSpec.Modeling.Core;
@@ -164,7 +164,18 @@ public static class TypedRowsCompiler
 
             var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(
                 DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file), catalog);
-            views.AddRange(Views.ManagedViewsEmitter.Emit(module, catalog, dialect));
+
+            // Composite sources (ADR-0126 §1.1) synthesize row types during this parse;
+            // deterministic names may carry collision suffixes — extend the catalog with
+            // THIS parse's synthesized types before Emit resolves column lists.
+            var emitCatalog = catalog;
+            if (module.InferredRowTypes.Length > 0)
+            {
+                emitCatalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(
+                    catalog.Definitions.Values.Concat(module.InferredRowTypes).ToList());
+            }
+
+            views.AddRange(Views.ManagedViewsEmitter.Emit(module, emitCatalog, dialect));
         }
 
         return views;
