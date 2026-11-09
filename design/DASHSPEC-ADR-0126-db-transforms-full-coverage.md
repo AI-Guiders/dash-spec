@@ -98,6 +98,53 @@ source all_events: UnionAll(events_2025, events_2026)
 Легаси `from view … / from sql … / ports { output stream raw: T }` транспилируется
 при чтении (ADR-0119 OQ1), миграция корпуса механическая.
 
+### 1.1. IR и граф: Origin как DU, узлов в графе не появляется
+
+Грамматика: `SourceFrom` (`DashflowTypes.fs:5-14`) заменяется одним размеченным
+объединением:
+
+```fsharp
+type SourceOrigin =
+    | View       of dotted: string
+    | SqlQuery   of raw: string
+    | SqlFile    of path: string
+    | Xlsx       of path: string * sheet: string option
+    | InnerJoin  of left: string * right: string * cond: JoinCondition
+    | LeftJoin   of left: string * right: string * cond: JoinCondition
+    | RightJoin  of left: string * right: string * cond: JoinCondition
+    | FullJoin   of left: string * right: string * cond: JoinCondition
+    | UnionAll   of left: string * right: string
+and JoinCondition = { On: string list; LeftKey: string list; RightKey: string list }
+```
+
+«SourceConstructor» как отдельная сущность не вводится — это варианты DU плюс
+маленький AST-узел Origin-выражения в парсере (ident + опциональные args), одна
+продукция. `paramContract`-механика сюда не тянется: у композита нет параметров-портов.
+
+**Граф не меняется** (осознанный выбор):
+
+- `DashflowPathResolver.walk` останавливается на любом source — композитном в том
+  числе; рёбра composite → constituents никто никогда не проходит (инверсии и drill
+  через источник не существует, §4);
+- ссылки на constituent'ов — **не рёбра `FlowLink`**, а поля определения источника;
+  `FlowGraph.typeCheck` wire'ы не видит;
+- `ResolvedPath { Source; Transformers }` и C#-твин `DashflowExecutionPath(Source,
+  Transformers)` остаются линейными — срез «дерево пути» не существует.
+
+Fan-in существует только как данные внутри источника. Будущие runtime merge/lookup
+(§1 «Словарь») — отдельная история про `DashflowBatchExecutor`, сюда не подмешиваются.
+
+Потребители композита: `ResolveFrom` в `ManagedViewsEmitter`/`QueryCompiler`
+(резолвит constituent'ов через `module.Sources`, строит FROM) и схема-алгебра в
+type inference (`RowTypeSchemaBridge`). Assert'ы на парсинге: provider/time_zone
+constituent'ов совпадают, аргументы — простые source, ключи `on` существуют в обеих
+схемах (проверка — при доступной схеме типов).
+
+Blast radius: `DashflowTypes.fs` (DU), `DashflowModuleParser.fs` (парс Origin +
+транспиляция легаси), C#-твин `DashflowSourceDefinition` + маппер,
+`ManagedViewsEmitter.ResolveFrom`/`QueryCompiler`, диагностики.
+`DashflowPathResolver.fs` — не трогается.
+
 Семантика:
 
 - **Провайдер один**: `activity_joined` наследует провайдер обоих constituent'ов;
