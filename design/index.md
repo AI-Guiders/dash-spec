@@ -1,7 +1,7 @@
 ---
 type: Index
 title: "ADR index — dash-spec"
-description: "Автоматический индекс ADR (126 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
+description: "Автоматический индекс ADR (127 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
 tags: [adr, index, dashspec]
 ---
 
@@ -137,5 +137,6 @@ tags: [adr, index, dashspec]
 | [0122](DASHSPEC-ADR-0122-default-flow-wiring.md) | Default flow wiring — компилятор синтезирует линейные дуги карточек | Accepted |
 | [0123](DASHSPEC-ADR-0123-runtime-grouping.md) | Группировка и порядок — runtime-трансформеры payload→payload; сводка остаётся database group_by | Proposed |
 | [0124](DASHSPEC-ADR-0124-row-types-compiled-by-dsc.md) | Row types компилируются в CLR-типы (dsc build types, Roslyn) — доменный объект доезжает до рендера | Proposed |
-| [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Proposed |
-| [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Proposed |
+| [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Accepted |
+| [0126](DASHSPEC-ADR-0126-db-transforms-full-coverage.md) | Composite sources — join/union как конструкторы источников, window как линейный db-шаг | Proposed |
+| [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Accepted |
