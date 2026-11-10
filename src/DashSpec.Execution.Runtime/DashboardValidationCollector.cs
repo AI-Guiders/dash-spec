@@ -15,6 +15,8 @@ public static class DashboardValidationCollector
         Try(() => TabAnalyzer.Validate(document), errors);
         Try(() => RowTypeAnalyzer.Validate(document), errors);
         Try(() => ClickBindingAnalyzer.Validate(document), errors);
+        Try(() => LayoutAnalyzer.Validate(document), errors);
+        Try(() => DateDefaultAnalyzer.Validate(document), errors);
         return errors;
     }
 
@@ -25,6 +27,10 @@ public static class DashboardValidationCollector
             validate();
         }
         catch (DashSpecParseException ex)
+        {
+            errors.Add(ex.Message);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecFlowException ex)
         {
             errors.Add(ex.Message);
         }
