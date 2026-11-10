@@ -140,3 +140,4 @@ tags: [adr, index, dashspec]
 | [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Accepted |
 | [0126](DASHSPEC-ADR-0126-db-transforms-full-coverage.md) | Composite sources — join/union как конструкторы источников, window как линейный db-шаг | Proposed |
 | [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Accepted |
+| [0128](DASHSPEC-ADR-0128-authored-surface-for-inferred-types.md) | Authored surface для выведенных типов — эмит через AST, статус не различается | Proposed |

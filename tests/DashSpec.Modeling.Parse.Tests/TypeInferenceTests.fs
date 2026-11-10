@@ -50,7 +50,7 @@ end flow
 """
 
     [<Fact>]
-    let ``ports-less summarize synthesizes BaseSummaryRow with by and value`` () =
+    let ``ports-less summarize synthesizes BaseByAppRow with by and value`` () =
         let module' =
             parseFlow (
                 flowWithTransformer
@@ -68,7 +68,9 @@ transformer by_app {
         Assert.Equal(1, synthesized.Length)
 
         let def = synthesized[0]
-        Assert.Equal("EventSummaryRow", def.Name)
+        // The by-column distinguishes same-stem projections — EventByAppNameRow,
+        // not a numbered EventSummaryRow2.
+        Assert.Equal("EventByAppNameRow", def.Name)
         Assert.Equal(2, def.Fields.Length)
         Assert.Equal("app_name", def.Fields[0].Name)
         Assert.Equal("value", def.Fields[1].Name)
@@ -79,7 +81,7 @@ transformer by_app {
         let byApp = module'.Transformers |> Array.find (fun t -> t.Id = "by_app")
         let (port, rowType) = byApp.Outputs[0]
         Assert.Equal("rows", port)
-        Assert.Equal("EventSummaryRow", rowType)
+        Assert.Equal("EventByAppNameRow", rowType)
 
         // and the graph typechecks clean against the extended catalog
         Assert.Empty(module'.Diagnostics)

@@ -48,9 +48,25 @@ module TypeInference =
         if String.IsNullOrEmpty value then value
         else Char.ToUpperInvariant(value.[0]).ToString() + value.Substring(1)
 
+    /// snake_case / dotted column → Pascal identifier segment (app_name → AppName).
+    let private pascalOf (column: string) =
+        column.Split([| '_'; '.' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.map capitalize
+        |> String.concat ""
+
     let private baseNameForEffect (inputStem: string) (step: DashflowTransformStepDef) =
         match TransformDeclarations.effectOf step.PluginId with
-        | TransformTypeEffect.Projection -> $"{inputStem}SummaryRow"
+        | TransformTypeEffect.Projection ->
+            // The by-column distinguishes same-stem projections (Model+domain,
+            // Model+released) — without it every summarize collapses onto
+            // <Stem>SummaryRow and the dedup suffix ships meaningless 2/3.
+            let by =
+                step.Parameters
+                |> Array.tryFind (fun p -> String.Equals(p.Key, "by", StringComparison.OrdinalIgnoreCase))
+                |> Option.map (fun p -> pascalOf p.Value)
+                |> Option.defaultValue ""
+
+            if String.IsNullOrEmpty by then $"{inputStem}SummaryRow" else $"{inputStem}By{by}Row"
         | TransformTypeEffect.Extend ->
             // window-style: <Base>№ColRow — the added column rides the step's `as`.
             let col =

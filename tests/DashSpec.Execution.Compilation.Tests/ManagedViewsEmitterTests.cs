@@ -195,7 +195,7 @@ public sealed class ManagedViewsEmitterTests
         var view = Assert.Single(ManagedViewsEmitter.Emit(ParseFlow(ViewFlow), Catalog()));
         Assert.Equal("by_app", view.ChainId);
         // ADR-0127 inference filled the grouped output type at parse time
-        Assert.Equal("EventSummaryRow", view.RowType);
+        Assert.Equal("EventByAppNameRow", view.RowType);
     }
 
     // === ADR-0126 slice 3: composite sources compose into SQL ===
