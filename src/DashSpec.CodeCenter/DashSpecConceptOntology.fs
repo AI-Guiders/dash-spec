@@ -15,7 +15,7 @@ type DashSpecConceptKind =
     | CompilationUnit
     | DashboardModule of identifier: string
     | TabModule of identifier: string
-    | UnitModule of keyword: string * identifier: string
+    | UnitModule of kind: DashSpecModuleKind * identifier: string
     | ImportDeclaration of keyword: string * target: string
     | Block of keyword: DashSpecBlockKeyword * identifier: string option
     | CardReference of cardId: string
@@ -23,7 +23,7 @@ type DashSpecConceptKind =
     | Property of key: string
     | Port of portName: string
     | FlowLink of fromNode: string * toNode: string
-    | Clause of keyword: string
+    | Clause of kind: ClauseKind
     | GridRow
     | TableRow
 
@@ -31,7 +31,7 @@ type DashSpecConceptKind =
 type DashSpecConceptEdgeKind =
     | Contains
 
-/// Semantic tier attached to an AST outline node.
+/// Semantic tier attached to an AST concept node.
 type DashSpecConceptTier =
     { Id: NodeId
       Kind: DashSpecConceptKind
@@ -90,7 +90,7 @@ module DashSpecConceptOntology =
             match n.Directive with
             | DashSpecModuleDirective.Dashboard id -> DashSpecConceptKind.DashboardModule id
             | DashSpecModuleDirective.Tab id -> DashSpecConceptKind.TabModule id
-            | DashSpecModuleDirective.Module(kind, id) -> DashSpecConceptKind.UnitModule(DashSpecModuleKind.toKeyword kind, id)
+            | DashSpecModuleDirective.Module(kind, id) -> DashSpecConceptKind.UnitModule(kind, id)
         | DashSpecAstNode.ImportDeclaration n ->
             DashSpecConceptKind.ImportDeclaration(n.Keyword, n.Target)
         | DashSpecAstNode.BlockDeclaration n ->
@@ -102,27 +102,27 @@ module DashSpecConceptOntology =
         | DashSpecAstNode.PropertyAssignment n -> DashSpecConceptKind.Property n.Key
         | DashSpecAstNode.PortDeclaration n -> DashSpecConceptKind.Port n.PortName
         | DashSpecAstNode.FlowLinkDeclaration n -> DashSpecConceptKind.FlowLink(n.FromNode, n.ToNode)
-        | DashSpecAstNode.ClauseDeclaration n ->
-            let keyword =
-                match n.Kind with
-                | ClauseKind.NamespaceClause _ -> "namespace"
-                | ClauseKind.ScopeClause _ -> "scope"
-                | ClauseKind.UseProviderClause _
-                | ClauseKind.UseClause _ -> "use"
-                | ClauseKind.FromClause _ -> "from"
-                | ClauseKind.DefaultPortClause _ -> "default"
-                | ClauseKind.DirectiveClause(kw, _) -> kw
-            DashSpecConceptKind.Clause keyword
+        | DashSpecAstNode.ClauseDeclaration n -> DashSpecConceptKind.Clause n.Kind
         | DashSpecAstNode.GridRowDeclaration _ -> DashSpecConceptKind.GridRow
         | DashSpecAstNode.TableRowDeclaration _ -> DashSpecConceptKind.TableRow
         | _ -> failwith "not a concept-bearing AST node"
+
+    let clauseCaption (kind: ClauseKind) =
+        match kind with
+        | ClauseKind.NamespaceClause ns -> $"namespace {ns}"
+        | ClauseKind.ScopeClause s -> $"scope {s}"
+        | ClauseKind.UseProviderClause p -> $"use provider {p}"
+        | ClauseKind.UseClause(k, t) -> $"use {k} {t}"
+        | ClauseKind.FromClause _ -> "from"
+        | ClauseKind.DefaultPortClause(dir, port) -> $"default {dir} {port}"
+        | ClauseKind.DirectiveClause(kw, _) -> kw
 
     let outlineCaption (kind: DashSpecConceptKind) =
         match kind with
         | DashSpecConceptKind.CompilationUnit -> "unit"
         | DashSpecConceptKind.DashboardModule id -> $"module dashboard {id}"
         | DashSpecConceptKind.TabModule id -> $"module tab {id}"
-        | DashSpecConceptKind.UnitModule(keyword, id) -> $"module {keyword} {id}"
+        | DashSpecConceptKind.UnitModule(kind, id) -> $"module {DashSpecModuleKind.toKeyword kind} {id}"
         | DashSpecConceptKind.ImportDeclaration(keyword, target) -> $"{keyword} {target}"
         | DashSpecConceptKind.Block(keyword, Some identifier) ->
             $"{DashSpecBlockKeyword.toEndName keyword} {identifier}"
@@ -132,7 +132,7 @@ module DashSpecConceptOntology =
         | DashSpecConceptKind.Property key -> $"property {key}"
         | DashSpecConceptKind.Port portName -> $"port {portName}"
         | DashSpecConceptKind.FlowLink(fromNode, toNode) -> $"{fromNode} -> {toNode}"
-        | DashSpecConceptKind.Clause keyword -> keyword
+        | DashSpecConceptKind.Clause clauseKind -> clauseCaption clauseKind
         | DashSpecConceptKind.GridRow -> "grid row"
         | DashSpecConceptKind.TableRow -> "table row"
 

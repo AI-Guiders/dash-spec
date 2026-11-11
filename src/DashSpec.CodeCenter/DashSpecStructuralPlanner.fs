@@ -35,6 +35,7 @@ module DashSpecStructuralPlanner =
         match tier.Kind with
         | DashSpecConceptKind.DashboardModule _
         | DashSpecConceptKind.TabModule _
+        | DashSpecConceptKind.UnitModule _
         | DashSpecConceptKind.Block _ -> true
         | _ -> false
 

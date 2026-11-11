@@ -132,6 +132,22 @@ module DashSpecAst =
         | DashSpecAstNode.CardReference _ -> true
         | _ -> false
 
+    /// Semantic concept-bearing AST node (containers + typed member declarations).
+    let isConceptNode (node: DashSpecAstNode) =
+        match node with
+        | DashSpecAstNode.ModuleDeclaration _
+        | DashSpecAstNode.BlockDeclaration _
+        | DashSpecAstNode.CardReference _
+        | DashSpecAstNode.ImportDeclaration _
+        | DashSpecAstNode.TypeFieldDeclaration _
+        | DashSpecAstNode.PropertyAssignment _
+        | DashSpecAstNode.PortDeclaration _
+        | DashSpecAstNode.FlowLinkDeclaration _
+        | DashSpecAstNode.ClauseDeclaration _
+        | DashSpecAstNode.GridRowDeclaration _
+        | DashSpecAstNode.TableRowDeclaration _ -> true
+        | _ -> false
+
     let private unwrapStringLiteral (text: string) =
         if text.Length >= 2 && text.[0] = '"' && text.[text.Length - 1] = '"' then
             text.Substring(1, text.Length - 2)

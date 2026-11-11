@@ -25,7 +25,7 @@ module DashSpecConceptGraphBuilder =
             span
 
     let private addTier (tiers: Map<NodeId, DashSpecConceptTier>) (edges: DashSpecConceptEdge list) (parentId: NodeId option) (node: DashSpecAstNode) =
-        if not (DashSpecAst.isOutlineNode node) then
+        if not (DashSpecAst.isConceptNode node) then
             tiers, edges
         else
             let kind = DashSpecConceptOntology.kindFromAst node
@@ -57,7 +57,7 @@ module DashSpecConceptGraphBuilder =
         let rec walk (parentId: NodeId option) (tiers, edges) (node: DashSpecAstNode) =
             let tiers, edges = addTier tiers edges parentId node
             let parentForChildren =
-                if DashSpecAst.isOutlineNode node then Some(DashSpecAst.id node)
+                if DashSpecAst.isConceptNode node then Some(DashSpecAst.id node)
                 else parentId
 
             let tiers, edges =

@@ -47,10 +47,18 @@ module DashSpecProfileRebuild =
              : DocumentNode))
 
     let private foldingRegions (graph: DashSpecConceptGraph) =
+        let isFoldable kind =
+            match kind with
+            | DashSpecConceptKind.DashboardModule _
+            | DashSpecConceptKind.TabModule _
+            | DashSpecConceptKind.UnitModule _
+            | DashSpecConceptKind.Block _ -> true
+            | _ -> false
+
         graph.Tiers
         |> Map.toList
         |> List.choose (fun (_, tier) ->
-            if tier.Span.End <= tier.Span.Start then
+            if not (isFoldable tier.Kind) || tier.Span.End <= tier.Span.Start then
                 None
             else
                 Some
