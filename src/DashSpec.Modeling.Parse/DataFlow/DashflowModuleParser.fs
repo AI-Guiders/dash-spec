@@ -569,19 +569,29 @@ module DashflowModuleParser =
         (links: FlowLinkDef[])
         (typeCatalog: TypeCatalog)
         =
+        let mergeIntoCatalog (baseCatalog: TypeCatalog) (synthesized: RowTypeDef list) =
+            if synthesized.IsEmpty then
+                baseCatalog
+            else
+                let synthesizedNames =
+                    synthesized
+                    |> List.map (fun d -> d.Name)
+                    |> fun names -> System.Collections.Generic.HashSet<string>(names, StringComparer.OrdinalIgnoreCase)
+
+                TypeCatalog.ofDefinitions (
+                    seq {
+                        for existing in baseCatalog.Definitions.Values do
+                            if not (synthesizedNames.Contains existing.Name) then
+                                yield existing
+
+                        yield! synthesized
+                    }
+                )
+
         let sources, compositeSynthesized, _compositeDiagnostics =
             TypeInference.resolveCompositeSources sources typeCatalog
 
-        let compositeCatalog =
-            if compositeSynthesized.IsEmpty then
-                typeCatalog
-            else
-                TypeCatalog.ofDefinitions (
-                    seq {
-                        yield! typeCatalog.Definitions.Values
-                        yield! compositeSynthesized
-                    }
-                )
+        let compositeCatalog = mergeIntoCatalog typeCatalog compositeSynthesized
 
         let outcome = TypeInference.inferScope sources transformers links compositeCatalog
         let allSynthesized = compositeSynthesized @ outcome.Synthesized
@@ -601,16 +611,7 @@ module DashflowModuleParser =
 
                 { transformer with Outputs = outputs })
 
-        let extendedCatalog =
-            if allSynthesized.IsEmpty then
-                compositeCatalog
-            else
-                TypeCatalog.ofDefinitions (
-                    seq {
-                        yield! compositeCatalog.Definitions.Values
-                        yield! outcome.Synthesized
-                    }
-                )
+        let extendedCatalog = mergeIntoCatalog compositeCatalog outcome.Synthesized
 
         let patchedGraph = buildScopeGraph sources patchedTransformers nestedFlows links
         let diagnostics = FlowGraph.typeCheck patchedGraph extendedCatalog
