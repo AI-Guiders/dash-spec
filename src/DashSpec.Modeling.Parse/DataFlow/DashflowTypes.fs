@@ -121,9 +121,6 @@ type DashflowModule =
       /// ADR-0125: the `module flow <id> view` marker — the explicit opt-in for
       /// emitting the module's chains as managed views (dsc build views).
       EmitViews: bool
-      /// ADR-0125: the managed-views manifest entries for this flow (loaded from
-      /// dashspec.views.json next to the corpus by the document resolver).
-      ViewManifest: DashSpec.Modeling.Parse.Document.DashflowViewManifest.DashflowViewEntry list
       Diagnostics: FlowGraphDiagnostic[] }
 
     member this.WithSources(sources: DashflowSourceDef[]) =

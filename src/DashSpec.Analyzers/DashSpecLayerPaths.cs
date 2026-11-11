@@ -6,6 +6,7 @@ namespace DashSpec.Analyzers;
 internal static class DashSpecLayerPaths
 {
     private const string ConnectorsPrefix = "connectors";
+    private const string PublishingPrefix = "publishing";
     private const string ExecutionRuntimePrefix = "src/DashSpec.Execution.Runtime";
     private const string ExecutionCompilationPrefix = "src/DashSpec.Execution.Compilation";
     private const string CorePrefix = "src/DashSpec.Core";
@@ -13,9 +14,14 @@ internal static class DashSpecLayerPaths
     private const string HostPrefix = "src/DashSpec.Host";
     private const string AcquisitionDataPrefix = "src/DashSpec.Abstractions/Data/Acquisition";
 
+    /// <summary>Acquisition layer = every family allowed to touch a SQL client
+    /// directly (ADR-0085): connectors (the read face) and publishing (the DDL
+    /// write face, ADR-0125 §2).</summary>
     public static bool IsConnectorAcquisitionLayer(string? physicalPath) =>
         LogicalPathCompat.ContainsLayerSegment(physicalPath, ConnectorsPrefix)
-        || (physicalPath?.Contains("DashSpec.Connector.", StringComparison.Ordinal) ?? false);
+        || LogicalPathCompat.ContainsLayerSegment(physicalPath, PublishingPrefix)
+        || (physicalPath?.Contains("DashSpec.Connector.", StringComparison.Ordinal) ?? false)
+        || (physicalPath?.Contains("DashSpec.Publishing.", StringComparison.Ordinal) ?? false);
 
     public static bool IsExecutionRuntimeLayer(string? physicalPath) =>
         LogicalPathCompat.ContainsLayerSegment(physicalPath, ExecutionRuntimePrefix);

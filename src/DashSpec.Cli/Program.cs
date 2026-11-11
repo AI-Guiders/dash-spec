@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
+using DashSpec.Abstractions.Connectors;
 using DashSpec.Abstractions.Plugins;
+using DashSpec.Publishing.SqlServer;
 using DashSpec.Composition.Plugins;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
@@ -31,8 +33,51 @@ public static class Program
         {
             "validate" => Validate(args.Skip(1).ToArray()),
             "build" => Build(args.Skip(1).ToArray()),
+            "generate" => Generate(args.Skip(1).ToArray()),
             var unknown => Unknown(unknown),
         };
+    }
+
+    /// <summary>dsc generate types &lt;dir&gt; — ADR-0128: emit the flow-inferred row
+    /// types as an ordinary types-unit .ds (the authored surface). Regeneration is
+    /// a structural member-level merge; after the first emission the compiler
+    /// prefers the authored twin and synthesizes nothing.</summary>
+    private static int Generate(string[] rest)
+    {
+        if (rest.Length < 2 || rest[0] != "types" || rest[1] is "--help" or "-h")
+        {
+            Console.Error.WriteLine("usage: dsc generate types <corpus-dir> [--namespace <ns>] [--layout file-per-type|single-file]");
+            return 2;
+        }
+
+        var fullPath = Path.GetFullPath(rest[1]);
+        var moduleId = "inferred_types";
+        string? namespaceName = null;
+        string? layout = null;
+
+        for (var i = 2; i < rest.Length - 1; i++)
+        {
+            if (rest[i] == "--module")
+            {
+                moduleId = rest[i + 1];
+            }
+            else if (rest[i] == "--namespace")
+            {
+                namespaceName = rest[i + 1];
+            }
+            else if (rest[i] == "--layout")
+            {
+                layout = rest[i + 1];
+            }
+        }
+
+        if (!Directory.Exists(fullPath))
+        {
+            Console.Error.WriteLine($"Directory not found: {fullPath}");
+            return 2;
+        }
+
+        return TypedRowsCompiler.GenerateTypesUnit(fullPath, moduleId, namespaceName, layout);
     }
 
     /// <summary>dsc build types &lt;dir&gt; — ADR-0124: compile the corpus's row types into
@@ -92,6 +137,7 @@ public static class Program
         string? connection = null;
         string dialect = "tsql";
         string projectUid = "dsc-cli";
+        string? sqlLayout = null;
         var prune = false;
         for (var i = 0; i < rest.Length; i++)
         {
@@ -106,6 +152,10 @@ public static class Program
             else if (rest[i] is "--dialect" && i + 1 < rest.Length)
             {
                 dialect = rest[++i];
+            }
+            else if (rest[i] is "--layout" && i + 1 < rest.Length)
+            {
+                sqlLayout = rest[++i];
             }
             else if (rest[i] is "--project-uid" && i + 1 < rest.Length)
             {
@@ -131,6 +181,7 @@ public static class Program
             return 1;
         }
 
+        var sqlDir = WriteSqlFiles(views, fullPath, dialect, sqlLayout);
         foreach (var view in views)
         {
             Console.WriteLine($"-- {view.ViewName}");
@@ -140,7 +191,7 @@ public static class Program
 
         if (connection is null)
         {
-            Console.WriteLine($"OK: {views.Count} managed view(s) (print mode — pass --connection to apply)");
+            Console.WriteLine($"OK: {views.Count} managed view(s) emitted to {sqlDir} (print mode — pass --connection to apply)");
             return 0;
         }
 
@@ -150,148 +201,65 @@ public static class Program
             return 1;
         }
 
-        ApplyViews(views, connection, projectUid);
-        WriteManifest(views, fullPath);
+        // publish = the connector's write face (ADR-0085: SQL lives in acquisition);
+        // the CLI resolves the publisher by dialect until ConnectorRegistry grows a
+        // capability lookup — same shape Studio will ride
+        IManagedViewPublisher publisher = dialect.Equals("tsql", StringComparison.OrdinalIgnoreCase)
+            ? new SqlServerViewPublisher()
+            : throw new InvalidOperationException($"dialect '{dialect}' has no managed-view publisher.");
+
+        publisher.Apply(
+            views.Select(v => new ManagedViewDdl(v.ViewName, v.Ddl)).ToList(),
+            connection,
+            projectUid);
         if (prune)
         {
-            var dropped = PruneOrphans(connection, projectUid, views.Select(v => v.ViewName).ToHashSet(StringComparer.OrdinalIgnoreCase));
+            var dropped = publisher.PruneOrphans(connection, projectUid, views.Select(v => v.ViewName).ToHashSet(StringComparer.OrdinalIgnoreCase));
             Console.WriteLine($"prune: dropped {dropped} orphaned view(s)");
         }
 
-        Console.WriteLine($"OK: {views.Count} managed view(s) applied + leased to '{projectUid}', manifest written");
+        Console.WriteLine($"OK: {views.Count} managed view(s) applied + leased to '{projectUid}', DDL in {sqlDir}");
         return 0;
     }
 
-    /// <summary>The compiled artifact ships with the catalog (ADR-0125, the ADR-0124
-    /// symmetry): the manifest maps chain terminals to physical view names — the
-    /// reader's lookup at compile time.</summary>
-    private static void WriteManifest(IReadOnlyList<DashSpec.Execution.Compilation.Views.ManagedView> views, string corpusDir)
+    /// <summary>The emitted artifact is an ordinary project file: readable DDL under
+    /// <c>sql/views/</c> — git diffs show real SQL, SSMS/DataGrip can open it, a DBA
+    /// pipeline can run it. Layout is an option: file-per-view (default — one .sql
+    /// per managed view, <c>sql/views/&lt;name&gt;.sql</c>) or single-file (one .sql
+    /// per flow). No manifest: the compile-time reader computes view names from the
+    /// parsed .ds itself (ManagedViews SSOT).</summary>
+    private static string WriteSqlFiles(IReadOnlyList<DashSpec.Execution.Compilation.Views.ManagedView> views, string corpusDir, string dialect, string? layout)
     {
-        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
-        var entries = views.Select(v => new
-        {
-            flow = v.FlowId,
-            chain = v.ChainId,
-            viewName = v.ViewName,
-            rowType = v.RowType ?? "",
-            isFunction = v.IsFunction,
-        });
-        var path = Path.Combine(corpusDir, "dashspec.views.json");
-        File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(entries, options));
-    }
+        // the project marker (*.dsproj, ADR-0101) owns the layout: DDL lives under
+        // <project>/sql/views — created when missing, same one-path rule as types
+        var config = TypedRowsCompiler.EnsureProjectConfig(corpusDir, new List<string>());
+        var sqlDir = Path.Combine(config.ProjectRoot, "sql", "views");
+        Directory.CreateDirectory(sqlDir);
 
-    /// <summary>Drop dashspec_ views with no leases from other projects and absent
-    /// from the current revision (the current set was just re-leased). Views leased
-    /// by other projects survive — the whole point of leases (ADR-0125 §2).</summary>
-    private static int PruneOrphans(string connection, string projectUid, HashSet<string> current)
-    {
-        using var conn = new Microsoft.Data.SqlClient.SqlConnection(connection);
-        conn.Open();
+        var perView = !string.Equals(layout, "single-file", StringComparison.OrdinalIgnoreCase);
 
-        var orphans = new List<(string Name, string Type)>();
-        using (var find = conn.CreateCommand())
+        if (perView)
         {
-            find.CommandText = """
-                SELECT o.name, RTRIM(o.type)
-                FROM sys.objects o
-                WHERE o.name LIKE 'dashspec[_]%'
-                  AND o.type IN ('V', 'IF', 'TF', 'FN')
-                  AND NOT EXISTS (
-                    SELECT 1 FROM dashspec_view_leases l
-                    WHERE l.view_name = o.name AND l.project_uid <> @project
-                  )
-                """;
-            find.Parameters.AddWithValue("@project", projectUid);
-            using var reader = find.ExecuteReader();
-            while (reader.Read())
+            foreach (var view in views)
             {
-                var name = reader.GetString(0);
-                var objType = reader.GetString(1);
-                if (!current.Contains(name))
-                {
-                    orphans.Add((name, objType));
-                }
+                var path = Path.Combine(sqlDir, $"{view.ViewName}.sql");
+                var body = $"-- {view.FlowId}/{view.ChainId}{(view.IsFunction ? " (iTVF)" : "")}{Environment.NewLine}{view.Ddl}";
+                File.WriteAllText(path, body + Environment.NewLine);
+            }
+        }
+        else
+        {
+            foreach (var group in views.GroupBy(v => v.FlowId, StringComparer.OrdinalIgnoreCase))
+            {
+                var path = Path.Combine(sqlDir, $"{group.Key}.sql");
+                var body = string.Join(
+                    Environment.NewLine + Environment.NewLine,
+                    group.Select(v => $"-- {v.ChainId}{(v.IsFunction ? " (iTVF)" : "")}{Environment.NewLine}{v.Ddl}"));
+                File.WriteAllText(path, body + Environment.NewLine);
             }
         }
 
-        foreach (var (orphan, objType) in orphans)
-        {
-            var safeName = orphan.Replace("]", "]]");
-            using var drop = conn.CreateCommand();
-            drop.CommandText = objType == "V"
-                ? $"DROP VIEW IF EXISTS [{safeName}]"
-                : $"DROP FUNCTION IF EXISTS [{safeName}]";
-            drop.ExecuteNonQuery();
-
-            using var clearLease = conn.CreateCommand();
-            clearLease.CommandText = "DELETE FROM dashspec_view_leases WHERE view_name = @view";
-            clearLease.Parameters.AddWithValue("@view", orphan);
-            clearLease.ExecuteNonQuery();
-        }
-
-        // stale lease rows for views that no longer exist (e.g. an interrupted run)
-        using (var sweep = conn.CreateCommand())
-        {
-            sweep.CommandText = """
-                DELETE l FROM dashspec_view_leases l
-                WHERE NOT EXISTS (SELECT 1 FROM sys.views v WHERE v.name = l.view_name)
-                  AND NOT EXISTS (SELECT 1 FROM sys.objects o WHERE o.name = l.view_name AND o.type IN ('IF', 'TF', 'FN'))
-                """;
-            sweep.ExecuteNonQuery();
-        }
-
-        return orphans.Count;
-    }
-
-    /// <summary>Publish-time DDL (ADR-0125): CREATE OR ALTER each view and refresh this
-    /// project's leases — the reference-counting that makes a future --prune safe.</summary>
-    private static void ApplyViews(
-        IReadOnlyList<DashSpec.Execution.Compilation.Views.ManagedView> views,
-        string connection,
-        string projectUid)
-    {
-        using var conn = new Microsoft.Data.SqlClient.SqlConnection(connection);
-        conn.Open();
-
-        using (var leaseTable = conn.CreateCommand())
-        {
-            leaseTable.CommandText = """
-                IF OBJECT_ID('dashspec_view_leases') IS NULL
-                CREATE TABLE dashspec_view_leases (
-                    view_name NVARCHAR(256) NOT NULL,
-                    project_uid NVARCHAR(128) NOT NULL,
-                    updated_at_utc DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-                    CONSTRAINT PK_dashspec_view_leases PRIMARY KEY (view_name, project_uid)
-                )
-                """;
-            leaseTable.ExecuteNonQuery();
-        }
-
-        using (var clearOwn = conn.CreateCommand())
-        {
-            clearOwn.CommandText = "DELETE FROM dashspec_view_leases WHERE project_uid = @project;";
-            clearOwn.Parameters.AddWithValue("@project", projectUid);
-            clearOwn.ExecuteNonQuery();
-        }
-
-        foreach (var view in views)
-        {
-            using var ddl = conn.CreateCommand();
-            ddl.CommandText = view.Ddl;
-            ddl.ExecuteNonQuery();
-
-            using var lease = conn.CreateCommand();
-            lease.CommandText = """
-                MERGE dashspec_view_leases AS target
-                USING (SELECT @view AS view_name, @project AS project_uid) AS src
-                ON target.view_name = src.view_name AND target.project_uid = src.project_uid
-                WHEN MATCHED THEN UPDATE SET updated_at_utc = SYSUTCDATETIME()
-                WHEN NOT MATCHED THEN INSERT (view_name, project_uid) VALUES (src.view_name, src.project_uid);
-                """;
-            lease.Parameters.AddWithValue("@view", view.ViewName);
-            lease.Parameters.AddWithValue("@project", projectUid);
-            lease.ExecuteNonQuery();
-        }
+        return sqlDir;
     }
 
     private static int Validate(string[] rest)
@@ -460,9 +428,11 @@ public static class Program
               dsc validate <path> [--toml <dash-spec.toml>]
                   Validate a .ds spec, host module or catalog. Content-first: the module
                   root classifies the unit. Plugin vocabulary mirrors the web Host.
-              dsc build types <dir>
+              dsc generate types <dir> [--namespace <ns>] [--layout file-per-type|single-file]
+                  Emit flow-inferred row types as ordinary .ds types-units.
+              dsc build types <dir> [--out <dir>]
                   Compile row types from .ds units into TypedRows.dll.
-              dsc build views <dir> [--print] [--connection <connStr>] [--prune]
+              dsc build views <dir> [--dialect tsql|postgres] [--layout file-per-view|single-file] [--project-uid <id>] [--connection <connStr>] [--prune]
                   Emit or apply managed views from 'module flow <id> view' units.
             """);
     }

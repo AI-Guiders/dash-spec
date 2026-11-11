@@ -1,0 +1,38 @@
+module types ai_landscape_types
+namespace Ai.Landscape.Types
+
+type ModelJoinOrgRow
+optional int r.org_id
+optional string r.name
+optional string country
+optional string kind
+optional int model_id
+optional int org_id
+optional string name
+optional string domain
+optional date released
+optional decimal parameters_b
+optional decimal training_flop
+optional decimal cost_musd
+optional string accessibility
+end type
+
+type ModelByDomainRow
+optional string domain
+int value
+end type
+
+type ModelByAccessibilityRow
+optional string accessibility
+int value
+end type
+
+type ModelByReleasedRow
+optional date released
+int value
+end type
+
+type ModelJoinOrgByCountryRow
+optional string country
+int value
+end type

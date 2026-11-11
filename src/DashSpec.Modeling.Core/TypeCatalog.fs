@@ -53,6 +53,29 @@ module TypeCatalog =
         && Set.count rightFields = right.Fields.Length
         && leftFields = rightFields
 
+    /// <summary>The ONE merge of synthesized row types into a catalog (ADR-0127):
+    /// a same-name type joins only when structurally equal (the twin — reuse, not
+    /// duplicate); a genuinely different structure under a taken name is loud.
+    /// Every consumer of "catalog + inferred" goes through here — strict
+    /// <c>ofDefinitions</c> over an already-merged dictionary is how the
+    /// "Duplicate type" class was born.</summary>
+    let withInferred
+        (sourceLabel: string)
+        (inferred: seq<RowTypeDef>)
+        (catalog: TypeCatalog)
+        : TypeCatalog =
+        let map = Dictionary<string, RowTypeDef>(catalog.Definitions, StringComparer.OrdinalIgnoreCase)
+
+        for def in inferred do
+            match map.TryGetValue def.Name with
+            | true, existing when not (rowTypesStructurallyEqual existing def) ->
+                raise (
+                    DashSpecParseException(
+                        $"{sourceLabel}: inferred row type '{def.Name}' collides with a declared type of a different structure."))
+            | _ -> map.[def.Name] <- def
+
+        { Definitions = map :> IReadOnlyDictionary<string, RowTypeDef> }
+
     let rec private visitType
         (catalog: TypeCatalog)
         (visiting: HashSet<string>)

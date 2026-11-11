@@ -104,26 +104,30 @@ module DocumentFlowMaterializer =
             |> Option.defaultValue path.Source.OutputRowType
         toDataSource flow path.Source rowType
 
-    /// <summary>ADR-0125 reader path: a view-marked module whose chain has a
-    /// manifest entry reads the physical managed view by its deterministic name —
-    /// the card's SQL becomes <c>SELECT … FROM dashspec_…</c> with card filters as
-    /// the outer WHERE (predicate pushdown), the collapsed GROUP BY living in the
-    /// database. No manifest entry → the graph path, as before.</summary>
+    /// <summary>ADR-0125 reader path: a card on a view-marked chain reads the physical
+    /// managed view by its deterministic name — computed from the parsed module itself
+    /// (the <c>ManagedViews</c> SSOT; no on-disk manifest). The card's SQL becomes
+    /// <c>SELECT … FROM dashspec_…</c> with card filters as the outer WHERE (predicate
+    /// pushdown), the collapsed GROUP BY living in the database. The chain's terminal
+    /// row type — inferred or the author's structural twin — rides the same entry, so
+    /// the card's RowsType can never go stale against a cached artifact. Not a chain
+    /// terminal, or the chain is an iTVF → the graph path, as before.</summary>
     let private materializeManaged
-        (views: DashflowViewManifest.DashflowViewEntry list)
+        (catalog: TypeCatalog)
         (flow: DashflowModule)
         (input: CardFlowInput)
         =
         if not flow.EmitViews then
             None
         else
-            match DashflowViewManifest.tryFind views flow.FlowId input.NodeId with
+            let entries = ManagedViews.emit flow catalog
+
+            match ManagedViews.tryFind entries flow.FlowId input.NodeId with
             | Some entry when not entry.IsFunction ->
                 let rowType =
-                    if String.IsNullOrWhiteSpace entry.RowType then
-                        (DashflowPathResolver.resolve flow (toInputRef input)).Source.OutputRowType
-                    else
-                        entry.RowType
+                    match entry.RowType with
+                    | Some rt when not (String.IsNullOrWhiteSpace rt) -> rt
+                    | _ -> (DashflowPathResolver.resolve flow (toInputRef input)).Source.OutputRowType
 
                 Some
                     { Kind = DataSourceKind.View
@@ -136,25 +140,25 @@ module DocumentFlowMaterializer =
                       ProviderId = None }
             | _ -> None
 
-    let private materializeSlot (flow: DashflowModule) (slot: CardDiagramSlot) =
+    let private materializeSlot (catalog: TypeCatalog) (flow: DashflowModule) (slot: CardDiagramSlot) =
         match slot.FlowInput with
         | None -> slot
         | Some input when not (isFlowPlaceholder slot.DataSource) -> slot
         | Some input ->
             let dataSource =
-                match materializeManaged flow.ViewManifest flow input with
+                match materializeManaged catalog flow input with
                 | Some managed -> managed
                 | None -> materializeDataSource flow input
             slot |> fun s -> { s with DataSource = dataSource }
 
-    let private materializeCard (flow: DashflowModule) (card: CardDefinition) =
+    let private materializeCard (catalog: TypeCatalog) (flow: DashflowModule) (card: CardDefinition) =
         let slots =
             if card.DiagramSlots.Count = 0 then
                 card.DiagramSlots
             else
                 let built = Dictionary<string, CardDiagramSlot>(StringComparer.OrdinalIgnoreCase)
                 for kv in card.DiagramSlots do
-                    built.[kv.Key] <- materializeSlot flow kv.Value
+                    built.[kv.Key] <- materializeSlot catalog flow kv.Value
                 built :> IReadOnlyDictionary<_, _>
 
         let card' =
@@ -163,7 +167,7 @@ module DocumentFlowMaterializer =
             | Some input when not (isFlowPlaceholder card.DataSource) -> card
             | Some input ->
                 let dataSource =
-                    match materializeManaged flow.ViewManifest flow input with
+                    match materializeManaged catalog flow input with
                     | Some managed -> managed
                     | None -> materializeDataSource flow input
                 { card with DataSource = dataSource }
@@ -189,12 +193,19 @@ module DocumentFlowMaterializer =
             { card'' with DiagramSlots = slots }
 
     /// <summary>Apply flow-backed datasources for every card when a module dashflow is present.
-    /// Managed views (ADR-0125) ride the flow module's ViewManifest — cards on
-    /// view-marked chains read the physical views by their deterministic names.</summary>
+    /// Managed views (ADR-0125) ride the parsed module — cards on view-marked chains
+    /// read the physical views by their deterministic names, computed from the same
+    /// AST the DDL emitter uses (no on-disk manifest to go stale).</summary>
     let materialize (document: DashboardDocument) =
         match document.Dashflow with
         | None -> document
         | Some flow ->
-            let cards = document.Cards |> Seq.map (materializeCard flow) |> Seq.toList
+            // the card's type contract: author + inferred row types through the ONE
+            // tolerant merge (TypeCatalog.withInferred) — the document's ResolvedRowTypes
+            // already carry this flow's inferred types
+            let catalog =
+                TypeCatalog.withInferred "document flow" flow.InferredRowTypes (TypeCatalog.ofDefinitions document.ResolvedRowTypes.Values)
+
+            let cards = document.Cards |> Seq.map (materializeCard catalog flow) |> Seq.toList
             { document with Cards = cards }
 

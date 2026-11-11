@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DashSpec.Composition\DashSpec.Composition.csproj" />
     <ProjectReference Include="..\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
+    <ProjectReference Include="..\..\publishing\DashSpec.Publishing.SqlServer\DashSpec.Publishing.SqlServer.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <!-- transitive pin: NuGet audit fails the build on the vulnerable default -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <ProjectReference Include="..\..\publishing\DashSpec.Publishing.SqlServer\DashSpec.Publishing.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

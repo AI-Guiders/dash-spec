@@ -108,7 +108,7 @@ public sealed class ReportPreviewSessionTests
             Enumerable.Range(1, cardCount).Select(index => $$"""
               card c{{index}} as "C{{index}}"
               diagram number
-              value = x
+              value = value
               end number
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
