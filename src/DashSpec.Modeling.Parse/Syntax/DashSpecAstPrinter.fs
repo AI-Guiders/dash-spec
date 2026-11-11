@@ -207,7 +207,20 @@ module DashSpecAstPrinter =
             let builder = Text.StringBuilder()
 
             let lineText (tokens: SyntaxToken[]) =
-                String.Join(" ", tokens |> Array.map (fun t -> t.Text))
+                let sb = Text.StringBuilder()
+
+                for i = 0 to tokens.Length - 1 do
+                    let cur = tokens.[i].Text
+
+                    if i > 0 then
+                        let prev = tokens.[i - 1].Text
+
+                        if prev <> "." && cur <> "." then
+                            sb.Append(' ') |> ignore
+
+                    sb.Append(cur) |> ignore
+
+                sb.ToString()
 
             let rec render (node: DashSpecAstNode) =
                 match node with
@@ -238,7 +251,11 @@ module DashSpecAstPrinter =
                     builder.AppendLine(lineText flowLink.Tokens) |> ignore
 
                 | DashSpecAstNode.ClauseDeclaration clause ->
-                    builder.AppendLine(lineText clause.Tokens) |> ignore
+                    match clause.Kind with
+                    | ClauseKind.NamespaceClause ns ->
+                        builder.AppendLine($"namespace {ns}") |> ignore
+                    | _ ->
+                        builder.AppendLine(lineText clause.Tokens) |> ignore
 
                 | DashSpecAstNode.GridRowDeclaration gridRow ->
                     builder.AppendLine(lineText gridRow.Tokens) |> ignore
