@@ -1,5 +1,6 @@
 namespace DashSpec.Modeling.Parse.Syntax
 
+open System
 open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Core
 
@@ -25,23 +26,98 @@ type SourceOriginSyntax =
     | Leaf of kind: SourceLeafKindSyntax * target: string * sheet: string option
     | Composite of kind: CompositeOriginKindSyntax * left: string * right: string
 
+[<RequireQualifiedAccess>]
+type PortShapeSyntax =
+    | Stream
+    | Scalar
+
+[<RequireQualifiedAccess>]
+type PortDirection =
+    | Input
+    | Output
+
+[<RequireQualifiedAccess>]
+type LayoutScopeSyntax =
+    | Toolbar
+    | Section
+    | Page
+    | Card
+    | Host
+
+[<RequireQualifiedAccess>]
+type ProviderBindingSyntax =
+    | Infer
+    | Named of id: string
+
 /// <summary>Positional clause family (ADR-0130): each directive line carries its exact
 /// parsed positional structure rather than an untyped string bag.</summary>
 [<RequireQualifiedAccess>]
 type ClauseKind =
     | NamespaceClause of name: string
-    | ScopeClause of kind: string
+    | ScopeClause of scope: LayoutScopeSyntax
+    | UseProviderClause of provider: ProviderBindingSyntax
     | UseClause of kind: string * target: string
     | FromClause of origin: SourceOriginSyntax
-    | DefaultPortClause of direction: string * portName: string
+    | DefaultPortClause of direction: PortDirection * portName: string
     | DirectiveClause of keyword: string * args: string[]
+
+/// <summary>First-class compilation-unit kinds (ADR-0101 / ADR-0130): all 12 module
+/// kinds of the language are explicit DU cases.</summary>
+[<RequireQualifiedAccess>]
+type DashSpecModuleKind =
+    | Dashboard
+    | Section
+    | Diagram
+    | Layout
+    | Types
+    | Flow of emitViews: bool
+    | Presentation
+    | Tooltip
+    | Palette
+    | Catalog
+    | Host
+    | Transform
+    | Custom of keyword: string
+
+module DashSpecModuleKind =
+
+    let ofKeyword (keyword: string) (emitViews: bool) =
+        match keyword.Trim().ToLowerInvariant() with
+        | "dashboard" -> DashSpecModuleKind.Dashboard
+        | "section" -> DashSpecModuleKind.Section
+        | "diagram" -> DashSpecModuleKind.Diagram
+        | "layout" -> DashSpecModuleKind.Layout
+        | "types" -> DashSpecModuleKind.Types
+        | "flow" -> DashSpecModuleKind.Flow emitViews
+        | "presentation" -> DashSpecModuleKind.Presentation
+        | "tooltip" -> DashSpecModuleKind.Tooltip
+        | "palette" -> DashSpecModuleKind.Palette
+        | "catalog" -> DashSpecModuleKind.Catalog
+        | "host" -> DashSpecModuleKind.Host
+        | "transform" -> DashSpecModuleKind.Transform
+        | other -> DashSpecModuleKind.Custom other
+
+    let toKeyword (kind: DashSpecModuleKind) =
+        match kind with
+        | DashSpecModuleKind.Dashboard -> "dashboard"
+        | DashSpecModuleKind.Section -> "section"
+        | DashSpecModuleKind.Diagram -> "diagram"
+        | DashSpecModuleKind.Layout -> "layout"
+        | DashSpecModuleKind.Types -> "types"
+        | DashSpecModuleKind.Flow _ -> "flow"
+        | DashSpecModuleKind.Presentation -> "presentation"
+        | DashSpecModuleKind.Tooltip -> "tooltip"
+        | DashSpecModuleKind.Palette -> "palette"
+        | DashSpecModuleKind.Catalog -> "catalog"
+        | DashSpecModuleKind.Host -> "host"
+        | DashSpecModuleKind.Transform -> "transform"
+        | DashSpecModuleKind.Custom kw -> kw
 
 [<RequireQualifiedAccess>]
 type DashSpecModuleDirective =
     | Dashboard of identifier: string
     | Tab of identifier: string
-    /// <summary>Any other compilation-unit root: `module &lt;kind&gt; &lt;id&gt;` (diagram, layout, types, flow, presentation, tooltip, palette, catalog, host, transform) — ADR-0101.</summary>
-    | Unit of keyword: string * identifier: string
+    | Module of kind: DashSpecModuleKind * identifier: string
 
 type DashSpecBlockOpener =
     | Named of keyword: DashSpecBlockKeyword * identifier: string
@@ -115,8 +191,10 @@ and ImportDeclarationSyntax =
       Span: TextSpan
       /// Surface keyword (`import`).
       Keyword: string
-      /// Unit kind keyword (types/flows/layouts/…).
+      /// Unit kind keyword (`types`/`flows`/`layouts`/…).
       Kind: string option
+      /// Resolved typed ImportKind when recognized by ImportKindRegistry.
+      ImportKind: ImportKind option
       /// Imported namespace.
       Target: string
       Alias: string option
@@ -155,7 +233,7 @@ and PortDeclarationSyntax =
     { Id: NodeId
       Span: TextSpan
       Role: PortDeclRole
-      PortShape: string option
+      PortShape: PortShapeSyntax option
       PortName: string
       ValueType: string option
       DefaultValue: string option
@@ -181,11 +259,22 @@ and ClauseSyntax =
       Kind: ClauseKind
       Tokens: SyntaxToken[] }
 
+/// <summary>Typed cell inside a grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2 / ADR-0130).</summary>
+and GridCellSyntax =
+    { Target: string
+      Weight: int option }
+
+    member this.RawText =
+        match this.Weight with
+        | Some w -> $"{this.Target}:{w}"
+        | None -> this.Target
+
 /// <summary>Grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2) — empty cell is
-/// the whole `[]` token; cells carry the weight suffix verbatim.</summary>
+/// the whole `[]` token; cells carry both structured `TypedCells` and `Cells` text.</summary>
 and GridRowSyntax =
     { Id: NodeId
       Span: TextSpan
+      TypedCells: GridCellSyntax[]
       Cells: string[]
       Tokens: SyntaxToken[] }
 

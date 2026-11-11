@@ -28,7 +28,8 @@ module DashSpecRuleChecks =
             { Keyword = DashSpecBlockKeyword.Tab
               Identifier = Some id
               Span = span }
-        | DashSpecModuleDirective.Unit(keyword, id) ->
+        | DashSpecModuleDirective.Module(kind, id) ->
+            let keyword = DashSpecModuleKind.toKeyword kind
             let kw =
                 DashSpecBlockKeyword.tryOfName keyword
                 |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)
@@ -38,9 +39,8 @@ module DashSpecRuleChecks =
 
     let private moduleParticipatesInBlockBalance (node: DashSpecAstNode) (directive: DashSpecModuleDirective) =
         match directive with
-        | DashSpecModuleDirective.Unit(keyword, id)
-            when String.Equals(keyword, "types", StringComparison.OrdinalIgnoreCase)
-                 || String.Equals(keyword, "catalog", StringComparison.OrdinalIgnoreCase) ->
+        | DashSpecModuleDirective.Module((DashSpecModuleKind.Types | DashSpecModuleKind.Catalog) as kind, id) ->
+            let keyword = DashSpecModuleKind.toKeyword kind
             let kw =
                 DashSpecBlockKeyword.tryOfName keyword
                 |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)

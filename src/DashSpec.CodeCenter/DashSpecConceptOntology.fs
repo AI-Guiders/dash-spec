@@ -90,7 +90,7 @@ module DashSpecConceptOntology =
             match n.Directive with
             | DashSpecModuleDirective.Dashboard id -> DashSpecConceptKind.DashboardModule id
             | DashSpecModuleDirective.Tab id -> DashSpecConceptKind.TabModule id
-            | DashSpecModuleDirective.Unit(keyword, id) -> DashSpecConceptKind.UnitModule(keyword, id)
+            | DashSpecModuleDirective.Module(kind, id) -> DashSpecConceptKind.UnitModule(DashSpecModuleKind.toKeyword kind, id)
         | DashSpecAstNode.ImportDeclaration n ->
             DashSpecConceptKind.ImportDeclaration(n.Keyword, n.Target)
         | DashSpecAstNode.BlockDeclaration n ->
@@ -107,6 +107,7 @@ module DashSpecConceptOntology =
                 match n.Kind with
                 | ClauseKind.NamespaceClause _ -> "namespace"
                 | ClauseKind.ScopeClause _ -> "scope"
+                | ClauseKind.UseProviderClause _
                 | ClauseKind.UseClause _ -> "use"
                 | ClauseKind.FromClause _ -> "from"
                 | ClauseKind.DefaultPortClause _ -> "default"

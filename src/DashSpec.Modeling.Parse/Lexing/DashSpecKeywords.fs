@@ -24,7 +24,8 @@ module DashSpecKeywords =
         | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
         | "diagramlibrary" | "group" | "phase" | "diagram" | "section" | "menu"
-        | "type" | "source" | "transformer" | "ports" | "palette" | "tooltip" | "host" | "defaults" -> true
+        | "type" | "source" | "transformer" | "ports" | "palette" | "tooltip" | "host" | "defaults"
+        | "flow" | "nest" -> true
         | _ -> diagramKinds |> List.contains keyword
 
     let isControlKeyword (value: string) =

@@ -51,6 +51,8 @@ type DashSpecBlockKeyword =
     | Host
     | Surfaces
     | Defaults
+    | Flow
+    | Nest
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -102,6 +104,8 @@ module DashSpecBlockKeyword =
         | "host" -> Some DashSpecBlockKeyword.Host
         | "surfaces" -> Some DashSpecBlockKeyword.Surfaces
         | "defaults" -> Some DashSpecBlockKeyword.Defaults
+        | "flow" -> Some DashSpecBlockKeyword.Flow
+        | "nest" -> Some DashSpecBlockKeyword.Nest
         | _ when DashSpecKeywords.diagramKinds |> List.contains keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
@@ -121,7 +125,9 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Filters
         | DashSpecBlockKeyword.Grid
         | DashSpecBlockKeyword.Source
-        | DashSpecBlockKeyword.Transformer -> true
+        | DashSpecBlockKeyword.Transformer
+        | DashSpecBlockKeyword.Flow
+        | DashSpecBlockKeyword.Nest -> true
         | _ -> false
 
     let isFormField (keyword: DashSpecBlockKeyword) =
@@ -196,4 +202,6 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Host -> "host"
         | DashSpecBlockKeyword.Surfaces -> "surfaces"
         | DashSpecBlockKeyword.Defaults -> "defaults"
+        | DashSpecBlockKeyword.Flow -> "flow"
+        | DashSpecBlockKeyword.Nest -> "nest"
         | DashSpecBlockKeyword.Other name -> name

@@ -44,7 +44,11 @@ module DashSpecStructuralPlanner =
             match n.Directive with
             | DashSpecModuleDirective.Dashboard _ -> Some(DashSpecBlockKeyword.Other "dashboard")
             | DashSpecModuleDirective.Tab _ -> Some DashSpecBlockKeyword.Tab
-            | DashSpecModuleDirective.Unit(keyword, _) -> Some(DashSpecBlockKeyword.Other keyword)
+            | DashSpecModuleDirective.Module(kind, _) ->
+                let keyword = DashSpecModuleKind.toKeyword kind
+                DashSpecBlockKeyword.tryOfName keyword
+                |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)
+                |> Some
         | DashSpecAstNode.BlockDeclaration n ->
             match n.Opener with
             | DashSpecBlockOpener.Named(keyword, _) -> Some keyword

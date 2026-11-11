@@ -101,7 +101,7 @@ module DashSpecAst =
             match n.Directive with
             | DashSpecModuleDirective.Dashboard id -> $"module dashboard {id}"
             | DashSpecModuleDirective.Tab id -> $"module tab {id}"
-            | DashSpecModuleDirective.Unit(keyword, id) -> $"module {keyword} {id}"
+            | DashSpecModuleDirective.Module(kind, id) -> $"module {DashSpecModuleKind.toKeyword kind} {id}"
         | DashSpecAstNode.BlockDeclaration n ->
             match n.Opener with
             | DashSpecBlockOpener.Named(keyword, identifier) ->

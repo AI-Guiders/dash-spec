@@ -48,60 +48,75 @@ module PropertyBlockParser =
 
     /// <summary>ADR-0130: project property values from typed
     /// PropertyAssignment and `use` ClauseDeclaration members — one pass over the tree,
-    /// no re-read of text. Unwraps string literals when the schema expects StringValue.</summary>
-    let tryProjectPropertiesFromAst
+    /// raising `DashSpecParseException` on unknown keys or invalid member lines.</summary>
+    let projectPropertiesFromAst
         (members: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode[])
         (schema: PropertySpec list)
+        (blockName: string)
         allowExtensionProperties
-        : Dictionary<string, string> option =
+        : Dictionary<string, string> =
         let specs = Dictionary<string, PropertySpec>(StringComparer.OrdinalIgnoreCase)
         for s in schema do
             specs.[s.Name] <- s
 
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        let mutable ok = true
 
         for memberNode in members do
-            if ok then
-                match memberNode with
-                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.PropertyAssignment p ->
-                    match specs.TryGetValue p.Key with
-                    | true, spec ->
-                        match spec.ValueType with
-                        | PropertyValueType.String ->
-                            if p.ValueTokens.Length = 1 && p.ValueTokens.[0].LexKind = TokenKind.String then
-                                values.[p.Key] <- unwrapQuotes p.ValueText
-                            else
-                                ok <- false
-                        | PropertyValueType.Scalar ->
-                            if p.ValueTokens.Length = 1 then
-                                values.[p.Key] <- unwrapQuotes p.ValueText
-                            else
-                                ok <- false
-                        | PropertyValueType.CommaList ->
-                            values.[p.Key] <- p.ValueText.Replace(" , ", ", ", StringComparison.Ordinal)
-                        | PropertyValueType.RestOfLine
-                        | PropertyValueType.DateRange
-                        | PropertyValueType.QualifiedName ->
-                            values.[p.Key] <- unwrapQuotes p.ValueText
-                        | PropertyValueType.ColumnBinding ->
-                            ok <- false
-                    | false, _ ->
-                        if allowExtensionProperties && not (p.Key.EndsWith("_as", StringComparison.OrdinalIgnoreCase)) then
+            match memberNode with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.PropertyAssignment p ->
+                match specs.TryGetValue p.Key with
+                | true, spec ->
+                    match spec.ValueType with
+                    | PropertyValueType.String ->
+                        if p.ValueTokens.Length = 1 && p.ValueTokens.[0].LexKind = TokenKind.String then
                             values.[p.Key] <- unwrapQuotes p.ValueText
                         else
-                            ok <- false
-                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ClauseDeclaration c ->
-                    match c.Kind with
-                    | DashSpec.Modeling.Parse.Syntax.ClauseKind.DirectiveClause("use", [| preset |]) when specs.ContainsKey "use" ->
-                        values.["use"] <- preset
-                    | _ -> ok <- false
-                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlankLine _
-                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.EndBlock _ -> ()
-                | memberNode when DashSpec.Modeling.Parse.Syntax.DashSpecAst.isTrivia memberNode -> ()
-                | _ -> ok <- false
+                            raise (DashSpecParseException($"Property '{p.Key}' in {blockName} requires a string literal."))
+                    | PropertyValueType.Scalar ->
+                        if p.ValueTokens.Length = 1 then
+                            values.[p.Key] <- unwrapQuotes p.ValueText
+                        else
+                            raise (DashSpecParseException($"Property '{p.Key}' in {blockName} requires a scalar value."))
+                    | PropertyValueType.CommaList ->
+                        values.[p.Key] <- p.ValueText.Replace(" , ", ", ", StringComparison.Ordinal)
+                    | PropertyValueType.RestOfLine
+                    | PropertyValueType.DateRange
+                    | PropertyValueType.QualifiedName ->
+                        values.[p.Key] <- unwrapQuotes p.ValueText
+                    | PropertyValueType.ColumnBinding ->
+                        values.[p.Key] <- unwrapQuotes p.ValueText
+                | false, _ ->
+                    if allowExtensionProperties && not (p.Key.EndsWith("_as", StringComparison.OrdinalIgnoreCase)) then
+                        values.[p.Key] <- unwrapQuotes p.ValueText
+                    else
+                        raise (DashSpecParseException($"Unknown property '{p.Key}' in {blockName} block."))
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ClauseDeclaration c ->
+                match c.Kind with
+                | DashSpec.Modeling.Parse.Syntax.ClauseKind.NamespaceClause _ -> ()
+                | DashSpec.Modeling.Parse.Syntax.ClauseKind.DirectiveClause("use", [| preset |]) when specs.ContainsKey "use" ->
+                    values.["use"] <- preset
+                | _ ->
+                    let lineText = c.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected directive '{lineText}' in {blockName} block."))
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ImportDeclaration _
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlankLine _
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.EndBlock _ -> ()
+            | memberNode when DashSpec.Modeling.Parse.Syntax.DashSpecAst.isTrivia memberNode -> ()
+            | other ->
+                let lineText = DashSpec.Modeling.Parse.Syntax.DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Unexpected statement '{lineText}' in {blockName} block."))
 
-        if ok then Some values else None
+        values
+
+    /// <summary>Compatibility wrapper returning `Some` over `projectPropertiesFromAst`.</summary>
+    let tryProjectPropertiesFromAst
+        (members: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode[])
+        (schema: PropertySpec list)
+        allowExtensionProperties
+        : Dictionary<string, string> option =
+        try
+            Some(projectPropertiesFromAst members schema "property" allowExtensionProperties)
+        with :? DashSpecParseException -> None
 
     let parseFlatProperties (reader: TokenReader) (schema: PropertySpec list) context allowExtensionProperties allowQuotedKeys =
         let specs =

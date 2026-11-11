@@ -87,91 +87,94 @@ module TypeModuleParser =
         reader.ExpectKeyword "type"
         parseTypeBlockAfterKeyword reader
 
-    /// Project RowTypeDef[] from a parsed syntax tree (`DashSpecAstNode`), returns None if
-    /// any type block has malformed/unrecognized member lines or missing end block so the
-    /// caller can report exact syntax diagnostics.
-    let tryProjectTypesFromAst (root: DashSpecAstNode) : RowTypeDef[] option =
-        let typeBlocks =
-            DashSpecAst.descendants root
-            |> Seq.choose (function
-                | DashSpecAstNode.BlockDeclaration block ->
-                    match block.Opener with
-                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, typeName) -> Some(typeName, block)
-                    | _ -> None
-                | _ -> None)
-            |> Seq.toArray
+    /// Project RowTypeDef[] from a parsed syntax tree (`DashSpecAstNode`), raising
+    /// `DashSpecParseException` on any malformed member, missing `end type`, or empty type block.
+    let projectTypesFromAst (root: DashSpecAstNode) : RowTypeDef[] =
+        let containerMembers =
+            match root with
+            | DashSpecAstNode.CompilationUnit cu ->
+                let hasModule =
+                    cu.Members
+                    |> Array.exists (function DashSpecAstNode.ModuleDeclaration _ -> true | _ -> false)
+                if hasModule then
+                    (ModuleGrammar.unwrap DashSpecModuleKind.Types root).Body
+                else
+                    cu.Members
+            | _ -> DashSpecAst.members root
 
-        if typeBlocks.Length = 0 then
-            None
-        else
-            let defs = ResizeArray<RowTypeDef>(typeBlocks.Length)
-            let mutable ok = true
+        let defs = ResizeArray<RowTypeDef>()
 
-            for typeName, block in typeBlocks do
-                let hasEnd =
-                    block.Members
-                    |> Array.exists (function
-                        | DashSpecAstNode.EndBlock e when e.EndKeyword = DashSpecBlockKeyword.Type -> true
-                        | _ -> false)
+        for node in containerMembers do
+            match node with
+            | DashSpecAstNode.BlockDeclaration block ->
+                match block.Opener with
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, typeName) ->
+                    let hasEnd =
+                        block.Members
+                        |> Array.exists (function
+                            | DashSpecAstNode.EndBlock e when e.EndKeyword = DashSpecBlockKeyword.Type ->
+                                match e.EndId with
+                                | Some endId when not (String.Equals(endId, typeName, StringComparison.Ordinal)) ->
+                                    raise (DashSpecParseException($"end type '{endId}' does not match type '{typeName}'."))
+                                | _ -> true
+                            | DashSpecAstNode.EndBlock e ->
+                                raise (DashSpecParseException($"type '{typeName}': unexpected 'end {DashSpecBlockKeyword.toEndName e.EndKeyword}'."))
+                            | _ -> false)
 
-                let hasUnrecognizedLine =
-                    block.Members
-                    |> Array.exists (fun m ->
+                    if not hasEnd then
+                        raise (DashSpecParseException($"type '{typeName}' requires 'end type'."))
+
+                    let fields = ResizeArray<RowFieldDef>()
+
+                    for m in block.Members do
                         match m with
-                        | DashSpecAstNode.TypeFieldDeclaration _
-                        | DashSpecAstNode.BlankLine _
-                        | DashSpecAstNode.EndBlock _ -> false
-                        | m when DashSpecAst.isTrivia m -> false
-                        | _ -> true)
-
-                let fields =
-                    block.Members
-                    |> Array.choose (function
                         | DashSpecAstNode.TypeFieldDeclaration f ->
-                            Some
+                            fields.Add
                                 { Name = f.FieldName
                                   Type = f.FieldType
                                   Optional = f.Optional }
-                        | _ -> None)
+                        | DashSpecAstNode.BlankLine _
+                        | DashSpecAstNode.EndBlock _ -> ()
+                        | m when DashSpecAst.isTrivia m -> ()
+                        | other ->
+                            let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
+                            raise (DashSpecParseException($"type '{typeName}': invalid field declaration '{lineText}'."))
 
-                if not hasEnd || hasUnrecognizedLine || fields.Length = 0 then
-                    ok <- false
-                else
-                    defs.Add { Name = typeName; Fields = fields }
+                    if fields.Count = 0 then
+                        raise (DashSpecParseException($"type '{typeName}' must declare at least one field."))
 
-            if ok then Some(defs.ToArray()) else None
+                    defs.Add { Name = typeName; Fields = fields.ToArray() }
+                | _ ->
+                    let headerText = block.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected block '{headerText}' in types module."))
+            | DashSpecAstNode.ClauseDeclaration c ->
+                match c.Kind with
+                | ClauseKind.NamespaceClause _ -> ()
+                | _ ->
+                    let lineText = c.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected directive '{lineText}' in types module."))
+            | DashSpecAstNode.ImportDeclaration _
+            | DashSpecAstNode.BlankLine _
+            | DashSpecAstNode.EndBlock _ -> ()
+            | n when DashSpecAst.isTrivia n -> ()
+            | other ->
+                let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Unexpected statement '{lineText}' in types module."))
+
+        defs.ToArray()
+
+    /// Compatibility wrapper returning `Some` over `projectTypesFromAst`.
+    let tryProjectTypesFromAst (root: DashSpecAstNode) : RowTypeDef[] option =
+        try
+            let defs = projectTypesFromAst root
+            if defs.Length > 0 then Some defs else None
+        with :? DashSpecParseException -> None
 
     let parseTypesModule (text: string) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Types text is required."
 
         let tree = DashSpecSurfaceSyntax.parse text
-
-        let defs =
-            match tryProjectTypesFromAst tree.Root with
-            | Some projected -> projected
-            | None ->
-                let reader = ParserUtilities.createReader text
-                reader.SkipFileDirectives()
-                reader.SkipNewlines()
-
-                if reader.TryKeyword "module" then
-                    if reader.TryKeyword "types" then
-                        reader.ReadIdent() |> ignore
-                        reader.SkipNewlines()
-
-                        if reader.TryKeyword "namespace" then
-                            reader.ReadDottedPropertyKey() |> ignore
-                            reader.SkipNewlines()
-
-                let parsed = ResizeArray<RowTypeDef>()
-
-                while not reader.IsEof do
-                    reader.SkipNewlines()
-
-                    if not reader.IsEof then
-                        parsed.Add(parseTypeBlock reader)
-
-                parsed.ToArray()
+        let defs = projectTypesFromAst tree.Root
 
         let catalog = TypeCatalog.ofDefinitions defs
 

@@ -48,9 +48,10 @@ end flow
         Assert.Equal(2, ports.Length)
         Assert.Equal("raw", ports.[0].PortName)
         Assert.Equal("input", (match ports.[0].Role with PortDeclRole.PortInput -> "input" | _ -> "other"))
+        Assert.Equal(Some PortShapeSyntax.Stream, ports.[0].PortShape)
         Assert.Equal("rows", ports.[1].PortName)
         Assert.Equal("EventByAppRow", ports.[1].ValueType |> Option.defaultValue "")
-        Assert.Equal<string * string>([| ("output", "rows") |], defaultClauses)
+        Assert.Equal<PortDirection * string>([| (PortDirection.Output, "rows") |], defaultClauses)
 
         let portsBlock =
             DashSpecAst.descendants tree.Root

@@ -3,7 +3,7 @@ type: ADR
 id: DASHSPEC-ADR-0130
 title: "Единый графовый конвейер (parse → graph → IR) и типизированный AST членов"
 status: "Accepted"
-implementation: "Реализован: первоклассные ключевые слова всех блоков (Type, Source, Transformer, Ports, Transform, Palette, Tooltip, Host, Surfaces, Defaults), типизированные узлы членов (TypeFieldDeclaration, PropertyAssignment, PortDeclaration, FlowLinkDeclaration, позиционный ClauseDeclaration с единым SourceOriginSyntax, GridRowDeclaration, TableRowDeclaration), типизированная шапка BlockDeclaration (TypeAnnotation, Origin) и прямая проекция модулей (TypeModuleParser, DashflowModuleParser, LayoutModuleParser, PresentationModuleParser, TransformModuleParser) из AST без повторного TokenReader или вырезания substring."
+implementation: "Реализован полностью (без legacy TokenReader фолбэков): первоклассные DashSpecModuleKind (12 видов модулей, включая Flow(emitViews: bool)), ModuleGrammar.unwrap, DashSpecBlockKeyword (Type, Source, Transformer, Ports, Transform, Series, Flow, Nest, Palette, Tooltip, Host, Surfaces, Defaults), типизированные узлы членов (TypeFieldDeclaration, PropertyAssignment, PortDeclaration с PortShapeSyntax, FlowLinkDeclaration, позиционный ClauseDeclaration с LayoutScopeSyntax/ProviderBindingSyntax/SourceOriginSyntax/PortDirection, GridRowDeclaration с GridCellSyntax, TableRowDeclaration) и прямая проекция модулей (TypeModuleParser, DashflowModuleParser, LayoutModuleParser, PresentationModuleParser, TransformModuleParser) исключительно из AST."
 date: 2026-11-10
 tags: [dashspec, adr, ast, concept-graph, syntax, codecenter, parser, compiler]
 language: ru-RU

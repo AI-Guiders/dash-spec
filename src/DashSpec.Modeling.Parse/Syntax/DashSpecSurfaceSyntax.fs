@@ -32,10 +32,10 @@ module DashSpecSurfaceSyntax =
         | Import of keyword: string * kind: string option * target: string * alias: string option
         | TypeField of optional: bool * fieldType: DashType * fieldName: string
         | Property of key: string * valueText: string * keyTokens: SyntaxToken[] * eqToken: SyntaxToken * valueTokens: SyntaxToken[]
-        | Port of role: PortDeclRole * shape: string option * portName: string * valueType: string option * defaultValue: string option * columnBinding: string option
+        | Port of role: PortDeclRole * shape: PortShapeSyntax option * portName: string * valueType: string option * defaultValue: string option * columnBinding: string option
         | FlowLink of fromNode: string * fromPort: string option * toNode: string * toPort: string option
         | Clause of kind: ClauseKind
-        | GridRow of cells: string[]
+        | GridRow of typedCells: GridCellSyntax[] * cells: string[]
         | TableRow of cells: string[]
         | Line
         | BlankLine
@@ -142,11 +142,13 @@ module DashSpecSurfaceSyntax =
                   EndId = endId
                   Tokens = node.Tokens }
         | NodePayload.Import(keyword, kind, target, aliasName) ->
+            let resolvedImportKind = kind |> Option.bind ImportKindRegistry.tryFindByKeyword
             DashSpecAstNode.ImportDeclaration
                 { Id = node.Id
                   Span = span
                   Keyword = keyword
                   Kind = kind
+                  ImportKind = resolvedImportKind
                   Target = target
                   Alias = aliasName
                   Tokens = node.Tokens }
@@ -194,10 +196,11 @@ module DashSpecSurfaceSyntax =
                   Span = span
                   Kind = kind
                   Tokens = node.Tokens }
-        | NodePayload.GridRow cells ->
+        | NodePayload.GridRow(typedCells, cells) ->
             DashSpecAstNode.GridRowDeclaration
                 { Id = node.Id
                   Span = span
+                  TypedCells = typedCells
                   Cells = cells
                   Tokens = node.Tokens }
         | NodePayload.TableRow cells ->
@@ -359,7 +362,7 @@ module DashSpecSurfaceSyntax =
 
     /// <summary>Ports-block member line (ADR-0130): `input|output [stream|scalar] name: type`,
     /// `param name: type [= default] [bind column]`.</summary>
-    let private tryParsePortLine (tokens: Token list) : (PortDeclRole * string option * string * string option * string option * string option) option =
+    let private tryParsePortLine (tokens: Token list) : (PortDeclRole * PortShapeSyntax option * string * string option * string option * string option) option =
         let sigTokens = significantTokens tokens
 
         let isDotted (segment: Token list) =
@@ -380,8 +383,11 @@ module DashSpecSurfaceSyntax =
             let shape, afterShape =
                 match rest with
                 | { Kind = TokenKind.Ident; Value = s } :: tail
-                    when String.Equals(s, "stream", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(s, "scalar", StringComparison.OrdinalIgnoreCase) -> Some(s.ToLowerInvariant()), tail
+                    when String.Equals(s, "stream", StringComparison.OrdinalIgnoreCase) ->
+                    Some PortShapeSyntax.Stream, tail
+                | { Kind = TokenKind.Ident; Value = s } :: tail
+                    when String.Equals(s, "scalar", StringComparison.OrdinalIgnoreCase) ->
+                    Some PortShapeSyntax.Scalar, tail
                 | _ -> None, rest
 
             match afterShape with
@@ -566,6 +572,15 @@ module DashSpecSurfaceSyntax =
                 | _ -> typeAnnotation, None, false
         | _ -> None, None, true
 
+    let private tryParseScopeSyntax (raw: string) : LayoutScopeSyntax option =
+        match raw.Trim().ToLowerInvariant() with
+        | "toolbar" -> Some LayoutScopeSyntax.Toolbar
+        | "section" -> Some LayoutScopeSyntax.Section
+        | "page" -> Some LayoutScopeSyntax.Page
+        | "card" -> Some LayoutScopeSyntax.Card
+        | "host" -> Some LayoutScopeSyntax.Host
+        | _ -> None
+
     /// <summary>Positional clause line (ADR-0130): dispatches `namespace`, `scope`, `use`,
     /// `from`, `default input|output`, and positional directives (`rows`, `catalog`, `entry`, `layout`)
     /// into structured <see cref="ClauseKind"/> variants.</summary>
@@ -585,10 +600,18 @@ module DashSpecSurfaceSyntax =
                 | None -> None
             | [ { Kind = TokenKind.Ident; Value = kw }; { Kind = TokenKind.Ident; Value = scopeKind } ]
                 when String.Equals(kw, "scope", StringComparison.OrdinalIgnoreCase) ->
-                Some(ClauseKind.ScopeClause(scopeKind.ToLowerInvariant()))
+                tryParseScopeSyntax scopeKind |> Option.map ClauseKind.ScopeClause
             | [ { Kind = TokenKind.Ident; Value = kw }; { Kind = TokenKind.Ident; Value = useKind }; { Kind = TokenKind.Ident; Value = target } ]
                 when String.Equals(kw, "use", StringComparison.OrdinalIgnoreCase) ->
-                Some(ClauseKind.UseClause(useKind.ToLowerInvariant(), target))
+                if String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
+                    let binding =
+                        if String.Equals(target, "infer", StringComparison.OrdinalIgnoreCase) then
+                            ProviderBindingSyntax.Infer
+                        else
+                            ProviderBindingSyntax.Named target
+                    Some(ClauseKind.UseProviderClause binding)
+                else
+                    Some(ClauseKind.UseClause(useKind.ToLowerInvariant(), target))
             | { Kind = TokenKind.Ident; Value = kw } :: rest
                 when String.Equals(kw, "from", StringComparison.OrdinalIgnoreCase) ->
                 tryParseFromOrigin rest |> Option.map ClauseKind.FromClause
@@ -596,7 +619,10 @@ module DashSpecSurfaceSyntax =
                 when String.Equals(kw, "default", StringComparison.OrdinalIgnoreCase)
                 && (String.Equals(dir, "input", StringComparison.OrdinalIgnoreCase)
                     || String.Equals(dir, "output", StringComparison.OrdinalIgnoreCase)) ->
-                Some(ClauseKind.DefaultPortClause(dir.ToLowerInvariant(), portName))
+                let portDir =
+                    if String.Equals(dir, "input", StringComparison.OrdinalIgnoreCase) then PortDirection.Input
+                    else PortDirection.Output
+                Some(ClauseKind.DefaultPortClause(portDir, portName))
             | { Kind = TokenKind.Ident; Value = kw } :: rest
                 when positionalDirectives.Contains(kw.ToLowerInvariant()) && not rest.IsEmpty ->
                 let args = rest |> List.map (fun t -> t.Value) |> Array.ofList
@@ -663,18 +689,24 @@ module DashSpecSurfaceSyntax =
                 | _ -> None
 
     /// <summary>Grid drawing row (ADR-0111 §2 / ADR-0130): `[ ref:weight ] [ ]` —
-    /// the empty cell is one whole `[]` token; the weight suffix rides verbatim.</summary>
-    let private tryParseGridRowLine (tokens: Token list) : string[] option =
+    /// the empty cell is one whole `[]` token; cells carry both structured `GridCellSyntax` and raw text.</summary>
+    let private tryParseGridRowLine (tokens: Token list) : (GridCellSyntax[] * string[]) option =
         let sigTokens = significantTokens tokens
 
         match sigTokens with
         | { Kind = TokenKind.EmptyCell } :: _ ->
             if sigTokens |> List.forall (fun t -> t.Kind = TokenKind.EmptyCell) then
-                Some(sigTokens |> List.map (fun t -> t.Value) |> Array.ofList)
+                let typed =
+                    sigTokens
+                    |> List.map (fun t -> { Target = t.Value; Weight = None })
+                    |> Array.ofList
+                let raw = sigTokens |> List.map (fun t -> t.Value) |> Array.ofList
+                Some(typed, raw)
             else
                 None
         | { Kind = TokenKind.LBracket } :: _ ->
-            let cells = ResizeArray<string>()
+            let typedCells = ResizeArray<GridCellSyntax>()
+            let rawCells = ResizeArray<string>()
             let mutable ok = true
             let mutable index = 0
 
@@ -684,21 +716,30 @@ module DashSpecSurfaceSyntax =
                     index <- index + 1
 
                     while ok && index < sigTokens.Length && sigTokens.[index].Kind <> TokenKind.RBracket do
-                        match sigTokens.[index] with
-                        | { Kind = TokenKind.EmptyCell; Value = empty } ->
-                            cells.Add empty
-                            index <- index + 1
-                        | { Kind = TokenKind.Ident; Value = name } ->
-                            let mutable cell = name
-                            index <- index + 1
+                        let readWeightAndAppend (target: string) =
+                            let mutable rawCell = target
+                            let mutable weightOpt: int option = None
 
                             if index + 1 < sigTokens.Length
                                && sigTokens.[index].Kind = TokenKind.Colon
                                && sigTokens.[index + 1].Kind = TokenKind.Ident then
-                                cell <- cell + ":" + sigTokens.[index + 1].Value
+                                let weightText = sigTokens.[index + 1].Value
+                                rawCell <- target + ":" + weightText
+                                match Int32.TryParse weightText with
+                                | true, w -> weightOpt <- Some w
+                                | _ -> ()
                                 index <- index + 2
 
-                            cells.Add cell
+                            typedCells.Add { Target = target; Weight = weightOpt }
+                            rawCells.Add rawCell
+
+                        match sigTokens.[index] with
+                        | { Kind = TokenKind.EmptyCell; Value = empty } ->
+                            index <- index + 1
+                            readWeightAndAppend empty
+                        | { Kind = TokenKind.Ident; Value = name } ->
+                            index <- index + 1
+                            readWeightAndAppend name
                         | _ -> ok <- false
 
                     if not ok || index >= sigTokens.Length || sigTokens.[index].Kind <> TokenKind.RBracket then
@@ -707,7 +748,7 @@ module DashSpecSurfaceSyntax =
                         index <- index + 1
                 | _ -> ok <- false
 
-            if ok && cells.Count > 0 then Some(cells.ToArray()) else None
+            if ok && typedCells.Count > 0 then Some(typedCells.ToArray(), rawCells.ToArray()) else None
         | _ -> None
 
     /// <summary>Table row (ADR-0130): `| a | b |` — one TableRow token, cells split on `|`.</summary>
@@ -765,13 +806,18 @@ module DashSpecSurfaceSyntax =
             Some(kw, kindOpt, target, aliasName)
 
     let private appendModule (_parent: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) (kind: string) (moduleId: string) =
+        let emitViews =
+            significantTokens line.Tokens
+            |> List.skip 3
+            |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "view", StringComparison.OrdinalIgnoreCase))
+
         let directive =
             if String.Equals(kind, "section", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Tab moduleId
             elif String.Equals(kind, "dashboard", StringComparison.OrdinalIgnoreCase) then
                 DashSpecModuleDirective.Dashboard moduleId
             else
-                DashSpecModuleDirective.Unit(kind, moduleId)
+                DashSpecModuleDirective.Module(DashSpecModuleKind.ofKeyword kind emitViews, moduleId)
 
         mkNode (NodePayload.Module directive) (nextId id) line.Span (lineSyntaxTokens text allTokens line)
 
@@ -841,8 +887,8 @@ module DashSpecSurfaceSyntax =
                     None
 
             match gridRow with
-            | Some cells ->
-                container.Children.Add(mkNode (NodePayload.GridRow cells) (nextId id) line.Span syntaxTokens)
+            | Some(typedCells, cells) ->
+                container.Children.Add(mkNode (NodePayload.GridRow(typedCells, cells)) (nextId id) line.Span syntaxTokens)
             | None ->
                 match tableRow with
                 | Some cells ->

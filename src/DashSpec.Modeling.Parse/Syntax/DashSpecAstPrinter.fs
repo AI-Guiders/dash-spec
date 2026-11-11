@@ -115,7 +115,7 @@ module DashSpecAstPrinter =
                 [| DashSpecAstNode.ModuleDeclaration
                        { Id = nextId ()
                          Span = emptySpan
-                         Directive = DashSpecModuleDirective.Unit("types", moduleId)
+                         Directive = DashSpecModuleDirective.Module(DashSpecModuleKind.Types, moduleId)
                          HeaderSpan = emptySpan
                          Tokens = [| keyword "module"; keyword "types"; ident moduleId |]
                          Members = Array.append preamble blocksWithSpacing } |] }
