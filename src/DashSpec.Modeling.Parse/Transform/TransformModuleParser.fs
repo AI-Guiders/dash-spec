@@ -31,9 +31,43 @@ module TransformModuleParser =
 
         { UsePreset = usePreset; Max = max; OtherLabel = other }
 
+    let private tryProjectTransformFromAst (root: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode) : SeriesTransformBlock option =
+        match
+            DashSpec.Modeling.Parse.Syntax.DashSpecAst.descendants root
+            |> Seq.tryPick (function
+                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ModuleDeclaration m as node ->
+                    match m.Directive with
+                    | DashSpec.Modeling.Parse.Syntax.DashSpecModuleDirective.Unit("transform", _id) -> Some node
+                    | _ -> None
+                | _ -> None)
+        with
+        | None -> None
+        | Some moduleNode ->
+            let propMembers =
+                let moduleMembers = DashSpec.Modeling.Parse.Syntax.DashSpecAst.members moduleNode
+                let seriesBlock =
+                    moduleMembers
+                    |> Array.tryPick (function
+                        | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlockDeclaration b ->
+                            match b.Opener with
+                            | DashSpec.Modeling.Parse.Syntax.DashSpecBlockOpener.Anonymous DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Series ->
+                                Some b.Members
+                            | _ -> None
+                        | _ -> None)
+
+                defaultArg seriesBlock moduleMembers
+
+            match PropertyBlockParser.tryProjectPropertiesFromAst propMembers PropertyBlockParser.seriesTransformSchema false with
+            | Some props when props.Count > 0 -> Some(toBlock props)
+            | _ -> None
+
     let parseTransformFile (text: string) : SeriesTransformBlock =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Transform text is required."
 
+        let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
+        match tryProjectTransformFromAst tree.Root with
+        | Some block -> block
+        | None ->
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.ExpectKeyword "module"

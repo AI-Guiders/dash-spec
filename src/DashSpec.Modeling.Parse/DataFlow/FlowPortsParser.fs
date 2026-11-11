@@ -178,3 +178,64 @@ module FlowPortsParser =
           Params = paramsDecls.ToArray()
           DefaultInput = defaultInput
           DefaultOutput = defaultOutput }
+
+    /// <summary>ADR-0130: project <see cref="ParsedPorts"/> from a typed
+    /// ports-block AST (<c>DashSpecAstNode</c> members). None when the block carries
+    /// any unrecognized member — the caller falls back to the token path.</summary>
+    let tryProjectPortsFromAst (members: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode[]) : ParsedPorts option =
+        let inputs = ResizeArray<ParsedPortDecl>()
+        let outputs = ResizeArray<ParsedPortDecl>()
+        let paramsDecls = ResizeArray<ParsedParamDecl>()
+        let mutable defaultInput = None
+        let mutable defaultOutput = None
+        let mutable ok = true
+
+        for memberNode in members do
+            match memberNode with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.PortDeclaration decl ->
+                let shape =
+                    match decl.PortShape with
+                    | Some s when String.Equals(s, "scalar", StringComparison.OrdinalIgnoreCase) -> PortShape.Scalar
+                    | _ -> PortShape.Stream
+
+                match decl.Role with
+                | DashSpec.Modeling.Parse.Syntax.PortDeclRole.PortInput ->
+                    inputs.Add { Name = decl.PortName; ValueType = decl.ValueType |> Option.defaultValue ""; Shape = shape }
+                | DashSpec.Modeling.Parse.Syntax.PortDeclRole.PortOutput ->
+                    if shape = PortShape.Scalar then
+                        raise (DashSpecParseException("output ports must be stream (row batch)."))
+                    outputs.Add { Name = decl.PortName; ValueType = decl.ValueType |> Option.defaultValue ""; Shape = shape }
+                | DashSpec.Modeling.Parse.Syntax.PortDeclRole.PortParam ->
+                    paramsDecls.Add
+                        { Name = decl.PortName
+                          ValueType = decl.ValueType |> Option.defaultValue ""
+                          Default = decl.DefaultValue
+                          ColumnBinding = decl.ColumnBinding }
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ClauseDeclaration clause ->
+                match clause.Kind with
+                | DashSpec.Modeling.Parse.Syntax.ClauseKind.DefaultPortClause(direction, portName) ->
+                    if String.Equals(direction, "input", StringComparison.OrdinalIgnoreCase) then
+                        defaultInput <- Some portName
+                    else
+                        defaultOutput <- Some portName
+                | _ -> ok <- false
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlankLine _
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.EndBlock _ -> ()
+            | memberNode when DashSpec.Modeling.Parse.Syntax.DashSpecAst.isTrivia memberNode -> ()
+            | _ -> ok <- false
+
+        if not ok then
+            None
+        else
+            let inputsArr = inputs.ToArray()
+            let outputsArr = outputs.ToArray()
+
+            defaultInput |> Option.iter (fun name -> validateDefaultPort "input" name inputsArr)
+            defaultOutput |> Option.iter (fun name -> validateDefaultPort "output" name outputsArr)
+
+            Some
+                { Inputs = inputsArr
+                  Outputs = outputsArr
+                  Params = paramsDecls.ToArray()
+                  DefaultInput = defaultInput
+                  DefaultOutput = defaultOutput }

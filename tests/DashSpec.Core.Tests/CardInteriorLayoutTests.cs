@@ -290,6 +290,9 @@ public class CardInteriorLayoutTests
                 apply = manual
               end filters
               diagram ref H heatmap
+              x = a
+              y = b
+              value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name
@@ -345,6 +348,9 @@ public class CardInteriorLayoutTests
                 end layout
               end filters
               diagram ref H heatmap
+              x = a
+              y = b
+              value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name
@@ -397,6 +403,9 @@ public class CardInteriorLayoutTests
                 apply = manual
               end filters
               diagram ref H heatmap
+              x = a
+              y = b
+              value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] H }
               bind usage_date, app_name

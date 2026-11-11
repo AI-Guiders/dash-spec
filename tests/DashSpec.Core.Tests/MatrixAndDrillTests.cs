@@ -64,7 +64,8 @@ public sealed class DrillDownPhraseTests
               invoke drill_down(tab = detail, target = user_name, from = y)
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }

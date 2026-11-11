@@ -1,6 +1,40 @@
 namespace DashSpec.Modeling.Parse.Syntax
 
 open AIGuiders.Platform.Modeling.Core.Identity
+open DashSpec.Modeling.Core
+
+[<RequireQualifiedAccess>]
+type SourceLeafKindSyntax =
+    | View
+    | SqlQuery
+    | SqlFile
+    | Xlsx
+
+[<RequireQualifiedAccess>]
+type CompositeOriginKindSyntax =
+    | InnerJoin
+    | LeftJoin
+    | RightJoin
+    | FullJoin
+    | UnionAll
+
+/// <summary>Typed source origin (ADR-0126 / ADR-0130): shared between header `= Origin(…)`
+/// and body `from view|sql|xlsx …` so both forms project the same structured AST.</summary>
+[<RequireQualifiedAccess>]
+type SourceOriginSyntax =
+    | Leaf of kind: SourceLeafKindSyntax * target: string * sheet: string option
+    | Composite of kind: CompositeOriginKindSyntax * left: string * right: string
+
+/// <summary>Positional clause family (ADR-0130): each directive line carries its exact
+/// parsed positional structure rather than an untyped string bag.</summary>
+[<RequireQualifiedAccess>]
+type ClauseKind =
+    | NamespaceClause of name: string
+    | ScopeClause of kind: string
+    | UseClause of kind: string * target: string
+    | FromClause of origin: SourceOriginSyntax
+    | DefaultPortClause of direction: string * portName: string
+    | DirectiveClause of keyword: string * args: string[]
 
 [<RequireQualifiedAccess>]
 type DashSpecModuleDirective =
@@ -24,6 +58,13 @@ type DashSpecAstNode =
     | Line of LineSyntax
     | BlankLine of BlankLineSyntax
     | ImportDeclaration of ImportDeclarationSyntax
+    | TypeFieldDeclaration of TypeFieldSyntax
+    | PropertyAssignment of PropertySyntax
+    | PortDeclaration of PortDeclarationSyntax
+    | FlowLinkDeclaration of FlowLinkSyntax
+    | ClauseDeclaration of ClauseSyntax
+    | GridRowDeclaration of GridRowSyntax
+    | TableRowDeclaration of TableRowSyntax
 
 and CompilationUnitSyntax =
     { Id: NodeId
@@ -42,6 +83,8 @@ and BlockDeclarationSyntax =
     { Id: NodeId
       Span: TextSpan
       Opener: DashSpecBlockOpener
+      TypeAnnotation: string option
+      Origin: SourceOriginSyntax option
       HeaderSpan: TextSpan
       Tokens: SyntaxToken[]
       Members: DashSpecAstNode[] }
@@ -79,6 +122,80 @@ and ImportDeclarationSyntax =
       Alias: string option
       Tokens: SyntaxToken[] }
 
+/// <summary>Typed field declaration inside a `type &lt;Name&gt;` block: `[optional] &lt;type&gt; &lt;name&gt;` (ADR-0130).</summary>
+and TypeFieldSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Optional: bool
+      FieldType: DashType
+      FieldName: string
+      Tokens: SyntaxToken[] }
+
+/// <summary>Typed property assignment inside a block: `&lt;key&gt; = &lt;value&gt;` (ADR-0130).</summary>
+and PropertySyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Key: string
+      ValueText: string
+      KeyTokens: SyntaxToken[]
+      EqualsToken: SyntaxToken
+      ValueTokens: SyntaxToken[]
+      Tokens: SyntaxToken[] }
+
+/// <summary>Port-role of a ports-block member (ADR-0130).</summary>
+and PortDeclRole =
+    | PortInput
+    | PortOutput
+    | PortParam
+
+/// <summary>Typed member of a `ports … end ports` block (ADR-0130):
+/// `input stream|scalar Name: Type`, `output stream Name: Type`,
+/// `param name: type [= default] [bind column]`.</summary>
+and PortDeclarationSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Role: PortDeclRole
+      PortShape: string option
+      PortName: string
+      ValueType: string option
+      DefaultValue: string option
+      ColumnBinding: string option
+      Tokens: SyntaxToken[] }
+
+/// <summary>Typed flow edge inside a flow module (ADR-0130):
+/// `producer [outPort] -&gt; [inPort] consumer`.</summary>
+and FlowLinkSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      FromNode: string
+      FromPort: string option
+      ToNode: string
+      ToPort: string option
+      Tokens: SyntaxToken[] }
+
+/// <summary>Positional directive line without an assignment (ADR-0130):
+/// `namespace`, `scope`, `use`, `from`, `default input|output`, or positional directives.</summary>
+and ClauseSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Kind: ClauseKind
+      Tokens: SyntaxToken[] }
+
+/// <summary>Grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2) — empty cell is
+/// the whole `[]` token; cells carry the weight suffix verbatim.</summary>
+and GridRowSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Cells: string[]
+      Tokens: SyntaxToken[] }
+
+/// <summary>Markdown-style table row `| a | b |` — one TableRow token per line.</summary>
+and TableRowSyntax =
+    { Id: NodeId
+      Span: TextSpan
+      Cells: string[]
+      Tokens: SyntaxToken[] }
+
 [<CLIMutable>]
 type ParseTree =
     { Text: string
@@ -95,3 +212,10 @@ type DashSpecAstNodeKind =
     | Line = 5
     | BlankLine = 6
     | ImportDeclaration = 7
+    | TypeFieldDeclaration = 8
+    | PropertyAssignment = 9
+    | PortDeclaration = 10
+    | FlowLinkDeclaration = 11
+    | ClauseDeclaration = 12
+    | GridRowDeclaration = 13
+    | TableRowDeclaration = 14

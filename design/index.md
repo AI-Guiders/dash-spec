@@ -1,14 +1,14 @@
 ---
 type: Index
 title: "ADR index — dash-spec"
-description: "Автоматический индекс ADR (127 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
+description: "Автоматический индекс ADR (130 записей, обновлён unknown). Генерируется scripts/gen-adr-index.py из frontmatter — не редактировать руками."
 tags: [adr, index, dashspec]
 ---
 
 # ADR index
 
 Производное состояние (OKF): таблица ниже собирается скриптом из frontmatter
-файлов ADR. Следующий номер — **0128**. Ручные правки будут перезаписаны:
+файлов ADR. Следующий номер — **0131**. Ручные правки будут перезаписаны:
 `python scripts/gen-adr-index.py` (CI-проверка актуальности: `--check`).
 
 | ADR | Title | Status |
@@ -140,4 +140,6 @@ tags: [adr, index, dashspec]
 | [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Accepted |
 | [0126](DASHSPEC-ADR-0126-db-transforms-full-coverage.md) | Composite sources — join/union как конструкторы источников, window как линейный db-шаг | Proposed |
 | [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Accepted |
-| [0128](DASHSPEC-ADR-0128-authored-surface-for-inferred-types.md) | Authored surface для выведенных типов — эмит через AST, статус не различается | Proposed |
+| [0128](DASHSPEC-ADR-0128-authored-surface-for-inferred-types.md) | Authored surface для выведенных типов — эмит через AST, статус не различается | Accepted |
+| [0129](DASHSPEC-ADR-0129-sqlite-landing-zone.md) | SQLite landing zone — мульти-источник через локальный файл-БД | Proposed |
+| [0130](DASHSPEC-ADR-0130-unified-graph-pipeline-and-typed-ast.md) | Единый графовый конвейер (parse → graph → IR) и типизированный AST членов | Accepted |

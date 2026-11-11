@@ -38,7 +38,8 @@ public sealed class PluginFamilyParseTests
                 usage_date
               end bind
               diagram line
-              x = usage_date y
+              x = usage_date
+              y = value
               end line
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
@@ -89,7 +90,8 @@ public sealed class PluginFamilyParseTests
                 usage_date
               end bind
               diagram line
-              x = usage_date y
+              x = usage_date
+              y = value
               end line
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card

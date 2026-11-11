@@ -57,7 +57,7 @@ module TransformDeclarationParser =
                 | None ->
                     raise (
                         DashSpecParseException(
-                            $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque (ADR-0127)."))
+                            $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque."))
             elif reader.TryKeyword "requires_block" then
                 reader.Expect TokenKind.Eq |> ignore
                 requiresBlock <- reader.ReadIdent().Equals("true", StringComparison.OrdinalIgnoreCase)

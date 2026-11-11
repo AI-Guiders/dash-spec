@@ -15,6 +15,13 @@ module DashSpecAst =
         | DashSpecAstNode.Line n -> n.Id
         | DashSpecAstNode.BlankLine n -> n.Id
         | DashSpecAstNode.ImportDeclaration n -> n.Id
+        | DashSpecAstNode.TypeFieldDeclaration n -> n.Id
+        | DashSpecAstNode.PropertyAssignment n -> n.Id
+        | DashSpecAstNode.PortDeclaration n -> n.Id
+        | DashSpecAstNode.FlowLinkDeclaration n -> n.Id
+        | DashSpecAstNode.ClauseDeclaration n -> n.Id
+        | DashSpecAstNode.GridRowDeclaration n -> n.Id
+        | DashSpecAstNode.TableRowDeclaration n -> n.Id
 
     let span (node: DashSpecAstNode) =
         match node with
@@ -26,6 +33,13 @@ module DashSpecAst =
         | DashSpecAstNode.Line n -> n.Span
         | DashSpecAstNode.BlankLine n -> n.Span
         | DashSpecAstNode.ImportDeclaration n -> n.Span
+        | DashSpecAstNode.TypeFieldDeclaration n -> n.Span
+        | DashSpecAstNode.PropertyAssignment n -> n.Span
+        | DashSpecAstNode.PortDeclaration n -> n.Span
+        | DashSpecAstNode.FlowLinkDeclaration n -> n.Span
+        | DashSpecAstNode.ClauseDeclaration n -> n.Span
+        | DashSpecAstNode.GridRowDeclaration n -> n.Span
+        | DashSpecAstNode.TableRowDeclaration n -> n.Span
 
     let members (node: DashSpecAstNode) =
         match node with
@@ -41,6 +55,14 @@ module DashSpecAst =
         | DashSpecAstNode.CardReference n -> n.Tokens
         | DashSpecAstNode.EndBlock n -> n.Tokens
         | DashSpecAstNode.Line n -> n.Tokens
+        | DashSpecAstNode.ImportDeclaration n -> n.Tokens
+        | DashSpecAstNode.TypeFieldDeclaration n -> n.Tokens
+        | DashSpecAstNode.PropertyAssignment n -> n.Tokens
+        | DashSpecAstNode.PortDeclaration n -> n.Tokens
+        | DashSpecAstNode.FlowLinkDeclaration n -> n.Tokens
+        | DashSpecAstNode.ClauseDeclaration n -> n.Tokens
+        | DashSpecAstNode.GridRowDeclaration n -> n.Tokens
+        | DashSpecAstNode.TableRowDeclaration n -> n.Tokens
         | _ -> Array.empty
 
     let withSpan (node: DashSpecAstNode) (newSpan: TextSpan) (newMembers: DashSpecAstNode[]) =
@@ -60,6 +82,13 @@ module DashSpecAst =
         | DashSpecAstNode.Line _ -> DashSpecAstNodeKind.Line
         | DashSpecAstNode.BlankLine _ -> DashSpecAstNodeKind.BlankLine
         | DashSpecAstNode.ImportDeclaration _ -> DashSpecAstNodeKind.ImportDeclaration
+        | DashSpecAstNode.TypeFieldDeclaration _ -> DashSpecAstNodeKind.TypeFieldDeclaration
+        | DashSpecAstNode.PropertyAssignment _ -> DashSpecAstNodeKind.PropertyAssignment
+        | DashSpecAstNode.PortDeclaration _ -> DashSpecAstNodeKind.PortDeclaration
+        | DashSpecAstNode.FlowLinkDeclaration _ -> DashSpecAstNodeKind.FlowLinkDeclaration
+        | DashSpecAstNode.ClauseDeclaration _ -> DashSpecAstNodeKind.ClauseDeclaration
+        | DashSpecAstNode.GridRowDeclaration _ -> DashSpecAstNodeKind.GridRowDeclaration
+        | DashSpecAstNode.TableRowDeclaration _ -> DashSpecAstNodeKind.TableRowDeclaration
 
     let isEndBlock (node: DashSpecAstNode) =
         match node with

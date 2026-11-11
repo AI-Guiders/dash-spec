@@ -83,9 +83,10 @@
     <Compile Include="Filter\FilterLayoutRefResolver.fs" />
     <Compile Include="Types\TypeModuleParser.fs" />
     <Compile Include="Types\RowTypeSchemaBridge.fs" />
-    <Compile Include="Document\DashflowViewManifest.fs" />
+    <Compile Include="Syntax\DashSpecAstPrinter.fs" />
     <Compile Include="DataFlow\DashflowTypes.fs" />
     <Compile Include="DataFlow\CompositeSql.fs" />
+    <Compile Include="DataFlow\ManagedViews.fs" />
     <Compile Include="DataFlow\DashflowProviderBridge.fs" />
     <Compile Include="DataFlow\FlowPortsParser.fs" />
     <Compile Include="DataFlow\FlowLinkParser.fs" />

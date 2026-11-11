@@ -521,7 +521,8 @@ public class DashboardParseTests
                 activity_day, app_name
               end bind
               diagram line
-              x = bucket_start_utc y
+              x = bucket_start_utc
+              y = value
               end line
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
@@ -917,7 +918,8 @@ public class DashboardParseTests
                 title = "T"
               card h as "H"
                 diagram heatmap
-                  x = a y
+                  x = a
+                  y = value
                   value = c
                 end heatmap
                 legend
@@ -1268,7 +1270,8 @@ public class DashboardParseTests
                     usage_date
                   end bind
                   diagram line
-                  x = usage_date y
+                  x = usage_date
+                  y = value
                   end line
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   where [[usage_date]]
@@ -1301,7 +1304,8 @@ public class DashboardParseTests
               span = 6
               end place
               diagram bar
-              x = a y
+              x = a
+              y = value
               end bar
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card
@@ -1312,7 +1316,8 @@ public class DashboardParseTests
               span = 6
               end place
               diagram bar
-              x = a y
+              x = a
+              y = value
               end bar
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card

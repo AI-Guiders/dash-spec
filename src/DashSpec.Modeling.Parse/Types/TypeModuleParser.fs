@@ -4,6 +4,7 @@ open System
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 module TypeModuleParser =
 
@@ -40,7 +41,9 @@ module TypeModuleParser =
             if String.IsNullOrWhiteSpace typeName then
                 raise (DashSpecParseException("Field type is required."))
 
-            let fieldName = reader.ReadIdent()
+            // qualified field names ride the dot (`r.col`, ADR-0128 composite surface) —
+            // the same dotted-ident rule as property keys, one language
+            let fieldName = reader.ReadDottedPropertyKey()
 
             if String.IsNullOrWhiteSpace fieldName then
                 raise (DashSpecParseException("Row field requires a name."))
@@ -84,24 +87,91 @@ module TypeModuleParser =
         reader.ExpectKeyword "type"
         parseTypeBlockAfterKeyword reader
 
+    /// Project RowTypeDef[] from a parsed syntax tree (`DashSpecAstNode`), returns None if
+    /// any type block has malformed/unrecognized member lines or missing end block so the
+    /// caller can report exact syntax diagnostics.
+    let tryProjectTypesFromAst (root: DashSpecAstNode) : RowTypeDef[] option =
+        let typeBlocks =
+            DashSpecAst.descendants root
+            |> Seq.choose (function
+                | DashSpecAstNode.BlockDeclaration block ->
+                    match block.Opener with
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, typeName) -> Some(typeName, block)
+                    | _ -> None
+                | _ -> None)
+            |> Seq.toArray
+
+        if typeBlocks.Length = 0 then
+            None
+        else
+            let defs = ResizeArray<RowTypeDef>(typeBlocks.Length)
+            let mutable ok = true
+
+            for typeName, block in typeBlocks do
+                let hasEnd =
+                    block.Members
+                    |> Array.exists (function
+                        | DashSpecAstNode.EndBlock e when e.EndKeyword = DashSpecBlockKeyword.Type -> true
+                        | _ -> false)
+
+                let hasUnrecognizedLine =
+                    block.Members
+                    |> Array.exists (fun m ->
+                        match m with
+                        | DashSpecAstNode.TypeFieldDeclaration _
+                        | DashSpecAstNode.BlankLine _
+                        | DashSpecAstNode.EndBlock _ -> false
+                        | m when DashSpecAst.isTrivia m -> false
+                        | _ -> true)
+
+                let fields =
+                    block.Members
+                    |> Array.choose (function
+                        | DashSpecAstNode.TypeFieldDeclaration f ->
+                            Some
+                                { Name = f.FieldName
+                                  Type = f.FieldType
+                                  Optional = f.Optional }
+                        | _ -> None)
+
+                if not hasEnd || hasUnrecognizedLine || fields.Length = 0 then
+                    ok <- false
+                else
+                    defs.Add { Name = typeName; Fields = fields }
+
+            if ok then Some(defs.ToArray()) else None
+
     let parseTypesModule (text: string) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Types text is required."
-        let reader = ParserUtilities.createReader text
-        reader.SkipFileDirectives()
-        reader.SkipNewlines()
 
-        if reader.TryKeyword "module" then
-            if reader.TryKeyword "types" then
-                reader.ReadIdent() |> ignore
+        let tree = DashSpecSurfaceSyntax.parse text
+
+        let defs =
+            match tryProjectTypesFromAst tree.Root with
+            | Some projected -> projected
+            | None ->
+                let reader = ParserUtilities.createReader text
+                reader.SkipFileDirectives()
                 reader.SkipNewlines()
 
-        let defs = ResizeArray<RowTypeDef>()
+                if reader.TryKeyword "module" then
+                    if reader.TryKeyword "types" then
+                        reader.ReadIdent() |> ignore
+                        reader.SkipNewlines()
 
-        while not reader.IsEof do
-            reader.SkipNewlines()
+                        if reader.TryKeyword "namespace" then
+                            reader.ReadDottedPropertyKey() |> ignore
+                            reader.SkipNewlines()
 
-            if not reader.IsEof then
-                defs.Add(parseTypeBlock reader)
+                let parsed = ResizeArray<RowTypeDef>()
+
+                while not reader.IsEof do
+                    reader.SkipNewlines()
+
+                    if not reader.IsEof then
+                        parsed.Add(parseTypeBlock reader)
+
+                parsed.ToArray()
 
         let catalog = TypeCatalog.ofDefinitions defs
 
@@ -109,4 +179,4 @@ module TypeModuleParser =
         | Result.Ok () -> ()
         | Result.Error errors -> raise (DashSpecParseException(String.Join("; ", errors)))
 
-        defs.ToArray()
+        defs

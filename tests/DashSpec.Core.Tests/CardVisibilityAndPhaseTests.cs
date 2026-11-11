@@ -43,7 +43,8 @@ public sealed class CardVisibilityAndPhaseTests
               message = "Too dense — narrow filters."
               end when
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -79,7 +80,8 @@ public sealed class CardVisibilityAndPhaseTests
               message = "Pick a user"
               end user_name
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -114,7 +116,8 @@ public sealed class CardVisibilityAndPhaseTests
               phase detail
               card heat as "H"
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }

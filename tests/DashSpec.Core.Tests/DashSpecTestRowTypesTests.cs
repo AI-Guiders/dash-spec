@@ -35,7 +35,8 @@ public class DashSpecTestRowTypesTests
               title = "T"
               card x as "X"
               diagram bar
-              x = a y
+              x = a
+              y = value
               end bar
               data flow { s [rows] -> [rows] __diagram__ }
               end card

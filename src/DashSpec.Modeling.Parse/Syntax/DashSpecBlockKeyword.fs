@@ -42,6 +42,15 @@ type DashSpecBlockKeyword =
     | DiagramLibrary
     | Bind
     | Import
+    | Type
+    | Source
+    | Transformer
+    | Ports
+    | Palette
+    | Tooltip
+    | Host
+    | Surfaces
+    | Defaults
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -84,6 +93,15 @@ module DashSpecBlockKeyword =
         | "diagramlibrary" -> Some DashSpecBlockKeyword.DiagramLibrary
         | "bind" -> Some DashSpecBlockKeyword.Bind
         | "import" -> Some DashSpecBlockKeyword.Import
+        | "type" -> Some DashSpecBlockKeyword.Type
+        | "source" -> Some DashSpecBlockKeyword.Source
+        | "transformer" -> Some DashSpecBlockKeyword.Transformer
+        | "ports" -> Some DashSpecBlockKeyword.Ports
+        | "palette" -> Some DashSpecBlockKeyword.Palette
+        | "tooltip" -> Some DashSpecBlockKeyword.Tooltip
+        | "host" -> Some DashSpecBlockKeyword.Host
+        | "surfaces" -> Some DashSpecBlockKeyword.Surfaces
+        | "defaults" -> Some DashSpecBlockKeyword.Defaults
         | _ when DashSpecKeywords.diagramKinds |> List.contains keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
@@ -101,7 +119,9 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Chrome
         | DashSpecBlockKeyword.Diagram
         | DashSpecBlockKeyword.Filters
-        | DashSpecBlockKeyword.Grid -> true
+        | DashSpecBlockKeyword.Grid
+        | DashSpecBlockKeyword.Source
+        | DashSpecBlockKeyword.Transformer -> true
         | _ -> false
 
     let isFormField (keyword: DashSpecBlockKeyword) =
@@ -118,7 +138,14 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Configuration
         | DashSpecBlockKeyword.Report
         | DashSpecBlockKeyword.Bind
-        | DashSpecBlockKeyword.Import -> true
+        | DashSpecBlockKeyword.Import
+        | DashSpecBlockKeyword.Type
+        | DashSpecBlockKeyword.Ports
+        | DashSpecBlockKeyword.Palette
+        | DashSpecBlockKeyword.Tooltip
+        | DashSpecBlockKeyword.Host
+        | DashSpecBlockKeyword.Surfaces
+        | DashSpecBlockKeyword.Defaults -> true
         | _ -> false
 
     let toEndName (keyword: DashSpecBlockKeyword) =
@@ -160,4 +187,13 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.DiagramLibrary -> "diagramlibrary"
         | DashSpecBlockKeyword.Bind -> "bind"
         | DashSpecBlockKeyword.Import -> "import"
+        | DashSpecBlockKeyword.Type -> "type"
+        | DashSpecBlockKeyword.Source -> "source"
+        | DashSpecBlockKeyword.Transformer -> "transformer"
+        | DashSpecBlockKeyword.Ports -> "ports"
+        | DashSpecBlockKeyword.Palette -> "palette"
+        | DashSpecBlockKeyword.Tooltip -> "tooltip"
+        | DashSpecBlockKeyword.Host -> "host"
+        | DashSpecBlockKeyword.Surfaces -> "surfaces"
+        | DashSpecBlockKeyword.Defaults -> "defaults"
         | DashSpecBlockKeyword.Other name -> name

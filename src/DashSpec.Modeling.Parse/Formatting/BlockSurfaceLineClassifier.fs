@@ -64,6 +64,17 @@ module BlockSurfaceLineClassifier =
                 BlockOpener("phase", Some id)
             | { Kind = TokenKind.Ident; Value = "group" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 BlockOpener("group", Some id)
+            | { Kind = TokenKind.Ident; Value = "type" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
+                BlockOpener("type", Some id)
+            // ADR-0130 slice 2: flow-module block headers capture their id even when
+            // the header carries '=' (composite `source x : T = View(...)` origins).
+            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
+                when kw = "source" || kw = "transformer" || kw = "flow" ->
+                BlockOpener(kw, Some id)
+            | { Kind = TokenKind.Ident; Value = "transform" } :: { Kind = TokenKind.Ident; Value = "use" } :: { Kind = TokenKind.Ident; Value = pluginId } :: _ ->
+                BlockOpener("transform", Some pluginId)
+            | { Kind = TokenKind.Ident; Value = "transform" } :: { Kind = TokenKind.Ident; Value = "series" } :: _ ->
+                BlockOpener("series", None)
             | tokens when hasEquals tokens -> Content
             | { Kind = TokenKind.Ident; Value = kw } :: _ when DashSpecKeywords.isBlockKeyword kw ->
                 BlockOpener(kw, None)

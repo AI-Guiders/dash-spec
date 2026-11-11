@@ -242,6 +242,56 @@ transformer passthrough {
         Assert.Empty(module'.Diagnostics)
 
     [<Fact>]
+    let ``re-parsing a flow over its own synthesized types reuses the twin, not a suffix`` () =
+        // ADR-0128 §3 step 2: the corpus loader parses flow units twice (types pass,
+        // views pass). The second parse must reuse the first pass's composite type
+        // (structural twin in the catalog) instead of minting ModelJoinOrgRow2/3 —
+        // the mechanism behind the ModelJoinOrgRow3 duplicate in dsc build views.
+        let joinFlow =
+            """
+module flow inference_join
+
+source events : EventRow = View(dbo.events) {
+  use provider infer
+}
+
+source orgs : OrgRow = View(dbo.orgs) {
+  use provider infer
+}
+
+source joined = InnerJoin(events, orgs) {
+  on = org_id
+}
+
+end flow
+"""
+
+        let typesWithOrg =
+            typesText
+            + """
+type OrgRow
+  string org_id
+  string org_name
+end type
+"""
+
+        let catalog =
+            TypeCatalog.ofDefinitions (TypeModuleParser.parseTypesModule typesWithOrg)
+
+        let first = DashflowModuleParser.parseModule joinFlow catalog
+        Assert.Equal(1, first.InferredRowTypes.Length) // ModelJoinOrgRow synthesized
+
+        let catalog' =
+            TypeCatalog.ofDefinitions
+                [| yield! catalog.Definitions.Values
+                   yield! first.InferredRowTypes |]
+
+        let second = DashflowModuleParser.parseModule joinFlow catalog'
+        Assert.Empty(second.InferredRowTypes) // the twin was reused — no suffix minted
+        let joined = second.Sources |> Array.find (fun s -> s.Id = "joined")
+        Assert.Equal(first.Sources[2].OutputRowType, joined.OutputRowType)
+
+    [<Fact>]
     let ``declaration units carry the type_effect`` () =
         // the stdlib registration is lazy; ensure it and probe two declarations
         TransformDeclarationParser.ensureStdlibRegistered ()
@@ -251,3 +301,82 @@ transformer passthrough {
 
         // undeclared ids are opaque — inference never runs for them
         Assert.Equal(TransformTypeEffect.Opaque, TransformDeclarations.effectOf "no_such_transform")
+
+    [<Fact>]
+    let ``two composite joins with identical shape share one synthesized type without suffix`` () =
+        let joinFlow =
+            """
+module flow inference_two_joins
+
+source events_2023 : EventRow = View(dbo.events_2023) {
+  use provider infer
+}
+
+source events_2024 : EventRow = View(dbo.events_2024) {
+  use provider infer
+}
+
+source orgs : OrgRow = View(dbo.orgs) {
+  use provider infer
+}
+
+source joined_2023 = InnerJoin(events_2023, orgs) {
+  on = org_id
+}
+
+source joined_2024 = InnerJoin(events_2024, orgs) {
+  on = org_id
+}
+
+end flow
+"""
+
+        let typesWithOrg =
+            typesText
+            + """
+type OrgRow
+  string org_id
+  string org_name
+end type
+"""
+
+        let catalog =
+            TypeCatalog.ofDefinitions (TypeModuleParser.parseTypesModule typesWithOrg)
+
+        let parsed = DashflowModuleParser.parseModule joinFlow catalog
+        let joinTypes = parsed.InferredRowTypes |> Array.filter (fun t -> t.Name.StartsWith("EventJoinOrgRow"))
+        Assert.Single(joinTypes) |> ignore
+        Assert.Equal("EventJoinOrgRow", joinTypes[0].Name)
+
+    [<Fact>]
+    let ``AST printer synthesizes, merges member changes in place, and round-trips`` () =
+        let initial =
+            [| { Name = "FirstRow"
+                 Fields = [| { Name = "domain"; Type = DashType.Primitive DashPrimitive.String; Optional = true } |] }
+               { Name = "SecondRow"
+                 Fields = [| { Name = "count"; Type = DashType.Primitive DashPrimitive.Int; Optional = false } |] } |]
+
+        let unitAst =
+            DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit
+                "demo_types"
+                (Some "Demo.Types")
+                initial
+
+        let mutatedCandidate =
+            { Name = "FirstRow"
+              Fields =
+                [| { Name = "domain"; Type = DashType.Primitive DashPrimitive.String; Optional = true }
+                   { Name = "value"; Type = DashType.Primitive DashPrimitive.Decimal; Optional = false } |] }
+
+        let mergedAst =
+            DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit unitAst mutatedCandidate
+
+        let printed = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.print mergedAst
+        Assert.Contains("namespace Demo.Types", printed)
+
+        let reparsed = TypeModuleParser.parseTypesModule printed
+        Assert.Equal(2, reparsed.Length)
+        Assert.Equal("FirstRow", reparsed[0].Name)
+        Assert.Equal(2, reparsed[0].Fields.Length)
+        Assert.Equal("SecondRow", reparsed[1].Name)
+        Assert.Single(reparsed[1].Fields) |> ignore

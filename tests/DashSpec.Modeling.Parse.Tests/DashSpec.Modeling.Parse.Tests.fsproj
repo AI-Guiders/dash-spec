@@ -20,6 +20,7 @@
     <Compile Include="SyntaxTreeTests.fs" />
     <Compile Include="LayoutModuleParserTests.fs" />
     <Compile Include="TypeModuleParserTests.fs" />
+    <Compile Include="FlowSurfaceSyntaxTests.fs" />
     <Compile Include="AccessorGrammarTests.fs" />
     <Compile Include="TimeShiftLexerTests.fs" />
     <Compile Include="DashflowModuleParserTests.fs" />

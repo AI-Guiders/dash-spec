@@ -19,6 +19,13 @@ type DashSpecConceptKind =
     | ImportDeclaration of keyword: string * target: string
     | Block of keyword: DashSpecBlockKeyword * identifier: string option
     | CardReference of cardId: string
+    | TypeField of fieldName: string
+    | Property of key: string
+    | Port of portName: string
+    | FlowLink of fromNode: string * toNode: string
+    | Clause of keyword: string
+    | GridRow
+    | TableRow
 
 [<RequireQualifiedAccess>]
 type DashSpecConceptEdgeKind =
@@ -61,6 +68,13 @@ module DashSpecConceptOntology =
         | DashSpecConceptKind.DashboardModule _
         | DashSpecConceptKind.TabModule _
         | DashSpecConceptKind.CardReference _ -> DashSpecProjectionRole.Diagram
+        | DashSpecConceptKind.TypeField _
+        | DashSpecConceptKind.Property _ -> DashSpecProjectionRole.FormField
+        | DashSpecConceptKind.FlowLink _ -> DashSpecProjectionRole.Diagram
+        | DashSpecConceptKind.Port _
+        | DashSpecConceptKind.Clause _
+        | DashSpecConceptKind.TableRow -> DashSpecProjectionRole.FormField
+        | DashSpecConceptKind.GridRow -> DashSpecProjectionRole.Diagram
         | DashSpecConceptKind.Block(keyword, _) ->
             if DashSpecBlockKeyword.isDiagramContainer keyword then
                 DashSpecProjectionRole.Diagram
@@ -84,6 +98,22 @@ module DashSpecConceptOntology =
             | DashSpecBlockOpener.Named(keyword, identifier) -> DashSpecConceptKind.Block(keyword, Some identifier)
             | DashSpecBlockOpener.Anonymous keyword -> DashSpecConceptKind.Block(keyword, None)
         | DashSpecAstNode.CardReference n -> DashSpecConceptKind.CardReference n.CardId
+        | DashSpecAstNode.TypeFieldDeclaration n -> DashSpecConceptKind.TypeField n.FieldName
+        | DashSpecAstNode.PropertyAssignment n -> DashSpecConceptKind.Property n.Key
+        | DashSpecAstNode.PortDeclaration n -> DashSpecConceptKind.Port n.PortName
+        | DashSpecAstNode.FlowLinkDeclaration n -> DashSpecConceptKind.FlowLink(n.FromNode, n.ToNode)
+        | DashSpecAstNode.ClauseDeclaration n ->
+            let keyword =
+                match n.Kind with
+                | ClauseKind.NamespaceClause _ -> "namespace"
+                | ClauseKind.ScopeClause _ -> "scope"
+                | ClauseKind.UseClause _ -> "use"
+                | ClauseKind.FromClause _ -> "from"
+                | ClauseKind.DefaultPortClause _ -> "default"
+                | ClauseKind.DirectiveClause(kw, _) -> kw
+            DashSpecConceptKind.Clause keyword
+        | DashSpecAstNode.GridRowDeclaration _ -> DashSpecConceptKind.GridRow
+        | DashSpecAstNode.TableRowDeclaration _ -> DashSpecConceptKind.TableRow
         | _ -> failwith "not a concept-bearing AST node"
 
     let outlineCaption (kind: DashSpecConceptKind) =
@@ -97,6 +127,13 @@ module DashSpecConceptOntology =
             $"{DashSpecBlockKeyword.toEndName keyword} {identifier}"
         | DashSpecConceptKind.Block(keyword, None) -> DashSpecBlockKeyword.toEndName keyword
         | DashSpecConceptKind.CardReference cardId -> $"card {cardId}"
+        | DashSpecConceptKind.TypeField fieldName -> $"field {fieldName}"
+        | DashSpecConceptKind.Property key -> $"property {key}"
+        | DashSpecConceptKind.Port portName -> $"port {portName}"
+        | DashSpecConceptKind.FlowLink(fromNode, toNode) -> $"{fromNode} -> {toNode}"
+        | DashSpecConceptKind.Clause keyword -> keyword
+        | DashSpecConceptKind.GridRow -> "grid row"
+        | DashSpecConceptKind.TableRow -> "table row"
 
     let treeCaption (tier: DashSpecConceptTier) =
         match tier.Title with

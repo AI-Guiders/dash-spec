@@ -5,6 +5,7 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 module DashflowModuleParser =
 
@@ -875,7 +876,7 @@ module DashflowModuleParser =
                 | _ ->
                     raise (
                         DashSpecParseException(
-                            $"source '{compositeId}': composite constituent '{constituentId}' is itself composite — nested composition is not supported (v1, ADR-0126)."))
+                            $"source '{compositeId}': composite constituent '{constituentId}' is itself composite — nested composition is not supported in v1."))
 
         let providerOf (def: DashflowSourceDef) =
             match def.Provider with
@@ -891,7 +892,7 @@ module DashflowModuleParser =
                 | Some lp, Some rp when not (String.Equals(lp, rp, StringComparison.OrdinalIgnoreCase)) ->
                     raise (
                         DashSpecParseException(
-                            $"source '{compositeId}': composite constituents '{leftId}' (provider '{lp}') and '{rightId}' (provider '{rp}') resolve to different providers — cross-db composition does not exist (ADR-0125/0126)."))
+                            $"source '{compositeId}': composite constituents '{leftId}' (provider '{lp}') and '{rightId}' (provider '{rp}') resolve to different providers — cross-db composition is not supported."))
                 | Some lp, _ | _, Some lp -> DashflowProviderBinding.Named lp
                 | None, None -> DashflowProviderBinding.Infer
 
@@ -899,7 +900,7 @@ module DashflowModuleParser =
                 if not (String.Equals(left.TimeZone, right.TimeZone, StringComparison.Ordinal)) then
                     raise (
                         DashSpecParseException(
-                            $"source '{compositeId}': composite constituents '{leftId}' (time_zone '{left.TimeZone}') and '{rightId}' (time_zone '{right.TimeZone}') disagree — both must declare the same zone or none (ADR-0126)."))
+                            $"source '{compositeId}': composite constituents '{leftId}' (time_zone '{left.TimeZone}') and '{rightId}' (time_zone '{right.TimeZone}') disagree — both must declare the same zone or none."))
                 else
                     left.TimeZone
 
@@ -1113,7 +1114,6 @@ module DashflowModuleParser =
           Graph = graph
           InferredRowTypes = inferred |> List.toArray
           EmitViews = false
-          ViewManifest = []
           Diagnostics = diagnostics |> List.toArray }
 
     /// Body after <c>@flow &lt;id&gt;</c> until <c>end flow</c> (optional matching id on <c>end</c>).
@@ -1146,9 +1146,393 @@ module DashflowModuleParser =
             (links.ToArray())
             typeCatalog
 
+    // --- ADR-0130: pure AST projection for flow modules (zero TokenReader rebuild) ---
+
+    let private mapLeafKind (k: SourceLeafKindSyntax) : SourceFromKind =
+        match k with
+        | SourceLeafKindSyntax.View -> SourceFromKind.View
+        | SourceLeafKindSyntax.SqlQuery -> SourceFromKind.SqlQuery
+        | SourceLeafKindSyntax.SqlFile -> SourceFromKind.SqlFile
+        | SourceLeafKindSyntax.Xlsx -> SourceFromKind.Xlsx
+
+    let private mapCompositeKind (k: CompositeOriginKindSyntax) : CompositeOriginKind =
+        match k with
+        | CompositeOriginKindSyntax.InnerJoin -> JoinInner
+        | CompositeOriginKindSyntax.LeftJoin -> JoinLeft
+        | CompositeOriginKindSyntax.RightJoin -> JoinRight
+        | CompositeOriginKindSyntax.FullJoin -> JoinFull
+        | CompositeOriginKindSyntax.UnionAll -> Union
+
+    let private mapOriginSyntax (origin: SourceOriginSyntax) : ParsedOrigin =
+        match origin with
+        | SourceOriginSyntax.Leaf(k, target, sheet) -> PLeaf(mapLeafKind k, target, sheet)
+        | SourceOriginSyntax.Composite(k, left, right) -> PComposite(mapCompositeKind k, left, right)
+
+    let private tryReadIdentListFromProperty (prop: PropertySyntax) : string list option =
+        let items = ResizeArray<string>()
+        let mutable ok = true
+        let mutable idx = 0
+
+        while ok && idx < prop.ValueTokens.Length do
+            if prop.ValueTokens.[idx].LexKind = TokenKind.Ident then
+                items.Add prop.ValueTokens.[idx].Text
+                idx <- idx + 1
+                if idx < prop.ValueTokens.Length then
+                    if prop.ValueTokens.[idx].LexKind = TokenKind.Comma then
+                        idx <- idx + 1
+                    else
+                        ok <- false
+            else
+                ok <- false
+
+        if ok && items.Count > 0 then Some(List.ofSeq items) else None
+
+    let private tryProjectSourceFromAst (sourceId: string) (block: BlockDeclarationSyntax) : DashflowSourceDef option =
+        let annotationRowType = block.TypeAnnotation
+        let headerOrigin = block.Origin |> Option.map mapOriginSyntax
+
+        let hasBraceOnHeader =
+            block.Tokens |> Array.exists (fun t -> t.LexKind = TokenKind.LBrace)
+
+        if not hasBraceOnHeader then
+            match headerOrigin with
+            | Some(PComposite _) when block.Members.Length = 0 -> ()
+            | _ -> raise (DashSpecParseException($"source '{sourceId}': expected '{{' after source header."))
+
+        let mutable providerBinding: DashflowProviderBinding option = None
+        let mutable from: SourceFrom option = None
+        let mutable onKeys: string list = []
+        let mutable leftKeys: string list = []
+        let mutable rightKeys: string list = []
+        let mutable timeZone = ""
+        let mutable outputPort = ""
+        let mutable outputRowType = ""
+        let mutable defaultOutputPort = None
+        let mutable ok = true
+
+        for memberNode in block.Members do
+            if ok then
+                match memberNode with
+                | DashSpecAstNode.PropertyAssignment prop ->
+                    if String.Equals(prop.Key, "time_zone", StringComparison.OrdinalIgnoreCase) then
+                        let raw =
+                            if prop.ValueTokens.Length = 1 && prop.ValueTokens.[0].LexKind = TokenKind.String then
+                                let s = prop.ValueTokens.[0].Text
+                                if s.Length >= 2 && s.[0] = '"' && s.[s.Length - 1] = '"' then s.Substring(1, s.Length - 2) else s
+                            else
+                                prop.ValueText
+
+                        let value = raw.Trim().ToLowerInvariant()
+                        if value <> "utc" && value <> "local" then
+                            raise (DashSpecParseException($"source '{sourceId}': time_zone supports utc or local (got '{raw}')."))
+                        timeZone <- value
+                    elif String.Equals(prop.Key, "on", StringComparison.OrdinalIgnoreCase) then
+                        match tryReadIdentListFromProperty prop with
+                        | Some keys -> onKeys <- keys
+                        | None -> ok <- false
+                    elif String.Equals(prop.Key, "left_key", StringComparison.OrdinalIgnoreCase) then
+                        match tryReadIdentListFromProperty prop with
+                        | Some keys -> leftKeys <- keys
+                        | None -> ok <- false
+                    elif String.Equals(prop.Key, "right_key", StringComparison.OrdinalIgnoreCase) then
+                        match tryReadIdentListFromProperty prop with
+                        | Some keys -> rightKeys <- keys
+                        | None -> ok <- false
+                    else
+                        ok <- false
+                | DashSpecAstNode.ClauseDeclaration clause ->
+                    match clause.Kind with
+                    | ClauseKind.UseClause(useKind, target) ->
+                        if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
+                            raise (DashSpecParseException($"source '{sourceId}': use 'provider <id>', not 'connector' (connector is the runtime plugin; provider selects the manifest entry)."))
+
+                        if not (String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase)) then
+                            raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id|infer>' before from/ports."))
+
+                        match headerOrigin with
+                        | Some(PComposite _) ->
+                            raise (DashSpecParseException($"source '{sourceId}': a composite source inherits use provider from its constituents — declare it on them, not here."))
+                        | _ -> ()
+
+                        providerBinding <-
+                            if String.Equals(target, "infer", StringComparison.OrdinalIgnoreCase) then
+                                Some DashflowProviderBinding.Infer
+                            else
+                                Some(DashflowProviderBinding.Named target)
+                    | ClauseKind.FromClause originSyntax ->
+                        if headerOrigin.IsSome then
+                            raise (DashSpecParseException($"source '{sourceId}': origin already declared in the header (`= …`) — 'from' cannot be declared twice."))
+
+                        match originSyntax with
+                        | SourceOriginSyntax.Leaf(k, value, sheet) ->
+                            from <- Some { Kind = mapLeafKind k; Value = value; Sheet = sheet }
+                        | _ -> ok <- false
+                    | _ -> ok <- false
+                | DashSpecAstNode.BlockDeclaration childBlock ->
+                    match childBlock.Opener with
+                    | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _) ->
+                        match headerOrigin with
+                        | Some(PComposite _) ->
+                            raise (DashSpecParseException($"source '{sourceId}': a composite source has no ports block — annotate the row type in the header (`source {sourceId}: Type = …`) or leave it for synthesis."))
+                        | _ -> ()
+
+                        match FlowPortsParser.tryProjectPortsFromAst childBlock.Members with
+                        | Some ports ->
+                            defaultOutputPort <- applySourcePorts ports &outputPort &outputRowType
+                        | None -> ok <- false
+                    | _ -> ok <- false
+                | DashSpecAstNode.BlankLine _
+                | DashSpecAstNode.EndBlock _ -> ()
+                | memberNode when DashSpecAst.isTrivia memberNode -> ()
+                | _ -> ok <- false
+
+        if not ok then
+            None
+        else
+            let origin: SourceOrigin option =
+                match headerOrigin, from with
+                | Some(PLeaf(kind, value, sheet)), None ->
+                    if not onKeys.IsEmpty || not leftKeys.IsEmpty || not rightKeys.IsEmpty then
+                        raise (DashSpecParseException($"source '{sourceId}': `on` / `left_key` / `right_key` are only valid on composite sources (InnerJoin/LeftJoin/RightJoin/FullJoin/UnionAll)."))
+                    Some(SourceOrigin.Leaf(kind, value, sheet))
+                | Some(PComposite(kind, left, right)), None ->
+                    let joinCond =
+                        if not onKeys.IsEmpty then
+                            if not leftKeys.IsEmpty || not rightKeys.IsEmpty then
+                                raise (DashSpecParseException($"source '{sourceId}': `on` and `left_key`/`right_key` cannot be mixed — pick one join-condition form."))
+                            Some { On = onKeys; LeftKey = []; RightKey = [] }
+                        elif not leftKeys.IsEmpty || not rightKeys.IsEmpty then
+                            if leftKeys.IsEmpty || rightKeys.IsEmpty then
+                                raise (DashSpecParseException($"source '{sourceId}': join origin with `left_key` requires `right_key` too (and vice versa)."))
+                            Some { On = []; LeftKey = leftKeys; RightKey = rightKeys }
+                        else
+                            None
+
+                    let join left right cond =
+                        match kind with
+                        | JoinInner -> SourceOrigin.InnerJoin(left, right, cond)
+                        | JoinLeft -> SourceOrigin.LeftJoin(left, right, cond)
+                        | JoinRight -> SourceOrigin.RightJoin(left, right, cond)
+                        | JoinFull -> SourceOrigin.FullJoin(left, right, cond)
+                        | Union -> SourceOrigin.UnionAll(left, right)
+
+                    match kind with
+                    | Union ->
+                        if not onKeys.IsEmpty || not leftKeys.IsEmpty || not rightKeys.IsEmpty then
+                            raise (DashSpecParseException($"source '{sourceId}': UnionAll takes no join condition (`on` / `left_key` / `right_key` are not allowed)."))
+                        Some(SourceOrigin.UnionAll(left, right))
+                    | _ ->
+                        match joinCond with
+                        | None ->
+                            raise (DashSpecParseException($"source '{sourceId}': join origin requires `on = col` or `left_key = …` + `right_key = …` in the body."))
+                        | Some cond -> Some(join left right cond)
+                | Some _, Some _ -> None
+                | None, Some legacy ->
+                    if not onKeys.IsEmpty || not leftKeys.IsEmpty || not rightKeys.IsEmpty then
+                        raise (DashSpecParseException($"source '{sourceId}': `on` / `left_key` / `right_key` are only valid on composite sources (InnerJoin/LeftJoin/RightJoin/FullJoin/UnionAll)."))
+                    Some(SourceOrigin.Leaf(legacy.Kind, legacy.Value, legacy.Sheet))
+                | None, None ->
+                    raise (DashSpecParseException($"source '{sourceId}' requires an origin: `= View/SqlQuery/SqlFile/Xlsx/…` in the header or legacy `from view|sql|xlsx` in the body."))
+
+            match origin with
+            | None -> raise (DashSpecParseException($"source '{sourceId}' requires an origin."))
+            | Some originValue ->
+                let isComposite =
+                    match originValue with
+                    | SourceOrigin.Leaf _ -> false
+                    | _ -> true
+
+                if not isComposite then
+                    match annotationRowType with
+                    | Some ann when
+                        not (String.IsNullOrWhiteSpace outputRowType)
+                        && not (String.Equals(ann, outputRowType, StringComparison.Ordinal)) ->
+                        raise (DashSpecParseException($"source '{sourceId}': row type annotated in the header ('{ann}') differs from the ports block ('{outputRowType}') — declare one."))
+                    | _ -> ()
+
+                let finalRowType =
+                    if isComposite then
+                        defaultArg annotationRowType ""
+                    elif not (String.IsNullOrWhiteSpace outputRowType) then
+                        outputRowType
+                    else
+                        defaultArg annotationRowType ""
+
+                let finalPort =
+                    if not (String.IsNullOrWhiteSpace outputPort) then
+                        outputPort
+                    elif isComposite || headerOrigin.IsSome then
+                        "rows"
+                    else
+                        ""
+
+                match providerBinding with
+                | None when not isComposite ->
+                    raise (DashSpecParseException($"source '{sourceId}' requires use provider <id> or use provider infer (manifest default_provider_id; same as card datasource infer)."))
+                | _ -> ()
+
+                if not isComposite && String.IsNullOrWhiteSpace finalPort then
+                    raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port."))
+
+                Some
+                    { Id = sourceId
+                      Provider = match providerBinding with Some b -> b | None -> DashflowProviderBinding.Infer
+                      Origin = originValue
+                      TimeZone = timeZone
+                      OutputPort = finalPort
+                      OutputRowType = finalRowType
+                      DefaultOutputPort = defaultOutputPort }
+
+    let private tryProjectTransformerFromAst (transformerId: string) (block: BlockDeclarationSyntax) : DashflowTransformerDef option =
+        let inputs = ResizeArray<DashflowInputDecl>()
+        let outputs = ResizeArray<string * string>()
+        let paramsDecls = ResizeArray<DashflowParamPortDef>()
+        let steps = ResizeArray<DashflowTransformStepDef>()
+        let mutable defaultInputPort = None
+        let mutable defaultOutputPort = None
+        let mutable ok = true
+
+        for memberNode in block.Members do
+            if ok then
+                match memberNode with
+                | DashSpecAstNode.BlockDeclaration childBlock ->
+                    match childBlock.Opener with
+                    | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _) ->
+                        match FlowPortsParser.tryProjectPortsFromAst childBlock.Members with
+                        | None -> ok <- false
+                        | Some ports ->
+                            defaultInputPort <- ports.DefaultInput
+                            defaultOutputPort <- ports.DefaultOutput
+
+                            for decl in ports.Inputs do
+                                inputs.Add
+                                    { Name = decl.Name
+                                      PortType = Some(FlowPortsParser.toDashPortType decl) }
+
+                            for decl in ports.Outputs do
+                                outputs.Add((decl.Name, decl.ValueType))
+
+                            for decl in ports.Params do
+                                paramsDecls.Add
+                                    { Name = decl.Name
+                                      ValueType = decl.ValueType
+                                      Default = decl.Default
+                                      DependsOn = None
+                                      ColumnBinding = decl.ColumnBinding }
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Transform, pluginId) ->
+                        match TransformStepParser.tryProjectStepFromAst transformerId pluginId childBlock with
+                        | Some step -> steps.Add step
+                        | None -> ok <- false
+                    | _ -> ok <- false
+                | DashSpecAstNode.BlankLine _
+                | DashSpecAstNode.EndBlock _ -> ()
+                | memberNode when DashSpecAst.isTrivia memberNode -> ()
+                | _ -> ok <- false
+
+        if not ok then
+            None
+        else
+            Some
+                { Id = transformerId
+                  Inputs = inputs.ToArray()
+                  Outputs = outputs.ToArray()
+                  Params = paramsDecls.ToArray()
+                  DefaultInputPort = defaultInputPort
+                  DefaultOutputPort = defaultOutputPort
+                  Steps = steps.ToArray() }
+
+    /// <summary>One flow scope from typed tree members: Source, Transformer, FlowLink,
+    /// and nested Flow blocks project directly from typed AST nodes without rebuilding
+    /// any TokenReader stream.</summary>
+    let rec private tryProjectScope
+        (members: DashSpecAstNode[])
+        (typeCatalog: TypeCatalog)
+        (seenIds: HashSet<string>)
+        : (DashflowSourceDef[] * DashflowTransformerDef[] * DashflowNestedFlowDef[] * FlowLinkDef[]) option
+        =
+        let sources = ResizeArray<DashflowSourceDef>()
+        let transformers = ResizeArray<DashflowTransformerDef>()
+        let nestedFlows = ResizeArray<DashflowNestedFlowDef>()
+        let links = ResizeArray<FlowLinkDef>()
+        let mutable ok = true
+
+        for memberNode in members do
+            if ok then
+                match memberNode with
+                | DashSpecAstNode.BlockDeclaration block ->
+                    match block.Opener with
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Source, sourceId) ->
+                        ensureUniqueNodeId "source" sourceId seenIds
+                        match tryProjectSourceFromAst sourceId block with
+                        | Some src -> sources.Add src
+                        | None -> ok <- false
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Transformer, transformerId) ->
+                        ensureUniqueNodeId "transformer" transformerId seenIds
+                        match tryProjectTransformerFromAst transformerId block with
+                        | Some tr -> transformers.Add tr
+                        | None -> ok <- false
+                    | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other "flow", nestedId) ->
+                        ensureUniqueNodeId "nested flow" nestedId seenIds
+
+                        match tryProjectScope block.Members typeCatalog seenIds with
+                        | Some (s, t, n, l) ->
+                            nestedFlows.Add(finishNestedFlow nestedId s t n l typeCatalog)
+                        | None -> ok <- false
+                    | _ -> ok <- false
+                | DashSpecAstNode.FlowLinkDeclaration link ->
+                    links.Add
+                        { FromNode = link.FromNode
+                          FromPort = link.FromPort
+                          ToNode = link.ToNode
+                          ToPort = link.ToPort }
+                | DashSpecAstNode.ClauseDeclaration clause ->
+                    match clause.Kind with
+                    | ClauseKind.NamespaceClause _ -> ()
+                    | _ -> ok <- false
+                | DashSpecAstNode.ImportDeclaration _
+                | DashSpecAstNode.BlankLine _
+                | DashSpecAstNode.EndBlock _ -> ()
+                | memberNode when DashSpecAst.isTrivia memberNode -> ()
+                | _ -> ok <- false
+
+        if ok then
+            Some(sources.ToArray(), transformers.ToArray(), nestedFlows.ToArray(), links.ToArray())
+        else
+            None
+
+    /// <summary>ADR-0130: project a flow module directly from the typed syntax tree.</summary>
+    let private tryProjectFlowFromAst
+        (root: DashSpecAstNode)
+        (typeCatalog: TypeCatalog)
+        : DashflowModule option =
+        match
+            DashSpecAst.descendants root
+            |> Seq.tryPick (function
+                | DashSpecAstNode.ModuleDeclaration m as node ->
+                    match m.Directive with
+                    | DashSpecModuleDirective.Unit("flow", flowId) -> Some(node, flowId)
+                    | _ -> None
+                | _ -> None)
+        with
+        | None -> None
+        | Some (moduleNode, flowId) ->
+            let emitViews =
+                DashSpecAst.tokens moduleNode
+                |> Array.exists (fun t -> t.LexKind = TokenKind.Ident && String.Equals(t.Text, "view", StringComparison.OrdinalIgnoreCase))
+
+            let seenIds = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+            match tryProjectScope (DashSpecAst.members moduleNode) typeCatalog seenIds with
+            | None -> None
+            | Some (sources, transformers, nestedFlows, links) ->
+                let parsed = finishModule flowId sources transformers nestedFlows links typeCatalog
+
+                Some(if emitViews then { parsed with EmitViews = true } else parsed)
+
     /// `.dashflow` fragment: <c>@flow &lt;id&gt;</c> … <c>end flow</c>.
-    let parseModule (text: string) (typeCatalog: TypeCatalog) =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
+    let private legacyParseModule (text: string) (typeCatalog: TypeCatalog) =
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.SkipNewlines()
@@ -1166,10 +1550,17 @@ module DashflowModuleParser =
         if String.IsNullOrWhiteSpace flowId then
             raise (DashSpecParseException("@flow requires an id."))
 
-        // ADR-0125: the explicit opt-in marker — `module flow <id> view` emits the
-        // module's chains into the database as managed views (dsc build views).
         let emitViews = reader.TryKeyword "view"
 
         reader.SkipNewlines()
         let parsed = parseFlowEnvelope reader flowId typeCatalog
         if emitViews then { parsed with EmitViews = true } else parsed
+
+    let parseModule (text: string) (typeCatalog: TypeCatalog) =
+        if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
+
+        let tree = DashSpecSurfaceSyntax.parse text
+
+        match tryProjectFlowFromAst tree.Root typeCatalog with
+        | Some module' -> module'
+        | None -> legacyParseModule text typeCatalog

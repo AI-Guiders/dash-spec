@@ -21,7 +21,8 @@ public sealed class PhraseTemplateTests
               invoke drill_down(from = y, target = user_name)
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -68,7 +69,8 @@ public sealed class PhraseTemplateTests
               invoke csv_export(format = csv, delimiter = ";")
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }

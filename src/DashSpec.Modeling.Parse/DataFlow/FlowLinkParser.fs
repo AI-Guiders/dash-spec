@@ -68,3 +68,24 @@ module FlowLinkParser =
                   FromPort = fromPort
                   ToNode = toNode
                   ToPort = toPortFromBracket }
+
+    /// <summary>ADR-0130 slice 2: project flow links from typed AST members. None when
+    /// any member is neither a link, trivia, nor a blank — the caller falls back.</summary>
+    let tryProjectLinksFromAst (members: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode[]) : FlowLinkDef list option =
+        let mutable ok = true
+        let links = ResizeArray<FlowLinkDef>()
+
+        for memberNode in members do
+            match memberNode with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.FlowLinkDeclaration link ->
+                links.Add
+                    { FromNode = link.FromNode
+                      FromPort = link.FromPort
+                      ToNode = link.ToNode
+                      ToPort = link.ToPort }
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlankLine _
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.EndBlock _ -> ()
+            | memberNode when DashSpec.Modeling.Parse.Syntax.DashSpecAst.isTrivia memberNode -> ()
+            | _ -> ok <- false
+
+        if ok then Some(List.ofSeq links) else None

@@ -50,7 +50,8 @@ public class SqlDataSourceParserTests
             usage_date
           end bind
           diagram bar
-          x = a y
+          x = a
+          y = value
           end bar
           data flow { {{sourceId}} [rows] -> [rows] __diagram__ }
           end card

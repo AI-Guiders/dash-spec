@@ -101,7 +101,8 @@ public class CardClickBehaviourTests
               goto section detail
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -151,7 +152,8 @@ public class CardClickBehaviourTests
               set app_name from y
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -177,7 +179,8 @@ public class CardClickBehaviourTests
               show below as chart from tooltip
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -204,7 +207,8 @@ public class CardClickBehaviourTests
               source = peak_apps
               end tooltip
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               inspect
@@ -243,7 +247,8 @@ public class CardClickBehaviourTests
               | category item | app_drill | app_name=y |
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               diagram ref drill cell_table
@@ -290,7 +295,8 @@ public class CardClickBehaviourTests
               | category item | drill.users_table | app_name=y |
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               diagram ref drill
@@ -350,7 +356,8 @@ public class CardClickBehaviourTests
               set app_name from y
               end click
               diagram heatmap
-              x = a y
+              x = a
+              y = value
               value = c
               end heatmap
               data flow { fixture_src [rows] -> [rows] __diagram__ }

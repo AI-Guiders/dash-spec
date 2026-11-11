@@ -70,7 +70,8 @@ public class ChartRuntimeTests
               title = "T"
               card c as "C"
               diagram line
-              x = a y
+              x = a
+              y = value
               series = s
               end line
               presentation
@@ -120,7 +121,8 @@ public class ChartRuntimeTests
               title = "T"
               card c as "C"
               diagram bar
-              x = a y
+              x = a
+              y = value
               orientation = vertical
               end bar
               presentation
@@ -180,7 +182,8 @@ public class ChartRuntimeTests
               title = "T"
               card c as "C"
               diagram bar
-              category = app_name value
+              category = app_name
+              value = value
               scale_value = integer
               end bar
               data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -296,7 +299,8 @@ public class ChartRuntimeTests
               title = "T"
               card c as "C"
               diagram bar
-              x = app_name y
+              x = app_name
+              y = value
               scale_y = integer
               end bar
               data flow { fixture_src [rows] -> [rows] __diagram__ }

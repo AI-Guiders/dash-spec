@@ -397,7 +397,8 @@ public class QueryCompilerTests
                 usage_date
               end bind
               diagram bar
-              x = user_sam y
+              x = user_sam
+              y = value
               end bar
               data flow { s_wrap [rows] -> [rows] __diagram__ }
               end card
@@ -453,7 +454,8 @@ public class QueryCompilerTests
                 usage_date
               end bind
               diagram line
-              x = usage_date y
+              x = usage_date
+              y = value
               end line
               data flow { fixture_src [rows] -> [rows] __diagram__ }
               end card

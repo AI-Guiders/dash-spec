@@ -204,9 +204,6 @@ module TypeInference =
         let diagnostics = ResizeArray<InferenceDiagnostic>()
         let takenNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
 
-        for def in catalog.Definitions.Values do
-            takenNames.Add def.Name |> ignore
-
         let fieldsOf (typeName: string) : RowTypeDef option =
             if String.IsNullOrWhiteSpace typeName then None
             else TypeCatalog.tryGet catalog typeName
@@ -249,7 +246,7 @@ module TypeInference =
                                     if not (TypeCatalog.rowTypesStructurallyEqual leftDef rightDef) then
                                         diagnostics.Add(
                                             diag "DFLOW013"
-                                                $"source '{source.Id}': union sides '{left.OutputRowType}' and '{right.OutputRowType}' are not structurally equal (ADR-0126 §1).")
+                                                $"source '{source.Id}': union sides '{left.OutputRowType}' and '{right.OutputRowType}' are not structurally equal.")
 
                                     leftDef.Fields
 
@@ -262,31 +259,42 @@ module TypeInference =
                                     when not (TypeCatalog.rowTypesStructurallyEqual declaredDef candidate) ->
                                     diagnostics.Add(
                                         diag "DFLOW013"
-                                            $"source '{source.Id}': declared type '{declared}' does not match the composite merge of '{left.OutputRowType}' and '{right.OutputRowType}' (ADR-0127 transform-typecheck).")
+                                            $"source '{source.Id}': declared type '{declared}' does not match the composite merge of '{left.OutputRowType}' and '{right.OutputRowType}'.")
                                 | _ -> ()
 
                                 source
                             else
-                                let stemL = stemOf left.OutputRowType
-                                let stemR = stemOf right.OutputRowType
-                                let combiner = if isJoin then "Join" else "Union"
-                                let baseName = $"{stemL}{combiner}{stemR}Row"
+                                // A structural twin already in the catalog is preferred over
+                                // synthesis (ADR-0128 §3 step 2): a second parse over the same
+                                // flow reuses the first pass's name instead of minting a suffix.
+                                let twin =
+                                    Seq.append catalog.Definitions.Values synthesized
+                                    |> Seq.tryFind (fun existing -> TypeCatalog.rowTypesStructurallyEqual existing candidate)
 
-                                let mutable name = baseName
-                                let mutable index = 2
+                                match twin with
+                                | Some existing ->
+                                    { source with OutputRowType = existing.Name }
+                                | None ->
+                                    let stemL = stemOf left.OutputRowType
+                                    let stemR = stemOf right.OutputRowType
+                                    let combiner = if isJoin then "Join" else "Union"
+                                    let baseName = $"{stemL}{combiner}{stemR}Row"
 
-                                while takenNames.Contains name do
-                                    name <- $"{baseName}{index}"
-                                    index <- index + 1
+                                    let mutable name = baseName
+                                    let mutable index = 2
 
-                                takenNames.Add name |> ignore
-                                let named = { candidate with Name = name }
-                                synthesized.Add named
-                                { source with OutputRowType = name }
+                                    while takenNames.Contains name do
+                                        name <- $"{baseName}{index}"
+                                        index <- index + 1
+
+                                    takenNames.Add name |> ignore
+                                    let named = { candidate with Name = name }
+                                    synthesized.Add named
+                                    { source with OutputRowType = name }
                         | _ ->
                             diagnostics.Add(
                                 diag "DFLOW013"
-                                    $"source '{source.Id}': composite side '{leftId}'/'{rightId}' has no row type — annotate the leaf source (ADR-0126 §1).")
+                                    $"source '{source.Id}': composite side '{leftId}'/'{rightId}' has no row type — annotate the leaf source.")
 
                             source
                     | _ -> source)
@@ -309,9 +317,6 @@ module TypeInference =
         let synthesized = ResizeArray<RowTypeDef>()
         let diagnostics = ResizeArray<InferenceDiagnostic>()
         let takenNames = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-
-        for def in catalog.Definitions.Values do
-            takenNames.Add def.Name |> ignore
 
         let sourceRowType (nodeId: string) =
             sources
@@ -402,7 +407,7 @@ module TypeInference =
                             when not (TypeCatalog.rowTypesStructurallyEqual declaredType inferredType) ->
                             diagnostics.Add(
                                 diag "DFLOW010"
-                                    $"transformer '{transformer.Id}': declared output type '{declared}' does not match the inferred '{inferredType.Name}' (transform-typecheck, ADR-0127).")
+                                    $"transformer '{transformer.Id}': declared output type '{declared}' does not match the inferred '{inferredType.Name}'.")
                         | _ -> ()
 
                         outputTypes.[(transformer.Id, portName)] <- declared

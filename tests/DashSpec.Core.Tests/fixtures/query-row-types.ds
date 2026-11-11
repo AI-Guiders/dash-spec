@@ -29,4 +29,13 @@ type FixtureRow
   optional string column_a
   optional string column_b
   optional string value_col
+  optional int id
+  optional decimal kpi
+  optional decimal launches
+  optional string a
+  optional string b
+  optional decimal c
+  optional decimal peak
+  optional decimal peak_concurrent_apps
+  optional int seats
 end type

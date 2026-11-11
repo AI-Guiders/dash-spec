@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text;
 using DashSpec.Abstractions.Data;
 using DashSpec.Modeling.Core;
@@ -27,7 +27,15 @@ public static class TypedRowsCompiler
         ArgumentNullException.ThrowIfNull(definitions);
         ArgumentNullException.ThrowIfNull(outputDirectory);
 
-        var source = EmitSource(definitions);
+        // Composite join types carry side-qualified fields (`r.col`, ADR-0126 §2) —
+        // a SQL-facing surface, not CLR row shape (no runtime code constructs them:
+        // managed views read the database). They ship in the .ds catalog; the CLR
+        // assembly carries the plain-identifier types only.
+        var clrTypes = definitions
+            .Where(d => d.Fields.All(f => !f.Name.Contains('.')))
+            .ToList();
+
+        var source = EmitSource(clrTypes);
         Directory.CreateDirectory(outputDirectory);
         var path = Path.Combine(outputDirectory, assemblyName + ".dll");
 
@@ -58,7 +66,7 @@ public static class TypedRowsCompiler
             throw new InvalidOperationException($"TypedRows compilation failed:\n{errors}");
         }
 
-        return new BuildResult(path, definitions.Select(d => d.Name).ToList());
+        return new BuildResult(path, clrTypes.Select(d => d.Name).ToList());
     }
 
     /// <summary>Framework reference assemblies for compilation: the SDK's
@@ -75,8 +83,13 @@ public static class TypedRowsCompiler
         var refPack = Path.Combine(dotnetRoot, "packs", "Microsoft.NETCore.App.Ref");
         if (Directory.Exists(refPack))
         {
+            // the emitted assembly runs on THIS process's runtime — a ref pack of a
+            // newer major (e.g. 11 packs after an SDK 11 install) makes the host
+            // unable to load it (System.Runtime 11 vs net10 runtime)
+            var runtimeMajor = Environment.Version.Major;
             var version = Directory.EnumerateDirectories(refPack)
                 .Where(d => Version.TryParse(Path.GetFileName(d), out _))
+                .Where(d => Version.Parse(Path.GetFileName(d)).Major == runtimeMajor)
                 .OrderByDescending(d => Version.Parse(Path.GetFileName(d)))
                 .Select(d => Path.Combine(d, "ref"))
                 .SelectMany(refRoot => Directory.EnumerateDirectories(refRoot))
@@ -144,6 +157,213 @@ public static class TypedRowsCompiler
         return definitions.Values.ToList();
     }
 
+    /// <summary>The project marker (*.dsproj, ADR-0101) is the one layout authority.
+    /// Missing? Create it — root_namespace derived from the first flow unit's own
+    /// namespace (Ai.Landscape.Flows → Ai.Landscape) — and reload. One path, no
+    /// fallback layout.</summary>
+    public static DashSpec.Modeling.Parse.Project.DashSpecProjectConfig EnsureProjectConfig(string directory, IReadOnlyList<string> flowFiles)
+    {
+        var opt = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.tryFindConfig(
+            Microsoft.FSharp.Core.FSharpOption<string>.Some(directory));
+
+        if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Project.DashSpecProjectConfig>.get_IsSome(opt))
+        {
+            return opt.Value;
+        }
+
+        string? derived = null;
+        foreach (var file in flowFiles)
+        {
+            var nsOpt = DashSpec.Modeling.Parse.Document.UnitSource.namespaceOf(File.ReadAllText(file));
+            if (Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(nsOpt))
+            {
+                var ns = nsOpt.Value;
+                derived = ns.EndsWith(".Flows", StringComparison.Ordinal) ? ns[..^".Flows".Length] : ns;
+                break;
+            }
+        }
+
+        var marker = Path.Combine(directory, Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar)) + ".dsproj");
+        var markerText = derived is null
+            ? "root_namespace = \"Generated\"\n"
+            : $"root_namespace = \"{derived}\"\n";
+        File.WriteAllText(marker, markerText);
+        Console.WriteLine($"project: created {marker}" + (derived is null ? "" : $" (root_namespace = \"{derived}\")"));
+
+        var created = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.tryFindConfig(
+            Microsoft.FSharp.Core.FSharpOption<string>.Some(directory));
+        return Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Project.DashSpecProjectConfig>.get_IsSome(created)
+            ? created.Value
+            : throw new InvalidOperationException($"project marker created but not discovered: {marker}");
+    }
+
+    /// <summary>dsc generate types (ADR-0128): emit inferred row types as ordinary
+    /// .ds types-units. Layout is an option: file-per-type (default — one types
+    /// unit per row type, types/&lt;name&gt;.ds, the rename- and git-friendly grain)
+    /// or single-file (one unit per flow, types/&lt;flow&gt;.types.ds). Regeneration
+    /// merges by name (ADR-0128 §3 step 3); generated units are ordinary seed-catalog
+    /// members, so the twin preference carries the author's renames. The round-trip
+    /// law guards the printer.</summary>
+    public static int GenerateTypesUnit(string directory, string moduleId, string? namespaceName, string? layout)
+    {
+        // the seed catalog is the AUTHOR's declared types only — including previously
+        // generated units (they are ordinary types units). We retain the parsed AST
+        // of every loaded types-unit in memory so member updates mutate the AST
+        // directly without re-reading or re-parsing files from disk.
+        var declared = new Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase);
+        var loadedUnitAsts = new Dictionary<string, DashSpec.Modeling.Parse.Syntax.DashSpecAstNode>(StringComparer.OrdinalIgnoreCase);
+        var flowFiles = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(directory, "*.ds", SearchOption.AllDirectories))
+        {
+            var header = FirstLines(file, 2);
+
+            if (header.Contains("module types", StringComparison.Ordinal))
+            {
+                var rawText = DashSpec.Modeling.Parse.Document.UnitSource.tryReadRaw(file).Value;
+                var unitRoot = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse(rawText).Root;
+                loadedUnitAsts[Path.GetFullPath(file)] = unitRoot;
+                var projectedOpt = DashSpec.Modeling.Parse.Types.TypeModuleParser.tryProjectTypesFromAst(unitRoot);
+                var definitions = Microsoft.FSharp.Core.FSharpOption<RowTypeDef[]>.get_IsSome(projectedOpt)
+                    ? projectedOpt.Value
+                    : ParseTypes(rawText);
+                foreach (var definition in definitions)
+                {
+                    declared[definition.Name] = definition;
+                }
+            }
+            else if (header.Contains("module flow", StringComparison.Ordinal))
+            {
+                flowFiles.Add(file);
+            }
+        }
+
+        var catalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(declared.Values);
+
+        // the project marker (*.dsproj, ADR-0101) owns the layout — created when
+        // missing; generated units live under <project>/types, namespace = root_namespace
+        var projectConfig = EnsureProjectConfig(directory, flowFiles);
+        var typesDir = Path.Combine(projectConfig.ProjectRoot, "types");
+        Directory.CreateDirectory(typesDir);
+
+        var ns = namespaceName;
+        if (string.IsNullOrWhiteSpace(ns)
+            && projectConfig.RootNamespace is { } root
+            && Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(root)
+            && !string.IsNullOrWhiteSpace(root.Value))
+        {
+            ns = root.Value + ".Types";
+        }
+
+        var nsOption = string.IsNullOrWhiteSpace(ns)
+            ? Microsoft.FSharp.Core.FSharpOption<string>.None
+            : Microsoft.FSharp.Core.FSharpOption<string>.Some(ns);
+
+        // candidates across all flow units, tagged by their source flow
+        var candidates = new List<(RowTypeDef Type, string FlowId)>();
+
+        foreach (var file in flowFiles)
+        {
+            var text = DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file);
+            var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(text, catalog);
+
+            foreach (var inferred in module.InferredRowTypes)
+            {
+                candidates.Add((inferred, module.FlowId));
+            }
+        }
+
+        if (candidates.Count == 0)
+        {
+            Console.Error.WriteLine("no inferred row types found under " + directory);
+            return 1;
+        }
+
+        var perType = !string.Equals(layout, "single-file", StringComparison.OrdinalIgnoreCase);
+        var generated = 0;
+
+        if (perType)
+        {
+            // one types unit per row type: types/<name>.ds — mutate the in-memory AST
+            // if already loaded, or synthesize a new CompilationUnit AST node
+            foreach (var (candidate, _) in candidates)
+            {
+                var targetPath = Path.GetFullPath(Path.Combine(typesDir, $"{candidate.Name}.ds"));
+                var unitAst = loadedUnitAsts.TryGetValue(targetPath, out var existingAst)
+                    ? DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit(existingAst, candidate)
+                    : DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit(candidate.Name, nsOption, [candidate]);
+
+                loadedUnitAsts[targetPath] = unitAst;
+                FlushTypesUnitAst(candidate.Name, unitAst, [candidate], targetPath);
+                generated++;
+            }
+        }
+        else
+        {
+            // single-file: one types unit per flow unit — types/<flow>.types.ds
+            foreach (var group in candidates.GroupBy(c => c.FlowId, StringComparer.OrdinalIgnoreCase))
+            {
+                var unitId = $"{group.Key}_types";
+                var targetPath = Path.GetFullPath(Path.Combine(typesDir, $"{group.Key}.types.ds"));
+                var groupCandidates = group.Select(c => c.Type).ToList();
+
+                DashSpec.Modeling.Parse.Syntax.DashSpecAstNode unitAst;
+                if (loadedUnitAsts.TryGetValue(targetPath, out var existingAst))
+                {
+                    unitAst = existingAst;
+                    foreach (var candidate in groupCandidates)
+                    {
+                        unitAst = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit(unitAst, candidate);
+                    }
+                }
+                else
+                {
+                    unitAst = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit(unitId, nsOption, groupCandidates);
+                }
+
+                loadedUnitAsts[targetPath] = unitAst;
+                FlushTypesUnitAst(unitId, unitAst, groupCandidates, targetPath);
+                generated++;
+            }
+        }
+
+        return generated == 0 ? 1 : 0;
+    }
+
+    /// <summary>Project an in-memory types-unit AST to text, verify the round-trip law, and write to disk.</summary>
+    private static void FlushTypesUnitAst(
+        string unitId,
+        DashSpec.Modeling.Parse.Syntax.DashSpecAstNode unitAst,
+        IReadOnlyList<RowTypeDef> expectedTypes,
+        string targetPath)
+    {
+        var unitText = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.print(unitAst);
+
+        try
+        {
+            var reparsed = ParseTypes(unitText).ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+            foreach (var expected in expectedTypes)
+            {
+                if (!reparsed.TryGetValue(expected.Name, out var actual)
+                    || !DashSpec.Modeling.Core.TypeCatalogModule.rowTypesStructurallyEqual(expected, actual))
+                {
+                    Console.Error.WriteLine($"round-trip law broken for '{unitId}' — the printer produced text that does not reparse to the same definitions");
+                    Console.Error.WriteLine(unitText);
+                    throw new InvalidOperationException("round-trip law broken (see the dumped text above).");
+                }
+            }
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            Console.Error.WriteLine($"round-trip law broken for '{unitId}': {ex.Message}");
+            Console.Error.WriteLine(unitText);
+            throw;
+        }
+
+        File.WriteAllText(targetPath, unitText);
+        Console.WriteLine($"OK: {targetPath} ({expectedTypes.Count} row types: {string.Join(", ", expectedTypes.Select(d => d.Name))})");
+    }
+
     /// <summary>Scans a corpus for view-marked flow units (<c>module flow &lt;id&gt; view</c>,
     /// ADR-0125) and emits their chains as managed views. Types are loaded first so the
     /// emitter can render explicit column lists and inference (ADR-0127) can contribute
@@ -165,17 +385,9 @@ public static class TypedRowsCompiler
             var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(
                 DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file), catalog);
 
-            // Composite sources (ADR-0126 §1.1) synthesize row types during this parse;
-            // deterministic names may carry collision suffixes — extend the catalog with
-            // THIS parse's synthesized types before Emit resolves column lists.
-            var emitCatalog = catalog;
-            if (module.InferredRowTypes.Length > 0)
-            {
-                emitCatalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(
-                    catalog.Definitions.Values.Concat(module.InferredRowTypes).ToList());
-            }
-
-            views.AddRange(Views.ManagedViewsEmitter.Emit(module, emitCatalog, dialect));
+            // Composite row types synthesized during this parse ride the module; the
+            // emitter merges them into the working catalog itself (ManagedViews SSOT).
+            views.AddRange(Views.ManagedViewsEmitter.Emit(module, catalog, dialect));
         }
 
         return views;
@@ -202,7 +414,7 @@ public static class TypedRowsCompiler
     internal static string EmitSource(IReadOnlyList<RowTypeDef> definitions)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("// <auto-generated> ADR-0124: dsc build types — row types compiled from the spec. </auto-generated>");
+        builder.AppendLine("// <auto-generated> dsc build types — row types compiled from the spec. </auto-generated>");
         builder.AppendLine("#nullable enable");
         builder.AppendLine("namespace DashSpec.TypedRows;");
         builder.AppendLine();
@@ -307,7 +519,7 @@ public static class TypedRowsCompiler
         if (field.Type is not DashType.Primitive primitive)
         {
             throw new InvalidOperationException(
-                $"row type '{field.Name}': only primitive fields compile to CLR (ADR-0079).");
+                $"row type '{field.Name}': only primitive fields compile to CLR.");
         }
 
         return DashPrimitiveModule.toString(primitive.Item);

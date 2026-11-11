@@ -23,27 +23,31 @@ module section demo
   title = "Demo"
   card peak_by_app as "Peak" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card peak_apps as "Apps" ref E
   diagram heatmap
-  x = a y
+  x = a
+  y = value
   value = c
   end heatmap
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card idle as "Idle" ref T
   diagram heatmap
-  x = a y
+  x = a
+  y = value
   value = c
   end heatmap
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card utilization as "Util" ref F
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
@@ -72,25 +76,29 @@ module section demo
   title = "demo"
   card a as "A" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card b as "B" ref E
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card c as "C" ref T
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card d as "D" ref F
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
@@ -121,19 +129,22 @@ module section demo
   title = "demo"
   card a as "A" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card b as "B" ref W
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card c as "C" ref E
   diagram heatmap
-  x = a y
+  x = a
+  y = value
   value = c
   end heatmap
   data flow { fixture_src [rows] -> [rows] __diagram__ }
@@ -166,37 +177,43 @@ module section demo
   title = "demo"
   card q as "Q" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card e as "E" ref E
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card r as "R" ref R
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card t as "T" ref T
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card y as "Y" ref Y
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card f as "F" ref F
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
@@ -240,25 +257,29 @@ module section demo
   title = "demo"
   card a as "A" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card b as "B" ref E
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card c as "C" ref T
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card d as "D" ref F
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
@@ -303,7 +324,8 @@ end section
                   title = "demo"
                   card a as "A" ref Q
                   diagram bar
-                  x = a y
+                  x = a
+                  y = value
                   end bar
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
@@ -705,7 +727,8 @@ end section
                   title = "demo"
                   card a as "A" ref D
                   diagram bar
-                  x = a y
+                  x = a
+                  y = value
                   end bar
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
@@ -802,19 +825,22 @@ end section
                   title = "demo"
                   card a as "A" ref Q
                   diagram bar
-                  x = a y
+                  x = a
+                  y = value
                   end bar
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   card b as "B" ref E
                   diagram bar
-                  x = a y
+                  x = a
+                  y = value
                   end bar
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
                   card c as "C" ref T
                   diagram bar
-                  x = a y
+                  x = a
+                  y = value
                   end bar
                   data flow { fixture_src [rows] -> [rows] __diagram__ }
                   end card
@@ -859,19 +885,22 @@ module section demo
   title = "demo"
   card wide as "Wide" ref Q
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card inner_a as "Inner A" ref E
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card
   card inner_b as "Inner B" ref T
   diagram bar
-  x = a y
+  x = a
+  y = value
   end bar
   data flow { fixture_src [rows] -> [rows] __diagram__ }
   end card

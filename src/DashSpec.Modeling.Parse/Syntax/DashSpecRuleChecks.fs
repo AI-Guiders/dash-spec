@@ -29,9 +29,23 @@ module DashSpecRuleChecks =
               Identifier = Some id
               Span = span }
         | DashSpecModuleDirective.Unit(keyword, id) ->
-            { Keyword = DashSpecBlockKeyword.Other keyword
+            let kw =
+                DashSpecBlockKeyword.tryOfName keyword
+                |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)
+            { Keyword = kw
               Identifier = Some id
               Span = span }
+
+    let private moduleParticipatesInBlockBalance (node: DashSpecAstNode) (directive: DashSpecModuleDirective) =
+        match directive with
+        | DashSpecModuleDirective.Unit(keyword, id)
+            when String.Equals(keyword, "types", StringComparison.OrdinalIgnoreCase)
+                 || String.Equals(keyword, "catalog", StringComparison.OrdinalIgnoreCase) ->
+            let kw =
+                DashSpecBlockKeyword.tryOfName keyword
+                |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)
+            DashSpecAst.hasClosingEndBlock node kw (Some id)
+        | _ -> true
 
     let private blockFrame (opener: DashSpecBlockOpener) (span: TextSpan) : BlockFrame =
         match opener with
@@ -45,13 +59,25 @@ module DashSpecRuleChecks =
               Span = span }
 
     /// Tab blocks without a matching `end tab` in their subtree are registry headers, not balance frames.
+    /// Brace-delimited blocks (`{ … }`) and bodyless composite sources (`source s = UnionAll(a, b)`)
+    /// do not close with `end <keyword>`.
     let private participatesInBlockBalance (node: DashSpecAstNode) =
         match node with
         | DashSpecAstNode.BlockDeclaration n ->
-            match n.Opener with
-            | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, id) ->
-                DashSpecAst.hasClosingEndBlock node DashSpecBlockKeyword.Tab (Some id)
-            | _ -> true
+            let hasBraceOnHeader =
+                n.Tokens
+                |> Array.exists (fun t -> t.LexKind = DashSpec.Modeling.Parse.Lexing.TokenKind.LBrace)
+
+            let isBodylessOrigin =
+                n.Origin.IsSome && n.Members.Length = 0
+
+            if hasBraceOnHeader || isBodylessOrigin then
+                false
+            else
+                match n.Opener with
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, id) ->
+                    DashSpecAst.hasClosingEndBlock node DashSpecBlockKeyword.Tab (Some id)
+                | _ -> true
         | _ -> true
 
     let private opensCards (node: DashSpecAstNode) =
@@ -94,7 +120,8 @@ module DashSpecRuleChecks =
             | DashSpecAstNode.CardReference n when cardsDepth.Value = 0 ->
                 signal DashSpecRule.CardReferenceOutsideCards $"card reference '{n.CardId}' is not nested under a cards block" n.Span
             | DashSpecAstNode.ModuleDeclaration n ->
-                blockStack.Push(moduleFrame n.Directive n.Span)
+                if moduleParticipatesInBlockBalance node n.Directive then
+                    blockStack.Push(moduleFrame n.Directive n.Span)
                 let mutable seenCode = false
 
                 for child in DashSpecAst.members node do

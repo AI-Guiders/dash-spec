@@ -42,8 +42,43 @@ module PresentationModuleParser =
                     false
             if props.Count = 0 then None else Some(toBlock props)
 
+    let private tryProjectPresentationFromAst (root: DashSpec.Modeling.Parse.Syntax.DashSpecAstNode) : PresentationModuleDocument option =
+        match
+            DashSpec.Modeling.Parse.Syntax.DashSpecAst.descendants root
+            |> Seq.tryPick (function
+                | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ModuleDeclaration m as node ->
+                    match m.Directive with
+                    | DashSpec.Modeling.Parse.Syntax.DashSpecModuleDirective.Unit("presentation", id) -> Some(node, id)
+                    | _ -> None
+                | _ -> None)
+        with
+        | None -> None
+        | Some(moduleNode, id) ->
+            let propMembers =
+                let moduleMembers = DashSpec.Modeling.Parse.Syntax.DashSpecAst.members moduleNode
+                let innerBlock =
+                    moduleMembers
+                    |> Array.tryPick (function
+                        | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlockDeclaration b ->
+                            match b.Opener with
+                            | DashSpec.Modeling.Parse.Syntax.DashSpecBlockOpener.Anonymous DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Presentation ->
+                                Some b.Members
+                            | _ -> None
+                        | _ -> None)
+
+                defaultArg innerBlock moduleMembers
+
+            match PropertyBlockParser.tryProjectPropertiesFromAst propMembers (PropertySchemas.presentation ()) false with
+            | Some props when props.Count > 0 ->
+                Some { Id = id; Local = Some(toBlock props) }
+            | _ -> None
+
     let parsePresentationModule (text: string) : PresentationModuleDocument =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Presentation text is required."
+        let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
+        match tryProjectPresentationFromAst tree.Root with
+        | Some doc -> doc
+        | None ->
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.ExpectKeyword "module"
