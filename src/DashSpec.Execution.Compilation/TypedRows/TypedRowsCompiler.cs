@@ -198,19 +198,19 @@ public static class TypedRowsCompiler
     }
 
     /// <summary>dsc generate types (ADR-0128): emit inferred row types as ordinary
-    /// .ds types-units. Layout is an option: file-per-type (default — one types
-    /// unit per row type, types/&lt;name&gt;.ds, the rename- and git-friendly grain)
-    /// or single-file (one unit per flow, types/&lt;flow&gt;.types.ds). Regeneration
-    /// merges by name (ADR-0128 §3 step 3); generated units are ordinary seed-catalog
-    /// members, so the twin preference carries the author's renames. The round-trip
-    /// law guards the printer.</summary>
-    public static int GenerateTypesUnit(string directory, string moduleId, string? namespaceName, string? layout)
+    /// .ds types-units. Existing types are updated in-place in whichever types-unit
+    /// AST currently declares them; brand-new types default to <c>types/&lt;name&gt;.ds</c>.
+    /// Regeneration merges by name (ADR-0128 §3 step 3); generated units are ordinary
+    /// seed-catalog members, so the twin preference carries the author's renames.
+    /// The round-trip law guards the printer.</summary>
+    public static int GenerateTypesUnit(string directory, string moduleId, string? namespaceName)
     {
         // the seed catalog is the AUTHOR's declared types only — including previously
         // generated units (they are ordinary types units). We retain the parsed AST
-        // of every loaded types-unit in memory so member updates mutate the AST
-        // directly without re-reading or re-parsing files from disk.
+        // of every loaded types-unit in memory and track which file declares each type
+        // so member updates mutate the AST where the type actually lives.
         var declared = new Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase);
+        var typeLocations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var loadedUnitAsts = new Dictionary<string, DashSpec.Modeling.Parse.Syntax.DashSpecAstNode>(StringComparer.OrdinalIgnoreCase);
         var flowFiles = new List<string>();
 
@@ -220,9 +220,10 @@ public static class TypedRowsCompiler
 
             if (header.Contains("module types", StringComparison.Ordinal))
             {
+                var fullPath = Path.GetFullPath(file);
                 var rawText = DashSpec.Modeling.Parse.Document.UnitSource.tryReadRaw(file).Value;
                 var unitRoot = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse(rawText).Root;
-                loadedUnitAsts[Path.GetFullPath(file)] = unitRoot;
+                loadedUnitAsts[fullPath] = unitRoot;
                 var projectedOpt = DashSpec.Modeling.Parse.Types.TypeModuleParser.tryProjectTypesFromAst(unitRoot);
                 var definitions = Microsoft.FSharp.Core.FSharpOption<RowTypeDef[]>.get_IsSome(projectedOpt)
                     ? projectedOpt.Value
@@ -230,6 +231,7 @@ public static class TypedRowsCompiler
                 foreach (var definition in definitions)
                 {
                     declared[definition.Name] = definition;
+                    typeLocations[definition.Name] = fullPath;
                 }
             }
             else if (header.Contains("module flow", StringComparison.Ordinal))
@@ -241,7 +243,7 @@ public static class TypedRowsCompiler
         var catalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(declared.Values);
 
         // the project marker (*.dsproj, ADR-0101) owns the layout — created when
-        // missing; generated units live under <project>/types, namespace = root_namespace
+        // missing; new generated units default to <project>/types/<name>.ds, namespace = root_namespace
         var projectConfig = EnsureProjectConfig(directory, flowFiles);
         var typesDir = Path.Combine(projectConfig.ProjectRoot, "types");
         Directory.CreateDirectory(typesDir);
@@ -259,18 +261,13 @@ public static class TypedRowsCompiler
             ? Microsoft.FSharp.Core.FSharpOption<string>.None
             : Microsoft.FSharp.Core.FSharpOption<string>.Some(ns);
 
-        // candidates across all flow units, tagged by their source flow
-        var candidates = new List<(RowTypeDef Type, string FlowId)>();
+        var candidates = new List<RowTypeDef>();
 
         foreach (var file in flowFiles)
         {
             var text = DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file);
             var module = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModule(text, catalog);
-
-            foreach (var inferred in module.InferredRowTypes)
-            {
-                candidates.Add((inferred, module.FlowId));
-            }
+            candidates.AddRange(module.InferredRowTypes);
         }
 
         if (candidates.Count == 0)
@@ -279,55 +276,44 @@ public static class TypedRowsCompiler
             return 1;
         }
 
-        var perType = !string.Equals(layout, "single-file", StringComparison.OrdinalIgnoreCase);
-        var generated = 0;
+        var dirtyUnits = new Dictionary<string, (string UnitId, List<RowTypeDef> ExpectedTypes)>(StringComparer.OrdinalIgnoreCase);
 
-        if (perType)
+        foreach (var candidate in candidates)
         {
-            // one types unit per row type: types/<name>.ds — mutate the in-memory AST
-            // if already loaded, or synthesize a new CompilationUnit AST node
-            foreach (var (candidate, _) in candidates)
+            // If the type already lives in any loaded types-unit (regardless of file name or layout),
+            // update it in-place in that exact unit; otherwise place new types into types/<name>.ds.
+            var targetPath = typeLocations.TryGetValue(candidate.Name, out var existingPath)
+                ? existingPath
+                : Path.GetFullPath(Path.Combine(typesDir, $"{candidate.Name}.ds"));
+
+            if (loadedUnitAsts.TryGetValue(targetPath, out var existingAst))
             {
-                var targetPath = Path.GetFullPath(Path.Combine(typesDir, $"{candidate.Name}.ds"));
-                var unitAst = loadedUnitAsts.TryGetValue(targetPath, out var existingAst)
-                    ? DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit(existingAst, candidate)
-                    : DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit(candidate.Name, nsOption, [candidate]);
-
-                loadedUnitAsts[targetPath] = unitAst;
-                FlushTypesUnitAst(candidate.Name, unitAst, [candidate], targetPath);
-                generated++;
+                loadedUnitAsts[targetPath] = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit(existingAst, candidate);
             }
-        }
-        else
-        {
-            // single-file: one types unit per flow unit — types/<flow>.types.ds
-            foreach (var group in candidates.GroupBy(c => c.FlowId, StringComparer.OrdinalIgnoreCase))
+            else
             {
-                var unitId = $"{group.Key}_types";
-                var targetPath = Path.GetFullPath(Path.Combine(typesDir, $"{group.Key}.types.ds"));
-                var groupCandidates = group.Select(c => c.Type).ToList();
-
-                DashSpec.Modeling.Parse.Syntax.DashSpecAstNode unitAst;
-                if (loadedUnitAsts.TryGetValue(targetPath, out var existingAst))
-                {
-                    unitAst = existingAst;
-                    foreach (var candidate in groupCandidates)
-                    {
-                        unitAst = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit(unitAst, candidate);
-                    }
-                }
-                else
-                {
-                    unitAst = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit(unitId, nsOption, groupCandidates);
-                }
-
-                loadedUnitAsts[targetPath] = unitAst;
-                FlushTypesUnitAst(unitId, unitAst, groupCandidates, targetPath);
-                generated++;
+                loadedUnitAsts[targetPath] = DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit(candidate.Name, nsOption, [candidate]);
             }
+
+            typeLocations[candidate.Name] = targetPath;
+
+            if (!dirtyUnits.TryGetValue(targetPath, out var entry))
+            {
+                var unitId = Path.GetFileNameWithoutExtension(targetPath).Replace('.', '_');
+                entry = (unitId, new List<RowTypeDef>());
+                dirtyUnits[targetPath] = entry;
+            }
+
+            entry.ExpectedTypes.RemoveAll(t => string.Equals(t.Name, candidate.Name, StringComparison.OrdinalIgnoreCase));
+            entry.ExpectedTypes.Add(candidate);
         }
 
-        return generated == 0 ? 1 : 0;
+        foreach (var (targetPath, (unitId, expectedTypes)) in dirtyUnits)
+        {
+            FlushTypesUnitAst(unitId, loadedUnitAsts[targetPath], expectedTypes, targetPath);
+        }
+
+        return dirtyUnits.Count == 0 ? 1 : 0;
     }
 
     /// <summary>Project an in-memory types-unit AST to text, verify the round-trip law, and write to disk.</summary>

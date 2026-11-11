@@ -3,7 +3,7 @@ type: ADR
 id: DASHSPEC-ADR-0128
 title: "Authored surface для выведенных типов — эмит через AST, статус не различается"
 status: "Accepted"
-implementation: "Реализован: DashSpecAstPrinter (synthesizeTypesUnit, mergeTypeIntoUnit, print, roundTripHolds), dsc generate types <dir> [--layout file-per-type|single-file] поверх AST в памяти, переиспользование синтезированных composite-двойников в TypeInference.fs и types/ai_landscape.types.ds"
+implementation: "Реализован: DashSpecAstPrinter (synthesizeTypesUnit, mergeTypeIntoUnit, print, roundTripHolds), dsc generate types <dir> поверх AST в памяти (обновление типов по их фактическому месту жизни в проекте, дефолт для новых — types/<name>.ds), переиспользование синтезированных composite-двойников в TypeInference.fs и types/ai_landscape.types.ds"
 date: 2026-11-10
 tags: [dashspec, adr, type-inference, adr-0127, codecenter, concept-graph, ast, emit]
 language: ru-RU

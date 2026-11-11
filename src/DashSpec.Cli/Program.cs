@@ -38,22 +38,22 @@ public static class Program
         };
     }
 
-    /// <summary>dsc generate types &lt;dir&gt; — ADR-0128: emit the flow-inferred row
-    /// types as an ordinary types-unit .ds (the authored surface). Regeneration is
-    /// a structural member-level merge; after the first emission the compiler
-    /// prefers the authored twin and synthesizes nothing.</summary>
+    /// <summary>dsc generate types &lt;dir&gt; — emit the flow-inferred row
+    /// types as ordinary types-unit .ds files (the authored surface). Regeneration is
+    /// a structural member-level merge in whichever types-unit currently declares the
+    /// type; after the first emission the compiler prefers the authored twin and
+    /// synthesizes nothing.</summary>
     private static int Generate(string[] rest)
     {
         if (rest.Length < 2 || rest[0] != "types" || rest[1] is "--help" or "-h")
         {
-            Console.Error.WriteLine("usage: dsc generate types <corpus-dir> [--namespace <ns>] [--layout file-per-type|single-file]");
+            Console.Error.WriteLine("usage: dsc generate types <corpus-dir> [--namespace <ns>]");
             return 2;
         }
 
         var fullPath = Path.GetFullPath(rest[1]);
         var moduleId = "inferred_types";
         string? namespaceName = null;
-        string? layout = null;
 
         for (var i = 2; i < rest.Length - 1; i++)
         {
@@ -65,10 +65,6 @@ public static class Program
             {
                 namespaceName = rest[i + 1];
             }
-            else if (rest[i] == "--layout")
-            {
-                layout = rest[i + 1];
-            }
         }
 
         if (!Directory.Exists(fullPath))
@@ -77,7 +73,7 @@ public static class Program
             return 2;
         }
 
-        return TypedRowsCompiler.GenerateTypesUnit(fullPath, moduleId, namespaceName, layout);
+        return TypedRowsCompiler.GenerateTypesUnit(fullPath, moduleId, namespaceName);
     }
 
     /// <summary>dsc build types &lt;dir&gt; — ADR-0124: compile the corpus's row types into
@@ -428,7 +424,7 @@ public static class Program
               dsc validate <path> [--toml <dash-spec.toml>]
                   Validate a .ds spec, host module or catalog. Content-first: the module
                   root classifies the unit. Plugin vocabulary mirrors the web Host.
-              dsc generate types <dir> [--namespace <ns>] [--layout file-per-type|single-file]
+              dsc generate types <dir> [--namespace <ns>]
                   Emit flow-inferred row types as ordinary .ds types-units.
               dsc build types <dir> [--out <dir>]
                   Compile row types from .ds units into TypedRows.dll.

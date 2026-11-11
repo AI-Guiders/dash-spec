@@ -284,4 +284,53 @@ public sealed class ManagedViewsEmitterTests
         Assert.Contains("WHERE l.app_name = @product", view.Select);
         Assert.StartsWith("CREATE OR ALTER FUNCTION", view.Ddl);
     }
+
+    [Fact]
+    public void GenerateTypesUnit_updates_existing_type_in_place_regardless_of_file_location()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "dashspec_types_loc_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var customTypesPath = Path.Combine(tempDir, "custom_domain.ds");
+            File.WriteAllText(customTypesPath, """
+                module types custom_domain
+                namespace Demo.Custom
+
+                type EventRow
+                  date usage_date
+                  string app_name
+                  int sessions
+                end type
+
+                type EventByAppNameRow
+                  string app_name
+                end type
+                """);
+
+            File.WriteAllText(Path.Combine(tempDir, "usage.ds"), ViewFlow);
+
+            var exitCode = DashSpec.Execution.Compilation.TypedRowsCompiler.GenerateTypesUnit(
+                tempDir,
+                "inferred_types",
+                namespaceName: null);
+
+            Assert.Equal(0, exitCode);
+
+            // EventByAppNameRow was declared in custom_domain.ds -> updated in place (int value merged in),
+            // and no duplicate types/EventByAppNameRow.ds was created for it.
+            var updatedCustom = File.ReadAllText(customTypesPath);
+            Assert.Contains("namespace Demo.Custom", updatedCustom);
+            Assert.Contains("type EventByAppNameRow", updatedCustom);
+            Assert.Contains("int value", updatedCustom);
+            Assert.False(File.Exists(Path.Combine(tempDir, "types", "EventByAppNameRow.ds")));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
 }
