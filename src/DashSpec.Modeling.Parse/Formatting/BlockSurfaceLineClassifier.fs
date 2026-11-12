@@ -54,24 +54,8 @@ module BlockSurfaceLineClassifier =
                 BlockOpener("click", None)
             | { Kind = TokenKind.Ident; Value = "filters" } :: { Kind = TokenKind.Ident; Value = "chrome" } :: _ ->
                 BlockOpener("chrome", None)
-            | { Kind = TokenKind.Ident; Value = "card" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("card", Some id)
-            | { Kind = TokenKind.Ident; Value = "section" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("section", Some id)
-            | { Kind = TokenKind.Ident; Value = "page" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("page", Some id)
-            | { Kind = TokenKind.Ident; Value = "phase" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("phase", Some id)
-            | { Kind = TokenKind.Ident; Value = "group" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("group", Some id)
-            | { Kind = TokenKind.Ident; Value = "type" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("type", Some id)
-            | { Kind = TokenKind.Ident; Value = "nest" } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
-                BlockOpener("nest", Some id)
-            // ADR-0130: flow-module block headers capture their id even when
-            // the header carries '=' (composite `source x : T = View(...)` origins).
             | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
-                when kw = "source" || kw = "transformer" || kw = "flow" ->
+                when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
                 BlockOpener(kw, Some id)
             | { Kind = TokenKind.Ident; Value = "transform" } :: { Kind = TokenKind.Ident; Value = "use" } :: { Kind = TokenKind.Ident; Value = pluginId } :: _ ->
                 BlockOpener("transform", Some pluginId)
@@ -80,11 +64,12 @@ module BlockSurfaceLineClassifier =
             | { Kind = TokenKind.Ident; Value = "transform" } :: _ ->
                 Content
             | tokens when hasEquals tokens -> Content
-            | { Kind = TokenKind.Ident; Value = kw } :: _ when DashSpecKeywords.isBlockKeyword kw ->
-                BlockOpener(kw, None)
             | { Kind = TokenKind.Ident; Value = "filter" } :: _ -> Content
-            | { Kind = TokenKind.Bang } :: _ -> Content
             | { Kind = TokenKind.Ident; Value = "use" } :: _ -> Content
+            | { Kind = TokenKind.Bang } :: _ -> Content
+            | { Kind = TokenKind.Ident; Value = kw } :: _ when
+                DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.tryOfName kw |> Option.isSome ->
+                BlockOpener(kw, None)
             | _ -> Content
 
     let classifyTrimmedLine (trimmed: string) : LineKind =

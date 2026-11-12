@@ -24,18 +24,9 @@ module PresentationModuleParser =
     let parsePresentationModule (text: string) : PresentationModuleDocument =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Presentation text is required."
         let tree = DashSpecSurfaceSyntax.parse text
-        let env = ModuleGrammar.unwrap DashSpecModuleKind.Presentation tree.Root
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Presentation tree.Root
+        let propMembers = UnitGrammar.unwrapOptionalBlock DashSpecBlockKeyword.Presentation env.Body
 
-        let innerBlock =
-            env.Body
-            |> Array.tryPick (function
-                | DashSpecAstNode.BlockDeclaration b ->
-                    match b.Opener with
-                    | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Presentation -> Some b.Members
-                    | _ -> None
-                | _ -> None)
-
-        let propMembers = defaultArg innerBlock env.Body
         let props =
             PropertyBlockParser.projectPropertiesFromAst
                 propMembers

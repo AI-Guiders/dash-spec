@@ -1,6 +1,6 @@
-# Tab module template — unit file (ADR-0101), referenced by id from a dashboard.
-#   Dashboard: import tabs from Demo.MyTab   +   tab my_tab as "My tab"   (no body)
-#   Units shared by namespace: import palettes / layouts / diagrams … from <Namespace> (ADR-0098).
+# Section module template — unit file, referenced by id from a dashboard.
+#   Dashboard: import sections from Demo.MySection   +   section my_tab as "My section"   (no body)
+#   Units shared by namespace: import palettes / layouts / diagrams … from <Namespace>.
 
 module section my_tab
     namespace Demo.MyTab

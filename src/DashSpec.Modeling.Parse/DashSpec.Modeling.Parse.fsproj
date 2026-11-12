@@ -27,7 +27,6 @@
     <Compile Include="Syntax\SyntaxTokenClassifier.fs" />
     <Compile Include="BlockSyntax.fs" />
     <Compile Include="Table\TableLiteral.fs" />
-    <Compile Include="Construct.fs" />
     <Compile Include="Alias\AliasBlockParser.fs" />
     <Compile Include="Formatting\DashSpecFormatOptions.fs" />
     <Compile Include="Formatting\BlockSurfaceLineClassifier.fs" />
@@ -40,11 +39,12 @@
     <Compile Include="Syntax\SyntaxTreeParser.fs" />
     <Compile Include="Syntax\SyntaxTree.fs" />
     <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
+    <Compile Include="Construct.fs" />
     <Compile Include="PropertySchemas.fs" />
     <Compile Include="AccessorGrammar.fs" />
     <Compile Include="MemberGrammar.fs" />
     <Compile Include="BlockGrammar.fs" />
-    <Compile Include="ModuleGrammar.fs" />
+    <Compile Include="UnitGrammar.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />

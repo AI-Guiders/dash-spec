@@ -41,7 +41,10 @@ type DashSpecBlockKeyword =
     | Toolbar
     | DiagramLibrary
     | Bind
-    | Import
+    | Links
+    | Link
+    | Menu
+    | Show
     | Type
     | Source
     | Transformer
@@ -94,7 +97,10 @@ module DashSpecBlockKeyword =
         | "toolbar" -> Some DashSpecBlockKeyword.Toolbar
         | "diagramlibrary" -> Some DashSpecBlockKeyword.DiagramLibrary
         | "bind" -> Some DashSpecBlockKeyword.Bind
-        | "import" -> Some DashSpecBlockKeyword.Import
+        | "links" -> Some DashSpecBlockKeyword.Links
+        | "link" -> Some DashSpecBlockKeyword.Link
+        | "menu" -> Some DashSpecBlockKeyword.Menu
+        | "show" -> Some DashSpecBlockKeyword.Show
         | "type" -> Some DashSpecBlockKeyword.Type
         | "source" -> Some DashSpecBlockKeyword.Source
         | "transformer" -> Some DashSpecBlockKeyword.Transformer
@@ -109,6 +115,13 @@ module DashSpecBlockKeyword =
         | _ when DashSpecKeywords.diagramKinds |> List.contains keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
+
+    /// Block keywords whose header line takes an identifier (`<kw> <id>`).
+    let isNamedBlockKeyword (name: string) =
+        match name.ToLowerInvariant() with
+        | "card" | "section" | "page" | "phase" | "group" | "type" | "nest"
+        | "source" | "transformer" | "flow" | "link" -> true
+        | _ -> false
 
     let isDiagramContainer (keyword: DashSpecBlockKeyword) =
         match keyword with
@@ -144,7 +157,10 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Configuration
         | DashSpecBlockKeyword.Report
         | DashSpecBlockKeyword.Bind
-        | DashSpecBlockKeyword.Import
+        | DashSpecBlockKeyword.Links
+        | DashSpecBlockKeyword.Link
+        | DashSpecBlockKeyword.Menu
+        | DashSpecBlockKeyword.Show
         | DashSpecBlockKeyword.Type
         | DashSpecBlockKeyword.Ports
         | DashSpecBlockKeyword.Palette
@@ -192,7 +208,10 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Toolbar -> "toolbar"
         | DashSpecBlockKeyword.DiagramLibrary -> "diagramlibrary"
         | DashSpecBlockKeyword.Bind -> "bind"
-        | DashSpecBlockKeyword.Import -> "import"
+        | DashSpecBlockKeyword.Links -> "links"
+        | DashSpecBlockKeyword.Link -> "link"
+        | DashSpecBlockKeyword.Menu -> "menu"
+        | DashSpecBlockKeyword.Show -> "show"
         | DashSpecBlockKeyword.Type -> "type"
         | DashSpecBlockKeyword.Source -> "source"
         | DashSpecBlockKeyword.Transformer -> "transformer"

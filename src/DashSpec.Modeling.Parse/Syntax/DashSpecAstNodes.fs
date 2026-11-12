@@ -4,6 +4,70 @@ open System
 open AIGuiders.Platform.Modeling.Core.Identity
 open DashSpec.Modeling.Core
 
+/// <summary>First-class member-access / qualified identifier tree (`Ident` or `target . member`) in DashSpec surface syntax.</summary>
+[<RequireQualifiedAccess>]
+type DotSyntax =
+    | Ident of name: string
+    | Member of target: DotSyntax * memberName: string
+
+    member this.Segments : string[] =
+        let rec loop acc node =
+            match node with
+            | DotSyntax.Ident name -> (name :: acc) |> List.toArray
+            | DotSyntax.Member(target, memberName) -> loop (memberName :: acc) target
+        loop [] this
+
+    member this.Text = String.Join(".", this.Segments)
+    member this.IsQualified =
+        match this with
+        | DotSyntax.Member _ -> true
+        | DotSyntax.Ident _ -> false
+    member this.Root =
+        match this with
+        | DotSyntax.Ident name -> name
+        | DotSyntax.Member(target, _) -> target.Root
+    member this.MemberName =
+        match this with
+        | DotSyntax.Ident name -> name
+        | DotSyntax.Member(_, memberName) -> memberName
+    override this.ToString() = this.Text
+
+module DotSyntax =
+
+    let ofSegments (segments: string seq) : DotSyntax =
+        let clean =
+            segments
+            |> Seq.map (fun s -> s.Trim())
+            |> Seq.filter (fun s -> s.Length > 0)
+            |> Seq.toList
+
+        match clean with
+        | [] -> DotSyntax.Ident ""
+        | head :: tail ->
+            tail |> List.fold (fun acc seg -> DotSyntax.Member(acc, seg)) (DotSyntax.Ident head)
+
+    let parse (raw: string) : DotSyntax =
+        if String.IsNullOrWhiteSpace raw then
+            DotSyntax.Ident ""
+        else
+            ofSegments (raw.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries))
+
+/// <summary>First-class typed right-hand-side expression of a `key = value` property assignment (ADR-0130).</summary>
+[<RequireQualifiedAccess>]
+type PropertyValueSyntax =
+    | Member of path: DotSyntax
+    | StringLiteral of value: string
+    | HexColorLiteral of hex: string
+    | TimeShiftLiteral of offset: string
+    | IanaZoneLiteral of zone: string
+    | RelativeDayLiteral of expr: string
+    | Range of fromBound: PropertyValueSyntax * toBound: PropertyValueSyntax
+    | Call of target: DotSyntax * args: PropertyValueSyntax[]
+    | BracketList of items: PropertyValueSyntax[]
+    | CommaList of items: PropertyValueSyntax[]
+    | Aliased of value: PropertyValueSyntax * title: string
+    | Raw of text: string
+
 [<RequireQualifiedAccess>]
 type SourceLeafKindSyntax =
     | View
@@ -195,7 +259,9 @@ and ImportDeclarationSyntax =
       Kind: string option
       /// Resolved typed ImportKind when recognized by ImportKindRegistry.
       ImportKind: ImportKind option
-      /// Imported namespace.
+      /// Imported namespace as structured DotSyntax.
+      TargetPath: DotSyntax
+      /// Imported namespace text.
       Target: string
       Alias: string option
       Tokens: SyntaxToken[] }
@@ -206,6 +272,7 @@ and TypeFieldSyntax =
       Span: TextSpan
       Optional: bool
       FieldType: DashType
+      FieldPath: DotSyntax
       FieldName: string
       Tokens: SyntaxToken[] }
 
@@ -213,7 +280,9 @@ and TypeFieldSyntax =
 and PropertySyntax =
     { Id: NodeId
       Span: TextSpan
+      KeyPath: DotSyntax
       Key: string
+      Value: PropertyValueSyntax
       ValueText: string
       KeyTokens: SyntaxToken[]
       EqualsToken: SyntaxToken
@@ -245,8 +314,10 @@ and PortDeclarationSyntax =
 and FlowLinkSyntax =
     { Id: NodeId
       Span: TextSpan
+      FromPath: DotSyntax
       FromNode: string
       FromPort: string option
+      ToPath: DotSyntax
       ToNode: string
       ToPort: string option
       Tokens: SyntaxToken[] }
@@ -278,10 +349,60 @@ and GridRowSyntax =
       Cells: string[]
       Tokens: SyntaxToken[] }
 
-/// <summary>Markdown-style table row `| a | b |` — one TableRow token per line.</summary>
+/// <summary>Typed row inside a `filters` table (`| id | bind | column | label | widget | … |`).</summary>
+and FilterRowSyntax =
+    { Id: string
+      Bind: string
+      Column: string option
+      Label: string option
+      Widget: string option
+      Attributes: Map<string, string> }
+
+/// <summary>Typed row inside a `links` table (`| id | label | url | target | topbar | settings |`).</summary>
+and LinkRowSyntax =
+    { Id: string
+      Label: string
+      Url: string
+      Target: string option
+      Topbar: string option
+      Settings: string option }
+
+/// <summary>Typed row inside a `when` table (`| state | message |`).</summary>
+and WhenRowSyntax =
+    { State: string
+      Message: string }
+
+/// <summary>Typed row inside an `on click` table (`| source | drill | set |`).</summary>
+and ClickRowSyntax =
+    { Source: string
+      Drill: string option
+      Set: string option }
+
+/// <summary>Typed row inside a `table` / `columns` table (`| id | format | label | sorting | alignment |`).</summary>
+and ColumnRowSyntax =
+    { Id: string
+      Format: string option
+      Label: string option
+      Sorting: string option
+      Alignment: string option
+      HeaderAlignment: string option }
+
+/// <summary>Domain kind of a pipe-table row inside a block (ADR-0130).</summary>
+and [<RequireQualifiedAccess>] TableRowKind =
+    | Header of columns: string[]
+    | Separator
+    | Filter of FilterRowSyntax
+    | Link of LinkRowSyntax
+    | When of WhenRowSyntax
+    | Click of ClickRowSyntax
+    | Column of ColumnRowSyntax
+    | Generic of attributes: Map<string, string>
+
+/// <summary>Markdown-style table row `| a | b |` — carries its typed domain representation (<see cref="TableRowKind"/>) and raw cells.</summary>
 and TableRowSyntax =
     { Id: NodeId
       Span: TextSpan
+      Kind: TableRowKind
       Cells: string[]
       Tokens: SyntaxToken[] }
 

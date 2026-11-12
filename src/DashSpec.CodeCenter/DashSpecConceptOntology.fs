@@ -25,7 +25,7 @@ type DashSpecConceptKind =
     | FlowLink of fromNode: string * toNode: string
     | Clause of kind: ClauseKind
     | GridRow
-    | TableRow
+    | TableRow of kind: TableRowKind
 
 [<RequireQualifiedAccess>]
 type DashSpecConceptEdgeKind =
@@ -73,7 +73,7 @@ module DashSpecConceptOntology =
         | DashSpecConceptKind.FlowLink _ -> DashSpecProjectionRole.Diagram
         | DashSpecConceptKind.Port _
         | DashSpecConceptKind.Clause _
-        | DashSpecConceptKind.TableRow -> DashSpecProjectionRole.FormField
+        | DashSpecConceptKind.TableRow _ -> DashSpecProjectionRole.FormField
         | DashSpecConceptKind.GridRow -> DashSpecProjectionRole.Diagram
         | DashSpecConceptKind.Block(keyword, _) ->
             if DashSpecBlockKeyword.isDiagramContainer keyword then
@@ -104,7 +104,7 @@ module DashSpecConceptOntology =
         | DashSpecAstNode.FlowLinkDeclaration n -> DashSpecConceptKind.FlowLink(n.FromNode, n.ToNode)
         | DashSpecAstNode.ClauseDeclaration n -> DashSpecConceptKind.Clause n.Kind
         | DashSpecAstNode.GridRowDeclaration _ -> DashSpecConceptKind.GridRow
-        | DashSpecAstNode.TableRowDeclaration _ -> DashSpecConceptKind.TableRow
+        | DashSpecAstNode.TableRowDeclaration n -> DashSpecConceptKind.TableRow n.Kind
         | _ -> failwith "not a concept-bearing AST node"
 
     let clauseCaption (kind: ClauseKind) =
@@ -134,7 +134,18 @@ module DashSpecConceptOntology =
         | DashSpecConceptKind.FlowLink(fromNode, toNode) -> $"{fromNode} -> {toNode}"
         | DashSpecConceptKind.Clause clauseKind -> clauseCaption clauseKind
         | DashSpecConceptKind.GridRow -> "grid row"
-        | DashSpecConceptKind.TableRow -> "table row"
+        | DashSpecConceptKind.TableRow rowKind ->
+            match rowKind with
+            | TableRowKind.Header cols ->
+                let joined = System.String.Join(", ", cols)
+                $"table header ({joined})"
+            | TableRowKind.Separator -> "table separator"
+            | TableRowKind.Filter f -> $"filter {f.Id}"
+            | TableRowKind.Link l -> $"link {l.Id}"
+            | TableRowKind.When w -> $"when {w.State}"
+            | TableRowKind.Click c -> $"click {c.Source}"
+            | TableRowKind.Column c -> $"column {c.Id}"
+            | TableRowKind.Generic _ -> "table row"
 
     let treeCaption (tier: DashSpecConceptTier) =
         match tier.Title with

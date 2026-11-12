@@ -45,6 +45,7 @@ module DashSpecAstPrinter =
               Span = emptySpan
               Optional = field.Optional
               FieldType = field.Type
+              FieldPath = DotSyntax.parse field.Name
               FieldName = field.Name
               Tokens = fieldTokens field }
 

@@ -998,7 +998,7 @@ module DashflowModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
 
         let tree = DashSpecSurfaceSyntax.parse text
-        let env = ModuleGrammar.unwrap (DashSpecModuleKind.Flow false) tree.Root
+        let env = UnitGrammar.unwrap (DashSpecModuleKind.Flow false) tree.Root
 
         let emitViews =
             match env.Kind with

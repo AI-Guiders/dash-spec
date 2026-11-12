@@ -958,62 +958,6 @@ module rec DocumentModuleParser =
 
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
 
-    let private parseFiltersBlock (reader: TokenReader) (shell: ReportCompileContext) (mode: ReportBodyMode) =
-        let blockFilterDefaults = FilterScopeDefaults.create ()
-        FilterScopeDefaults.merge blockFilterDefaults shell.FilterDefaults
-
-        let resolveFilterProperty (filterName: string) (property: string) =
-            FilterScopeDefaults.resolveProperty [ blockFilterDefaults; shell.FilterDefaults ] filterName property
-
-        let onDefaults () =
-            shell.FormatDefaults <-
-                DefaultsBlockParser.parse reader "defaults" shell.FormatDefaults blockFilterDefaults
-
-        let onDefault () =
-            shell.FormatDefaults <-
-                DefaultsBlockParser.parse reader "default" shell.FormatDefaults blockFilterDefaults
-
-        let onFilter () =
-            let filter = FilterParser.parse reader resolveFilterProperty
-
-            if mode = ReportBodyMode.TabEmbedded then
-                shell.TabLocalFilters.Add filter
-            else
-                // `standalone` blocks and the module-scope `filters` block describe the same filter for two modes;
-                // the one parsed first (standalone) wins so a tab opened standalone does not declare it twice.
-                let alreadyDeclared =
-                    shell.Filters
-                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
-
-                if not alreadyDeclared then
-                    shell.Filters.Add filter
-
-            reader.SkipNewlines()
-
-        let addFilter (filter: FilterDefinition) =
-            if mode = ReportBodyMode.TabEmbedded then
-                shell.TabLocalFilters.Add filter
-            else
-                let alreadyDeclared =
-                    shell.Filters
-                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
-
-                if not alreadyDeclared then
-                    shell.Filters.Add filter
-
-        let pipeRows = ResizeArray<string>()
-
-        let members: BlockGrammar.ContainerMember list =
-            [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
-              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
-              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ())
-              BlockGrammar.TableRowRows(pipeRows) ]
-
-        BlockGrammar.parseKeywordContainer reader "filters" "filters block" members None |> ignore
-
-        if pipeRows.Count > 0 then
-            FilterTableParser.applyFilterRows (List.ofSeq pipeRows) resolveFilterProperty addFilter
-
     /// GDL-table filter rows inside `filters` (ADR-0004 deferred step family, ADR-0104 grammar):
     /// header row declares attributes, each row desugars into the same FilterDefinition IR.
     /// ADR-0106: the table side rides the construct declaration — vocabulary, header/unset
@@ -1027,10 +971,10 @@ module rec DocumentModuleParser =
             | "top" -> FilterKind.Top
             | other -> raise (DashSpecParseException($"filters table bind for '{id}' must be date, field or top, got '{other}'."))
 
-        let applyFilterRows
-            (rows: string list)
+        let declaration
             (resolveProperty: string -> string -> string option)
             (addFilter: FilterDefinition -> unit)
+            : Construct.Declaration<FilterDefinition>
             =
             let cellsToFilter (m: Map<string, string>) : FilterDefinition =
                 match Construct.tryCell m "id" with
@@ -1128,14 +1072,64 @@ module rec DocumentModuleParser =
                     filter
                 | None -> raise (DashSpecParseException("filters table row requires a non-empty 'id' cell."))
 
-            let declaration : Construct.Declaration<FilterDefinition> =
-                { Name = "filters"
-                  Vocabulary =
-                    [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit"; "depends" ]
-                  CellsToRow = cellsToFilter
-                  ConstructRow = addFilter }
+            { Name = "filters"
+              Vocabulary =
+                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit"; "depends" ]
+              CellsToRow = cellsToFilter
+              ConstructRow = addFilter }
 
-            Construct.applyTableRows declaration rows
+    let private parseFiltersBlock (reader: TokenReader) (shell: ReportCompileContext) (mode: ReportBodyMode) =
+        let blockFilterDefaults = FilterScopeDefaults.create ()
+        FilterScopeDefaults.merge blockFilterDefaults shell.FilterDefaults
+
+        let resolveFilterProperty (filterName: string) (property: string) =
+            FilterScopeDefaults.resolveProperty [ blockFilterDefaults; shell.FilterDefaults ] filterName property
+
+        let onDefaults () =
+            shell.FormatDefaults <-
+                DefaultsBlockParser.parse reader "defaults" shell.FormatDefaults blockFilterDefaults
+
+        let onDefault () =
+            shell.FormatDefaults <-
+                DefaultsBlockParser.parse reader "default" shell.FormatDefaults blockFilterDefaults
+
+        let onFilter () =
+            let filter = FilterParser.parse reader resolveFilterProperty
+
+            if mode = ReportBodyMode.TabEmbedded then
+                shell.TabLocalFilters.Add filter
+            else
+                // `standalone` blocks and the module-scope `filters` block describe the same filter for two modes;
+                // the one parsed first (standalone) wins so a tab opened standalone does not declare it twice.
+                let alreadyDeclared =
+                    shell.Filters
+                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
+
+                if not alreadyDeclared then
+                    shell.Filters.Add filter
+
+            reader.SkipNewlines()
+
+        let addFilter (filter: FilterDefinition) =
+            if mode = ReportBodyMode.TabEmbedded then
+                shell.TabLocalFilters.Add filter
+            else
+                let alreadyDeclared =
+                    shell.Filters
+                    |> Seq.exists (fun existing -> String.Equals(existing.Name, filter.Name, StringComparison.OrdinalIgnoreCase))
+
+                if not alreadyDeclared then
+                    shell.Filters.Add filter
+
+        let filterDecl = FilterTableParser.declaration resolveFilterProperty addFilter
+
+        let members: BlockGrammar.ContainerMember list =
+            [ BlockGrammar.ChildKeyword("defaults", fun _ -> onDefaults ())
+              BlockGrammar.ChildKeyword("default", fun _ -> onDefault ())
+              BlockGrammar.ChildKeyword("filter", fun _ -> onFilter ())
+              BlockGrammar.TableConstruct(Construct.createTableConsumer filterDecl) ]
+
+        BlockGrammar.parseKeywordContainer reader "filters" "filters block" members None |> ignore
 
     let private skipTopLevelSection (reader: TokenReader) (endKind: string) =
         BlockSyntax.beginBlock reader

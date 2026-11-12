@@ -57,7 +57,7 @@ module UnitSource =
 
     let readUnit (path: string) =
         match tryReadRaw path with
-        | Some text -> blankHeader text
+        | Some text -> text
         | None -> raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
     /// Module id of a unit file: the third word of the `module <kind> <id>` line.

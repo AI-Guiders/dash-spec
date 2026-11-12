@@ -5,129 +5,116 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 module PaletteModuleParser =
 
-    let rec private readColorOperand (reader: TokenReader) =
-        reader.SkipNewlines()
-        if reader.IsAt TokenKind.Ident then
-            let saved = reader.SavePosition()
-            let name = reader.ReadIdent()
-            if name.Equals("color", StringComparison.OrdinalIgnoreCase) && reader.IsAt TokenKind.LParen then
-                reader.Expect TokenKind.LParen
-                let inner = readColorOperand reader
-                reader.Expect TokenKind.RParen
-                inner
-            else
-                reader.RestorePosition saved
-                reader.ReadIdent()
-        elif reader.IsAt TokenKind.String then reader.ReadString()
-        elif reader.IsAt TokenKind.HexColor then reader.ReadHexColor()
-        elif reader.IsAt TokenKind.Ident then reader.ReadIdent()
-        else raise (reader.Unexpected "color literal (#rrggbb), CSS name, const reference, or color(...)")
+    let private unquote (raw: string) =
+        let t = raw.Trim()
+        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
+            t.Substring(1, t.Length - 2)
+        else
+            t
 
-    let private readColorList (reader: TokenReader) =
-        reader.Expect TokenKind.LBracket
-        reader.SkipNewlines()
-        let items = ResizeArray<string>()
+    let rec private parseColorOperandTokens (tokens: SyntaxToken list) : string * SyntaxToken list =
+        match tokens with
+        | { LexKind = TokenKind.Ident; Text = fn } :: { LexKind = TokenKind.LParen } :: rest
+            when String.Equals(fn, "color", StringComparison.OrdinalIgnoreCase) ->
+            let inner, afterInner = parseColorOperandTokens rest
+            match afterInner with
+            | { LexKind = TokenKind.RParen } :: tail -> inner, tail
+            | _ -> raise (DashSpecParseException("Expected ')' after color(...) operand."))
+        | { LexKind = TokenKind.String; Text = s } :: tail ->
+            unquote s, tail
+        | { LexKind = TokenKind.HexColor; Text = h } :: tail ->
+            h, tail
+        | { LexKind = TokenKind.Ident; Text = id } :: tail ->
+            id, tail
+        | _ ->
+            raise (DashSpecParseException("Expected color literal (#rrggbb), CSS name, const reference, or color(...)."))
 
-        while not (reader.IsAt TokenKind.RBracket) && not reader.IsEof do
-            reader.SkipNewlines()
-            if reader.IsAt TokenKind.RBracket then ()
-            else
-                items.Add(readColorOperand reader)
-                reader.SkipNewlines()
-                if reader.CurrentKind = TokenKind.Comma then reader.Advance()
+    let private parseSingleColorOperand (tokens: SyntaxToken[]) (context: string) : string =
+        let operand, rest = parseColorOperandTokens (Array.toList tokens)
+        if not rest.IsEmpty then
+            raise (DashSpecParseException($"Unexpected trailing tokens in {context}."))
+        operand
 
-        reader.SkipNewlines()
-        reader.Expect TokenKind.RBracket
-        if items.Count = 0 then raise (DashSpecParseException("colors list requires at least one entry."))
-        items :> IReadOnlyList<_>
+    let private parseColorsPropertyTokens (tokens: SyntaxToken[]) (constants: IReadOnlyDictionary<string, string>) : string =
+        match Array.toList tokens with
+        | [ { LexKind = TokenKind.String; Text = s } ] -> unquote s
+        | { LexKind = TokenKind.LBracket } :: rest ->
+            let items = ResizeArray<string>()
+            let mutable cur = rest
+            let mutable closed = false
 
-    let private readColorsProperty (reader: TokenReader) (constants: IReadOnlyDictionary<string, string>) =
-        if reader.IsAt TokenKind.LBracket then
-            readColorList reader
+            while not cur.IsEmpty && not closed do
+                match cur with
+                | { LexKind = TokenKind.RBracket } :: tail ->
+                    closed <- true
+                    cur <- tail
+                | _ ->
+                    let operand, afterOperand = parseColorOperandTokens cur
+                    items.Add operand
+                    cur <-
+                        match afterOperand with
+                        | { LexKind = TokenKind.Comma } :: tail -> tail
+                        | tail -> tail
+
+            if not closed || not cur.IsEmpty then
+                raise (DashSpecParseException("Unclosed or malformed colors list '[ ... ]'."))
+
+            if items.Count = 0 then
+                raise (DashSpecParseException("colors list requires at least one entry."))
+
+            items
             |> Seq.map (fun operand -> PaletteColorResolver.resolveOperand operand constants "colors list")
             |> PaletteColorResolver.joinColorList
-        elif reader.CurrentKind = TokenKind.String then reader.ReadString()
-        else raise (reader.Unexpected "colors list [ … ] or string")
+        | _ ->
+            raise (DashSpecParseException("Expected colors list [ … ] or string."))
 
-    let private parseConstants (reader: TokenReader) =
+    /// Project a palette definition from any container's AST members (shared by `module palette <id>` and `palette` blocks).
+    let projectFromMembers (id: string) (members: DashSpecAstNode[]) : PaletteDocument =
+        let flatMembers = UnitGrammar.unwrapOptionalBlock DashSpecBlockKeyword.Palette members
+        let view = UnitGrammar.view flatMembers
+
+        if view.Body.Length <> view.Properties.Length then
+            raise (DashSpecParseException($"Palette '{id}' contains unexpected non-property statements."))
+
         let constants = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        while reader.TryKeyword "const" do
-            let name = reader.ReadIdent()
-            if String.IsNullOrWhiteSpace name then raise (DashSpecParseException("const requires a name."))
-            reader.Expect TokenKind.Eq
-            let operand = readColorOperand reader
-            let hex = PaletteColorResolver.resolveOperand operand constants $"const '{name}'"
-            constants.[name] <- hex
-            reader.SkipNewlines()
-        constants :> IReadOnlyDictionary<string, string>
-
-    let private parsePaletteMappings (reader: TokenReader) (constants: IReadOnlyDictionary<string, string>) wrapped endKind =
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
-        let shouldContinue () =
-            if wrapped then not (reader.IsAt TokenKind.RBrace) && not reader.IsEof
-            elif not (String.IsNullOrWhiteSpace endKind) then not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof
-            else not reader.IsEof
+        for prop in view.Properties do
+            match prop.KeyTokens with
+            | [| { LexKind = TokenKind.Ident; Text = kw }; { LexKind = TokenKind.Ident; Text = constName } |]
+                when String.Equals(kw, "const", StringComparison.OrdinalIgnoreCase) ->
+                let operand = parseSingleColorOperand prop.ValueTokens $"const '{constName}'"
+                let hex = PaletteColorResolver.resolveOperand operand constants $"const '{constName}'"
+                constants.[constName] <- hex
+            | [| { LexKind = TokenKind.Ident; Text = key } |] ->
+                if String.Equals(key, "colors", StringComparison.OrdinalIgnoreCase) then
+                    values.[key] <- parseColorsPropertyTokens prop.ValueTokens constants
+                else
+                    let operand = parseSingleColorOperand prop.ValueTokens $"palette entry '{key}'"
+                    values.[key] <- PaletteColorResolver.resolveOperand operand constants $"palette entry '{key}'"
+            | [| { LexKind = TokenKind.String; Text = rawKey } |] ->
+                let key = unquote rawKey
+                if String.IsNullOrWhiteSpace key then
+                    raise (DashSpecParseException("Quoted property key cannot be empty."))
+                let operand = parseSingleColorOperand prop.ValueTokens $"palette entry '{key}'"
+                values.[key] <- PaletteColorResolver.resolveOperand operand constants $"palette entry '{key}'"
+            | _ ->
+                raise (DashSpecParseException($"Invalid property key '{prop.Key}' in palette '{id}'."))
 
-        while shouldContinue () do
-            reader.SkipNewlines()
-            if wrapped && reader.IsAt TokenKind.RBrace then ()
-            elif not (String.IsNullOrWhiteSpace endKind) && BlockSyntax.isBlockEnd reader endKind None then ()
-            elif not wrapped && reader.IsEof then ()
-            else
-                let inlineContinue () =
-                    if wrapped then not (reader.IsAt TokenKind.RBrace) && not reader.IsEof
-                    elif not (String.IsNullOrWhiteSpace endKind) then
-                        not (reader.IsAt TokenKind.Newline) && not (BlockSyntax.isBlockEnd reader endKind None) && not reader.IsEof
-                    else not (reader.IsAt TokenKind.Newline) && not reader.IsEof
+        if values.Count = 0 then
+            raise (DashSpecParseException($"Palette '{id}' requires at least one mapping entry."))
 
-                while inlineContinue () do
-                    let key = reader.ReadPropertyKey(allowQuoted=true)
-                    reader.Expect TokenKind.Eq
-                    if key.Equals("colors", StringComparison.OrdinalIgnoreCase) then
-                        values.[key] <- readColorsProperty reader constants
-                    else
-                        let operand = readColorOperand reader
-                        values.[key] <- PaletteColorResolver.resolveOperand operand constants $"palette entry '{key}'"
-                reader.SkipNewlines()
-
-        if not (String.IsNullOrWhiteSpace endKind) then BlockSyntax.expectBlockEnd reader endKind None
-        values
+        { Id = id; Properties = values :> IReadOnlyDictionary<_, _> }
 
     let parsePaletteFile (text: string) : PaletteDocument =
-        let text = DashSpec.Modeling.Parse.Document.UnitSource.blankHeader text
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Palette text is required."
-        let reader = ParserUtilities.createReader text
-        reader.SkipFileDirectives()
-        reader.ExpectKeyword "module"
-        reader.ExpectKeyword "palette"
-        let id = reader.ReadIdent()
-        if String.IsNullOrWhiteSpace id then raise (DashSpecParseException("Palette module requires @palette <id>."))
-        reader.SkipNewlines()
-        let constants = parseConstants reader
-
-        let props =
-            if reader.TryKeyword "palette" then
-                if reader.IsOnNewline() then
-                    BlockSyntax.beginBlock reader
-                    reader.SkipNewlines()
-                    parsePaletteMappings reader constants false "palette"
-                elif reader.IsAt TokenKind.LBrace then
-                    reader.Expect TokenKind.LBrace
-                    reader.SkipNewlines()
-                    let values = parsePaletteMappings reader constants true ""
-                    reader.Expect TokenKind.RBrace
-                    values
-                else
-                    parsePaletteMappings reader constants false ""
-            else
-                parsePaletteMappings reader constants false ""
-
-        if props.Count = 0 then raise (DashSpecParseException($"Palette '{id}' requires at least one mapping entry."))
-        { Id = id; Properties = props :> IReadOnlyDictionary<_, _> }
+        let tree = DashSpecSurfaceSyntax.parse text
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Palette tree.Root
+        projectFromMembers env.Id env.Body
 
     let parsePaletteFileWithId (text: string) =
         let doc = parsePaletteFile text

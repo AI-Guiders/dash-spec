@@ -15,26 +15,23 @@ module DashSpecKeywords =
         [ "line"; "area"; "sparkline"; "bar"; "pie"; "donut"; "doughnut"; "scatter"; "histogram"; "box"
           "boxplot"; "treemap"; "gauge"; "windrose"; "wind_rose"; "table"; "number"; "heatmap"; "gantt" ]
 
-    let isBlockKeyword (value: string) =
-        let keyword = value.ToLowerInvariant()
-
-        match keyword with
-        | "runtime" | "configuration" | "connect" | "report" | "extensions" | "links" | "surfaces"
-        | "bind" | "filters" | "cards" | "views" | "data" | "transform" | "series"
-        | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
-        | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
-        | "diagramlibrary" | "group" | "phase" | "diagram" | "section" | "menu"
-        | "type" | "source" | "transformer" | "ports" | "palette" | "tooltip" | "host" | "defaults"
-        | "flow" | "nest" -> true
-        | _ -> diagramKinds |> List.contains keyword
-
+    /// Typed SSOT for block vocabulary is `DashSpecBlockKeyword.tryOfName`; this table is only
+    /// syntax-coloring vocabulary (ADR-0130): control words plus every block keyword so the
+    /// highlighter marks block openers (grid, filters, cards, …) as keywords.
     let isControlKeyword (value: string) =
         match value.ToLowerInvariant() with
         | "section" | "sections" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
         | "import" | "from" | "namespace" | "on" | "goto" | "page" | "phase" | "group"
         | "connector" | "provider" | "palette" | "manifest" | "sqldialect" | "datasource" | "link" | "catalog"
-        | "diagram" | "end" -> true
-        | _ -> isBlockKeyword value
+        | "diagram" | "end"
+        | "grid" | "runtime" | "configuration" | "connect" | "report" | "extensions" | "links" | "surfaces"
+        | "bind" | "filters" | "views" | "data" | "transform" | "series"
+        | "presentation" | "view" | "layout" | "chrome" | "click" | "inspect"
+        | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
+        | "diagramlibrary" | "menu"
+        | "type" | "source" | "transformer" | "ports" | "tooltip" | "host" | "defaults"
+        | "flow" | "nest" -> true
+        | _ -> diagramKinds |> List.contains (value.ToLowerInvariant())
 
     /// `module <kind> <id>` roots: every importable unit kind plus the module-only roots.
     let isModuleDirective (value: string) =

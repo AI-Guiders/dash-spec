@@ -66,10 +66,7 @@ internal static class ModuleParseRegistration
         DashSpec.Modeling.Parse.Document.UnitSource.registerEmbeddedUnits(units);
     }
 
-    /// <summary>Bridge entry for unit text: a `.ds` unit still carries its ADR-0098 header (`namespace` / `import`)
-    /// while every unit parser reads only the body, so the header is blanked here once — same length, same offsets.</summary>
-    private static string UnitText(string text) =>
-        DashSpec.Modeling.Parse.Document.UnitSource.blankHeader(text);
+    private static string UnitText(string text) => text;
 
     private static void RegisterLayout()
     {

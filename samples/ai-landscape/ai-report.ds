@@ -22,31 +22,12 @@ module dashboard ai_report
         defaults
             filter.models_top.limit = 50
         end defaults
-        filter domain
-          bind field
-            column = domain
-          end bind
-          show
-            label = "Direction"
-            widget = combobox
-          end show
-        end filter
-        filter accessibility
-          bind field
-            column = accessibility
-          end bind
-          show
-            label = "Weights"
-            widget = combobox
-          end show
-        end filter
-        filter models_top
-          bind top
-          end bind
-          show
-            label = "Rows (TOP)"
-          end show
-        end filter
+        filters
+            | id            | bind  | column        | label      | widget   |
+            | domain        | field | domain        | Direction  | combobox |
+            | accessibility | field | accessibility | Weights    | combobox |
+            | models_top    | top   | -             | Rows (TOP) | -        |
+        end filters
         toolbar chrome
             layout = bar
             sticky = line

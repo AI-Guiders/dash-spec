@@ -36,7 +36,7 @@ module DashSpecSurfaceSyntax =
         | FlowLink of fromNode: string * fromPort: string option * toNode: string * toPort: string option
         | Clause of kind: ClauseKind
         | GridRow of typedCells: GridCellSyntax[] * cells: string[]
-        | TableRow of cells: string[]
+        | TableRow of kind: TableRowKind * cells: string[]
         | Line
         | BlankLine
 
@@ -149,6 +149,7 @@ module DashSpecSurfaceSyntax =
                   Keyword = keyword
                   Kind = kind
                   ImportKind = resolvedImportKind
+                  TargetPath = DotSyntax.parse target
                   Target = target
                   Alias = aliasName
                   Tokens = node.Tokens }
@@ -158,13 +159,116 @@ module DashSpecSurfaceSyntax =
                   Span = span
                   Optional = optional
                   FieldType = fieldType
+                  FieldPath = DotSyntax.parse fieldName
                   FieldName = fieldName
                   Tokens = node.Tokens }
         | NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens) ->
+            let rec parseAtom (toks: SyntaxToken[]) (fallbackText: string) : PropertyValueSyntax =
+                if toks.Length = 0 then
+                    PropertyValueSyntax.Raw fallbackText
+                elif toks.Length >= 3
+                     && toks.[toks.Length - 1].LexKind = TokenKind.String
+                     && toks.[toks.Length - 2].LexKind = TokenKind.Ident
+                     && String.Equals(toks.[toks.Length - 2].Text, "as", StringComparison.OrdinalIgnoreCase) then
+                    let innerToks = toks.[0 .. toks.Length - 3]
+                    let innerText = innerToks |> Array.map (fun t -> t.Text) |> String.concat " "
+                    let rawTitle = toks.[toks.Length - 1].Text
+                    let title =
+                        if rawTitle.Length >= 2 && rawTitle.[0] = '"' && rawTitle.[rawTitle.Length - 1] = '"' then
+                            rawTitle.Substring(1, rawTitle.Length - 2)
+                        else
+                            rawTitle
+                    PropertyValueSyntax.Aliased(parseAtom innerToks innerText, title)
+                elif toks.Length >= 2
+                     && toks.[0].LexKind = TokenKind.LBracket
+                     && toks.[toks.Length - 1].LexKind = TokenKind.RBracket then
+                    let inner = toks.[1 .. toks.Length - 2]
+                    let items = ResizeArray<PropertyValueSyntax>()
+                    let cur = ResizeArray<SyntaxToken>()
+                    let mutable depth = 0
+                    for t in inner do
+                        if t.LexKind = TokenKind.LParen || t.LexKind = TokenKind.LBracket then
+                            depth <- depth + 1
+                            cur.Add t
+                        elif t.LexKind = TokenKind.RParen || t.LexKind = TokenKind.RBracket then
+                            depth <- depth - 1
+                            cur.Add t
+                        elif t.LexKind = TokenKind.Comma && depth = 0 then
+                            if cur.Count > 0 then
+                                let arr = cur.ToArray()
+                                items.Add(parseAtom arr (arr |> Array.map (fun x -> x.Text) |> String.concat ""))
+                                cur.Clear()
+                        else
+                            cur.Add t
+                    if cur.Count > 0 then
+                        let arr = cur.ToArray()
+                        items.Add(parseAtom arr (arr |> Array.map (fun x -> x.Text) |> String.concat ""))
+                    PropertyValueSyntax.BracketList(items.ToArray())
+                elif toks |> Array.exists (fun t -> t.LexKind = TokenKind.DotDot) then
+                    let idx = toks |> Array.findIndex (fun t -> t.LexKind = TokenKind.DotDot)
+                    let left = toks.[0 .. idx - 1]
+                    let right = toks.[idx + 1 ..]
+                    PropertyValueSyntax.Range(
+                        parseAtom left (left |> Array.map (fun x -> x.Text) |> String.concat ""),
+                        parseAtom right (right |> Array.map (fun x -> x.Text) |> String.concat ""))
+                elif toks |> Array.exists (fun t -> t.LexKind = TokenKind.Comma)
+                     && not (toks |> Array.exists (fun t -> t.LexKind = TokenKind.LParen)) then
+                    let items = ResizeArray<PropertyValueSyntax>()
+                    let cur = ResizeArray<SyntaxToken>()
+                    for t in toks do
+                        if t.LexKind = TokenKind.Comma then
+                            if cur.Count > 0 then
+                                let arr = cur.ToArray()
+                                items.Add(parseAtom arr (arr |> Array.map (fun x -> x.Text) |> String.concat " "))
+                                cur.Clear()
+                        else
+                            cur.Add t
+                    if cur.Count > 0 then
+                        let arr = cur.ToArray()
+                        items.Add(parseAtom arr (arr |> Array.map (fun x -> x.Text) |> String.concat " "))
+                    PropertyValueSyntax.CommaList(items.ToArray())
+                elif toks.Length >= 3
+                     && toks.[toks.Length - 1].LexKind = TokenKind.RParen
+                     && toks |> Array.exists (fun t -> t.LexKind = TokenKind.LParen) then
+                    let lpIdx = toks |> Array.findIndex (fun t -> t.LexKind = TokenKind.LParen)
+                    let fnToks = toks.[0 .. lpIdx - 1]
+                    let argToks = toks.[lpIdx + 1 .. toks.Length - 2]
+                    if fnToks.Length > 0 && fnToks |> Array.forall (fun t -> t.LexKind = TokenKind.Ident || t.LexKind = TokenKind.Dot) then
+                        let fnPath = DotSyntax.parse (fnToks |> Array.map (fun t -> t.Text) |> String.concat "")
+                        let args =
+                            if argToks.Length = 0 then [||]
+                            else [| parseAtom argToks (argToks |> Array.map (fun t -> t.Text) |> String.concat "") |]
+                        PropertyValueSyntax.Call(fnPath, args)
+                    else
+                        PropertyValueSyntax.Raw fallbackText
+                elif toks.Length = 1 then
+                    let t = toks.[0]
+                    match t.LexKind with
+                    | TokenKind.String ->
+                        let raw = t.Text
+                        let s =
+                            if raw.Length >= 2 && raw.[0] = '"' && raw.[raw.Length - 1] = '"' then
+                                raw.Substring(1, raw.Length - 2)
+                            else
+                                raw
+                        PropertyValueSyntax.StringLiteral s
+                    | TokenKind.HexColor -> PropertyValueSyntax.HexColorLiteral t.Text
+                    | TokenKind.TimeShift -> PropertyValueSyntax.TimeShiftLiteral t.Text
+                    | TokenKind.IanaZone -> PropertyValueSyntax.IanaZoneLiteral t.Text
+                    | TokenKind.RelativeDay -> PropertyValueSyntax.RelativeDayLiteral t.Text
+                    | TokenKind.Ident -> PropertyValueSyntax.Member(DotSyntax.Ident t.Text)
+                    | _ -> PropertyValueSyntax.Raw fallbackText
+                elif toks |> Array.forall (fun t -> t.LexKind = TokenKind.Ident || t.LexKind = TokenKind.Dot) then
+                    PropertyValueSyntax.Member(DotSyntax.parse (toks |> Array.map (fun t -> t.Text) |> String.concat ""))
+                else
+                    PropertyValueSyntax.Raw fallbackText
+
             DashSpecAstNode.PropertyAssignment
                 { Id = node.Id
                   Span = span
+                  KeyPath = DotSyntax.parse key
                   Key = key
+                  Value = parseAtom valueTokens valueText
                   ValueText = valueText
                   KeyTokens = keyTokens
                   EqualsToken = eqToken
@@ -185,8 +289,10 @@ module DashSpecSurfaceSyntax =
             DashSpecAstNode.FlowLinkDeclaration
                 { Id = node.Id
                   Span = span
+                  FromPath = DotSyntax.parse fromNode
                   FromNode = fromNode
                   FromPort = fromPort
+                  ToPath = DotSyntax.parse toNode
                   ToNode = toNode
                   ToPort = toPort
                   Tokens = node.Tokens }
@@ -203,10 +309,11 @@ module DashSpecSurfaceSyntax =
                   TypedCells = typedCells
                   Cells = cells
                   Tokens = node.Tokens }
-        | NodePayload.TableRow cells ->
+        | NodePayload.TableRow(kind, cells) ->
             DashSpecAstNode.TableRowDeclaration
                 { Id = node.Id
                   Span = span
+                  Kind = kind
                   Cells = cells
                   Tokens = node.Tokens }
         | NodePayload.Line -> DashSpecAstNode.Line { Id = node.Id; Span = span; Tokens = node.Tokens }
@@ -277,17 +384,22 @@ module DashSpecSurfaceSyntax =
             && t.Kind <> TokenKind.LineComment
             && t.Kind <> TokenKind.BlockComment)
 
-    let private tryParseDottedName (tokens: Token list) =
+    let private tryParseDotSyntax (tokens: Token list) : DotSyntax option =
         let filtered = significantTokens tokens
 
         if filtered.IsEmpty then
             None
         elif filtered |> List.forall (fun t -> t.Kind = TokenKind.Ident || t.Kind = TokenKind.Dot) then
             let joined = filtered |> List.map (fun t -> t.Value) |> String.concat ""
-            if String.IsNullOrWhiteSpace joined || joined.StartsWith('.') || joined.EndsWith('.') then None
-            else Some joined
+            if String.IsNullOrWhiteSpace joined || joined.StartsWith('.') || joined.EndsWith('.') then
+                None
+            else
+                Some(DotSyntax.parse joined)
         else
             None
+
+    let private tryParseDottedName (tokens: Token list) =
+        tryParseDotSyntax tokens |> Option.map (fun d -> d.Text)
 
     let private tryParseTypeFieldLine (tokens: Token list) : (bool * DashType * string) option =
         let sigTokens = significantTokens tokens
@@ -339,7 +451,11 @@ module DashSpecSurfaceSyntax =
             let eqToken = nonTrivia.[eqIdx]
             let valueTokens = nonTrivia.[eqIdx + 1 ..]
 
-            if keyTokens |> Array.forall (fun t -> t.LexKind = TokenKind.Ident || t.LexKind = TokenKind.Dot) then
+            let validKey =
+                (keyTokens |> Array.forall (fun t -> t.LexKind = TokenKind.Ident || t.LexKind = TokenKind.Dot))
+                || (keyTokens.Length = 1 && keyTokens.[0].LexKind = TokenKind.String)
+
+            if validKey then
                 // ADR-0130: one property per line — a second `=` on the line is
                 // a multi-assignment, which stays an untyped Line for diagnostics.
                 let valueHasAssignment =
@@ -761,6 +877,81 @@ module DashSpecSurfaceSyntax =
 
             if cells.Length = 0 then None else Some cells
 
+    let private isTableSeparatorRow (cells: string[]) =
+        cells.Length > 0
+        && cells |> Array.forall (fun c -> c.Length > 0 && c |> Seq.forall (fun ch -> ch = '-' || ch = ':'))
+
+    let private classifyTableRow (container: MutableNode) (cells: string[]) : TableRowKind =
+        let existingHeader =
+            container.Children
+            |> Seq.tryPick (fun child ->
+                match child.Payload with
+                | NodePayload.TableRow(TableRowKind.Header cols, _) -> Some cols
+                | _ -> None)
+
+        match existingHeader with
+        | None ->
+            TableRowKind.Header(cells |> Array.map (fun c -> c.Trim()))
+        | Some _ when isTableSeparatorRow cells ->
+            TableRowKind.Separator
+        | Some headerCols ->
+            let attrs =
+                [ for i in 0 .. (min (cells.Length - 1) (headerCols.Length - 1)) do
+                    let key = headerCols.[i].Trim().ToLowerInvariant()
+                    let v = cells.[i].Trim()
+                    if key.Length > 0 && v.Length > 0 && v <> "-" then
+                        yield key, v ]
+                |> Map.ofList
+
+            let tryAttr name = Map.tryFind name attrs
+
+            let blockKeyword =
+                match container.Payload with
+                | NodePayload.Block(DashSpecBlockOpener.Anonymous kw, _, _)
+                | NodePayload.Block(DashSpecBlockOpener.Named(kw, _), _, _) -> Some kw
+                | _ -> None
+
+            match blockKeyword with
+            | Some DashSpecBlockKeyword.Filters ->
+                TableRowKind.Filter
+                    { Id = tryAttr "id" |> Option.defaultValue ""
+                      Bind = tryAttr "bind" |> Option.defaultValue ""
+                      Column = tryAttr "column"
+                      Label = tryAttr "label"
+                      Widget = tryAttr "widget"
+                      Attributes = attrs }
+            | Some DashSpecBlockKeyword.Links ->
+                let id = tryAttr "id" |> Option.defaultValue ""
+                TableRowKind.Link
+                    { Id = id
+                      Label = tryAttr "label" |> Option.defaultValue id
+                      Url = tryAttr "url" |> Option.defaultValue ""
+                      Target = tryAttr "target"
+                      Topbar = tryAttr "topbar"
+                      Settings = tryAttr "settings" }
+            | Some DashSpecBlockKeyword.OnClick
+            | Some DashSpecBlockKeyword.Click ->
+                TableRowKind.Click
+                    { Source = tryAttr "source" |> Option.defaultValue ""
+                      Drill = tryAttr "drill"
+                      Set = tryAttr "set" }
+            | Some(DashSpecBlockKeyword.Other kw) when String.Equals(kw, "when", StringComparison.OrdinalIgnoreCase) ->
+                TableRowKind.When
+                    { State = tryAttr "state" |> Option.defaultValue ""
+                      Message = tryAttr "message" |> Option.defaultValue "" }
+            | Some(DashSpecBlockKeyword.Other kw)
+                when String.Equals(kw, "table", StringComparison.OrdinalIgnoreCase)
+                     || String.Equals(kw, "columns", StringComparison.OrdinalIgnoreCase) ->
+                TableRowKind.Column
+                    { Id = tryAttr "id" |> Option.defaultValue ""
+                      Format = tryAttr "format"
+                      Label = tryAttr "label"
+                      Sorting = tryAttr "sorting"
+                      Alignment = tryAttr "alignment"
+                      HeaderAlignment = tryAttr "header_alignment" }
+            | _ ->
+                TableRowKind.Generic attrs
+
     /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;namespace&gt; [as &lt;alias&gt;]` (ADR-0098).</summary>
     let private tryParseImportLine (tokens: Token list) =
         let sigTokens = significantTokens tokens
@@ -892,7 +1083,8 @@ module DashSpecSurfaceSyntax =
             | None ->
                 match tableRow with
                 | Some cells ->
-                    container.Children.Add(mkNode (NodePayload.TableRow cells) (nextId id) line.Span syntaxTokens)
+                    let rowKind = classifyTableRow container cells
+                    container.Children.Add(mkNode (NodePayload.TableRow(rowKind, cells)) (nextId id) line.Span syntaxTokens)
                 | None ->
                     match linkLine with
                     | Some(fromNode, fromPort, toNode, toPort) ->

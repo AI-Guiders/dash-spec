@@ -60,6 +60,35 @@ public sealed class HostModuleParserTests
     }
 
     [Fact]
+    public void Parse_host_with_tabular_links()
+    {
+        const string text = """
+            module host demo
+            catalog "catalogs/demo.dashcatalog"
+
+            links
+              | id     | label  | url                  | topbar | settings |
+              | portal | Портал | https://example/demo | true   | false    |
+              | docs   | Доки   | https://example/docs | false  | true     |
+            end links
+
+            end host
+            """;
+
+        var host = HostModuleParser.Parse(text, @"D:\planet\dashspec");
+
+        Assert.Equal(2, host.Links.Count);
+        Assert.Equal("portal", host.Links[0].Id);
+        Assert.Equal("Портал", host.Links[0].Label);
+        Assert.Equal("https://example/demo", host.Links[0].Url);
+        Assert.True(host.Links[0].Topbar);
+        Assert.False(host.Links[0].Settings);
+        Assert.Equal("docs", host.Links[1].Id);
+        Assert.False(host.Links[1].Topbar);
+        Assert.True(host.Links[1].Settings);
+    }
+
+    [Fact]
     public void Parse_host_with_imported_layout()
     {
         var dir = Path.Combine(Path.GetTempPath(), "dashhost-include-" + Guid.NewGuid().ToString("N"));

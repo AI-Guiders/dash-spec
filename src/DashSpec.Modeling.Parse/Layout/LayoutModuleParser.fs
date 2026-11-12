@@ -105,7 +105,7 @@ module LayoutModuleParser =
             invalidArg "text" "Layout text is required."
 
         let tree = DashSpecSurfaceSyntax.parse text
-        let env = ModuleGrammar.unwrap DashSpecModuleKind.Layout tree.Root
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Layout tree.Root
 
         let scope =
             env.Body

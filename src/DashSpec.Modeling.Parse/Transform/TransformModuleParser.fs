@@ -35,20 +35,14 @@ module TransformModuleParser =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Transform text is required."
 
         let tree = DashSpecSurfaceSyntax.parse text
-        let env = ModuleGrammar.unwrap DashSpecModuleKind.Transform tree.Root
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Transform tree.Root
 
-        let seriesBlock =
-            env.Body
-            |> Array.tryPick (function
-                | DashSpecAstNode.BlockDeclaration b ->
-                    match b.Opener with
-                    | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Series -> Some b.Members
-                    | _ ->
-                        let headerText = b.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                        raise (DashSpecParseException($"Expected 'transform series', got '{headerText}'."))
-                | _ -> None)
+        for b in env.View.Blocks do
+            if b.Opener <> DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Series then
+                let headerText = b.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Expected 'transform series', got '{headerText}'."))
 
-        let propMembers = defaultArg seriesBlock env.Body
+        let propMembers = UnitGrammar.unwrapOptionalBlock DashSpecBlockKeyword.Series env.Body
         let props =
             PropertyBlockParser.projectPropertiesFromAst
                 propMembers

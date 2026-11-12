@@ -103,11 +103,11 @@ module CardVisibilityParser =
     /// semantics). Rows: <c>| state | message |</c>; the block forms (when oversize,
     /// when &lt;filter&gt;) stay valid and fill the same cells per the family rule.
     /// </summary>
-    let applyWhenTableRows
+    let whenDeclaration
         (cardId: string)
         (setOversize: string -> unit)
         (setNoData: string -> unit)
-        (rows: string list)
+        : Construct.Declaration<string * string>
         =
         let cellsToRow (m: Map<string, string>) : string * string =
             let state =
@@ -128,10 +128,23 @@ module CardVisibilityParser =
                 let words = String.Join(" | ", [ WhenStates.NoData; WhenStates.Oversize ])
                 raise (DashSpecParseException($"Card '{cardId}': unknown when state '{other}' ({words})."))
 
-        let declaration: Construct.Declaration<string * string> =
-            { Name = "when"
-              Vocabulary = [ "state"; "message" ]
-              CellsToRow = cellsToRow
-              ConstructRow = applyRow }
+        { Name = "when"
+          Vocabulary = [ "state"; "message" ]
+          CellsToRow = cellsToRow
+          ConstructRow = applyRow }
 
-        Construct.applyTableRows declaration rows
+    let applyWhenForm
+        (cardId: string)
+        (setOversize: string -> unit)
+        (setNoData: string -> unit)
+        (form: Construct.ConstructForm)
+        =
+        Construct.apply (whenDeclaration cardId setOversize setNoData) form
+
+    let applyWhenTableRows
+        (cardId: string)
+        (setOversize: string -> unit)
+        (setNoData: string -> unit)
+        (rows: string list)
+        =
+        Construct.applyTableRows (whenDeclaration cardId setOversize setNoData) rows

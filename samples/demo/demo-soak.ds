@@ -1,6 +1,6 @@
 module dashboard demo_soak
-    import tooltips from Demo.Tooltips
     namespace Demo.Soak
+    import tooltips from Demo.Tooltips
     import diagrams from Demo.Diagrams
     import types from Demo.Types
     import flows from Demo.Flows as demo_report_flow
@@ -31,75 +31,17 @@ module dashboard demo_soak
             filter.events_top.limit = 200
             filter.idle_top.limit = 100
         end defaults
-        filter usage_date
-          bind date
-            column = usage_date
-            grain_filter = period_grain
-          end bind
-          show
-            label = "Report date"
-          end show
-        end filter
-        filter activity_slot
-          bind date
-            column = bucket_start_utc
-            single = true
-          end bind
-          show
-            label = "Day"
-            widget = day
-          end show
-        end filter
-        filter period_start
-          bind date
-            column = period_start
-          end bind
-          show
-            label = "Period start"
-            widget = day
-          end show
-        end filter
-        filter app_name
-          bind field
-            column = demo.v_daily_active_events.app_name
-          end bind
-          show
-            label = "Products"
-            widget = combobox
-          end show
-        end filter
-        filter user_name
-          bind field
-            column = demo.v_events_detail.user_id
-          end bind
-          show
-            label = "User"
-            widget = combobox
-          end show
-        end filter
-        filter period_grain
-          bind field
-            column = demo.v_peak_concurrent_by_period.period_grain
-          end bind
-          show
-            label = "Grain: day / month / year"
-            widget = combobox
-          end show
-        end filter
-        filter events_top
-          bind top
-          end bind
-          show
-            label = "Rows (TOP)"
-          end show
-        end filter
-        filter idle_top
-          bind top
-          end bind
-          show
-            label = "Rows (TOP)"
-          end show
-        end filter
+        filters
+            | id            | bind  | column                                        | label                     | widget   | grain        | single |
+            | usage_date    | date  | usage_date                                    | Report date               | -        | period_grain | -      |
+            | activity_slot | date  | bucket_start_utc                              | Day                       | day      | -            | true   |
+            | period_start  | date  | period_start                                  | Period start              | day      | -            | -      |
+            | app_name      | field | demo.v_daily_active_events.app_name           | Products                  | combobox | -            | -      |
+            | user_name     | field | demo.v_events_detail.user_id                  | User                      | combobox | -            | -      |
+            | period_grain  | field | demo.v_peak_concurrent_by_period.period_grain | Grain: day / month / year | combobox | -            | -      |
+            | events_top    | top   | -                                             | Rows (TOP)                | -        | -            | -      |
+            | idle_top      | top   | -                                             | Rows (TOP)                | -        | -            | -      |
+        end filters
         toolbar chrome
             layout = bar
             sticky = line

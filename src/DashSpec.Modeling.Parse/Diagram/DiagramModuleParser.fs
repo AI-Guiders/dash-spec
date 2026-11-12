@@ -103,6 +103,13 @@ module DiagramModuleParser =
                     elif reader.TryKeyword "inspect" then
                         statements.Add(InspectStatement(InspectPresentationParser.parse reader "diagram module"))
                         reader.SkipNewlines()
+                    elif reader.TryKeyword "namespace" || reader.TryKeyword "import" then
+                        while not (reader.IsOnNewline()) && not reader.IsEof do
+                            reader.Advance()
+                        reader.SkipNewlines()
+                    elif BlockSyntax.isBlockEnd reader "diagram" None then
+                        while not reader.IsEof do
+                            reader.Advance()
                     else
                         raise (reader.Unexpected())
 
@@ -113,7 +120,6 @@ module DiagramModuleParser =
 
     let parseDiagramModule (text: string) =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Diagram text is required."
-        let text = DashSpec.Modeling.Parse.Document.UnitSource.blankHeader text
         let reader = ParserUtilities.createReader text
         reader.SkipFileDirectives()
         reader.ExpectKeyword "module"

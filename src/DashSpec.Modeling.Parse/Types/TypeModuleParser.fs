@@ -97,7 +97,7 @@ module TypeModuleParser =
                     cu.Members
                     |> Array.exists (function DashSpecAstNode.ModuleDeclaration _ -> true | _ -> false)
                 if hasModule then
-                    (ModuleGrammar.unwrap DashSpecModuleKind.Types root).Body
+                    (UnitGrammar.unwrap DashSpecModuleKind.Types root).Body
                 else
                     cu.Members
             | _ -> DashSpecAst.members root

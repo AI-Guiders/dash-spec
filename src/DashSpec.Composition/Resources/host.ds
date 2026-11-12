@@ -2,8 +2,8 @@ module layout dashspec_default_shell
 namespace DashSpec.Default.Shell
 scope host
 
-grid
-[] [] [] [] [] [] [] [] [] [] [] []
+layout grid
+[] [] [] [] [] [] [] [] [] [] [] [] 
 end grid
 
 [ brand [] nav external_links help settings ]

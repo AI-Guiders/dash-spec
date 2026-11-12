@@ -26,9 +26,8 @@ module BlockGrammar =
         /// Bare `[] [] []` empty-cell rows at container level ([ADR-0111] §2: the grid is drawn with empty cells).
         /// Each row collects its length — how many `[]` tokens before the line ends.
         | RepeatingEmptyCellRows of rows: ResizeArray<int>
-        /// Bare `| a | b |` table rows at container level (GDL-table body; ADR-0004 deferred step family).
-        /// Collected verbatim; header row + cell semantics are the consumer's (TableLiteral).
-        | TableRowRows of rows: ResizeArray<string>
+        /// Typed table construct consumer: projects each table row directly into its domain object (`'Row`) as it is read.
+        | TableConstruct of consumer: Construct.TableConsumer
 
     let serializeColumnFormatMap (map: IReadOnlyDictionary<string, string>) =
         let sb = StringBuilder()
@@ -79,8 +78,8 @@ module BlockGrammar =
                 count <- count + 1
             rows.Add(count)
             true
-        | TableRowRows rows when reader.CurrentKind = TokenKind.TableRow ->
-            rows.Add(reader.CurrentTableRow())
+        | TableConstruct consumer when reader.CurrentKind = TokenKind.TableRow ->
+            consumer.ConsumeRow(reader.CurrentTableRow())
             reader.Advance()
             true
         | _ -> tryParseChild reader memberDef values
@@ -89,7 +88,7 @@ module BlockGrammar =
         match memberDef with
         | RepeatingBracketRows _ -> false
         | RepeatingEmptyCellRows _ -> false
-        | TableRowRows _ -> false
+        | TableConstruct _ -> false
         | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then
                 let map = MemberGrammar.parseStringMapBlock reader endKind blockName readValue
@@ -176,6 +175,12 @@ module BlockGrammar =
         reader.SkipNewlines()
         parseBody reader endKind blockName members values endId
         BlockSyntax.expectBlockEnd reader endKind endId
+
+        for memberDef in members do
+            match memberDef with
+            | TableConstruct consumer -> consumer.Complete()
+            | _ -> ()
+
         values
 
     let parseBracketContainer (reader: TokenReader) blockName (members: ContainerMember list) =

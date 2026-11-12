@@ -7,8 +7,16 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 module HostModuleParser =
+
+    let private unquote (raw: string) =
+        let t = raw.Trim()
+        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
+            t.Substring(1, t.Length - 2)
+        else
+            t
 
     let private importShellLayout (specDirectory: string option) (sourceOffset: int) (namespaceName: string) =
         match specDirectory with
@@ -40,97 +48,100 @@ module HostModuleParser =
             | _ ->
                 raise (DashSpecParseException($"Host imports more than one layouts unit from '{namespaceName}'.", sourceOffset))
 
-    let private parseLink (reader: TokenReader) =
-        let linkId = reader.ReadIdent()
-        if String.IsNullOrWhiteSpace linkId then
-            raise (DashSpecParseException("Host link requires an id."))
+    let private parseBoolCell (id: string) (col: string) (defaultValue: bool) (raw: string option) =
+        match raw with
+        | None -> defaultValue
+        | Some v when String.IsNullOrWhiteSpace v -> defaultValue
+        | Some v ->
+            match v.Trim().ToLowerInvariant() with
+            | "true" -> true
+            | "false" -> false
+            | other ->
+                raise (
+                    DashSpecParseException(
+                        $"links '{col}' for '{id}' must be true or false, got '{other}'."
+                    )
+                )
 
-        let mutable label = linkId
-        if reader.TryKeyword "as" then
-            label <- reader.ReadString()
+    let private linkDeclaration (addLink: HostLinkDefinition -> unit) : Construct.Declaration<HostLinkDefinition> =
+        let cellsToLink (m: Map<string, string>) : HostLinkDefinition =
+            match Construct.tryCell m "id" with
+            | Some rawId when not (String.IsNullOrWhiteSpace rawId) ->
+                let linkId = rawId.Trim()
 
-        let props =
-            BlockGrammar.parseKeywordContainer
-                reader
-                "link"
-                $"host link '{linkId}'"
-                [ BlockGrammar.SchemaProperties(PropertySchemas.hostLink, false, false) ]
-                (Some linkId)
+                let url =
+                    match Construct.tryCell m "url" with
+                    | Some u when not (String.IsNullOrWhiteSpace u) -> unquote u
+                    | _ -> raise (DashSpecParseException($"Host link '{linkId}' requires url."))
 
-        reader.SkipNewlines()
+                let label =
+                    match Construct.tryCell m "label" with
+                    | Some l when not (String.IsNullOrWhiteSpace l) -> unquote l
+                    | _ -> linkId
 
-        let url =
-            match props.TryGetValue "url" with
-            | true, value -> value
-            | false, _ -> ""
+                let target =
+                    match Construct.tryCell m "target" with
+                    | Some t when not (String.IsNullOrWhiteSpace t) -> unquote t
+                    | _ -> "_blank"
 
-        if String.IsNullOrWhiteSpace url then
-            raise (DashSpecParseException($"Host link '{linkId}' requires url."))
+                { Id = linkId
+                  Label = label
+                  Url = url
+                  Target = target
+                  Topbar = parseBoolCell linkId "topbar" true (Construct.tryCell m "topbar")
+                  Settings = parseBoolCell linkId "settings" true (Construct.tryCell m "settings") }
+            | _ -> raise (DashSpecParseException("links row requires a non-empty 'id' cell."))
 
-        let readBool (key: string) (defaultValue: bool) =
-            match props.TryGetValue key with
-            | true, value when String.IsNullOrWhiteSpace value -> defaultValue
-            | true, value -> not (value.Equals("false", StringComparison.OrdinalIgnoreCase))
-            | false, _ -> defaultValue
+        { Name = "links"
+          Vocabulary = [ "id"; "label"; "url"; "target"; "topbar"; "settings" ]
+          CellsToRow = cellsToLink
+          ConstructRow = addLink }
 
-        { Id = linkId
-          Label = label
-          Url = url
-          Target =
-            match props.TryGetValue "target" with
-            | true, value when not (String.IsNullOrWhiteSpace value) -> value
-            | _ -> "_blank"
-          Topbar = readBool "topbar" true
-          Settings = readBool "settings" true }
+    let private projectLinksBlock (block: BlockDeclarationSyntax) (links: ResizeArray<HostLinkDefinition>) =
+        let decl = linkDeclaration links.Add
+        let view = UnitGrammar.view block.Members
 
-    let private parseLinksBlock (reader: TokenReader) (links: ResizeArray<HostLinkDefinition>) =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-        while not (BlockSyntax.isBlockEnd reader "links" None) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "links" None then ()
-            elif reader.TryKeyword "link" then
-                links.Add(parseLink reader)
-            else
-                raise (reader.Unexpected())
-        BlockSyntax.expectBlockEnd reader "links" None
-        reader.SkipNewlines()
+        for child in view.Blocks do
+            match child.Opener with
+            | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Link, linkId) ->
+                let label = DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration child) |> Option.defaultValue linkId
+                let _ =
+                    PropertyBlockParser.projectPropertiesFromAst
+                        child.Members
+                        PropertySchemas.hostLink
+                        $"host link '{linkId}'"
+                        false
+                let form = Construct.fromAstBlock [ "id", linkId; "label", label ] child
+                Construct.apply decl form
+            | _ ->
+                let headerText = child.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Unexpected block '{headerText}' in host links."))
 
-    let private parseSurfacesBlock (reader: TokenReader) (surfaces: ResizeArray<string>) =
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
-        while not (BlockSyntax.isBlockEnd reader "surfaces" None) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "surfaces" None then ()
-            elif reader.TryKeyword "show" then
-                let mutable continueItems = true
-                while continueItems && not (reader.IsOnNewline()) && not reader.IsEof do
-                    if reader.RawKind = TokenKind.Ident then
-                        surfaces.Add(reader.ReadIdentSameLine())
-                    if reader.IsAt TokenKind.Comma then
-                        reader.Advance()
-                    else
-                        continueItems <- false
-                reader.SkipNewlines()
-            else
-                raise (reader.Unexpected())
-        BlockSyntax.expectBlockEnd reader "surfaces" None
-        reader.SkipNewlines()
+        match Construct.tryFromAstTable block.Members with
+        | Some tableForm -> Construct.apply decl tableForm
+        | None -> ()
+
+    let private projectSurfacesBlock (block: BlockDeclarationSyntax) (surfaces: ResizeArray<string>) =
+        let view = UnitGrammar.view block.Members
+        for node in view.Body do
+            let tokens = DashSpecAst.tokens node |> Array.filter (fun t -> t.LexKind <> TokenKind.LineComment && t.LexKind <> TokenKind.BlockComment)
+            match Array.toList tokens with
+            | { LexKind = TokenKind.Ident; Text = kw } :: rest when String.Equals(kw, "show", StringComparison.OrdinalIgnoreCase) ->
+                for tok in rest do
+                    if tok.LexKind = TokenKind.Ident then
+                        surfaces.Add tok.Text
+                    elif tok.LexKind <> TokenKind.Comma then
+                        raise (DashSpecParseException($"Unexpected token '{tok.Text}' in host surfaces."))
+            | other ->
+                let text = other |> List.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Unexpected statement '{text}' in host surfaces."))
 
     let parse (text: string) (specDirectory: string option) : HostDocument =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Host text is required."
 
-        let reader = ParserUtilities.createReader text
-        reader.SkipFileDirectives()
-        reader.SkipNewlines()
-        reader.ExpectKeyword "module"
-        reader.ExpectKeyword "host"
-        let hostId = reader.ReadIdent()
-        if String.IsNullOrWhiteSpace hostId then
-            raise (DashSpecParseException("@host module requires @host <id>."))
-
-        BlockSyntax.beginBlock reader
-        reader.SkipNewlines()
+        let tree = DashSpecSurfaceSyntax.parse text
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Host tree.Root
+        let hostId = env.Id
 
         let mutable catalogPath = ""
         let configuration = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -140,79 +151,45 @@ module HostModuleParser =
         let surfaces = ResizeArray<string>()
         let mutable shellLayout = None
 
-        while not (BlockSyntax.isBlockEnd reader "host" (Some hostId)) && not reader.IsEof do
-            reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "host" (Some hostId) then ()
-            elif reader.TryKeyword "catalog" then
-                catalogPath <- reader.ReadString()
-                reader.SkipNewlines()
-            elif reader.TryKeyword "configuration" then
-                let props =
-                    PropertyBlockParser.parse
-                        reader
-                        PropertySchemas.hostConfiguration
-                        "configuration"
-                        false
-                        false
-                for kv in props do
-                    configuration.[kv.Key] <- kv.Value
-                reader.SkipNewlines()
-            elif reader.TryKeyword "presentation" then
-                let props =
-                    PropertyBlockParser.parse
-                        reader
-                        PropertySchemas.hostPresentation
-                        "presentation"
-                        false
-                        false
-                for kv in props do
-                    presentation.[kv.Key] <- kv.Value
-                reader.SkipNewlines()
-            elif reader.TryKeyword "menu" then
-                // Menu policy (ADR-0073 nav surface): rides to the shell chrome
-                // as menu_-prefixed presentation keys.
-                let props =
-                    PropertyBlockParser.parse
-                        reader
-                        PropertySchemas.hostMenu
-                        "menu"
-                        false
-                        false
-                for kv in props do
-                    presentation.[$"menu_{kv.Key}"] <- kv.Value
-                reader.SkipNewlines()
-            elif reader.TryKeyword "host" then
-                // Settings home block (ADR-0112 §6): nested `host … end host` — the first
-                // `end host` closes the block, the module's own one closes the module.
-                let props =
-                    PropertyBlockParser.parse
-                        reader
-                        PropertySchemas.hostSettings
-                        "host"
-                        false
-                        false
-                for kv in props do
-                    hostSettings.[kv.Key] <- kv.Value
-                reader.SkipNewlines()
-            elif reader.TryKeyword "links" then
-                parseLinksBlock reader links
-            elif reader.TryKeyword "surfaces" then
-                parseSurfacesBlock reader surfaces
-            elif reader.TryKeyword "import" then
-                let sourceOffset = reader.CurrentOffset
-                let kind = reader.ReadIdent()
-                reader.ExpectKeyword "from"
-                let namespaceName = AccessorGrammar.readQualifiedName reader
+        for imp in env.Imports do
+            let kind = imp.Kind |> Option.defaultValue ""
+            if not (String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase)) then
+                raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}.", imp.Span.Start))
+            shellLayout <- Some(importShellLayout specDirectory imp.Span.Start imp.Target)
 
-                if not (String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase)) then
-                    raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}.", sourceOffset))
-
-                shellLayout <- Some(importShellLayout specDirectory sourceOffset namespaceName)
-                reader.SkipNewlines()
-            else
-                raise (reader.Unexpected())
-
-        BlockSyntax.expectBlockEnd reader "host" (Some hostId)
+        for node in env.View.Body do
+            match node with
+            | DashSpecAstNode.ClauseDeclaration c ->
+                match c.Kind with
+                | ClauseKind.DirectiveClause("catalog", args) when args.Length >= 1 ->
+                    catalogPath <- unquote args.[0]
+                | _ ->
+                    let text = c.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected clause '{text}' in host '{hostId}'."))
+            | DashSpecAstNode.BlockDeclaration b ->
+                match b.Opener with
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Configuration ->
+                    for kv in PropertyBlockParser.projectPropertiesFromAst b.Members PropertySchemas.hostConfiguration "configuration" false do
+                        configuration.[kv.Key] <- kv.Value
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Presentation ->
+                    for kv in PropertyBlockParser.projectPropertiesFromAst b.Members PropertySchemas.hostPresentation "presentation" false do
+                        presentation.[kv.Key] <- kv.Value
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Menu ->
+                    for kv in PropertyBlockParser.projectPropertiesFromAst b.Members PropertySchemas.hostMenu "menu" false do
+                        presentation.[$"menu_{kv.Key}"] <- kv.Value
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Host ->
+                    for kv in PropertyBlockParser.projectPropertiesFromAst b.Members PropertySchemas.hostSettings "host" false do
+                        hostSettings.[kv.Key] <- kv.Value
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Links ->
+                    projectLinksBlock b links
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Surfaces ->
+                    projectSurfacesBlock b surfaces
+                | _ ->
+                    let headerText = b.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected block '{headerText}' in host '{hostId}'."))
+            | other ->
+                let text = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
+                raise (DashSpecParseException($"Unexpected statement '{text}' in host '{hostId}'."))
 
         if String.IsNullOrWhiteSpace catalogPath then
             raise (DashSpecParseException($"@host '{hostId}' requires catalog \"path/to-catalog.ds\"."))
