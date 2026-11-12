@@ -145,6 +145,7 @@ module DashSpecConceptOntology =
             | TableRowKind.When w -> $"when {w.State}"
             | TableRowKind.Click c -> $"click {c.Source}"
             | TableRowKind.Column c -> $"column {c.Id}"
+            | TableRowKind.CatalogEntry e -> $"entry {e.Id}"
             | TableRowKind.Generic _ -> "table row"
 
     let treeCaption (tier: DashSpecConceptTier) =

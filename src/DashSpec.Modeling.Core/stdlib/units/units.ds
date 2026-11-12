@@ -1,4 +1,8 @@
+module registry units
+namespace DashSpec.Stdlib.Units
+
 | unit         | import_as     | role        |
+| registry     | registries    | declaration |
 | types        | types         | declaration |
 | layout       | layouts       | declaration |
 | presentation | presentations | declaration |
@@ -11,3 +15,5 @@
 | dashboard    | -             | root        |
 | catalog      | -             | root        |
 | host         | -             | root        |
+
+end registry

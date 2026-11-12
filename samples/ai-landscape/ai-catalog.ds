@@ -1,6 +1,5 @@
 ﻿module catalog ai_landscape
+default = ai_report
 
-    default ai_report
-
-    entry ai_report as "AI Landscape 2023-2024"
-    dashspec "ai-report.ds"
+| id        | title                  | dashspec     |
+| ai_report | AI Landscape 2023-2024 | ai-report.ds |

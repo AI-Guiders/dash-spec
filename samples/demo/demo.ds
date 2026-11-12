@@ -1,19 +1,13 @@
 module host demo
 import layouts from Demo.Layouts
 
-catalog "demo-catalog.ds"
-
-host
-  language = "ru-RU"
-  display_timezone = "Europe/Moscow"
-  product_title = "DashSpec Demo"
-  catalog_label = "Отчёт"
-  color_scheme = dark
-  render = selfmade
-end host
-
-surfaces
-  show help, settings, spec_dev
-end surfaces
+catalog = "demo-catalog.ds"
+language = "ru-RU"
+display_timezone = "Europe/Moscow"
+product_title = "DashSpec Demo"
+catalog_label = "Отчёт"
+color_scheme = dark
+render = selfmade
+surfaces = [help, settings, spec_dev]
 
 end host

@@ -35,8 +35,9 @@ module DashSpecSurfaceSyntax =
         | Port of role: PortDeclRole * shape: PortShapeSyntax option * portName: string * valueType: string option * defaultValue: string option * columnBinding: string option
         | FlowLink of fromNode: string * fromPort: string option * toNode: string * toPort: string option
         | Clause of kind: ClauseKind
-        | GridRow of typedCells: GridCellSyntax[] * cells: string[]
+        | GridRow of kind: GridRowKind * typedCells: GridCellSyntax[] * cells: string[]
         | TableRow of kind: TableRowKind * cells: string[]
+        | CustomNode of node: DashSpecAstNode
         | Line
         | BlankLine
 
@@ -340,10 +341,11 @@ module DashSpecSurfaceSyntax =
                   Span = span
                   Kind = kind
                   Tokens = node.Tokens }
-        | NodePayload.GridRow(typedCells, cells) ->
+        | NodePayload.GridRow(kind, typedCells, cells) ->
             DashSpecAstNode.GridRowDeclaration
                 { Id = node.Id
                   Span = span
+                  Kind = kind
                   TypedCells = typedCells
                   Cells = cells
                   Tokens = node.Tokens }
@@ -354,6 +356,7 @@ module DashSpecSurfaceSyntax =
                   Kind = kind
                   Cells = cells
                   Tokens = node.Tokens }
+        | NodePayload.CustomNode custom -> custom
         | NodePayload.Line -> DashSpecAstNode.Line { Id = node.Id; Span = span; Tokens = node.Tokens }
         | NodePayload.BlankLine -> DashSpecAstNode.BlankLine { Id = node.Id; Span = span }
 
@@ -842,9 +845,9 @@ module DashSpecSurfaceSyntax =
                 | Some(fromNode, fromPort), Some(toNode, toPort) -> Some(fromNode, fromPort, toNode, toPort)
                 | _ -> None
 
-    /// <summary>Grid drawing row (ADR-0111 §2 / ADR-0130): `[ ref:weight ] [ ]` —
-    /// the empty cell is one whole `[]` token; cells carry both structured `GridCellSyntax` and raw text.</summary>
-    let private tryParseGridRowLine (tokens: Token list) : (GridCellSyntax[] * string[]) option =
+    /// <summary>Grid drawing row (ADR-0111 §2 / ADR-0130 / ADR-0131): `[ ref:weight ] [ ]` —
+    /// first-class `GridRowKind` (`RulerRow` vs `BoardRow`) and `GridCellTarget` (`EmptySlot` vs `Slot`).</summary>
+    let private tryParseGridRowLine (tokens: Token list) : (GridRowKind * GridCellSyntax[] * string[]) option =
         let sigTokens = significantTokens tokens
 
         match sigTokens with
@@ -852,10 +855,10 @@ module DashSpecSurfaceSyntax =
             if sigTokens |> List.forall (fun t -> t.Kind = TokenKind.EmptyCell) then
                 let typed =
                     sigTokens
-                    |> List.map (fun t -> { Target = t.Value; Weight = None })
+                    |> List.map (fun _ -> { Target = GridCellTarget.EmptySlot; Weight = None })
                     |> Array.ofList
                 let raw = sigTokens |> List.map (fun t -> t.Value) |> Array.ofList
-                Some(typed, raw)
+                Some(GridRowKind.RulerRow typed.Length, typed, raw)
             else
                 None
         | { Kind = TokenKind.LBracket } :: _ ->
@@ -870,30 +873,30 @@ module DashSpecSurfaceSyntax =
                     index <- index + 1
 
                     while ok && index < sigTokens.Length && sigTokens.[index].Kind <> TokenKind.RBracket do
-                        let readWeightAndAppend (target: string) =
-                            let mutable rawCell = target
+                        let readWeightAndAppend (cellTarget: GridCellTarget) (targetText: string) =
+                            let mutable rawCell = targetText
                             let mutable weightOpt: int option = None
 
                             if index + 1 < sigTokens.Length
                                && sigTokens.[index].Kind = TokenKind.Colon
                                && sigTokens.[index + 1].Kind = TokenKind.Ident then
                                 let weightText = sigTokens.[index + 1].Value
-                                rawCell <- target + ":" + weightText
+                                rawCell <- targetText + ":" + weightText
                                 match Int32.TryParse weightText with
                                 | true, w -> weightOpt <- Some w
                                 | _ -> ()
                                 index <- index + 2
 
-                            typedCells.Add { Target = target; Weight = weightOpt }
+                            typedCells.Add { Target = cellTarget; Weight = weightOpt }
                             rawCells.Add rawCell
 
                         match sigTokens.[index] with
                         | { Kind = TokenKind.EmptyCell; Value = empty } ->
                             index <- index + 1
-                            readWeightAndAppend empty
+                            readWeightAndAppend GridCellTarget.EmptySlot empty
                         | { Kind = TokenKind.Ident; Value = name } ->
                             index <- index + 1
-                            readWeightAndAppend name
+                            readWeightAndAppend (GridCellTarget.Slot(DotSyntax.parse name)) name
                         | _ -> ok <- false
 
                     if not ok || index >= sigTokens.Length || sigTokens.[index].Kind <> TokenKind.RBracket then
@@ -902,7 +905,11 @@ module DashSpecSurfaceSyntax =
                         index <- index + 1
                 | _ -> ok <- false
 
-            if ok && typedCells.Count > 0 then Some(typedCells.ToArray(), rawCells.ToArray()) else None
+            if ok && typedCells.Count > 0 then
+                let cellsArr = typedCells.ToArray()
+                Some(GridRowKind.BoardRow cellsArr, cellsArr, rawCells.ToArray())
+            else
+                None
         | _ -> None
 
     /// <summary>Table row (ADR-0130): `| a | b |` — one TableRow token, cells split on `|`.</summary>
@@ -987,6 +994,14 @@ module DashSpecSurfaceSyntax =
                       Sorting = tryAttr "sorting"
                       Alignment = tryAttr "alignment"
                       HeaderAlignment = tryAttr "header_alignment" }
+            | _ when Map.containsKey "dashspec" attrs ->
+                let id = tryAttr "id" |> Option.defaultValue ""
+                TableRowKind.CatalogEntry
+                    { Id = id
+                      Title = tryAttr "title" |> Option.orElse (tryAttr "label") |> Option.defaultValue id
+                      DashspecPath = tryAttr "dashspec" |> Option.defaultValue ""
+                      Section = tryAttr "section"
+                      Page = tryAttr "page" }
             | _ ->
                 TableRowKind.Generic attrs
 
@@ -1072,6 +1087,25 @@ module DashSpecSurfaceSyntax =
 
         mkNode payload (nextId id) line.Span (lineSyntaxTokens text allTokens line)
 
+    /// Context passed to a registered surface line-grammar plugin.
+    type LineGrammarContext =
+        { ContainerOpener: DashSpecBlockOpener option
+          NodeId: NodeId
+          Span: TextSpan
+          RawTokens: Token list
+          SyntaxTokens: SyntaxToken[] }
+
+    type LineGrammarDescriptor =
+        { Id: string
+          TryParse: LineGrammarContext -> DashSpecAstNode option }
+
+    let private customLineGrammars = Dictionary<string, LineGrammarDescriptor>(StringComparer.OrdinalIgnoreCase)
+
+    /// Register or replace a pluggable line-grammar contributor in the surface syntax microkernel.
+    let registerLineGrammar (descriptor: LineGrammarDescriptor) =
+        if not (String.IsNullOrWhiteSpace descriptor.Id) then
+            customLineGrammars.[descriptor.Id.Trim()] <- descriptor
+
     let private appendContentNode (container: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) =
         if isTypeParent container then
             match tryParseTypeFieldLine line.Tokens with
@@ -1095,50 +1129,96 @@ module DashSpecSurfaceSyntax =
                     container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
         else
             let syntaxTokens = lineSyntaxTokens text allTokens line
-
-            let gridRow =
-                match line.Tokens |> significantTokens |> List.tryHead |> Option.map (fun t -> t.Kind) with
-                | Some TokenKind.LBracket
-                | Some TokenKind.EmptyCell -> tryParseGridRowLine line.Tokens
+            let containerOpener =
+                match container.Payload with
+                | NodePayload.Block(opener, _, _) -> Some opener
                 | _ -> None
 
-            let tableRow =
-                if gridRow.IsNone
-                   && line.Tokens |> List.exists (fun t -> t.Kind = TokenKind.TableRow) then
-                    tryParseTableRowLine line.Tokens
-                else
+            let customHit =
+                if customLineGrammars.Count = 0 then
                     None
-
-            let linkLine =
-                if line.Tokens |> List.exists (fun t -> t.Kind = TokenKind.FlowArrow) then
-                    tryParseFlowLinkLine line.Tokens
                 else
-                    None
+                    let candidateId = nextId id
+                    let ctx =
+                        { ContainerOpener = containerOpener
+                          NodeId = candidateId
+                          Span = line.Span
+                          RawTokens = line.Tokens
+                          SyntaxTokens = syntaxTokens }
+                    customLineGrammars.Values |> Seq.tryPick (fun g -> g.TryParse ctx)
 
-            match gridRow with
-            | Some(typedCells, cells) ->
-                container.Children.Add(mkNode (NodePayload.GridRow(typedCells, cells)) (nextId id) line.Span syntaxTokens)
+            match customHit with
+            | Some customNode ->
+                container.Children.Add(mkNode (NodePayload.CustomNode customNode) (DashSpecAst.id customNode) line.Span syntaxTokens)
             | None ->
+                let tableRow =
+                    if line.Tokens |> List.exists (fun t -> t.Kind = TokenKind.TableRow) then
+                        tryParseTableRowLine line.Tokens
+                    else
+                        None
+
                 match tableRow with
                 | Some cells ->
                     let rowKind = classifyTableRow container cells
                     container.Children.Add(mkNode (NodePayload.TableRow(rowKind, cells)) (nextId id) line.Span syntaxTokens)
                 | None ->
-                    match linkLine with
-                    | Some(fromNode, fromPort, toNode, toPort) ->
-                        container.Children.Add(
-                            mkNode (NodePayload.FlowLink(fromNode, fromPort, toNode, toPort)) (nextId id) line.Span syntaxTokens)
+                    match tryParseClauseLine line.Tokens with
+                    | Some kind ->
+                        container.Children.Add(mkNode (NodePayload.Clause kind) (nextId id) line.Span syntaxTokens)
                     | None ->
-                        match tryParseClauseLine line.Tokens with
-                        | Some kind ->
-                            container.Children.Add(mkNode (NodePayload.Clause kind) (nextId id) line.Span syntaxTokens)
+                        match tryParsePropertyLine syntaxTokens with
+                        | Some(key, valueText, keyTokens, eqToken, valueTokens) ->
+                            container.Children.Add(
+                                mkNode (NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens)) (nextId id) line.Span syntaxTokens)
                         | None ->
-                            match tryParsePropertyLine syntaxTokens with
-                            | Some(key, valueText, keyTokens, eqToken, valueTokens) ->
-                                container.Children.Add(
-                                    mkNode (NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens)) (nextId id) line.Span syntaxTokens)
-                            | None ->
-                                container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
+                            container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
+
+    do
+        // Register the bracket/grid layout line grammar (`[] [] …` and `[ ref:weight [] … ]`) as a modular line-grammar plugin.
+        registerLineGrammar
+            { Id = "layout.grid_row"
+              TryParse = fun ctx ->
+                  match ctx.RawTokens |> significantTokens |> List.tryHead |> Option.map (fun t -> t.Kind) with
+                  | Some TokenKind.LBracket
+                  | Some TokenKind.EmptyCell ->
+                      match tryParseGridRowLine ctx.RawTokens with
+                      | Some(kind, typedCells, cells) ->
+                          Some(
+                              DashSpecAstNode.GridRowDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Kind = kind
+                                    TypedCells = typedCells
+                                    Cells = cells
+                                    Tokens = ctx.SyntaxTokens })
+                      | None -> None
+                  | _ -> None }
+
+        // Register the flow arrow line grammar (`producer [out] -> [in] consumer`) as a modular line-grammar plugin.
+        registerLineGrammar
+            { Id = "flow.arrow_link"
+              TryParse = fun ctx ->
+                  if ctx.RawTokens |> List.exists (fun t -> t.Kind = TokenKind.FlowArrow) then
+                      match tryParseFlowLinkLine ctx.RawTokens with
+                      | Some(fromNode, fromPort, toNode, toPort) ->
+                          let sourceEndpoint = FlowEndpointSyntax.create fromNode fromPort
+                          let targetEndpoint = FlowEndpointSyntax.create toNode toPort
+                          Some(
+                              DashSpecAstNode.FlowLinkDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Source = sourceEndpoint
+                                    Target = targetEndpoint
+                                    FromPath = sourceEndpoint.Path
+                                    FromNode = fromNode
+                                    FromPort = fromPort
+                                    ToPath = targetEndpoint.Path
+                                    ToNode = toNode
+                                    ToPort = toPort
+                                    Tokens = ctx.SyntaxTokens })
+                      | None -> None
+                  else
+                      None }
 
     /// If a block opener line carries inline body tokens after `{` (e.g. `transform use to_zone { zone = UTC+3 }`
     /// or `transform use summarize { by = app_name`), extract that inline slice as a virtual PhysicalLine

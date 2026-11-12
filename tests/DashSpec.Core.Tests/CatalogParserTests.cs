@@ -61,6 +61,36 @@ public sealed class CatalogParserTests
     }
 
     [Fact]
+    public void Parse_tabular_catalog_with_groups_and_default_property()
+    {
+        const string text = """
+            module catalog demo
+            default = soak
+
+            | id   | title    | dashspec     | section  |
+            | soak | Dev Soak | demo-soak.ds | overview |
+
+            group extra
+              title = "Extra"
+
+              | id        | title     | dashspec          |
+              | analytics | Analytics | demo-analytics.ds |
+            end group
+            """;
+
+        var catalog = CatalogReader.Parse(text);
+
+        Assert.Equal("demo", catalog.Id);
+        Assert.Equal("soak", catalog.DefaultEntryId);
+        Assert.Equal(2, catalog.Entries.Count);
+        Assert.Equal("Dev Soak", catalog.Entries[0].Title);
+        Assert.Equal("overview", catalog.Entries[0].InitialTabId!.Value);
+        Assert.Equal("extra", catalog.Entries[1].GroupId!.Value);
+        Assert.Single(catalog.Groups!.Value);
+        Assert.Equal("Extra", catalog.Groups.Value[0].Title);
+    }
+
+    [Fact]
     public void Parse_rejects_duplicate_entry_id()
     {
         const string text = """

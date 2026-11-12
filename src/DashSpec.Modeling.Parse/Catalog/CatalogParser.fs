@@ -16,6 +16,47 @@ module CatalogParser =
         else
             t
 
+    let private entryDeclaration
+        (groupId: string option)
+        (addEntry: CatalogEntryDefinition -> unit)
+        : Construct.Declaration<CatalogEntryDefinition>
+        =
+        let cellsToEntry (m: Map<string, string>) : CatalogEntryDefinition =
+            match Construct.tryCell m "id" with
+            | Some rawId when not (String.IsNullOrWhiteSpace rawId) ->
+                let id = (unquote rawId).Trim()
+                let title =
+                    Construct.tryCell m "title"
+                    |> Option.orElse (Construct.tryCell m "label")
+                    |> Option.map unquote
+                    |> Option.filter (fun s -> not (String.IsNullOrWhiteSpace s))
+                    |> Option.defaultValue id
+                let dashspecPath =
+                    match Construct.tryCell m "dashspec" with
+                    | Some p when not (String.IsNullOrWhiteSpace(unquote p)) -> unquote p
+                    | _ -> raise (DashSpecParseException($"Catalog entry '{id}' requires dashspec path."))
+                let section =
+                    Construct.tryCell m "section"
+                    |> Option.map unquote
+                    |> Option.filter (fun s -> not (String.IsNullOrWhiteSpace s) && s <> "-")
+                let page =
+                    Construct.tryCell m "page"
+                    |> Option.map unquote
+                    |> Option.filter (fun s -> not (String.IsNullOrWhiteSpace s) && s <> "-")
+                { Id = id
+                  Title = title
+                  DashspecPath = dashspecPath
+                  GroupId = groupId
+                  InitialTabId = section
+                  InitialPageId = page }
+            | _ ->
+                raise (DashSpecParseException("Catalog entry requires an id."))
+
+        { Name = "catalog"
+          Vocabulary = [ "id"; "title"; "label"; "dashspec"; "section"; "page" ]
+          CellsToRow = cellsToEntry
+          ConstructRow = addEntry }
+
     let rec private projectScopeEntries
         (members: DashSpecAstNode[])
         (groupId: string option)
@@ -110,8 +151,23 @@ module CatalogParser =
                 pendingTokens.Clear()
                 parseFlatTokens toks
 
+        let decl = entryDeclaration groupId entries.Add
+
+        match Construct.tryFromAstTable members with
+        | Some tableForm -> Construct.apply decl tableForm
+        | None -> ()
+
         let rec collectNode (node: DashSpecAstNode) =
             match node with
+            | DashSpecAstNode.TableRowDeclaration _ -> ()
+            | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "default", StringComparison.OrdinalIgnoreCase) ->
+                flushPending ()
+                if groupId.IsSome then
+                    raise (DashSpecParseException("Catalog 'default' is only allowed at module scope."))
+                let v = (unquote p.ValueText).Trim()
+                if String.IsNullOrWhiteSpace v then
+                    raise (DashSpecParseException("Catalog default requires an entry id."))
+                defaultEntryId <- Some v
             | DashSpecAstNode.BlockDeclaration b ->
                 match b.Opener with
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Group, gId) ->
@@ -121,7 +177,9 @@ module CatalogParser =
                     if groups |> Seq.exists (fun g -> String.Equals(g.Id, gId, StringComparison.OrdinalIgnoreCase)) then
                         raise (DashSpecParseException($"Catalog declares duplicate group id '{gId}'."))
 
-                    let mutable groupTitle = gId
+                    let mutable groupTitle =
+                        DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b)
+                        |> Option.defaultValue gId
                     let innerMembers = ResizeArray<DashSpecAstNode>()
 
                     for child in (UnitGrammar.view b.Members).Body do
@@ -133,6 +191,12 @@ module CatalogParser =
 
                     projectScopeEntries (innerMembers.ToArray()) (Some gId) entries groups |> ignore
                     groups.Add({ Id = gId; Title = groupTitle })
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, entryId)
+                    when String.Equals(kw, "entry", StringComparison.OrdinalIgnoreCase) ->
+                    flushPending ()
+                    let title = DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b) |> Option.defaultValue entryId
+                    let form = Construct.fromAstBlock [ "id", entryId; "title", title ] b
+                    Construct.apply decl form
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, _)
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, _) ->
                     for tok in b.Tokens do

@@ -121,20 +121,79 @@ module HostModuleParser =
         | Some tableForm -> Construct.apply decl tableForm
         | None -> ()
 
+    let private parseSurfaceItems (prop: PropertySyntax) (surfaces: ResizeArray<string>) =
+        match prop.Value with
+        | PropertyValueSyntax.BracketList items
+        | PropertyValueSyntax.CommaList items ->
+            for item in items do
+                let trimmed = (unquote item.Text).Trim()
+                if not (String.IsNullOrWhiteSpace trimmed) then
+                    surfaces.Add trimmed
+        | _ ->
+            for part in prop.ValueText.Trim().TrimStart('[').TrimEnd(']').Split(',', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries) do
+                let trimmed = (unquote part).Trim()
+                if not (String.IsNullOrWhiteSpace trimmed) then
+                    surfaces.Add trimmed
+
     let private projectSurfacesBlock (block: BlockDeclarationSyntax) (surfaces: ResizeArray<string>) =
         let view = UnitGrammar.view block.Members
         for node in view.Body do
-            let tokens = DashSpecAst.tokens node |> Array.filter (fun t -> t.LexKind <> TokenKind.LineComment && t.LexKind <> TokenKind.BlockComment)
-            match Array.toList tokens with
-            | { LexKind = TokenKind.Ident; Text = kw } :: rest when String.Equals(kw, "show", StringComparison.OrdinalIgnoreCase) ->
-                for tok in rest do
-                    if tok.LexKind = TokenKind.Ident then
-                        surfaces.Add tok.Text
-                    elif tok.LexKind <> TokenKind.Comma then
-                        raise (DashSpecParseException($"Unexpected token '{tok.Text}' in host surfaces."))
-            | other ->
-                let text = other |> List.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"Unexpected statement '{text}' in host surfaces."))
+            match node with
+            | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "show", StringComparison.OrdinalIgnoreCase) ->
+                parseSurfaceItems p surfaces
+            | _ ->
+                let tokens = DashSpecAst.tokens node |> Array.filter (fun t -> t.LexKind <> TokenKind.LineComment && t.LexKind <> TokenKind.BlockComment)
+                match Array.toList tokens with
+                | { LexKind = TokenKind.Ident; Text = kw } :: rest when String.Equals(kw, "show", StringComparison.OrdinalIgnoreCase) ->
+                    for tok in rest do
+                        if tok.LexKind = TokenKind.Ident then
+                            surfaces.Add tok.Text
+                        elif tok.LexKind <> TokenKind.Comma then
+                            raise (DashSpecParseException($"Unexpected token '{tok.Text}' in host surfaces."))
+                | other ->
+                    let text = other |> List.map (fun t -> t.Text) |> String.concat " "
+                    raise (DashSpecParseException($"Unexpected statement '{text}' in host surfaces."))
+
+    let private applyHostProperty
+        (key: string)
+        (rawVal: string)
+        (propNode: PropertySyntax option)
+        (catalogPath: string byref)
+        (configuration: Dictionary<string, string>)
+        (presentation: Dictionary<string, string>)
+        (hostSettings: Dictionary<string, string>)
+        (surfaces: ResizeArray<string>)
+        =
+        let k = key.Trim().ToLowerInvariant()
+        let v = unquote rawVal
+        match k with
+        | "catalog" ->
+            catalogPath <- v
+        | "surfaces" ->
+            match propNode with
+            | Some p -> parseSurfaceItems p surfaces
+            | None ->
+                for part in v.TrimStart('[').TrimEnd(']').Split(',', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries) do
+                    surfaces.Add(unquote part)
+        | "language"
+        | "display_timezone" ->
+            configuration.[k] <- v
+            hostSettings.[k] <- v
+        | "product_title"
+        | "catalog_label"
+        | "color_scheme"
+        | "large_field_filter_layout"
+        | "render" ->
+            presentation.[k] <- v
+            hostSettings.[k] <- v
+        | "provider_default" ->
+            hostSettings.[k] <- v
+        | "sections"
+        | "collapse_duplicate" ->
+            presentation.[$"menu_{k}"] <- v
+            hostSettings.[k] <- v
+        | _ ->
+            raise (DashSpecParseException($"Unknown property '{key}' in host module."))
 
     let parse (text: string) (specDirectory: string option) : HostDocument =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Host text is required."
@@ -159,6 +218,8 @@ module HostModuleParser =
 
         for node in env.View.Body do
             match node with
+            | DashSpecAstNode.PropertyAssignment p ->
+                applyHostProperty p.Key p.ValueText (Some p) &catalogPath configuration presentation hostSettings surfaces
             | DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | ClauseKind.DirectiveClause("catalog", args) when args.Length >= 1 ->
@@ -179,7 +240,7 @@ module HostModuleParser =
                         presentation.[$"menu_{kv.Key}"] <- kv.Value
                 | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Host ->
                     for kv in PropertyBlockParser.projectPropertiesFromAst b.Members PropertySchemas.hostSettings "host" false do
-                        hostSettings.[kv.Key] <- kv.Value
+                        applyHostProperty kv.Key kv.Value None &catalogPath configuration presentation hostSettings surfaces
                 | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Links ->
                     projectLinksBlock b links
                 | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Surfaces ->
@@ -192,7 +253,7 @@ module HostModuleParser =
                 raise (DashSpecParseException($"Unexpected statement '{text}' in host '{hostId}'."))
 
         if String.IsNullOrWhiteSpace catalogPath then
-            raise (DashSpecParseException($"@host '{hostId}' requires catalog \"path/to-catalog.ds\"."))
+            raise (DashSpecParseException($"@host '{hostId}' requires catalog = \"path/to-catalog.ds\"."))
 
         { Id = hostId
           CatalogPath = catalogPath

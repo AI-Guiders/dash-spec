@@ -124,6 +124,34 @@ public sealed class HostModuleParserTests
     }
 
     [Fact]
+    public void Parse_host_with_flat_properties_and_catalog_assignment()
+    {
+        const string text = """
+            module host demo
+
+            catalog = "catalogs/demo.ds"
+            language = "ru-RU"
+            display_timezone = "Europe/Moscow"
+            product_title = "Demo"
+            catalog_label = "Отчёт"
+            color_scheme = dark
+            render = radzen
+            surfaces = [help, settings, spec_dev]
+
+            end host
+            """;
+
+        var host = HostModuleParser.Parse(text, @"D:\planet\dashspec");
+
+        Assert.Equal("demo", host.Id);
+        Assert.Equal("catalogs/demo.ds", host.CatalogPath);
+        Assert.Equal("ru-RU", host.Configuration["language"]);
+        Assert.Equal("Demo", host.Presentation["product_title"]);
+        Assert.Equal("radzen", host.Presentation["render"]);
+        Assert.Equal(["help", "settings", "spec_dev"], host.Surfaces);
+    }
+
+    [Fact]
     public void Parse_host_rejects_missing_catalog()
     {
         const string text = """

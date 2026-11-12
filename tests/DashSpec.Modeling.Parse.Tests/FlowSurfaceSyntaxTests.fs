@@ -218,3 +218,66 @@ end flow
                 | _ -> None)
 
         Assert.Equal<string * string>([| ("by", "app_name"); ("agg", "count") |], props)
+
+    [<Fact>]
+    let ``Surface syntax parses first-class GridRowKind (RulerRow vs BoardRow) and GridCellTarget`` () =
+        let src =
+            """
+module layout demo_layout
+scope = section
+
+layout grid
+[] [] [] []
+end grid
+
+[ kpi_a:2 [] kpi_b:1 ]
+"""
+
+        let tree = DashSpecSurfaceSyntax.parse src
+
+        let gridRows =
+            DashSpecAst.descendants tree.Root
+            |> Seq.choose (function
+                | DashSpecAstNode.GridRowDeclaration r -> Some r
+                | _ -> None)
+            |> Seq.toArray
+
+        Assert.Equal(2, gridRows.Length)
+        Assert.Equal(GridRowKind.RulerRow 4, gridRows.[0].Kind)
+
+        match gridRows.[1].Kind with
+        | GridRowKind.BoardRow cells ->
+            Assert.Equal(3, cells.Length)
+            Assert.Equal(GridCellTarget.Slot(DotSyntax.Ident "kpi_a"), cells.[0].Target)
+            Assert.Equal(Some 2, cells.[0].Weight)
+            Assert.Equal(GridCellTarget.EmptySlot, cells.[1].Target)
+            Assert.True(cells.[1].IsEmptySlot)
+            Assert.Equal(1, cells.[1].EffectiveWeight)
+            Assert.Equal(GridCellTarget.Slot(DotSyntax.Ident "kpi_b"), cells.[2].Target)
+            Assert.Equal(Some 1, cells.[2].Weight)
+        | other -> Assert.Fail($"Expected BoardRow, got {other}")
+
+    [<Fact>]
+    let ``RegistryModuleParser projects module registry unit with properties and rows`` () =
+        let src =
+            """
+module registry custom_rules
+namespace Demo.Registries
+
+default_severity = warning
+
+| checker      | severity |
+| custom.rule1 | error    |
+| custom.rule2 | info     |
+
+end registry
+"""
+
+        let reg = DashSpec.Modeling.Parse.RegistryModuleParser.parse src
+        Assert.Equal("custom_rules", reg.Id)
+        Assert.Equal(Some "Demo.Registries", reg.Namespace)
+        Assert.Equal("warning", reg.Properties.["default_severity"])
+        Assert.Equal<string>([| "checker"; "severity" |], reg.Columns)
+        Assert.Equal(2, reg.Rows.Count)
+        Assert.Equal("custom.rule1", reg.Rows.[0].["checker"])
+        Assert.Equal("error", reg.Rows.[0].["severity"])

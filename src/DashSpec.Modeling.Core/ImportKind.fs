@@ -7,6 +7,7 @@ open System.Reflection
 /// <summary>Module <c>import &lt;kind&gt; from …</c> partition (ADR-0098). Loaded from <c>stdlib/units/units.ds</c>.</summary>
 [<RequireQualifiedAccess>]
 type ImportKind =
+    | Registries
     | Diagrams
     | Layouts
     | Presentations
@@ -41,6 +42,7 @@ module ImportKindRegistry =
 
     let private tryMapImportKind (unitKw: string) =
         match unitKw.ToLowerInvariant() with
+        | "registry" -> Some ImportKind.Registries
         | "diagram" -> Some ImportKind.Diagrams
         | "layout" -> Some ImportKind.Layouts
         | "presentation" -> Some ImportKind.Presentations

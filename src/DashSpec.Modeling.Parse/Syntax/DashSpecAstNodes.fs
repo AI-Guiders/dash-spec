@@ -160,6 +160,35 @@ type PropertyValueSyntax =
     | Aliased of value: PropertyValueSyntax * title: string
     | Raw of text: string
 
+    member this.Text =
+        match this with
+        | PropertyValueSyntax.Member d -> d.Text
+        | PropertyValueSyntax.StringLiteral s -> s
+        | PropertyValueSyntax.Boolean b -> if b then "true" else "false"
+        | PropertyValueSyntax.Integer i -> string i
+        | PropertyValueSyntax.Decimal m -> string m
+        | PropertyValueSyntax.HexColor c -> c.Normalized
+        | PropertyValueSyntax.TimeShift s -> s.ToString()
+        | PropertyValueSyntax.IanaZone z -> z.Id
+        | PropertyValueSyntax.RelativeDay d -> d.ToString()
+        | PropertyValueSyntax.DateBound b ->
+            match b with
+            | DateBoundValue.Today -> "today"
+            | DateBoundValue.Relative r -> r.ToString()
+            | DateBoundValue.Calendar dt -> dt.ToString("yyyy-MM-dd")
+        | PropertyValueSyntax.DateRange r -> $"{r.From}..{r.To}"
+        | PropertyValueSyntax.Range(a, b) -> $"{a.Text}..{b.Text}"
+        | PropertyValueSyntax.Call(t, args) ->
+            let argStr = args |> Array.map (fun x -> x.Text) |> String.concat ", "
+            $"{t.Text}({argStr})"
+        | PropertyValueSyntax.BracketList items ->
+            let inner = items |> Array.map (fun x -> x.Text) |> String.concat ", "
+            $"[{inner}]"
+        | PropertyValueSyntax.CommaList items ->
+            items |> Array.map (fun x -> x.Text) |> String.concat ", "
+        | PropertyValueSyntax.Aliased(v, title) -> $"{v.Text} as \"{title}\""
+        | PropertyValueSyntax.Raw t -> t
+
 [<RequireQualifiedAccess>]
 type SourceLeafKindSyntax =
     | View
@@ -221,6 +250,7 @@ type ClauseKind =
 /// kinds of the language are explicit DU cases.</summary>
 [<RequireQualifiedAccess>]
 type DashSpecModuleKind =
+    | Registry
     | Dashboard
     | Section
     | Diagram
@@ -239,6 +269,7 @@ module DashSpecModuleKind =
 
     let ofKeyword (keyword: string) (emitViews: bool) =
         match keyword.Trim().ToLowerInvariant() with
+        | "registry" -> DashSpecModuleKind.Registry
         | "dashboard" -> DashSpecModuleKind.Dashboard
         | "section" -> DashSpecModuleKind.Section
         | "diagram" -> DashSpecModuleKind.Diagram
@@ -255,6 +286,7 @@ module DashSpecModuleKind =
 
     let toKeyword (kind: DashSpecModuleKind) =
         match kind with
+        | DashSpecModuleKind.Registry -> "registry"
         | DashSpecModuleKind.Dashboard -> "dashboard"
         | DashSpecModuleKind.Section -> "section"
         | DashSpecModuleKind.Diagram -> "diagram"
@@ -424,24 +456,55 @@ and ClauseSyntax =
       Kind: ClauseKind
       Tokens: SyntaxToken[] }
 
-/// <summary>Typed cell inside a grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2 / ADR-0130).</summary>
+/// <summary>Target of a cell inside a bracket layout / grid row: either an empty slot `[]` or a named slot/reference.</summary>
+and [<RequireQualifiedAccess>] GridCellTarget =
+    | EmptySlot
+    | Slot of target: DotSyntax
+
+/// <summary>Typed cell inside a grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2 / ADR-0130 / ADR-0131).</summary>
 and GridCellSyntax =
-    { Target: string
+    { Target: GridCellTarget
       Weight: int option }
+
+    member this.IsEmptySlot =
+        match this.Target with
+        | GridCellTarget.EmptySlot -> true
+        | GridCellTarget.Slot _ -> false
+
+    member this.TargetText =
+        match this.Target with
+        | GridCellTarget.EmptySlot -> "[]"
+        | GridCellTarget.Slot d -> d.Text
+
+    member this.EffectiveWeight = defaultArg this.Weight 1
 
     member this.RawText =
         match this.Weight with
-        | Some w -> $"{this.Target}:{w}"
-        | None -> this.Target
+        | Some w -> $"{this.TargetText}:{w}"
+        | None -> this.TargetText
+
+/// <summary>Structural kind of a grid / layout row: either a bare `[] [] …` ruler row or a bracketed `[ a:4 [] b:8 ]` board row.</summary>
+and [<RequireQualifiedAccess>] GridRowKind =
+    | RulerRow of columns: int
+    | BoardRow of cells: GridCellSyntax[]
 
 /// <summary>Grid drawing row `[ card:weight ] [ ]` (ADR-0111 §2) — empty cell is
-/// the whole `[]` token; cells carry both structured `TypedCells` and `Cells` text.</summary>
+/// the whole `[]` token; cells carry structured `Kind`, `TypedCells`, and `Cells` text.</summary>
 and GridRowSyntax =
     { Id: NodeId
       Span: TextSpan
+      Kind: GridRowKind
       TypedCells: GridCellSyntax[]
       Cells: string[]
       Tokens: SyntaxToken[] }
+
+/// <summary>Typed row inside a `catalog` table (`| id | title | dashspec | section | page |`).</summary>
+and CatalogEntryRowSyntax =
+    { Id: string
+      Title: string
+      DashspecPath: string
+      Section: string option
+      Page: string option }
 
 /// <summary>Typed row inside a `filters` table (`| id | bind | column | label | widget | … |`).</summary>
 and FilterRowSyntax =
@@ -490,6 +553,7 @@ and [<RequireQualifiedAccess>] TableRowKind =
     | When of WhenRowSyntax
     | Click of ClickRowSyntax
     | Column of ColumnRowSyntax
+    | CatalogEntry of CatalogEntryRowSyntax
     | Generic of attributes: Map<string, string>
 
 /// <summary>Markdown-style table row `| a | b |` — carries its typed domain representation (<see cref="TableRowKind"/>) and raw cells.</summary>

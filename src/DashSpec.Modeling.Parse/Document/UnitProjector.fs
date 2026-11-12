@@ -22,6 +22,61 @@ type UnitPluginDescriptor =
       Role: UnitCompileRole
       Project: UnitProjectionContext -> obj }
 
+type RegistryDocument =
+    { Id: string
+      Namespace: string option
+      Properties: System.Collections.Generic.IReadOnlyDictionary<string, string>
+      Columns: string[]
+      Rows: System.Collections.Generic.IReadOnlyList<Map<string, string>> }
+
+/// <summary>First-class <c>module registry &lt;id&gt;</c> unit parser (ADR-0131):
+/// projects declarative tabular registries (e.g. <c>stdlib/units/units.ds</c>, <c>stdlib/rules/rules.ds</c>,
+/// or user-authored registries) directly from the AST.</summary>
+module RegistryModuleParser =
+
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : RegistryDocument =
+        let props = System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        for p in env.View.Properties do
+            props.[p.Key] <- p.Value.Text
+
+        let columns =
+            env.View.TableRows
+            |> Array.tryPick (fun r ->
+                match r.Kind with
+                | TableRowKind.Header cols -> Some cols
+                | _ -> None)
+            |> Option.defaultValue [||]
+
+        let rows = ResizeArray<Map<string, string>>()
+        match Construct.tryFromAstTable env.Body with
+        | Some(Construct.ConstructForm.TableForm tableRows) when tableRows.Length > 1 ->
+            let header = tableRows.[0] |> Array.map (fun c -> c.Trim())
+            for r in tableRows.[1..] do
+                let isSep = r.Length > 0 && r |> Array.forall (fun c -> c.Length > 0 && c |> Seq.forall (fun ch -> ch = '-' || ch = ':'))
+                if not isSep then
+                    let m =
+                        [ for i in 0 .. (min (r.Length - 1) (header.Length - 1)) do
+                            let k = header.[i]
+                            let v = r.[i].Trim()
+                            if k.Length > 0 && v.Length > 0 && v <> "-" then
+                                yield k, v ]
+                        |> Map.ofList
+                    rows.Add m
+        | _ -> ()
+
+        { Id = env.Id
+          Namespace = env.Namespace
+          Properties = props
+          Columns = columns
+          Rows = rows :> System.Collections.Generic.IReadOnlyList<_> }
+
+    let parse (text: string) : RegistryDocument =
+        if String.IsNullOrWhiteSpace text then
+            invalidArg "text" "Registry text is required."
+        let tree = DashSpecSurfaceSyntax.parse text
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Registry tree.Root
+        parseEnvelope env
+
 /// <summary>Pure microkernel unit plugin registry: sits directly above <see cref="UnitGrammar"/>
 /// and knows zero concrete unit domains. Each vertical domain (built-in or external plugin)
 /// registers its own <see cref="UnitPluginDescriptor"/> here.</summary>
@@ -73,3 +128,10 @@ module UnitProjector =
                 kw, env.Id, payload
             | None ->
                 raise (DashSpecUnitHeaderException($"Unknown module kind '{kw}'.", env.ModuleNode.Span.Start))
+
+    do
+        register
+            { KindKeyword = "registry"
+              ImportKind = Some ImportKind.Registries
+              Role = UnitCompileRole.Declaration
+              Project = fun ctx -> box (RegistryModuleParser.parseEnvelope ctx.Envelope) }

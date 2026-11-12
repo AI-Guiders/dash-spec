@@ -30,10 +30,11 @@ module LayoutModuleParser =
         for memberNode in members do
             match memberNode with
             | DashSpecAstNode.GridRowDeclaration row ->
-                if row.TypedCells |> Array.forall (fun c -> c.Target = "[]" && c.Weight.IsNone)
-                   && not (row.Tokens |> Array.exists (fun t -> t.LexKind = DashSpec.Modeling.Parse.Lexing.TokenKind.LBracket)) then
+                match row.Kind with
+                | GridRowKind.RulerRow _ ->
                     raise (DashSpecParseException("Bare [] grid cells belong inside 'grid … end grid'; board rows require '[ … ]'."))
-                entries.Add(CardRow(row.Cells :> IReadOnlyList<string>))
+                | GridRowKind.BoardRow _ ->
+                    entries.Add(CardRow(row.Cells :> IReadOnlyList<string>))
             | DashSpecAstNode.BlockDeclaration block ->
                 match block.Opener with
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Group, groupId) ->
@@ -84,6 +85,7 @@ module LayoutModuleParser =
                 | _ ->
                     let headerText = block.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
                     raise (DashSpecParseException($"Unexpected block '{headerText}' in layout module."))
+            | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "scope", StringComparison.OrdinalIgnoreCase) -> ()
             | DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | ClauseKind.ScopeClause _ -> ()
@@ -114,6 +116,14 @@ module LayoutModuleParser =
                     match c.Kind with
                     | ClauseKind.ScopeClause s -> Some(mapScope s)
                     | _ -> None
+                | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "scope", StringComparison.OrdinalIgnoreCase) ->
+                    match unwrapQuotes(p.ValueText).Trim().ToLowerInvariant() with
+                    | "toolbar" -> Some LayoutScope.Toolbar
+                    | "section" -> Some LayoutScope.Tab
+                    | "page" -> Some LayoutScope.Page
+                    | "card" -> Some LayoutScope.Card
+                    | "host" -> Some LayoutScope.Host
+                    | bad -> raise (DashSpecParseException($"Layout module scope must be toolbar, tab, page, card, or host; got '{bad}'."))
                 | DashSpecAstNode.Line l when l.Tokens.Length >= 2 && String.Equals(l.Tokens.[0].Text, "scope", StringComparison.OrdinalIgnoreCase) ->
                     raise (DashSpecParseException($"Layout module scope must be toolbar, tab, page, card, or host; got '{l.Tokens.[1].Text}'."))
                 | _ -> None)
@@ -136,8 +146,8 @@ module LayoutModuleParser =
                 let rowLengths = ResizeArray<int>()
                 for child in gridBlock.Members do
                     match child with
-                    | DashSpecAstNode.GridRowDeclaration r when r.TypedCells |> Array.forall (fun c -> c.Target = "[]" && c.Weight.IsNone) ->
-                        rowLengths.Add r.TypedCells.Length
+                    | DashSpecAstNode.GridRowDeclaration { Kind = GridRowKind.RulerRow cols } ->
+                        rowLengths.Add cols
                     | DashSpecAstNode.BlankLine _
                     | DashSpecAstNode.EndBlock _ -> ()
                     | c when DashSpecAst.isTrivia c -> ()

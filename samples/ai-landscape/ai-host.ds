@@ -1,19 +1,13 @@
 ﻿module host ai_landscape
 import layouts from Ai.Landscape.Layouts
 
-catalog "ai-catalog.ds"
-
-host
-  language = "ru-RU"
-  display_timezone = "Europe/Moscow"
-  product_title = "AI Landscape"
-  catalog_label = "Отчёт"
-  color_scheme = dark
-  render = radzen
-end host
-
-surfaces
-  show help, settings, spec_dev
-end surfaces
+catalog = "ai-catalog.ds"
+language = "ru-RU"
+display_timezone = "Europe/Moscow"
+product_title = "AI Landscape"
+catalog_label = "Отчёт"
+color_scheme = dark
+render = radzen
+surfaces = [help, settings, spec_dev]
 
 end host

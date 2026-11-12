@@ -1,3 +1,6 @@
+module registry rules
+namespace DashSpec.Stdlib.Rules
+
 | checker                        | severity |
 | ExtraEndBlock                  | error    |
 | MismatchedEndKeyword           | error    |
@@ -33,3 +36,5 @@
 | diagram.column_not_in_type     | warning  |
 | bundle.renderer_missing        | warning  |
 | filter.grain_default_missing   | warning  |
+
+end registry
