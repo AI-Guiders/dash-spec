@@ -48,7 +48,7 @@ module Construct =
         match tryCell m name with
         | Some v -> v
         | None ->
-            raise (DashSpecParseException($"{declName} table row '{rowId}' requires a '{name}' cell."))
+            raise (DashSpecMissingMemberException(name, $"{declName} table row '{rowId}' requires a '{name}' cell."))
 
     let private bindingsToMap (pairs: (string * string) seq) : Map<string, string> =
         let mutable m = Map.empty<string, string>
@@ -69,7 +69,7 @@ module Construct =
                 |> List.filter (fun cells -> not (TableLiteral.isSeparator cells))
 
             if dataRows.IsEmpty then
-                raise (DashSpecParseException($"{declName} table requires at least one row after the header."))
+                raise (DashSpecTableStructureException(declName, $"{declName} table requires at least one row after the header."))
 
             dataRows
             |> List.map (fun cells ->
@@ -78,7 +78,7 @@ module Construct =
                         yield keys.[i], cells.[i].Trim() ]
                 |> Map.ofList)
         | [] ->
-            raise (DashSpecParseException($"{declName} table requires at least one row after the header."))
+            raise (DashSpecTableStructureException(declName, $"{declName} table requires at least one row after the header."))
 
     let private validateVocabulary (decl: Declaration<'Row>) (maps: Map<string, string> list) =
         let allowed = HashSet<string>(decl.Vocabulary, StringComparer.OrdinalIgnoreCase)
@@ -89,7 +89,8 @@ module Construct =
                     let vocabularyList = String.Join(", ", decl.Vocabulary)
 
                     raise (
-                        DashSpecParseException(
+                        DashSpecUnknownPropertyException(
+                            k,
                             $"{decl.Name} table attribute '{k}' is not one of: {vocabularyList}.")
                     )
 

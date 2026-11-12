@@ -20,5 +20,5 @@ module LayoutModuleScopeValidator =
         match board.ModuleScope with
         | None -> ()
         | Some scope when scope <> expected ->
-            raise (DashSpecParseException($"{context}: layout module declares scope {formatScope scope} but was included for {formatScope expected}."))
+            raise (DashSpecScopeMismatchException($"{context}: layout module declares scope {formatScope scope} but was included for {formatScope expected}."))
         | Some _ -> ()

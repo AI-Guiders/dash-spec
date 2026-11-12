@@ -82,7 +82,7 @@ module FlowGraphLinkRules =
 
         if inferred <> expected then
             raise (
-                DashSpecParseException(
+                DashSpecScopeMismatchException(
                     $"{contextLabel}: link '{link.FromNode} -> {link.ToNode}' belongs in {roleName inferred} flow, not {kindName kind} flow."
                 )
             )

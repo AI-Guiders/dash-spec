@@ -8,9 +8,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ParseErrors.fs" />
     <Compile Include="Diagnostics.fs" />
     <Compile Include="DashSpecRules.fs" />
+    <Compile Include="ParseErrors.fs" />
     <Compile Include="TypeSystem.fs" />
     <Compile Include="TypeInvariantLaws.fs" />
     <Compile Include="TypeCatalog.fs" />

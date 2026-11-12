@@ -108,7 +108,7 @@ module UnitGrammar =
     let private buildEnvelope (m: ModuleDeclarationSyntax) (actualKind: DashSpecModuleKind) (id: string) : UnitEnvelope =
         if String.IsNullOrWhiteSpace id then
             let kw = DashSpecModuleKind.toKeyword actualKind
-            raise (DashSpecParseException($"'module {kw}' requires an identifier."))
+            raise (DashSpecUnitHeaderException($"'module {kw}' requires an identifier.", m.Span.Start))
 
         let mutable ns: string option = None
         let imports = ResizeArray<ImportDeclarationSyntax>()
@@ -120,7 +120,7 @@ module UnitGrammar =
                 match c.Kind with
                 | ClauseKind.NamespaceClause n ->
                     if ns.IsSome then
-                        raise (DashSpecParseException("Module header allows only one 'namespace' directive."))
+                        raise (DashSpecUnitHeaderException("Module header allows only one 'namespace' directive.", c.Span.Start))
                     ns <- Some n
                 | _ -> body.Add child
             | DashSpecAstNode.ImportDeclaration imp ->
@@ -155,14 +155,15 @@ module UnitGrammar =
 
         match tryUnwrapAny root with
         | None ->
-            raise (DashSpecParseException($"Module requires 'module {expectedKeyword} <id>'."))
+            raise (DashSpecUnitHeaderException($"Module requires 'module {expectedKeyword} <id>'."))
         | Some env ->
             if kindMatches expectedKind env.Kind then
                 env
             else
                 raise (
-                    DashSpecParseException(
-                        $"Expected 'module {expectedKeyword} <id>', got 'module {DashSpecModuleKind.toKeyword env.Kind} {env.Id}'."))
+                    DashSpecUnitHeaderException(
+                        $"Expected 'module {expectedKeyword} <id>', got 'module {DashSpecModuleKind.toKeyword env.Kind} {env.Id}'.",
+                        env.ModuleNode.Span.Start))
 
     /// Non-throwing variant of <see cref="unwrap"/> for speculative classification.
     let tryUnwrap (expectedKind: DashSpecModuleKind) (root: DashSpecAstNode) : UnitEnvelope option =

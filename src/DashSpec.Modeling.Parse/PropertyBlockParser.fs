@@ -71,12 +71,12 @@ module PropertyBlockParser =
                         if p.ValueTokens.Length = 1 && p.ValueTokens.[0].LexKind = TokenKind.String then
                             values.[p.Key] <- unwrapQuotes p.ValueText
                         else
-                            raise (DashSpecParseException($"Property '{p.Key}' in {blockName} requires a string literal."))
+                            raise (DashSpecInvalidValueException($"Property '{p.Key}' in {blockName} requires a string literal.", p.Key, p.Span.Start))
                     | PropertyValueType.Scalar ->
                         if p.ValueTokens.Length = 1 then
                             values.[p.Key] <- unwrapQuotes p.ValueText
                         else
-                            raise (DashSpecParseException($"Property '{p.Key}' in {blockName} requires a scalar value."))
+                            raise (DashSpecInvalidValueException($"Property '{p.Key}' in {blockName} requires a scalar value.", p.Key, p.Span.Start))
                     | PropertyValueType.CommaList ->
                         values.[p.Key] <- p.ValueText.Replace(" , ", ", ", StringComparison.Ordinal)
                     | PropertyValueType.RestOfLine
@@ -89,7 +89,7 @@ module PropertyBlockParser =
                     if allowExtensionProperties && not (p.Key.EndsWith("_as", StringComparison.OrdinalIgnoreCase)) then
                         values.[p.Key] <- unwrapQuotes p.ValueText
                     else
-                        raise (DashSpecParseException($"Unknown property '{p.Key}' in {blockName} block."))
+                        raise (DashSpecUnknownPropertyException(p.Key, $"Unknown property '{p.Key}' in {blockName} block.", p.Span.Start))
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | DashSpec.Modeling.Parse.Syntax.ClauseKind.NamespaceClause _ -> ()
@@ -97,14 +97,14 @@ module PropertyBlockParser =
                     values.["use"] <- preset
                 | _ ->
                     let lineText = c.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected directive '{lineText}' in {blockName} block."))
+                    raise (DashSpecUnexpectedStatementException($"Unexpected directive '{lineText}' in {blockName} block.", c.Span.Start))
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ImportDeclaration _
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.BlankLine _
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.EndBlock _ -> ()
             | memberNode when DashSpec.Modeling.Parse.Syntax.DashSpecAst.isTrivia memberNode -> ()
             | other ->
                 let lineText = DashSpec.Modeling.Parse.Syntax.DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"Unexpected statement '{lineText}' in {blockName} block."))
+                raise (DashSpecUnexpectedStatementException($"Unexpected statement '{lineText}' in {blockName} block.", (DashSpec.Modeling.Parse.Syntax.DashSpecAst.span other).Start))
 
         values
 

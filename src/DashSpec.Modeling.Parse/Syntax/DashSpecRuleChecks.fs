@@ -10,6 +10,11 @@ type DashSpecRuleFinding =
       Message: string
       Span: TextSpan }
 
+    member this.Descriptor = DashSpecRules.descriptor this.Rule
+    member this.Code = this.Descriptor.Code
+    member this.Severity = this.Descriptor.Severity
+    member this.ToException() = this.Descriptor.CreateException(this.Message, Some this.Span.Start)
+
 /// <summary>Language rules evaluated in one document-order pass over the surface tree (ADR-0102).</summary>
 module DashSpecRuleChecks =
 
@@ -127,7 +132,7 @@ module DashSpecRuleChecks =
                 for child in DashSpecAst.members node do
                     match child with
                     | DashSpecAstNode.ImportDeclaration import when seenCode ->
-                        signal DashSpecRule.ImportAfterCode $"'{import.Keyword}' belongs in the module header, before code sections (ADR-0101)." import.Span
+                        signal DashSpecRule.ImportAfterCode $"'{import.Keyword}' belongs in the module header, before code sections." import.Span
                     | DashSpecAstNode.ImportDeclaration _
                     | DashSpecAstNode.BlankLine _ -> ()
                     | _ when DashSpecAst.isTrivia child -> ()
@@ -180,5 +185,12 @@ module DashSpecRuleChecks =
         let line, character = positionOf text finding.Span.Start
         let endLine, endCharacter = positionOf text finding.Span.End
 
-        DashSpecDiagnostic.create line character endLine endCharacter finding.Message (DashSpecRules.severity finding.Rule)
-        |> DashSpecDiagnostic.withCode (DashSpecRules.code finding.Rule)
+        DashSpecDiagnostic.create line character endLine endCharacter finding.Message finding.Severity
+        |> DashSpecDiagnostic.withCode finding.Code
+
+    /// Convert a caught <see cref="DashSpecParseException"/> into a <see cref="DashSpecRuleFinding"/> with its owning rule descriptor.
+    let fromException (ex: DashSpecParseException) : DashSpecRuleFinding =
+        let start = if ex.SourceOffset.HasValue then ex.SourceOffset.Value else 0
+        { Rule = ex.Rule
+          Message = ex.Message
+          Span = TextSpan.create start (start + 1) }
