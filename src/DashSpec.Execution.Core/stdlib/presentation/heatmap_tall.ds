@@ -2,5 +2,4 @@ module presentation heatmap_tall
 namespace DashSpec.Std
 
   height = 420
-  visible_rows = 8
-  align = center
+  align = left
