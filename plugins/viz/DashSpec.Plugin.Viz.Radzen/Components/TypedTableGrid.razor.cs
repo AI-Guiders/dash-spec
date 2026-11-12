@@ -18,11 +18,11 @@ namespace DashSpec.Plugin.Viz.RadzenUI.Components;
 /// </summary>
 public sealed partial class TypedTableGrid<TItem> where TItem : notnull
 {
-    private const int GridPageSize = 15;
-
     [Parameter] public IReadOnlyList<TableField> Fields { get; set; } = [];
 
     [Parameter] public IReadOnlyList<TItem> Items { get; set; } = [];
+
+    [Parameter] public int PageSize { get; set; } = 15;
 
     [Parameter] public bool ColumnFilters { get; set; } = true;
 

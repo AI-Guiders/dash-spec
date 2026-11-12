@@ -33,7 +33,7 @@ public sealed record ChartPresentation(
         var height = sparkline ? 64 : 280;
         if (properties.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
-            parsedHeight is >= 40 and <= 800)
+            parsedHeight > 0)
         {
             height = parsedHeight;
         }

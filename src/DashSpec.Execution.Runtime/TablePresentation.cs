@@ -20,7 +20,8 @@ public sealed record TablePresentation(
     int MaxHeightPx = 420,
     bool ColumnFilters = true,
     int FrozenColumns = 0,
-    bool AllowGrouping = false)
+    bool AllowGrouping = false,
+    int PageSize = 15)
 {
     public static TablePresentation FromProperties(IReadOnlyDictionary<string, string> properties)
     {
@@ -29,7 +30,7 @@ public sealed record TablePresentation(
         {
             width = rawWidth.ToLowerInvariant() switch
             {
-                "fill" or "100%" or "full" => TableWidthMode.Fill,
+                "fill" or "100%" or "full" or "stretch" => TableWidthMode.Fill,
                 _ => TableWidthMode.Content,
             };
         }
@@ -44,13 +45,13 @@ public sealed record TablePresentation(
         var maxHeight = 420;
         if (properties.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
-            parsedHeight is >= 120 and <= 800)
+            parsedHeight > 0)
         {
             maxHeight = parsedHeight;
         }
         else if (properties.TryGetValue("max_height", out var rawMaxHeight) &&
                  int.TryParse(rawMaxHeight, out var parsedMax) &&
-                 parsedMax is >= 120 and <= 800)
+                 parsedMax > 0)
         {
             maxHeight = parsedMax;
         }
@@ -79,7 +80,15 @@ public sealed record TablePresentation(
             allowGrouping = rawGrouping is "true" or "yes" or "1" or "on";
         }
 
-        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns, allowGrouping);
+        var pageSize = 15;
+        if (properties.TryGetValue("page_size", out var rawPageSize) &&
+            int.TryParse(rawPageSize.Trim(), out var parsedPageSize) &&
+            parsedPageSize > 0)
+        {
+            pageSize = parsedPageSize;
+        }
+
+        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns, allowGrouping, pageSize);
     }
 
     public static TablePresentation Resolve(CardDefinition card, SpecLibrary? library) =>

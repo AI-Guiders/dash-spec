@@ -17,7 +17,7 @@ internal static class CategoryChartPayloadBuilder
         var yColumn = DiagramBindings.Column(diagram, "y");
         var hasReference = DiagramBindings.TryGetColumn(diagram, "reference", out var referenceColumn);
         var hasColorColumn = DiagramBindings.TryGetColumn(diagram, "color", out var colorColumn);
-        var referenceLabel = DiagramBindings.Label(diagram, "reference") ?? "Куплено";
+        var referenceLabel = DiagramBindings.Label(diagram, "reference") ?? (hasReference ? referenceColumn : "reference");
 
         var ordered = new List<(string Label, double? Value, double? Reference, string? Color)>();
         var indexByLabel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);

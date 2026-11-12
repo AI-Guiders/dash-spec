@@ -29,14 +29,14 @@ public static class CardChromeResolver
         var props = ChartChromeProperties.Merge(card, library);
         if (props.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
-            parsedHeight is >= 160 and <= 800)
+            parsedHeight > 0)
         {
             return parsedHeight;
         }
 
         if (card.Diagram.Properties.TryGetValue("height", out var legacyHeight) &&
             int.TryParse(legacyHeight, out var legacyParsed) &&
-            legacyParsed is >= 160 and <= 800)
+            legacyParsed > 0)
         {
             return legacyParsed;
         }
@@ -57,8 +57,7 @@ public static class CardChromeResolver
             return fromDiagram;
         }
 
-        var series = ResolveSeriesTransform(card, library);
-        return series is { Max: > 0 } ? series.Max : null;
+        return null;
     }
 
     public static SeriesTransformSettings? ResolveSeriesTransform(

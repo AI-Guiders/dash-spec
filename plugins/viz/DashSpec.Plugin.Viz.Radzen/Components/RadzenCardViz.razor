@@ -310,6 +310,7 @@ else
     /// table ignores the key; the Radzen grid honors it per column.</summary>
     private int FrozenColumns => Context.Card.TablePresentation?.FrozenColumns ?? 0;
 
+    private int PageSize => Context.Card.TablePresentation?.PageSize ?? 15;
 
     private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
 
@@ -321,6 +322,7 @@ else
     {
         ["Fields"] = Table.Fields,
         ["Items"] = Table.TypedItems,
+        ["PageSize"] = PageSize,
         ["ColumnFilters"] = ColumnFilters,
         ["FrozenColumns"] = FrozenColumns,
         ["AllowGrouping"] = AllowGrouping,
