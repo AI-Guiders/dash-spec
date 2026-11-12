@@ -320,13 +320,17 @@ module DashSpecSurfaceSyntax =
                   ColumnBinding = columnBinding
                   Tokens = node.Tokens }
         | NodePayload.FlowLink(fromNode, fromPort, toNode, toPort) ->
+            let sourceEndpoint = FlowEndpointSyntax.create fromNode fromPort
+            let targetEndpoint = FlowEndpointSyntax.create toNode toPort
             DashSpecAstNode.FlowLinkDeclaration
                 { Id = node.Id
                   Span = span
-                  FromPath = DotSyntax.parse fromNode
+                  Source = sourceEndpoint
+                  Target = targetEndpoint
+                  FromPath = sourceEndpoint.Path
                   FromNode = fromNode
                   FromPort = fromPort
-                  ToPath = DotSyntax.parse toNode
+                  ToPath = targetEndpoint.Path
                   ToNode = toNode
                   ToPort = toPort
                   Tokens = node.Tokens }

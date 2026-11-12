@@ -52,6 +52,91 @@ module DotSyntax =
         else
             ofSegments (raw.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries))
 
+/// <summary>Port selector inside brackets `[port]` or `[innerNode.port]` on a flow arrow endpoint.</summary>
+[<RequireQualifiedAccess>]
+type PortSelectorSyntax =
+    | Port of name: string
+    | QualifiedPort of innerNode: string * portName: string
+
+    member this.RawText =
+        match this with
+        | PortSelectorSyntax.Port name -> name
+        | PortSelectorSyntax.QualifiedPort(n, p) -> $"{n}.{p}"
+
+module PortSelectorSyntax =
+
+    let parse (raw: string) : PortSelectorSyntax =
+        match DotSyntax.parse raw with
+        | DotSyntax.Member(DotSyntax.Ident node, port) -> PortSelectorSyntax.QualifiedPort(node, port)
+        | d -> PortSelectorSyntax.Port d.Text
+
+/// <summary>First-class semantic target of a flow arrow endpoint (`producer -> consumer`),
+/// parsed directly from its <see cref="DotSyntax"/> structure.</summary>
+[<RequireQualifiedAccess>]
+type FlowEndpointTarget =
+    | ImplicitDiagram
+    | ReportAnchor
+    | PageAnchor of pageId: string
+    | CardAnchor of cardId: string
+    | CardSlot of cardId: string * slot: string
+    | DashboardChrome
+    | SectionChrome of sectionId: string
+    | CardChrome of cardId: string
+    | HostTarget of path: DotSyntax
+    | PhaseTarget of phaseId: string
+    | FilterNode of filterId: string
+    | Node of path: DotSyntax
+
+module FlowEndpointTarget =
+
+    let ofDotSyntax (path: DotSyntax) : FlowEndpointTarget =
+        match path.Segments |> Array.map (fun s -> s.Trim()) with
+        | [| "__diagram__" |] -> FlowEndpointTarget.ImplicitDiagram
+        | [| s |] when String.Equals(s, "report", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.ReportAnchor
+        | [| prefix; pageId |] when String.Equals(prefix, "page", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.PageAnchor pageId
+        | [| prefix; cardId |] when String.Equals(prefix, "card", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.CardAnchor cardId
+        | [| prefix; cardId; slot |] when String.Equals(prefix, "card", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.CardSlot(cardId, slot)
+        | [| prefix; target |]
+            when String.Equals(prefix, "chrome", StringComparison.OrdinalIgnoreCase)
+                 && String.Equals(target, "dashboard", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.DashboardChrome
+        | [| prefix; kind; secId |]
+            when String.Equals(prefix, "chrome", StringComparison.OrdinalIgnoreCase)
+                 && (String.Equals(kind, "section", StringComparison.OrdinalIgnoreCase)
+                     || String.Equals(kind, "tab", StringComparison.OrdinalIgnoreCase)) ->
+            FlowEndpointTarget.SectionChrome secId
+        | [| prefix; kind; cardId |]
+            when String.Equals(prefix, "chrome", StringComparison.OrdinalIgnoreCase)
+                 && String.Equals(kind, "card", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.CardChrome cardId
+        | segs when segs.Length >= 2 && String.Equals(segs.[0], "host", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.HostTarget(DotSyntax.ofSegments segs.[1..])
+        | [| prefix; phaseId |] when String.Equals(prefix, "phase", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.PhaseTarget phaseId
+        | [| prefix; filterId |] when String.Equals(prefix, "filter", StringComparison.OrdinalIgnoreCase) ->
+            FlowEndpointTarget.FilterNode filterId
+        | _ ->
+            FlowEndpointTarget.Node path
+
+/// <summary>Typed endpoint of a flow arrow (`Source -> Target`), combining <see cref="FlowEndpointTarget"/>,
+/// <see cref="DotSyntax"/> path, and optional <see cref="PortSelectorSyntax"/>.</summary>
+type FlowEndpointSyntax =
+    { Target: FlowEndpointTarget
+      Path: DotSyntax
+      Port: PortSelectorSyntax option }
+
+module FlowEndpointSyntax =
+
+    let create (rawNode: string) (rawPort: string option) : FlowEndpointSyntax =
+        let path = DotSyntax.parse rawNode
+        { Target = FlowEndpointTarget.ofDotSyntax path
+          Path = path
+          Port = rawPort |> Option.map PortSelectorSyntax.parse }
+
 /// <summary>First-class typed right-hand-side expression of a `key = value` property assignment (ADR-0130),
 /// backed by validated domain value types (<see cref="HexColorValue"/>, <see cref="TimeShiftValue"/>,
 /// <see cref="IanaZoneValue"/>, <see cref="RelativeDayValue"/>, <see cref="DateBoundValue"/>, <see cref="DateRangeValue"/>).</summary>
@@ -317,10 +402,12 @@ and PortDeclarationSyntax =
       Tokens: SyntaxToken[] }
 
 /// <summary>Typed flow edge inside a flow module (ADR-0130):
-/// `producer [outPort] -&gt; [inPort] consumer`.</summary>
+/// `Source -&gt; Target` (`producer [outPort] -&gt; [inPort] consumer`).</summary>
 and FlowLinkSyntax =
     { Id: NodeId
       Span: TextSpan
+      Source: FlowEndpointSyntax
+      Target: FlowEndpointSyntax
       FromPath: DotSyntax
       FromNode: string
       FromPort: string option

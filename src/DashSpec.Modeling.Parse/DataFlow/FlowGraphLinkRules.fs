@@ -25,24 +25,38 @@ module FlowGraphLinkRules =
         lower.StartsWith("chrome.") || lower.StartsWith("host.")
 
     let inferRole (link: FlowLinkDef) : InferredLinkRole =
-        if FlowPlacementAnchors.tryPlacementAnchor link.ToNode |> Option.isSome then
+        let source = DashSpec.Modeling.Parse.Syntax.FlowEndpointSyntax.create link.FromNode link.FromPort
+        let target = DashSpec.Modeling.Parse.Syntax.FlowEndpointSyntax.create link.ToNode link.ToPort
+
+        let toPortEquals name =
+            match target.Port with
+            | Some(DashSpec.Modeling.Parse.Syntax.PortSelectorSyntax.Port p) ->
+                String.Equals(p, name, StringComparison.OrdinalIgnoreCase)
+            | _ -> false
+
+        match target.Target with
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.ReportAnchor
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.PageAnchor _
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.CardAnchor _ ->
             InferredLinkRole.Placement
-        elif FlowPlacementAnchors.isDataFlowCardAnchor link.ToNode then
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.CardSlot _ ->
             InferredLinkRole.Data
-        elif link.ToNode.StartsWith("host.", StringComparison.OrdinalIgnoreCase) then
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.HostTarget _ ->
             InferredLinkRole.Wire
-        elif portEquals link "toolbar" || portEquals link "panel" || portEquals link "filters" then
+        | _ when toPortEquals "toolbar" || toPortEquals "panel" || toPortEquals "filters" ->
             InferredLinkRole.Show
-        elif isChromeOrHostTarget link.ToNode && portEquals link "host" |> not then
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.DashboardChrome
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.SectionChrome _
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.CardChrome _
+            when not (toPortEquals "host") ->
             InferredLinkRole.Show
-        elif
-            link.FromPort
-            |> Option.exists (fun p -> p.Contains("click", StringComparison.OrdinalIgnoreCase))
-        then
+        | _ when
+            source.Port
+            |> Option.exists (fun p -> p.RawText.Contains("click", StringComparison.OrdinalIgnoreCase)) ->
             InferredLinkRole.Action
-        elif link.ToNode.StartsWith("phase.", StringComparison.OrdinalIgnoreCase) then
+        | DashSpec.Modeling.Parse.Syntax.FlowEndpointTarget.PhaseTarget _ ->
             InferredLinkRole.Action
-        else
+        | _ ->
             InferredLinkRole.Data
 
     let private roleName role =
