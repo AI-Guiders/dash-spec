@@ -1,6 +1,7 @@
 namespace DashSpec.Modeling.Parse.Document
 
 open System
+open System.Collections.Concurrent
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Catalog
@@ -15,7 +16,6 @@ open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.Types
 
-/// <summary>Unified unit projector over the single DashSpec AST (<see cref="ParseTree"/> → <see cref="ProjectedUnit"/>).</summary>
 [<RequireQualifiedAccess>]
 type ProjectedUnit =
     | Types of id: string * ns: string option * definitions: RowTypeDef[]
@@ -32,13 +32,83 @@ type ProjectedUnit =
     | Dashboard of spec: DashboardDocument
     | Custom of kind: string * id: string * payload: obj
 
+type UnitProjectionContext =
+    { Text: string
+      Envelope: UnitGrammar.UnitEnvelope
+      SpecDirectory: string option
+      TypeCatalog: TypeCatalog option
+      ParseOptions: DashSpecParseOptions option }
+
+type UnitProjectorDescriptor =
+    { KindKeyword: string
+      Project: UnitProjectionContext -> ProjectedUnit }
+
+/// <summary>Plugin-driven unit projector registry: every unit kind (built-in or external plugin)
+/// is registered as a <see cref="UnitProjectorDescriptor"/> keyed by its module keyword.</summary>
 module UnitProjector =
 
-    let private customProjectors =
-        System.Collections.Concurrent.ConcurrentDictionary<string, UnitGrammar.UnitEnvelope -> obj>(StringComparer.OrdinalIgnoreCase)
+    let private projectors =
+        ConcurrentDictionary<string, UnitProjectorDescriptor>(StringComparer.OrdinalIgnoreCase)
+
+    let register (descriptor: UnitProjectorDescriptor) =
+        if not (String.IsNullOrWhiteSpace descriptor.KindKeyword) then
+            projectors.[descriptor.KindKeyword.Trim()] <- descriptor
 
     let registerCustomProjector (kind: string) (projector: UnitGrammar.UnitEnvelope -> obj) =
-        customProjectors.[kind] <- projector
+        register
+            { KindKeyword = kind
+              Project = fun ctx -> ProjectedUnit.Custom(kind, ctx.Envelope.Id, projector ctx.Envelope) }
+
+    do
+        let builtins =
+            [ { KindKeyword = "types"
+                Project = fun ctx ->
+                    let defs = TypeModuleParser.parseTypesModule ctx.Text
+                    ProjectedUnit.Types(ctx.Envelope.Id, ctx.Envelope.Namespace, defs) }
+              { KindKeyword = "flow"
+                Project = fun ctx ->
+                    let catalog = defaultArg ctx.TypeCatalog TypeCatalog.empty
+                    ProjectedUnit.Flow(DashflowModuleParser.parseModule ctx.Text catalog) }
+              { KindKeyword = "layout"
+                Project = fun ctx ->
+                    ProjectedUnit.Layout(LayoutModuleParser.parseLayoutFile ctx.Text) }
+              { KindKeyword = "presentation"
+                Project = fun ctx ->
+                    let doc = PresentationModuleParser.parsePresentationModule ctx.Text
+                    ProjectedUnit.Presentation(doc.Id, doc) }
+              { KindKeyword = "transform"
+                Project = fun ctx ->
+                    let block = TransformModuleParser.parseTransformFile ctx.Text
+                    ProjectedUnit.Transform(ctx.Envelope.Id, block) }
+              { KindKeyword = "palette"
+                Project = fun ctx ->
+                    let doc = PaletteModuleParser.parsePaletteFile ctx.Text
+                    ProjectedUnit.Palette(doc.Id, doc) }
+              { KindKeyword = "tooltip"
+                Project = fun ctx ->
+                    let def = TooltipModuleParser.parseTooltipFile ctx.Text
+                    ProjectedUnit.Tooltip(def.Id, def) }
+              { KindKeyword = "catalog"
+                Project = fun ctx ->
+                    ProjectedUnit.Catalog(CatalogParser.parse ctx.Text) }
+              { KindKeyword = "host"
+                Project = fun ctx ->
+                    ProjectedUnit.Host(HostModuleParser.parse ctx.Text ctx.SpecDirectory) }
+              { KindKeyword = "diagram"
+                Project = fun ctx ->
+                    let id, doc = DiagramModuleParser.parseDiagramModuleWithId ctx.Text
+                    ProjectedUnit.Diagram(id, doc) }
+              { KindKeyword = "section"
+                Project = fun ctx ->
+                    let opts = defaultArg ctx.ParseOptions DashSpecParseOptions.defaultOptions
+                    ProjectedUnit.Section(DashboardComposer.parse ctx.Text ctx.SpecDirectory opts) }
+              { KindKeyword = "dashboard"
+                Project = fun ctx ->
+                    let opts = defaultArg ctx.ParseOptions DashSpecParseOptions.defaultOptions
+                    ProjectedUnit.Dashboard(DashboardComposer.parse ctx.Text ctx.SpecDirectory opts) } ]
+
+        for d in builtins do
+            register d
 
     let project (text: string) (specDirectory: string option) (typeCatalog: TypeCatalog option) (parseOptions: DashSpecParseOptions option) : ProjectedUnit =
         if String.IsNullOrWhiteSpace text then
@@ -50,42 +120,14 @@ module UnitProjector =
         | None ->
             raise (DashSpecUnitHeaderException("Unit requires 'module <kind> <id>'."))
         | Some env ->
-            match env.Kind with
-            | DashSpecModuleKind.Types ->
-                let defs = TypeModuleParser.parseTypesModule text
-                ProjectedUnit.Types(env.Id, env.Namespace, defs)
-            | DashSpecModuleKind.Flow _ ->
-                let catalog = defaultArg typeCatalog TypeCatalog.empty
-                ProjectedUnit.Flow(DashflowModuleParser.parseModule text catalog)
-            | DashSpecModuleKind.Layout ->
-                ProjectedUnit.Layout(LayoutModuleParser.parseLayoutFile text)
-            | DashSpecModuleKind.Presentation ->
-                let doc = PresentationModuleParser.parsePresentationModule text
-                ProjectedUnit.Presentation(doc.Id, doc)
-            | DashSpecModuleKind.Transform ->
-                let block = TransformModuleParser.parseTransformFile text
-                ProjectedUnit.Transform(env.Id, block)
-            | DashSpecModuleKind.Palette ->
-                let doc = PaletteModuleParser.parsePaletteFile text
-                ProjectedUnit.Palette(doc.Id, doc)
-            | DashSpecModuleKind.Tooltip ->
-                let def = TooltipModuleParser.parseTooltipFile text
-                ProjectedUnit.Tooltip(def.Id, def)
-            | DashSpecModuleKind.Catalog ->
-                ProjectedUnit.Catalog(CatalogParser.parse text)
-            | DashSpecModuleKind.Host ->
-                ProjectedUnit.Host(HostModuleParser.parse text specDirectory)
-            | DashSpecModuleKind.Diagram ->
-                let id, doc = DiagramModuleParser.parseDiagramModuleWithId text
-                ProjectedUnit.Diagram(id, doc)
-            | DashSpecModuleKind.Section ->
-                let opts = defaultArg parseOptions DashSpecParseOptions.defaultOptions
-                ProjectedUnit.Section(DashboardComposer.parse text specDirectory opts)
-            | DashSpecModuleKind.Dashboard ->
-                let opts = defaultArg parseOptions DashSpecParseOptions.defaultOptions
-                ProjectedUnit.Dashboard(DashboardComposer.parse text specDirectory opts)
-            | DashSpecModuleKind.Custom kw ->
-                match customProjectors.TryGetValue kw with
-                | true, projector -> ProjectedUnit.Custom(kw, env.Id, projector env)
-                | false, _ ->
-                    raise (DashSpecUnitHeaderException($"Unknown module kind '{kw}'.", env.ModuleNode.Span.Start))
+            let kw = DashSpecModuleKind.toKeyword env.Kind
+            match projectors.TryGetValue kw with
+            | true, descriptor ->
+                descriptor.Project
+                    { Text = text
+                      Envelope = env
+                      SpecDirectory = specDirectory
+                      TypeCatalog = typeCatalog
+                      ParseOptions = parseOptions }
+            | false, _ ->
+                raise (DashSpecUnitHeaderException($"Unknown module kind '{kw}'.", env.ModuleNode.Span.Start))

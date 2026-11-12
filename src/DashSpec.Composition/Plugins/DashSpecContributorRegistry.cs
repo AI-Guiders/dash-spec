@@ -30,8 +30,12 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly List<DashSpecCommandDescriptor> _commands = [];
     private readonly Dictionary<string, RuleCheckerContributorDescriptor> _ruleCheckers =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, UnitKindContributorDescriptor> _unitKinds =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public IReadOnlyDictionary<string, RuleCheckerContributorDescriptor> RuleCheckers => _ruleCheckers;
+
+    public IReadOnlyDictionary<string, UnitKindContributorDescriptor> UnitKinds => _unitKinds;
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
@@ -227,6 +231,23 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         {
             throw new InvalidOperationException(
                 $"Duplicate rule checker '{descriptor.CheckerId}' from plugin '{descriptor.PluginId}'.");
+        }
+
+        TrackPlugin(descriptor.PluginId);
+    }
+
+    public void AddUnitKind(UnitKindContributorDescriptor descriptor)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        if (string.IsNullOrWhiteSpace(descriptor.KindKeyword))
+        {
+            throw new ArgumentException("KindKeyword is required.", nameof(descriptor));
+        }
+
+        if (!_unitKinds.TryAdd(descriptor.KindKeyword, descriptor))
+        {
+            throw new InvalidOperationException(
+                $"Duplicate unit kind '{descriptor.KindKeyword}' from plugin '{descriptor.PluginId}'.");
         }
 
         TrackPlugin(descriptor.PluginId);

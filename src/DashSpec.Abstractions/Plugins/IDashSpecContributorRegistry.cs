@@ -44,6 +44,8 @@ public interface IDashSpecContributorRegistry
     void AddCommand(DashSpecCommandDescriptor descriptor);
 
     void AddRuleChecker(RuleCheckerContributorDescriptor descriptor);
+
+    void AddUnitKind(UnitKindContributorDescriptor descriptor);
 }
 
 public sealed record RuleCheckerContributorDescriptor(
@@ -51,6 +53,11 @@ public sealed record RuleCheckerContributorDescriptor(
     string CheckerId,
     string Code,
     Action<object> Validate);
+
+public sealed record UnitKindContributorDescriptor(
+    string PluginId,
+    string KindKeyword,
+    Func<string, string?, object> Project);
 
 public sealed record VizCardToolbarDescriptor(string RendererId, Type ComponentType);
 
