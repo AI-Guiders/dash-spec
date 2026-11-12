@@ -1,5 +1,5 @@
 ﻿module host ai_landscape
-import layouts from Demo.Layouts
+import layouts from Ai.Landscape.Layouts
 
 catalog "ai-catalog.ds"
 

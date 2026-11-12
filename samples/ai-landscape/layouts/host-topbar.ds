@@ -1,0 +1,5 @@
+module layout ai_host_topbar
+namespace Ai.Landscape.Layouts
+scope host
+
+[ brand [] catalog nav external_links help settings ]
