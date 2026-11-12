@@ -119,7 +119,20 @@ module UnitImport =
 
     let private registerDashflowText (path: string) (text: string) (state: ModuleImportState) =
         let catalog = TypeCatalog.ofDefinitions (state.ExportRowTypes().Values)
-        state.RegisterDashflow(DashflowModuleParser.parseModule text catalog, path)
+        let defaultProvider =
+            state.Defaults.Values
+            |> Seq.tryPick (fun d -> d.Provider)
+            |> Option.map (fun p ->
+                if String.Equals(p.Trim(), "infer", StringComparison.OrdinalIgnoreCase) then
+                    DashflowProviderBinding.Infer
+                else
+                    DashflowProviderBinding.Named(p.Trim()))
+        let defaultTimeZone =
+            state.Defaults.Values
+            |> Seq.tryPick (fun d -> d.TimeZone)
+            |> Option.map (fun tz -> tz.Trim().ToLowerInvariant())
+            |> Option.defaultValue ""
+        state.RegisterDashflow(DashflowModuleParser.parseModuleWithDefaults text catalog defaultProvider defaultTimeZone, path)
 
     let private unitIdOf (kind: string) (path: string) (text: string) =
         match UnitSource.moduleIdOf text with
@@ -128,6 +141,7 @@ module UnitImport =
 
     /// <summary>Compilation unit kind, taken from the <c>module &lt;kind&gt; &lt;id&gt;</c> header (ADR-0101).</summary>
     type UnitKind =
+        | Defaults
         | Runtime
         | Layout
         | Diagram
@@ -154,6 +168,7 @@ module UnitImport =
 
         let private unitKindOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) =
             match kind with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults -> Some Defaults
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Runtime -> Some Runtime
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout -> Some Layout
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram -> Some Diagram
@@ -181,7 +196,13 @@ module UnitImport =
     let private contributors =
         let d = System.Collections.Concurrent.ConcurrentDictionary<UnitKind, UnitContributor>()
         let builtins =
-            [ { Kind = Runtime
+            [ { Kind = Defaults
+                ImportKind = Some ImportKind.Defaults
+                Role = Declaration
+                Register = fun (_, text, _, state) ->
+                    let doc = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parse text
+                    state.RegisterDefaults(doc.Id, doc) }
+              { Kind = Runtime
                 ImportKind = Some ImportKind.Runtimes
                 Role = Declaration
                 Register = fun (path, text, _, state) ->

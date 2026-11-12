@@ -1,0 +1,8 @@
+module defaults ai_defaults
+namespace Ai.Landscape.Defaults
+
+sqldialect = tsql
+provider = infer
+filter.models_top.limit = 50
+
+end defaults

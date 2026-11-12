@@ -318,6 +318,9 @@ public static class Program
                 case UnitKind.Runtime:
                     _ = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseFile(fullPath);
                     break;
+                case UnitKind.Defaults:
+                    _ = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parseFile(fullPath);
+                    break;
                 default:
                     ValidateSpec(fullPath, BuildParseOptions(tomlPath));
                     break;
@@ -357,6 +360,7 @@ public static class Program
                     "host" => UnitKind.HostModule,
                     "catalog" => UnitKind.Catalog,
                     "runtime" => UnitKind.Runtime,
+                    "defaults" => UnitKind.Defaults,
                     _ => UnitKind.Spec,
                 };
             }
@@ -457,5 +461,6 @@ public static class Program
         HostModule,
         Catalog,
         Runtime,
+        Defaults,
     }
 }

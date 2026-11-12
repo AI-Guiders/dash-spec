@@ -1,9 +1,9 @@
 module flow demo_report
 namespace Demo.Flows
 
-source daily_peak_raw: FixtureRow = View(demo.v_daily_peak_concurrent_proxy) {
-  use provider infer
-}
+provider = infer
+
+source daily_peak_raw: FixtureRow = View(demo.v_daily_peak_concurrent_proxy)
 
 transformer daily_peak_tz {
   transform use to_zone { zone = UTC+3 }
@@ -11,9 +11,7 @@ transformer daily_peak_tz {
 
 daily_peak_raw [rows] -> [rows] daily_peak_tz
 
-source activity_raw: FixtureRow = View(demo.v_five_minute_events) {
-  use provider infer
-}
+source activity_raw: FixtureRow = View(demo.v_five_minute_events)
 
 transformer activity_tz {
   transform use to_zone { zone = UTC+3 }
@@ -21,9 +19,7 @@ transformer activity_tz {
 
 activity_raw [rows] -> [rows] activity_tz
 
-source dau_raw: FixtureRow = View(demo.v_daily_active_events) {
-  use provider infer
-}
+source dau_raw: FixtureRow = View(demo.v_daily_active_events)
 
 transformer dau_tz {
   transform use to_zone { zone = UTC+3 }
@@ -31,9 +27,7 @@ transformer dau_tz {
 
 dau_raw [rows] -> [rows] dau_tz
 
-source period_peak_raw: FixtureRow = View(demo.v_peak_concurrent_by_period) {
-  use provider infer
-}
+source period_peak_raw: FixtureRow = View(demo.v_peak_concurrent_by_period)
 
 transformer period_peak_tz {
   transform use to_zone { zone = UTC+3 }
@@ -41,9 +35,7 @@ transformer period_peak_tz {
 
 period_peak_raw [rows] -> [rows] period_peak_tz
 
-source peak_apps_raw: FixtureRow = View(demo.v_daily_peak_concurrent_apps_per_user) {
-  use provider infer
-}
+source peak_apps_raw: FixtureRow = View(demo.v_daily_peak_concurrent_apps_per_user)
 
 transformer peak_apps_tz {
   transform use to_zone { zone = UTC+3 }
@@ -51,9 +43,7 @@ transformer peak_apps_tz {
 
 peak_apps_raw [rows] -> [rows] peak_apps_tz
 
-source idle_raw: FixtureRow = View(demo.v_daily_idle_minutes_by_user_app) {
-  use provider infer
-}
+source idle_raw: FixtureRow = View(demo.v_daily_idle_minutes_by_user_app)
 
 transformer idle_tz {
   transform use to_zone { zone = UTC+3 }
@@ -61,9 +51,7 @@ transformer idle_tz {
 
 idle_raw [rows] -> [rows] idle_tz
 
-source idle_scatter_raw: FixtureRow = SqlFile("sql/idle-vs-peak-scatter.sql") {
-  use provider infer
-}
+source idle_scatter_raw: FixtureRow = SqlFile("sql/idle-vs-peak-scatter.sql")
 
 transformer idle_scatter_tz {
   transform use to_zone { zone = UTC+3 }
@@ -71,9 +59,7 @@ transformer idle_scatter_tz {
 
 idle_scatter_raw [rows] -> [rows] idle_scatter_tz
 
-source events_raw: EventDetailRow = View(demo.v_events_detail) {
-  use provider infer
-}
+source events_raw: EventDetailRow = View(demo.v_events_detail)
 
 transformer events_tz {
   transform use to_zone { zone = UTC+3 }

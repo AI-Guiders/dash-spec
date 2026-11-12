@@ -1,0 +1,13 @@
+module defaults demo_defaults
+namespace Demo.Defaults
+
+sqldialect = tsql
+provider = infer
+filter.usage_date.range = -7d..today
+filter.activity_slot.range = today
+filter.period_start.range = today
+filter.period_grain.scale = day
+filter.events_top.limit = 200
+filter.idle_top.limit = 100
+
+end defaults

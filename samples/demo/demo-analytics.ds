@@ -2,11 +2,7 @@ module section analytics
     namespace Demo.Analytics
     import palettes from Demo.Palettes
     import runtimes from Demo.Runtime
-
-    configuration
-        sqldialect = tsql
-
-    end configuration
+    import defaults from Demo.Defaults
 
     connect
         use palette demo_apps

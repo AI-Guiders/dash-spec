@@ -1,24 +1,14 @@
 module flow ai_landscape view
 namespace Ai.Landscape.Flows
 
-// Leaf sources — Epoch AI open data ingested into SQL (ADR-0126 NOTE: files → db → dashspec)
-source models_2023: ModelRow = View(ai_landscape.models_2023) {
-  use provider infer
-}
+provider = infer
 
-source models_2024: ModelRow = View(ai_landscape.models_2024) {
-  use provider infer
-}
+source models_2023: ModelRow = View(ai_landscape.models_2023)
+source models_2024: ModelRow = View(ai_landscape.models_2024)
+source orgs: OrgRow = View(ai_landscape.orgs)
 
-source orgs: OrgRow = View(ai_landscape.orgs) {
-  use provider infer
-}
+source models: ModelRow = UnionAll(models_2023, models_2024)
 
-// Composite: the unified model stream of the last two years (UnionAll of leaves)
-source models: ModelRow = UnionAll(models_2023, models_2024) {
-}
-
-// Composite: who builds what — models joined with organizations (InnerJoin of leaves)
 source landscape_2023 = InnerJoin(models_2023, orgs) {
   on = org_id
 }

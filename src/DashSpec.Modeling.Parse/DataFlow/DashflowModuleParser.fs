@@ -691,7 +691,13 @@ module DashflowModuleParser =
 
         List.ofSeq items
 
-    let private projectSourceFromAst (sourceId: string) (block: BlockDeclarationSyntax) : DashflowSourceDef =
+    let private projectSourceFromAst
+        (sourceId: string)
+        (block: BlockDeclarationSyntax)
+        (defaultProvider: DashflowProviderBinding option)
+        (defaultTimeZone: string)
+        : DashflowSourceDef
+        =
         let annotationRowType = block.TypeAnnotation
         let headerOrigin = block.Origin |> Option.map mapOriginSyntax
 
@@ -700,15 +706,15 @@ module DashflowModuleParser =
 
         if not hasBraceOnHeader then
             match headerOrigin with
-            | Some(PComposite _) when block.Members.Length = 0 -> ()
+            | Some _ when block.Members.Length = 0 -> ()
             | _ -> raise (DashSpecParseException($"source '{sourceId}': expected '{{' after source header."))
 
-        let mutable providerBinding: DashflowProviderBinding option = None
+        let mutable providerBinding: DashflowProviderBinding option = defaultProvider
         let mutable from: SourceFrom option = None
         let mutable onKeys: string list = []
         let mutable leftKeys: string list = []
         let mutable rightKeys: string list = []
-        let mutable timeZone = ""
+        let mutable timeZone = defaultTimeZone
         let mutable outputPort = ""
         let mutable outputRowType = ""
         let mutable defaultOutputPort = None
@@ -728,6 +734,12 @@ module DashflowModuleParser =
                     if value <> "utc" && value <> "local" then
                         raise (DashSpecParseException($"source '{sourceId}': time_zone supports utc or local (got '{raw}')."))
                     timeZone <- value
+                elif String.Equals(prop.Key, "provider", StringComparison.OrdinalIgnoreCase) then
+                    let raw = prop.ValueText.Trim().Trim('"')
+                    if String.Equals(raw, "infer", StringComparison.OrdinalIgnoreCase) then
+                        providerBinding <- Some DashflowProviderBinding.Infer
+                    elif not (String.IsNullOrWhiteSpace raw) then
+                        providerBinding <- Some(DashflowProviderBinding.Named raw)
                 elif String.Equals(prop.Key, "on", StringComparison.OrdinalIgnoreCase) then
                     onKeys <- readIdentListFromProperty sourceId prop
                 elif String.Equals(prop.Key, "left_key", StringComparison.OrdinalIgnoreCase) then
@@ -948,26 +960,51 @@ module DashflowModuleParser =
         (members: DashSpecAstNode[])
         (typeCatalog: TypeCatalog)
         (seenIds: HashSet<string>)
+        (initialProvider: DashflowProviderBinding option)
+        (initialTimeZone: string)
         : DashflowSourceDef[] * DashflowTransformerDef[] * DashflowNestedFlowDef[] * FlowLinkDef[]
         =
         let sources = ResizeArray<DashflowSourceDef>()
         let transformers = ResizeArray<DashflowTransformerDef>()
         let nestedFlows = ResizeArray<DashflowNestedFlowDef>()
         let links = ResizeArray<FlowLinkDef>()
+        let mutable scopeProvider = initialProvider
+        let mutable scopeTimeZone = initialTimeZone
+
+        let applyDefaultProperty (key: string) (rawVal: string) =
+            let v = rawVal.Trim().Trim('"')
+            if String.Equals(key, "provider", StringComparison.OrdinalIgnoreCase) then
+                if String.Equals(v, "infer", StringComparison.OrdinalIgnoreCase) then
+                    scopeProvider <- Some DashflowProviderBinding.Infer
+                elif not (String.IsNullOrWhiteSpace v) then
+                    scopeProvider <- Some(DashflowProviderBinding.Named v)
+            elif String.Equals(key, "time_zone", StringComparison.OrdinalIgnoreCase) then
+                let tz = v.ToLowerInvariant()
+                if tz <> "utc" && tz <> "local" then
+                    raise (DashSpecParseException($"flow defaults: time_zone supports utc or local (got '{rawVal}')."))
+                scopeTimeZone <- tz
 
         for memberNode in members do
             match memberNode with
+            | DashSpecAstNode.PropertyAssignment prop ->
+                applyDefaultProperty prop.Key prop.ValueText
             | DashSpecAstNode.BlockDeclaration block ->
                 match block.Opener with
+                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Defaults
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Defaults, _) ->
+                    for child in block.Members do
+                        match child with
+                        | DashSpecAstNode.PropertyAssignment p -> applyDefaultProperty p.Key p.ValueText
+                        | _ -> ()
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Source, sourceId) ->
                     ensureUniqueNodeId "source" sourceId seenIds
-                    sources.Add(projectSourceFromAst sourceId block)
+                    sources.Add(projectSourceFromAst sourceId block scopeProvider scopeTimeZone)
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Transformer, transformerId) ->
                     ensureUniqueNodeId "transformer" transformerId seenIds
                     transformers.Add(projectTransformerFromAst transformerId block)
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Flow, nestedId) ->
                     ensureUniqueNodeId "nested flow" nestedId seenIds
-                    let s, t, n, l = projectScope block.Members typeCatalog seenIds
+                    let s, t, n, l = projectScope block.Members typeCatalog seenIds scopeProvider scopeTimeZone
                     nestedFlows.Add(finishNestedFlow nestedId s t n l typeCatalog)
                 | _ ->
                     let headerText = block.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
@@ -981,6 +1018,11 @@ module DashflowModuleParser =
             | DashSpecAstNode.ClauseDeclaration clause ->
                 match clause.Kind with
                 | ClauseKind.NamespaceClause _ -> ()
+                | ClauseKind.UseProviderClause p ->
+                    scopeProvider <-
+                        match p with
+                        | ProviderBindingSyntax.Infer -> Some DashflowProviderBinding.Infer
+                        | ProviderBindingSyntax.Named id -> Some(DashflowProviderBinding.Named id)
                 | _ ->
                     let lineText = clause.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
                     raise (DashSpecParseException($"Unexpected clause '{lineText}' in flow scope."))
@@ -994,7 +1036,12 @@ module DashflowModuleParser =
 
         sources.ToArray(), transformers.ToArray(), nestedFlows.ToArray(), links.ToArray()
 
-    let parseModule (text: string) (typeCatalog: TypeCatalog) =
+    let parseModuleWithDefaults
+        (text: string)
+        (typeCatalog: TypeCatalog)
+        (defaultProvider: DashflowProviderBinding option)
+        (defaultTimeZone: string)
+        =
         if String.IsNullOrWhiteSpace text then invalidArg "text" "Dashflow text is required."
 
         let tree = DashSpecSurfaceSyntax.parse text
@@ -1006,6 +1053,10 @@ module DashflowModuleParser =
             | _ -> false
 
         let seenIds = HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        let sources, transformers, nestedFlows, links = projectScope env.Body typeCatalog seenIds
+        let sources, transformers, nestedFlows, links =
+            projectScope env.Body typeCatalog seenIds defaultProvider defaultTimeZone
         let parsed = finishModule env.Id sources transformers nestedFlows links typeCatalog
         if emitViews then { parsed with EmitViews = true } else parsed
+
+    let parseModule (text: string) (typeCatalog: TypeCatalog) =
+        parseModuleWithDefaults text typeCatalog None ""

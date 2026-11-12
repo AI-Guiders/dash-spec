@@ -38,13 +38,24 @@ module DateDefaultRange =
         else
             raise (DashSpecParseException($"Unknown date bound '{token}'. Use today, -Nd (e.g. -7d), or yyyy-MM-dd."))
 
+    let tryParse (expression: string) : Result<DateRangeValue, string> =
+        if String.IsNullOrWhiteSpace expression then
+            Result.Error "Date filter requires explicit default range, e.g. default -7d..today"
+        else
+            let parts = expression.Split("..", StringSplitOptions.TrimEntries ||| StringSplitOptions.RemoveEmptyEntries)
+            if parts.Length <> 2 then
+                Result.Error $"Date default must be 'from..to' (e.g. -7d..today or 2026-06-01..2026-06-30), got '{expression.Trim()}'."
+            else
+                DateRangeValue.tryParseBounds parts.[0] parts.[1]
+
     let validateSyntax (expression: string) =
-        let fromToken, toToken = splitRange expression
-        resolveBoundShape fromToken |> ignore
-        resolveBoundShape toToken |> ignore
+        match tryParse expression with
+        | Result.Ok _ -> ()
+        | Result.Error err -> raise (DashSpecParseException err)
 
     let validateSingleDayDefault (expression: string) =
-        let fromToken, toToken = splitRange expression
-
-        if not (fromToken.Equals(toToken, StringComparison.OrdinalIgnoreCase)) then
+        match tryParse expression with
+        | Result.Ok range when range.From = range.To -> ()
+        | Result.Ok _ ->
             raise (DashSpecParseException($"Date filter with widget=day requires a single-day default (from..to must match), e.g. today..today, got '{expression.Trim()}'."))
+        | Result.Error err -> raise (DashSpecParseException err)

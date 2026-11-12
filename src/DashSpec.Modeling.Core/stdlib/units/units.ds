@@ -3,6 +3,7 @@ namespace DashSpec.Stdlib.Units
 
 | unit         | import_as     | role        |
 | registry     | registries    | declaration |
+| defaults     | defaults      | declaration |
 | runtime      | runtimes      | declaration |
 | types        | types         | declaration |
 | layout       | layouts       | declaration |

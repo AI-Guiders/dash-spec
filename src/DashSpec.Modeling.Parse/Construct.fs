@@ -137,6 +137,36 @@ module Construct =
 
         if rows.Length = 0 then None else Some(ConstructForm.TableForm rows)
 
+    /// Unified AST construct projection: applies <paramref name="decl"/> across both
+    /// <see cref="ConstructForm.TableForm"/> (`| col1 | col2 |`) and <see cref="ConstructForm.BlockForm"/>
+    /// (`<blockKeyword> [<id>] ... end <blockKeyword>`) in a single call.
+    let projectAst
+        (decl: Declaration<'Row>)
+        (blockKeyword: DashSpecBlockKeyword option)
+        (idAttribute: string)
+        (members: DashSpecAstNode[])
+        : unit
+        =
+        match tryFromAstTable members with
+        | Some tableForm -> apply decl tableForm
+        | None -> ()
+
+        match blockKeyword with
+        | None -> ()
+        | Some kw ->
+            for m in members do
+                match m with
+                | DashSpecAstNode.BlockDeclaration b ->
+                    match b.Opener with
+                    | DashSpecBlockOpener.Named(bkw, itemId) when bkw = kw ->
+                        let header =
+                            if String.IsNullOrWhiteSpace idAttribute then [] else [ idAttribute, itemId ]
+                        apply decl (fromAstBlock header b)
+                    | DashSpecBlockOpener.Anonymous bkw when bkw = kw ->
+                        apply decl (fromAstBlock [] b)
+                    | _ -> ()
+                | _ -> ()
+
     /// Convert raw pipe-table lines into <see cref="ConstructForm.TableForm"/> and apply the declaration.
     let applyTableRows (decl: Declaration<'Row>) (rows: string list) : unit =
         let cellRows = rows |> List.map TableLiteral.splitCells |> List.toArray

@@ -17,6 +17,35 @@ module ExtensionBlockParser =
         while not (BlockSyntax.isBlockEnd reader keyword None) && not reader.IsEof do
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader keyword None then ()
+            elif reader.CurrentKind = TokenKind.TableRow then
+                let tableRows = ResizeArray<string[]>()
+                while not reader.IsEof && reader.CurrentKind = TokenKind.TableRow do
+                    tableRows.Add(TableLiteral.splitCells (reader.CurrentTableRow()))
+                    reader.Advance()
+                    reader.SkipNewlines()
+
+                if tableRows.Count > 1 then
+                    let headers = tableRows.[0] |> Array.map (fun h -> h.Trim())
+                    let idColIdx =
+                        headers
+                        |> Array.tryFindIndex (fun h -> String.Equals(h, "id", StringComparison.OrdinalIgnoreCase))
+                        |> Option.defaultValue 0
+
+                    for r in tableRows |> Seq.skip 1 do
+                        if not (TableLiteral.isSeparator r) && idColIdx < r.Length then
+                            let rowId = r.[idColIdx].Trim().Trim('"')
+                            if not (String.IsNullOrWhiteSpace rowId) && rowId <> "-" then
+                                let rowProps = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                                for i in 0 .. (min (r.Length - 1) (headers.Length - 1)) do
+                                    if i <> idColIdx then
+                                        let colName = headers.[i]
+                                        let cellVal = r.[i].Trim().Trim('"')
+                                        if not (String.IsNullOrWhiteSpace colName) && not (String.IsNullOrWhiteSpace cellVal) && cellVal <> "-" then
+                                            rowProps.[colName] <- cellVal
+                                nested.Add
+                                    { Keyword = rowId
+                                      Properties = rowProps :> IReadOnlyDictionary<_, _>
+                                      Nested = [||] }
             else
                 let mark = reader.SavePosition()
                 let first = reader.ReadIdent()

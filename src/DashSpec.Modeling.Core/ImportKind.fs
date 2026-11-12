@@ -8,6 +8,7 @@ open System.Reflection
 [<RequireQualifiedAccess>]
 type ImportKind =
     | Registries
+    | Defaults
     | Runtimes
     | Diagrams
     | Layouts
@@ -46,6 +47,7 @@ module ImportKindRegistry =
     let private tryMapImportKind (unitKw: string) =
         match unitKw.ToLowerInvariant() with
         | "registry" -> Some ImportKind.Registries
+        | "defaults" -> Some ImportKind.Defaults
         | "runtime" -> Some ImportKind.Runtimes
         | "diagram" -> Some ImportKind.Diagrams
         | "layout" -> Some ImportKind.Layouts

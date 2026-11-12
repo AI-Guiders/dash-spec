@@ -8,11 +8,7 @@ module dashboard demo_soak
     import sections from Demo.Analytics
     import presentations from DashSpec.Std
     import runtimes from Demo.Runtime
-
-    configuration
-        sqldialect = tsql
-
-    end configuration
+    import defaults from Demo.Defaults
 
     connect
         use palette demo_apps
@@ -21,14 +17,6 @@ module dashboard demo_soak
 
     report
         title = "DashSpec — Demo soak"
-        defaults
-            filter.usage_date.range = -7d..today
-            filter.activity_slot.range = today
-            filter.period_start.range = today
-            filter.period_grain.scale = day
-            filter.events_top.limit = 200
-            filter.idle_top.limit = 100
-        end defaults
         filters
             | id            | bind  | column                                        | label                     | widget   | grain        | single |
             | usage_date    | date  | usage_date                                    | Report date               | -        | period_grain | -      |

@@ -1322,8 +1322,8 @@ module DashSpecSurfaceSyntax =
         elif String.Equals(kind, "source", StringComparison.OrdinalIgnoreCase) then
             let _, originOpt, _ = parseSourceHeaderMetadata lineTokens
             match originOpt with
-            | Some(SourceOriginSyntax.Composite _) -> false, false // bodyless composite source
-            | _ -> true, false
+            | Some _ -> false, false // bodyless source (`source id: Type = View(...)` or `UnionAll(...)`)
+            | None -> true, false
         elif String.Equals(kind, "transform", StringComparison.OrdinalIgnoreCase) then
             // `transform use <plugin>` without `{` on the opener line is a bodyless transform step
             false, false

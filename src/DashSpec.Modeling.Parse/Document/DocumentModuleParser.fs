@@ -416,6 +416,12 @@ module rec DocumentModuleParser =
             includes
             diagnostics
 
+        for d in includes.Defaults.Values do
+            match d.SqlDialect with
+            | Some dialectRaw -> sqlDialect <- SqlDialectParser.parse dialectRaw
+            | None -> ()
+            timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc d.Properties
+
         let seenCode = ref false
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "dashboard" (Some dashboardId)) do
@@ -511,6 +517,12 @@ module rec DocumentModuleParser =
             DocumentModuleKind.Tab
             includes
             diagnostics
+
+        for d in includes.Defaults.Values do
+            match d.SqlDialect with
+            | Some dialectRaw -> sqlDialect <- SqlDialectParser.parse dialectRaw
+            | None -> ()
+            timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc d.Properties
 
         let seenCode = ref false
 
@@ -716,7 +728,7 @@ module rec DocumentModuleParser =
 
         let onStandalone () =
             if mode = ReportBodyMode.TabEmbedded then
-                skipStandaloneBlock reader
+                skipStandaloneBlock reader shell
             else
                 parseStandaloneBlock reader shell
 
@@ -917,13 +929,14 @@ module rec DocumentModuleParser =
 
         BlockSyntax.expectBlockEnd reader "standalone" (None: string option)
 
-    let private skipStandaloneBlock (reader: TokenReader) =
+    let private skipStandaloneBlock (reader: TokenReader) (shell: ReportCompileContext) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let standaloneFilterDefaults = FilterScopeDefaults.create ()
+        FilterScopeDefaults.merge standaloneFilterDefaults shell.FilterDefaults
 
         let resolveFilterProperty (filterName: string) (property: string) =
-            FilterScopeDefaults.tryGet standaloneFilterDefaults filterName property
+            FilterScopeDefaults.resolveProperty [ standaloneFilterDefaults; shell.FilterDefaults ] filterName property
 
         let onDefaults () =
             DefaultsBlockParser.parse reader "defaults" ReportFormatDefaults.empty standaloneFilterDefaults |> ignore
@@ -1078,7 +1091,7 @@ module rec DocumentModuleParser =
 
             { Name = "filters"
               Vocabulary =
-                [ "id"; "bind"; "column"; "label"; "widget"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit"; "depends" ]
+                [ "id"; "bind"; "column"; "label"; "widget"; "density"; "ref"; "single"; "grain"; "min"; "max"; "bind_scope"; "range"; "limit"; "depends" ]
               CellsToRow = cellsToFilter
               ConstructRow = addFilter }
 
@@ -1199,6 +1212,20 @@ module rec DocumentModuleParser =
         shell.ModuleExtensions <- moduleExtensions
         shell.Includes <- includes
         shell.TimePolicy <- timePolicy
+
+        for d in includes.Defaults.Values do
+            shell.FormatDefaults <-
+                ReportFormatDefaults.merge
+                    shell.FormatDefaults
+                    { Culture = d.Culture
+                      TimeFormat = d.TimeFormat
+                      DateFormat = d.DateFormat
+                      DateTimeFormat = d.DateTimeFormat }
+
+            for fk in d.FilterDefaults do
+                for pk in fk.Value do
+                    FilterScopeDefaults.set shell.FilterDefaults fk.Key pk.Key pk.Value
+
         shell
 
     let private restrictExtensionBlocksForModule (options: DashSpecParseOptions) (moduleExtensions: ModuleExtensionsDefinition) =

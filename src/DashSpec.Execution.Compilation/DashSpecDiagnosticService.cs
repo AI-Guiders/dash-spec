@@ -104,6 +104,7 @@ public static class DashSpecDiagnosticService
             ["types"] = (_, _, _, _) => [],
             ["flow"] = (_, _, _, _) => [],
             ["registry"] = (text, _, _, _) => { DashSpec.Modeling.Parse.RegistryModuleParser.parse(text); return []; },
+            ["defaults"] = (text, _, _, _) => { DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parse(text); return []; },
             ["runtime"] = (text, _, _, _) => { DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse(text); return []; },
             ["catalog"] = LintCatalog,
             ["host"] = (text, _, specDir, _) => { HostModuleParser.Parse(text, specDir); return []; },

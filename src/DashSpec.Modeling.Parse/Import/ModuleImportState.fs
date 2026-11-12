@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
+open DashSpec.Modeling.Parse.Defaults
 open DashSpec.Modeling.Parse.Runtime
 
 type ModuleImportState() =
@@ -29,6 +30,12 @@ type ModuleImportState() =
     let tabModules = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let runtimes = Dictionary<string, RuntimeDocument>(StringComparer.OrdinalIgnoreCase)
     let runtimePaths = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let defaultsDocs = Dictionary<string, DefaultsDocument>(StringComparer.OrdinalIgnoreCase)
+
+    member _.RegisterDefaults(id: string, doc: DefaultsDocument) =
+        defaultsDocs.[id] <- doc
+
+    member _.Defaults = defaultsDocs :> IReadOnlyDictionary<string, DefaultsDocument>
 
     member _.RegisterRuntime(id: string, path: string, doc: RuntimeDocument) =
         runtimes.[id] <- doc
