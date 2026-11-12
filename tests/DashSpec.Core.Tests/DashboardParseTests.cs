@@ -991,7 +991,7 @@ public class DashboardParseTests
             LocalFilters: [],
             SeriesTransform: new SeriesTransformBlock(null, 8, "Other"));
 
-        Assert.Equal(8, MatrixPresentation.FromCard(cardWithSeries).VisibleRows);
+        Assert.Null(MatrixPresentation.FromCard(cardWithSeries).VisibleRows);
     }
 
     [Theory]
