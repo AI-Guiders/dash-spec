@@ -1,8 +1,8 @@
 // Generates docs/grammar/CONTEXT.md from the parser registries.
 // Run: dotnet fsi tools/grammar-context.fsx   (after building the solution once)
 
-#r "../src/DashSpec.Modeling.Core/bin/Debug/net10.0/DashSpec.Modeling.Core.dll"
-#r "../src/DashSpec.Modeling.Parse/bin/Debug/net10.0/DashSpec.Modeling.Parse.dll"
+#r "../src/DashSpec.Modeling.Core/bin/Debug/net11.0/DashSpec.Modeling.Core.dll"
+#r "../src/DashSpec.Modeling.Parse/bin/Debug/net11.0/DashSpec.Modeling.Parse.dll"
 
 open System
 open System.IO

@@ -259,27 +259,36 @@ else
             activeCell = _activeCell is { } active ? new { yi = active.Yi, xi = active.Xi } : (object?)null,
         };
 
-        if (_mountedPayloadKey is not null &&
-            !firstRender &&
-            !string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal))
+        try
         {
+            if (_mountedPayloadKey is not null &&
+                !firstRender &&
+                !string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal))
+            {
+                _mountedPayloadKey = payloadKey;
+                await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
+                return;
+            }
+
+            if (string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal) && !firstRender)
+            {
+                await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
+                return;
+            }
+
             _mountedPayloadKey = payloadKey;
-            await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
-            return;
+            await Js.InvokeVoidAsync(
+                "dashSpecMatrix.mount",
+                HostId,
+                CanvasId,
+                payloadObj);
         }
-
-        if (string.Equals(payloadKey, _mountedPayloadKey, StringComparison.Ordinal) && !firstRender)
+        catch (JSDisconnectedException)
         {
-            await Js.InvokeVoidAsync("dashSpecMatrix.update", HostId, CanvasId, payloadObj);
-            return;
         }
-
-        _mountedPayloadKey = payloadKey;
-        await Js.InvokeVoidAsync(
-            "dashSpecMatrix.mount",
-            HostId,
-            CanvasId,
-            payloadObj);
+        catch (TaskCanceledException)
+        {
+        }
     }
 
     private string BuildPayloadKey() =>
@@ -311,7 +320,20 @@ else
             return;
         }
 
-        var hit = await Js.InvokeAsync<CanvasHit?>("dashSpecMatrix.hitTest", CanvasId, args.OffsetX, args.OffsetY);
+        CanvasHit? hit;
+        try
+        {
+            hit = await Js.InvokeAsync<CanvasHit?>("dashSpecMatrix.hitTest", CanvasId, args.OffsetX, args.OffsetY);
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
         if (hit is null || hit.Value is null)
         {
             return;

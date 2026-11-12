@@ -106,38 +106,47 @@
         _previousValueAxisMax = ValueAxisMax;
         _previousCategoryClickEnabled = CategoryClickEnabled;
         _previousDetailView = DetailView;
-        await Js.InvokeVoidAsync(
-            "dashSpecCharts.render",
-            ChartId,
-            ChartType,
-            Payload.Labels,
-            Payload.Series,
-            new
-            {
-                legend = Legend,
-                stacked = Stacked,
-                fill = FillArea,
-                sparkline = Sparkline,
-                horizontal = Orientation is ChartOrientation.Horizontal,
-                valueAxisScale = ValueAxisScale switch
+        try
+        {
+            await Js.InvokeVoidAsync(
+                "dashSpecCharts.render",
+                ChartId,
+                ChartType,
+                Payload.Labels,
+                Payload.Series,
+                new
                 {
-                    ChartAxisScale.Integer => "integer",
-                    ChartAxisScale.Percent => "percent",
-                    _ => "decimal",
-                },
-                referenceValues = Payload.ReferenceValues,
-                referenceLabel = Payload.ReferenceLabel,
-                points = Payload.Points,
-                boxes = Payload.Boxes,
-                treemap = Payload.Treemap,
-                gauge = Payload.Gauge,
-                categoryAxisLabel = CategoryAxisLabel,
-                valueAxisLabel = ValueAxisLabel,
-                valueAxisMax = ValueAxisMax,
-                categoryClickEnabled = CategoryClickEnabled,
-                detailView = DetailView,
-                dotNetRef = CategoryClickEnabled ? _dotNetRef : null,
-            });
+                    legend = Legend,
+                    stacked = Stacked,
+                    fill = FillArea,
+                    sparkline = Sparkline,
+                    horizontal = Orientation is ChartOrientation.Horizontal,
+                    valueAxisScale = ValueAxisScale switch
+                    {
+                        ChartAxisScale.Integer => "integer",
+                        ChartAxisScale.Percent => "percent",
+                        _ => "decimal",
+                    },
+                    referenceValues = Payload.ReferenceValues,
+                    referenceLabel = Payload.ReferenceLabel,
+                    points = Payload.Points,
+                    boxes = Payload.Boxes,
+                    treemap = Payload.Treemap,
+                    gauge = Payload.Gauge,
+                    categoryAxisLabel = CategoryAxisLabel,
+                    valueAxisLabel = ValueAxisLabel,
+                    valueAxisMax = ValueAxisMax,
+                    categoryClickEnabled = CategoryClickEnabled,
+                    detailView = DetailView,
+                    dotNetRef = CategoryClickEnabled ? _dotNetRef : null,
+                });
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
     }
 
     [JSInvokable]

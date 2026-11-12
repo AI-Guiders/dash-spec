@@ -27,15 +27,17 @@ public sealed class DashCatalogEmitDriftTests
 
     private static void RunProcess(string fileName, string arguments, string workingDirectory)
     {
-        using var process = Process.Start(new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = fileName,
-            Arguments = arguments,
+            Arguments = $"{arguments} -nodeReuse:false",
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-        });
+        };
+        startInfo.Environment["DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER"] = "1";
+        using var process = Process.Start(startInfo);
 
         Assert.NotNull(process);
         var stdout = process.StandardOutput.ReadToEnd();

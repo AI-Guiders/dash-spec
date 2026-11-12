@@ -44,10 +44,19 @@
         if (firstRender)
         {
             _selfRef = DotNetObjectReference.Create(this);
-            await Js.InvokeVoidAsync("dashspecDatepicker.init", _element, _selfRef, BuildOptions());
-            _pickerReady = true;
-            _renderedFrom = From;
-            _renderedTo = To;
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.init", _element, _selfRef, BuildOptions());
+                _pickerReady = true;
+                _renderedFrom = From;
+                _renderedTo = To;
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 
@@ -59,7 +68,16 @@
         {
             _renderedFrom = From;
             _renderedTo = To;
-            await Js.InvokeVoidAsync("dashspecDatepicker.updateRange", _element, From, To);
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.updateRange", _element, From, To);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 

@@ -27,7 +27,7 @@
 
 ## 1. Запустить demo Host локально
 
-**Нужно:** .NET SDK (см. `TargetFramework` Host, сейчас `net10.0`), SQL Server с demo-схемой (или поправить connection string).
+**Нужно:** .NET SDK (см. `TargetFramework` Host, сейчас `net11.0`), SQL Server с demo-схемой (или поправить connection string).
 
 ```powershell
 git clone https://github.com/AI-Guiders/dash-spec.git

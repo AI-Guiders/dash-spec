@@ -4,11 +4,9 @@
 
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <NoWarn>$(NoWarn);MSB3277;NU1608</NoWarn>
 
     <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
-
-    <FSharpCoreImplicitPackageVersion>10.1.401</FSharpCoreImplicitPackageVersion>
 
     <!-- Local platform resolution (sibling guiders-platform): enabled by the
          "SSCAD (LUS prod)" launch profile via DASHSPEC_LOCAL_PLATFORM=true.

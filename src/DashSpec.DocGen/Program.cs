@@ -8,8 +8,8 @@ var repoRoot = ResolveRepoRoot(args);
 // Use the freshest documentation file: preferring Release silently regenerates docs from a stale build.
 var coreXml = new[]
     {
-        Path.Combine(repoRoot, "src/DashSpec.Core/bin/Release/net10.0/DashSpec.Core.xml"),
-        Path.Combine(repoRoot, "src/DashSpec.Core/bin/Debug/net10.0/DashSpec.Core.xml"),
+        Path.Combine(repoRoot, "src/DashSpec.Core/bin/Release/net11.0/DashSpec.Core.xml"),
+        Path.Combine(repoRoot, "src/DashSpec.Core/bin/Debug/net11.0/DashSpec.Core.xml"),
     }
     .Where(File.Exists)
     .OrderByDescending(File.GetLastWriteTimeUtc)

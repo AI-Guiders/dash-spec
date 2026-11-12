@@ -49,31 +49,33 @@ else
             }
             @for (var yi = 0; yi < Payload.YLabels.Count; yi++)
             {
-                var yLabel = Payload.YLabels[yi];
+                var cellY = yi;
+                var yLabel = Payload.YLabels[cellY];
                 @if (ShowAxisLabelsY)
                 {
-                    <div class="heatmap-y-label" style="@($"grid-row:{yi + 2};grid-column:1")" title="@yLabel">@FormatYLabel(yLabel)</div>
+                    <div class="heatmap-y-label" style="@($"grid-row:{cellY + 2};grid-column:1")" title="@yLabel">@FormatYLabel(yLabel)</div>
                 }
                 else
                 {
                     <div class="heatmap-y-label heatmap-y-label-spacer"
-                         style="@($"grid-row:{yi + 2};grid-column:1")"
+                         style="@($"grid-row:{cellY + 2};grid-column:1")"
                          aria-hidden="true"></div>
                 }
                 @for (var xi = 0; xi < Payload.XLabels.Count; xi++)
                 {
-                    var value = Payload.Cells[yi][xi];
-                    var xLabel = Payload.XLabels[xi];
+                    var cellX = xi;
+                    var value = Payload.Cells[cellY][cellX];
+                    var xLabel = Payload.XLabels[cellX];
                     var filled = value is not null;
-                    var active = _activeCell is { Yi: var ay, Xi: var ax } && ay == yi && ax == xi;
-                    var (cellMin, cellMax) = Payload.ColorRangeForCell(yi, xi);
+                    var active = _activeCell is { Yi: var ay, Xi: var ax } && ay == cellY && ax == cellX;
+                    var (cellMin, cellMax) = Payload.ColorRangeForCell(cellY, cellX);
                     <div class="heatmap-cell @(filled ? "heatmap-cell-filled" : "heatmap-cell-empty") @(active ? "heatmap-cell-active" : null)"
-                         style="@CellStyle(yi, xi, filled, value, cellMin, cellMax)"
-                         @onmouseenter="() => ShowPopover(yi, xi)"
+                         style="@CellStyle(cellY, cellX, filled, value, cellMin, cellMax)"
+                         @onmouseenter="() => ShowPopover(cellY, cellX)"
                          @onmouseleave="HidePopover"
-                         @onclick="() => SelectCell(yi, xi)"
+                         @onclick="() => SelectCell(cellY, cellX)"
                          @onclick:stopPropagation="true"
-                         @onfocus="() => ShowPopover(yi, xi)"
+                         @onfocus="() => ShowPopover(cellY, cellX)"
                          @onblur="HidePopover"
                          tabindex="@(filled ? 0 : -1)">
                         @if (filled && ShowCellValues)
@@ -84,22 +86,22 @@ else
                         {
                             <div class="heatmap-popover" role="tooltip">
                                 <p class="heatmap-popover-head">@PopoverHeader(yLabel, xLabel, value)</p>
-                                @if (TooltipFormat is TooltipFormat.List && HasTooltipItems(yi, xi))
+                                @if (TooltipFormat is TooltipFormat.List && HasTooltipItems(cellY, cellX))
                                 {
                                     @if (!string.IsNullOrWhiteSpace(TooltipLabel))
                                     {
                                         <p class="heatmap-popover-section"><RichTextView Text="@TooltipLabel" /></p>
                                     }
                                     <ul class="heatmap-popover-list">
-                                        @foreach (var item in TooltipItems(yi, xi))
+                                        @foreach (var item in TooltipItems(cellY, cellX))
                                         {
                                             <li>@item</li>
                                         }
                                     </ul>
                                 }
-                                else if (HasTooltipItems(yi, xi))
+                                else if (HasTooltipItems(cellY, cellX))
                                 {
-                                    <p class="heatmap-popover-body">@InlineTooltipBody(yi, xi)</p>
+                                    <p class="heatmap-popover-body">@InlineTooltipBody(cellY, cellX)</p>
                                 }
                             </div>
                         }

@@ -158,7 +158,16 @@
         if (!_inputBound)
         {
             _inputBound = true;
-            await Js.InvokeVoidAsync("aiguidersInput.surfaces.commandLine.bindInput", _inputRef);
+            try
+            {
+                await Js.InvokeVoidAsync("aiguidersInput.surfaces.commandLine.bindInput", _inputRef);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 

@@ -33,7 +33,16 @@
         var bindings = DashboardCatalogBindings.HostBindings()
             .Select(binding => new { gesture = binding.Gesture, methodName = binding.MethodName })
             .ToArray();
-        await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindHostBindings", _selfRef, bindings);
+        try
+        {
+            await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindHostBindings", _selfRef, bindings);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
     }
 
     void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
@@ -49,7 +58,16 @@
         Coordinator.Changed -= OnCoordinatorChanged;
         if (_bindingsBound)
         {
-            await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindHostBindings");
+            try
+            {
+                await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindHostBindings");
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
 
         _selfRef?.Dispose();

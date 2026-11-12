@@ -44,25 +44,34 @@ public sealed class DashSpecActionDispatcher
 
         var context = BuildContext(card);
         var outcome = await handler.ExecuteAsync(context, mergedArgs, cancellationToken).ConfigureAwait(false);
-        if (outcome.Kind is DashSpecActionOutcomeKind.DownloadText &&
-            !string.IsNullOrWhiteSpace(outcome.TextContent))
+        try
         {
-            await _js.InvokeVoidAsync(
-                "dashspecDownload.downloadText",
-                cancellationToken,
-                outcome.FileName ?? "export.csv",
-                outcome.TextContent,
-                outcome.MimeType ?? "text/csv;charset=utf-8").ConfigureAwait(false);
+            if (outcome.Kind is DashSpecActionOutcomeKind.DownloadText &&
+                !string.IsNullOrWhiteSpace(outcome.TextContent))
+            {
+                await _js.InvokeVoidAsync(
+                    "dashspecDownload.downloadText",
+                    cancellationToken,
+                    outcome.FileName ?? "export.csv",
+                    outcome.TextContent,
+                    outcome.MimeType ?? "text/csv;charset=utf-8").ConfigureAwait(false);
+            }
+            else if (outcome.Kind is DashSpecActionOutcomeKind.DownloadBase64 &&
+                     !string.IsNullOrWhiteSpace(outcome.TextContent))
+            {
+                await _js.InvokeVoidAsync(
+                    "dashspecDownload.downloadBase64",
+                    cancellationToken,
+                    outcome.FileName ?? "export.xlsx",
+                    outcome.TextContent,
+                    outcome.MimeType ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").ConfigureAwait(false);
+            }
         }
-        else if (outcome.Kind is DashSpecActionOutcomeKind.DownloadBase64 &&
-                 !string.IsNullOrWhiteSpace(outcome.TextContent))
+        catch (JSDisconnectedException)
         {
-            await _js.InvokeVoidAsync(
-                "dashspecDownload.downloadBase64",
-                cancellationToken,
-                outcome.FileName ?? "export.xlsx",
-                outcome.TextContent,
-                outcome.MimeType ?? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").ConfigureAwait(false);
+        }
+        catch (TaskCanceledException)
+        {
         }
 
         return outcome;

@@ -10,7 +10,7 @@ Browser smoke tests catch **JavaScript parse/runtime errors**, failed script loa
 ```powershell
 cd tests\DashSpec.Host.E2E
 dotnet build
-pwsh bin\Debug\net10.0\playwright.ps1 install chromium
+pwsh bin\Debug\net11.0\playwright.ps1 install chromium
 ```
 
 Chart.js and the boxplot plugin are **vendored** under `src/DashSpec.Host/wwwroot/lib/chartjs` — no CDN or outbound HTTPS required at runtime or in E2E.

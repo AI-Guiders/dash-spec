@@ -92,13 +92,22 @@ else
         if (firstRender && Mode is "day" or "month" or "time" or "datetime")
         {
             _selfRef = DotNetObjectReference.Create(this);
-            await Js.InvokeVoidAsync(
-                "dashspecDatepicker.init",
-                _element,
-                _selfRef,
-                BuildOptions());
-            _pickerReady = true;
-            _renderedValue = Value;
+            try
+            {
+                await Js.InvokeVoidAsync(
+                    "dashspecDatepicker.init",
+                    _element,
+                    _selfRef,
+                    BuildOptions());
+                _pickerReady = true;
+                _renderedValue = Value;
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 
@@ -107,7 +116,16 @@ else
         if (_pickerReady && !string.Equals(_renderedValue, Value, StringComparison.Ordinal))
         {
             _renderedValue = Value;
-            await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 
@@ -248,7 +266,16 @@ else
     {
         if (_pickerReady)
         {
-            await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+            try
+            {
+                await Js.InvokeVoidAsync("dashspecDatepicker.update", _element, Value);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
         }
     }
 

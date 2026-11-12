@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $project = Join-Path $RepoRoot 'src/DashSpec.LanguageServer/DashSpec.LanguageServer.csproj'
-$outDir = Join-Path $RepoRoot "src/DashSpec.LanguageServer/bin/$Configuration/net10.0"
+$outDir = Join-Path $RepoRoot "src/DashSpec.LanguageServer/bin/$Configuration/net11.0"
 $serverDir = Join-Path $RepoRoot 'editor/vscode-dashspec/server'
 
 Write-Host "Building DashSpec.LanguageServer ($Configuration)..."

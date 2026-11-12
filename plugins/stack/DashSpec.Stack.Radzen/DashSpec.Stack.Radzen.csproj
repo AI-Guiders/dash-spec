@@ -4,10 +4,10 @@
        surface. It reads the author's theme token and links its own reading of
        it — the host never links stack css. Companion of DashSpec.Stack.SelfMade. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>14</LangVersion>
+    <LangVersion>15</LangVersion>
     <RootNamespace>DashSpec.Stack.Radzen</RootNamespace>
     <Version>0.1.0</Version>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
