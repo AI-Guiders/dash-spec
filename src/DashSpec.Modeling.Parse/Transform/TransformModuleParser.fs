@@ -43,18 +43,44 @@ module TransformModuleParser =
                 raise (DashSpecParseException($"Expected 'transform series', got '{headerText}'."))
 
         let propMembers = UnitGrammar.unwrapOptionalBlock DashSpecBlockKeyword.Series env.Body
-        let props =
-            PropertyBlockParser.projectPropertiesFromAst
-                propMembers
-                PropertyBlockParser.seriesTransformSchema
-                "transform series"
-                false
+        let view = UnitGrammar.view propMembers
 
-        toBlock props
+        // If the `module transform` unit is a data-flow transform declaration (`type_effect` / `locality` / `param`),
+        // validate its `type_effect` and return an empty SeriesTransformBlock for legacy callers.
+        let isFlowStepDeclaration =
+            view.Ports.Length > 0
+            || view.Properties
+               |> Array.exists (fun p ->
+                   String.Equals(p.Key, "type_effect", StringComparison.OrdinalIgnoreCase)
+                   || String.Equals(p.Key, "locality", StringComparison.OrdinalIgnoreCase)
+                   || String.Equals(p.Key, "requires_block", StringComparison.OrdinalIgnoreCase)
+                   || String.Equals(p.Key, "hint", StringComparison.OrdinalIgnoreCase))
+
+        if isFlowStepDeclaration then
+            for p in view.Properties do
+                if String.Equals(p.Key, "type_effect", StringComparison.OrdinalIgnoreCase) then
+                    let name = p.ValueText.Trim()
+                    if TransformDeclarations.TransformTypeEffect.tryParse name |> Option.isNone then
+                        raise (
+                            DashSpecInvalidValueException(
+                                $"transform '{env.Id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque.",
+                                "type_effect",
+                                p.Span.Start))
+
+            { UsePreset = None; Max = None; OtherLabel = None }
+        else
+            let props =
+                PropertyBlockParser.projectPropertiesFromAst
+                    propMembers
+                    PropertyBlockParser.seriesTransformSchema
+                    "transform series"
+                    false
+
+            toBlock props
 
     do
         UnitProjector.register
             { KindKeyword = "transform"
-              ImportKind = None
+              ImportKind = Some ImportKind.Transforms
               Role = UnitCompileRole.Declaration
               Project = fun ctx -> box (parseTransformFile ctx.Text) }

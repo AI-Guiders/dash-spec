@@ -83,7 +83,8 @@ module DashSpecSurfaceSyntax =
     let private isPortsParent (frame: MutableNode) =
         match frame.Payload with
         | NodePayload.Block(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports, _, _)
-        | NodePayload.Block(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _), _, _) -> true
+        | NodePayload.Block(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _), _, _)
+        | NodePayload.Module(DashSpecModuleDirective.Module(DashSpecModuleKind.Transform, _)) -> true
         | _ -> false
 
     let rec private toImmutable (node: MutableNode) : DashSpecAstNode =
@@ -1092,7 +1093,20 @@ module DashSpecSurfaceSyntax =
                     container.Children.Add(
                         mkNode (NodePayload.Port(role, shape, portName, valueType, defaultValue, columnBinding)) (nextId id) line.Span syntaxTokens)
                 | None ->
-                    container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
+                    match tryParseImportLine line.Tokens with
+                    | Some(keyword, kind, target, aliasName) ->
+                        appendImport container id text allTokens line keyword kind target aliasName
+                    | None ->
+                        match tryParseClauseLine line.Tokens with
+                        | Some(ClauseKind.NamespaceClause _ as kind) ->
+                            container.Children.Add(mkNode (NodePayload.Clause kind) (nextId id) line.Span syntaxTokens)
+                        | _ ->
+                            match tryParsePropertyLine syntaxTokens with
+                            | Some(key, valueText, keyTokens, eqToken, valueTokens) ->
+                                container.Children.Add(
+                                    mkNode (NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens)) (nextId id) line.Span syntaxTokens)
+                            | None ->
+                                container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
         else
             let syntaxTokens = lineSyntaxTokens text allTokens line
 

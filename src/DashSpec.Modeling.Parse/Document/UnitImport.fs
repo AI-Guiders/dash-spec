@@ -135,6 +135,7 @@ module UnitImport =
         | Types
         | Flow
         | Palette
+        | Transform
         | Tab
         | Unsupported of string
 
@@ -159,6 +160,7 @@ module UnitImport =
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Types -> Some Types
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _ -> Some Flow
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Palette -> Some Palette
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Transform -> Some Transform
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some Tab
             | _ -> None
 
@@ -207,6 +209,17 @@ module UnitImport =
                 Register = fun (_, text, _, state) ->
                     let palette = Palette.PaletteModuleParser.parsePaletteFile text
                     state.RegisterPalette(palette.Id, palette) }
+              { Kind = Transform
+                ImportKind = Some ImportKind.Transforms
+                Role = Declaration
+                Register = fun (path, text, _, state) ->
+                    let id = unitIdOf "transform" path text
+                    try
+                        let block = Transform.TransformModuleParser.parseTransformFile text
+                        state.RegisterSeriesTransformPreset(id, block)
+                    with _ ->
+                        let decl = DashSpec.Modeling.Parse.DataFlow.TransformDeclarationParser.parseDeclaration text
+                        TransformDeclarations.register decl }
               { Kind = Tab
                 ImportKind = Some ImportKind.Tabs
                 Role = Consumer

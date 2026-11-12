@@ -4,37 +4,28 @@ open System
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Core.TransformDeclarations
 open DashSpec.Modeling.Parse
-open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 /// <summary>
-/// Parses transform declaration units (ADR-0126 slice 0.5) — the stdlib's
-/// vocabulary. A unit is a flat header + keys:
-/// <c>module transform &lt;id&gt;</c>, <c>namespace …</c> (metadata),
-/// <c>locality = database|runtime</c>, <c>requires_block = true|false</c>,
-/// <c>param &lt;key&gt;: &lt;kind&gt;</c> (kind: ident|string|timeshift|iana),
-/// <c>hint = "…"</c> (the diagnostic for a literal mismatch). The units are
-/// embedded in this assembly (<c>stdlib/transforms/**.ds</c>) and self-register
-/// lazily on the first vocabulary query — direct parser use sees them without any
-/// host bootstrap.
+/// Projects transform declaration units (<c>module transform &lt;id&gt;</c>) directly from the
+/// typed AST via <see cref="UnitGrammar.unwrap"/> (zero <c>TokenReader</c>).
 /// </summary>
 module TransformDeclarationParser =
 
+    let private unquote (raw: string) =
+        let t = raw.Trim()
+        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
+            t.Substring(1, t.Length - 2)
+        else
+            t
+
     let parseDeclaration (text: string) : TransformDecl =
-        let reader = ParserUtilities.createReader text
-        reader.SkipFileDirectives()
-        reader.SkipNewlines()
+        if String.IsNullOrWhiteSpace text then
+            invalidArg "text" "Transform declaration text is required."
 
-        reader.ExpectKeyword "module" |> ignore
-        reader.ExpectKeyword "transform" |> ignore
-        let id = reader.ReadIdent()
-        reader.SkipNewlines()
-
-        // namespace line — metadata only; the declaration carries the id itself.
-        if reader.TryKeyword "namespace" then
-            while not (reader.IsOnNewline()) && not reader.IsEof do
-                reader.Advance() |> ignore
-
-        reader.SkipNewlines()
+        let tree = DashSpecSurfaceSyntax.parse text
+        let env = UnitGrammar.unwrap DashSpecModuleKind.Transform tree.Root
+        let id = env.Id
 
         let mutable locality = "runtime"
         let mutable requiresBlock = false
@@ -42,39 +33,46 @@ module TransformDeclarationParser =
         let mutable effect = TransformDeclarations.TransformTypeEffect.Opaque
         let params' = ResizeArray<TransformDeclarations.ParamDecl>()
 
-        while not reader.IsEof do
-            if reader.IsOnNewline() then
-                reader.SkipNewlines()
-            elif reader.TryKeyword "locality" then
-                reader.Expect TokenKind.Eq |> ignore
-                locality <- reader.ReadIdent()
-            elif reader.TryKeyword "type_effect" then
-                reader.Expect TokenKind.Eq |> ignore
-                let name = reader.ReadIdent()
+        for node in env.View.Body do
+            match node with
+            | DashSpecAstNode.PropertyAssignment p ->
+                match p.Key.ToLowerInvariant() with
+                | "locality" ->
+                    locality <- p.ValueText.Trim()
+                | "type_effect" ->
+                    let name = p.ValueText.Trim()
+                    match TransformDeclarations.TransformTypeEffect.tryParse name with
+                    | Some parsed -> effect <- parsed
+                    | None ->
+                        raise (
+                            DashSpecInvalidValueException(
+                                $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque.",
+                                "type_effect",
+                                p.Span.Start))
+                | "requires_block" ->
+                    requiresBlock <- String.Equals(p.ValueText.Trim(), "true", StringComparison.OrdinalIgnoreCase)
+                | "hint" ->
+                    hint <- unquote p.ValueText
+                | _ -> ()
+            | DashSpecAstNode.PortDeclaration port when port.Role = PortDeclRole.PortParam ->
+                let kind = port.ValueType |> Option.defaultValue "ident"
+                params'.Add({ TransformDeclarations.ParamDecl.Key = port.PortName; Literals = [ kind ]; Hint = hint })
+            | _ -> ()
 
-                match TransformDeclarations.TransformTypeEffect.tryParse name with
-                | Some parsed -> effect <- parsed
-                | None ->
-                    raise (
-                        DashSpecParseException(
-                            $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque."))
-            elif reader.TryKeyword "requires_block" then
-                reader.Expect TokenKind.Eq |> ignore
-                requiresBlock <- reader.ReadIdent().Equals("true", StringComparison.OrdinalIgnoreCase)
-            elif reader.TryKeyword "hint" then
-                reader.Expect TokenKind.Eq |> ignore
-                hint <- reader.ReadString()
-            elif reader.TryKeyword "param" then
-                let key = reader.ReadIdent()
-                reader.Expect TokenKind.Colon |> ignore
-                let kind = reader.ReadIdent()
-                params'.Add({ TransformDeclarations.ParamDecl.Key = key; Literals = [ kind ]; Hint = hint })
-            else
-                reader.Advance() |> ignore
+        // Second pass: if `hint` was declared after `param` lines (as in `to_zone.ds` / `iana_to_timeshift.ds`),
+        // backfill any empty ParamDecl.Hint with the module's hint.
+        let resolvedParams =
+            params'
+            |> Seq.map (fun p ->
+                if String.IsNullOrWhiteSpace p.Hint && not (String.IsNullOrWhiteSpace hint) then
+                    { p with Hint = hint }
+                else
+                    p)
+            |> Seq.toList
 
         { Id = id
           Locality = locality
-          Params = List.ofSeq params'
+          Params = resolvedParams
           RequiresParameterBlock = requiresBlock
           TypeEffect = effect }
 
@@ -82,10 +80,7 @@ module TransformDeclarationParser =
     let private stdlibLock = obj ()
 
     /// <summary>Lazy stdlib self-registration: on the first call, every embedded
-    /// <c>stdlib/transforms/**.ds</c> unit of this assembly is parsed and registered.
-    /// Idempotent; the flag flips inside the lock — a concurrent first parse must
-    /// never observe a half-empty vocabulary (Blazor prerender + circuit parse the
-    /// document in parallel).</summary>
+    /// <c>stdlib/transforms/**.ds</c> unit of this assembly is parsed and registered.</summary>
     let ensureStdlibRegistered () =
         lock stdlibLock (fun () ->
             if not stdlibLoaded.Value then

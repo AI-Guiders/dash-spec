@@ -14,6 +14,7 @@ type ImportKind =
     | Types
     | Flows
     | Palettes
+    | Transforms
     | Tabs
 
 [<RequireQualifiedAccess>]
@@ -47,6 +48,7 @@ module ImportKindRegistry =
         | "types" -> Some ImportKind.Types
         | "flow" -> Some ImportKind.Flows
         | "palette" -> Some ImportKind.Palettes
+        | "transform" -> Some ImportKind.Transforms
         | "section" -> Some ImportKind.Tabs
         | _ -> None
 

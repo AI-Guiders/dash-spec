@@ -8,11 +8,13 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Presentation
 open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
+open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
 
 type ModuleImportState() =
     let diagrams = Dictionary<string, UnitFragment>(StringComparer.OrdinalIgnoreCase)
     let chartChromePresets = Dictionary<string, PresentationBlock>(StringComparer.OrdinalIgnoreCase)
+    let seriesTransformPresets = Dictionary<string, SeriesTransformBlock>(StringComparer.OrdinalIgnoreCase)
     let tooltips = Dictionary<string, TooltipDefinition>(StringComparer.OrdinalIgnoreCase)
     let rowTypes = Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase)
     let mutable dashflowModule: DashflowModule option = None
@@ -87,6 +89,15 @@ type ModuleImportState() =
         if chartChromePresets.ContainsKey id then
             raise (DashSpecParseException($"Duplicate chart chrome preset '{id}' in module imports."))
         chartChromePresets.[id] <- block
+
+    member this.RegisterSeriesTransformPreset(id: string, block: SeriesTransformBlock) =
+        if String.IsNullOrWhiteSpace id then invalidArg "id" "Transform preset id is required."
+        seriesTransformPresets.[id] <- block
+
+    member this.TryGetSeriesTransformPreset(id: string) =
+        match seriesTransformPresets.TryGetValue id with
+        | true, value -> Some value
+        | false, _ -> None
 
     member _.TryGetChartChromePreset(id: string, block: outref<PresentationBlock>) =
         match chartChromePresets.TryGetValue id with
