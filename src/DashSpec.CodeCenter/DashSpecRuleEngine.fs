@@ -32,8 +32,3 @@ module DashSpecRuleEngine =
 
     let evaluate (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
         evaluateFindings graph |> List.map DashSpecDiagnosticCatalog.ofFinding
-
-    let evaluateBlockBalance (graph: DashSpecConceptGraph) : ProfileLawDiagnostic list =
-        evaluateFindings graph
-        |> List.filter (fun finding -> DashSpecRules.isBlockBalance finding.Rule)
-        |> List.map DashSpecDiagnosticCatalog.ofFinding

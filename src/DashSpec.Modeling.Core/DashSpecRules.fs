@@ -31,7 +31,6 @@ and [<CustomEquality; NoComparison>] DashSpecRuleDescriptor =
       Code: string
       Severity: DashSpecDiagnosticSeverity
       Title: string
-      IsBlockBalance: bool
       CreateException: string * int option -> DashSpecParseException }
 
     override this.Equals(obj) =

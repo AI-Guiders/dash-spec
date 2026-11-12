@@ -193,4 +193,4 @@ module DashSpecRuleChecks =
         let start = if ex.SourceOffset.HasValue then ex.SourceOffset.Value else 0
         { Rule = ex.Rule
           Message = ex.Message
-          Span = TextSpan.create start (start + 1) }
+          Span = TextSpan.Create start (start + 1) }

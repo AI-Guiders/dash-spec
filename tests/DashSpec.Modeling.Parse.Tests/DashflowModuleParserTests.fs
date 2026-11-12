@@ -416,7 +416,7 @@ dataflow x
 end flow x
 """
 
-        Assert.Throws<DashSpecParseException>(fun () ->
+        Assert.Throws<DashSpecUnitHeaderException>(fun () ->
             DashflowModuleParser.parseModule dataflowRoot catalog |> ignore)
         |> ignore
 
@@ -426,7 +426,7 @@ flow x
 end flow x
 """
 
-        Assert.Throws<DashSpecParseException>(fun () ->
+        Assert.Throws<DashSpecUnitHeaderException>(fun () ->
             DashflowModuleParser.parseModule bareFlow catalog |> ignore)
         |> ignore
 

@@ -7,8 +7,6 @@ module DashSpecInvariantLaws =
 
     let all = DashSpecRuleEngine.evaluate
 
-    let balancedBlockStructure = DashSpecRuleEngine.evaluateBlockBalance
-
     let outlineSpansAreValid (graph: DashSpecConceptGraph) =
         DashSpecRuleEngine.evaluate graph
         |> List.filter (fun diagnostic -> diagnostic.Code = DashSpecRules.code DashSpecRule.EmptyOutlineSpan)
