@@ -208,9 +208,14 @@ module DashSpecSurfaceSyntax =
                     let idx = toks |> Array.findIndex (fun t -> t.LexKind = TokenKind.DotDot)
                     let left = toks.[0 .. idx - 1]
                     let right = toks.[idx + 1 ..]
-                    PropertyValueSyntax.Range(
-                        parseAtom left (left |> Array.map (fun x -> x.Text) |> String.concat ""),
-                        parseAtom right (right |> Array.map (fun x -> x.Text) |> String.concat ""))
+                    let leftText = left |> Array.map (fun x -> x.Text) |> String.concat ""
+                    let rightText = right |> Array.map (fun x -> x.Text) |> String.concat ""
+                    match DateRangeValue.tryParseBounds leftText rightText with
+                    | Result.Ok dr -> PropertyValueSyntax.DateRange dr
+                    | Result.Error _ ->
+                        PropertyValueSyntax.Range(
+                            parseAtom left leftText,
+                            parseAtom right rightText)
                 elif toks |> Array.exists (fun t -> t.LexKind = TokenKind.Comma)
                      && not (toks |> Array.exists (fun t -> t.LexKind = TokenKind.LParen)) then
                     let items = ResizeArray<PropertyValueSyntax>()
@@ -252,11 +257,40 @@ module DashSpecSurfaceSyntax =
                             else
                                 raw
                         PropertyValueSyntax.StringLiteral s
-                    | TokenKind.HexColor -> PropertyValueSyntax.HexColorLiteral t.Text
-                    | TokenKind.TimeShift -> PropertyValueSyntax.TimeShiftLiteral t.Text
-                    | TokenKind.IanaZone -> PropertyValueSyntax.IanaZoneLiteral t.Text
-                    | TokenKind.RelativeDay -> PropertyValueSyntax.RelativeDayLiteral t.Text
-                    | TokenKind.Ident -> PropertyValueSyntax.Member(DotSyntax.Ident t.Text)
+                    | TokenKind.HexColor ->
+                        match HexColorValue.tryParse t.Text with
+                        | Result.Ok c -> PropertyValueSyntax.HexColor c
+                        | Result.Error _ -> PropertyValueSyntax.Raw fallbackText
+                    | TokenKind.TimeShift ->
+                        match TimeShiftValue.tryParse t.Text with
+                        | Result.Ok s -> PropertyValueSyntax.TimeShift s
+                        | Result.Error _ -> PropertyValueSyntax.Raw fallbackText
+                    | TokenKind.IanaZone ->
+                        match IanaZoneValue.tryParse t.Text with
+                        | Result.Ok z -> PropertyValueSyntax.IanaZone z
+                        | Result.Error _ -> PropertyValueSyntax.Raw fallbackText
+                    | TokenKind.RelativeDay ->
+                        match RelativeDayValue.tryParse t.Text with
+                        | Result.Ok r -> PropertyValueSyntax.RelativeDay r
+                        | Result.Error _ -> PropertyValueSyntax.Raw fallbackText
+                    | TokenKind.Ident ->
+                        let txt = t.Text
+                        if String.Equals(txt, "true", StringComparison.OrdinalIgnoreCase) then
+                            PropertyValueSyntax.Boolean true
+                        elif String.Equals(txt, "false", StringComparison.OrdinalIgnoreCase) then
+                            PropertyValueSyntax.Boolean false
+                        elif String.Equals(txt, "today", StringComparison.OrdinalIgnoreCase) then
+                            PropertyValueSyntax.DateBound DateBoundValue.Today
+                        else
+                            match Int64.TryParse(txt, Globalization.NumberStyles.Integer, Globalization.CultureInfo.InvariantCulture) with
+                            | true, i -> PropertyValueSyntax.Integer i
+                            | false, _ ->
+                                match Decimal.TryParse(txt, Globalization.NumberStyles.Number, Globalization.CultureInfo.InvariantCulture) with
+                                | true, d -> PropertyValueSyntax.Decimal d
+                                | false, _ ->
+                                    match DateBoundValue.tryParse txt with
+                                    | Result.Ok b -> PropertyValueSyntax.DateBound b
+                                    | Result.Error _ -> PropertyValueSyntax.Member(DotSyntax.Ident txt)
                     | _ -> PropertyValueSyntax.Raw fallbackText
                 elif toks |> Array.forall (fun t -> t.LexKind = TokenKind.Ident || t.LexKind = TokenKind.Dot) then
                     PropertyValueSyntax.Member(DotSyntax.parse (toks |> Array.map (fun t -> t.Text) |> String.concat ""))

@@ -52,15 +52,22 @@ module DotSyntax =
         else
             ofSegments (raw.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries))
 
-/// <summary>First-class typed right-hand-side expression of a `key = value` property assignment (ADR-0130).</summary>
+/// <summary>First-class typed right-hand-side expression of a `key = value` property assignment (ADR-0130),
+/// backed by validated domain value types (<see cref="HexColorValue"/>, <see cref="TimeShiftValue"/>,
+/// <see cref="IanaZoneValue"/>, <see cref="RelativeDayValue"/>, <see cref="DateBoundValue"/>, <see cref="DateRangeValue"/>).</summary>
 [<RequireQualifiedAccess>]
 type PropertyValueSyntax =
     | Member of path: DotSyntax
     | StringLiteral of value: string
-    | HexColorLiteral of hex: string
-    | TimeShiftLiteral of offset: string
-    | IanaZoneLiteral of zone: string
-    | RelativeDayLiteral of expr: string
+    | Boolean of value: bool
+    | Integer of value: int64
+    | Decimal of value: decimal
+    | HexColor of color: HexColorValue
+    | TimeShift of shift: TimeShiftValue
+    | IanaZone of zone: IanaZoneValue
+    | RelativeDay of day: RelativeDayValue
+    | DateBound of bound: DateBoundValue
+    | DateRange of dateRange: DateRangeValue
     | Range of fromBound: PropertyValueSyntax * toBound: PropertyValueSyntax
     | Call of target: DotSyntax * args: PropertyValueSyntax[]
     | BracketList of items: PropertyValueSyntax[]
