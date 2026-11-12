@@ -21,11 +21,25 @@ public sealed class BrowserConsoleCapture
         {
             if (msg.Type == "error")
             {
-                _consoleErrors.Add(msg.Text);
+                var location = msg.Location;
+                if (!string.IsNullOrEmpty(location) && IsDevToolingProbe(location))
+                {
+                    return;
+                }
+
+                _consoleErrors.Add(string.IsNullOrEmpty(location) || location == msg.Text ? msg.Text : $"{msg.Text} (at {location})");
             }
         };
 
         page.PageError += (_, error) => _pageErrors.Add(error);
+
+        page.Response += (_, response) =>
+        {
+            if (response.Status >= 400 && !IsDevToolingProbe(response.Url))
+            {
+                _consoleErrors.Add($"http {response.Status}: {response.Url}");
+            }
+        };
 
         page.RequestFailed += (_, request) =>
         {
@@ -50,4 +64,10 @@ public sealed class BrowserConsoleCapture
         url.Contains("/js/", StringComparison.OrdinalIgnoreCase) ||
         url.Contains(".js?", StringComparison.OrdinalIgnoreCase) ||
         url.EndsWith(".js", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The Blazor WASM dev hot-reload module (Debug SDK injection) probes for
+    /// hot-reload settings that exist only inside a live dev session — its 404 is tooling
+    /// noise, not an application resource failing.</summary>
+    private static bool IsDevToolingProbe(string url) =>
+        url.Contains("/_framework/dotnet-browser-tools/", StringComparison.OrdinalIgnoreCase);
 }
