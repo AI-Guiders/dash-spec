@@ -138,53 +138,85 @@ module UnitImport =
         | Tab
         | Unsupported of string
 
+    type UnitRole =
+        | Declaration
+        | Consumer
+
+    type UnitContributor =
+        { Kind: UnitKind
+          ImportKind: ImportKind option
+          Role: UnitRole
+          Register: string * string * DocumentModuleKind * ModuleImportState -> unit }
+
     module UnitFileClassifier =
 
-        let private peekRootKeyword (text: string) =
-            try
-                let reader = ParserUtilities.createReader text
-                reader.SkipNewlines()
-                if reader.TryKeyword "module" then
-                    match reader.TryPeekIdent() with
-                    | Some keyword ->
-                        reader.ReadIdent() |> ignore
-                        Some(keyword.ToLowerInvariant())
-                    | None -> None
-                else None
-            with _ ->
-                None
-
-        let private unitKindOfImportKind (kind: ImportKind) =
+        let private unitKindOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) =
             match kind with
-            | ImportKind.Layouts -> Layout
-            | ImportKind.Diagrams -> Diagram
-            | ImportKind.Presentations -> Presentation
-            | ImportKind.Tooltips -> Tooltip
-            | ImportKind.Types -> Types
-            | ImportKind.Flows -> Flow
-            | ImportKind.Palettes -> Palette
-            | ImportKind.Tabs -> Tab
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout -> Some Layout
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram -> Some Diagram
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Presentation -> Some Presentation
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Tooltip -> Some Tooltip
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Types -> Some Types
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _ -> Some Flow
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Palette -> Some Palette
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some Tab
+            | _ -> None
 
-        /// Unit kind from the `module <kind> <id>` keyword, resolved through the import-kind registry.
+        /// Unit kind from the parsed `UnitGrammar.tryUnwrapAny` envelope.
         let classify (path: string) (text: string) : UnitKind =
-            match peekRootKeyword text with
-            | Some keyword ->
-                match ImportKindRegistry.tryFindByModuleKeyword keyword with
-                | Some kind -> unitKindOfImportKind kind
+            try
+                let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
+                match UnitGrammar.tryUnwrapAny tree.Root with
+                | Some env ->
+                    unitKindOfModuleKind env.Kind
+                    |> Option.defaultWith (fun () -> Unsupported(Path.GetExtension path))
                 | None -> Unsupported(Path.GetExtension path)
-            | None -> Unsupported(Path.GetExtension path)
+            with _ ->
+                Unsupported(Path.GetExtension path)
 
-    let private importKindOf (unitKind: UnitKind) =
-        match unitKind with
-        | Layout -> Some ImportKind.Layouts
-        | Diagram -> Some ImportKind.Diagrams
-        | Presentation -> Some ImportKind.Presentations
-        | Tooltip -> Some ImportKind.Tooltips
-        | Types -> Some ImportKind.Types
-        | Flow -> Some ImportKind.Flows
-        | Palette -> Some ImportKind.Palettes
-        | Tab -> Some ImportKind.Tabs
-        | Unsupported _ -> None
+    let private contributors =
+        let d = System.Collections.Concurrent.ConcurrentDictionary<UnitKind, UnitContributor>()
+        let builtins =
+            [ { Kind = Layout
+                ImportKind = Some ImportKind.Layouts
+                Role = Declaration
+                Register = fun (_, text, moduleKind, state) -> assignLayoutBoard (LayoutModuleParser.parseLayoutFile text) moduleKind state }
+              { Kind = Diagram
+                ImportKind = Some ImportKind.Diagrams
+                Role = Consumer
+                Register = fun (path, _, _, state) -> registerDiagramFile path state }
+              { Kind = Presentation
+                ImportKind = Some ImportKind.Presentations
+                Role = Declaration
+                Register = fun (path, _, _, state) -> registerPresentationFile path state }
+              { Kind = Tooltip
+                ImportKind = Some ImportKind.Tooltips
+                Role = Declaration
+                Register = fun (path, _, _, state) -> registerTooltipFile path state }
+              { Kind = Types
+                ImportKind = Some ImportKind.Types
+                Role = Declaration
+                Register = fun (path, _, _, state) -> registerTypesFile path state }
+              { Kind = Flow
+                ImportKind = Some ImportKind.Flows
+                Role = Consumer
+                Register = fun (path, text, _, state) -> registerDashflowText path text state }
+              { Kind = Palette
+                ImportKind = Some ImportKind.Palettes
+                Role = Declaration
+                Register = fun (_, text, _, state) ->
+                    let palette = Palette.PaletteModuleParser.parsePaletteFile text
+                    state.RegisterPalette(palette.Id, palette) }
+              { Kind = Tab
+                ImportKind = Some ImportKind.Tabs
+                Role = Consumer
+                Register = fun (path, text, _, state) -> state.RegisterTabModule(unitIdOf "section" path text, path) } ]
+        for c in builtins do
+            d.[c.Kind] <- c
+        d
+
+    let registerUnitContributor (contributor: UnitContributor) =
+        contributors.[contributor.Kind] <- contributor
 
     let registerUnitFile
         (path: string)
@@ -198,49 +230,30 @@ module UnitImport =
         let text = UnitSource.readUnit path
         let unitKind = UnitFileClassifier.classify path text
 
-        let otherKind =
-            match importKind, importKindOf unitKind with
-            | Some expected, Some actual -> expected <> actual
-            | _ -> false
+        match contributors.TryGetValue unitKind with
+        | true, contributor ->
+            let otherKind =
+                match importKind, contributor.ImportKind with
+                | Some expected, Some actual -> expected <> actual
+                | _ -> false
 
-        if not otherKind then
-            match unitKind with
-            | Layout -> assignLayoutBoard (LayoutModuleParser.parseLayoutFile text) moduleKind state
-            | Diagram -> registerDiagramFile path state
-            | Presentation -> registerPresentationFile path state
-            | Tooltip -> registerTooltipFile path state
-            | Types -> registerTypesFile path state
-            | Flow -> registerDashflowText path text state
-            | Palette ->
-                let palette = Palette.PaletteModuleParser.parsePaletteFile text
-                state.RegisterPalette(palette.Id, palette)
-            | Tab -> state.RegisterTabModule(unitIdOf "section" path text, path)
-            | Unsupported _ ->
-                // Mixed module (module <name> without kind) — dispatch by import kind
-                match importKind with
-                | Some ImportKind.Types -> registerTypesFile path state
-                | Some ImportKind.Flows ->
-                    // Wrap content in flow syntax for parser compatibility
-                    registerDashflowText path ("module flow __imported__\n" + text + "\nend flow") state
-                | _ ->
-                    raise (DashSpecParseException($"'{path}': module kind not recognized; expected 'module <kind> <id>'."))
-
-    /// <summary>Unit role for dependency-ordered registration: declarations are
-    /// order-free symbols (a presentation/type/palette registers into the symbol
-    /// table), consumers fold against the table (a diagram resolves
-    /// <c>chrome use</c>, a flow resolves row types). The compiler owns the order —
-    /// directive order in the author's header must not decide visibility.</summary>
-    type private UnitRole =
-        | Declaration
-        | Consumer
+            if not otherKind then
+                contributor.Register(path, text, moduleKind, state)
+        | false, _ ->
+            match importKind with
+            | Some ImportKind.Types -> registerTypesFile path state
+            | Some ImportKind.Flows ->
+                registerDashflowText path ("module flow __imported__\n" + text + "\nend flow") state
+            | _ ->
+                raise (DashSpecUnitHeaderException($"'{path}': module kind not recognized; expected 'module <kind> <id>'."))
 
     module private UnitRole =
         let ofPath (path: string) =
             let text = UnitSource.readUnit path
-            match UnitFileClassifier.classify path text with
-            | Layout | Presentation | Tooltip | Types | Palette -> Declaration
-            | Diagram | Flow | Tab -> Consumer
-            | Unsupported _ -> Consumer // mixed modules dispatch by import kind at registration
+            let kind = UnitFileClassifier.classify path text
+            match contributors.TryGetValue kind with
+            | true, c -> c.Role
+            | false, _ -> Consumer
 
     /// <summary>Two-phase registration: all declarations first (full symbol table),
     /// then consumers. A diagram whose preset is imported by a LATER directive (or

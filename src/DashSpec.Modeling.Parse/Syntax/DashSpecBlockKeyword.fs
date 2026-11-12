@@ -112,7 +112,7 @@ module DashSpecBlockKeyword =
         | "defaults" -> Some DashSpecBlockKeyword.Defaults
         | "flow" -> Some DashSpecBlockKeyword.Flow
         | "nest" -> Some DashSpecBlockKeyword.Nest
-        | _ when DashSpecKeywords.diagramKinds |> List.contains keyword ->
+        | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
 

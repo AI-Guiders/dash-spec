@@ -1,5 +1,4 @@
 using DashSpec.Execution.Runtime;
-
 using DashSpec.Compiler.Contract;
 
 namespace DashSpec.Composition.Plugins;
@@ -22,12 +21,35 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
             KnownPresentationProperties = registry.PresentationProperties.ToHashSet(StringComparer.OrdinalIgnoreCase),
         };
 
-        // The F# grammar reads the presentation vocabulary through a bridge (the same
-        // pattern as the parse bridges): plugin knobs become parseable process-wide
-        // once a kernel with those plugins has built its options.
         if (options.KnownPresentationProperties.Count > 0)
         {
             DashSpec.Modeling.Parse.PropertySchemas.registerPresentationProperties(options.KnownPresentationProperties);
+        }
+
+        foreach (var diagramKind in registry.DiagramKinds.Values)
+        {
+            DashSpec.Modeling.Parse.Diagram.DiagramKindRegistry.registerPluginKind(
+                diagramKind.KindId,
+                diagramKind.DataFamily,
+                diagramKind.SupportsTopLimit,
+                diagramKind.BindingProperties);
+        }
+
+        foreach (var ruleChecker in registry.RuleCheckers.Values)
+        {
+            DashboardValidationCollector.RegisterChecker(
+                ruleChecker.CheckerId,
+                (doc, errors) =>
+                {
+                    try
+                    {
+                        ruleChecker.Validate(doc);
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(ex.Message);
+                    }
+                });
         }
 
         return options;

@@ -1,8 +1,10 @@
 namespace DashSpec.Modeling.Parse.Diagram
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open DashSpec.Modeling.Parse
+open DashSpec.Modeling.Parse.Lexing
 
 module DiagramKindRegistry =
 
@@ -39,7 +41,8 @@ module DiagramKindRegistry =
     let private chartRequired = [ "x"; "y" ]
 
     let private specs =
-        dict
+        let d = ConcurrentDictionary<string, DiagramKindSpec>(StringComparer.OrdinalIgnoreCase)
+        let builtins =
             [ "line", { Id = "line"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
               "area", { Id = "area"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
               "sparkline", { Id = "sparkline"; DataFamily = DiagramDataFamily.Chart; Properties = chartProperties; RequiredRoles = chartRequired; SupportsTopLimit = false; AllowExtensionProperties = true }
@@ -59,6 +62,43 @@ module DiagramKindRegistry =
               "number", { Id = "number"; DataFamily = DiagramDataFamily.Scalar; Properties = numberProperties; RequiredRoles = [ "value" ]; SupportsTopLimit = false; AllowExtensionProperties = false }
               "heatmap", { Id = "heatmap"; DataFamily = DiagramDataFamily.Matrix; Properties = heatmapProperties; RequiredRoles = [ "x"; "y"; "value" ]; SupportsTopLimit = false; AllowExtensionProperties = true }
               "gantt", { Id = "gantt"; DataFamily = DiagramDataFamily.Gantt; Properties = ganttProperties; RequiredRoles = [ "y"; "from"; "to" ]; SupportsTopLimit = true; AllowExtensionProperties = true } ]
+        for k, v in builtins do
+            d.[k] <- v
+        d
+
+    let register (spec: DiagramKindSpec) =
+        if not (String.IsNullOrWhiteSpace spec.Id) then
+            specs.[spec.Id] <- spec
+            DashSpecKeywords.registerDiagramKind spec.Id
+
+    let registerPluginKind (id: string) (dataFamily: string) (supportsTopLimit: bool) (bindingProps: string seq) =
+        if not (String.IsNullOrWhiteSpace id) && not (specs.ContainsKey id) then
+            let family, baseProps =
+                match dataFamily.Trim().ToLowerInvariant() with
+                | "table" -> DiagramDataFamily.Table, tableProperties
+                | "scalar" -> DiagramDataFamily.Scalar, numberProperties
+                | "matrix" -> DiagramDataFamily.Matrix, heatmapProperties
+                | "gantt" -> DiagramDataFamily.Gantt, ganttProperties
+                | _ -> DiagramDataFamily.Chart, chartProperties
+
+            let extraProps =
+                bindingProps
+                |> Seq.filter (fun name ->
+                    not (baseProps |> List.exists (fun p -> String.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))))
+                |> Seq.map (fun name ->
+                    { PropertySchemas.Name = name
+                      PropertySchemas.ValueType = PropertySchemas.PropertyValueType.Scalar })
+                |> Seq.toList
+
+            register
+                { Id = id
+                  DataFamily = family
+                  Properties = baseProps @ extraProps
+                  RequiredRoles = []
+                  SupportsTopLimit = supportsTopLimit
+                  AllowExtensionProperties = true }
+        elif not (String.IsNullOrWhiteSpace id) then
+            DashSpecKeywords.registerDiagramKind id
 
     let tryResolve kind = specs.TryGetValue kind
 

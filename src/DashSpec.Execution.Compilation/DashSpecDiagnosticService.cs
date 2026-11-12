@@ -86,9 +86,39 @@ public static class DashSpecDiagnosticService
         return TextPositions.ToDiagnostic(text, ex.Message, offset);
     }
 
+    public delegate IReadOnlyList<DashSpecDiagnostic> UnitValidatorContributor(
+        string text,
+        string filePath,
+        string specDirectory,
+        DashSpecParseOptions parseOptions);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, UnitValidatorContributor> UnitValidators =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["diagram"] = (text, _, specDir, _) => { DiagramModuleParser.ParseDiagramFile(text, specDir); return []; },
+            ["presentation"] = (text, _, specDir, _) => { PresentationModuleParser.ParsePresentationFile(text, specDir); return []; },
+            ["palette"] = (text, _, _, _) => { PaletteModuleParser.ParsePaletteFile(text); return []; },
+            ["transform"] = (text, _, _, _) => { TransformModuleParser.ParseTransformFile(text); return []; },
+            ["layout"] = (text, _, _, _) => { LayoutModuleParser.ParseLayoutFile(text); return []; },
+            ["tooltip"] = (text, _, _, _) => { TooltipModuleParser.ParseTooltipFile(text); return []; },
+            ["types"] = (_, _, _, _) => [],
+            ["flow"] = (_, _, _, _) => [],
+            ["catalog"] = LintCatalog,
+            ["host"] = (text, _, specDir, _) => { HostModuleParser.Parse(text, specDir); return []; },
+            ["dashboard"] = ValidateAssembledRoot,
+            ["section"] = ValidateTabAssembled,
+        };
+
+    public static void RegisterUnitValidator(string unitKind, UnitValidatorContributor validator)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(unitKind);
+        ArgumentNullException.ThrowIfNull(validator);
+        UnitValidators[unitKind.Trim()] = validator;
+    }
+
     /// <summary>
-    /// A `.ds` file is routed by the kind in its module header (ADR-0101). There is no
-    /// legacy document path anymore: flat formats are retired, unknown kinds are errors.
+    /// A `.ds` file is routed by the kind in its module header through the extensible
+    /// <see cref="UnitValidators"/> contributor table.
     /// </summary>
     private static IReadOnlyList<DashSpecDiagnostic> ValidateByFileKind(
         string text,
@@ -101,54 +131,23 @@ public static class DashSpecDiagnosticService
             return
             [
                 new DashSpecDiagnostic(0, 0, 0, 1,
-                    $"'{Path.GetFileName(filePath)}' is not a .ds unit — legacy document formats are retired (ADR-0101)."),
+                    $"'{Path.GetFileName(filePath)}' is not a .ds unit — legacy document formats are retired."),
             ];
         }
 
         var (unitKind, _) = FsharpDocument.UnitSource.tryKindAndId(text);
 
-        switch (unitKind.ToLowerInvariant())
+        if (!string.IsNullOrWhiteSpace(unitKind) && UnitValidators.TryGetValue(unitKind.Trim(), out var validator))
         {
-            case "diagram":
-                DiagramModuleParser.ParseDiagramFile(text, specDirectory);
-                return [];
-            case "presentation":
-                PresentationModuleParser.ParsePresentationFile(text, specDirectory);
-                return [];
-            case "palette":
-                PaletteModuleParser.ParsePaletteFile(text);
-                return [];
-            case "transform":
-                TransformModuleParser.ParseTransformFile(text);
-                return [];
-            case "layout":
-                LayoutModuleParser.ParseLayoutFile(text);
-                return [];
-            case "tooltip":
-                TooltipModuleParser.ParseTooltipFile(text);
-                return [];
-            case "types":
-            case "flow":
-                // Type and flow units have no standalone validation facade: they are validated in the
-                // context of the module that imports them.
-                return [];
-            case "catalog":
-                return LintCatalog(text, filePath, specDirectory, parseOptions);
-            case "host":
-                HostModuleParser.Parse(text, specDirectory);
-                return [];
-            case "dashboard":
-                return ValidateAssembledRoot(text, filePath, specDirectory, parseOptions);
-            case "section":
-                return ValidateTabAssembled(text, filePath, specDirectory, parseOptions);
-            default:
-                return
-                [
-                    new DashSpecDiagnostic(0, 0, 0, 1, string.IsNullOrWhiteSpace(unitKind)
-                        ? "No module header — a .ds unit starts with 'module <kind> <id>' (ADR-0101)."
-                        : $"Unknown module kind '{unitKind}' (ADR-0101)."),
-                ];
+            return validator(text, filePath, specDirectory, parseOptions);
         }
+
+        return
+        [
+            new DashSpecDiagnostic(0, 0, 0, 1, string.IsNullOrWhiteSpace(unitKind)
+                ? "No module header — a .ds unit starts with 'module <kind> <id>'."
+                : $"Unknown module kind '{unitKind}'."),
+        ];
     }
 
     /// <summary>
