@@ -8,6 +8,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="stdlib\rules\rules.ds" LogicalName="stdlib/rules/rules.ds" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Diagnostics.fs" />
     <Compile Include="DashSpecRules.fs" />
     <Compile Include="ParseErrors.fs" />

@@ -181,6 +181,25 @@ module DashSpecRuleChecks =
 
         List.ofSeq violations
 
+    let private customCheckers = System.Collections.Concurrent.ConcurrentDictionary<string, DashSpecAstNode -> DashSpecRuleFinding list>(StringComparer.OrdinalIgnoreCase)
+
+    /// Register a pluggable AST rule checker by id.
+    let registerChecker (checkerId: string) (checker: DashSpecAstNode -> DashSpecRuleFinding list) =
+        customCheckers.[checkerId] <- checker
+
+    /// Evaluate all active built-in and plugin AST rule checkers against the syntax tree.
+    let evaluateAll (root: DashSpecAstNode) : DashSpecRuleFinding list =
+        let baseFindings =
+            findings root
+            |> List.filter (fun f -> DashSpecRules.isCheckerEnabled(f.Descriptor.Id))
+
+        let pluginFindings =
+            [ for kv in customCheckers do
+                if DashSpecRules.isCheckerEnabled kv.Key then
+                    yield! kv.Value root ]
+
+        baseFindings @ pluginFindings
+
     let toDiagnostic (text: string) (finding: DashSpecRuleFinding) : DashSpecDiagnostic =
         let line, character = positionOf text finding.Span.Start
         let endLine, endCharacter = positionOf text finding.Span.End

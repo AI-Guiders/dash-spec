@@ -28,6 +28,10 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<IDashSpecEndpointContributor> _endpointContributors = [];
     private readonly List<DashSpecCommandDescriptor> _commands = [];
+    private readonly Dictionary<string, RuleCheckerContributorDescriptor> _ruleCheckers =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public IReadOnlyDictionary<string, RuleCheckerContributorDescriptor> RuleCheckers => _ruleCheckers;
     private readonly Dictionary<string, Type> _vizComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _vizToolbars = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
@@ -208,6 +212,23 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
 
         _commands.Add(descriptor);
+        TrackPlugin(descriptor.PluginId);
+    }
+
+    public void AddRuleChecker(RuleCheckerContributorDescriptor descriptor)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        if (string.IsNullOrWhiteSpace(descriptor.CheckerId))
+        {
+            throw new ArgumentException("CheckerId is required.", nameof(descriptor));
+        }
+
+        if (!_ruleCheckers.TryAdd(descriptor.CheckerId, descriptor))
+        {
+            throw new InvalidOperationException(
+                $"Duplicate rule checker '{descriptor.CheckerId}' from plugin '{descriptor.PluginId}'.");
+        }
+
         TrackPlugin(descriptor.PluginId);
     }
 

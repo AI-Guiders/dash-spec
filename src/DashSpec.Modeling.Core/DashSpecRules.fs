@@ -1,6 +1,9 @@
 namespace DashSpec.Modeling.Core
 
 open System
+open System.Collections.Concurrent
+open System.IO
+open System.Reflection
 
 /// <summary>Language rule identifier (SSOT).</summary>
 [<RequireQualifiedAccess>]
@@ -27,9 +30,10 @@ type DashSpecRule =
     | UnresolvedImportOrReference
     | TypeMismatch
 
-/// <summary>Self-contained rule descriptor: owns Code, Severity, Title, and its typed Exception factory.</summary>
+/// <summary>Self-contained rule/checker descriptor: owns its Id, Code, Severity, Title, and typed Exception factory.</summary>
 and [<CustomEquality; NoComparison>] DashSpecRuleDescriptor =
-    { Rule: DashSpecRule
+    { Id: string
+      Rule: DashSpecRule
       Code: string
       Severity: DashSpecDiagnosticSeverity
       Title: string
@@ -37,10 +41,11 @@ and [<CustomEquality; NoComparison>] DashSpecRuleDescriptor =
 
     override this.Equals(obj) =
         match obj with
-        | :? DashSpecRuleDescriptor as other -> this.Rule = other.Rule
+        | :? DashSpecRuleDescriptor as other ->
+            String.Equals(this.Id, other.Id, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    override this.GetHashCode() = hash this.Rule
+    override this.GetHashCode() = StringComparer.OrdinalIgnoreCase.GetHashCode(this.Id)
 
 /// <summary>Base parse/validation exception owned by a required <see cref="DashSpecRuleDescriptor"/>.</summary>
 and DashSpecParseException(descriptor: DashSpecRuleDescriptor, message: string, ?sourceOffset: int) =
@@ -68,13 +73,13 @@ and DashSpecParseException(descriptor: DashSpecRuleDescriptor, message: string, 
 and DashSpecBlockBalanceException(descriptor: DashSpecRuleDescriptor, message: string, ?sourceOffset: int) =
     inherit DashSpecParseException(descriptor, message, ?sourceOffset = sourceOffset)
 
-/// <summary>DS009: Unclosed lexical token (`"…"`, `"""…"""`, `[[…]]`, or `/* … */`).</summary>
+/// <summary>DS020: Unclosed lexical token (`"…"`, `"""…"""`, `[[…]]`, or `/* … */`).</summary>
 and DashSpecUnclosedTokenException(descriptor: DashSpecRuleDescriptor, message: string, ?sourceOffset: int) =
     inherit DashSpecParseException(descriptor, message, ?sourceOffset = sourceOffset)
     new(message: string, ?sourceOffset: int) =
         DashSpecUnclosedTokenException(DashSpecRules.descriptor DashSpecRule.UnclosedToken, message, ?sourceOffset = sourceOffset)
 
-/// <summary>DS020: Unexpected lexical character or malformed token (`-`, `#`, unknown symbol).</summary>
+/// <summary>DS021: Unexpected lexical character or malformed token (`-`, `#`, unknown symbol).</summary>
 and DashSpecUnexpectedTokenException(descriptor: DashSpecRuleDescriptor, message: string, ?sourceOffset: int) =
     inherit DashSpecParseException(descriptor, message, ?sourceOffset = sourceOffset)
     new(message: string, ?sourceOffset: int) =
@@ -146,73 +151,131 @@ and DashSpecTypeMismatchException(descriptor: DashSpecRuleDescriptor, message: s
     new(message: string, ?sourceOffset: int) =
         DashSpecTypeMismatchException(DashSpecRules.descriptor DashSpecRule.TypeMismatch, message, ?sourceOffset = sourceOffset)
 
-/// <summary>SSOT catalog of all <see cref="DashSpecRuleDescriptor"/> entries — each rule carries its
-/// Code, Severity, Title, and typed Exception constructor in one record.</summary>
+/// <summary>Open registry of rule/checker descriptors + embedded <c>stdlib/rules/rules.ds</c> checker manifest.</summary>
 and DashSpecRules =
 
-    static let mk rule code severity title ctor =
+    static let parseSeverity (raw: string) =
+        match raw.Trim().ToLowerInvariant() with
+        | "warning" | "warn" -> DashSpecDiagnosticSeverity.Warning
+        | "info" | "information" -> DashSpecDiagnosticSeverity.Information
+        | _ -> DashSpecDiagnosticSeverity.Error
+
+    static let configuredCheckers : Map<string, DashSpecDiagnosticSeverity> =
+        let assembly = Assembly.GetExecutingAssembly()
+        use stream = assembly.GetManifestResourceStream("stdlib/rules/rules.ds")
+        if isNull stream then
+            Map.empty
+        else
+            use reader = new StreamReader(stream)
+            let lines =
+                reader.ReadToEnd().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map (fun l -> l.Trim())
+                |> Array.filter (fun l -> l.StartsWith('|'))
+
+            if lines.Length <= 1 then
+                Map.empty
+            else
+                lines.[1..]
+                |> Array.choose (fun line ->
+                    let cells = line.Split('|', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
+                    if cells.Length >= 2 && not (cells.[0] |> Seq.forall (fun c -> c = '-')) then
+                        Some(cells.[0], parseSeverity cells.[1])
+                    else
+                        None)
+                |> Map.ofArray
+
+    static let mk id rule code defaultSeverity title ctor =
+        let severity =
+            configuredCheckers
+            |> Map.tryFind id
+            |> Option.defaultValue defaultSeverity
+
         let rec d =
-            { Rule = rule
+            { Id = id
+              Rule = rule
               Code = code
               Severity = severity
               Title = title
               CreateException = fun (msg, off) -> ctor d msg off }
         d
 
-    static let descriptors =
-        [ mk DashSpecRule.ExtraEndBlock "DS001" DashSpecDiagnosticSeverity.Error "unexpected end block"
+    static let builtinDescriptors =
+        [ mk "ExtraEndBlock" DashSpecRule.ExtraEndBlock "DS001" DashSpecDiagnosticSeverity.Error "unexpected end block"
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.MismatchedEndKeyword "DS002" DashSpecDiagnosticSeverity.Error "end block does not match its opener"
+          mk "MismatchedEndKeyword" DashSpecRule.MismatchedEndKeyword "DS002" DashSpecDiagnosticSeverity.Error "end block does not match its opener"
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.MismatchedEndIdentifier "DS003" DashSpecDiagnosticSeverity.Error "end block identifier does not match its opener"
+          mk "MismatchedEndIdentifier" DashSpecRule.MismatchedEndIdentifier "DS003" DashSpecDiagnosticSeverity.Error "end block identifier does not match its opener"
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnclosedBlock "DS004" DashSpecDiagnosticSeverity.Error "block is not closed"
+          mk "UnclosedBlock" DashSpecRule.UnclosedBlock "DS004" DashSpecDiagnosticSeverity.Error "block is not closed"
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.EmptyOutlineSpan "DS005" DashSpecDiagnosticSeverity.Error "outline node has an empty span"
+          mk "EmptyOutlineSpan" DashSpecRule.EmptyOutlineSpan "DS005" DashSpecDiagnosticSeverity.Error "outline node has an empty span"
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk DashSpecRule.CardReferenceOutsideCards "DS006" DashSpecDiagnosticSeverity.Warning "card reference is not nested under a cards block"
+          mk "CardReferenceOutsideCards" DashSpecRule.CardReferenceOutsideCards "DS006" DashSpecDiagnosticSeverity.Warning "card reference is not nested under a cards block"
               (fun d msg off -> DashSpecScopeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.RoundTripOutlineChanged "DS007" DashSpecDiagnosticSeverity.Error "outline changed after serialize round-trip"
+          mk "RoundTripOutlineChanged" DashSpecRule.RoundTripOutlineChanged "DS007" DashSpecDiagnosticSeverity.Error "outline changed after serialize round-trip"
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk DashSpecRule.ImportAfterCode "DS008" DashSpecDiagnosticSeverity.Error "import must come before code sections in the module header"
+          mk "ImportAfterCode" DashSpecRule.ImportAfterCode "DS008" DashSpecDiagnosticSeverity.Error "import must come before code sections in the module header"
               (fun d msg off -> DashSpecUnitHeaderException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.ParseError "DS009" DashSpecDiagnosticSeverity.Error "syntax error"
+          mk "ParseError" DashSpecRule.ParseError "DS009" DashSpecDiagnosticSeverity.Error "syntax error"
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk DashSpecRule.InvalidUnitHeader "DS010" DashSpecDiagnosticSeverity.Error "invalid unit header or duplicate namespace directive"
+          mk "InvalidUnitHeader" DashSpecRule.InvalidUnitHeader "DS010" DashSpecDiagnosticSeverity.Error "invalid unit header or duplicate namespace directive"
               (fun d msg off -> DashSpecUnitHeaderException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnexpectedStatement "DS011" DashSpecDiagnosticSeverity.Error "unexpected statement or block in container"
+          mk "UnexpectedStatement" DashSpecRule.UnexpectedStatement "DS011" DashSpecDiagnosticSeverity.Error "unexpected statement or block in container"
               (fun d msg off -> DashSpecUnexpectedStatementException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.DuplicateDeclaration "DS012" DashSpecDiagnosticSeverity.Error "duplicate declaration identifier"
+          mk "DuplicateDeclaration" DashSpecRule.DuplicateDeclaration "DS012" DashSpecDiagnosticSeverity.Error "duplicate declaration identifier"
               (fun d msg off -> DashSpecDuplicateDeclarationException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.MissingRequiredMember "DS013" DashSpecDiagnosticSeverity.Error "missing required block, property, or table cell"
+          mk "MissingRequiredMember" DashSpecRule.MissingRequiredMember "DS013" DashSpecDiagnosticSeverity.Error "missing required block, property, or table cell"
               (fun d msg off -> DashSpecMissingMemberException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnknownPropertyOrColumn "DS014" DashSpecDiagnosticSeverity.Error "unknown property key or table column"
+          mk "UnknownPropertyOrColumn" DashSpecRule.UnknownPropertyOrColumn "DS014" DashSpecDiagnosticSeverity.Error "unknown property key or table column"
               (fun d msg off -> DashSpecUnknownPropertyException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.InvalidValueLiteral "DS015" DashSpecDiagnosticSeverity.Error "invalid value literal or value type constraint violation"
+          mk "InvalidValueLiteral" DashSpecRule.InvalidValueLiteral "DS015" DashSpecDiagnosticSeverity.Error "invalid value literal or value type constraint violation"
               (fun d msg off -> DashSpecInvalidValueException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.MalformedTable "DS016" DashSpecDiagnosticSeverity.Error "table requires at least one data row after header"
+          mk "MalformedTable" DashSpecRule.MalformedTable "DS016" DashSpecDiagnosticSeverity.Error "table requires at least one data row after header"
               (fun d msg off -> DashSpecTableStructureException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.ScopeMismatch "DS017" DashSpecDiagnosticSeverity.Error "scope or flow-block role mismatch"
+          mk "ScopeMismatch" DashSpecRule.ScopeMismatch "DS017" DashSpecDiagnosticSeverity.Error "scope or flow-block role mismatch"
               (fun d msg off -> DashSpecScopeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnresolvedImportOrReference "DS018" DashSpecDiagnosticSeverity.Error "unresolved import or symbol reference"
+          mk "UnresolvedImportOrReference" DashSpecRule.UnresolvedImportOrReference "DS018" DashSpecDiagnosticSeverity.Error "unresolved import or symbol reference"
               (fun d msg off -> DashSpecUnresolvedReferenceException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.TypeMismatch "DS019" DashSpecDiagnosticSeverity.Error "type mismatch across ports, fields, or composite sources"
+          mk "TypeMismatch" DashSpecRule.TypeMismatch "DS019" DashSpecDiagnosticSeverity.Error "type mismatch across ports, fields, or composite sources"
               (fun d msg off -> DashSpecTypeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnclosedToken "DS020" DashSpecDiagnosticSeverity.Error "unclosed string, raw block, or block comment"
+          mk "UnclosedToken" DashSpecRule.UnclosedToken "DS020" DashSpecDiagnosticSeverity.Error "unclosed string, raw block, or block comment"
               (fun d msg off -> DashSpecUnclosedTokenException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk DashSpecRule.UnexpectedToken "DS021" DashSpecDiagnosticSeverity.Error "unexpected character or malformed lexical token"
+          mk "UnexpectedToken" DashSpecRule.UnexpectedToken "DS021" DashSpecDiagnosticSeverity.Error "unexpected character or malformed lexical token"
               (fun d msg off -> DashSpecUnexpectedTokenException(d, msg, ?sourceOffset = off) :> DashSpecParseException) ]
 
-    static let byRule = descriptors |> List.map (fun d -> d.Rule, d) |> Map.ofList
-    static let byCode = descriptors |> List.map (fun d -> d.Code, d) |> Map.ofList
+    static let byRule = builtinDescriptors |> List.map (fun d -> d.Rule, d) |> Map.ofList
+    static let byCode = ConcurrentDictionary<string, DashSpecRuleDescriptor>(StringComparer.OrdinalIgnoreCase)
+    static let byId = ConcurrentDictionary<string, DashSpecRuleDescriptor>(StringComparer.OrdinalIgnoreCase)
 
-    static member allDescriptors = descriptors
-    static member all = descriptors |> List.map (fun d -> d.Rule)
+    static do
+        for d in builtinDescriptors do
+            byCode.[d.Code] <- d
+            byId.[d.Id] <- d
+
+    static member register(descriptor: DashSpecRuleDescriptor) =
+        byCode.[descriptor.Code] <- descriptor
+        byId.[descriptor.Id] <- descriptor
+
+    static member isCheckerEnabled(checkerId: string) =
+        configuredCheckers.IsEmpty || configuredCheckers.ContainsKey checkerId
+
+    static member configuredSeverity(checkerId: string, fallback: DashSpecDiagnosticSeverity) =
+        configuredCheckers |> Map.tryFind checkerId |> Option.defaultValue fallback
+
+    static member allDescriptors = builtinDescriptors
+    static member all = builtinDescriptors |> List.map (fun d -> d.Rule)
     static member descriptor(rule: DashSpecRule) = byRule.[rule]
+    static member tryById(id: string) =
+        match byId.TryGetValue id with
+        | true, d -> Some d
+        | false, _ -> None
     static member code(rule: DashSpecRule) = byRule.[rule].Code
     static member severity(rule: DashSpecRule) = byRule.[rule].Severity
     static member title(rule: DashSpecRule) = byRule.[rule].Title
-    static member tryOfCode(value: string) = byCode |> Map.tryFind value |> Option.map (fun d -> d.Rule)
+    static member tryOfCode(value: string) =
+        match byCode.TryGetValue value with
+        | true, d -> Some d.Rule
+        | false, _ -> None
     static member createException (rule: DashSpecRule) (message: string) (sourceOffset: int option) =
         byRule.[rule].CreateException(message, sourceOffset)
     static member raiseRule (rule: DashSpecRule) (message: string) (sourceOffset: int option) =

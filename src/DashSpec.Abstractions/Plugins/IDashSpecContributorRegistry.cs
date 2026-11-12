@@ -42,7 +42,15 @@ public interface IDashSpecContributorRegistry
     void RegisterVizCardToolbar(string rendererId, Type toolbarComponentType);
 
     void AddCommand(DashSpecCommandDescriptor descriptor);
+
+    void AddRuleChecker(RuleCheckerContributorDescriptor descriptor);
 }
+
+public sealed record RuleCheckerContributorDescriptor(
+    string PluginId,
+    string CheckerId,
+    string Code,
+    Action<object> Validate);
 
 public sealed record VizCardToolbarDescriptor(string RendererId, Type ComponentType);
 
