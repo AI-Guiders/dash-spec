@@ -3,5 +3,5 @@ namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
-param by: ident
-param direction: ident
+param by = ident
+param direction = ident

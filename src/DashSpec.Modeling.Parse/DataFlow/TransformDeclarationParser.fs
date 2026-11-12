@@ -4,11 +4,13 @@ open System
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Core.TransformDeclarations
 open DashSpec.Modeling.Parse
+open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
 /// <summary>
 /// Projects transform declaration units (<c>module transform &lt;id&gt;</c>) directly from the
-/// typed AST via <see cref="UnitGrammar.unwrap"/> (zero <c>TokenReader</c>).
+/// typed AST via <see cref="UnitGrammar.unwrap"/> (every member is a standard <c>PropertyAssignment</c>
+/// with <c>=</c>, including <c>param &lt;name&gt; = &lt;kind&gt;</c>).
 /// </summary>
 module TransformDeclarationParser =
 
@@ -33,14 +35,18 @@ module TransformDeclarationParser =
         let mutable effect = TransformDeclarations.TransformTypeEffect.Opaque
         let params' = ResizeArray<TransformDeclarations.ParamDecl>()
 
-        for node in env.View.Body do
-            match node with
-            | DashSpecAstNode.PropertyAssignment p ->
-                match p.Key.ToLowerInvariant() with
+        for prop in env.View.Properties do
+            match prop.KeyTokens with
+            | [| { LexKind = TokenKind.Ident; Text = kw }; { LexKind = TokenKind.Ident; Text = paramName } |]
+                when String.Equals(kw, "param", StringComparison.OrdinalIgnoreCase) ->
+                let kind = prop.ValueText.Trim()
+                params'.Add({ TransformDeclarations.ParamDecl.Key = paramName; Literals = [ kind ]; Hint = hint })
+            | _ ->
+                match prop.Key.ToLowerInvariant() with
                 | "locality" ->
-                    locality <- p.ValueText.Trim()
+                    locality <- prop.ValueText.Trim()
                 | "type_effect" ->
-                    let name = p.ValueText.Trim()
+                    let name = prop.ValueText.Trim()
                     match TransformDeclarations.TransformTypeEffect.tryParse name with
                     | Some parsed -> effect <- parsed
                     | None ->
@@ -48,19 +54,13 @@ module TransformDeclarationParser =
                             DashSpecInvalidValueException(
                                 $"transform '{id}': unknown type_effect '{name}' — expected identity|projection|extend|compose|require_equal|opaque.",
                                 "type_effect",
-                                p.Span.Start))
+                                prop.Span.Start))
                 | "requires_block" ->
-                    requiresBlock <- String.Equals(p.ValueText.Trim(), "true", StringComparison.OrdinalIgnoreCase)
+                    requiresBlock <- String.Equals(prop.ValueText.Trim(), "true", StringComparison.OrdinalIgnoreCase)
                 | "hint" ->
-                    hint <- unquote p.ValueText
+                    hint <- unquote prop.ValueText
                 | _ -> ()
-            | DashSpecAstNode.PortDeclaration port when port.Role = PortDeclRole.PortParam ->
-                let kind = port.ValueType |> Option.defaultValue "ident"
-                params'.Add({ TransformDeclarations.ParamDecl.Key = port.PortName; Literals = [ kind ]; Hint = hint })
-            | _ -> ()
 
-        // Second pass: if `hint` was declared after `param` lines (as in `to_zone.ds` / `iana_to_timeshift.ds`),
-        // backfill any empty ParamDecl.Hint with the module's hint.
         let resolvedParams =
             params'
             |> Seq.map (fun p ->

@@ -3,6 +3,6 @@ namespace DashSpec.Std.Transformations.Database
 
 type_effect = projection
 locality = database
-param by: ident
-param agg: ident
-param value: ident
+param by = ident
+param agg = ident
+param value = ident

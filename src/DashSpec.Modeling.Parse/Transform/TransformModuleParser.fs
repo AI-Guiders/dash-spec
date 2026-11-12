@@ -48,13 +48,13 @@ module TransformModuleParser =
         // If the `module transform` unit is a data-flow transform declaration (`type_effect` / `locality` / `param`),
         // validate its `type_effect` and return an empty SeriesTransformBlock for legacy callers.
         let isFlowStepDeclaration =
-            view.Ports.Length > 0
-            || view.Properties
-               |> Array.exists (fun p ->
-                   String.Equals(p.Key, "type_effect", StringComparison.OrdinalIgnoreCase)
-                   || String.Equals(p.Key, "locality", StringComparison.OrdinalIgnoreCase)
-                   || String.Equals(p.Key, "requires_block", StringComparison.OrdinalIgnoreCase)
-                   || String.Equals(p.Key, "hint", StringComparison.OrdinalIgnoreCase))
+            view.Properties
+            |> Array.exists (fun p ->
+                (p.KeyTokens.Length = 2 && String.Equals(p.KeyTokens.[0].Text, "param", StringComparison.OrdinalIgnoreCase))
+                || String.Equals(p.Key, "type_effect", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(p.Key, "locality", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(p.Key, "requires_block", StringComparison.OrdinalIgnoreCase)
+                || String.Equals(p.Key, "hint", StringComparison.OrdinalIgnoreCase))
 
         if isFlowStepDeclaration then
             for p in view.Properties do

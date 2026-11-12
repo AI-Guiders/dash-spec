@@ -4,5 +4,5 @@ namespace DashSpec.Std.Transformations.Runtime
 type_effect = identity
 locality = runtime
 requires_block = true
-param zone: timeshift
+param zone = timeshift
 hint = "to_zone requires a TimeShift literal (UTC+…); for IANA zones use transform use iana_to_timeshift."
