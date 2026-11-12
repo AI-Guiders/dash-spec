@@ -103,6 +103,8 @@ public static class DashSpecDiagnosticService
             ["tooltip"] = (text, _, _, _) => { TooltipModuleParser.ParseTooltipFile(text); return []; },
             ["types"] = (_, _, _, _) => [],
             ["flow"] = (_, _, _, _) => [],
+            ["registry"] = (text, _, _, _) => { DashSpec.Modeling.Parse.RegistryModuleParser.parse(text); return []; },
+            ["runtime"] = (text, _, _, _) => { DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse(text); return []; },
             ["catalog"] = LintCatalog,
             ["host"] = (text, _, specDir, _) => { HostModuleParser.Parse(text, specDir); return []; },
             ["dashboard"] = ValidateAssembledRoot,

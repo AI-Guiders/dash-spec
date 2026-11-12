@@ -318,21 +318,25 @@ module rec DocumentModuleParser =
             let moduleId = reader.ReadIdent()
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
-            ModuleHeaderParser.parse reader |> ignore
+            let header = ModuleHeaderParser.parse reader
+            let importedRuntimeNamespace =
+                header.Imports
+                |> Seq.tryPick (fun imp ->
+                    if imp.Kind = ImportKind.Runtimes then Some imp.Namespace else None)
             reader.SkipNewlines()
 
             let rec loop () =
-                if reader.IsEof || BlockSyntax.isBlockEnd reader moduleKind (Some moduleId) then None
+                if reader.IsEof || BlockSyntax.isBlockEnd reader moduleKind (Some moduleId) then importedRuntimeNamespace
                 else
                     reader.SkipNewlines()
-                    if BlockSyntax.isBlockEnd reader moduleKind (Some moduleId) then None
+                    if BlockSyntax.isBlockEnd reader moduleKind (Some moduleId) then importedRuntimeNamespace
                     elif reader.TryKeyword "runtime" then
                         let props = PropertyBlockParser.parse reader PropertySchemas.runtime "runtime" false false
                         match props.TryGetValue "manifest" with
                         | true, value -> Some value
-                        | false, _ -> None
+                        | false, _ -> importedRuntimeNamespace
                     elif reader.TryKeyword "configuration" || reader.TryKeyword "connect" || reader.TryKeyword "report" then
-                        None
+                        importedRuntimeNamespace
                     elif reader.TryKeyword "extensions" then
                         skipTopLevelSection reader "extensions"
                         loop ()

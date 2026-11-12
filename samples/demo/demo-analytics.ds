@@ -1,9 +1,7 @@
 module section analytics
     namespace Demo.Analytics
     import palettes from Demo.Palettes
-    runtime
-        manifest = "demo.toml"
-    end runtime
+    import runtimes from Demo.Runtime
 
     configuration
         sqldialect = tsql

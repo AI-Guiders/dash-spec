@@ -81,7 +81,7 @@ module UnitSource =
 
             if
                 parts.Length >= 2
-                && (DashSpec.Modeling.Core.ImportKindRegistry.tryFindByModuleKeyword parts.[1]).IsSome
+                && DashSpec.Modeling.Core.ImportKindRegistry.isUnitKeyword parts.[1]
             then
                 Some(parts.[1].ToLowerInvariant())
             else

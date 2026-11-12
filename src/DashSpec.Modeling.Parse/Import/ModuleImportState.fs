@@ -10,6 +10,7 @@ open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
+open DashSpec.Modeling.Parse.Runtime
 
 type ModuleImportState() =
     let diagrams = Dictionary<string, UnitFragment>(StringComparer.OrdinalIgnoreCase)
@@ -26,6 +27,15 @@ type ModuleImportState() =
     let aliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let palettes = Dictionary<string, PaletteDocument>(StringComparer.OrdinalIgnoreCase)
     let tabModules = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let runtimes = Dictionary<string, RuntimeDocument>(StringComparer.OrdinalIgnoreCase)
+    let runtimePaths = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+    member _.RegisterRuntime(id: string, path: string, doc: RuntimeDocument) =
+        runtimes.[id] <- doc
+        runtimePaths.[id] <- path
+
+    member _.Runtimes = runtimes :> IReadOnlyDictionary<string, RuntimeDocument>
+    member _.RuntimePaths = runtimePaths :> IReadOnlyDictionary<string, string>
 
     member _.RegisterPalette(id: string, palette: PaletteDocument) =
         if palettes.ContainsKey id then

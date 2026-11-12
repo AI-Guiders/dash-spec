@@ -21,9 +21,109 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
         }
 
         var text = File.ReadAllText(path, Encoding.UTF8);
+        if (path.EndsWith(".ds", StringComparison.OrdinalIgnoreCase))
+        {
+            return LoadFromRuntimeModule(text, path);
+        }
+
         RejectLegacyConnectorTomlKeys(text, path);
         return TomlSerializer.Deserialize<DashSpecTomlRoot>(text, SerializerOptions)
             ?? new DashSpecTomlRoot();
+    }
+
+    private DashSpecTomlRoot LoadFromRuntimeModule(string text, string path)
+    {
+        var doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse(text);
+        var root = new DashSpecTomlRoot();
+        root.Plugins.DefaultProviderId = string.IsNullOrWhiteSpace(doc.DefaultProviderId)
+            ? "sqlserver"
+            : doc.DefaultProviderId;
+        root.Plugins.ActiveBundle = string.IsNullOrWhiteSpace(doc.ActiveBundle)
+            ? "standard"
+            : doc.ActiveBundle;
+
+        if (doc.Plugins.Count > 0)
+        {
+            root.Plugins.Bundles.Add(new PluginBundleTomlEntry
+            {
+                Name = root.Plugins.ActiveBundle,
+                Plugins = doc.Plugins.ToList(),
+            });
+        }
+
+        var loadedConnectorIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var p in doc.Providers)
+        {
+            root.Providers[p.Id] = new ProviderTomlSection
+            {
+                ConnectionString = p.ConnectionString,
+                CommandTimeoutSeconds = p.TimeoutSeconds,
+                MaxRows = p.MaxRows,
+            };
+
+            var connectorKind = string.IsNullOrWhiteSpace(p.Connector) ? p.Id : p.Connector;
+            if (!string.Equals(p.Id, connectorKind, StringComparison.OrdinalIgnoreCase) &&
+                !root.Providers.ContainsKey(connectorKind))
+            {
+                root.Providers[connectorKind] = new ProviderTomlSection
+                {
+                    ConnectionString = p.ConnectionString,
+                    CommandTimeoutSeconds = p.TimeoutSeconds,
+                    MaxRows = p.MaxRows,
+                };
+            }
+
+            if (loadedConnectorIds.Add(connectorKind))
+            {
+                var assemblyName = connectorKind.ToLowerInvariant() switch
+                {
+                    "postgres" or "postgresql" => "DashSpec.Connector.Postgres.dll",
+                    _ => "DashSpec.Connector.SqlServer.dll",
+                };
+                root.Plugins.Load.Add(new PluginLoadTomlEntry
+                {
+                    Id = connectorKind,
+                    Assembly = assemblyName,
+                    Tier = "core",
+                    IsProvider = true,
+                });
+            }
+        }
+
+        if (loadedConnectorIds.Count == 0)
+        {
+            root.Plugins.Load.Add(new PluginLoadTomlEntry
+            {
+                Id = "sqlserver",
+                Assembly = "DashSpec.Connector.SqlServer.dll",
+                Tier = "core",
+                IsProvider = true,
+            });
+        }
+
+        root.Plugins.Load.Add(new PluginLoadTomlEntry
+        {
+            Id = "card_export",
+            Assembly = "DashSpec.Plugin.Export.dll",
+            Tier = "extended",
+            IsProvider = false,
+        });
+
+        var dir = Path.GetDirectoryName(path);
+        var baseName = Path.GetFileNameWithoutExtension(path);
+        if (!string.IsNullOrWhiteSpace(dir) &&
+            !baseName.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
+        {
+            var localDsPath = Path.Combine(dir, $"{baseName}.local.ds");
+            if (File.Exists(localDsPath))
+            {
+                var localRoot = LoadFromRuntimeModule(File.ReadAllText(localDsPath, Encoding.UTF8), localDsPath);
+                root = Merge(root, localRoot);
+            }
+        }
+
+        return root;
     }
 
     private static void RejectLegacyConnectorTomlKeys(string text, string path)

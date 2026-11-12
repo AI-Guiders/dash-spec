@@ -7,9 +7,7 @@ module dashboard demo_soak
     import palettes from Demo.Palettes
     import sections from Demo.Analytics
     import presentations from DashSpec.Std
-    runtime
-        manifest = "demo.toml"
-    end runtime
+    import runtimes from Demo.Runtime
 
     configuration
         sqldialect = tsql

@@ -89,6 +89,33 @@ public sealed class HostPathResolver : IHostPathResolver
 
         const string extension = ".dashhost";
         var withExt = path.EndsWith(extension, StringComparison.OrdinalIgnoreCase) ? path : path + extension;
-        return File.Exists(withExt) ? withExt : null;
+        if (File.Exists(withExt))
+        {
+            return withExt;
+        }
+
+        var searchDirs = new[]
+        {
+            Path.Combine(contentRoot, "dashspec"),
+            contentRoot,
+            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "ai-landscape")),
+            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "demo")),
+        };
+
+        foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!Directory.Exists(dir))
+            {
+                continue;
+            }
+
+            var unitHit = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir).TryFindUnit("host", dashhostReference);
+            if (unitHit is not null && File.Exists(unitHit.Value.Path))
+            {
+                return Path.GetFullPath(unitHit.Value.Path);
+            }
+        }
+
+        return null;
     }
 }

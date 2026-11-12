@@ -43,8 +43,21 @@ public sealed class HostBootstrapService(
 
         if (string.IsNullOrWhiteSpace(bootstrap.Host.Dashhost))
         {
+            var envHost = Environment.GetEnvironmentVariable("DASHSPEC_HOST");
+            if (!string.IsNullOrWhiteSpace(envHost))
+            {
+                bootstrap.Host.Dashhost = envHost.Trim();
+            }
+            else
+            {
+                bootstrap.Host.Dashhost = TryAutoDiscoverHostSpec(contentRoot) ?? string.Empty;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(bootstrap.Host.Dashhost))
+        {
             throw new InvalidOperationException(
-                "[host] dashhost is required in dash-spec.toml or dash-spec.local.toml.");
+                "[host] dashhost is required (declare a 'module host <id>' in the workspace or set DASHSPEC_HOST).");
         }
 
         var dashhostPath = pathResolver.ResolveDashhostPath(contentRoot, bootstrap.Host.Dashhost)
@@ -194,6 +207,38 @@ public sealed class HostBootstrapService(
             scheme,
             string.Join(", ", RadzenColorSchemes.All.Select(t => t.Token)),
             RadzenColorSchemes.DefaultToken);
+    }
+
+    private static string? TryAutoDiscoverHostSpec(string contentRoot)
+    {
+        var searchDirs = new[]
+        {
+            Path.Combine(contentRoot, "dashspec"),
+            contentRoot,
+            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "ai-landscape")),
+            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "demo")),
+        };
+
+        foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!Directory.Exists(dir))
+            {
+                continue;
+            }
+
+            var idx = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir);
+            var hostEntry = idx.Entries.FirstOrDefault(e =>
+                e.Kind is not null &&
+                string.Equals(e.Kind.Value, "host", StringComparison.OrdinalIgnoreCase) &&
+                File.Exists(e.Path));
+
+            if (hostEntry is not null)
+            {
+                return Path.GetFullPath(hostEntry.Path);
+            }
+        }
+
+        return null;
     }
 
     private static bool ShouldSkipLocalHostOverlay(IHostEnvironment environment) =>

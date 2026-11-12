@@ -5,6 +5,7 @@ obj/
 *.suo
 *.bak
 appsettings.Development.local.json
+*.local.ds
 dash-spec.local.toml
 samples/demo/demo.local.toml
 publish/

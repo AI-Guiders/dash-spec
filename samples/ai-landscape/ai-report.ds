@@ -4,9 +4,7 @@ module dashboard ai_report
     import types from Ai.Landscape.Types
     import flows from Ai.Landscape.Flows as ai_flows
     import presentations from DashSpec.Std
-    runtime
-        manifest = "ai.toml"
-    end runtime
+    import runtimes from Ai.Landscape.Runtime
 
     configuration
         sqldialect = tsql

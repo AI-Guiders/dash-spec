@@ -128,6 +128,7 @@ module UnitImport =
 
     /// <summary>Compilation unit kind, taken from the <c>module &lt;kind&gt; &lt;id&gt;</c> header (ADR-0101).</summary>
     type UnitKind =
+        | Runtime
         | Layout
         | Diagram
         | Presentation
@@ -153,6 +154,7 @@ module UnitImport =
 
         let private unitKindOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) =
             match kind with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Runtime -> Some Runtime
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout -> Some Layout
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram -> Some Diagram
             | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Presentation -> Some Presentation
@@ -179,7 +181,13 @@ module UnitImport =
     let private contributors =
         let d = System.Collections.Concurrent.ConcurrentDictionary<UnitKind, UnitContributor>()
         let builtins =
-            [ { Kind = Layout
+            [ { Kind = Runtime
+                ImportKind = Some ImportKind.Runtimes
+                Role = Declaration
+                Register = fun (path, text, _, state) ->
+                    let doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse text
+                    state.RegisterRuntime(doc.Id, path, doc) }
+              { Kind = Layout
                 ImportKind = Some ImportKind.Layouts
                 Role = Declaration
                 Register = fun (_, text, moduleKind, state) -> assignLayoutBoard (LayoutModuleParser.parseLayoutFile text) moduleKind state }

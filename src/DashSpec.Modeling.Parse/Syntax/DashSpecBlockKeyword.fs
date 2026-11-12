@@ -56,6 +56,7 @@ type DashSpecBlockKeyword =
     | Defaults
     | Flow
     | Nest
+    | Provider
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -112,6 +113,7 @@ module DashSpecBlockKeyword =
         | "defaults" -> Some DashSpecBlockKeyword.Defaults
         | "flow" -> Some DashSpecBlockKeyword.Flow
         | "nest" -> Some DashSpecBlockKeyword.Nest
+        | "provider" -> Some DashSpecBlockKeyword.Provider
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
@@ -120,7 +122,7 @@ module DashSpecBlockKeyword =
     let isNamedBlockKeyword (name: string) =
         match name.ToLowerInvariant() with
         | "card" | "section" | "page" | "phase" | "group" | "type" | "nest"
-        | "source" | "transformer" | "flow" | "link" -> true
+        | "source" | "transformer" | "flow" | "link" | "provider" -> true
         | _ -> false
 
     let isDiagramContainer (keyword: DashSpecBlockKeyword) =
@@ -167,7 +169,8 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Tooltip
         | DashSpecBlockKeyword.Host
         | DashSpecBlockKeyword.Surfaces
-        | DashSpecBlockKeyword.Defaults -> true
+        | DashSpecBlockKeyword.Defaults
+        | DashSpecBlockKeyword.Provider -> true
         | _ -> false
 
     let toEndName (keyword: DashSpecBlockKeyword) =
@@ -223,4 +226,5 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Defaults -> "defaults"
         | DashSpecBlockKeyword.Flow -> "flow"
         | DashSpecBlockKeyword.Nest -> "nest"
+        | DashSpecBlockKeyword.Provider -> "provider"
         | DashSpecBlockKeyword.Other name -> name

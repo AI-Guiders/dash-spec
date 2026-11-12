@@ -251,6 +251,7 @@ type ClauseKind =
 [<RequireQualifiedAccess>]
 type DashSpecModuleKind =
     | Registry
+    | Runtime
     | Dashboard
     | Section
     | Diagram
@@ -270,6 +271,7 @@ module DashSpecModuleKind =
     let ofKeyword (keyword: string) (emitViews: bool) =
         match keyword.Trim().ToLowerInvariant() with
         | "registry" -> DashSpecModuleKind.Registry
+        | "runtime" -> DashSpecModuleKind.Runtime
         | "dashboard" -> DashSpecModuleKind.Dashboard
         | "section" -> DashSpecModuleKind.Section
         | "diagram" -> DashSpecModuleKind.Diagram
@@ -287,6 +289,7 @@ module DashSpecModuleKind =
     let toKeyword (kind: DashSpecModuleKind) =
         match kind with
         | DashSpecModuleKind.Registry -> "registry"
+        | DashSpecModuleKind.Runtime -> "runtime"
         | DashSpecModuleKind.Dashboard -> "dashboard"
         | DashSpecModuleKind.Section -> "section"
         | DashSpecModuleKind.Diagram -> "diagram"

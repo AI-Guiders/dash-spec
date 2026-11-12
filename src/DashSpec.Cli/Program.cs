@@ -315,6 +315,9 @@ public static class Program
                 case UnitKind.Catalog:
                     DashSpecValidator.ValidateCatalog(fullPath, BuildParseOptions(tomlPath));
                     break;
+                case UnitKind.Runtime:
+                    _ = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseFile(fullPath);
+                    break;
                 default:
                     ValidateSpec(fullPath, BuildParseOptions(tomlPath));
                     break;
@@ -353,6 +356,7 @@ public static class Program
                 {
                     "host" => UnitKind.HostModule,
                     "catalog" => UnitKind.Catalog,
+                    "runtime" => UnitKind.Runtime,
                     _ => UnitKind.Spec,
                 };
             }
@@ -397,9 +401,20 @@ public static class Program
 
         if (probed is null)
         {
-            Console.Error.WriteLine(
-                "note: no dash-spec.toml found (cwd, exe dir) — builtin vocabulary only; pass --toml for full parity.");
-            return new DashSpecPluginManifest();
+            return new DashSpecPluginManifest
+            {
+                ActiveBundle = "standard",
+                DefaultProviderId = "sqlserver",
+                Plugins =
+                [
+                    new DashSpecPluginLoadEntry
+                    {
+                        Id = "card_export",
+                        Assembly = "DashSpec.Plugin.Export.dll",
+                        Tier = DashSpec.Abstractions.Plugins.PluginTier.Extended,
+                    },
+                ],
+            };
         }
 
         return DashSpecPluginsToml.Read(probed);
@@ -441,5 +456,6 @@ public static class Program
         Spec,
         HostModule,
         Catalog,
+        Runtime,
     }
 }

@@ -83,15 +83,6 @@
     <None Update="Catalog\dash.catalog.gdl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Update="dash-spec.toml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="dash-spec.dev.toml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="dash-spec.local.toml.example">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <Target Name="StageConnectorPlugins" AfterTargets="Build;Publish">

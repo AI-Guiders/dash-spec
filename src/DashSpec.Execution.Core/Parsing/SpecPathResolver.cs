@@ -18,6 +18,15 @@ public static class SpecPathResolver
 
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            if (Directory.Exists(dir))
+            {
+                var unitHit = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir).TryFindUnit("runtime", relativePath);
+                if (unitHit is not null && File.Exists(unitHit.Value.Path))
+                {
+                    return Path.GetFullPath(unitHit.Value.Path);
+                }
+            }
+
             var candidate = Path.GetFullPath(Path.Combine(dir, relativePath));
             if (File.Exists(candidate))
             {
