@@ -1,4 +1,3 @@
-
 namespace DashSpec.Execution.Parsing;
 
 public static class HostModuleParser
@@ -6,12 +5,7 @@ public static class HostModuleParser
     public static HostDocument Parse(string text, string? specDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        if (HostParseBridge.Parse is { } parse)
-        {
-            return parse(text, specDirectory);
-        }
-
-        throw new InvalidOperationException("Host parse bridge not registered.");
+        return ModuleParseRegistration.ParseHost(text, specDirectory);
     }
 
     public static HostDocument ParseFile(string path)

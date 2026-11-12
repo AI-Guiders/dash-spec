@@ -160,6 +160,7 @@
     <Compile Include="Document\DashboardParser.fs" />
     <Compile Include="Document\DashboardComposer.fs" />
     <Compile Include="Document\DashSpecCompiler.fs" />
+    <Compile Include="Document\UnitProjector.fs" />
   </ItemGroup>
 
   <ItemGroup>

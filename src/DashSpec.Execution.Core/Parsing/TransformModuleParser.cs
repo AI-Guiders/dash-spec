@@ -1,4 +1,3 @@
-
 namespace DashSpec.Execution.Parsing;
 
 internal static class TransformModuleParser
@@ -6,12 +5,6 @@ internal static class TransformModuleParser
     public static SeriesTransformBlock ParseTransformFile(string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-
-        if (TransformParseBridge.ParseTransformFile is { } parse)
-        {
-            return parse(text);
-        }
-
-        throw new InvalidOperationException("Transform parse bridge not registered.");
+        return ModuleParseRegistration.ParseTransformFile(text);
     }
 }

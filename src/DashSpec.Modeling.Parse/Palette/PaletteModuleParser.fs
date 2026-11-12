@@ -23,7 +23,7 @@ module PaletteModuleParser =
             let inner, afterInner = parseColorOperandTokens rest
             match afterInner with
             | { LexKind = TokenKind.RParen } :: tail -> inner, tail
-            | _ -> raise (DashSpecParseException("Expected ')' after color(...) operand."))
+            | _ -> raise (DashSpecInvalidValueException("Expected ')' after color(...) operand."))
         | { LexKind = TokenKind.String; Text = s } :: tail ->
             unquote s, tail
         | { LexKind = TokenKind.HexColor; Text = h } :: tail ->
@@ -31,12 +31,12 @@ module PaletteModuleParser =
         | { LexKind = TokenKind.Ident; Text = id } :: tail ->
             id, tail
         | _ ->
-            raise (DashSpecParseException("Expected color literal (#rrggbb), CSS name, const reference, or color(...)."))
+            raise (DashSpecInvalidValueException("Expected color literal (#rrggbb), CSS name, const reference, or color(...)."))
 
     let private parseSingleColorOperand (tokens: SyntaxToken[]) (context: string) : string =
         let operand, rest = parseColorOperandTokens (Array.toList tokens)
         if not rest.IsEmpty then
-            raise (DashSpecParseException($"Unexpected trailing tokens in {context}."))
+            raise (DashSpecInvalidValueException($"Unexpected trailing tokens in {context}."))
         operand
 
     let private parseColorsPropertyTokens (tokens: SyntaxToken[]) (constants: IReadOnlyDictionary<string, string>) : string =
@@ -61,16 +61,16 @@ module PaletteModuleParser =
                         | tail -> tail
 
             if not closed || not cur.IsEmpty then
-                raise (DashSpecParseException("Unclosed or malformed colors list '[ ... ]'."))
+                raise (DashSpecInvalidValueException("Unclosed or malformed colors list '[ ... ]'."))
 
             if items.Count = 0 then
-                raise (DashSpecParseException("colors list requires at least one entry."))
+                raise (DashSpecInvalidValueException("colors list requires at least one entry."))
 
             items
             |> Seq.map (fun operand -> PaletteColorResolver.resolveOperand operand constants "colors list")
             |> PaletteColorResolver.joinColorList
         | _ ->
-            raise (DashSpecParseException("Expected colors list [ … ] or string."))
+            raise (DashSpecInvalidValueException("Expected colors list [ … ] or string."))
 
     /// Project a palette definition from any container's AST members (shared by `module palette <id>` and `palette` blocks).
     let projectFromMembers (id: string) (members: DashSpecAstNode[]) : PaletteDocument =
@@ -78,7 +78,7 @@ module PaletteModuleParser =
         let view = UnitGrammar.view flatMembers
 
         if view.Body.Length <> view.Properties.Length then
-            raise (DashSpecParseException($"Palette '{id}' contains unexpected non-property statements."))
+            raise (DashSpecUnexpectedStatementException($"Palette '{id}' contains unexpected non-property statements."))
 
         let constants = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -99,14 +99,14 @@ module PaletteModuleParser =
             | [| { LexKind = TokenKind.String; Text = rawKey } |] ->
                 let key = unquote rawKey
                 if String.IsNullOrWhiteSpace key then
-                    raise (DashSpecParseException("Quoted property key cannot be empty."))
+                    raise (DashSpecInvalidValueException("Quoted property key cannot be empty."))
                 let operand = parseSingleColorOperand prop.ValueTokens $"palette entry '{key}'"
                 values.[key] <- PaletteColorResolver.resolveOperand operand constants $"palette entry '{key}'"
             | _ ->
-                raise (DashSpecParseException($"Invalid property key '{prop.Key}' in palette '{id}'."))
+                raise (DashSpecUnknownPropertyException(prop.Key, $"Invalid property key '{prop.Key}' in palette '{id}'."))
 
         if values.Count = 0 then
-            raise (DashSpecParseException($"Palette '{id}' requires at least one mapping entry."))
+            raise (DashSpecMissingMemberException("colors", $"Palette '{id}' requires at least one mapping entry."))
 
         { Id = id; Properties = values :> IReadOnlyDictionary<_, _> }
 

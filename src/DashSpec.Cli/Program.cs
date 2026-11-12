@@ -307,7 +307,10 @@ public static class Program
             switch (Classify(fullPath))
             {
                 case UnitKind.HostModule:
-                    HostModuleParser.ParseFile(fullPath);
+                    var hostDoc = HostModuleParser.ParseFile(fullPath);
+                    var hostDir = Path.GetDirectoryName(fullPath)!;
+                    var catalogPath = Path.GetFullPath(Path.Combine(hostDir, hostDoc.CatalogPath));
+                    DashSpecValidator.ValidateCatalog(catalogPath, BuildParseOptions(tomlPath));
                     break;
                 case UnitKind.Catalog:
                     DashSpecValidator.ValidateCatalog(fullPath, BuildParseOptions(tomlPath));

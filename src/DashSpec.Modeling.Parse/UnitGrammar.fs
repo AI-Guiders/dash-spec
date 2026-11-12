@@ -119,9 +119,8 @@ module UnitGrammar =
             | DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | ClauseKind.NamespaceClause n ->
-                    if ns.IsSome then
-                        raise (DashSpecUnitHeaderException("Module header allows only one 'namespace' directive.", c.Span.Start))
-                    ns <- Some n
+                    if ns.IsNone then
+                        ns <- Some n
                 | _ -> body.Add child
             | DashSpecAstNode.ImportDeclaration imp ->
                 imports.Add imp

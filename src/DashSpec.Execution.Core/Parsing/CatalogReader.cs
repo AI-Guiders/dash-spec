@@ -6,12 +6,7 @@ public static class CatalogReader
     public static CatalogDocument Parse(string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        if (CatalogParseBridge.Parse is { } parse)
-        {
-            return parse(text);
-        }
-
-        throw new InvalidOperationException("Catalog parse bridge not registered.");
+        return ModuleParseRegistration.ParseCatalog(text);
     }
 
     public static CatalogDocument ParseFile(string path)

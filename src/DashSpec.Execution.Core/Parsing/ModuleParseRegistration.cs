@@ -1,27 +1,9 @@
 using System.Linq;
 using DashSpec.Execution.Runtime;
-using Microsoft.FSharp.Core;
-using FsharpCatalog = DashSpec.Modeling.Parse.Catalog.CatalogDocument;
-using FsharpCatalogEntry = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
-using FsharpCatalogGroup = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
-using FsharpBoard = DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition;
-using FsharpLayout = DashSpec.Modeling.Parse.Layout;
-using FsharpScope = DashSpec.Modeling.Parse.Layout.LayoutScope;
-using FsharpTooltip = DashSpec.Modeling.Parse.Tooltip.TooltipDefinition;
-using FsharpTransform = DashSpec.Modeling.Parse.Transform.SeriesTransformBlock;
-using FsharpPalette = DashSpec.Modeling.Parse.Palette.PaletteDocument;
-using FsharpPresentation = DashSpec.Modeling.Parse.Presentation.PresentationModuleDocument;
-using FsharpPresentationBlock = DashSpec.Modeling.Parse.Presentation.PresentationBlock;
-using FsharpHost = DashSpec.Modeling.Parse.Host.HostDocument;
-using FsharpHostLink = DashSpec.Modeling.Parse.Host.HostLinkDefinition;
-using FsharpDiagram = DashSpec.Modeling.Parse.Diagram.DiagramDefinition;
-using FsharpDiagramStmt = DashSpec.Modeling.Parse.Diagram.DiagramFragmentStatement;
-using FsharpInspect = DashSpec.Modeling.Parse.Diagram.InspectPresentation;
 using FsharpImport = DashSpec.Modeling.Parse.Import.UnitFragmentResolver;
 
 namespace DashSpec.Execution.Parsing;
 
-/// <summary>Wire F# fragment parsers into Core bridges (ADR-0048 M2–M5).</summary>
 internal static class ModuleParseRegistration
 {
     static ModuleParseRegistration()
@@ -29,14 +11,6 @@ internal static class ModuleParseRegistration
         DocumentParseRegistration.Register();
         DocumentFormatRegistration.Register();
         DocumentSyntaxRegistration.Register();
-        RegisterLayout();
-        RegisterTooltip();
-        RegisterCatalog();
-        RegisterHost();
-        RegisterTransform();
-        RegisterPalette();
-        RegisterPresentation();
-        RegisterDiagram();
         RegisterEmbeddedStdlib();
     }
 
@@ -44,11 +18,6 @@ internal static class ModuleParseRegistration
 
     internal static void EnsureStdlibRegistered() => RegisterEmbeddedStdlib();
 
-    /// <summary>Stdlib units are EmbeddedResources of this assembly (ADR-0017) with
-    /// well-known logical names (<c>stdlib/presentation/heatmap_tall.ds</c> — the
-    /// LogicalName metadata in the csproj): the manifest name IS the virtual unit path,
-    /// no runtime name surgery. Registered on assembly load — the stdlib is always
-    /// available, exactly like the old filesystem walk was.</summary>
     private static void RegisterEmbeddedStdlib()
     {
         const string prefix = "stdlib/";
@@ -66,179 +35,12 @@ internal static class ModuleParseRegistration
         DashSpec.Modeling.Parse.Document.UnitSource.registerEmbeddedUnits(units);
     }
 
-    private static string UnitText(string text) => text;
-
-    private static void RegisterLayout()
+    internal static LayoutBoardDefinition ParseLayoutFile(string text)
     {
-        LayoutParseBridge.ParseLayoutFile = text =>
-        {
-            try
-            {
-                return ToCore(DashSpec.Modeling.Parse.Layout.LayoutModuleParser.parseLayoutFile(UnitText(text)));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterTooltip()
-    {
-        TooltipParseBridge.ParseTooltipFile = text =>
-        {
-            try
-            {
-                return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFile(UnitText(text)));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-
-        TooltipParseBridge.ParseTooltipFileWithId = text =>
-        {
-            try
-            {
-                var (id, def) = DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFileWithId(UnitText(text));
-                return (id, ToCore(def));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-
-        TooltipParseBridge.ParseTooltipBody = (id, body) =>
-        {
-            try
-            {
-                return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipInlineBody(id, body));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterCatalog()
-    {
-        CatalogParseBridge.Parse = text =>
-        {
-            try
-            {
-                return ToCore(DashSpec.Modeling.Parse.Catalog.CatalogParser.parse(UnitText(text)));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterHost()
-    {
-        HostParseBridge.Parse = (text, specDirectory) =>
-        {
-            try
-            {
-                var directory =
-                    string.IsNullOrWhiteSpace(specDirectory) ? null : specDirectory;
-                return ToCore(DashSpec.Modeling.Parse.Host.HostModuleParser.parse(UnitText(text), directory));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterTransform()
-    {
-        TransformParseBridge.ParseTransformFile = text =>
-        {
-            try
-            {
-                return ToCore(DashSpec.Modeling.Parse.Transform.TransformModuleParser.parseTransformFile(UnitText(text)));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterPalette()
-    {
-        PaletteParseBridge.ParsePaletteFile = text =>
-        {
-            try
-            {
-                var doc = DashSpec.Modeling.Parse.Palette.PaletteModuleParser.parsePaletteFile(UnitText(text));
-                return (doc.Id, ToCore(doc));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterDiagram()
-    {
-        DiagramParseBridge.ParseDiagramFile = (text, baseDirectory) =>
-        {
-            try
-            {
-                return UnitFragmentMapper.ToCore(FsharpImport.foldDiagramModule(UnitText(text)));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-
-        DiagramParseBridge.ParseDiagramFileWithId = (text, baseDirectory) =>
-        {
-            try
-            {
-                var (id, fragment) = FsharpImport.foldDiagramModuleWithId(UnitText(text));
-                return (id, UnitFragmentMapper.ToCore(fragment));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static void RegisterPresentation()
-    {
-        PresentationParseBridge.ParsePresentationFile = (text, _) =>
-            ParsePresentationBlock(text);
-
-        PresentationParseBridge.ParsePresentationFileWithId = (text, _) =>
-        {
-            try
-            {
-                var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(UnitText(text));
-                return (doc.Id, ParsePresentationBlock(text));
-            }
-            catch (DashSpec.Modeling.Core.DashSpecParseException ex)
-            {
-                throw new DashSpecParseException(ex.Message, ex.SourceOffset);
-            }
-        };
-    }
-
-    private static PresentationBlock ParsePresentationBlock(string text)
-    {
+        EnsureRegistered();
         try
         {
-            return UnitFragmentMapper.ToCorePresentation(
-                FsharpImport.parsePresentationBlock(UnitText(text)));
+            return DashSpec.Modeling.Parse.Layout.LayoutModuleParser.parseLayoutFile(text);
         }
         catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
@@ -246,7 +48,155 @@ internal static class ModuleParseRegistration
         }
     }
 
-    private static TooltipDefinition ToCore(FsharpTooltip tooltip)
+    internal static TooltipDefinition ParseTooltipFile(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFile(text));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static (string Id, TooltipDefinition Definition) ParseTooltipFileWithId(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            var (id, def) = DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipFileWithId(text);
+            return (id, ToCore(def));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static TooltipDefinition ParseTooltipBody(string id, string body)
+    {
+        EnsureRegistered();
+        try
+        {
+            return ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipModuleParser.parseTooltipInlineBody(id, body));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static CatalogDocument ParseCatalog(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            return DashSpec.Modeling.Parse.Catalog.CatalogParser.parse(text);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static HostDocument ParseHost(string text, string? specDirectory)
+    {
+        EnsureRegistered();
+        try
+        {
+            var directory = string.IsNullOrWhiteSpace(specDirectory) ? null : specDirectory;
+            return DashSpec.Modeling.Parse.Host.HostModuleParser.parse(text, directory);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static SeriesTransformBlock ParseTransformFile(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            return DashSpec.Modeling.Parse.Transform.TransformModuleParser.parseTransformFile(text);
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static (string Id, IReadOnlyDictionary<string, string> Properties) ParsePaletteFile(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            var doc = DashSpec.Modeling.Parse.Palette.PaletteModuleParser.parsePaletteFile(text);
+            return (doc.Id, doc.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static UnitFragment ParseDiagramFile(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            return UnitFragmentMapper.ToCore(FsharpImport.foldDiagramModule(text));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static (string Id, UnitFragment Fragment) ParseDiagramFileWithId(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            var (id, fragment) = FsharpImport.foldDiagramModuleWithId(text);
+            return (id, UnitFragmentMapper.ToCore(fragment));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static PresentationBlock ParsePresentationBlock(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            return UnitFragmentMapper.ToCorePresentation(FsharpImport.parsePresentationBlock(text));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    internal static (string Id, PresentationBlock Block) ParsePresentationFileWithId(string text)
+    {
+        EnsureRegistered();
+        try
+        {
+            var doc = DashSpec.Modeling.Parse.Presentation.PresentationModuleParser.parsePresentationModule(text);
+            return (doc.Id, ParsePresentationBlock(text));
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
+        {
+            throw new DashSpecParseException(ex.Message, ex.SourceOffset);
+        }
+    }
+
+    private static TooltipDefinition ToCore(DashSpec.Modeling.Parse.Tooltip.TooltipDefinition tooltip)
     {
         var definition = new TooltipDefinition(tooltip.Id, tooltip.Variables, tooltip.Template);
         try
@@ -260,28 +210,4 @@ internal static class ModuleParseRegistration
 
         return definition;
     }
-
-    private static HostDocument ToCore(FsharpHost host) =>
-        host;
-
-
-    private static CatalogDocument ToCore(FsharpCatalog catalog) => catalog;
-
-    private static SeriesTransformBlock ToCore(FsharpTransform transform) =>
-        transform;
-
-    private static IReadOnlyDictionary<string, string> ToCore(FsharpPalette palette) =>
-        palette.Properties.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
-
-    private static PresentationBlock ToCore(FsharpPresentationBlock block) =>
-        block;
-
-    private static DiagramDefinition ToCore(FsharpDiagram diagram) =>
-        diagram;
-
-    private static InspectPresentation ToCore(FsharpInspect inspect) =>
-        inspect;
-
-    private static LayoutBoardDefinition ToCore(FsharpBoard board) =>
-        board;
 }
