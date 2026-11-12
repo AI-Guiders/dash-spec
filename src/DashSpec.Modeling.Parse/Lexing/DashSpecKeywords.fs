@@ -46,9 +46,6 @@ module DashSpecKeywords =
         | "flow" | "nest" -> true
         | _ -> isDiagramKind value
 
-    /// `module <kind> <id>` roots: every importable unit kind plus the module-only roots.
+    /// `module <kind> <id>` roots: resolved from the declarative `stdlib/units/units.ds` manifest.
     let isModuleDirective (value: string) =
-        ImportKindRegistry.tryFindByModuleKeyword value |> Option.isSome
-        || (match value.ToLowerInvariant() with
-            | "dashboard" | "catalog" | "host" -> true
-            | _ -> false)
+        ImportKindRegistry.isUnitKeyword value

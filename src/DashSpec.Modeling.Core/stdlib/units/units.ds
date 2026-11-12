@@ -1,0 +1,13 @@
+| unit         | import_as     | role        |
+| types        | types         | declaration |
+| layout       | layouts       | declaration |
+| presentation | presentations | declaration |
+| tooltip      | tooltips      | declaration |
+| palette      | palettes      | declaration |
+| transform    | -             | declaration |
+| diagram      | diagrams      | consumer    |
+| flow         | flows         | consumer    |
+| section      | sections      | consumer    |
+| dashboard    | -             | root        |
+| catalog      | -             | root        |
+| host         | -             | root        |

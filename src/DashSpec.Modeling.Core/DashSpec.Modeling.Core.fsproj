@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="stdlib\rules\rules.ds" LogicalName="stdlib/rules/rules.ds" />
+    <EmbeddedResource Include="stdlib\units\units.ds" LogicalName="stdlib/units/units.ds" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Diagnostics.fs" />
