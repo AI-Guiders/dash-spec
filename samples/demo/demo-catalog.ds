@@ -1,6 +1,10 @@
 module catalog demo
+namespace Demo.Catalogs
+import dashboards from Demo.Soak
+import sections from Demo.Analytics
+
 default = demo_soak
 
-| id             | title                | dashspec          |
-| demo_soak      | DashSpec — Demo soak | demo-soak.ds      |
-| demo_analytics | Analytics            | demo-analytics.ds |
+| id             | title                | dashboard      |
+| demo_soak      | DashSpec — Demo soak | demo_soak      |
+| demo_analytics | Analytics            | Demo.Analytics |

@@ -210,11 +210,16 @@ module HostModuleParser =
         let surfaces = ResizeArray<string>()
         let mutable shellLayout = None
 
+        let importedCatalogNamespaces = ResizeArray<string>()
+
         for imp in env.Imports do
             let kind = imp.Kind |> Option.defaultValue ""
-            if not (String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase)) then
-                raise (DashSpecParseException($"@host module allows import layouts only, got import {kind}.", imp.Span.Start))
-            shellLayout <- Some(importShellLayout specDirectory imp.Span.Start imp.Target)
+            if String.Equals(kind, "layouts", StringComparison.OrdinalIgnoreCase) then
+                shellLayout <- Some(importShellLayout specDirectory imp.Span.Start imp.Target)
+            elif String.Equals(kind, "catalogs", StringComparison.OrdinalIgnoreCase) then
+                importedCatalogNamespaces.Add imp.Target
+            else
+                raise (DashSpecParseException($"@host module allows import layouts or import catalogs only, got import {kind}.", imp.Span.Start))
 
         for node in env.View.Body do
             match node with
@@ -252,8 +257,27 @@ module HostModuleParser =
                 let text = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
                 raise (DashSpecParseException($"Unexpected statement '{text}' in host '{hostId}'."))
 
+        // Resolve catalog by unit index (module id or imported catalogs namespace) when specDirectory exists.
+        match specDirectory with
+        | Some dir when not (String.IsNullOrWhiteSpace dir) && Directory.Exists dir ->
+            let index = DashSpec.Modeling.Parse.Document.UnitIndex.build dir
+            if not (String.IsNullOrWhiteSpace catalogPath) then
+                match index.TryFindUnit("catalog", catalogPath) with
+                | Some entry ->
+                    catalogPath <- Path.GetRelativePath(dir, entry.Path).Replace('\\', '/')
+                | None -> ()
+            elif importedCatalogNamespaces.Count > 0 then
+                let found =
+                    importedCatalogNamespaces
+                    |> Seq.tryPick (fun ns -> index.TryFindUnit("catalog", ns))
+                match found with
+                | Some entry ->
+                    catalogPath <- Path.GetRelativePath(dir, entry.Path).Replace('\\', '/')
+                | None -> ()
+        | _ -> ()
+
         if String.IsNullOrWhiteSpace catalogPath then
-            raise (DashSpecParseException($"@host '{hostId}' requires catalog = \"path/to-catalog.ds\"."))
+            raise (DashSpecParseException($"@host '{hostId}' requires catalog = <id> (or import catalogs from <Namespace>)."))
 
         { Id = hostId
           CatalogPath = catalogPath

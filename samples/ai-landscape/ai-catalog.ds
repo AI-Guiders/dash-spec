@@ -1,5 +1,8 @@
 ﻿module catalog ai_landscape
+namespace Ai.Landscape.Catalogs
+import dashboards from Ai.Landscape.Report
+
 default = ai_report
 
-| id        | title                  | dashspec     |
-| ai_report | AI Landscape 2023-2024 | ai-report.ds |
+| id        | title                  | dashboard |
+| ai_report | AI Landscape 2023-2024 | ai_report |

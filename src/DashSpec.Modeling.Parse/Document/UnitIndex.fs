@@ -10,22 +10,24 @@ open DashSpec.Modeling.Parse.Project
 type UnitIndexEntry =
     { Path: string
       Namespace: string
-      Kind: string option }
+      Kind: string option
+      ModuleId: string option }
 
-/// <summary>Namespace resolution over the project roots (ADR-0098). Built once per compile from the project
-/// membership (<c>.dsproj</c>) plus the product stdlib, so imports no longer rescan the tree per directive.</summary>
+/// <summary>Namespace and module-id resolution over the project roots (ADR-0098 / ADR-0131). Built once per compile from the project
+/// membership (<c>.dsproj</c>) plus the product stdlib, so imports and unit references no longer rescan the tree per directive.</summary>
 type UnitIndex(entries: IReadOnlyList<UnitIndexEntry>) =
 
     let byNamespace = Dictionary<string, ResizeArray<UnitIndexEntry>>(StringComparer.OrdinalIgnoreCase)
 
     do
         for entry in entries do
-            match byNamespace.TryGetValue entry.Namespace with
-            | true, bucket -> bucket.Add entry
-            | false, _ ->
-                let bucket = ResizeArray<UnitIndexEntry>()
-                bucket.Add entry
-                byNamespace.[entry.Namespace] <- bucket
+            if not (String.IsNullOrWhiteSpace entry.Namespace) then
+                match byNamespace.TryGetValue entry.Namespace with
+                | true, bucket -> bucket.Add entry
+                | false, _ ->
+                    let bucket = ResizeArray<UnitIndexEntry>()
+                    bucket.Add entry
+                    byNamespace.[entry.Namespace] <- bucket
 
     member _.Entries = entries
 
@@ -34,6 +36,26 @@ type UnitIndex(entries: IReadOnlyList<UnitIndexEntry>) =
         match byNamespace.TryGetValue namespaceName with
         | true, bucket -> List.ofSeq bucket
         | false, _ -> []
+
+    /// <summary>Find a unit by kind (`catalog`, `dashboard`, …) and either its module id (`module &lt;kind&gt; &lt;id&gt;`) or namespace.</summary>
+    member this.TryFindUnit(kindKeyword: string, idOrNamespace: string) : UnitIndexEntry option =
+        if String.IsNullOrWhiteSpace idOrNamespace then
+            None
+        else
+            let needle = idOrNamespace.Trim()
+            let matchesKind (e: UnitIndexEntry) =
+                match e.Kind with
+                | Some k -> String.Equals(k, kindKeyword, StringComparison.OrdinalIgnoreCase)
+                | None -> false
+
+            entries
+            |> Seq.tryFind (fun e ->
+                matchesKind e
+                && (match e.ModuleId with
+                    | Some mid -> String.Equals(mid, needle, StringComparison.OrdinalIgnoreCase)
+                    | None -> false))
+            |> Option.orElseWith (fun () ->
+                this.Find needle |> List.tryFind matchesKind)
 
 module UnitIndex =
 
@@ -69,9 +91,17 @@ module UnitIndex =
         try
             match UnitSource.tryReadRaw path with
             | Some text ->
-                match UnitSource.namespaceOf text with
-                | Some ns -> Some { Path = path; Namespace = ns; Kind = UnitSource.moduleKindOf text }
-                | None -> None
+                let nsOpt = UnitSource.namespaceOf text
+                let kindOpt = UnitSource.moduleKindOf text
+                let idOpt = UnitSource.moduleIdOf text
+                if nsOpt.IsSome || idOpt.IsSome then
+                    Some
+                        { Path = path
+                          Namespace = nsOpt |> Option.defaultValue ""
+                          Kind = kindOpt
+                          ModuleId = idOpt }
+                else
+                    None
             | None -> None
         with _ ->
             None

@@ -1,7 +1,8 @@
 module host demo
 import layouts from Demo.Layouts
+import catalogs from Demo.Catalogs
 
-catalog = "demo-catalog.ds"
+catalog = demo
 language = "ru-RU"
 display_timezone = "Europe/Moscow"
 product_title = "DashSpec Demo"

@@ -33,6 +33,17 @@ public static class CatalogReader
 
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            if (Directory.Exists(dir))
+            {
+                var idx = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir);
+                var unitHit = idx.TryFindUnit("dashboard", dashspecReference)
+                    ?? idx.TryFindUnit("section", dashspecReference);
+                if (unitHit is not null && File.Exists(unitHit.Value.Path))
+                {
+                    return Path.GetFullPath(unitHit.Value.Path);
+                }
+            }
+
             var path = Path.GetFullPath(Path.Combine(dir, dashspecReference));
             if (File.Exists(path))
             {

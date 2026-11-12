@@ -12,8 +12,8 @@ namespace DashSpec.Stdlib.Units
 | diagram      | diagrams      | consumer    |
 | flow         | flows         | consumer    |
 | section      | sections      | consumer    |
-| dashboard    | -             | root        |
-| catalog      | -             | root        |
+| dashboard    | dashboards    | consumer    |
+| catalog      | catalogs      | consumer    |
 | host         | -             | root        |
 
 end registry

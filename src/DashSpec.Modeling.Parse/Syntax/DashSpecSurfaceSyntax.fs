@@ -926,14 +926,7 @@ module DashSpecSurfaceSyntax =
         cells.Length > 0
         && cells |> Array.forall (fun c -> c.Length > 0 && c |> Seq.forall (fun ch -> ch = '-' || ch = ':'))
 
-    let private classifyTableRow (container: MutableNode) (cells: string[]) : TableRowKind =
-        let existingHeader =
-            container.Children
-            |> Seq.tryPick (fun child ->
-                match child.Payload with
-                | NodePayload.TableRow(TableRowKind.Header cols, _) -> Some cols
-                | _ -> None)
-
+    let private classifyTableRow (containerOpener: DashSpecBlockOpener option) (existingHeader: string[] option) (cells: string[]) : TableRowKind =
         match existingHeader with
         | None ->
             TableRowKind.Header(cells |> Array.map (fun c -> c.Trim()))
@@ -951,10 +944,10 @@ module DashSpecSurfaceSyntax =
             let tryAttr name = Map.tryFind name attrs
 
             let blockKeyword =
-                match container.Payload with
-                | NodePayload.Block(DashSpecBlockOpener.Anonymous kw, _, _)
-                | NodePayload.Block(DashSpecBlockOpener.Named(kw, _), _, _) -> Some kw
-                | _ -> None
+                match containerOpener with
+                | Some(DashSpecBlockOpener.Anonymous kw)
+                | Some(DashSpecBlockOpener.Named(kw, _)) -> Some kw
+                | None -> None
 
             match blockKeyword with
             | Some DashSpecBlockKeyword.Filters ->
@@ -994,12 +987,12 @@ module DashSpecSurfaceSyntax =
                       Sorting = tryAttr "sorting"
                       Alignment = tryAttr "alignment"
                       HeaderAlignment = tryAttr "header_alignment" }
-            | _ when Map.containsKey "dashspec" attrs ->
+            | _ when Map.containsKey "dashboard" attrs || Map.containsKey "dashspec" attrs ->
                 let id = tryAttr "id" |> Option.defaultValue ""
                 TableRowKind.CatalogEntry
                     { Id = id
                       Title = tryAttr "title" |> Option.orElse (tryAttr "label") |> Option.defaultValue id
-                      DashspecPath = tryAttr "dashspec" |> Option.defaultValue ""
+                      DashspecPath = tryAttr "dashboard" |> Option.orElse (tryAttr "dashspec") |> Option.defaultValue ""
                       Section = tryAttr "section"
                       Page = tryAttr "page" }
             | _ ->
@@ -1090,6 +1083,7 @@ module DashSpecSurfaceSyntax =
     /// Context passed to a registered surface line-grammar plugin.
     type LineGrammarContext =
         { ContainerOpener: DashSpecBlockOpener option
+          ExistingTableHeader: string[] option
           NodeId: NodeId
           Span: TextSpan
           RawTokens: Token list
@@ -1099,82 +1093,120 @@ module DashSpecSurfaceSyntax =
         { Id: string
           TryParse: LineGrammarContext -> DashSpecAstNode option }
 
+    let private lineGrammarOrder = ResizeArray<string>()
     let private customLineGrammars = Dictionary<string, LineGrammarDescriptor>(StringComparer.OrdinalIgnoreCase)
 
     /// Register or replace a pluggable line-grammar contributor in the surface syntax microkernel.
     let registerLineGrammar (descriptor: LineGrammarDescriptor) =
         if not (String.IsNullOrWhiteSpace descriptor.Id) then
-            customLineGrammars.[descriptor.Id.Trim()] <- descriptor
+            let key = descriptor.Id.Trim()
+            if not (customLineGrammars.ContainsKey key) then
+                lineGrammarOrder.Add key
+            customLineGrammars.[key] <- descriptor
 
+    /// Pure surface-syntax kernel dispatcher: evaluates registered line-grammar plugins,
+    /// falling back to `key = value` (`PropertyAssignment`) or raw `Line`.
     let private appendContentNode (container: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) =
-        if isTypeParent container then
-            match tryParseTypeFieldLine line.Tokens with
-            | Some(optional, dashType, fieldName) ->
-                container.Children.Add(
-                    mkNode (NodePayload.TypeField(optional, dashType, fieldName)) (nextId id) line.Span (lineSyntaxTokens text allTokens line))
-            | None ->
-                appendLine container id text allTokens line
-        elif isPortsParent container then
-            let syntaxTokens = lineSyntaxTokens text allTokens line
+        let syntaxTokens = lineSyntaxTokens text allTokens line
+        let containerOpener =
+            match container.Payload with
+            | NodePayload.Block(opener, _, _) -> Some opener
+            | _ -> None
 
-            match tryParseClauseLine line.Tokens with
-            | Some(ClauseKind.DefaultPortClause _ as kind) ->
-                container.Children.Add(mkNode (NodePayload.Clause kind) (nextId id) line.Span syntaxTokens)
+        let existingTableHeader =
+            container.Children
+            |> Seq.tryPick (fun child ->
+                match child.Payload with
+                | NodePayload.TableRow(TableRowKind.Header cols, _)
+                | NodePayload.CustomNode(DashSpecAstNode.TableRowDeclaration { Kind = TableRowKind.Header cols }) -> Some cols
+                | _ -> None)
+
+        let candidateId = nextId id
+        let ctx =
+            { ContainerOpener = containerOpener
+              ExistingTableHeader = existingTableHeader
+              NodeId = candidateId
+              Span = line.Span
+              RawTokens = line.Tokens
+              SyntaxTokens = syntaxTokens }
+
+        let grammarHit =
+            lineGrammarOrder
+            |> Seq.tryPick (fun key -> customLineGrammars.[key].TryParse ctx)
+
+        match grammarHit with
+        | Some customNode ->
+            container.Children.Add(mkNode (NodePayload.CustomNode customNode) (DashSpecAst.id customNode) line.Span syntaxTokens)
+        | None ->
+            match containerOpener with
+            | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Type)
+            | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, _))
+            | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports)
+            | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _)) ->
+                container.Children.Add(mkNode NodePayload.Line candidateId line.Span syntaxTokens)
             | _ ->
-                match tryParsePortLine line.Tokens with
-                | Some(role, shape, portName, valueType, defaultValue, columnBinding) ->
+                match tryParsePropertyLine syntaxTokens with
+                | Some(key, valueText, keyTokens, eqToken, valueTokens) ->
                     container.Children.Add(
-                        mkNode (NodePayload.Port(role, shape, portName, valueType, defaultValue, columnBinding)) (nextId id) line.Span syntaxTokens)
+                        mkNode (NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens)) candidateId line.Span syntaxTokens)
                 | None ->
-                    container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
-        else
-            let syntaxTokens = lineSyntaxTokens text allTokens line
-            let containerOpener =
-                match container.Payload with
-                | NodePayload.Block(opener, _, _) -> Some opener
-                | _ -> None
-
-            let customHit =
-                if customLineGrammars.Count = 0 then
-                    None
-                else
-                    let candidateId = nextId id
-                    let ctx =
-                        { ContainerOpener = containerOpener
-                          NodeId = candidateId
-                          Span = line.Span
-                          RawTokens = line.Tokens
-                          SyntaxTokens = syntaxTokens }
-                    customLineGrammars.Values |> Seq.tryPick (fun g -> g.TryParse ctx)
-
-            match customHit with
-            | Some customNode ->
-                container.Children.Add(mkNode (NodePayload.CustomNode customNode) (DashSpecAst.id customNode) line.Span syntaxTokens)
-            | None ->
-                let tableRow =
-                    if line.Tokens |> List.exists (fun t -> t.Kind = TokenKind.TableRow) then
-                        tryParseTableRowLine line.Tokens
-                    else
-                        None
-
-                match tableRow with
-                | Some cells ->
-                    let rowKind = classifyTableRow container cells
-                    container.Children.Add(mkNode (NodePayload.TableRow(rowKind, cells)) (nextId id) line.Span syntaxTokens)
-                | None ->
-                    match tryParseClauseLine line.Tokens with
-                    | Some kind ->
-                        container.Children.Add(mkNode (NodePayload.Clause kind) (nextId id) line.Span syntaxTokens)
-                    | None ->
-                        match tryParsePropertyLine syntaxTokens with
-                        | Some(key, valueText, keyTokens, eqToken, valueTokens) ->
-                            container.Children.Add(
-                                mkNode (NodePayload.Property(key, valueText, keyTokens, eqToken, valueTokens)) (nextId id) line.Span syntaxTokens)
-                        | None ->
-                            container.Children.Add(mkNode NodePayload.Line (nextId id) line.Span syntaxTokens)
+                    container.Children.Add(mkNode NodePayload.Line candidateId line.Span syntaxTokens)
 
     do
-        // Register the bracket/grid layout line grammar (`[] [] …` and `[ ref:weight [] … ]`) as a modular line-grammar plugin.
+        // 1. Type field line grammar (`?type name` inside `type` blocks).
+        registerLineGrammar
+            { Id = "types.field"
+              TryParse = fun ctx ->
+                  match ctx.ContainerOpener with
+                  | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Type)
+                  | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, _)) ->
+                      match tryParseTypeFieldLine ctx.RawTokens with
+                      | Some(optional, dashType, fieldName) ->
+                          Some(
+                              DashSpecAstNode.TypeFieldDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Optional = optional
+                                    FieldType = dashType
+                                    FieldPath = DotSyntax.parse fieldName
+                                    FieldName = fieldName
+                                    Tokens = ctx.SyntaxTokens })
+                      | None -> None
+                  | _ -> None }
+
+        // 2. Port declaration line grammar (`input/output/param` and `default input|output` inside `ports` blocks).
+        registerLineGrammar
+            { Id = "ports.declaration"
+              TryParse = fun ctx ->
+                  match ctx.ContainerOpener with
+                  | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports)
+                  | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _)) ->
+                      match tryParseClauseLine ctx.RawTokens with
+                      | Some(ClauseKind.DefaultPortClause _ as kind) ->
+                          Some(
+                              DashSpecAstNode.ClauseDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Kind = kind
+                                    Tokens = ctx.SyntaxTokens })
+                      | _ ->
+                          match tryParsePortLine ctx.RawTokens with
+                          | Some(role, shape, portName, valueType, defaultValue, columnBinding) ->
+                              Some(
+                                  DashSpecAstNode.PortDeclaration
+                                      { Id = ctx.NodeId
+                                        Span = ctx.Span
+                                        Role = role
+                                        PortShape = shape
+                                        PortName = portName
+                                        ValueType = valueType
+                                        DefaultValue = defaultValue
+                                        ColumnBinding = columnBinding
+                                        Tokens = ctx.SyntaxTokens })
+                          | None -> None
+                  | _ -> None }
+
+        // 3. Bracket/grid layout line grammar (`[] [] …` and `[ ref:weight [] … ]`).
         registerLineGrammar
             { Id = "layout.grid_row"
               TryParse = fun ctx ->
@@ -1194,7 +1226,26 @@ module DashSpecSurfaceSyntax =
                       | None -> None
                   | _ -> None }
 
-        // Register the flow arrow line grammar (`producer [out] -> [in] consumer`) as a modular line-grammar plugin.
+        // 4. Pipe-table line grammar (`| col1 | col2 |`).
+        registerLineGrammar
+            { Id = "table.pipe_row"
+              TryParse = fun ctx ->
+                  if ctx.RawTokens |> List.exists (fun t -> t.Kind = TokenKind.TableRow) then
+                      match tryParseTableRowLine ctx.RawTokens with
+                      | Some cells ->
+                          let rowKind = classifyTableRow ctx.ContainerOpener ctx.ExistingTableHeader cells
+                          Some(
+                              DashSpecAstNode.TableRowDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Kind = rowKind
+                                    Cells = cells
+                                    Tokens = ctx.SyntaxTokens })
+                      | None -> None
+                  else
+                      None }
+
+        // 5. Flow arrow line grammar (`producer [out] -> [in] consumer`).
         registerLineGrammar
             { Id = "flow.arrow_link"
               TryParse = fun ctx ->
@@ -1219,6 +1270,26 @@ module DashSpecSurfaceSyntax =
                       | None -> None
                   else
                       None }
+
+        // 6. Clause directive line grammar (`namespace`, `scope`, `use`, `from`, `default input|output`).
+        registerLineGrammar
+            { Id = "clause.directive"
+              TryParse = fun ctx ->
+                  match ctx.ContainerOpener with
+                  | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Type)
+                  | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, _))
+                  | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports)
+                  | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _)) -> None
+                  | _ ->
+                      match tryParseClauseLine ctx.RawTokens with
+                      | Some kind ->
+                          Some(
+                              DashSpecAstNode.ClauseDeclaration
+                                  { Id = ctx.NodeId
+                                    Span = ctx.Span
+                                    Kind = kind
+                                    Tokens = ctx.SyntaxTokens })
+                      | None -> None }
 
     /// If a block opener line carries inline body tokens after `{` (e.g. `transform use to_zone { zone = UTC+3 }`
     /// or `transform use summarize { by = app_name`), extract that inline slice as a virtual PhysicalLine

@@ -32,9 +32,9 @@ module CatalogParser =
                     |> Option.filter (fun s -> not (String.IsNullOrWhiteSpace s))
                     |> Option.defaultValue id
                 let dashspecPath =
-                    match Construct.tryCell m "dashspec" with
+                    match Construct.tryCell m "dashboard" |> Option.orElse (Construct.tryCell m "dashspec") with
                     | Some p when not (String.IsNullOrWhiteSpace(unquote p)) -> unquote p
-                    | _ -> raise (DashSpecParseException($"Catalog entry '{id}' requires dashspec path."))
+                    | _ -> raise (DashSpecParseException($"Catalog entry '{id}' requires dashboard (or dashspec)."))
                 let section =
                     Construct.tryCell m "section"
                     |> Option.map unquote
@@ -53,7 +53,7 @@ module CatalogParser =
                 raise (DashSpecParseException("Catalog entry requires an id."))
 
         { Name = "catalog"
-          Vocabulary = [ "id"; "title"; "label"; "dashspec"; "section"; "page" ]
+          Vocabulary = [ "id"; "title"; "label"; "dashboard"; "dashspec"; "section"; "page" ]
           CellsToRow = cellsToEntry
           ConstructRow = addEntry }
 

@@ -1,7 +1,8 @@
 ﻿module host ai_landscape
 import layouts from Ai.Landscape.Layouts
+import catalogs from Ai.Landscape.Catalogs
 
-catalog = "ai-catalog.ds"
+catalog = ai_landscape
 language = "ru-RU"
 display_timezone = "Europe/Moscow"
 product_title = "AI Landscape"
