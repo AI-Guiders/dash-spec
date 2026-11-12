@@ -37,7 +37,7 @@ module DashSpecCompiler =
                 let offset = if ex.SourceOffset.HasValue then ex.SourceOffset.Value else 0
                 let line, character = DashSpecRuleChecks.positionOf text offset
 
-                [ DashSpecDiagnostic.create line character line character ex.Message DashSpecDiagnosticSeverity.Error
-                  |> DashSpecDiagnostic.withCode (DashSpecRules.code DashSpecRule.ParseError) ]
+                [ DashSpecDiagnostic.create line character line character ex.Message ex.Severity
+                  |> DashSpecDiagnostic.withCode ex.Code ]
 
         ruleDiagnostics text @ parseFailure

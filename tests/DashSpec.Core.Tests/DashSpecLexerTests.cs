@@ -33,8 +33,9 @@ public sealed class DashSpecLexerTests
     [Fact]
     public void Hash_text_at_line_start_is_invalid_hex()
     {
-        var ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(() => DashSpecLexer.tokenize("# not a comment\n"));
+        var ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecUnexpectedTokenException>(() => DashSpecLexer.tokenize("# not a comment\n"));
         Assert.Contains("Invalid hex color", ex.Message, StringComparison.Ordinal);
+        Assert.Equal("DS021", ex.Code);
     }
 
     [Fact]
@@ -92,7 +93,8 @@ public sealed class DashSpecLexerTests
     [Fact]
     public void Unterminated_block_comment_throws()
     {
-        var ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecParseException>(() => DashSpecLexer.tokenize("/* oops"));
+        var ex = Assert.Throws<DashSpec.Modeling.Core.DashSpecUnclosedTokenException>(() => DashSpecLexer.tokenize("/* oops"));
         Assert.Contains("block comment", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("DS020", ex.Code);
     }
 }

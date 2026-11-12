@@ -96,7 +96,7 @@ module DashSpecLexer =
             if closed then
                 Some { Kind = TokenKind.BlockComment; Value = text.[start..i - 1]; Start = start; Length = i - start }
             else
-                raise (DashSpecParseException("Unterminated block comment (/* … */)."))
+                raise (DashSpecUnclosedTokenException("Unterminated block comment (/* … */).", start))
 
     let private readString (text: string) (i: byref<int>) start =
         i <- i + 1
@@ -110,7 +110,7 @@ module DashSpecLexer =
                 sb.Append(text.[i]) |> ignore
                 i <- i + 1
         if i >= text.Length then
-            raise (DashSpecParseException("Unterminated string literal."))
+            raise (DashSpecUnclosedTokenException("Unterminated string literal.", start))
         i <- i + 1
         { Kind = TokenKind.String; Value = sb.ToString(); Start = start; Length = i - start }
 
@@ -138,7 +138,7 @@ module DashSpecLexer =
                 i <- i + 1
 
         if finished then token
-        else raise (DashSpecParseException("Unterminated multiline string literal (\"\"\")."))
+        else raise (DashSpecUnclosedTokenException("Unterminated multiline string literal (\"\"\").", start))
 
     let private readHexColor (text: string) (i: byref<int>) start =
         i <- i + 1
@@ -147,7 +147,7 @@ module DashSpecLexer =
             i <- i + 1
         let hexLen = i - hexStart
         if hexLen <> 3 && hexLen <> 6 then
-            raise (DashSpecParseException($"Invalid hex color at position {start}. Use #rgb or #rrggbb (not at line start as comment — use // or /* */)."))
+            raise (DashSpecUnexpectedTokenException($"Invalid hex color at position {start}. Use #rgb or #rrggbb (not at line start as comment — use // or /* */).", start))
         { Kind = TokenKind.HexColor; Value = text.[start..i - 1]; Start = start; Length = i - start }
 
     let tokenize (text: string) : IReadOnlyList<Token> =
@@ -220,8 +220,9 @@ module DashSpecLexer =
                             atLineStart <- false
                         else
                             raise (
-                                DashSpecParseException(
-                                    $"Invalid '-' at position {arrowStart}. Use -Nd for relative days or -+> for flow links."
+                                DashSpecUnexpectedTokenException(
+                                    $"Invalid '-' at position {arrowStart}. Use -Nd for relative days or -+> for flow links.",
+                                    arrowStart
                                 ))
                 | ',' -> tokens.Add({ Kind = TokenKind.Comma; Value = ","; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
                 | ':' -> tokens.Add({ Kind = TokenKind.Colon; Value = ":"; Start = start; Length = 1 }); i <- i + 1; atLineStart <- false
@@ -243,7 +244,7 @@ module DashSpecLexer =
                                 foundEnd <- true
                             else
                                 j <- j + 1
-                        if j >= text.Length then raise (DashSpecParseException("Unterminated [[ raw block."))
+                        if j >= text.Length then raise (DashSpecUnclosedTokenException("Unterminated [[ raw block.", start))
                         tokens.Add({ Kind = TokenKind.Raw; Value = text.[start..j - 1].Trim(); Start = start; Length = j - start })
                         i <- j; atLineStart <- false
                     else
@@ -283,7 +284,7 @@ module DashSpecLexer =
                         i <- i + 1
                     tokens.Add({ Kind = TokenKind.TableRow; Value = text.[start..i - 1].Trim(); Start = start; Length = i - start })
                     atLineStart <- false
-                | c -> raise (DashSpecParseException($"Unexpected character '{c}' at position {i}.", i))
+                | c -> raise (DashSpecUnexpectedTokenException($"Unexpected character '{c}' at position {i}.", i))
         tokens.Add({ Kind = TokenKind.Eof; Value = ""; Start = text.Length; Length = 0 })
         tokens :> IReadOnlyList<Token>
 
