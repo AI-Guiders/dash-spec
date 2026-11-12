@@ -164,3 +164,10 @@ module LayoutModuleParser =
         { Entries = entries :> IReadOnlyList<_>
           ModuleScope = Some scope
           GridColumns = gridColumns }
+
+    do
+        UnitProjector.register
+            { KindKeyword = "layout"
+              ImportKind = Some ImportKind.Layouts
+              Role = UnitCompileRole.Declaration
+              Project = fun ctx -> box (parseLayoutFile ctx.Text) }

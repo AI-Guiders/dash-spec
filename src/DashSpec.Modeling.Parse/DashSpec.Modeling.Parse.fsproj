@@ -45,6 +45,7 @@
     <Compile Include="MemberGrammar.fs" />
     <Compile Include="BlockGrammar.fs" />
     <Compile Include="UnitGrammar.fs" />
+    <Compile Include="Document\UnitProjector.fs" />
     <Compile Include="PropertyBlockParser.fs" />
     <Compile Include="ParserUtilities.fs" />
     <Compile Include="Layout\LayoutTypes.fs" />
@@ -160,7 +161,6 @@
     <Compile Include="Document\DashboardParser.fs" />
     <Compile Include="Document\DashboardComposer.fs" />
     <Compile Include="Document\DashSpecCompiler.fs" />
-    <Compile Include="Document\UnitProjector.fs" />
   </ItemGroup>
 
   <ItemGroup>

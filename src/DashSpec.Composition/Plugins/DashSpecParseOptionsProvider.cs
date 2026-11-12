@@ -54,9 +54,9 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
 
         foreach (var unitKind in registry.UnitKinds.Values)
         {
-            DashSpec.Modeling.Parse.Document.UnitProjector.registerCustomProjector(
+            DashSpec.Modeling.Parse.UnitProjector.registerCustomProjector(
                 unitKind.KindKeyword,
-                 Microsoft.FSharp.Core.FSharpFunc<DashSpec.Modeling.Parse.UnitGrammar.UnitEnvelope, object>.FromConverter(
+                Microsoft.FSharp.Core.FSharpFunc<DashSpec.Modeling.Parse.UnitGrammar.UnitEnvelope, object>.FromConverter(
                     env => unitKind.Project(env.Id, null)));
         }
 

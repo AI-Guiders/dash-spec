@@ -119,3 +119,10 @@ module PaletteModuleParser =
     let parsePaletteFileWithId (text: string) =
         let doc = parsePaletteFile text
         doc.Id, doc
+
+    do
+        UnitProjector.register
+            { KindKeyword = "palette"
+              ImportKind = Some ImportKind.Palettes
+              Role = UnitCompileRole.Declaration
+              Project = fun ctx -> box (parsePaletteFile ctx.Text) }

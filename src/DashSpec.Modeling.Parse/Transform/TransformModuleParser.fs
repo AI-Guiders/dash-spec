@@ -51,3 +51,10 @@ module TransformModuleParser =
                 false
 
         toBlock props
+
+    do
+        UnitProjector.register
+            { KindKeyword = "transform"
+              ImportKind = None
+              Role = UnitCompileRole.Declaration
+              Project = fun ctx -> box (parseTransformFile ctx.Text) }

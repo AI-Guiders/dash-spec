@@ -42,3 +42,10 @@ module PresentationModuleParser =
     let parsePresentationModuleWithId (text: string) =
         let doc = parsePresentationModule text
         doc.Id, doc
+
+    do
+        UnitProjector.register
+            { KindKeyword = "presentation"
+              ImportKind = Some ImportKind.Presentations
+              Role = UnitCompileRole.Declaration
+              Project = fun ctx -> box (parsePresentationModule ctx.Text) }

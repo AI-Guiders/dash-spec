@@ -180,3 +180,10 @@ module CatalogParser =
 
         let groupsOpt = if groups.Count = 0 then None else Some(groups :> IReadOnlyList<_>)
         { Id = catalogId; DefaultEntryId = defaultId; Entries = entries :> IReadOnlyList<_>; Groups = groupsOpt }
+
+    do
+        UnitProjector.register
+            { KindKeyword = "catalog"
+              ImportKind = None
+              Role = UnitCompileRole.Root
+              Project = fun ctx -> box (parse ctx.Text) }

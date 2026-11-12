@@ -209,3 +209,10 @@ module HostModuleParser =
             raise (FileNotFoundException($"Host file not found: '{path}'.", path))
         let directory = Path.GetDirectoryName(Path.GetFullPath path)
         parse (File.ReadAllText path) (Some directory)
+
+    do
+        UnitProjector.register
+            { KindKeyword = "host"
+              ImportKind = None
+              Role = UnitCompileRole.Root
+              Project = fun ctx -> box (parse ctx.Text ctx.SpecDirectory) }
