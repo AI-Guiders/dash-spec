@@ -144,3 +144,26 @@ module ModuleHeaderParser =
 
         { Namespace = namespaceName
           Imports = imports :> IReadOnlyList<_> }
+
+    /// <summary>Extracts all namespaces imported with <c>ImportKind.Tabs</c> (`sections`) from a module's header.</summary>
+    let importedTabNamespaces (text: string) : string[] =
+        try
+            let reader = ParserUtilities.createReader text
+            reader.SkipFileDirectives()
+            reader.SkipNewlines()
+            if not (reader.TryKeyword "module") then
+                [||]
+            else
+                reader.ReadIdent() |> ignore // kind (`dashboard`, `section`, …)
+                if reader.TryPeekIdent().IsSome then
+                    reader.ReadIdent() |> ignore // id
+                BlockSyntax.beginBlock reader
+                reader.SkipNewlines()
+                let header = parse reader
+                header.Imports
+                |> Seq.choose (fun d ->
+                    if d.Kind = ImportKind.Tabs then Some d.Namespace else None)
+                |> Seq.distinct
+                |> Seq.toArray
+        with _ ->
+            [||]

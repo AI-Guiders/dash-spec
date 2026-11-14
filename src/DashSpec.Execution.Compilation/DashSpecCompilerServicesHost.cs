@@ -122,9 +122,6 @@ public sealed partial class DashSpecAssembledCorpus(
     IReadOnlyList<string> rootFiles,
     DashSpecParseOptions assembledOptions)
 {
-    [GeneratedRegex(@"(?m)^\s*import\s+sections\s+from\s+([A-Za-z_][\w.]*)\s*$", RegexOptions.CultureInvariant)]
-    private static partial Regex ImportTabsLine();
-
     readonly Lock _gate = new();
     readonly Dictionary<string, (FsharpDocument.DashboardDocument? Document, string? Error, int? ErrorOffset)> _assembled =
         new(StringComparer.OrdinalIgnoreCase);
@@ -169,7 +166,7 @@ public sealed partial class DashSpecAssembledCorpus(
         return true;
     }
 
-    /// <summary>Roots whose text imports <c>tabs from &lt;tabNamespace&gt;</c> (the compiler's import grammar).</summary>
+    /// <summary>Roots whose module header imports <c>sections</c> from <paramref name="tabNamespace"/>.</summary>
     public IReadOnlyList<string> ImportingRoots(string tabNamespace)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tabNamespace);
@@ -179,9 +176,11 @@ public sealed partial class DashSpecAssembledCorpus(
             if (!memberTexts.TryGetValue(root, out var text))
                 continue;
 
-            foreach (Match match in ImportTabsLine().Matches(text))
+            foreach (var ns in FsharpDocument.ModuleHeaderParser.importedTabNamespaces(text))
             {
-                if (string.Equals(match.Groups[1].Value, tabNamespace, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(ns, tabNamespace, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals($"{ns}.sections", tabNamespace, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals($"{ns}.section", tabNamespace, StringComparison.OrdinalIgnoreCase))
                 {
                     importing.Add(root);
                     break;
