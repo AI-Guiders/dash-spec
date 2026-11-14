@@ -48,13 +48,25 @@ internal static class RowTypeAnalyzer
         // SQL error at first render; both are spec defects visible at compile.
         foreach (var role in DiagramBindings.SelectColumnRoles(diagram.Kind))
         {
-            if (DiagramBindings.TryGetColumn(diagram, role, out var column) && !known.Contains(column))
+            if (!DiagramBindings.TryGetColumn(diagram, role, out var column))
+            {
+                continue;
+            }
+
+            if (!schema.FieldOrdinals.TryGetValue(column, out var ordinal))
             {
                 throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                    $"Card '{context}': diagram '{diagram.Kind}' binds '{role}' to column '{column}', " +
-                    $"which is not a field of row type '{source.RowsType}' " +
-                    $"(fields: {string.Join(", ", schema.Fields.Select(f => f.Name))}).");
+                    DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                        "rule.TypeMismatch.column_not_in_type",
+                        context,
+                        diagram.Kind,
+                        role,
+                        column,
+                        source.RowsType,
+                        string.Join(", ", schema.Fields.Select(f => f.Name))));
             }
+
+            ValidateRoleTypeCompatibility(context, diagram, role, schema.Fields[ordinal], source.RowsType);
         }
 
         // Tooltip variable columns ride the same SELECT — same contract.
@@ -65,8 +77,12 @@ internal static class RowTypeAnalyzer
                 if (!known.Contains(column))
                 {
                     throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                        $"Card '{context}': tooltip column '{column}' is not a field of row type " +
-                        $"'{source.RowsType}' (fields: {string.Join(", ", schema.Fields.Select(f => f.Name))}).");
+                        DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                            "rule.TypeMismatch.tooltip_column_missing",
+                            context,
+                            column,
+                            source.RowsType,
+                            string.Join(", ", schema.Fields.Select(f => f.Name))));
                 }
             }
         }
@@ -81,8 +97,12 @@ internal static class RowTypeAnalyzer
                 if (!known.Contains(column))
                 {
                     throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                        $"Card '{context}': table column '{column}' is not a field of row type " +
-                        $"'{source.RowsType}' (fields: {string.Join(", ", schema.Fields.Select(f => f.Name))}).");
+                        DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                            "rule.TypeMismatch.table_column_missing",
+                            context,
+                            column,
+                            source.RowsType,
+                            string.Join(", ", schema.Fields.Select(f => f.Name))));
                 }
             }
         }
@@ -99,8 +119,12 @@ internal static class RowTypeAnalyzer
                 if (!known.Contains(column))
                 {
                     throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                        $"Card '{context}': sort column '{column}' is not a field of row type " +
-                        $"'{source.RowsType}' (fields: {string.Join(", ", schema.Fields.Select(f => f.Name))}).");
+                        DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                            "rule.TypeMismatch.sort_column_missing",
+                            context,
+                            column,
+                            source.RowsType,
+                            string.Join(", ", schema.Fields.Select(f => f.Name))));
                 }
 
                 if (words.Length > 2
@@ -109,9 +133,65 @@ internal static class RowTypeAnalyzer
                         && !words[1].Equals("DESC", StringComparison.OrdinalIgnoreCase)))
                 {
                     throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                        $"Card '{context}': sort segment '{segment}' is not '<column> [ASC|DESC]'.");
+                        DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                            "rule.TypeMismatch.sort_segment_invalid",
+                            context,
+                            segment));
                 }
             }
+        }
+    }
+
+    private static void ValidateRoleTypeCompatibility(
+        string context,
+        DiagramDefinition diagram,
+        string role,
+        RowFieldSchema field,
+        string rowTypeName)
+    {
+        var kind = diagram.Kind.ToLowerInvariant();
+        var r = role.ToLowerInvariant();
+
+        var isCountAggregate =
+            diagram.Properties.TryGetValue("aggregate", out var agg) &&
+            (agg.Equals("count", StringComparison.OrdinalIgnoreCase) ||
+             agg.Equals("distinct_count", StringComparison.OrdinalIgnoreCase));
+
+        var requiresNumeric = (kind, r) switch
+        {
+            ("heatmap" or "gauge" or "histogram" or "box" or "boxplot", "value") => !isCountAggregate,
+            ("bar" or "pie" or "donut" or "doughnut" or "treemap" or "windrose" or "wind_rose" or "line" or "area" or "sparkline", "y" or "reference") => !isCountAggregate,
+            ("scatter", "x" or "y" or "size") => !isCountAggregate,
+            _ => false,
+        };
+
+        if (requiresNumeric &&
+            field.Kind is not (DashPrimitiveKind.Int or DashPrimitiveKind.Decimal or DashPrimitiveKind.Duration))
+        {
+            throw new DashSpec.Modeling.Core.DashSpecFlowException(
+                DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                    "rule.TypeMismatch.role_requires_numeric",
+                    context,
+                    diagram.Kind,
+                    role,
+                    field.Name,
+                    rowTypeName,
+                    field.Kind.ToString().ToLowerInvariant()));
+        }
+
+        if (kind is "gantt" or "gantt_timeline" &&
+            r is "from" or "to" &&
+            field.Kind is not (DashPrimitiveKind.Date or DashPrimitiveKind.DateTime or DashPrimitiveKind.Time or DashPrimitiveKind.String))
+        {
+            throw new DashSpec.Modeling.Core.DashSpecFlowException(
+                DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                    "rule.TypeMismatch.role_requires_temporal",
+                    context,
+                    diagram.Kind,
+                    role,
+                    field.Name,
+                    rowTypeName,
+                    field.Kind.ToString().ToLowerInvariant()));
         }
     }
 
@@ -128,8 +208,10 @@ internal static class RowTypeAnalyzer
         if (!catalog.ContainsKey(source.RowsType))
         {
             throw new DashSpec.Modeling.Core.DashSpecFlowException(
-                $"Card '{context}': row type '{source.RowsType}' is not defined in the document catalog " +
-                "— declare it among the document types or check the spelling.");
+                DashSpec.Modeling.Core.DashSpecRules.formatMessage(
+                    "rule.UnresolvedImportOrReference.row_type",
+                    context,
+                    source.RowsType));
         }
     }
 }

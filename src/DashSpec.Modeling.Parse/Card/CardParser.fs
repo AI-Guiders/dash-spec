@@ -143,8 +143,12 @@ module CardParser =
 
         match reader.TryPeekIdent() with
         | None -> raise (reader.Unexpected "diagram kind, preset id, or registry id")
-        | Some diagramName ->
-            reader.ReadIdent() |> ignore
+        | Some firstIdent ->
+            let diagramName =
+                if DiagramKindRegistry.tryResolve firstIdent |> fst then
+                    reader.ReadIdent()
+                else
+                    AccessorGrammar.readQualifiedName reader
             reader.SkipNewlines()
             if reader.IsAt TokenKind.LBrace then
                 raise (DashSpecParseException($"Card '{cardId}': brace diagram blocks removed; use diagram {diagramName} … end diagram."))
@@ -674,7 +678,14 @@ module CardParser =
 
         BlockSyntax.expectBlockEnd reader "card" (Some id)
 
-        let title = title.Value
+        let title =
+            match title.Value with
+            | Some t when not (String.IsNullOrWhiteSpace t) -> Some t
+            | _ ->
+                match includes with
+                | Some inc -> inc.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Card, id)
+                | None -> None
+
         let useCardPreset = useCardPreset.Value
         let oversizeMessage = oversizeMessage.Value
         let emptyMessage = emptyMessage.Value
@@ -683,7 +694,7 @@ module CardParser =
         let localFiltersChromeBoard = localFiltersChromeBoard.Value
 
         match title with
-        | None | Some (null | "") -> raise (DashSpecParseException($"Card '{id}' requires title (as \"…\" or title = \"…\")."))
+        | None | Some (null | "") -> raise (DashSpecParseException($"Card '{id}' requires title (title = \"…\" or card.{id} in module texts)."))
         | _ -> ()
 
         if includeFragment.Value.Diagram.IsSome then

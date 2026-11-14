@@ -7,14 +7,14 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type PaletteDocument =
+    { Id: string
+      Properties: IReadOnlyDictionary<string, string> }
+
 module PaletteModuleParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
-            t.Substring(1, t.Length - 2)
-        else
-            t
+    let private unquote = Construct.unquote
 
     let rec private parseColorOperandTokens (tokens: SyntaxToken list) : string * SyntaxToken list =
         match tokens with
@@ -110,19 +110,12 @@ module PaletteModuleParser =
 
         { Id = id; Properties = values :> IReadOnlyDictionary<_, _> }
 
-    let parsePaletteFile (text: string) : PaletteDocument =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Palette text is required."
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Palette tree.Root
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : PaletteDocument =
         projectFromMembers env.Id env.Body
+
+    let parsePaletteFile (text: string) : PaletteDocument =
+        UnitGrammar.parseUnit DashSpecModuleKind.Palette parseEnvelope text
 
     let parsePaletteFileWithId (text: string) =
         let doc = parsePaletteFile text
         doc.Id, doc
-
-    do
-        UnitProjector.register
-            { KindKeyword = "palette"
-              ImportKind = Some ImportKind.Palettes
-              Role = UnitCompileRole.Declaration
-              Project = fun ctx -> box (parsePaletteFile ctx.Text) }

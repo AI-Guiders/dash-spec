@@ -1343,4 +1343,97 @@ public class DashboardParseTests
         Assert.Equal(3, layout["c"].Row);
     }
 
+    [Fact]
+    public void RowTypeAnalyzer_rejects_non_numeric_column_bound_to_heatmap_value()
+    {
+        var ex = Assert.ThrowsAny<Exception>(() =>
+            DashSpecTestRowTypes.ParseDashboard("""
+                module dashboard t
+                  import types from Fixtures.QueryRowTypes
+                  import flows from Fixtures.Flow as fixture_flow
+                  connect
+                    use flow fixture_flow
+                  end connect
+                  report
+                    title = "T"
+                    card h as "H"
+                      diagram heatmap
+                        x = usage_date
+                        y = user_sam
+                        value = app_name
+                      end heatmap
+                      data flow { fixture_src [rows] -> [rows] __diagram__ }
+                    end card
+                  end report
+                end dashboard
+                """));
+
+        Assert.Contains("requires a numeric field", ex.Message);
+        Assert.Contains("app_name", ex.Message);
+    }
+
+    [Fact]
+    public void MatrixPayload_formats_cell_values_by_schema_primitive_kind_and_value_format()
+    {
+        var intSchema = new DashSpec.Abstractions.Data.RowTypeSchema(
+            "IntMatrixRow",
+            [
+                new DashSpec.Abstractions.Data.RowFieldSchema("x", DashSpec.Abstractions.Data.DashPrimitiveKind.String, false),
+                new DashSpec.Abstractions.Data.RowFieldSchema("y", DashSpec.Abstractions.Data.DashPrimitiveKind.String, false),
+                new DashSpec.Abstractions.Data.RowFieldSchema("v", DashSpec.Abstractions.Data.DashPrimitiveKind.Int, false),
+            ]);
+        var intBatch = DashSpec.Abstractions.Data.TypedRowBatch.Create(
+            intSchema,
+            [
+                [
+                    DashSpec.Abstractions.Data.DashValue.FromString("Mon"),
+                    DashSpec.Abstractions.Data.DashValue.FromString("Alice"),
+                    DashSpec.Abstractions.Data.DashValue.FromInt(7),
+                ],
+            ]);
+        var intDiagram = new DiagramDefinition
+        {
+            Kind = "heatmap",
+            Properties = new Dictionary<string, string>
+            {
+                ["x"] = "x",
+                ["y"] = "y",
+                ["value"] = "v",
+            },
+        };
+        var intMatrix = ChartDataBuilder.BuildHeatmap(intBatch, intDiagram);
+        Assert.Equal(DashSpec.Abstractions.Data.DashPrimitiveKind.Int, intMatrix.ValueKind);
+        Assert.Equal("7", intMatrix.FormatValue(intMatrix.Cells[0][0]));
+
+        var decSchema = new DashSpec.Abstractions.Data.RowTypeSchema(
+            "DecMatrixRow",
+            [
+                new DashSpec.Abstractions.Data.RowFieldSchema("x", DashSpec.Abstractions.Data.DashPrimitiveKind.String, false),
+                new DashSpec.Abstractions.Data.RowFieldSchema("y", DashSpec.Abstractions.Data.DashPrimitiveKind.String, false),
+                new DashSpec.Abstractions.Data.RowFieldSchema("v", DashSpec.Abstractions.Data.DashPrimitiveKind.Decimal, false),
+            ]);
+        var decBatch = DashSpec.Abstractions.Data.TypedRowBatch.Create(
+            decSchema,
+            [
+                [
+                    DashSpec.Abstractions.Data.DashValue.FromString("Mon"),
+                    DashSpec.Abstractions.Data.DashValue.FromString("Alice"),
+                    DashSpec.Abstractions.Data.DashValue.FromDecimal(12.5m),
+                ],
+            ]);
+        var decDiagram = new DiagramDefinition
+        {
+            Kind = "heatmap",
+            Properties = new Dictionary<string, string>
+            {
+                ["x"] = "x",
+                ["y"] = "y",
+                ["value"] = "v",
+            },
+        };
+        var decMatrix = ChartDataBuilder.BuildHeatmap(decBatch, decDiagram);
+        Assert.Equal(DashSpec.Abstractions.Data.DashPrimitiveKind.Decimal, decMatrix.ValueKind);
+        Assert.Equal("12.5", decMatrix.FormatValue(decMatrix.Cells[0][0]));
+    }
+
 }

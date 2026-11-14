@@ -5,6 +5,42 @@ open System.Collections.Concurrent
 open System.IO
 open System.Reflection
 
+module private RuleManifestLoader =
+
+    let loadRuleTexts (resourceName: string) : Map<string, string> =
+        let assembly = Assembly.GetExecutingAssembly()
+        use stream = assembly.GetManifestResourceStream(resourceName)
+        if isNull stream then
+            Map.empty
+        else
+            use reader = new StreamReader(stream)
+            let lines =
+                reader.ReadToEnd().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.map (fun l -> l.Trim())
+                |> Array.filter (fun l -> l.StartsWith('|'))
+
+            if lines.Length <= 1 then
+                Map.empty
+            else
+                lines.[1..]
+                |> Array.choose (fun line ->
+                    let normalized = line.Replace(@"\|", "\u001F")
+                    let cells = normalized.Split('|', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
+                    if cells.Length >= 2 && not (cells.[0] |> Seq.forall (fun c -> c = '-')) then
+                        let key =
+                            if cells.[0].StartsWith("rule.", StringComparison.OrdinalIgnoreCase) then
+                                cells.[0].Substring(5)
+                            else
+                                cells.[0]
+                        let label = cells.[1].Replace("\u001F", "|")
+                        Some(key, label)
+                    else
+                        None)
+                |> Map.ofArray
+
+    let textsEn = lazy (loadRuleTexts "stdlib/texts/rules.en.ds")
+    let textsRu = lazy (loadRuleTexts "stdlib/texts/rules.ru.ds")
+
 /// <summary>Language rule identifier (SSOT).</summary>
 [<RequireQualifiedAccess>]
 type DashSpecRule =
@@ -152,7 +188,7 @@ and DashSpecTypeMismatchException(descriptor: DashSpecRuleDescriptor, message: s
         DashSpecTypeMismatchException(DashSpecRules.descriptor DashSpecRule.TypeMismatch, message, ?sourceOffset = sourceOffset)
 
 /// <summary>Open registry of rule/checker descriptors + embedded <c>stdlib/rules/rules.ds</c> checker manifest.</summary>
-and DashSpecRules =
+and DashSpecRules private () =
 
     static let parseSeverity (raw: string) =
         match raw.Trim().ToLowerInvariant() with
@@ -184,11 +220,16 @@ and DashSpecRules =
                         None)
                 |> Map.ofArray
 
-    static let mk id rule code defaultSeverity title ctor =
+    static let resolveTitle id =
+        RuleManifestLoader.textsEn.Value |> Map.tryFind id |> Option.defaultValue id
+
+    static let mk id rule code defaultSeverity ctor =
         let severity =
             configuredCheckers
             |> Map.tryFind id
             |> Option.defaultValue defaultSeverity
+
+        let title = resolveTitle id
 
         let rec d =
             { Id = id
@@ -200,47 +241,47 @@ and DashSpecRules =
         d
 
     static let builtinDescriptors =
-        [ mk "ExtraEndBlock" DashSpecRule.ExtraEndBlock "DS001" DashSpecDiagnosticSeverity.Error "unexpected end block"
+        [ mk "ExtraEndBlock" DashSpecRule.ExtraEndBlock "DS001" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "MismatchedEndKeyword" DashSpecRule.MismatchedEndKeyword "DS002" DashSpecDiagnosticSeverity.Error "end block does not match its opener"
+          mk "MismatchedEndKeyword" DashSpecRule.MismatchedEndKeyword "DS002" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "MismatchedEndIdentifier" DashSpecRule.MismatchedEndIdentifier "DS003" DashSpecDiagnosticSeverity.Error "end block identifier does not match its opener"
+          mk "MismatchedEndIdentifier" DashSpecRule.MismatchedEndIdentifier "DS003" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnclosedBlock" DashSpecRule.UnclosedBlock "DS004" DashSpecDiagnosticSeverity.Error "block is not closed"
+          mk "UnclosedBlock" DashSpecRule.UnclosedBlock "DS004" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecBlockBalanceException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "EmptyOutlineSpan" DashSpecRule.EmptyOutlineSpan "DS005" DashSpecDiagnosticSeverity.Error "outline node has an empty span"
+          mk "EmptyOutlineSpan" DashSpecRule.EmptyOutlineSpan "DS005" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk "CardReferenceOutsideCards" DashSpecRule.CardReferenceOutsideCards "DS006" DashSpecDiagnosticSeverity.Warning "card reference is not nested under a cards block"
+          mk "CardReferenceOutsideCards" DashSpecRule.CardReferenceOutsideCards "DS006" DashSpecDiagnosticSeverity.Warning
               (fun d msg off -> DashSpecScopeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "RoundTripOutlineChanged" DashSpecRule.RoundTripOutlineChanged "DS007" DashSpecDiagnosticSeverity.Error "outline changed after serialize round-trip"
+          mk "RoundTripOutlineChanged" DashSpecRule.RoundTripOutlineChanged "DS007" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk "ImportAfterCode" DashSpecRule.ImportAfterCode "DS008" DashSpecDiagnosticSeverity.Error "import must come before code sections in the module header"
+          mk "ImportAfterCode" DashSpecRule.ImportAfterCode "DS008" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnitHeaderException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "ParseError" DashSpecRule.ParseError "DS009" DashSpecDiagnosticSeverity.Error "syntax error"
+          mk "ParseError" DashSpecRule.ParseError "DS009" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecParseException(d, msg, ?sourceOffset = off))
-          mk "InvalidUnitHeader" DashSpecRule.InvalidUnitHeader "DS010" DashSpecDiagnosticSeverity.Error "invalid unit header or duplicate namespace directive"
+          mk "InvalidUnitHeader" DashSpecRule.InvalidUnitHeader "DS010" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnitHeaderException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnexpectedStatement" DashSpecRule.UnexpectedStatement "DS011" DashSpecDiagnosticSeverity.Error "unexpected statement or block in container"
+          mk "UnexpectedStatement" DashSpecRule.UnexpectedStatement "DS011" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnexpectedStatementException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "DuplicateDeclaration" DashSpecRule.DuplicateDeclaration "DS012" DashSpecDiagnosticSeverity.Error "duplicate declaration identifier"
+          mk "DuplicateDeclaration" DashSpecRule.DuplicateDeclaration "DS012" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecDuplicateDeclarationException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "MissingRequiredMember" DashSpecRule.MissingRequiredMember "DS013" DashSpecDiagnosticSeverity.Error "missing required block, property, or table cell"
+          mk "MissingRequiredMember" DashSpecRule.MissingRequiredMember "DS013" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecMissingMemberException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnknownPropertyOrColumn" DashSpecRule.UnknownPropertyOrColumn "DS014" DashSpecDiagnosticSeverity.Error "unknown property key or table column"
+          mk "UnknownPropertyOrColumn" DashSpecRule.UnknownPropertyOrColumn "DS014" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnknownPropertyException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "InvalidValueLiteral" DashSpecRule.InvalidValueLiteral "DS015" DashSpecDiagnosticSeverity.Error "invalid value literal or value type constraint violation"
+          mk "InvalidValueLiteral" DashSpecRule.InvalidValueLiteral "DS015" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecInvalidValueException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "MalformedTable" DashSpecRule.MalformedTable "DS016" DashSpecDiagnosticSeverity.Error "table requires at least one data row after header"
+          mk "MalformedTable" DashSpecRule.MalformedTable "DS016" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecTableStructureException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "ScopeMismatch" DashSpecRule.ScopeMismatch "DS017" DashSpecDiagnosticSeverity.Error "scope or flow-block role mismatch"
+          mk "ScopeMismatch" DashSpecRule.ScopeMismatch "DS017" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecScopeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnresolvedImportOrReference" DashSpecRule.UnresolvedImportOrReference "DS018" DashSpecDiagnosticSeverity.Error "unresolved import or symbol reference"
+          mk "UnresolvedImportOrReference" DashSpecRule.UnresolvedImportOrReference "DS018" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnresolvedReferenceException(d, "", msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "TypeMismatch" DashSpecRule.TypeMismatch "DS019" DashSpecDiagnosticSeverity.Error "type mismatch across ports, fields, or composite sources"
+          mk "TypeMismatch" DashSpecRule.TypeMismatch "DS019" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecTypeMismatchException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnclosedToken" DashSpecRule.UnclosedToken "DS020" DashSpecDiagnosticSeverity.Error "unclosed string, raw block, or block comment"
+          mk "UnclosedToken" DashSpecRule.UnclosedToken "DS020" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnclosedTokenException(d, msg, ?sourceOffset = off) :> DashSpecParseException)
-          mk "UnexpectedToken" DashSpecRule.UnexpectedToken "DS021" DashSpecDiagnosticSeverity.Error "unexpected character or malformed lexical token"
+          mk "UnexpectedToken" DashSpecRule.UnexpectedToken "DS021" DashSpecDiagnosticSeverity.Error
               (fun d msg off -> DashSpecUnexpectedTokenException(d, msg, ?sourceOffset = off) :> DashSpecParseException) ]
 
     static let byRule = builtinDescriptors |> List.map (fun d -> d.Rule, d) |> Map.ofList
@@ -280,3 +321,22 @@ and DashSpecRules =
         byRule.[rule].CreateException(message, sourceOffset)
     static member raiseRule (rule: DashSpecRule) (message: string) (sourceOffset: int option) =
         raise (byRule.[rule].CreateException(message, sourceOffset))
+
+    /// <summary>Resolve a rule message template from embedded <c>stdlib/texts/rules.*.ds</c> by key (e.g. <c>TypeMismatch.role_requires_numeric</c>).</summary>
+    static member tryResolveText(key: string, ?language: string) : string option =
+        let normalizedKey =
+            if key.StartsWith("rule.", StringComparison.OrdinalIgnoreCase) then key.Substring(5) else key
+        let useRu =
+            match language with
+            | Some lang when lang.StartsWith("ru", StringComparison.OrdinalIgnoreCase) -> true
+            | _ -> false
+        if useRu then
+            RuleManifestLoader.textsRu.Value |> Map.tryFind normalizedKey |> Option.orElseWith (fun () -> RuleManifestLoader.textsEn.Value |> Map.tryFind normalizedKey)
+        else
+            RuleManifestLoader.textsEn.Value |> Map.tryFind normalizedKey
+
+    /// <summary>Format a diagnostic message from embedded <c>stdlib/texts/rules.en.ds</c> using positional arguments.</summary>
+    static member formatMessage(key: string, [<ParamArray>] args: obj[]) : string =
+        match DashSpecRules.tryResolveText(key) with
+        | Some template -> String.Format(System.Globalization.CultureInfo.InvariantCulture, template, args)
+        | None -> key

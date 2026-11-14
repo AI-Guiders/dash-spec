@@ -86,6 +86,7 @@ else if (Owner is not null)
 
 @code {
     [Parameter, EditorRequired] public Slot Slot { get; set; } = default!;
+    [Parameter] public bool DetailView { get; set; }
     [CascadingParameter] public DashboardCardView? Owner { get; set; }
 
     private Type? _diagramType;
@@ -118,27 +119,25 @@ else if (Owner is not null)
             return;
         }
 
-        var parameters = new Dictionary<string, object?>
+        _diagramParameters = new Dictionary<string, object?>
         {
-            ["Card"] = Owner.Card,
-            ["MatrixMin"] = Owner.Card.Matrix?.Min ?? 0,
-            ["MatrixMax"] = Owner.Card.Matrix?.Max ?? 0,
-                ["OnHeatmapCellSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                this,
+            ["Request"] = new CardVizHostRequest
+            {
+                Card = Owner.Card,
+                Slot = HasSlotPayload ? Owner.Card.InteriorSlotRenders![Slot.Node.Id] : null,
+                DetailView = DetailView,
+                MatrixMin = Owner.Card.Matrix?.Min ?? 0,
+                MatrixMax = Owner.Card.Matrix?.Max ?? 0,
+                OnHeatmapCellSelected = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
                     Owner.HandleHeatmapCellSelectedAsync),
-            ["OnHeatmapCategoryItemSelected"] = EventCallback.Factory.Create<HeatmapCellContext>(
-                this,
+                OnHeatmapCategoryItemSelected = EventCallback.Factory.Create<HeatmapCellContext>(
+                    this,
                     Owner.HandleHeatmapCategoryItemSelectedAsync),
-            ["OnCardAction"] = EventCallback.Factory.Create<CardActionRequest>(
-                this,
-                Owner.HandleCardActionAsync),
+                OnCardAction = EventCallback.Factory.Create<CardActionRequest>(
+                    this,
+                    Owner.HandleCardActionAsync),
+            },
         };
-
-        if (HasSlotPayload)
-        {
-            parameters["Slot"] = Owner.Card.InteriorSlotRenders![Slot.Node.Id];
-        }
-
-        _diagramParameters = parameters;
     }
 }

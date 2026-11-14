@@ -1,14 +1,16 @@
 module dashboard demo_soak
     namespace Demo.Soak
-    import tooltips from Demo.Tooltips
-    import diagrams from Demo.Diagrams
-    import types from Demo.Types
-    import flows from Demo.Flows as demo_report_flow
-    import palettes from Demo.Palettes
-    import sections from Demo.Analytics
-    import presentations from DashSpec.Std
-    import runtimes from Demo.Runtime
-    import defaults from Demo.Defaults
+    from Demo import {
+        tooltips
+        diagrams
+        types
+        flows = demo_report_flow
+        palettes
+        runtimes
+        defaults
+    }
+    from Demo.Analytics import sections
+    from DashSpec.Std import presentations
 
     connect
         use palette demo_apps

@@ -182,8 +182,30 @@ public sealed record MatrixPayload(
     IReadOnlyList<double>? RowMaxs = null,
     IReadOnlyList<double>? ColMins = null,
     IReadOnlyList<double>? ColMaxs = null,
-    IReadOnlyList<DateTime>? XBucketStarts = null)
+    IReadOnlyList<DateTime>? XBucketStarts = null,
+    DashPrimitiveKind ValueKind = DashPrimitiveKind.Int,
+    string? ValueFormat = null)
 {
+    public string FormatValue(double? value, ReportFormatDefaults? defaults = null)
+    {
+        if (value is not { } v)
+        {
+            return "—";
+        }
+
+        if (!string.IsNullOrWhiteSpace(ValueFormat))
+        {
+            object boxed = ValueKind == DashPrimitiveKind.Int ? (long)Math.Round(v) : v;
+            return LabelFormat.FormatObject(boxed, ValueFormat, defaults);
+        }
+
+        return ValueKind switch
+        {
+            DashPrimitiveKind.Int => ((long)Math.Round(v)).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            _ => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+        };
+    }
+
     public (double Min, double Max) ColorRangeForCell(int yi, int xi)
     {
         var (cellMin, cellMax) = ColorNormalize switch

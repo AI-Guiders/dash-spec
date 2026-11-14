@@ -998,17 +998,36 @@ module DashSpecSurfaceSyntax =
             | _ ->
                 TableRowKind.Generic attrs
 
-    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;namespace&gt; [as &lt;alias&gt;]` (ADR-0098).</summary>
+    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;namespace&gt; [= &lt;alias&gt;]` or `from &lt;namespace&gt; import &lt;kind&gt; [= &lt;alias&gt;]`.</summary>
     let private tryParseImportLine (tokens: Token list) =
         let sigTokens = significantTokens tokens
-        let keyword, rest =
-            match sigTokens with
-            | { Kind = TokenKind.Ident; Value = "import" } :: tail -> Some "import", tail
-            | _ -> None, []
-
-        match keyword with
-        | None -> None
-        | Some kw ->
+        match sigTokens with
+        | { Kind = TokenKind.Ident; Value = "from" } :: rest when
+            rest |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase)) ->
+            let importIdx =
+                rest
+                |> List.findIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase))
+            let nsTokens = rest |> List.take importIdx
+            let afterImport =
+                rest
+                |> List.skip (importIdx + 1)
+                |> List.filter (fun t -> t.Kind <> TokenKind.LBrace && t.Kind <> TokenKind.RBrace)
+            let target =
+                nsTokens
+                |> List.filter (fun t -> t.Kind = TokenKind.String || t.Kind = TokenKind.Ident || t.Kind = TokenKind.Dot)
+                |> List.map (fun t -> t.Value)
+                |> String.concat ""
+            match afterImport with
+            | { Kind = TokenKind.Ident; Value = k } :: tail ->
+                let aliasName =
+                    match tail with
+                    | { Kind = TokenKind.Eq } :: { Kind = TokenKind.Ident; Value = a } :: _ -> Some a
+                    | { Kind = TokenKind.Ident; Value = asKw } :: { Kind = TokenKind.Ident; Value = a } :: _
+                        when String.Equals(asKw, "as", StringComparison.OrdinalIgnoreCase) -> Some a
+                    | _ -> None
+                Some("import", Some k, target, aliasName)
+            | _ -> None
+        | { Kind = TokenKind.Ident; Value = "import" } :: rest ->
             let kindOpt =
                 match rest with
                 | { Kind = TokenKind.Ident; Value = k } :: _
@@ -1021,8 +1040,12 @@ module DashSpecSurfaceSyntax =
                 | Some i -> rest |> List.skip (i + 1)
                 | None -> rest
 
+            let isAliasSplitToken (t: Token) =
+                t.Kind = TokenKind.Eq
+                || (t.Kind = TokenKind.Ident && String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase))
+
             let targetTokens, aliasTokens =
-                match afterFrom |> List.tryFindIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase)) with
+                match afterFrom |> List.tryFindIndex isAliasSplitToken with
                 | Some i -> afterFrom |> List.splitAt i
                 | None -> afterFrom, []
 
@@ -1040,7 +1063,8 @@ module DashSpecSurfaceSyntax =
                     else
                         None)
 
-            Some(kw, kindOpt, target, aliasName)
+            Some("import", kindOpt, target, aliasName)
+        | _ -> None
 
     let private appendModule (_parent: MutableNode) (id: int ref) (text: string) (allTokens: Token[]) (line: TokenReaderPhysicalLines.PhysicalLine) (kind: string) (moduleId: string) =
         let emitViews =

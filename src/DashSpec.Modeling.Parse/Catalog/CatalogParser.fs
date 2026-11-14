@@ -7,14 +7,28 @@ open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type CatalogEntryDefinition =
+    { Id: string
+      Title: string
+      DashspecPath: string
+      GroupId: string option
+      InitialTabId: string option
+      InitialPageId: string option }
+
+[<CLIMutable>]
+type CatalogGroupDefinition = { Id: string; Title: string }
+
+[<CLIMutable>]
+type CatalogDocument =
+    { Id: string
+      DefaultEntryId: string
+      Entries: IReadOnlyList<CatalogEntryDefinition>
+      Groups: IReadOnlyList<CatalogGroupDefinition> option }
+
 module CatalogParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
-            t.Substring(1, t.Length - 2)
-        else
-            t
+    let private unquote = Construct.unquote
 
     let private entryDeclaration
         (groupId: string option)
@@ -219,10 +233,7 @@ module CatalogParser =
         flushPending ()
         defaultEntryId
 
-    let parse (text: string) : CatalogDocument =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Catalog text is required."
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Catalog tree.Root
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : CatalogDocument =
         let catalogId = env.Id
 
         let entries = ResizeArray<CatalogEntryDefinition>()
@@ -245,9 +256,5 @@ module CatalogParser =
         let groupsOpt = if groups.Count = 0 then None else Some(groups :> IReadOnlyList<_>)
         { Id = catalogId; DefaultEntryId = defaultId; Entries = entries :> IReadOnlyList<_>; Groups = groupsOpt }
 
-    do
-        UnitProjector.register
-            { KindKeyword = "catalog"
-              ImportKind = None
-              Role = UnitCompileRole.Root
-              Project = fun ctx -> box (parse ctx.Text) }
+    let parse (text: string) : CatalogDocument =
+        UnitGrammar.parseUnit DashSpecModuleKind.Catalog parseEnvelope text

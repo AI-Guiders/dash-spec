@@ -115,18 +115,17 @@ public static class DashSpecCompilerServicesHost
 /// roots (dashboard units), and the lazy per-root assembled-document cache. Immutable once
 /// built; stale snapshots are replaced wholesale by the host.
 /// </summary>
-public sealed class DashSpecAssembledCorpus(
+public sealed partial class DashSpecAssembledCorpus(
     string corpusRoot,
     IReadOnlyDictionary<string, string> memberTexts,
     IReadOnlyDictionary<string, DateTime> memberMtimes,
     IReadOnlyList<string> rootFiles,
     DashSpecParseOptions assembledOptions)
 {
-    static readonly Regex ImportTabsLine = new(
-        @"(?m)^\s*import\s+sections\s+from\s+([A-Za-z_][\w.]*)\s*$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    [GeneratedRegex(@"(?m)^\s*import\s+sections\s+from\s+([A-Za-z_][\w.]*)\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex ImportTabsLine();
 
-    readonly object _gate = new();
+    readonly Lock _gate = new();
     readonly Dictionary<string, (FsharpDocument.DashboardDocument? Document, string? Error, int? ErrorOffset)> _assembled =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -180,7 +179,7 @@ public sealed class DashSpecAssembledCorpus(
             if (!memberTexts.TryGetValue(root, out var text))
                 continue;
 
-            foreach (Match match in ImportTabsLine.Matches(text))
+            foreach (Match match in ImportTabsLine().Matches(text))
             {
                 if (string.Equals(match.Groups[1].Value, tabNamespace, StringComparison.OrdinalIgnoreCase))
                 {

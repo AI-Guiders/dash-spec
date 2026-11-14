@@ -120,6 +120,21 @@ public static class TypedRowsCompiler
     /// along (ADR-0127): their port type inference may synthesize row types, and those
     /// compile into the same TypedRows.dll — hand-written and inferred types are
     /// indistinguishable for the runtime.</summary>
+    private static RowTypeDef MergeRowTypeDef(RowTypeDef existing, RowTypeDef incoming)
+    {
+        var merged = new List<RowFieldDef>(existing.Fields);
+        var seen = new HashSet<string>(existing.Fields.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
+        foreach (var field in incoming.Fields)
+        {
+            if (seen.Add(field.Name))
+            {
+                merged.Add(field);
+            }
+        }
+
+        return new RowTypeDef(existing.Name, merged.ToArray());
+    }
+
     public static IReadOnlyList<RowTypeDef> LoadCorpusTypes(string directory)
     {
         var definitions = new Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase);
@@ -131,7 +146,9 @@ public static class TypedRowsCompiler
             {
                 foreach (var definition in ParseTypes(DashSpec.Modeling.Parse.Document.UnitSource.readUnit(file)))
                 {
-                    definitions[definition.Name] = definition;
+                    definitions[definition.Name] = definitions.TryGetValue(definition.Name, out var prev)
+                        ? MergeRowTypeDef(prev, definition)
+                        : definition;
                 }
             }
             else if (header.Contains("module flow", StringComparison.Ordinal))

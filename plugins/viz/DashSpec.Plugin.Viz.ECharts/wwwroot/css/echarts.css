@@ -82,11 +82,11 @@
 }
 
 .ech-x-label {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   text-align: center;
   color: var(--rz-text-secondary-color, #8fa0b3);
   white-space: nowrap;
-  padding-bottom: 0.15rem;
+  padding: 0 2px 0.15rem;
   cursor: pointer;
 }
 

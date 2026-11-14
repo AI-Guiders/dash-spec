@@ -1,6 +1,8 @@
 ﻿module host ai_landscape
-import layouts from Ai.Landscape.Layouts
-import catalogs from Ai.Landscape.Catalogs
+from Ai.Landscape import {
+    layouts
+    catalogs
+}
 
 catalog = ai_landscape
 language = "ru-RU"

@@ -231,6 +231,10 @@ module PropertySchemas =
         [ spec "x" ColumnBinding
           spec "y" ColumnBinding
           spec "value" ColumnBinding
+          spec "x_format" Scalar
+          spec "y_format" Scalar
+          spec "value_format" Scalar
+          spec "color_scale" Scalar
           spec "height" Scalar
           spec "visible_rows" Scalar
           spec "color_normalize" Scalar

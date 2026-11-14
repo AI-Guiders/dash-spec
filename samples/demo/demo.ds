@@ -1,6 +1,8 @@
 module host demo
-import layouts from Demo.Layouts
-import catalogs from Demo.Catalogs
+from Demo import {
+    layouts
+    catalogs
+}
 
 catalog = demo
 language = "ru-RU"

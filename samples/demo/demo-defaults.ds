@@ -9,5 +9,3 @@ filter.period_start.range = today
 filter.period_grain.scale = day
 filter.events_top.limit = 200
 filter.idle_top.limit = 100
-
-end defaults

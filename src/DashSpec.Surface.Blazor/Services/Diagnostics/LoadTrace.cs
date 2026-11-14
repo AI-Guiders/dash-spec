@@ -4,7 +4,7 @@ namespace DashSpec.Surface.Blazor.Services.Diagnostics;
 
 public sealed class LoadTrace
 {
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private LoadTraceSnapshot? _last;
     private readonly List<LoadTraceSnapshot> _history = [];
 

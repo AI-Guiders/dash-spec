@@ -484,6 +484,9 @@ public sealed class CardRenderService(
                 rows = DashflowCardDataPipeline.ApplyTransforms(document, effective.FlowInput?.Value, rows);
                 var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
                 var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
+                var chartPresentation = kind.DataFamily is DiagramDataFamily.Chart
+                    ? CompositionResolution.ResolveChartPresentation(effective, library)
+                    : null;
                 var matrixPresentation = kind.DataFamily is DiagramDataFamily.Matrix
                     ? MatrixPresentation.FromCard(effective, library)
                     : null;
@@ -496,6 +499,13 @@ public sealed class CardRenderService(
 
                 var slotResult = kind.DataFamily switch
                 {
+                    DiagramDataFamily.Scalar => new CardSlotRenderResult(
+                        slotRef,
+                        effective.Diagram.Kind,
+                        kind.DataFamily,
+                        renderPluginId,
+                        Number: FormatNumber(rows, effective.Diagram),
+                        NumberScale: effective.Diagram.Properties.TryGetValue("scale_value", out var numberScale) ? numberScale : null),
                     DiagramDataFamily.Table => new CardSlotRenderResult(
                         slotRef,
                         effective.Diagram.Kind,
@@ -509,6 +519,9 @@ public sealed class CardRenderService(
                         kind.DataFamily,
                         renderPluginId,
                         Matrix: ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, seriesTransform, effective.Tooltip?.Value),
+                        DetailMatrix: seriesTransform is null
+                            ? null
+                            : ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, null, effective.Tooltip?.Value),
                         MatrixPresentation: matrixPresentation),
                     DiagramDataFamily.Chart => new CardSlotRenderResult(
                         slotRef,
@@ -521,7 +534,17 @@ public sealed class CardRenderService(
                             seriesTransform,
                             effective,
                             library,
-                            document.ColorPalette?.Value)),
+                            document.ColorPalette?.Value),
+                        DetailChart: seriesTransform is null
+                            ? null
+                            : ChartDataBuilder.BuildChart(
+                                rows,
+                                effective.Diagram,
+                                null,
+                                effective,
+                                library,
+                                document.ColorPalette?.Value),
+                        ChartPresentation: chartPresentation),
                     DiagramDataFamily.Gantt => new CardSlotRenderResult(
                         slotRef,
                         effective.Diagram.Kind,
@@ -544,6 +567,9 @@ public sealed class CardRenderService(
                         effective.Diagram.Properties.GetValueOrDefault("title"),
                         slotOverlay),
                     FormatDefaults = document.ResolvedFormatDefaults,
+                    EmptyMessage = effective.EmptyMessage?.Value,
+                    ClickBehaviour = effective.ClickBehaviour?.Value,
+                    ClickHandlers = effective.ClickHandlers,
                     // Клик-значения слота живут в display-кадре родительской оси (to_zone):
                     // для фильтров по storage-колонкам они конвертируются инверсией графа.
                     FlowPath = flowPath,

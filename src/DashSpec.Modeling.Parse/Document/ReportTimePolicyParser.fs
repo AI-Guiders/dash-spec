@@ -11,12 +11,12 @@ module ReportTimePolicyParser =
           WorkTimeColumn = None
           WorkCalendar = None }
 
-    let private parseBasis (raw: string) =
+    let parseBasis (raw: string) =
         match raw.Trim().ToLowerInvariant() with
         | "working" | "work" -> ReportTimeBasis.Working
         | _ -> ReportTimeBasis.Calendar
 
-    let private parseApply (raw: string) =
+    let parseApply (raw: string) =
         match raw.Trim().ToLowerInvariant() with
         | "measure" -> ReportTimeApply.Measure
         | "both" -> ReportTimeApply.Both

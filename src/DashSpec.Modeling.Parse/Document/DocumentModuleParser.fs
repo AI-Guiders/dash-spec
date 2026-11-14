@@ -418,9 +418,9 @@ module rec DocumentModuleParser =
 
         for d in includes.Defaults.Values do
             match d.SqlDialect with
-            | Some dialectRaw -> sqlDialect <- SqlDialectParser.parse dialectRaw
+            | Some dialect -> sqlDialect <- dialect
             | None -> ()
-            timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc d.Properties
+            timePolicyAcc <- ReportTimePolicyParser.mergePolicyOptions timePolicyAcc d.TimePolicy
 
         let seenCode = ref false
 
@@ -520,9 +520,9 @@ module rec DocumentModuleParser =
 
         for d in includes.Defaults.Values do
             match d.SqlDialect with
-            | Some dialectRaw -> sqlDialect <- SqlDialectParser.parse dialectRaw
+            | Some dialect -> sqlDialect <- dialect
             | None -> ()
-            timePolicyAcc <- ReportTimePolicyParser.mergeConfiguration timePolicyAcc d.Properties
+            timePolicyAcc <- ReportTimePolicyParser.mergePolicyOptions timePolicyAcc d.TimePolicy
 
         let seenCode = ref false
 
@@ -677,7 +677,7 @@ module rec DocumentModuleParser =
             elif String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
                 raise (DashSpecParseException("use provider belongs on dashflow source nodes, not in connect { }."))
             elif String.Equals(useKind, "palette", StringComparison.OrdinalIgnoreCase) then
-                paletteUse.Value <- Some(reader.ReadIdent())
+                paletteUse.Value <- Some(AccessorGrammar.readQualifiedName reader)
             elif String.Equals(useKind, "flow", StringComparison.OrdinalIgnoreCase) then
                 flowConnectSymbol.Value <- Some(AccessorGrammar.readQualifiedName reader)
             else
@@ -1128,6 +1128,19 @@ module rec DocumentModuleParser =
             reader.SkipNewlines()
 
         let addFilter (filter: FilterDefinition) =
+            let resolvedLabel =
+                match filter.Label with
+                | Some l when not (String.IsNullOrWhiteSpace l) -> Some l
+                | _ ->
+                    shell.Includes.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Filter, filter.Name)
+                    |> Option.orElseWith (fun () ->
+                        match filter.ColumnReference with
+                        | Some c when not (String.IsNullOrWhiteSpace c) ->
+                            shell.Includes.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Field, c)
+                        | _ -> None)
+
+            let filter = { filter with Label = resolvedLabel }
+
             if mode = ReportBodyMode.TabEmbedded then
                 shell.TabLocalFilters.Add filter
             else
@@ -1214,17 +1227,10 @@ module rec DocumentModuleParser =
         shell.TimePolicy <- timePolicy
 
         for d in includes.Defaults.Values do
-            shell.FormatDefaults <-
-                ReportFormatDefaults.merge
-                    shell.FormatDefaults
-                    { Culture = d.Culture
-                      TimeFormat = d.TimeFormat
-                      DateFormat = d.DateFormat
-                      DateTimeFormat = d.DateTimeFormat }
+            shell.FormatDefaults <- ReportFormatDefaults.merge shell.FormatDefaults d.Formats
 
-            for fk in d.FilterDefaults do
-                for pk in fk.Value do
-                    FilterScopeDefaults.set shell.FilterDefaults fk.Key pk.Key pk.Value
+            for fd in d.FilterDefaults do
+                FilterScopeDefaults.set shell.FilterDefaults fd.FilterId fd.Property.WireName fd.Value.Text
 
         shell
 

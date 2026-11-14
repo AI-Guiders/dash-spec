@@ -41,17 +41,10 @@ else
 }
 
 @code {
-    [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+    [Parameter, EditorRequired] public CardVizHostRequest Request { get; set; } = default!;
 
-    /// <summary>Inner-layout payload. A card has its own grid, so a slot is just another card to draw.</summary>
-    [Parameter] public CardSlotRenderResult? Slot { get; set; }
-
-    [Parameter] public double MatrixMin { get; set; }
-    [Parameter] public double MatrixMax { get; set; }
-    [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; set; }
-    [Parameter] public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; set; }
-    [Parameter] public bool DetailView { get; set; }
-    [Parameter] public EventCallback<CardActionRequest> OnCardAction { get; set; }
+    private CardRenderResult Card => Request.Card;
+    private CardSlotRenderResult? Slot => Request.Slot;
 
     private Type? _componentType;
     private Dictionary<string, object?> _parameters = new();
@@ -76,12 +69,12 @@ else
             ["Context"] = new CardVizRenderContext
             {
                 Card = card,
-                DetailView = DetailView,
-                MatrixMin = MatrixMin,
-                MatrixMax = MatrixMax,
-                OnHeatmapCellSelected = OnHeatmapCellSelected,
-                OnHeatmapCategoryItemSelected = OnHeatmapCategoryItemSelected,
-                OnCardAction = OnCardAction,
+                DetailView = Request.DetailView,
+                MatrixMin = Request.MatrixMin,
+                MatrixMax = Request.MatrixMax,
+                OnHeatmapCellSelected = Request.OnHeatmapCellSelected,
+                OnHeatmapCategoryItemSelected = Request.OnHeatmapCategoryItemSelected,
+                OnCardAction = Request.OnCardAction,
                 VizStateCardId = Slot is null ? null : Card.Id,
                 FlowPath = Slot?.FlowPath ?? Card.FlowPath,
             },
@@ -96,10 +89,21 @@ else
             slot.DataFamily,
             slot.RenderPluginId,
             Chart: slot.Chart,
+            DetailChart: slot.DetailChart,
             Table: slot.Table,
+            Number: slot.Number,
+            NumberScale: slot.NumberScale,
+            NumberDelta: slot.NumberDelta,
+            NumberDeltaTone: slot.NumberDeltaTone,
+            ChartPresentation: slot.ChartPresentation,
             Matrix: slot.Matrix,
+            DetailMatrix: slot.DetailMatrix,
             Gantt: slot.Gantt,
             MatrixPresentation: slot.MatrixPresentation,
             TablePresentation: slot.TablePresentation,
-            FormatDefaults: slot.FormatDefaults ?? Card.FormatDefaults);
+            FormatDefaults: slot.FormatDefaults ?? Card.FormatDefaults,
+            EmptyMessage: slot.EmptyMessage ?? Card.EmptyMessage,
+            ClickBehaviour: slot.ClickBehaviour ?? Card.ClickBehaviour,
+            ClickHandlers: slot.ClickHandlers ?? Card.ClickHandlers,
+            FlowPath: slot.FlowPath ?? Card.FlowPath);
 }

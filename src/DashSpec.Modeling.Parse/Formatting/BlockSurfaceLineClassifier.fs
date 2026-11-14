@@ -54,6 +54,20 @@ module BlockSurfaceLineClassifier =
                 BlockOpener("click", None)
             | { Kind = TokenKind.Ident; Value = "filters" } :: { Kind = TokenKind.Ident; Value = "chrome" } :: _ ->
                 BlockOpener("chrome", None)
+            | { Kind = TokenKind.Ident; Value = "from" } :: rest when
+                rest |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase)) ->
+                let importIdx =
+                    rest
+                    |> List.findIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase))
+                let nsTokens = rest |> List.take importIdx
+                let afterImport = rest |> List.skip (importIdx + 1)
+                let nsName = nsTokens |> List.map (fun t -> t.Value) |> String.concat ""
+                match afterImport with
+                | []
+                | [ { Kind = TokenKind.LBrace } ] ->
+                    BlockOpener("import", Some nsName)
+                | _ ->
+                    Content
             | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
                 when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
                 BlockOpener(kw, Some id)

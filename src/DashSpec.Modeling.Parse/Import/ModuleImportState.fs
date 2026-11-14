@@ -11,7 +11,9 @@ open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Defaults
+open DashSpec.Modeling.Parse.Texts
 open DashSpec.Modeling.Parse.Runtime
+open DashSpec.Modeling.Parse.Syntax
 
 type ModuleImportState() =
     let diagrams = Dictionary<string, UnitFragment>(StringComparer.OrdinalIgnoreCase)
@@ -31,11 +33,54 @@ type ModuleImportState() =
     let runtimes = Dictionary<string, RuntimeDocument>(StringComparer.OrdinalIgnoreCase)
     let runtimePaths = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let defaultsDocs = Dictionary<string, DefaultsDocument>(StringComparer.OrdinalIgnoreCase)
+    let textBindings = ResizeArray<TextBinding>()
 
     member _.RegisterDefaults(id: string, doc: DefaultsDocument) =
         defaultsDocs.[id] <- doc
 
     member _.Defaults = defaultsDocs :> IReadOnlyDictionary<string, DefaultsDocument>
+
+    member _.RegisterTexts(doc: TextsDocument) =
+        for b in doc.Bindings do
+            textBindings.Add b
+
+    member _.TextBindings = textBindings :> IReadOnlyList<TextBinding>
+
+    member _.TryResolveText(kind: LanguageObjectKind, path: DotSyntax) : string option =
+        let fullText = path.Text
+        let leafName = path.MemberName
+
+        // 1. Exact kind + full DotSyntax path match
+        textBindings
+        |> Seq.tryPick (fun b ->
+            if b.Target.Kind = Some kind && String.Equals(b.Target.Path.Text, fullText, StringComparison.OrdinalIgnoreCase) then
+                Some b.Label
+            else
+                None)
+        // 2. Exact kind + leaf name match (e.g. `field.app_name` matching `demo.v_events.app_name`)
+        |> Option.orElseWith (fun () ->
+            textBindings
+            |> Seq.tryPick (fun b ->
+                if b.Target.Kind = Some kind && String.Equals(b.Target.LeafName, leafName, StringComparison.OrdinalIgnoreCase) then
+                    Some b.Label
+                else
+                    None))
+        // 3. Unqualified LanguageObjectRef (`Kind = None`) matching path or leaf name
+        |> Option.orElseWith (fun () ->
+            textBindings
+            |> Seq.tryPick (fun b ->
+                if b.Target.Kind.IsNone
+                   && (String.Equals(b.Target.Path.Text, fullText, StringComparison.OrdinalIgnoreCase)
+                       || String.Equals(b.Target.LeafName, leafName, StringComparison.OrdinalIgnoreCase)) then
+                    Some b.Label
+                else
+                    None))
+
+    member this.TryResolveText(kind: LanguageObjectKind, rawId: string) : string option =
+        if String.IsNullOrWhiteSpace rawId then
+            None
+        else
+            this.TryResolveText(kind, DotSyntax.parse rawId)
 
     member _.RegisterRuntime(id: string, path: string, doc: RuntimeDocument) =
         runtimes.[id] <- doc

@@ -169,7 +169,7 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: null);
+        return FinalizeMatrix(rows, valueColumn, xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: null);
     }
 
     private static MatrixPayload BuildHourGrid(
@@ -325,7 +325,7 @@ internal static class MatrixPayloadBuilder
             max = 0;
         }
 
-        return FinalizeMatrix(xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: xKeys);
+        return FinalizeMatrix(rows, valueColumn, xLabels, yLabels, cells, min, max, tooltips, diagram, xBucketStarts: xKeys);
     }
 
     private readonly record struct AxisWindow(TimeOnly From, TimeOnly To);
@@ -405,6 +405,8 @@ internal static class MatrixPayloadBuilder
     }
 
     private static MatrixPayload FinalizeMatrix(
+        TypedRowBatch rows,
+        string valueColumn,
         IReadOnlyList<string> xLabels,
         IReadOnlyList<string> yLabels,
         double?[][] cells,
@@ -416,6 +418,10 @@ internal static class MatrixPayloadBuilder
     {
         diagram.Properties.TryGetValue("color_normalize", out var normalizeRaw);
         var normalize = MatrixColorNormalizeParser.Parse(normalizeRaw);
+        var valueKind = rows.Schema.FieldOrdinals.TryGetValue(valueColumn, out var valueOrdinal)
+            ? rows.Schema.Fields[valueOrdinal].Kind
+            : DashPrimitiveKind.Int;
+        diagram.Properties.TryGetValue("value_format", out var valueFormat);
 
         double[]? rowMins = null;
         double[]? rowMaxs = null;
@@ -444,7 +450,9 @@ internal static class MatrixPayloadBuilder
             rowMaxs,
             colMins,
             colMaxs,
-            xBucketStarts);
+            xBucketStarts,
+            valueKind,
+            valueFormat);
     }
 
     private static (double[] RowMins, double[] RowMaxs) ComputeRowRanges(

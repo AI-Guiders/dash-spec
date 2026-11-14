@@ -1,0 +1,35 @@
+module texts stdlib_rules_ru
+namespace DashSpec.Stdlib.Texts
+
+language = "ru-RU"
+
+| target                                    | label                                                                                                                               |
+| rule.ExtraEndBlock                        | лишний закрывающий блок end                                                                                                         |
+| rule.MismatchedEndKeyword                 | ключевое слово end не совпадает с открывающим блоком                                                                                |
+| rule.MismatchedEndIdentifier              | идентификатор в end не совпадает с открывающим блоком                                                                               |
+| rule.UnclosedBlock                        | блок не закрыт                                                                                                                      |
+| rule.EmptyOutlineSpan                     | узел дерева имеет пустой диапазон                                                                                                   |
+| rule.CardReferenceOutsideCards            | ссылка на карточку вне блока cards                                                                                                  |
+| rule.RoundTripOutlineChanged              | структура дерева изменилась после повторной сериализации                                                                            |
+| rule.ImportAfterCode                      | директива import должна располагаться в шапке модуля до кода                                                                        |
+| rule.ParseError                           | синтаксическая ошибка                                                                                                               |
+| rule.InvalidUnitHeader                    | некорректный заголовок модуля или дублирование namespace                                                                            |
+| rule.UnexpectedStatement                  | неожиданная инструкция или блок в контейнере                                                                                        |
+| rule.DuplicateDeclaration                 | повторное объявление идентификатора                                                                                                 |
+| rule.MissingRequiredMember                | отсутствует обязательный блок, свойство или ячейка таблицы                                                                          |
+| rule.UnknownPropertyOrColumn              | неизвестное имя свойства или колонки таблицы                                                                                        |
+| rule.InvalidValueLiteral                  | некорректный литерал значения или нарушение типа                                                                                    |
+| rule.MalformedTable                       | таблица должна содержать хотя бы одну строку данных после заголовка                                                                 |
+| rule.ScopeMismatch                        | несоответствие области видимости или роли потокового блока                                                                          |
+| rule.UnresolvedImportOrReference          | неразрешённый импорт или ссылка на символ                                                                                           |
+| rule.TypeMismatch                         | несовпадение типов между портами, полями или источниками                                                                            |
+| rule.UnclosedToken                        | незакрытая строка, сырой блок или блочный комментарий                                                                               |
+| rule.UnexpectedToken                      | неожиданный символ или некорректный лексический токен                                                                               |
+| rule.TypeMismatch.column_not_in_type      | Карточка '{0}': диаграмма '{1}' привязывает роль '{2}' к колонке '{3}', которой нет в типе '{4}' (поля: {5}).                       |
+| rule.TypeMismatch.role_requires_numeric   | Карточка '{0}': роль '{2}' диаграммы '{1}' требует числового поля (int, decimal или duration), но колонка '{3}' типа '{4}' имеет тип '{5}'. |
+| rule.TypeMismatch.role_requires_temporal  | Карточка '{0}': роль '{2}' диаграммы '{1}' требует поля даты/времени (date, datetime или time), но колонка '{3}' типа '{4}' имеет тип '{5}'. |
+| rule.TypeMismatch.tooltip_column_missing  | Карточка '{0}': колонка тултипа '{1}' отсутствует в типе '{2}' (поля: {3}).                                                         |
+| rule.TypeMismatch.table_column_missing    | Карточка '{0}': колонка таблицы '{1}' отсутствует в типе '{2}' (поля: {3}).                                                         |
+| rule.TypeMismatch.sort_column_missing     | Карточка '{0}': колонка сортировки '{1}' отсутствует в типе '{2}' (поля: {3}).                                                      |
+| rule.TypeMismatch.sort_segment_invalid    | Карточка '{0}': сегмент сортировки '{1}' не соответствует формату '<column> [ASC\|DESC]'.                                           |
+| rule.UnresolvedImportOrReference.row_type | Карточка '{0}': тип строки '{1}' не найден в каталоге документа — объявите его в типах или проверьте написание.                     |

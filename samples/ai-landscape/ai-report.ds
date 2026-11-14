@@ -1,11 +1,14 @@
 module dashboard ai_report
     namespace Ai.Landscape.Report
-    import diagrams from Ai.Landscape.Diagrams
-    import types from Ai.Landscape.Types
-    import flows from Ai.Landscape.Flows as ai_flows
-    import presentations from DashSpec.Std
-    import runtimes from Ai.Landscape.Runtime
-    import defaults from Ai.Landscape.Defaults
+    from Ai.Landscape import {
+        diagrams
+        types
+        flows = ai_flows
+        runtimes
+        defaults
+        texts
+    }
+    from DashSpec.Std import presentations
 
     connect
         use flow ai_flows
@@ -31,7 +34,7 @@ module dashboard ai_report
             accessibility -> [toolbar] chrome.dashboard
         end show flow
 
-        section overview as "Обзор"
+        section overview
             cards
                 kpi_cost
                 kpi_params
@@ -39,27 +42,27 @@ module dashboard ai_report
             end cards
         end section
 
-        section directions as "Что делают"
+        section directions
             cards
                 domain_bar
                 access_donut
             end cards
         end section
 
-        section countries as "Кто делает"
+        section countries
             cards
                 country_bar_2023
                 country_bar_2024
             end cards
         end section
 
-        section registry as "Реестр моделей"
+        section registry
             cards
                 models_table
             end cards
         end section
 
-        card kpi_cost as "Max training cost, $M"
+        card kpi_cost
             layout
                 place
                     row = 1
@@ -80,7 +83,7 @@ module dashboard ai_report
                 end bind
             end card
 
-        card kpi_params as "Max parameters, B"
+        card kpi_params
             layout
                 place
                     row = 1
@@ -97,7 +100,7 @@ module dashboard ai_report
                 end bind
             end card
 
-        card releases_line as "Releases per day"
+        card releases_line
             layout
                 place
                     row = 2
@@ -114,7 +117,7 @@ module dashboard ai_report
                 end bind
             end card
 
-        card domain_bar as "Models by direction"
+        card domain_bar
             layout
                 place
                     row = 3
@@ -131,7 +134,7 @@ module dashboard ai_report
                 end bind
             end card
 
-        card access_donut as "Open vs closed weights"
+        card access_donut
             layout
                 place
                     row = 3
@@ -145,7 +148,7 @@ module dashboard ai_report
             diagram ai_access_donut
             end card
 
-        card country_bar_2023 as "Models by country, 2023"
+        card country_bar_2023
             layout
                 place
                     row = 4
@@ -159,7 +162,7 @@ module dashboard ai_report
             diagram ai_country_bar_2023
             end card
 
-        card country_bar_2024 as "Models by country, 2024"
+        card country_bar_2024
             layout
                 place
                     row = 4
@@ -173,7 +176,7 @@ module dashboard ai_report
             diagram ai_country_bar_2024
             end card
 
-        card models_table as "Model registry"
+        card models_table
             layout
                 place
                     row = 5

@@ -6,31 +6,61 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Syntax
 
+[<RequireQualifiedAccess>]
+type RuntimeConnectorKind =
+    | SqlServer
+    | Postgres
+    | DuckDb
+    | Custom of id: string
+
+    member this.Name =
+        match this with
+        | RuntimeConnectorKind.SqlServer -> "sqlserver"
+        | RuntimeConnectorKind.Postgres -> "postgres"
+        | RuntimeConnectorKind.DuckDb -> "duckdb"
+        | RuntimeConnectorKind.Custom id -> id
+
+module RuntimeConnectorKind =
+
+    let parse (raw: string) : RuntimeConnectorKind =
+        match raw.Trim().ToLowerInvariant() with
+        | "sqlserver" | "mssql" | "tsql" -> RuntimeConnectorKind.SqlServer
+        | "postgres" | "postgresql" | "pg" -> RuntimeConnectorKind.Postgres
+        | "duckdb" -> RuntimeConnectorKind.DuckDb
+        | _ -> RuntimeConnectorKind.Custom(raw.Trim())
+
+[<CLIMutable>]
+type RuntimeProviderDefinition =
+    { Id: string
+      ConnectorKind: RuntimeConnectorKind
+      Server: string option
+      Port: int option
+      Database: string option
+      User: string option
+      Password: string option
+      IntegratedSecurity: bool option
+      Encrypt: bool option
+      TrustServerCertificate: bool option
+      TimeoutSeconds: int
+      MaxRows: int
+      ConnectionString: string }
+
+    member this.Connector = this.ConnectorKind.Name
+
+[<CLIMutable>]
+type RuntimeDocument =
+    { Id: string
+      Namespace: string option
+      DefaultProviderId: string
+      ActiveBundle: string
+      Providers: IReadOnlyList<RuntimeProviderDefinition>
+      Plugins: IReadOnlyList<string> }
+
 module RuntimeModuleParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && ((t.[0] = '"' && t.[t.Length - 1] = '"') || (t.[0] = '\'' && t.[t.Length - 1] = '\'')) then
-            t.Substring(1, t.Length - 2)
-        else
-            t
-
-    let private tryParseBool (raw: string option) : bool option =
-        match raw with
-        | Some s when not (String.IsNullOrWhiteSpace s) ->
-            match (unquote s).Trim().ToLowerInvariant() with
-            | "true" | "yes" | "1" -> Some true
-            | "false" | "no" | "0" -> Some false
-            | _ -> None
-        | _ -> None
-
-    let private tryParseInt (raw: string option) : int option =
-        match raw with
-        | Some s when not (String.IsNullOrWhiteSpace s) ->
-            match Int32.TryParse((unquote s).Trim()) with
-            | true, v -> Some v
-            | _ -> None
-        | _ -> None
+    let private unquote = Construct.unquote
+    let private tryParseBool = Construct.tryParseBool
+    let private tryParseInt = Construct.tryParseInt
 
     let private escapeAdoValue (value: string) =
         if value.IndexOfAny([| ';'; '='; '"'; '\''; ' ' |]) >= 0 then
@@ -39,7 +69,7 @@ module RuntimeModuleParser =
             value
 
     let private buildConnectionString
-        (connector: string)
+        (connectorKind: RuntimeConnectorKind)
         (server: string option)
         (port: int option)
         (database: string option)
@@ -58,17 +88,17 @@ module RuntimeModuleParser =
             | None, None -> ""
             | _ ->
                 let parts = ResizeArray<string>()
-                let isPg =
-                    String.Equals(connector, "postgres", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(connector, "postgresql", StringComparison.OrdinalIgnoreCase)
 
-                if isPg then
+                match connectorKind with
+                | RuntimeConnectorKind.Postgres ->
                     server |> Option.iter (fun s -> parts.Add($"Host={escapeAdoValue s}"))
                     port |> Option.iter (fun p -> parts.Add($"Port={p}"))
                     database |> Option.iter (fun d -> parts.Add($"Database={escapeAdoValue d}"))
                     user |> Option.iter (fun u -> parts.Add($"Username={escapeAdoValue u}"))
                     password |> Option.iter (fun pw -> parts.Add($"Password={escapeAdoValue pw}"))
-                else
+                | RuntimeConnectorKind.SqlServer
+                | RuntimeConnectorKind.DuckDb
+                | RuntimeConnectorKind.Custom _ ->
                     match server, port with
                     | Some s, Some p ->
                         let sp = $"{s},{p}"
@@ -112,12 +142,13 @@ module RuntimeModuleParser =
                 |> Option.map unquote
                 |> Option.defaultValue "sqlserver"
 
-            let connector =
+            let connectorRaw =
                 Construct.tryCell m "connector"
                 |> Option.orElse (Construct.tryCell m "driver")
                 |> Option.map unquote
                 |> Option.defaultValue id
 
+            let connectorKind = RuntimeConnectorKind.parse connectorRaw
             let server = Construct.tryCell m "server" |> Option.orElse (Construct.tryCell m "host") |> Option.map unquote
             let port = Construct.tryCell m "port" |> tryParseInt
             let database = Construct.tryCell m "database" |> Option.orElse (Construct.tryCell m "db") |> Option.map unquote
@@ -143,10 +174,10 @@ module RuntimeModuleParser =
                 |> Option.map unquote
 
             let connStr =
-                buildConnectionString connector server port database user password integratedSecurity encrypt trustCert explicitConn
+                buildConnectionString connectorKind server port database user password integratedSecurity encrypt trustCert explicitConn
 
             { Id = id
-              Connector = connector
+              ConnectorKind = connectorKind
               Server = server
               Port = port
               Database = database
@@ -184,6 +215,12 @@ module RuntimeModuleParser =
           CellsToRow = cellsToProvider
           ConstructRow = addProvider }
 
+    let private isRuntimeHeaderKey (key: string) =
+        match key.Trim().ToLowerInvariant() with
+        | "default" | "default_provider" | "default_provider_id"
+        | "bundle" | "active_bundle" | "plugins" -> true
+        | _ -> false
+
     let parseEnvelope (env: UnitGrammar.UnitEnvelope) : RuntimeDocument =
         let providers = ResizeArray<RuntimeProviderDefinition>()
         let plugins = ResizeArray<string>()
@@ -192,50 +229,39 @@ module RuntimeModuleParser =
 
         let decl = providerDeclaration providers.Add
 
-        match Construct.tryFromAstTable env.Body with
-        | Some tableForm -> Construct.apply decl tableForm
-        | None -> ()
+        // Unified TableForm + BlockForm (`provider <id> ... end provider`) + DottedForm (`<id>.<prop> = ...`)
+        Construct.projectAst decl (Some DashSpecBlockKeyword.Provider) "id" env.Body
 
-        let topProperties = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let flatProviderProps = ResizeArray<KeyValuePair<string, string>>()
 
-        for m in env.Body do
-            match m with
-            | DashSpecAstNode.PropertyAssignment p ->
-                let k = p.Key.Trim()
-                let v = (unquote p.ValueText).Trim()
-                match k.ToLowerInvariant() with
-                | "default" | "default_provider" | "default_provider_id" ->
-                    defaultProviderId <- v
-                | "bundle" | "active_bundle" ->
-                    activeBundle <- v
-                | "plugins" ->
-                    match p.Value with
-                    | PropertyValueSyntax.BracketList items
-                    | PropertyValueSyntax.CommaList items ->
-                        for item in items do
-                            let s = (unquote item.Text).Trim()
-                            if not (String.IsNullOrWhiteSpace s) then
-                                plugins.Add s
-                    | _ ->
-                        let inner = v.Trim().TrimStart('[').TrimEnd(']')
-                        for part in inner.Split([| ','; ' ' |], StringSplitOptions.RemoveEmptyEntries) do
-                            let s = (unquote part).Trim()
-                            if not (String.IsNullOrWhiteSpace s) then
-                                plugins.Add s
+        for p in env.View.Properties do
+            let k = p.Key.Trim()
+            let v = (unquote p.ValueText).Trim()
+            match k.ToLowerInvariant() with
+            | "default" | "default_provider" | "default_provider_id" ->
+                defaultProviderId <- v
+            | "bundle" | "active_bundle" ->
+                activeBundle <- v
+            | "plugins" ->
+                match p.Value with
+                | PropertyValueSyntax.BracketList items
+                | PropertyValueSyntax.CommaList items ->
+                    for item in items do
+                        let s = (unquote item.Text).Trim()
+                        if not (String.IsNullOrWhiteSpace s) then
+                            plugins.Add s
                 | _ ->
-                    topProperties.[k] <- p.ValueText
-            | DashSpecAstNode.BlockDeclaration b ->
-                match b.Opener with
-                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Provider, pid) ->
-                    Construct.apply decl (Construct.fromAstBlock [ "id", pid ] b)
-                | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Provider ->
-                    Construct.apply decl (Construct.fromAstBlock [] b)
-                | _ -> ()
+                    let inner = v.Trim().TrimStart('[').TrimEnd(']')
+                    for part in inner.Split([| ','; ' ' |], StringSplitOptions.RemoveEmptyEntries) do
+                        let s = (unquote part).Trim()
+                        if not (String.IsNullOrWhiteSpace s) then
+                            plugins.Add s
+            | _ when not p.KeyPath.IsQualified && not (isRuntimeHeaderKey k) ->
+                flatProviderProps.Add(KeyValuePair(k, p.ValueText))
             | _ -> ()
 
-        if providers.Count = 0 && topProperties.Count > 0 then
-            let pairs = topProperties |> Seq.map (fun kv -> KeyValuePair(kv.Key, kv.Value))
-            Construct.apply decl (Construct.ConstructForm.BlockForm([], pairs))
+        if providers.Count = 0 && flatProviderProps.Count > 0 then
+            Construct.apply decl (Construct.ConstructForm.BlockForm([], flatProviderProps))
 
         if String.IsNullOrWhiteSpace defaultProviderId then
             defaultProviderId <-
@@ -249,20 +275,7 @@ module RuntimeModuleParser =
           Plugins = plugins :> IReadOnlyList<_> }
 
     let parse (text: string) : RuntimeDocument =
-        if String.IsNullOrWhiteSpace text then
-            invalidArg "text" "Runtime module text is required."
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Runtime tree.Root
-        parseEnvelope env
+        UnitGrammar.parseUnit DashSpecModuleKind.Runtime parseEnvelope text
 
     let parseFile (path: string) : RuntimeDocument =
-        if not (System.IO.File.Exists path) then
-            raise (System.IO.FileNotFoundException("Runtime file not found.", path))
-        parse (System.IO.File.ReadAllText path)
-
-    do
-        UnitProjector.register
-            { KindKeyword = "runtime"
-              ImportKind = Some ImportKind.Runtimes
-              Role = UnitCompileRole.Declaration
-              Project = fun ctx -> box (parseEnvelope ctx.Envelope) }
+        UnitGrammar.parseUnitFile DashSpecModuleKind.Runtime parseEnvelope path

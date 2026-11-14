@@ -25,27 +25,29 @@ public sealed class DefaultFilterSelectorOverride : IFilterSelectorOverride
 /// <summary>Current override holder (the stack plugin sets it at startup; last wins).</summary>
 public static class FilterSelectorControls
 {
-    private static readonly object Lock = new();
-
-    private static IFilterSelectorOverride _override = new DefaultFilterSelectorOverride();
+    private static readonly Lock Gate = new();
 
     public static IFilterSelectorOverride Current
     {
         get
         {
-            lock (Lock)
+            lock (Gate)
             {
-                return _override;
+                return field;
             }
         }
-    }
+        private set
+        {
+            lock (Gate)
+            {
+                field = value;
+            }
+        }
+    } = new DefaultFilterSelectorOverride();
 
     public static void Set(IFilterSelectorOverride @override)
     {
         ArgumentNullException.ThrowIfNull(@override);
-        lock (Lock)
-        {
-            _override = @override;
-        }
+        Current = @override;
     }
 }

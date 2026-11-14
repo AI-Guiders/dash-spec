@@ -315,12 +315,6 @@ public static class Program
                 case UnitKind.Catalog:
                     DashSpecValidator.ValidateCatalog(fullPath, BuildParseOptions(tomlPath));
                     break;
-                case UnitKind.Runtime:
-                    _ = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseFile(fullPath);
-                    break;
-                case UnitKind.Defaults:
-                    _ = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parseFile(fullPath);
-                    break;
                 default:
                     ValidateSpec(fullPath, BuildParseOptions(tomlPath));
                     break;
@@ -359,8 +353,6 @@ public static class Program
                 {
                     "host" => UnitKind.HostModule,
                     "catalog" => UnitKind.Catalog,
-                    "runtime" => UnitKind.Runtime,
-                    "defaults" => UnitKind.Defaults,
                     _ => UnitKind.Spec,
                 };
             }
@@ -396,32 +388,20 @@ public static class Program
             return DashSpecPluginsToml.Read(Path.GetFullPath(tomlPath));
         }
 
-        var probed = new[]
+        return new DashSpecPluginManifest
         {
-            Path.Combine(Directory.GetCurrentDirectory(), "dash-spec.toml"),
-            Path.Combine(Directory.GetCurrentDirectory(), "dash-spec.local.toml"),
-            Path.Combine(AppContext.BaseDirectory, "dash-spec.toml"),
-        }.FirstOrDefault(File.Exists);
-
-        if (probed is null)
-        {
-            return new DashSpecPluginManifest
-            {
-                ActiveBundle = "standard",
-                DefaultProviderId = "sqlserver",
-                Plugins =
-                [
-                    new DashSpecPluginLoadEntry
-                    {
-                        Id = "card_export",
-                        Assembly = "DashSpec.Plugin.Export.dll",
-                        Tier = DashSpec.Abstractions.Plugins.PluginTier.Extended,
-                    },
-                ],
-            };
-        }
-
-        return DashSpecPluginsToml.Read(probed);
+            ActiveBundle = "standard",
+            DefaultProviderId = "sqlserver",
+            Plugins =
+            [
+                new DashSpecPluginLoadEntry
+                {
+                    Id = "card_export",
+                    Assembly = "DashSpec.Plugin.Export.dll",
+                    Tier = DashSpec.Abstractions.Plugins.PluginTier.Extended,
+                },
+            ],
+        };
     }
 
     private static string? ResolvePluginsDirectory()
@@ -460,7 +440,5 @@ public static class Program
         Spec,
         HostModule,
         Catalog,
-        Runtime,
-        Defaults,
     }
 }

@@ -2,19 +2,27 @@ namespace DashSpec.Modeling.Parse.Tooltip
 
 open System
 open System.Collections.Generic
+open System.Text.RegularExpressions
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type TooltipDefinition =
+    { Id: string
+      Variables: IReadOnlyDictionary<string, string>
+      Template: string }
+
 module TooltipModuleParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
-            t.Substring(1, t.Length - 2)
-        else
-            t
+    let private slotRegex = Regex(@"\{([A-Za-z_][A-Za-z0-9_]*)\}", RegexOptions.Compiled)
+
+    let private validatePlaceholders (id: string) (variables: IReadOnlyDictionary<string, string>) (template: string) =
+        for m in slotRegex.Matches(template) do
+            let slot = m.Groups.[1].Value
+            if not (variables.ContainsKey slot) then
+                raise (DashSpecParseException($"Tooltip '{id}': placeholder '{{{slot}}}' is not declared in variables."))
 
     /// Project a tooltip definition from any container's AST members (shared by `module tooltip <id>` and inline `tooltip <id>`).
     let projectFromMembers (id: string) (members: DashSpecAstNode[]) : TooltipDefinition =
@@ -53,7 +61,7 @@ module TooltipModuleParser =
                 if String.Equals(p.Key, "tooltip", StringComparison.OrdinalIgnoreCase) then
                     if p.ValueTokens.Length <> 1 || p.ValueTokens.[0].LexKind <> TokenKind.String then
                         raise (DashSpecParseException($"Tooltip '{id}': tooltip requires a string literal."))
-                    template <- Some(unquote p.ValueTokens.[0].Text)
+                    template <- Some(Construct.unquote p.ValueTokens.[0].Text)
                 elif String.Equals(p.Key, "source", StringComparison.OrdinalIgnoreCase) then
                     if p.ValueTokens.Length <> 1 || p.ValueTokens.[0].LexKind <> TokenKind.Ident then
                         raise (DashSpecParseException($"Tooltip '{id}': source requires a column name."))
@@ -85,13 +93,14 @@ module TooltipModuleParser =
                         raise (DashSpecParseException($"Tooltip '{id}': tooltip = \"...\" is required."))
                     variables.Value, template.Value
 
+        validatePlaceholders id resolvedVariables resolvedTemplate
         { Id = id; Variables = resolvedVariables; Template = resolvedTemplate }
 
-    let parseTooltipFile (text: string) : TooltipDefinition =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Tooltip text is required."
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Tooltip tree.Root
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : TooltipDefinition =
         projectFromMembers env.Id env.Body
+
+    let parseTooltipFile (text: string) : TooltipDefinition =
+        UnitGrammar.parseUnit DashSpecModuleKind.Tooltip parseEnvelope text
 
     let parseTooltipFileWithId (text: string) =
         let def = parseTooltipFile text
@@ -151,4 +160,5 @@ module TooltipModuleParser =
                         raise (DashSpecParseException($"Tooltip '{id}': tooltip = \"...\" is required."))
                     variables.Value, template.Value
 
+        validatePlaceholders id resolvedVariables resolvedTemplate
         { Id = id; Variables = resolvedVariables; Template = resolvedTemplate }

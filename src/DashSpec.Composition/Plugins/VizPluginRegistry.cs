@@ -22,6 +22,7 @@ public sealed class VizPluginRegistry
     private readonly IReadOnlyDictionary<string, IVizPlugin> _byId;
     private readonly IReadOnlyList<IRenderStack> _stacks;
     private readonly IRenderStackSettings _settings;
+    private readonly Lock _fallbackLock = new();
     private readonly HashSet<string> _announcedFallbacks = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>DS0582: fires once per distinct (stack, family/kind, missing plugin) when the
@@ -43,7 +44,7 @@ public sealed class VizPluginRegistry
     private void AnnounceFallback(string stack, string family, string? kindId, string missing)
     {
         var key = $"{stack}|{kindId ?? family}|{missing}";
-        lock (_announcedFallbacks)
+        lock (_fallbackLock)
         {
             if (!_announcedFallbacks.Add(key))
             {

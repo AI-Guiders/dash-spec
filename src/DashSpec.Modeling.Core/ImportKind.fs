@@ -9,6 +9,7 @@ open System.Reflection
 type ImportKind =
     | Registries
     | Defaults
+    | Texts
     | Runtimes
     | Diagrams
     | Layouts
@@ -48,6 +49,7 @@ module ImportKindRegistry =
         match unitKw.ToLowerInvariant() with
         | "registry" -> Some ImportKind.Registries
         | "defaults" -> Some ImportKind.Defaults
+        | "texts" -> Some ImportKind.Texts
         | "runtime" -> Some ImportKind.Runtimes
         | "diagram" -> Some ImportKind.Diagrams
         | "layout" -> Some ImportKind.Layouts

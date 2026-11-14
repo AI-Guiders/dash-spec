@@ -95,19 +95,9 @@ public static class DashSpecDiagnosticService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, UnitValidatorContributor> UnitValidators =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["diagram"] = (text, _, specDir, _) => { DiagramModuleParser.ParseDiagramFile(text, specDir); return []; },
-            ["presentation"] = (text, _, specDir, _) => { PresentationModuleParser.ParsePresentationFile(text, specDir); return []; },
-            ["palette"] = (text, _, _, _) => { PaletteModuleParser.ParsePaletteFile(text); return []; },
-            ["transform"] = (text, _, _, _) => { TransformModuleParser.ParseTransformFile(text); return []; },
-            ["layout"] = (text, _, _, _) => { LayoutModuleParser.ParseLayoutFile(text); return []; },
-            ["tooltip"] = (text, _, _, _) => { TooltipModuleParser.ParseTooltipFile(text); return []; },
             ["types"] = (_, _, _, _) => [],
             ["flow"] = (_, _, _, _) => [],
-            ["registry"] = (text, _, _, _) => { DashSpec.Modeling.Parse.RegistryModuleParser.parse(text); return []; },
-            ["defaults"] = (text, _, _, _) => { DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parse(text); return []; },
-            ["runtime"] = (text, _, _, _) => { DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse(text); return []; },
             ["catalog"] = LintCatalog,
-            ["host"] = (text, _, specDir, _) => { HostModuleParser.Parse(text, specDir); return []; },
             ["dashboard"] = ValidateAssembledRoot,
             ["section"] = ValidateTabAssembled,
         };
@@ -121,7 +111,7 @@ public static class DashSpecDiagnosticService
 
     /// <summary>
     /// A `.ds` file is routed by the kind in its module header through the extensible
-    /// <see cref="UnitValidators"/> contributor table.
+    /// <see cref="UnitValidators"/> contributor table or the unified <see cref="DashSpec.Modeling.Parse.UnitProjector"/>.
     /// </summary>
     private static IReadOnlyList<DashSpecDiagnostic> ValidateByFileKind(
         string text,
@@ -138,11 +128,26 @@ public static class DashSpecDiagnosticService
             ];
         }
 
+        DashSpec.Modeling.Parse.Document.UnitImport.ensureBuiltinUnitsRegistered();
         var (unitKind, _) = FsharpDocument.UnitSource.tryKindAndId(text);
 
-        if (!string.IsNullOrWhiteSpace(unitKind) && UnitValidators.TryGetValue(unitKind.Trim(), out var validator))
+        if (!string.IsNullOrWhiteSpace(unitKind))
         {
-            return validator(text, filePath, specDirectory, parseOptions);
+            var trimmedKind = unitKind.Trim();
+            if (UnitValidators.TryGetValue(trimmedKind, out var validator))
+            {
+                return validator(text, filePath, specDirectory, parseOptions);
+            }
+
+            if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.UnitPluginDescriptor>.get_IsSome(
+                    DashSpec.Modeling.Parse.UnitProjector.tryResolve(trimmedKind)))
+            {
+                var specDirOpt = string.IsNullOrWhiteSpace(specDirectory)
+                    ? Microsoft.FSharp.Core.FSharpOption<string>.None
+                    : Microsoft.FSharp.Core.FSharpOption<string>.Some(specDirectory);
+                _ = DashSpec.Modeling.Parse.UnitProjector.project(text, specDirOpt);
+                return [];
+            }
         }
 
         return

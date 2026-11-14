@@ -1,8 +1,10 @@
 module section analytics
     namespace Demo.Analytics
-    import palettes from Demo.Palettes
-    import runtimes from Demo.Runtime
-    import defaults from Demo.Defaults
+    from Demo import {
+        palettes
+        runtimes
+        defaults
+    }
 
     connect
         use palette demo_apps

@@ -26,7 +26,7 @@ module TabParser =
         reader.SkipNewlines()
 
         match reader.TryPeekIdent() with
-        | Some("cards" | "layout") ->
+        | Some("cards" | "layout" | "title") ->
             BlockSyntax.beginBlock reader
             reader.SkipNewlines()
             let mutable cardIds: IReadOnlyList<string> = [||]
@@ -35,6 +35,10 @@ module TabParser =
             while not (BlockSyntax.isBlockEnd reader moduleWord (Some id)) && not reader.IsEof do
                 reader.SkipNewlines()
                 if BlockSyntax.isBlockEnd reader moduleWord (Some id) then ()
+                elif reader.TryKeyword "title" then
+                    reader.Expect TokenKind.Eq
+                    label <- Some(reader.ReadString())
+                    reader.SkipNewlines()
                 elif reader.TryKeyword "cards" then
                     cardIds <- PropertyBlockParser.parseIdentListBlock reader "cards" $"tab {id} cards"
                     reader.SkipNewlines()

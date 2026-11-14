@@ -26,7 +26,7 @@
     /// (CardVizHost convention).</summary>
     [Parameter, EditorRequired] public CardVizRenderContext Context { get; set; } = default!;
 
-    private MatrixPayload? Matrix => Context.Card.Matrix;
+    private MatrixPayload? Matrix => Context.EffectiveCard.Matrix;
 
     private sealed record HeatCell(double X, double Y, double Value);
 

@@ -292,8 +292,8 @@ else
         await OnCellSelected.InvokeAsync(context);
     }
 
-    private static string FormatValue(double? value) =>
-        value is null ? "—" : value.Value.ToString("0");
+    private string FormatValue(double? value) =>
+        Payload.FormatValue(value);
 
     private string FormatXLabel(string label) => LabelFormat.Format(label, XFormat);
 

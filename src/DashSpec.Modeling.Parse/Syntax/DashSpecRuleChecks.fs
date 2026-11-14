@@ -43,14 +43,11 @@ module DashSpecRuleChecks =
               Span = span }
 
     let private moduleParticipatesInBlockBalance (node: DashSpecAstNode) (directive: DashSpecModuleDirective) =
-        match directive with
-        | DashSpecModuleDirective.Module((DashSpecModuleKind.Types | DashSpecModuleKind.Catalog) as kind, id) ->
-            let keyword = DashSpecModuleKind.toKeyword kind
-            let kw =
-                DashSpecBlockKeyword.tryOfName keyword
-                |> Option.defaultWith (fun () -> DashSpecBlockKeyword.Other keyword)
-            DashSpecAst.hasClosingEndBlock node kw (Some id)
-        | _ -> true
+        let frame = moduleFrame directive (DashSpecAst.span node)
+        DashSpecAst.members node
+        |> Array.exists (function
+            | DashSpecAstNode.EndBlock n -> n.EndKeyword = frame.Keyword
+            | _ -> false)
 
     let private blockFrame (opener: DashSpecBlockOpener) (span: TextSpan) : BlockFrame =
         match opener with
@@ -133,7 +130,16 @@ module DashSpecRuleChecks =
                     match child with
                     | DashSpecAstNode.ImportDeclaration import when seenCode ->
                         signal DashSpecRule.ImportAfterCode $"'{import.Keyword}' belongs in the module header, before code sections." import.Span
+                    | DashSpecAstNode.BlockDeclaration b when
+                        (match b.Opener with
+                         | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, _)
+                         | DashSpecBlockOpener.Anonymous(DashSpecBlockKeyword.Other kw) ->
+                             String.Equals(kw, "import", StringComparison.OrdinalIgnoreCase)
+                         | _ -> false) ->
+                        if seenCode then
+                            signal DashSpecRule.ImportAfterCode "'import' belongs in the module header, before code sections." b.Span
                     | DashSpecAstNode.ImportDeclaration _
+                    | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.NamespaceClause _ }
                     | DashSpecAstNode.BlankLine _ -> ()
                     | _ when DashSpecAst.isTrivia child -> ()
                     | _ -> seenCode <- true

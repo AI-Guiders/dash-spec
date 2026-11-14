@@ -37,6 +37,26 @@ type UnitIndex(entries: IReadOnlyList<UnitIndexEntry>) =
         | true, bucket -> List.ofSeq bucket
         | false, _ -> []
 
+    /// <summary>Find units for a given namespace and kind keyword (e.g. `diagrams` / `diagram`),
+    /// matching either exact <c>&lt;Namespace&gt;</c> or child <c>&lt;Namespace&gt;.&lt;keyword&gt;</c> / <c>&lt;Namespace&gt;.&lt;unitKeyword&gt;</c>.</summary>
+    member this.FindForKind(namespaceName: string, keyword: string, unitKeyword: string) : UnitIndexEntry list =
+        let candidates =
+            [ yield! this.Find namespaceName
+              if not (String.IsNullOrWhiteSpace keyword) then
+                  yield! this.Find $"{namespaceName}.{keyword}"
+              if not (String.IsNullOrWhiteSpace unitKeyword)
+                 && not (String.Equals(keyword, unitKeyword, StringComparison.OrdinalIgnoreCase)) then
+                  yield! this.Find $"{namespaceName}.{unitKeyword}" ]
+
+        let seen = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        [ for entry in candidates do
+              let kindMatches =
+                  match entry.Kind with
+                  | None -> true
+                  | Some k -> String.Equals(k, unitKeyword, StringComparison.OrdinalIgnoreCase)
+              if kindMatches && seen.Add entry.Path then
+                  yield entry ]
+
     /// <summary>Find a unit by kind (`catalog`, `dashboard`, …) and either its module id (`module &lt;kind&gt; &lt;id&gt;`) or namespace.</summary>
     member this.TryFindUnit(kindKeyword: string, idOrNamespace: string) : UnitIndexEntry option =
         if String.IsNullOrWhiteSpace idOrNamespace then
@@ -55,7 +75,7 @@ type UnitIndex(entries: IReadOnlyList<UnitIndexEntry>) =
                     | Some mid -> String.Equals(mid, needle, StringComparison.OrdinalIgnoreCase)
                     | None -> false))
             |> Option.orElseWith (fun () ->
-                this.Find needle |> List.tryFind matchesKind)
+                this.FindForKind(needle, kindKeyword + "s", kindKeyword) |> List.tryHead)
 
 module UnitIndex =
 

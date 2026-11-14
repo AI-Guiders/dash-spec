@@ -9,7 +9,7 @@ namespace DashSpec.Host.Services.Settings;
 
 public sealed class HostDatabaseInitializer : IHostDatabaseInitializer
 {
-    private readonly object _ensureLock = new();
+    private readonly Lock _ensureLock = new();
     private string? _ensuredDatabasePath;
 
     public string ResolveDatabasePath(DashSpecTomlRoot bootstrap)

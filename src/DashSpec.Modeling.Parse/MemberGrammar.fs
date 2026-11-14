@@ -41,7 +41,7 @@ module MemberGrammar =
             if String.Equals(key, "use", StringComparison.OrdinalIgnoreCase)
                && not (reader.IsAt TokenKind.Eq)
                && reader.TryPeekIdent().IsSome then
-                values.[key] <- reader.ReadIdent()
+                values.[key] <- AccessorGrammar.readQualifiedName reader
             else
                 reader.Expect TokenKind.Eq
                 if spec.ValueType = PropertyValueType.ColumnBinding then

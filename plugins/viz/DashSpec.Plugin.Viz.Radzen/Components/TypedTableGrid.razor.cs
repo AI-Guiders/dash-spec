@@ -9,6 +9,35 @@ using Radzen.Blazor;
 
 namespace DashSpec.Plugin.Viz.RadzenUI.Components;
 
+public sealed class TypedTableGridContext
+{
+    public required IReadOnlyList<TableField> Fields { get; init; }
+
+    public required IReadOnlyList<object> Items { get; init; }
+
+    public required int PageSize { get; init; }
+
+    public required bool ColumnFilters { get; init; }
+
+    public required int FrozenColumns { get; init; }
+
+    /// <summary>Report defaults carried on the render result — LabelFormat's ambient
+    /// is not trustworthy outside the payload-building flow.</summary>
+    public ReportFormatDefaults? FormatDefaults { get; init; }
+
+    /// <summary>Interactive grouping knob (table presentation <c>grouping = on</c>):
+    /// the column menu grows the Group/Then by/Ungroup items. They drive the grid's
+    /// native group descriptors — same machinery as the drag-into-panel gesture.</summary>
+    public required bool AllowGrouping { get; init; }
+
+    /// <summary>ADR-0107: the card declares a `row`-sourced click handler → rows are clickable.</summary>
+    public required bool RowClickEnabled { get; init; }
+
+    /// <summary>The first column's formatted value rides the same contract as the
+    /// builtin table (value-based, a re-render can't make it stale).</summary>
+    public EventCallback<string> OnRowClick { get; init; }
+}
+
 /// <summary>
 /// The table grid — the same chrome it always had (ADR-0115 header menu with
 /// copy-per-column, ADR-0107 row click, LabelFormat cells with the report defaults
@@ -18,31 +47,25 @@ namespace DashSpec.Plugin.Viz.RadzenUI.Components;
 /// </summary>
 public sealed partial class TypedTableGrid<TItem> where TItem : notnull
 {
-    [Parameter] public IReadOnlyList<TableField> Fields { get; set; } = [];
+    [Parameter, EditorRequired] public TypedTableGridContext Context { get; set; } = default!;
 
-    [Parameter] public IReadOnlyList<TItem> Items { get; set; } = [];
+    private IReadOnlyList<TableField> Fields => Context.Fields;
 
-    [Parameter] public int PageSize { get; set; } = 15;
+    private IReadOnlyList<TItem> Items => (IReadOnlyList<TItem>)Context.Items;
 
-    [Parameter] public bool ColumnFilters { get; set; } = true;
+    private int PageSize => Context.PageSize;
 
-    [Parameter] public int FrozenColumns { get; set; } = 0;
+    private bool ColumnFilters => Context.ColumnFilters;
 
-    /// <summary>Report defaults carried on the render result — LabelFormat's ambient
-    /// is not trustworthy outside the payload-building flow.</summary>
-    [Parameter] public ReportFormatDefaults? FormatDefaults { get; set; }
+    private int FrozenColumns => Context.FrozenColumns;
 
-    /// <summary>Interactive grouping knob (table presentation <c>grouping = on</c>):
-    /// the column menu grows the Group/Then by/Ungroup items. They drive the grid's
-    /// native group descriptors — same machinery as the drag-into-panel gesture.</summary>
-    [Parameter] public bool AllowGrouping { get; set; }
+    private ReportFormatDefaults? FormatDefaults => Context.FormatDefaults;
 
-    /// <summary>ADR-0107: the card declares a `row`-sourced click handler → rows are clickable.</summary>
-    [Parameter] public bool RowClickEnabled { get; set; }
+    private bool AllowGrouping => Context.AllowGrouping;
 
-    /// <summary>The first column's formatted value rides the same contract as the
-    /// builtin table (value-based, a re-render can't make it stale).</summary>
-    [Parameter] public EventCallback<string> OnRowClick { get; set; }
+    private bool RowClickEnabled => Context.RowClickEnabled;
+
+    private EventCallback<string> OnRowClick => Context.OnRowClick;
 
     private RadzenDataGrid<TItem>? _grid;
 

@@ -1,7 +1,7 @@
 module catalog demo
 namespace Demo.Catalogs
-import dashboards from Demo.Soak
-import sections from Demo.Analytics
+from Demo.Soak import dashboards
+from Demo.Analytics import sections
 
 default = demo_soak
 

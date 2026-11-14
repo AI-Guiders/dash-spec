@@ -18,4 +18,14 @@ public sealed record CardSlotRenderResult(
     string? AwaitingSource = null,
     string? Error = null,
     ReportFormatDefaults? FormatDefaults = null,
-    DashflowExecutionPath? FlowPath = null);
+    DashflowExecutionPath? FlowPath = null,
+    ChartPresentation? ChartPresentation = null,
+    ChartPayload? DetailChart = null,
+    MatrixPayload? DetailMatrix = null,
+    string? Number = null,
+    string? NumberScale = null,
+    string? NumberDelta = null,
+    string? NumberDeltaTone = null,
+    string? EmptyMessage = null,
+    DashSpec.Modeling.Parse.Card.CardClickBehaviour? ClickBehaviour = null,
+    IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null);

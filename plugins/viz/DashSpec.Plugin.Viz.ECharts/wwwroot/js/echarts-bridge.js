@@ -16,7 +16,7 @@
   function tooltipFormatter(p, ctx) {
     const xi = p.value[0];
     const yi = p.value[1];
-    const v = p.value[2];
+    const v = p.value[3] !== undefined ? p.value[3] : p.value[2];
     let text = (ctx.yLabels[yi] || '') + ' \u00b7 ' + (ctx.xLabels[xi] || '') + ': ' + v;
     const tip = ctx.tooltips && ctx.tooltips[yi] && ctx.tooltips[yi][xi];
     if (tip) {
@@ -58,7 +58,7 @@
         (series.data || []).forEach(function (item) {
           if (item.label) {
             item.label.formatter = function (p) {
-              return String(p.value[2]);
+              return p.value[3] !== undefined ? String(p.value[3]) : String(p.value[2]);
             };
           }
         });

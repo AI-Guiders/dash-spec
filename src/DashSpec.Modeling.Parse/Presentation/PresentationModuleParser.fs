@@ -6,6 +6,16 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type PresentationBlock =
+    { UsePreset: string option
+      Properties: IReadOnlyDictionary<string, string> }
+
+[<CLIMutable>]
+type PresentationModuleDocument =
+    { Id: string
+      Local: PresentationBlock option }
+
 module PresentationModuleParser =
 
     let private toBlock (props: IDictionary<string, string>) =
@@ -21,10 +31,7 @@ module PresentationModuleParser =
             map :> IReadOnlyDictionary<string, string>
         { UsePreset = usePreset; Properties = inlineProps }
 
-    let parsePresentationModule (text: string) : PresentationModuleDocument =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Presentation text is required."
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Presentation tree.Root
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : PresentationModuleDocument =
         let propMembers = UnitGrammar.unwrapOptionalBlock DashSpecBlockKeyword.Presentation env.Body
 
         let props =
@@ -39,13 +46,9 @@ module PresentationModuleParser =
 
         { Id = env.Id; Local = Some(toBlock props) }
 
+    let parsePresentationModule (text: string) : PresentationModuleDocument =
+        UnitGrammar.parseUnit DashSpecModuleKind.Presentation parseEnvelope text
+
     let parsePresentationModuleWithId (text: string) =
         let doc = parsePresentationModule text
         doc.Id, doc
-
-    do
-        UnitProjector.register
-            { KindKeyword = "presentation"
-              ImportKind = Some ImportKind.Presentations
-              Role = UnitCompileRole.Declaration
-              Project = fun ctx -> box (parsePresentationModule ctx.Text) }

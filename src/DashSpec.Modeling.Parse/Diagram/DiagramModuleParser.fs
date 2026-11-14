@@ -103,8 +103,11 @@ module DiagramModuleParser =
                     elif reader.TryKeyword "inspect" then
                         statements.Add(InspectStatement(InspectPresentationParser.parse reader "diagram module"))
                         reader.SkipNewlines()
-                    elif reader.TryKeyword "namespace" || reader.TryKeyword "import" then
-                        while not (reader.IsOnNewline()) && not reader.IsEof do
+                    elif reader.TryKeyword "namespace" || reader.TryKeyword "import" || reader.TryKeyword "from" then
+                        let mutable braceDepth = 0
+                        while (not (reader.IsOnNewline()) || braceDepth > 0) && not reader.IsEof do
+                            if reader.IsAt TokenKind.LBrace then braceDepth <- braceDepth + 1
+                            elif reader.IsAt TokenKind.RBrace then braceDepth <- max 0 (braceDepth - 1)
                             reader.Advance()
                         reader.SkipNewlines()
                     elif BlockSyntax.isBlockEnd reader "diagram" None then

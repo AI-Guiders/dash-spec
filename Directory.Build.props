@@ -14,6 +14,9 @@
     <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' and '$(DASHSPEC_LOCAL_PLATFORM)' == 'true'">true</UseLocalGuidersPlatform>
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == '' and '$(DASHSPEC_LOCAL_PLATFORM)' == 'true'">$(MSBuildThisFileDirectory)..\guiders-platform</GuidersPlatformRoot>
 
+    <!-- F# 11 (.NET 11): enable parallel graph-based type checking, optimization, and IL codegen -->
+    <OtherFlags Condition="'$(MSBuildProjectExtension)' == '.fsproj'">$(OtherFlags) --test:GraphBasedChecking --test:ParallelOptimization --test:ParallelIlxGen</OtherFlags>
+
   </PropertyGroup>
 
 </Project>

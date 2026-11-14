@@ -74,7 +74,7 @@ public sealed class DashSpecWebApplicationFactory : WebApplicationFactory<Progra
         while (dir is not null)
         {
             var candidate = Path.Combine(dir.FullName, "src", "DashSpec.Host");
-            if (File.Exists(Path.Combine(candidate, "dash-spec.toml")))
+            if (File.Exists(Path.Combine(candidate, "DashSpec.Host.csproj")))
             {
                 return candidate;
             }
@@ -82,6 +82,6 @@ public sealed class DashSpecWebApplicationFactory : WebApplicationFactory<Progra
             dir = dir.Parent;
         }
 
-        throw new InvalidOperationException("Could not locate DashSpec.Host project (dash-spec.toml).");
+        throw new InvalidOperationException("Could not locate DashSpec.Host project (DashSpec.Host.csproj).");
     }
 }

@@ -117,16 +117,38 @@
 </div>
 
 @code {
-    private const int CellPx = 28;
-    private const int YLabelPx = 128;
+    private const int CellPx = 32;
     private const int XLabelPx = 24;
+
+    private int YLabelPx
+    {
+        get
+        {
+            if (Empty)
+            {
+                return 128;
+            }
+
+            var maxChars = 0;
+            for (var i = 0; i < Rows; i++)
+            {
+                var len = FormatYLabel(YLabel(i)).Length;
+                if (len > maxChars)
+                {
+                    maxChars = len;
+                }
+            }
+
+            return Math.Clamp(maxChars * 7 + 16, 128, 224);
+        }
+    }
 
     /// <summary>The card render context — the host passes exactly this one parameter
     /// (CardVizHost convention, same as every card viz component).</summary>
     [Parameter, EditorRequired]
     public CardVizRenderContext Context { get; set; } = default!;
 
-    private MatrixPayload Matrix => Context.Card.Matrix!;
+    private MatrixPayload Matrix => Context.EffectiveCard.Matrix!;
 
     /// <summary><c>when | no data | message |</c> — the author's empty-state wording.</summary>
     private string? EmptyMessage => Context.EffectiveCard.EmptyMessage;
@@ -147,8 +169,9 @@
 
     /// <summary>The bridge resolves this id with getElementById — an ElementReference
     /// cached across renders travels through JSInterop as the {__internalId} wrapper,
-    /// which echarts cannot mount on (the "getContext is not a function" class).</summary>
-    private string HostDomId => $"ech-host-{Context.Card.Id}";
+    /// which echarts cannot mount on (the "getContext is not a function" class).
+    /// DetailView appends "-detail" so the expanded modal never collides with the board host.</summary>
+    private string HostDomId => Context.DetailView ? $"ech-host-{Context.Card.Id}-detail" : $"ech-host-{Context.Card.Id}";
 
     private ElementReference _body;
     private ElementReference _xInner;
@@ -161,11 +184,11 @@
 
     private int? _selectedXi;
 
-    private int Rows => Matrix.YLabels.Count;
+    private int Rows => Context.EffectiveCard.Matrix?.YLabels.Count ?? 0;
 
-    private int Cols => Matrix.XLabels.Count;
+    private int Cols => Context.EffectiveCard.Matrix?.XLabels.Count ?? 0;
 
-    private bool Empty => Rows == 0 || Cols == 0;
+    private bool Empty => Context.EffectiveCard.Matrix is null || Rows == 0 || Cols == 0;
 
     private string ColorScale => HeatmapColorScale.Normalize(Presentation?.ColorScale);
 
@@ -383,9 +406,13 @@
 
                 var (cellMin, cellMax) = Matrix.ColorRangeForCell(yi, xi);
                 var isSelected = yi == _selectedYi && xi == _selectedXi;
+                object numericValue = Matrix.ValueKind == DashSpec.Abstractions.Data.DashPrimitiveKind.Int
+                    ? (long)Math.Round(v)
+                    : Math.Round(v, 4);
+                var formattedValue = Matrix.FormatValue(v, Context.EffectiveCard.FormatDefaults);
                 items.Add(new
                 {
-                    value = new[] { xi, yi, (int)v },
+                    value = new object[] { xi, yi, numericValue, formattedValue },
                     itemStyle = new
                     {
                         color = isSelected

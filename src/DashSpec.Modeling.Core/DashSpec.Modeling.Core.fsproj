@@ -8,8 +8,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="stdlib\rules\rules.ds" LogicalName="stdlib/rules/rules.ds" />
-    <EmbeddedResource Include="stdlib\units\units.ds" LogicalName="stdlib/units/units.ds" />
+    <EmbeddedResource Include="stdlib\rules\rules.ds" LogicalName="stdlib/rules/rules.ds" WithCulture="false" />
+    <EmbeddedResource Include="stdlib\texts\rules.en.ds" LogicalName="stdlib/texts/rules.en.ds" WithCulture="false" />
+    <EmbeddedResource Include="stdlib\texts\rules.ru.ds" LogicalName="stdlib/texts/rules.ru.ds" WithCulture="false" />
+    <EmbeddedResource Include="stdlib\units\units.ds" LogicalName="stdlib/units/units.ds" WithCulture="false" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Diagnostics.fs" />

@@ -9,14 +9,29 @@ open DashSpec.Modeling.Parse.Layout
 open DashSpec.Modeling.Parse.Lexing
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type HostLinkDefinition =
+    { Id: string
+      Label: string
+      Url: string
+      Target: string
+      Topbar: bool
+      Settings: bool }
+
+[<CLIMutable>]
+type HostDocument =
+    { Id: string
+      CatalogPath: string
+      Configuration: IReadOnlyDictionary<string, string>
+      Presentation: IReadOnlyDictionary<string, string>
+      Host: IReadOnlyDictionary<string, string>
+      Links: IReadOnlyList<HostLinkDefinition>
+      Surfaces: IReadOnlyList<string>
+      ShellLayout: DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition option }
+
 module HostModuleParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
-            t.Substring(1, t.Length - 2)
-        else
-            t
+    let private unquote = Construct.unquote
 
     let private importShellLayout (specDirectory: string option) (sourceOffset: int) (namespaceName: string) =
         match specDirectory with
@@ -27,12 +42,7 @@ module HostModuleParser =
             let index = DashSpec.Modeling.Parse.Document.UnitIndex.build dir
 
             let entries =
-                index.Find namespaceName
-                |> List.filter (fun entry ->
-                    match entry.Kind with
-                    | None -> true
-                    | Some kind -> String.Equals(kind, "layout", StringComparison.OrdinalIgnoreCase)
-                )
+                index.FindForKind(namespaceName, "layouts", "layout")
 
             match entries with
             | [ entry ] ->
@@ -195,11 +205,7 @@ module HostModuleParser =
         | _ ->
             raise (DashSpecParseException($"Unknown property '{key}' in host module."))
 
-    let parse (text: string) (specDirectory: string option) : HostDocument =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Host text is required."
-
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Host tree.Root
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) (specDirectory: string option) : HostDocument =
         let hostId = env.Id
 
         let mutable catalogPath = ""
@@ -288,16 +294,10 @@ module HostModuleParser =
           Surfaces = surfaces :> IReadOnlyList<_>
           ShellLayout = shellLayout }
 
+    let parse (text: string) (specDirectory: string option) : HostDocument =
+        UnitGrammar.parseUnit DashSpecModuleKind.Host (fun env -> parseEnvelope env specDirectory) text
+
     let parseFile (path: string) : HostDocument =
         if String.IsNullOrWhiteSpace path then invalidArg "path" "Host file path is required."
-        if not (File.Exists path) then
-            raise (FileNotFoundException($"Host file not found: '{path}'.", path))
         let directory = Path.GetDirectoryName(Path.GetFullPath path)
-        parse (File.ReadAllText path) (Some directory)
-
-    do
-        UnitProjector.register
-            { KindKeyword = "host"
-              ImportKind = None
-              Role = UnitCompileRole.Root
-              Project = fun ctx -> box (parse ctx.Text ctx.SpecDirectory) }
+        UnitGrammar.parseUnitFile DashSpecModuleKind.Host (fun env -> parseEnvelope env (Some directory)) path

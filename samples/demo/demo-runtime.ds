@@ -5,5 +5,3 @@ default = sqlserver
 
 | id        | connector | server    | database     | integrated_security | trust_server_certificate |
 | sqlserver | sqlserver | localhost | DashSpecDemo | true                | true                     |
-
-end runtime

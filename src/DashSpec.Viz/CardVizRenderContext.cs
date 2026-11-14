@@ -11,7 +11,7 @@ public sealed class CardVizRenderContext
     /// <summary>Session overrides (legend, axes) are keyed by host card id, not interior slot synthetic ids.</summary>
     public string? VizStateCardId { get; init; }
 
-    public bool DetailView { get; init; }
+    public required bool DetailView { get; init; }
 
     public double MatrixMin { get; init; }
 
@@ -34,4 +34,24 @@ public sealed class CardVizRenderContext
 
     public string ResolveVizStateCardId() =>
         string.IsNullOrWhiteSpace(VizStateCardId) ? Card.Id : VizStateCardId;
+}
+
+public sealed class CardVizHostRequest
+{
+    public required CardRenderResult Card { get; init; }
+
+    /// <summary>Inner-layout payload. A card has its own grid, so a slot is just another card to draw.</summary>
+    public CardSlotRenderResult? Slot { get; init; }
+
+    public required bool DetailView { get; init; }
+
+    public double MatrixMin { get; init; }
+
+    public double MatrixMax { get; init; }
+
+    public EventCallback<HeatmapCellContext> OnHeatmapCellSelected { get; init; }
+
+    public EventCallback<HeatmapCellContext> OnHeatmapCategoryItemSelected { get; init; }
+
+    public EventCallback<CardActionRequest> OnCardAction { get; init; }
 }

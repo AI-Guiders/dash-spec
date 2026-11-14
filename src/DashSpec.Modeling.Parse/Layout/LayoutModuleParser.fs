@@ -101,14 +101,8 @@ module LayoutModuleParser =
 
         List.ofSeq entries
 
-    /// <summary>Parse a <c>module layout &lt;id&gt;</c> file body directly from the typed syntax tree.</summary>
-    let parseLayoutFile (text: string) : LayoutBoardDefinition =
-        if String.IsNullOrWhiteSpace text then
-            invalidArg "text" "Layout text is required."
-
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Layout tree.Root
-
+    /// <summary>Project a <c>module layout &lt;id&gt;</c> envelope directly from the typed syntax tree.</summary>
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : LayoutBoardDefinition =
         let scope =
             env.Body
             |> Array.tryPick (function
@@ -175,9 +169,5 @@ module LayoutModuleParser =
           ModuleScope = Some scope
           GridColumns = gridColumns }
 
-    do
-        UnitProjector.register
-            { KindKeyword = "layout"
-              ImportKind = Some ImportKind.Layouts
-              Role = UnitCompileRole.Declaration
-              Project = fun ctx -> box (parseLayoutFile ctx.Text) }
+    let parseLayoutFile (text: string) : LayoutBoardDefinition =
+        UnitGrammar.parseUnit DashSpecModuleKind.Layout parseEnvelope text

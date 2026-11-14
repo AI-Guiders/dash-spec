@@ -52,6 +52,55 @@ module DotSyntax =
         else
             ofSegments (raw.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries))
 
+/// <summary>First-class kind of a language object addressed in `texts`, `defaults`, or dotted construct expressions.</summary>
+[<RequireQualifiedAccess>]
+type LanguageObjectKind =
+    | Report
+    | Section
+    | Page
+    | Card
+    | Filter
+    | Diagram
+    | Field
+    | View
+    | Rule
+
+module LanguageObjectKind =
+
+    let tryParse (raw: string) : LanguageObjectKind option =
+        match raw.Trim().ToLowerInvariant() with
+        | "report" | "dashboard" -> Some LanguageObjectKind.Report
+        | "section" | "tab" -> Some LanguageObjectKind.Section
+        | "page" -> Some LanguageObjectKind.Page
+        | "card" -> Some LanguageObjectKind.Card
+        | "filter" -> Some LanguageObjectKind.Filter
+        | "diagram" -> Some LanguageObjectKind.Diagram
+        | "field" | "column" -> Some LanguageObjectKind.Field
+        | "view" -> Some LanguageObjectKind.View
+        | "rule" | "checker" -> Some LanguageObjectKind.Rule
+        | _ -> None
+
+/// <summary>Typed reference to a language object (`<kind>.<path>` or `<path>`), built directly from <see cref="DotSyntax"/>.</summary>
+type LanguageObjectRef =
+    { Kind: LanguageObjectKind option
+      Path: DotSyntax }
+
+    member this.LeafName = this.Path.MemberName
+
+module LanguageObjectRef =
+
+    let ofDotSyntax (dot: DotSyntax) : LanguageObjectRef =
+        match dot.Segments with
+        | [||] -> { Kind = None; Path = DotSyntax.Ident "" }
+        | [| single |] -> { Kind = None; Path = DotSyntax.Ident single }
+        | segs ->
+            match LanguageObjectKind.tryParse segs.[0] with
+            | Some kind -> { Kind = Some kind; Path = DotSyntax.ofSegments segs.[1..] }
+            | None -> { Kind = None; Path = dot }
+
+    let parse (raw: string) : LanguageObjectRef =
+        ofDotSyntax (DotSyntax.parse raw)
+
 /// <summary>Port selector inside brackets `[port]` or `[innerNode.port]` on a flow arrow endpoint.</summary>
 [<RequireQualifiedAccess>]
 type PortSelectorSyntax =
@@ -252,6 +301,7 @@ type ClauseKind =
 type DashSpecModuleKind =
     | Registry
     | Defaults
+    | Texts
     | Runtime
     | Dashboard
     | Section
@@ -273,6 +323,7 @@ module DashSpecModuleKind =
         match keyword.Trim().ToLowerInvariant() with
         | "registry" -> DashSpecModuleKind.Registry
         | "defaults" -> DashSpecModuleKind.Defaults
+        | "texts" -> DashSpecModuleKind.Texts
         | "runtime" -> DashSpecModuleKind.Runtime
         | "dashboard" -> DashSpecModuleKind.Dashboard
         | "section" -> DashSpecModuleKind.Section
@@ -292,6 +343,7 @@ module DashSpecModuleKind =
         match kind with
         | DashSpecModuleKind.Registry -> "registry"
         | DashSpecModuleKind.Defaults -> "defaults"
+        | DashSpecModuleKind.Texts -> "texts"
         | DashSpecModuleKind.Runtime -> "runtime"
         | DashSpecModuleKind.Dashboard -> "dashboard"
         | DashSpecModuleKind.Section -> "section"

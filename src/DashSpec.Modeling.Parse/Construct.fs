@@ -20,6 +20,8 @@ module Construct =
         | TableForm of rows: string[][]
         /// Block surface: header bindings (e.g. `id`, `label`) + body `key = value` properties.
         | BlockForm of headerBindings: (string * string) seq * properties: seq<KeyValuePair<string, string>>
+        /// Dotted property surface (`<id>.<prop> = <value>` or `<kind>.<id>.<prop> = <value>`), grouped by object id.
+        | DottedForm of instances: (string * (string * string) list) list
         /// Single-line / inline surface: positional or inline `(key, value)` bindings.
         | LineForm of bindings: (string * string) seq
 
@@ -36,6 +38,36 @@ module Construct =
 
     let private isUnset (cell: string) =
         String.IsNullOrWhiteSpace cell || cell = "-"
+
+    /// Strip matching outer double or single quotes from a cell or property literal.
+    let unquote (raw: string) : string =
+        if isNull raw then
+            ""
+        else
+            let t = raw.Trim()
+            if t.Length >= 2 && ((t.[0] = '"' && t.[t.Length - 1] = '"') || (t.[0] = '\'' && t.[t.Length - 1] = '\'')) then
+                t.Substring(1, t.Length - 2)
+            else
+                t
+
+    /// Try to parse a boolean cell/property value (`true`/`yes`/`1` or `false`/`no`/`0`).
+    let tryParseBool (raw: string option) : bool option =
+        match raw with
+        | Some s when not (String.IsNullOrWhiteSpace s) ->
+            match (unquote s).Trim().ToLowerInvariant() with
+            | "true" | "yes" | "1" -> Some true
+            | "false" | "no" | "0" -> Some false
+            | _ -> None
+        | _ -> None
+
+    /// Try to parse an integer cell/property value.
+    let tryParseInt (raw: string option) : int option =
+        match raw with
+        | Some s when not (String.IsNullOrWhiteSpace s) ->
+            match Int32.TryParse((unquote s).Trim()) with
+            | true, v -> Some v
+            | _ -> None
+        | _ -> None
 
     /// Optional cell: `-`/empty = unset (ADR-0104 family semantics).
     let tryCell (m: Map<string, string>) (name: string) : string option =
@@ -109,6 +141,10 @@ module Construct =
                     }
 
                 [ bindingsToMap combined ]
+            | ConstructForm.DottedForm instances ->
+                instances
+                |> List.map (fun (idAttr, pairs) ->
+                    bindingsToMap pairs |> fun m -> if String.IsNullOrWhiteSpace idAttr then m else m)
             | ConstructForm.LineForm bindings ->
                 [ bindingsToMap bindings ]
 
@@ -137,9 +173,57 @@ module Construct =
 
         if rows.Length = 0 then None else Some(ConstructForm.TableForm rows)
 
-    /// Unified AST construct projection: applies <paramref name="decl"/> across both
-    /// <see cref="ConstructForm.TableForm"/> (`| col1 | col2 |`) and <see cref="ConstructForm.BlockForm"/>
-    /// (`<blockKeyword> [<id>] ... end <blockKeyword>`) in a single call.
+    /// Extract <see cref="ConstructForm.DottedForm"/> from dotted <see cref="DashSpecAstNode.PropertyAssignment"/>
+    /// nodes (`<id>.<prop> = <value>` or `<kind>.<id>.<prop> = <value>`), grouping all properties of the same
+    /// object id in declaration order into one construct row.
+    let tryFromAstDotted
+        (decl: Declaration<'Row>)
+        (kindPrefix: string option)
+        (idAttribute: string)
+        (members: DashSpecAstNode[])
+        : ConstructForm option
+        =
+        let allowed = HashSet<string>(decl.Vocabulary, StringComparer.OrdinalIgnoreCase)
+        let order = ResizeArray<string>()
+        let byId = Dictionary<string, ResizeArray<string * string>>(StringComparer.OrdinalIgnoreCase)
+
+        let addProp (objId: string) (propName: string) (valText: string) =
+            if not (byId.ContainsKey objId) then
+                order.Add objId
+                byId.[objId] <- ResizeArray<string * string>()
+                if not (String.IsNullOrWhiteSpace idAttribute) then
+                    byId.[objId].Add(idAttribute, objId)
+            byId.[objId].Add(propName, valText)
+
+        for m in members do
+            match m with
+            | DashSpecAstNode.PropertyAssignment p when p.KeyPath.IsQualified ->
+                match p.KeyPath.Segments with
+                | [| objId; propName |] when allowed.Contains propName ->
+                    addProp objId propName p.ValueText
+                | [| prefix; objId; propName |] when allowed.Contains propName ->
+                    match kindPrefix with
+                    | Some kp when String.Equals(prefix, kp, StringComparison.OrdinalIgnoreCase) ->
+                        addProp objId propName p.ValueText
+                    | None when String.Equals(prefix, decl.Name, StringComparison.OrdinalIgnoreCase) ->
+                        addProp objId propName p.ValueText
+                    | None when (LanguageObjectKind.tryParse prefix).IsSome ->
+                        addProp $"{prefix}.{objId}" propName p.ValueText
+                    | _ -> ()
+                | _ -> ()
+            | _ -> ()
+
+        if order.Count = 0 then
+            None
+        else
+            let instances =
+                [ for objId in order -> objId, (byId.[objId] |> Seq.toList) ]
+            Some(ConstructForm.DottedForm instances)
+
+    /// Unified AST construct projection: applies <paramref name="decl"/> across
+    /// <see cref="ConstructForm.TableForm"/> (`| col1 | col2 |`),
+    /// <see cref="ConstructForm.BlockForm"/> (`<blockKeyword> [<id>] ... end <blockKeyword>`),
+    /// and <see cref="ConstructForm.DottedForm"/> (`<id>.<prop> = <value>`) in a single call.
     let projectAst
         (decl: Declaration<'Row>)
         (blockKeyword: DashSpecBlockKeyword option)
@@ -166,6 +250,11 @@ module Construct =
                         apply decl (fromAstBlock [] b)
                     | _ -> ()
                 | _ -> ()
+
+        let kindPrefix = blockKeyword |> Option.map DashSpecBlockKeyword.toEndName
+        match tryFromAstDotted decl kindPrefix idAttribute members with
+        | Some dottedForm -> apply decl dottedForm
+        | None -> ()
 
     /// Convert raw pipe-table lines into <see cref="ConstructForm.TableForm"/> and apply the declaration.
     let applyTableRows (decl: Declaration<'Row>) (rows: string list) : unit =

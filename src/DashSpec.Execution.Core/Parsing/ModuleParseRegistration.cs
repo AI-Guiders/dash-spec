@@ -8,6 +8,7 @@ internal static class ModuleParseRegistration
 {
     static ModuleParseRegistration()
     {
+        DashSpec.Modeling.Parse.Document.UnitImport.ensureBuiltinUnitsRegistered();
         DocumentParseRegistration.Register();
         DocumentFormatRegistration.Register();
         DocumentSyntaxRegistration.Register();

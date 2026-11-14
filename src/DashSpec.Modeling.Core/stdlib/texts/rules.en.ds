@@ -1,0 +1,35 @@
+module texts stdlib_rules_en
+namespace DashSpec.Stdlib.Texts
+
+language = "en-US"
+
+| target                                    | label                                                                                                                               |
+| rule.ExtraEndBlock                        | unexpected end block                                                                                                                |
+| rule.MismatchedEndKeyword                 | end block does not match its opener                                                                                                 |
+| rule.MismatchedEndIdentifier              | end block identifier does not match its opener                                                                                      |
+| rule.UnclosedBlock                        | block is not closed                                                                                                                 |
+| rule.EmptyOutlineSpan                     | outline node has an empty span                                                                                                      |
+| rule.CardReferenceOutsideCards            | card reference is not nested under a cards block                                                                                    |
+| rule.RoundTripOutlineChanged              | outline changed after serialize round-trip                                                                                          |
+| rule.ImportAfterCode                      | import must come before code sections in the module header                                                                          |
+| rule.ParseError                           | syntax error                                                                                                                        |
+| rule.InvalidUnitHeader                    | invalid unit header or duplicate namespace directive                                                                                |
+| rule.UnexpectedStatement                  | unexpected statement or block in container                                                                                          |
+| rule.DuplicateDeclaration                 | duplicate declaration identifier                                                                                                    |
+| rule.MissingRequiredMember                | missing required block, property, or table cell                                                                                     |
+| rule.UnknownPropertyOrColumn              | unknown property key or table column                                                                                                |
+| rule.InvalidValueLiteral                  | invalid value literal or value type constraint violation                                                                            |
+| rule.MalformedTable                       | table requires at least one data row after header                                                                                   |
+| rule.ScopeMismatch                        | scope or flow-block role mismatch                                                                                                   |
+| rule.UnresolvedImportOrReference          | unresolved import or symbol reference                                                                                               |
+| rule.TypeMismatch                         | type mismatch across ports, fields, or composite sources                                                                            |
+| rule.UnclosedToken                        | unclosed string, raw block, or block comment                                                                                        |
+| rule.UnexpectedToken                      | unexpected character or malformed lexical token                                                                                     |
+| rule.TypeMismatch.column_not_in_type      | Card '{0}': diagram '{1}' binds '{2}' to column '{3}', which is not a field of row type '{4}' (fields: {5}).                        |
+| rule.TypeMismatch.role_requires_numeric   | Card '{0}': diagram '{1}' role '{2}' requires a numeric field (int, decimal, or duration), but column '{3}' on row type '{4}' has type '{5}'. |
+| rule.TypeMismatch.role_requires_temporal  | Card '{0}': diagram '{1}' role '{2}' requires a temporal field (date, datetime, or time), but column '{3}' on row type '{4}' has type '{5}'.  |
+| rule.TypeMismatch.tooltip_column_missing  | Card '{0}': tooltip column '{1}' is not a field of row type '{2}' (fields: {3}).                                                    |
+| rule.TypeMismatch.table_column_missing    | Card '{0}': table column '{1}' is not a field of row type '{2}' (fields: {3}).                                                      |
+| rule.TypeMismatch.sort_column_missing     | Card '{0}': sort column '{1}' is not a field of row type '{2}' (fields: {3}).                                                       |
+| rule.TypeMismatch.sort_segment_invalid    | Card '{0}': sort segment '{1}' is not '<column> [ASC\|DESC]'.                                                                       |
+| rule.UnresolvedImportOrReference.row_type | Card '{0}': row type '{1}' is not defined in the document catalog — declare it among the document types or check the spelling.       |

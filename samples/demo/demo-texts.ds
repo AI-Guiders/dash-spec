@@ -1,0 +1,35 @@
+module texts demo_texts
+namespace Demo.Texts
+
+language = "en-US"
+
+| target                     | label                         |
+| section.overview           | Overview                      |
+| section.analytics          | Analytics                     |
+| section.detail             | Detail                        |
+| card.peak_concurrent_kpi   | Peak concurrent (max)         |
+| card.peak_sparkline        | Peak trend                    |
+| card.peak_concurrent_proxy | Peak concurrent (proxy)       |
+| card.peak_stacked_bar      | Peak by product (stacked)     |
+| card.activity_5min         | Activity 5-min                |
+| card.activity_area         | Activity (area)               |
+| card.dau_by_product        | DAU by product                |
+| card.dau_by_product_donut  | DAU by product (donut)        |
+| card.events_detail         | Events detail                 |
+| card.period_peak_by_app    | Peak by app (period)          |
+| card.peak_apps_heatmap     | **Peak apps** per user        |
+| card.idle_table            | Idle minutes (user × app)     |
+| card.idle_histogram        | Idle minutes (histogram)      |
+| card.idle_vs_peak_scatter  | Idle vs peak apps             |
+| card.idle_by_app_box       | Idle minutes by app (box)     |
+| card.peak_by_app_treemap   | Peak by app (treemap)         |
+| card.peak_gauge            | Peak concurrent (gauge)       |
+| card.peak_by_app_windrose  | Peak by app (wind rose)       |
+| field.app_name             | Product                       |
+| field.distinct_users       | Users                         |
+| field.idle_minutes         | Idle minutes                  |
+| field.peak_concurrent_apps | Peak apps                     |
+| field.intensity            | Intensity                     |
+| field.usage_date           | Day                           |
+| field.user_id              | User                          |
+| field.peak_concurrent_proxy| Peak                          |

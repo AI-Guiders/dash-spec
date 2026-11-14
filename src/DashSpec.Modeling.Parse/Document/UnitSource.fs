@@ -16,6 +16,7 @@ module UnitSource =
         trimmed = ""
         || trimmed.StartsWith("namespace ", StringComparison.Ordinal)
         || trimmed.StartsWith("import ", StringComparison.Ordinal)
+        || trimmed.StartsWith("from ", StringComparison.Ordinal)
 
     let private moduleIndex (lines: string[]) =
         lines |> Array.tryFindIndex (fun line -> line.TrimStart().StartsWith("module ", StringComparison.Ordinal))

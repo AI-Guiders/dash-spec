@@ -96,49 +96,70 @@ module ModuleImportResolver =
                 // Phase 0 — resolve EVERY directive first: missing imports are loud
                 // regardless of order, and the full unit list is known before any
                 // unit registers.
-                let resolvedUnits = ResizeArray<string * ImportKind option>()
+                let resolvedUnits = ResizeArray<string * ImportKind option * string option>()
+
+                // Group directives by (SourceOffset, Namespace) to detect whole-module `import alias = Namespace`
+                let groupedCounts =
+                    allImports
+                    |> Seq.countBy (fun d -> d.SourceOffset, d.Namespace)
+                    |> dict
+
+                let wholeModuleMatched = HashSet<int * string>()
 
                 for directive in allImports do
                     let keyword = ImportKindRegistry.keyword directive.Kind
                     let unitKeyword = ImportKindRegistry.moduleKeyword directive.Kind
+                    let isWholeModuleWildcard =
+                        directive.SourceOffset > 0
+                        && groupedCounts.TryGetValue((directive.SourceOffset, directive.Namespace)) = (true, ImportKindRegistry.allDefinitions.Length)
 
                     let entries =
-                        index.Find directive.Namespace
-                        |> List.filter (fun entry ->
-                            match entry.Kind with
-                            | None -> true
-                            | Some kind -> String.Equals(kind, unitKeyword, StringComparison.OrdinalIgnoreCase)
-                        )
+                        index.FindForKind(directive.Namespace, keyword, unitKeyword)
 
                     if List.isEmpty entries then
+                        if not isWholeModuleWildcard then
+                            raise (
+                                DashSpecParseException(
+                                    $"No module found for import {keyword} from '{directive.Namespace}'.",
+                                    directive.SourceOffset
+                                )
+                            )
+                    else
+                        wholeModuleMatched.Add((directive.SourceOffset, directive.Namespace)) |> ignore
+                        let qualifier = directive.Alias
+                        for entry in entries do
+                            resolvedUnits.Add(entry.Path, Some directive.Kind, qualifier)
+
+                        if directive.Kind = ImportKind.Flows then
+                            let namespaceName = directive.Namespace
+                            includes.RegisterFlowImportQualifier namespaceName
+
+                            let lastSegment =
+                                namespaceName.Split('.') |> Array.last
+
+                            includes.RegisterFlowImportQualifier lastSegment
+
+                            match directive.Alias with
+                            | Some alias -> includes.RegisterFlowImportQualifier alias
+                            | None -> ()
+
+                for directive in allImports do
+                    let isWholeModuleWildcard =
+                        directive.SourceOffset > 0
+                        && groupedCounts.TryGetValue((directive.SourceOffset, directive.Namespace)) = (true, ImportKindRegistry.allDefinitions.Length)
+                    if isWholeModuleWildcard && not (wholeModuleMatched.Contains((directive.SourceOffset, directive.Namespace))) then
                         raise (
                             DashSpecParseException(
-                                $"No module found for import {keyword} from '{directive.Namespace}'.",
+                                $"No module found in namespace '{directive.Namespace}'.",
                                 directive.SourceOffset
                             )
                         )
-
-                    for entry in entries do
-                        resolvedUnits.Add(entry.Path, Some directive.Kind)
-
-                    if directive.Kind = ImportKind.Flows then
-                        let namespaceName = directive.Namespace
-                        includes.RegisterFlowImportQualifier namespaceName
-
-                        let lastSegment =
-                            namespaceName.Split('.') |> Array.last
-
-                        includes.RegisterFlowImportQualifier lastSegment
-
-                        match directive.Alias with
-                        | Some alias -> includes.RegisterFlowImportQualifier alias
-                        | None -> ()
 
                 // Phase 1+2 — the compiler owns the registration order: declarations
                 // (presentations/types/palettes/tooltips/layouts) build the symbol
                 // table first, consumers (diagrams/flows/tabs) fold against it. The
                 // author's directive order stops deciding visibility.
-                UnitImport.registerUnitsInDependencyOrder
+                UnitImport.registerUnitsInDependencyOrderWithQualifiers
                     (List.ofSeq resolvedUnits)
                     moduleKind
                     includes

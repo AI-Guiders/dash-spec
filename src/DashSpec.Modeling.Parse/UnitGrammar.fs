@@ -124,6 +124,47 @@ module UnitGrammar =
                 | _ -> body.Add child
             | DashSpecAstNode.ImportDeclaration imp ->
                 imports.Add imp
+            | DashSpecAstNode.BlockDeclaration b when
+                (match b.Opener with
+                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, _) ->
+                     String.Equals(kw, "import", StringComparison.OrdinalIgnoreCase)
+                 | _ -> false) ->
+                let nsTarget =
+                    match b.Opener with
+                    | DashSpecBlockOpener.Named(_, ns) -> ns
+                    | _ -> ""
+                for memberNode in b.Members do
+                    match memberNode with
+                    | DashSpecAstNode.PropertyAssignment p ->
+                        imports.Add(
+                            { Id = p.Id
+                              Span = p.Span
+                              Keyword = "import"
+                              Kind = Some p.Key
+                              ImportKind = ImportKindRegistry.tryFindByKeyword p.Key
+                              TargetPath = DotSyntax.parse nsTarget
+                              Target = nsTarget
+                              Alias = Some p.ValueText
+                              Tokens = p.Tokens }
+                        )
+                    | DashSpecAstNode.Line l ->
+                        let identTokens =
+                            l.Tokens
+                            |> Array.filter (fun t -> t.LexKind = DashSpec.Modeling.Parse.Lexing.TokenKind.Ident)
+                        if identTokens.Length >= 1 then
+                            let k = identTokens.[0].Text
+                            imports.Add(
+                                { Id = l.Id
+                                  Span = l.Span
+                                  Keyword = "import"
+                                  Kind = Some k
+                                  ImportKind = ImportKindRegistry.tryFindByKeyword k
+                                  TargetPath = DotSyntax.parse nsTarget
+                                  Target = nsTarget
+                                  Alias = None
+                                  Tokens = l.Tokens }
+                            )
+                    | _ -> ()
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | c when DashSpecAst.isTrivia c -> ()
@@ -170,3 +211,17 @@ module UnitGrammar =
             Some(unwrap expectedKind root)
         with _ ->
             None
+
+    /// Parse any unit text of <paramref name="expectedKind"/> into its <see cref="UnitEnvelope"/> and project it via <paramref name="project"/>.
+    let parseUnit (expectedKind: DashSpecModuleKind) (project: UnitEnvelope -> 'T) (text: string) : 'T =
+        if String.IsNullOrWhiteSpace text then
+            invalidArg "text" $"{DashSpecModuleKind.toKeyword expectedKind} module text is required."
+        let tree = DashSpecSurfaceSyntax.parse text
+        let env = unwrap expectedKind tree.Root
+        project env
+
+    /// Read and parse a unit file on disk of <paramref name="expectedKind"/> via <paramref name="project"/>.
+    let parseUnitFile (expectedKind: DashSpecModuleKind) (project: UnitEnvelope -> 'T) (path: string) : 'T =
+        if not (System.IO.File.Exists path) then
+            raise (System.IO.FileNotFoundException($"{DashSpecModuleKind.toKeyword expectedKind} file not found.", path))
+        parseUnit expectedKind project (System.IO.File.ReadAllText path)

@@ -308,27 +308,30 @@ else
     /// <summary>Author intent (ADR-0115 §2): keep the first N columns pinned during
     /// horizontal scroll — <c>frozen_columns</c> in the presentation block. The self-made
     /// table ignores the key; the Radzen grid honors it per column.</summary>
-    private int FrozenColumns => Context.Card.TablePresentation?.FrozenColumns ?? 0;
+    private int FrozenColumns => Context.EffectiveCard.TablePresentation?.FrozenColumns ?? 0;
 
-    private int PageSize => Context.Card.TablePresentation?.PageSize ?? 15;
+    private int PageSize => Context.EffectiveCard.TablePresentation?.PageSize ?? 15;
 
-    private bool ColumnFilters => Context.Card.TablePresentation?.ColumnFilters ?? true;
+    private bool ColumnFilters => Context.EffectiveCard.TablePresentation?.ColumnFilters ?? true;
 
     /// <summary>Interactive grouping knob (table presentation <c>grouping = on</c>).</summary>
-    private bool AllowGrouping => Context.Card.TablePresentation?.AllowGrouping ?? false;
+    private bool AllowGrouping => Context.EffectiveCard.TablePresentation?.AllowGrouping ?? false;
 
 
     private Dictionary<string, object?> TypedGridParameters() => new()
     {
-        ["Fields"] = Table.Fields,
-        ["Items"] = Table.TypedItems,
-        ["PageSize"] = PageSize,
-        ["ColumnFilters"] = ColumnFilters,
-        ["FrozenColumns"] = FrozenColumns,
-        ["AllowGrouping"] = AllowGrouping,
-        ["FormatDefaults"] = Context.Card.FormatDefaults,
-        ["RowClickEnabled"] = RowClickEnabled,
-        ["OnRowClick"] = EventCallback.Factory.Create<string>(this, OnTableRowClicked),
+        ["Context"] = new TypedTableGridContext
+        {
+            Fields = Table.Fields,
+            Items = Table.TypedItems ?? [],
+            PageSize = PageSize,
+            ColumnFilters = ColumnFilters,
+            FrozenColumns = FrozenColumns,
+            AllowGrouping = AllowGrouping,
+            FormatDefaults = Context.EffectiveCard.FormatDefaults,
+            RowClickEnabled = RowClickEnabled,
+            OnRowClick = EventCallback.Factory.Create<string>(this, OnTableRowClicked),
+        },
     };
 
     /// <summary>ADR-0107 row click: the card declares a `row`-sourced handler → rows are

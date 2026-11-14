@@ -1,0 +1,25 @@
+module texts ai_texts
+namespace Ai.Landscape.Texts
+
+language = "ru-RU"
+
+| target                | label                      |
+| section.overview      | Обзор                      |
+| section.directions    | Что делают                 |
+| section.countries     | Кто делает                 |
+| section.registry      | Реестр моделей             |
+| card.kpi_cost         | Max training cost, $M      |
+| card.kpi_params       | Max parameters, B          |
+| card.releases_line    | Releases per day           |
+| card.domain_bar       | Models by direction        |
+| card.access_donut     | Open vs closed weights     |
+| card.country_bar_2023 | Models by country, 2023    |
+| card.country_bar_2024 | Models by country, 2024    |
+| card.models_table     | Model registry             |
+| field.cost_musd       | Max training cost, $M      |
+| field.parameters_b    | Max parameters, B          |
+| field.released        | Released                   |
+| field.domain          | Direction                  |
+| field.accessibility   | Weights                    |
+| field.country         | Country                    |
+| field.value           | Models                     |

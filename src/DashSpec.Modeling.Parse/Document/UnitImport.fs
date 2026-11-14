@@ -65,20 +65,52 @@ module UnitImport =
         let diagram =
             fragment.Diagram
             |> Option.map (fun diagram ->
+                let effective = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
                 match diagram.UsePreset with
                 | Some presetId ->
-                    let effective = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-
                     for entry in resolveChartChromeChain state path "diagram chrome" presetId do
-                        effective[entry.Key] <- entry.Value
+                        effective.[entry.Key] <- entry.Value
+                | None -> ()
 
-                    for entry in diagram.Properties do
-                        effective[entry.Key] <- entry.Value
+                for entry in diagram.Properties do
+                    effective.[entry.Key] <- entry.Value
 
-                    { diagram with
-                        Properties = effective :> IReadOnlyDictionary<_, _>
-                        UsePreset = None }
-                | None -> diagram)
+                // Apply imported `module texts` labels for bound axis columns and table columns when not explicitly set.
+                let bindingKeys = [| "x"; "y"; "category"; "value"; "series"; "reference"; "color"; "size"; "from"; "to" |]
+                for bk in bindingKeys do
+                    match effective.TryGetValue bk with
+                    | true, col when not (String.IsNullOrWhiteSpace col) && not (effective.ContainsKey(bk + "_as")) ->
+                        match state.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Field, col) with
+                        | Some lbl -> effective.[bk + "_as"] <- lbl
+                        | None -> ()
+                    | _ -> ()
+
+                match effective.TryGetValue "columns" with
+                | true, colsRaw when not (String.IsNullOrWhiteSpace colsRaw) ->
+                    let colLabels = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    match effective.TryGetValue "column_labels" with
+                    | true, existing when not (String.IsNullOrWhiteSpace existing) ->
+                        for line in existing.Split('\n', StringSplitOptions.RemoveEmptyEntries) do
+                            let parts = line.Split('=', 2)
+                            if parts.Length = 2 then
+                                colLabels.[parts.[0].Trim()] <- parts.[1].Trim()
+                    | _ -> ()
+
+                    for rawCol in colsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries) do
+                        let col = rawCol.Trim()
+                        if not (String.IsNullOrWhiteSpace col) && not (colLabels.ContainsKey col) then
+                            match state.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Field, col) with
+                            | Some lbl -> colLabels.[col] <- lbl
+                            | None -> ()
+
+                    if colLabels.Count > 0 then
+                        effective.["column_labels"] <- BlockGrammar.serializeColumnLabelMap colLabels
+                | _ -> ()
+
+                { diagram with
+                    Properties = effective :> IReadOnlyDictionary<_, _>
+                    UsePreset = None })
 
         let presentation =
             fragment.Presentation
@@ -100,18 +132,62 @@ module UnitImport =
 
         { fragment with Diagram = diagram; Presentation = presentation }
 
-    let private registerDiagramFile (path: string) (state: ModuleImportState) =
-        let id, fragment = UnitFragmentResolver.foldDiagramModuleWithId (UnitSource.readUnit path)
-        state.RegisterDiagram(id, resolveDiagramFragmentPresets path fragment state)
+    let private builtinsRegistered = ref false
 
-    let private registerPresentationFile (path: string) (state: ModuleImportState) =
-        let text = UnitSource.readUnit path
-        let id, _ = PresentationModuleParser.parsePresentationModuleWithId text
-        state.RegisterChartChromePreset(id, UnitFragmentResolver.parsePresentationBlock text)
-
-    let private registerTooltipFile (path: string) (state: ModuleImportState) =
-        let id, definition = TooltipModuleParser.parseTooltipFileWithId (UnitSource.readUnit path)
-        state.RegisterTooltip(id, definition)
+    let ensureBuiltinUnitsRegistered () =
+        if not !builtinsRegistered then
+            builtinsRegistered := true
+            let descriptors : UnitPluginDescriptor list =
+                [ { KindKeyword = "defaults"
+                    ImportKind = Some ImportKind.Defaults
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "texts"
+                    ImportKind = Some ImportKind.Texts
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Texts.TextsModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "runtime"
+                    ImportKind = Some ImportKind.Runtimes
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "catalog"
+                    ImportKind = None
+                    Role = UnitCompileRole.Root
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Catalog.CatalogParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "host"
+                    ImportKind = None
+                    Role = UnitCompileRole.Root
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Host.HostModuleParser.parseEnvelope ctx.Envelope ctx.SpecDirectory) }
+                  { KindKeyword = "layout"
+                    ImportKind = Some ImportKind.Layouts
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (LayoutModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "palette"
+                    ImportKind = Some ImportKind.Palettes
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (Palette.PaletteModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "presentation"
+                    ImportKind = Some ImportKind.Presentations
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (PresentationModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "tooltip"
+                    ImportKind = Some ImportKind.Tooltips
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (TooltipModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "transform"
+                    ImportKind = Some ImportKind.Transforms
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (Transform.TransformModuleParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "types"
+                    ImportKind = Some ImportKind.Types
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (TypeModuleParser.parseTypesModule ctx.Text) }
+                  { KindKeyword = "diagram"
+                    ImportKind = Some ImportKind.Diagrams
+                    Role = UnitCompileRole.Consumer
+                    Project = fun ctx -> box (UnitFragmentResolver.foldDiagramModuleWithId ctx.Text) } ]
+            for d in descriptors do
+                UnitProjector.register d
 
     let private registerTypesFile (path: string) (state: ModuleImportState) =
         for def in TypeModuleParser.parseTypesModule (UnitSource.readUnit path) do
@@ -122,11 +198,9 @@ module UnitImport =
         let defaultProvider =
             state.Defaults.Values
             |> Seq.tryPick (fun d -> d.Provider)
-            |> Option.map (fun p ->
-                if String.Equals(p.Trim(), "infer", StringComparison.OrdinalIgnoreCase) then
-                    DashflowProviderBinding.Infer
-                else
-                    DashflowProviderBinding.Named(p.Trim()))
+            |> Option.map (function
+                | DashSpec.Modeling.Parse.Syntax.ProviderBindingSyntax.Infer -> DashflowProviderBinding.Infer
+                | DashSpec.Modeling.Parse.Syntax.ProviderBindingSyntax.Named id -> DashflowProviderBinding.Named(id.Trim()))
         let defaultTimeZone =
             state.Defaults.Values
             |> Seq.tryPick (fun d -> d.TimeZone)
@@ -134,131 +208,120 @@ module UnitImport =
             |> Option.defaultValue ""
         state.RegisterDashflow(DashflowModuleParser.parseModuleWithDefaults text catalog defaultProvider defaultTimeZone, path)
 
-    let private unitIdOf (kind: string) (path: string) (text: string) =
-        match UnitSource.moduleIdOf text with
-        | Some id -> id
-        | None -> raise (DashSpecParseException($"'{path}': {kind} module requires 'module {kind} <id>'."))
+    let private tryUnwrapUnit (text: string) : UnitGrammar.UnitEnvelope option =
+        try
+            let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
+            UnitGrammar.tryUnwrapAny tree.Root
+        with _ ->
+            None
 
-    /// <summary>Compilation unit kind, taken from the <c>module &lt;kind&gt; &lt;id&gt;</c> header (ADR-0101).</summary>
-    type UnitKind =
-        | Defaults
-        | Runtime
-        | Layout
-        | Diagram
-        | Presentation
-        | Tooltip
-        | Types
-        | Flow
-        | Palette
-        | Transform
-        | Tab
-        | Unsupported of string
+    let private importKindOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) : ImportKind option =
+        match kind with
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults -> Some ImportKind.Defaults
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Texts -> Some ImportKind.Texts
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Runtime -> Some ImportKind.Runtimes
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout -> Some ImportKind.Layouts
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram -> Some ImportKind.Diagrams
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Presentation -> Some ImportKind.Presentations
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Tooltip -> Some ImportKind.Tooltips
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Types -> Some ImportKind.Types
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _ -> Some ImportKind.Flows
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Palette -> Some ImportKind.Palettes
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Transform -> Some ImportKind.Transforms
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some ImportKind.Tabs
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Registry -> Some ImportKind.Registries
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
+            UnitProjector.tryResolve kw |> Option.bind (fun d -> d.ImportKind)
+        | _ -> None
 
-    type UnitRole =
-        | Declaration
-        | Consumer
+    let private roleOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) : UnitCompileRole =
+        match kind with
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> UnitCompileRole.Consumer
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
+            UnitProjector.tryResolve kw
+            |> Option.map (fun d -> d.Role)
+            |> Option.defaultValue UnitCompileRole.Consumer
+        | _ -> UnitCompileRole.Declaration
 
-    type UnitContributor =
-        { Kind: UnitKind
-          ImportKind: ImportKind option
-          Role: UnitRole
-          Register: string * string * DocumentModuleKind * ModuleImportState -> unit }
+    let private registerEnvelopeWithQualifier
+        (path: string)
+        (text: string)
+        (env: UnitGrammar.UnitEnvelope)
+        (moduleKind: DocumentModuleKind)
+        (state: ModuleImportState)
+        (qualifier: string option)
+        =
+        let withQualifier (id: string) (reg: string -> unit) =
+            reg id
+            match qualifier with
+            | Some q when not (String.IsNullOrWhiteSpace q) && not (String.Equals(q, id, StringComparison.OrdinalIgnoreCase)) ->
+                let qid = $"{q}.{id}"
+                try reg qid with _ -> ()
+            | _ -> ()
 
-    module UnitFileClassifier =
-
-        let private unitKindOfModuleKind (kind: DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind) =
-            match kind with
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults -> Some Defaults
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Runtime -> Some Runtime
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout -> Some Layout
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram -> Some Diagram
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Presentation -> Some Presentation
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Tooltip -> Some Tooltip
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Types -> Some Types
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _ -> Some Flow
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Palette -> Some Palette
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Transform -> Some Transform
-            | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some Tab
-            | _ -> None
-
-        /// Unit kind from the parsed `UnitGrammar.tryUnwrapAny` envelope.
-        let classify (path: string) (text: string) : UnitKind =
+        match env.Kind with
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults ->
+            let doc = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parseEnvelope env
+            state.RegisterDefaults(doc.Id, doc)
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Texts ->
+            let doc = DashSpec.Modeling.Parse.Texts.TextsModuleParser.parseEnvelope env
+            state.RegisterTexts doc
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Runtime ->
+            let doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseEnvelope env
+            state.RegisterRuntime(doc.Id, path, doc)
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout ->
+            assignLayoutBoard (LayoutModuleParser.parseEnvelope env) moduleKind state
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram ->
+            let id, fragment = UnitFragmentResolver.foldDiagramModuleWithId text
+            let resolved = resolveDiagramFragmentPresets path fragment state
+            withQualifier id (fun k -> state.RegisterDiagram(k, resolved))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Presentation ->
+            let doc = PresentationModuleParser.parseEnvelope env
+            doc.Local
+            |> Option.defaultWith (fun () -> raise (DashSpecParseException("@presentation module requires at least one property.")))
+            |> fun block -> withQualifier doc.Id (fun k -> state.RegisterChartChromePreset(k, block))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Tooltip ->
+            let def = TooltipModuleParser.parseEnvelope env
+            withQualifier def.Id (fun k -> state.RegisterTooltip(k, def))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Types ->
+            for def in TypeModuleParser.parseTypesModule text do
+                state.RegisterRowType def
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _ ->
+            registerDashflowText path text state
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Palette ->
+            let palette = Palette.PaletteModuleParser.parseEnvelope env
+            withQualifier palette.Id (fun k -> state.RegisterPalette(k, palette))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Transform ->
             try
-                let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
-                match UnitGrammar.tryUnwrapAny tree.Root with
-                | Some env ->
-                    unitKindOfModuleKind env.Kind
-                    |> Option.defaultWith (fun () -> Unsupported(Path.GetExtension path))
-                | None -> Unsupported(Path.GetExtension path)
+                let block = Transform.TransformModuleParser.parseEnvelope env
+                withQualifier env.Id (fun k -> state.RegisterSeriesTransformPreset(k, block))
             with _ ->
-                Unsupported(Path.GetExtension path)
+                let decl = DashSpec.Modeling.Parse.DataFlow.TransformDeclarationParser.parseDeclaration text
+                TransformDeclarations.register decl
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section ->
+            withQualifier env.Id (fun k -> state.RegisterTabModule(k, path))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
+            match UnitProjector.tryResolve kw with
+            | Some d ->
+                d.Project
+                    { Text = text
+                      Envelope = env
+                      SpecDirectory = Path.GetDirectoryName path |> Option.ofObj }
+                |> ignore
+            | None ->
+                raise (DashSpecUnitHeaderException($"'{path}': module kind '{kw}' not recognized."))
+        | _ -> ()
 
-    let private contributors =
-        let d = System.Collections.Concurrent.ConcurrentDictionary<UnitKind, UnitContributor>()
-        let builtins =
-            [ { Kind = Defaults
-                ImportKind = Some ImportKind.Defaults
-                Role = Declaration
-                Register = fun (_, text, _, state) ->
-                    let doc = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parse text
-                    state.RegisterDefaults(doc.Id, doc) }
-              { Kind = Runtime
-                ImportKind = Some ImportKind.Runtimes
-                Role = Declaration
-                Register = fun (path, text, _, state) ->
-                    let doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse text
-                    state.RegisterRuntime(doc.Id, path, doc) }
-              { Kind = Layout
-                ImportKind = Some ImportKind.Layouts
-                Role = Declaration
-                Register = fun (_, text, moduleKind, state) -> assignLayoutBoard (LayoutModuleParser.parseLayoutFile text) moduleKind state }
-              { Kind = Diagram
-                ImportKind = Some ImportKind.Diagrams
-                Role = Consumer
-                Register = fun (path, _, _, state) -> registerDiagramFile path state }
-              { Kind = Presentation
-                ImportKind = Some ImportKind.Presentations
-                Role = Declaration
-                Register = fun (path, _, _, state) -> registerPresentationFile path state }
-              { Kind = Tooltip
-                ImportKind = Some ImportKind.Tooltips
-                Role = Declaration
-                Register = fun (path, _, _, state) -> registerTooltipFile path state }
-              { Kind = Types
-                ImportKind = Some ImportKind.Types
-                Role = Declaration
-                Register = fun (path, _, _, state) -> registerTypesFile path state }
-              { Kind = Flow
-                ImportKind = Some ImportKind.Flows
-                Role = Consumer
-                Register = fun (path, text, _, state) -> registerDashflowText path text state }
-              { Kind = Palette
-                ImportKind = Some ImportKind.Palettes
-                Role = Declaration
-                Register = fun (_, text, _, state) ->
-                    let palette = Palette.PaletteModuleParser.parsePaletteFile text
-                    state.RegisterPalette(palette.Id, palette) }
-              { Kind = Transform
-                ImportKind = Some ImportKind.Transforms
-                Role = Declaration
-                Register = fun (path, text, _, state) ->
-                    let id = unitIdOf "transform" path text
-                    try
-                        let block = Transform.TransformModuleParser.parseTransformFile text
-                        state.RegisterSeriesTransformPreset(id, block)
-                    with _ ->
-                        let decl = DashSpec.Modeling.Parse.DataFlow.TransformDeclarationParser.parseDeclaration text
-                        TransformDeclarations.register decl }
-              { Kind = Tab
-                ImportKind = Some ImportKind.Tabs
-                Role = Consumer
-                Register = fun (path, text, _, state) -> state.RegisterTabModule(unitIdOf "section" path text, path) } ]
-        for c in builtins do
-            d.[c.Kind] <- c
-        d
-
-    let registerUnitContributor (contributor: UnitContributor) =
-        contributors.[contributor.Kind] <- contributor
+    let private registerEnvelope
+        (path: string)
+        (text: string)
+        (env: UnitGrammar.UnitEnvelope)
+        (moduleKind: DocumentModuleKind)
+        (state: ModuleImportState)
+        =
+        registerEnvelopeWithQualifier path text env moduleKind state None
 
     let registerUnitFile
         (path: string)
@@ -270,18 +333,17 @@ module UnitImport =
             raise (FileNotFoundException($"module file not found: '{path}'.", path))
 
         let text = UnitSource.readUnit path
-        let unitKind = UnitFileClassifier.classify path text
 
-        match contributors.TryGetValue unitKind with
-        | true, contributor ->
+        match tryUnwrapUnit text with
+        | Some env ->
             let otherKind =
-                match importKind, contributor.ImportKind with
+                match importKind, importKindOfModuleKind env.Kind with
                 | Some expected, Some actual -> expected <> actual
                 | _ -> false
 
             if not otherKind then
-                contributor.Register(path, text, moduleKind, state)
-        | false, _ ->
+                registerEnvelope path text env moduleKind state
+        | None ->
             match importKind with
             | Some ImportKind.Types -> registerTypesFile path state
             | Some ImportKind.Flows ->
@@ -289,26 +351,47 @@ module UnitImport =
             | _ ->
                 raise (DashSpecUnitHeaderException($"'{path}': module kind not recognized; expected 'module <kind> <id>'."))
 
-    module private UnitRole =
-        let ofPath (path: string) =
-            let text = UnitSource.readUnit path
-            let kind = UnitFileClassifier.classify path text
-            match contributors.TryGetValue kind with
-            | true, c -> c.Role
-            | false, _ -> Consumer
-
     /// <summary>Two-phase registration: all declarations first (full symbol table),
-    /// then consumers. A diagram whose preset is imported by a LATER directive (or
-    /// only implicitly, at project level) still resolves — the author's file order
-    /// stops being load-bearing.</summary>
+    /// then consumers. Each unit file is unwrapped once and projected from its AST envelope.</summary>
+    let registerUnitsInDependencyOrderWithQualifiers
+        (paths: (string * ImportKind option * string option) list)
+        (moduleKind: DocumentModuleKind)
+        (state: ModuleImportState)
+        =
+        let prepared =
+            paths
+            |> List.map (fun (path, kind, qualifier) ->
+                if not (UnitSource.existsUnit path) then
+                    raise (FileNotFoundException($"module file not found: '{path}'.", path))
+                let text = UnitSource.readUnit path
+                let envOpt = tryUnwrapUnit text
+                let role =
+                    match envOpt with
+                    | Some env -> roleOfModuleKind env.Kind
+                    | None -> UnitCompileRole.Consumer
+                role, path, text, envOpt, kind, qualifier)
+
+        for phase in [ UnitCompileRole.Declaration; UnitCompileRole.Consumer ] do
+            for role, path, text, envOpt, importKind, qualifier in prepared do
+                if role = phase then
+                    match envOpt with
+                    | Some env ->
+                        let otherKind =
+                            match importKind, importKindOfModuleKind env.Kind with
+                            | Some expected, Some actual -> expected <> actual
+                            | _ -> false
+                        if not otherKind then
+                            registerEnvelopeWithQualifier path text env moduleKind state qualifier
+                    | None ->
+                        registerUnitFile path moduleKind state importKind
+
     let registerUnitsInDependencyOrder
         (paths: (string * ImportKind option) list)
         (moduleKind: DocumentModuleKind)
         (state: ModuleImportState)
         =
-        let withRoles = paths |> List.map (fun (path, kind) -> UnitRole.ofPath path, path, kind)
+        let withNone = paths |> List.map (fun (p, k) -> p, k, None)
+        registerUnitsInDependencyOrderWithQualifiers withNone moduleKind state
 
-        for phase in [ Declaration; Consumer ] do
-            for role, path, kind in withRoles do
-                if role = phase then
-                    registerUnitFile path moduleKind state kind
+    do
+        ensureBuiltinUnitsRegistered ()

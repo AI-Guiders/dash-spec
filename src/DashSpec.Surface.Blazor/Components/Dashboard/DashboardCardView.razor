@@ -158,11 +158,11 @@
                     @if (_fullscreenSlotId is { } slotId &&
                         InteriorSlots.FirstOrDefault(slot => slot.Node.Id == slotId) is { } fsSlot)
                     {
-                        <CardInteriorSlotContent Slot="fsSlot" />
+                        <CardInteriorSlotContent Slot="fsSlot" DetailView="true" />
                     }
                     else
                     {
-                        @InteriorPlan()
+                        @InteriorPlan(detailView: true)
                     }
                 </div>
             </CascadingValue>
@@ -307,7 +307,7 @@
 
     /// <summary>The interior slot plan — the SSOT render (ADR-0111 P1). The inline
     /// card and the fullscreen panel render the same grid; only the frame differs.</summary>
-    private RenderFragment InteriorPlan() => __builder =>
+    private RenderFragment InteriorPlan(bool detailView = false) => __builder =>
     {
         <CascadingValue Value="this" IsFixed="true">
             <CardInteriorGrid GridColumns="GridColumns" ExtraStyle="@InteriorGridFillStyle()">
@@ -316,7 +316,7 @@
                     <PlacementSlot Placement="slot.Placement"
                                    CssClass="@InteriorSlotCssClass(slot)"
                                    ExtraStyle="@InteriorSlotExtraStyle(slot)">
-                        <CardInteriorSlotContent Slot="slot" />
+                        <CardInteriorSlotContent Slot="slot" DetailView="detailView" />
                     </PlacementSlot>
                 }
             </CardInteriorGrid>

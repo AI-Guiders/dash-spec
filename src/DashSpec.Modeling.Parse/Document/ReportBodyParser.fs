@@ -65,7 +65,13 @@ module ReportBodyParser =
 
     let private parseTabStatement (reader: TokenReader) (ctx: ReportCompileContext) (moduleWord: string) =
         match ctx.Mode with
-        | ReportCompileMode.Dashboard -> ctx.Tabs.Add(TabParser.parse reader moduleWord)
+        | ReportCompileMode.Dashboard ->
+            let parsed = TabParser.parse reader moduleWord
+            let resolvedLabel =
+                match parsed.Label with
+                | Some l when not (String.IsNullOrWhiteSpace l) -> Some l
+                | _ -> ctx.Includes.TryResolveText(DashSpec.Modeling.Parse.Syntax.LanguageObjectKind.Section, parsed.Id)
+            ctx.Tabs.Add({ parsed with Label = resolvedLabel })
         | ReportCompileMode.TabStandalone
         | ReportCompileMode.TabEmbedded ->
             match ctx.TabModuleId with

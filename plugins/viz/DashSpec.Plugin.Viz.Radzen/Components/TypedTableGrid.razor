@@ -15,10 +15,11 @@
    contextmenu event and resolves the column from the th[data-column-index]. *@
 <RadzenDataGrid @ref="_grid" TItem="TItem" Data="@Items" data-testid="typed-grid"
                 Wrap="true" Density="Density.Compact" Style="width:100%;--typed:1"
-                AllowSorting="true" AllowFiltering="@ColumnFilters" FilterMode="FilterMode.SimpleWithMenu"
+                AllowSorting="true" AllowFiltering="@ColumnFilters"
+                FilterMode="@(Fields.Count <= 4 ? FilterMode.Simple : FilterMode.SimpleWithMenu)"
                 FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
                 AllowPaging="true" PageSize="@PageSize" AllowColumnResize="true"
-                AllowColumnPicking="true" AllowColumnReorder="true"
+                AllowColumnPicking="@(Fields.Count > 4)" AllowColumnReorder="true"
                 AllowGrouping="@AllowGrouping" GroupIndent="16"
                 RowClick="@OnRowClicked">
     <GroupHeaderTemplate>

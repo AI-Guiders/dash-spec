@@ -123,7 +123,7 @@ public static class DisplayResolution
         name.Replace('_', ' ');
 
     /// <summary>Weak → strong; rightmost non-empty wins; else <paramref name="fallback"/>.</summary>
-    public static string ResolveChain(string fallback, params string?[] weakToStrong)
+    public static string ResolveChain(string fallback, params ReadOnlySpan<string?> weakToStrong)
     {
         for (var i = weakToStrong.Length - 1; i >= 0; i--)
         {

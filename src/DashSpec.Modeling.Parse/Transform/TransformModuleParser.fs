@@ -5,6 +5,12 @@ open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Syntax
 
+[<CLIMutable>]
+type SeriesTransformBlock =
+    { UsePreset: string option
+      Max: int option
+      OtherLabel: string option }
+
 module TransformModuleParser =
 
     let private toBlock (props: System.Collections.Generic.Dictionary<string, string>) =
@@ -31,12 +37,7 @@ module TransformModuleParser =
 
         { UsePreset = usePreset; Max = max; OtherLabel = other }
 
-    let parseTransformFile (text: string) : SeriesTransformBlock =
-        if String.IsNullOrWhiteSpace text then invalidArg "text" "Transform text is required."
-
-        let tree = DashSpecSurfaceSyntax.parse text
-        let env = UnitGrammar.unwrap DashSpecModuleKind.Transform tree.Root
-
+    let parseEnvelope (env: UnitGrammar.UnitEnvelope) : SeriesTransformBlock =
         for b in env.View.Blocks do
             if b.Opener <> DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Series then
                 let headerText = b.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
@@ -78,9 +79,5 @@ module TransformModuleParser =
 
             toBlock props
 
-    do
-        UnitProjector.register
-            { KindKeyword = "transform"
-              ImportKind = Some ImportKind.Transforms
-              Role = UnitCompileRole.Declaration
-              Project = fun ctx -> box (parseTransformFile ctx.Text) }
+    let parseTransformFile (text: string) : SeriesTransformBlock =
+        UnitGrammar.parseUnit DashSpecModuleKind.Transform parseEnvelope text

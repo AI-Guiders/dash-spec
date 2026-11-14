@@ -94,7 +94,7 @@ internal static class DashboardFilterSlashLabels
 
 
 
-    static string FirstNonEmpty(params string?[] values)
+    static string FirstNonEmpty(params ReadOnlySpan<string?> values)
 
     {
 
