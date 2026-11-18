@@ -127,19 +127,21 @@ tags: [adr, index, dashspec]
 | [0109](DASHSPEC-ADR-0109-filter-wiring-ssot.md) | SSOT проводки фильтров клика | Accepted |
 | [0110](DASHSPEC-ADR-0110-host-shell-slot-plane.md) | Оболочка хоста как слотовая плоскость — nav-плагин и открытые контент-слоты | Accepted |
 | [0111](DASHSPEC-ADR-0111-assembled-slot-plane.md) | Собранная слотовая плоскость — SSOT визуальной композиции | Accepted |
-| [0112](DASHSPEC-ADR-0112-render-stack-and-theme-token.md) | Рендер-стек — выбор визуального фреймворка и тема как токен | Proposed |
+| [0112](DASHSPEC-ADR-0112-render-stack-and-theme-token.md) | Рендер-стек — выбор визуального фреймворка и тема как токен | Accepted |
 | [0113](DASHSPEC-ADR-0113-property-based-testing.md) | Property-based testing — парсеры и грамматики как исполняемые законы | Proposed |
 | [0114](DASHSPEC-ADR-0114-switch-slot-payloads.md) | Switch slot — multi-payload diagram slot | Accepted |
 | [0115](DASHSPEC-ADR-0115-radzen-table-grid-extras.md) | Radzen-рендер — паритет фич с self-made | Accepted |
 | [0116](DASHSPEC-ADR-0116-radzen-heatmap-feedback.md) | Radzen-тепловая карта — паритет и размеры от контента | Accepted |
-| [0117](DASHSPEC-ADR-0117-dsc-cli-composition-root.md) | dsc — CLI composition root; компилятор — библиотека за контрактом | Proposed |
+| [0117](DASHSPEC-ADR-0117-dsc-cli-composition-root.md) | dsc — CLI composition root; компилятор — библиотека за контрактом | Accepted |
 | [0118](DASHSPEC-ADR-0118-filter-widget-role-contract.md) | Контракт ролей фильтров — skin уходит стеку, реализации становятся замещаемыми | Accepted |
 | [0122](DASHSPEC-ADR-0122-default-flow-wiring.md) | Default flow wiring — компилятор синтезирует линейные дуги карточек | Accepted |
 | [0123](DASHSPEC-ADR-0123-runtime-grouping.md) | Группировка и порядок — runtime-трансформеры payload→payload; сводка остаётся database group_by | Proposed |
-| [0124](DASHSPEC-ADR-0124-row-types-compiled-by-dsc.md) | Row types компилируются в CLR-типы (dsc build types, Roslyn) — доменный объект доезжает до рендера | Proposed |
+| [0124](DASHSPEC-ADR-0124-row-types-compiled-by-dsc.md) | Row types компилируются в CLR-типы (dsc build types, Roslyn) — доменный объект доезжает до рендера | Accepted |
 | [0125](DASHSPEC-ADR-0125-dashspec-managed-views.md) | DashSpec-managed views — публикация создаёт view в БД из флоу-графа (dsc build views) | Accepted |
-| [0126](DASHSPEC-ADR-0126-db-transforms-full-coverage.md) | Composite sources — join/union как конструкторы источников, window как линейный db-шаг | Proposed |
+| [0126](DASHSPEC-ADR-0126-db-transforms-full-coverage.md) | Composite sources — join/union как конструкторы источников, window как линейный db-шаг | Accepted |
 | [0127](DASHSPEC-ADR-0127-transform-port-type-inference.md) | Transform port type inference — компилятор выводит типы портов трансформеров из входных рёбер и алгебры шагов | Accepted |
 | [0128](DASHSPEC-ADR-0128-authored-surface-for-inferred-types.md) | Authored surface для выведенных типов — эмит через AST, статус не различается | Accepted |
 | [0129](DASHSPEC-ADR-0129-sqlite-landing-zone.md) | SQLite landing zone — мульти-источник через локальный файл-БД | Proposed |
 | [0130](DASHSPEC-ADR-0130-unified-graph-pipeline-and-typed-ast.md) | Единый графовый конвейер (parse → graph → IR) и типизированный AST членов | Accepted |
+| [0131](DASHSPEC-ADR-0131-pluggable-compiler-microkernel-and-value-types.md) | Плагинное микроядро компилятора, единая контейнерная грамматика (UnitGrammar / ConstructForm), доменные ValueTypes и самодостаточные правила | Accepted |
+| [0132](DASHSPEC-ADR-0132-construct-hierarchy-three-tiers.md) | Иерархия конструктов — три уровня (ObjectConstruct → CollectionConstruct → MatrixConstruct) с единственными точками входа | Accepted |

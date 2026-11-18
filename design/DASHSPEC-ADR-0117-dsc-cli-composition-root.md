@@ -2,7 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0117
 title: "dsc — CLI composition root; компилятор — библиотека за контрактом"
-status: "Proposed"
+status: "Accepted"
+implementation: "Реализован: src/dsc выделен как самостоятельный CLI composition root (validate, build types, build views, generate types)."
 date: 2026-11-01
 tags: [dashspec, adr, cli, composition]
 language: ru

@@ -2,8 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0124
 title: "Row types компилируются в CLR-типы (dsc build types, Roslyn) — доменный объект доезжает до рендера"
-status: "Proposed"
-implementation: "none"
+status: "Accepted"
+implementation: "Реализован: TypedRowsCompiler (Roslyn CSharpCompilation), dsc build types -> DashSpec.TypedRows.dll, CompiledRowTypes, TypedTableGrid<TRow>."
 date: 2026-11-08
 tags: [dashspec, adr, row-types, roslyn, adr-0087, adr-0123]
 language: ru

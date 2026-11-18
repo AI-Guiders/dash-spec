@@ -2,8 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0126
 title: "Composite sources — join/union как конструкторы источников, window как линейный db-шаг"
-status: "Proposed"
-implementation: "planned: composite source def + parser, provider/time_zone asserts, FROM-composition in QueryCompiler/ManagedViewsEmitter, WindowStepSpec (Std.Transformations.Database), drill G⁻¹ works over composite sources by construction"
+status: "Accepted"
+implementation: "Реализован: CompositeSourceOrigin (InnerJoin, LeftJoin, RightJoin, FullJoin, UnionAll), CompositeSql, WindowStepSpec и ManagedViewsEmitter."
 date: 2026-11-09
 tags: [dashspec, adr, dashflow, join, union, window, composite-source, adr-0120, adr-0125, adr-0127]
 language: ru-RU

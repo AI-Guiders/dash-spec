@@ -2,7 +2,8 @@
 type: ADR
 id: DASHSPEC-ADR-0112
 title: "Рендер-стек — выбор визуального фреймворка и тема как токен"
-status: "Proposed"
+status: "Accepted"
+implementation: "Реализован: DashSpec.Stack.Radzen и DashSpec.Plugin.Viz.Radzen полностью изолируют Radzen (RadzenSidebar, RadzenTabBar, RadzenCardButton, RadzenCardViewSwitch, RadzenFilterWidgets); Surface.Blazor и Composition не имеют ссылок на Radzen (проверено в LayerDependencyTests)."
 date: 2026-10-22
 tags: [dashspec, adr]
 language: ru
