@@ -32,4 +32,15 @@ public sealed class RadzenRenderStack : IRenderStack
             // routes kinds; the canvas geometry keeps cells square at any filter width).
             ["heatmap"] = VizPluginIds.ECharts,
         };
+
+    public IReadOnlyList<ViewerTheme> Themes { get; } =
+        RadzenColorSchemes.All
+            .Select(t => new ViewerTheme(t.Token, t.Label))
+            .ToList();
+
+    public string DefaultThemeToken => RadzenColorSchemes.DefaultToken;
+
+    public Type? HeadComponent => typeof(RadzenStackHead);
+
+    public Type? ScriptsComponent => typeof(RadzenStackScripts);
 }

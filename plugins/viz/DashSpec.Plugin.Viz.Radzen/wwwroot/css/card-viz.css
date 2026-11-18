@@ -8,18 +8,29 @@
 .rviz-chart-wrap {
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
 
 /* Chart legend: compact chartjs-parity items. A donut legend lists category
    labels (dozens on the users split) — small type, tight rows. Radzen anchors
    the bottom legend to the container's bottom edge: an over-tall list would
    bleed upward over the page, so it caps and scrolls inside the card instead. */
-.rviz-chart-wrap .rz-legend {
+.rviz-chart-wrap .rz-legend,
+.rviz-chart-wrap .rz-legend-bottom {
   font-size: 0.72rem;
   line-height: 1.3;
   row-gap: 0;
-  max-height: 45%;
-  overflow-y: auto;
+  max-height: 45% !important;
+  overflow-y: auto !important;
+}
+
+.rviz-row-clickable {
+  cursor: pointer;
+}
+
+.rviz-row--active > td {
+  background-color: color-mix(in srgb, var(--rz-primary, #3b82f6) 22%, transparent) !important;
+  box-shadow: inset 0 1px 0 var(--rz-primary, #3b82f6), inset 0 -1px 0 var(--rz-primary, #3b82f6);
 }
 
 .rviz-chart-wrap .rz-legend-item {

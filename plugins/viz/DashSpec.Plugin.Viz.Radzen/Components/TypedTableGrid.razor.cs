@@ -75,6 +75,8 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
 
     private int? _copiedColumn;
 
+    private string? _selectedRowKey;
+
     private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>> PropertyCache =
         new();
 
@@ -125,6 +127,20 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
             _ => TextAlign.Left,
         };
 
+    private void OnRowRender(RowRenderEventArgs<TItem> args)
+    {
+        if (!RowClickEnabled || args.Data is not { } row)
+        {
+            return;
+        }
+
+        var rowKey = FormatCell(PropertyOf(row, 0), 0);
+        var active = string.Equals(rowKey, _selectedRowKey, StringComparison.Ordinal);
+        args.Attributes["class"] = active
+            ? "rz-data-row rviz-row-clickable rviz-row--active"
+            : "rz-data-row rviz-row-clickable";
+    }
+
     private async Task OnRowClicked(DataGridRowMouseEventArgs<TItem> args)
     {
         if (!RowClickEnabled || args.Data is not { } row)
@@ -132,7 +148,9 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
             return;
         }
 
-        await OnRowClick.InvokeAsync(FormatCell(PropertyOf(row, 0), 0));
+        var rowKey = FormatCell(PropertyOf(row, 0), 0);
+        _selectedRowKey = rowKey;
+        await OnRowClick.InvokeAsync(rowKey);
     }
 
     private async Task OpenColumnMenu(Microsoft.AspNetCore.Components.Web.MouseEventArgs args, int columnIndex)

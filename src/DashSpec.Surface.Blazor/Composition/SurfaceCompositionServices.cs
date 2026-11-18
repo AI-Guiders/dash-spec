@@ -37,11 +37,37 @@ public static class SurfaceCompositionServices
             Register(vizPlugin);
         }
 
-        // Radzen visual layer pilot ([ADR-0111]): bundle id (viz_radzen) activates it, render = "radzen".
-        Register(new DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin());
-
         // ECharts matrix guest (ADR-0112 spike): bundle id (viz_echarts); stacks delegate the heatmap kind here.
         Register(new DashSpec.Plugin.Viz.EChartsUI.Plugins.EChartsVizDashSpecPlugin());
+
+        // Stack-owned or host-provided viz plugins (discovered from loaded assemblies without direct dependency).
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var name = assembly.GetName().Name ?? string.Empty;
+            if (!name.StartsWith("DashSpec.Plugin.Viz.", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "DashSpec.Plugin.Viz.Builtins", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(name, "DashSpec.Plugin.Viz.ECharts", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            foreach (var type in assembly.GetExportedTypes())
+            {
+                if (!type.IsAbstract &&
+                    typeof(IDashSpecPlugin).IsAssignableFrom(type) &&
+                    type.GetConstructor(Type.EmptyTypes) is not null &&
+                    Activator.CreateInstance(type) is IDashSpecPlugin plugin &&
+                    !registry.ContainsPlugin(plugin.Id))
+                {
+                    Register(plugin);
+                }
+            }
+        }
+
+        // Interior filter widgets are rendered via the same FilterWidgetHost as toolbar/chrome filters.
+        registry.RegisterPluginComponent(
+            DashSpecPluginComponents.FilterWidget,
+            typeof(DashSpec.Plugin.Filter.Builtins.Components.FilterWidgetHost));
 
         foreach (var filterPlugin in FilterBuiltinsPluginCatalog.CreateAll())
         {

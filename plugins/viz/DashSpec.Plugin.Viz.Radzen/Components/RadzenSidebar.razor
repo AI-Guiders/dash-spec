@@ -1,0 +1,131 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Abstractions.Viewer
+@using DashSpec.Execution.Runtime
+@using DashSpec.Modeling.Parse.Catalog
+@using DashSpec.Modeling.Parse.Document
+@using DashSpec.Viz
+@using Radzen
+@using Radzen.Blazor
+
+@* ADR-0073 / ADR-0112: Radzen stack's left navigation sidebar (RadzenPanelMenu). *@
+
+<aside class="dash-sidebar @(_mobileOpen ? "dash-sidebar--open" : null)" aria-label="@Context.SidebarLabel">
+    <button type="button"
+            class="dash-sidebar-toggle"
+            aria-expanded="@_mobileOpen"
+            aria-label="@Context.SidebarLabel"
+            @onclick="ToggleMobile">
+        <svg class="dash-sidebar-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            @if (_mobileOpen)
+            {
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+            }
+            else
+            {
+                <path d="M4 6h16" />
+                <path d="M4 12h16" />
+                <path d="M4 18h16" />
+            }
+        </svg>
+        <span class="dash-sidebar-toggle-label">@ActiveBreadcrumb</span>
+    </button>
+    <div class="dash-sidebar-body">
+        <RadzenPanelMenu>
+            @foreach (var group in Context.Groups)
+            {
+                <RadzenPanelMenuItem Text="@DisplayResolution.ResolveCatalogGroupTitle(group)" Expanded="true">
+                    @foreach (var entry in EntriesOf(group))
+                    {
+                        @EntryNode(entry)
+                    }
+                </RadzenPanelMenuItem>
+            }
+            @foreach (var entry in Context.Entries.Where(entry => string.IsNullOrWhiteSpace(entry.GroupId?.Value)))
+            {
+                @EntryNode(entry)
+            }
+        </RadzenPanelMenu>
+    </div>
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public StackSidebarContext Context { get; set; } = default!;
+
+    private bool _mobileOpen;
+
+    private void ToggleMobile() => _mobileOpen = !_mobileOpen;
+
+    private string ActiveBreadcrumb
+    {
+        get
+        {
+            var entry = Context.Entries.FirstOrDefault(IsEntryActive);
+            var entryTitle = entry is not null ? DisplayResolution.ResolveCatalogEntryTitle(entry) : Context.SidebarLabel;
+            var tab = Context.Tabs.FirstOrDefault(t => string.Equals(t.Id, Context.ActiveTabId, StringComparison.OrdinalIgnoreCase));
+            var tabTitle = tab is not null ? (Context.ResolveTabLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id) : null;
+            return !string.IsNullOrWhiteSpace(tabTitle) && !string.Equals(tabTitle, entryTitle, StringComparison.OrdinalIgnoreCase)
+                ? $"{entryTitle} · {tabTitle}"
+                : entryTitle;
+        }
+    }
+
+    private RenderFragment EntryNode(CatalogEntryDefinition entry) => __builder =>
+    {
+        var entryId = entry.Id;
+        var isActive = IsEntryActive(entry);
+        var sections = SectionsFor(entry, isActive);
+        <RadzenPanelMenuItem Text="@DisplayResolution.ResolveCatalogEntryTitle(entry)"
+                             Selected="@isActive"
+                             Disabled="@Context.Busy"
+                             Click="@(async () => { _mobileOpen = false; await Context.OnSelectEntry.InvokeAsync(entryId); })">
+            @foreach (var tab in sections)
+            {
+                var tabId = tab.Id;
+                <RadzenPanelMenuItem Text="@(Context.ResolveTabLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)"
+                                     Selected="@string.Equals(tab.Id, Context.ActiveTabId, StringComparison.OrdinalIgnoreCase)"
+                                     Click="@(async () => { _mobileOpen = false; await Context.OnSelectTab.InvokeAsync(tabId); })" />
+            }
+        </RadzenPanelMenuItem>
+    };
+
+    private IReadOnlyList<TabDefinition> SectionsFor(CatalogEntryDefinition entry, bool isActive)
+    {
+        if (!isActive || Context.SectionsMode is ViewerMenuSectionsMode.None || Context.Tabs is not { Count: > 0 })
+        {
+            return [];
+        }
+
+        var pinned = entry.InitialTabId?.Value;
+        IEnumerable<TabDefinition> sections = Context.Tabs;
+        if (Context.SectionsMode is ViewerMenuSectionsMode.Siblings && !string.IsNullOrWhiteSpace(pinned))
+        {
+            sections = sections.Where(tab =>
+                !string.Equals(tab.Id, pinned, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var list = sections.ToList();
+        if (Context.CollapseDuplicateSection &&
+            list.Count == 1 &&
+            string.Equals(
+                Context.ResolveTabLabel?.Invoke(list[0]) ?? list[0].Label?.Value ?? list[0].Id,
+                DisplayResolution.ResolveCatalogEntryTitle(entry),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return [];
+        }
+
+        return list;
+    }
+
+    private bool IsEntryActive(CatalogEntryDefinition entry)
+    {
+        var active = string.IsNullOrWhiteSpace(Context.ActiveEntryId)
+            ? Context.Entries.FirstOrDefault()?.Id
+            : Context.ActiveEntryId;
+        return string.Equals(entry.Id, active, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<CatalogEntryDefinition> EntriesOf(CatalogGroupDefinition group) =>
+        Context.Entries.Where(entry => string.Equals(entry.GroupId?.Value, group.Id, StringComparison.OrdinalIgnoreCase));
+}

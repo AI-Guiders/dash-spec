@@ -1,5 +1,6 @@
 @namespace DashSpec.Plugin.Filter.Builtins.Components
 @using DashSpec.Execution.Runtime
+@using DashSpec.Modeling.Parse.Layout
 @using DashSpec.Viz
 @using DashSpec.Filters
 @using static DashSpec.Execution.Runtime.CardLocalFilterChromeCompactor
@@ -30,6 +31,8 @@
 
 @code {
     [Parameter, EditorRequired] public CardRenderResult Card { get; set; } = default!;
+    [Parameter] public IReadOnlyList<Slot>? ChromeSlotPlan { get; set; }
+    [Parameter] public IReadOnlyList<string>? ExcludedFilters { get; set; }
     [Parameter] public int GridColumns { get; set; } = 12;
     [Parameter] public bool HeadMetaLayout { get; set; }
     [Parameter, EditorRequired] public string ApplyLabel { get; set; } = "Apply";
@@ -47,26 +50,36 @@
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName, HashSet<string> Values)> OnCardFieldChanged { get; set; }
 
-    private bool UsesChromeGrid => Card.LocalFilterChromePlacements is { Count: > 0 };
+    private IReadOnlyDictionary<string, PlacementDefinition>? EffectiveChromePlacements =>
+        ChromeSlotPlan is { Count: > 0 } plan
+            ? plan.ToDictionary(s => s.Node.Id, s => s.Placement.Wide, StringComparer.OrdinalIgnoreCase)
+            : Card.LocalFilterChromePlacements;
+
+    private IReadOnlyList<string> EffectiveLocalFilters =>
+        ExcludedFilters is { Count: > 0 } excluded && Card.LocalFilters is { Count: > 0 } locals
+            ? locals.Where(f => !excluded.Contains(f, StringComparer.OrdinalIgnoreCase)).ToList()
+            : Card.LocalFilters ?? [];
+
+    private bool UsesChromeGrid => EffectiveChromePlacements is { Count: > 0 };
 
     private int ChromeGridColumns =>
-        Card.LocalFilterChromePlacements is { Count: > 0 } placements
+        EffectiveChromePlacements is { Count: > 0 } placements
             ? CardFilterChromeSlotOrder.GridColumnCount(placements)
             : GridColumns;
 
     private int ApplySplitIndex =>
-        Card.LocalFiltersApplySplitIndex ?? Card.LocalFilters?.Count ?? 0;
+        Card.LocalFiltersApplySplitIndex ?? EffectiveLocalFilters.Count;
 
     private bool ShowApplyButton =>
-        Card.LocalFilters is { Count: > 0 } && (!AutoApply || Card.LocalFiltersManualApply);
+        EffectiveLocalFilters.Count > 0 && (!AutoApply || Card.LocalFiltersManualApply);
 
     private bool LocalFiltersAutoApply =>
         AutoApply && !Card.LocalFiltersManualApply;
 
     private IEnumerable<string> SlotOrder =>
         CardFilterChromeSlotOrder.Order(
-            Card.LocalFilters ?? [],
-            Card.LocalFilterChromePlacements,
+            EffectiveLocalFilters,
+            EffectiveChromePlacements,
             ApplySplitIndex,
             ShowApplyButton);
 
@@ -80,36 +93,50 @@
                 : "card-head-toolbar-filters";
 
     private string GridStyle =>
-        UsesChromeGrid && Card.LocalFilterChromePlacements is { Count: > 0 } placements
+        UsesChromeGrid && EffectiveChromePlacements is { Count: > 0 } placements
             ? PlacementGridCss.ChromeGridStyle(placements, ChromeGridColumns)
             : string.Empty;
 
     private string SlotStyle(string slotId) =>
-        UsesChromeGrid &&
-        Card.LocalFilterChromePlacements!.TryGetValue(slotId, out var placement)
-            ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.ForFixedMid(placement))
-            : string.Empty;
+        ChromeSlotPlan is { Count: > 0 } plan &&
+        plan.FirstOrDefault(s => string.Equals(s.Node.Id, slotId, StringComparison.OrdinalIgnoreCase)) is { } slot
+            ? PlacementGridCss.SlotStyle(slot.Placement)
+            : UsesChromeGrid &&
+              EffectiveChromePlacements!.TryGetValue(slotId, out var placement)
+                ? PlacementGridCss.SlotStyle(PlacementVariantsPlanning.ForFixedMid(placement))
+                : string.Empty;
 
     private RenderFragment RenderFilter(string filterName) => __builder =>
     {
         var filter = FilterIndex[filterName];
         <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
-                          Filter="filter"
-                          Label="@FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields)"
-                          Hint="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
-                          HintAriaLabel="@(filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null)"
-                          Disabled="@Card.Loading"
-                          Options="GetFieldOptions(filter.Name)"
-                          Selected="@FilterWidgetPresentation.SelectedFieldValues(filter, SelectedFields)"
-                          SelectedChanged="values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))"
-                          DateFrom="DateFrom"
-                          DateTo="DateTo"
-                          FilterIndex="FilterIndex"
-                          SelectedFields="SelectedFields"
-                          OnDayChanged="args => OnCardDayChanged.InvokeAsync((Card.Id, args))"
-                          OnRangeChanged="() => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask"
-                          TopValue="@FilterWidgetPresentation.ResolveTopValue(filter, TopLimits)"
-                          TopValueChanged="value => OnLocalTopChanged(filter, value)" />;
+                          Context="@(new FilterWidgetRenderContext
+                          {
+                              Filter = filter,
+                              Label = FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, SelectedFields),
+                              Hint = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
+                              HintAriaLabel = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
+                              Disabled = Card.Loading,
+                              Options = GetFieldOptions(filter.Name),
+                              Selected = FilterWidgetPresentation.SelectedFieldValues(filter, SelectedFields),
+                              SelectedChanged = EventCallback.Factory.Create<HashSet<string>>(
+                                  this,
+                                  values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))),
+                              DateFrom = DateFrom,
+                              DateTo = DateTo,
+                              FilterIndex = FilterIndex,
+                              SelectedFields = SelectedFields,
+                              OnDayChanged = EventCallback.Factory.Create<string>(
+                                  this,
+                                  args => OnCardDayChanged.InvokeAsync((Card.Id, args))),
+                              OnRangeChanged = EventCallback.Factory.Create(
+                                  this,
+                                  () => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask),
+                              TopValue = FilterWidgetPresentation.ResolveTopValue(filter, TopLimits),
+                              TopValueChanged = EventCallback.Factory.Create<int>(
+                                  this,
+                                  value => OnLocalTopChanged(filter, value)),
+                          })" />;
     };
 
     private Task OnLocalTopChanged(FilterDefinition filter, int value)

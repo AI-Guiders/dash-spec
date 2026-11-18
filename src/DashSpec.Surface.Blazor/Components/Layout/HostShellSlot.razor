@@ -2,14 +2,14 @@
 @using DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Modeling.Parse.Layout
-@using Radzen
-@using Radzen.Blazor
+@using DashSpec.Viz
 @inject IWebHostEnvironment Environment
 @inject DashboardHostCommandCoordinator Coordinator
 @inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
 @inject HostPresentationSignals PresentationSignals
 @inject IViewerExternalLinksProvider ExternalLinks
 @inject IViewerShellChrome HostShell
+@inject ICardChromeControlsOverride ChromeControls
 @implements IDisposable
 
 @* One shell chrome cell's content ([ADR-0111] §2 experiment): rendered inside the cell
@@ -21,9 +21,9 @@
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Catalog && Coordinator.HasCatalog)
 {
-    // ADR-0112 §5: on the Radzen stack the left menu (DashboardSidebar) carries every
-    // report — the topbar combobox would duplicate it.
-    if (!IsRadzenStack)
+    // ADR-0112 §5: when the active stack provides a left sidebar menu, the topbar
+    // catalog combobox steps aside so it does not duplicate the sidebar.
+    if (ChromeControls.ResolveSidebar() is null)
     {
         <DashboardCatalogPicker Entries="Coordinator.CatalogEntries"
                                 Groups="Coordinator.CatalogGroups"
@@ -38,79 +38,34 @@ else if (Slot.SlotId == ViewerShellSlotIds.Catalog && Coordinator.HasCatalog)
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Nav)
 {
-    if (IsRadzenStack)
-    {
-        @* RadzenLink renders a real <a href> — navigation works in every render mode
-           (RadzenButton Href rides a dead href attribute on <button> in SSR chrome). *@
-        <RadzenLink Path="/" Text="@Loc.T("Dashboard")" />
-    }
-    else
-    {
-        <a href="/">@Loc.T("Dashboard")</a>
-    }
+    <a href="/" class="rz-link">@Loc.T("Dashboard")</a>
 }
 else if (Slot.SlotId == ViewerShellSlotIds.ExternalLinks)
 {
     @foreach (var link in _topbarLinks)
     {
-        if (IsRadzenStack)
-        {
-            <RadzenLink Path="@link.Url" Target="@link.Target" Text="@link.Label" class="external-link" />
-        }
-        else
-        {
-            <a href="@link.Url" target="@link.Target" rel="noopener noreferrer" class="external-link">@link.Label</a>
-        }
+        <a href="@link.Url" target="@link.Target" rel="noopener noreferrer" class="rz-link external-link">@link.Label</a>
     }
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Help && ShowsSurface("help"))
 {
-    if (IsRadzenStack)
-    {
-        <RadzenLink Path="/help" Text="?" Title="@Loc.T("Help")" class="help-link" />
-    }
-    else
-    {
-        <a href="/help" class="help-link" title="@Loc.T("Help")">?</a>
-    }
+    <a href="/help" class="rz-link help-link" title="@Loc.T("Help")">?</a>
 }
 else if (Slot.SlotId == ViewerShellSlotIds.Settings && ShowsSurface("settings"))
 {
     @* The per-user theme picker rides the settings cell: the admin sets the host
        default, every viewer picks their own (ADR-0112 §2 viewer layer). *@
     <ThemePicker />
-    if (IsRadzenStack)
-    {
-        <RadzenLink Path="/admin/access" Text="@Loc.T("Settings")" />
-    }
-    else
-    {
-        <a href="/admin/access">@Loc.T("Settings")</a>
-    }
+    <a href="/admin/access" class="rz-link">@Loc.T("Settings")</a>
 }
 else if (Slot.SlotId == ViewerShellSlotIds.SpecDev && Environment.IsDevelopment() && ShowsSurface("spec_dev"))
 {
-    if (IsRadzenStack)
-    {
-        <RadzenLink Path="/dev/spec" Text="@Loc.T("Spec")" />
-    }
-    else
-    {
-        <a href="/dev/spec">@Loc.T("Spec")</a>
-    }
+    <a href="/dev/spec" class="rz-link">@Loc.T("Spec")</a>
 }
 
 @code {
     [Parameter]
     public required ViewerShellSlot Slot { get; set; }
-
-    // ADR-0112: chrome belongs to the stack — Radzen buttons on the Radzen stack,
-    // plain links on SelfMade (exactly the pre-Radzen chrome).
-    [Inject]
-    public DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings { get; set; } = null!;
-
-    private bool IsRadzenStack =>
-        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
 
     IReadOnlyList<ViewerExternalLink> _topbarLinks = [];
 

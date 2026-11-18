@@ -9,24 +9,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>DashSpec</title>
-    @* ADR-0112 render stacks: the host links nothing itself — stacks and
-       plugins mount their own assets, and the chosen stack mounts ONLY its
-       own (§4/§5: the stack is the surface's visual language; no other
-       stack's css loads beside it). Plugin css is mounted by the plugins
-       themselves (ADR-0059/0060); flatpickr rides the Filter.Builtins head.
-       The Radzen stack mounts only when it is the chosen stack (render =
-       radzen); its theme reads the color_scheme token — its own reading. *@
-    @if (IsRadzenStack)
+    @* ADR-0112 render stacks: the host links nothing itself — the active stack mounts
+       its own head component dynamically, and plugins mount their own assets. *@
+    @if (RenderStackSettings.HeadComponent is { } headType)
     {
-        <RadzenVizHead />
-        @* The theme token is read LIVE (IViewerPresentationOptions): the admin save
-           lands in WitDB immediately, the next page load re-renders this head — no
-           host restart. The stack choice itself stays startup-frozen (RenderStackSettings). *@
-        <RadzenStackHead Theme="@ViewerTheme" />
-    }
-    else
-    {
-        <SelfMadeStackHead />
+        <DynamicComponent Type="headType"
+                          Parameters="@(new Dictionary<string, object?> { ["Theme"] = ViewerTheme })" />
     }
     <FilterBuiltinsHead />
     <VizBuiltinsHead />
@@ -36,14 +24,9 @@
 
 <body>
     <Routes />
-    @if (IsRadzenStack)
+    @if (RenderStackSettings.ScriptsComponent is { } scriptsType)
     {
-        <RadzenStackScripts />
-        <RadzenVizScripts />
-    }
-    else
-    {
-        <SelfMadeStackScripts />
+        <DynamicComponent Type="scriptsType" />
     }
     <FilterBuiltinsScripts />
     <VizBuiltinsScripts />
@@ -57,11 +40,6 @@
 </html>
 
 @code {
-    // ADR-0112: the Radzen stack mounts itself only when chosen (render = radzen);
-    // selfmade is the default — the surface looks exactly as it did before Radzen.
-    private bool IsRadzenStack =>
-        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
-
     /// <summary>Viewer override wins (cookie, set by the shell picker), else the live
     /// host default from admin. The root renders per request, so the cookie is read
     /// server-side on every load — no flash, no restart.</summary>
@@ -69,11 +47,9 @@
     {
         get
         {
-            var cookie = HttpContextAccessor?.HttpContext?.Request.Cookies[DashSpec.Stack.Radzen.RadzenColorSchemes.ViewerCookieName];
-            // Find(null/empty) returns the default theme, not null — gate on the
-            // cookie actually being present and known before using it.
+            var cookie = HttpContextAccessor?.HttpContext?.Request.Cookies[DashSpec.Abstractions.Viz.IRenderStackSettings.ViewerCookieName];
             return !string.IsNullOrWhiteSpace(cookie)
-                && DashSpec.Stack.Radzen.RadzenColorSchemes.Find(cookie) is not null
+                && RenderStackSettings.Themes.Any(t => string.Equals(t.Token, cookie.Trim(), StringComparison.OrdinalIgnoreCase))
                 ? cookie.Trim()
                 : Bootstrap.ColorScheme;
         }

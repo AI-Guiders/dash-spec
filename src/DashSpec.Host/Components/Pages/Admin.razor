@@ -12,6 +12,7 @@
 @inject NavigationManager Nav
 @inject HostExternalLinksProvider ExternalLinks
 @inject DashSpecHostContext HostContext
+@inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
 
 <PageTitle>@_section.Title — Settings</PageTitle>
 
@@ -158,12 +159,11 @@
                     <div class="field">
                         <label>Color scheme (remark 24)</label>
                         <InputSelect @bind-Value="_presentation.ColorScheme" class="input">
-                            @* ADR-0112 §2: the options ARE the Radzen stack's dictionary
-                               (RadzenColorSchemes) — the admin never drifts from what the
-                               stack actually renders. Empty value = the dictionary default. *@
-                            @foreach (var theme in DashSpec.Stack.Radzen.RadzenColorSchemes.All)
+                            @* ADR-0112 §2: the options come from the active stack's dictionary —
+                               the admin never drifts from what the stack actually renders. *@
+                            @foreach (var theme in RenderStackSettings.Themes)
                             {
-                                var value = theme.Token == DashSpec.Stack.Radzen.RadzenColorSchemes.DefaultToken
+                                var value = theme.Token == RenderStackSettings.DefaultThemeToken
                                     ? ""
                                     : theme.Token;
                                 <option value="@value">@theme.Label</option>

@@ -11,4 +11,8 @@ public sealed class StackCardChromeOverride : ICardChromeControlsOverride
     public Type? ResolveViewSwitch() => typeof(Components.RadzenCardViewSwitch);
 
     public Type? ResolveButton() => typeof(Components.RadzenCardButton);
+
+    public Type? ResolveSidebar() => typeof(Components.RadzenSidebar);
+
+    public Type? ResolveTabBar() => typeof(Components.RadzenTabBar);
 }

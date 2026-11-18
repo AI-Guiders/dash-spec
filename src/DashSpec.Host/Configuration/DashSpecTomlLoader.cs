@@ -112,7 +112,12 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
 
         var dir = Path.GetDirectoryName(path);
         var baseName = Path.GetFileNameWithoutExtension(path);
-        if (!string.IsNullOrWhiteSpace(dir) &&
+        var skipLocal = string.Equals(
+            Environment.GetEnvironmentVariable("DASHSPEC_SKIP_LOCAL_CONFIG"),
+            "1",
+            StringComparison.Ordinal);
+        if (!skipLocal &&
+            !string.IsNullOrWhiteSpace(dir) &&
             !baseName.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
         {
             var localDsPath = Path.Combine(dir, $"{baseName}.local.ds");

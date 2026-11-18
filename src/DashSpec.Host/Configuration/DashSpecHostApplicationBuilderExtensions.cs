@@ -78,28 +78,48 @@ public static class DashSpecHostApplicationBuilderExtensions
 
         // Render stacks (ADR-0112): the chosen stack routes families; the color_scheme
         // token flows to the stacks as-is — each stack reads it its own way.
+        builder.Services.AddSelfMadeRenderStack();
+        builder.Services.AddRadzenRenderStack();
+
+        var hostStackName = string.IsNullOrWhiteSpace(bootstrap.Presentation.RenderStack)
+            ? "selfmade"
+            : bootstrap.Presentation.RenderStack.Trim();
+        var registeredStacks = new IRenderStack[]
+        {
+            new SelfMadeRenderStack(),
+            new RadzenRenderStack(),
+        };
+        var activeStack = registeredStacks.FirstOrDefault(s =>
+            string.Equals(s.Name, hostStackName, StringComparison.OrdinalIgnoreCase))
+            ?? registeredStacks[0];
+
         var renderStackSettings = new RenderStackSettings
         {
-            HostStack = string.IsNullOrWhiteSpace(bootstrap.Presentation.RenderStack)
-                ? "selfmade"
-                : bootstrap.Presentation.RenderStack.Trim(),
+            HostStack = hostStackName,
             ColorScheme = string.IsNullOrWhiteSpace(bootstrap.Presentation.ColorScheme)
-                ? "dark"
+                ? activeStack.DefaultThemeToken
                 : bootstrap.Presentation.ColorScheme.Trim(),
+            DefaultThemeToken = activeStack.DefaultThemeToken,
+            Themes = activeStack.Themes,
+            HeadComponent = activeStack.HeadComponent,
+            ScriptsComponent = activeStack.ScriptsComponent,
         };
-        // The active stack's theme dictionary rides the settings (ADR-0112 §2): the
-        // stack owns the words, the surface renders the per-user picker from this copy.
-        if (string.Equals(renderStackSettings.HostStack, "radzen", StringComparison.OrdinalIgnoreCase))
+
+        if (activeStack.Themes.Count > 0 &&
+            !string.IsNullOrWhiteSpace(bootstrap.Presentation.ColorScheme) &&
+            !activeStack.Themes.Any(t => string.Equals(t.Token, bootstrap.Presentation.ColorScheme.Trim(), StringComparison.OrdinalIgnoreCase)))
         {
-            renderStackSettings.Themes = DashSpec.Stack.Radzen.RadzenColorSchemes.All
-                .Select(t => new DashSpec.Abstractions.Viz.ViewerTheme(t.Token, t.Label))
-                .ToList();
+            using var bootstrapLogFactory = LoggerFactory.Create(logging => logging.AddConsole());
+            bootstrapLogFactory.CreateLogger("DashSpec.HostBootstrap").LogWarning(
+                "color_scheme '{Scheme}' is not in the '{Stack}' stack theme dictionary ({Words}) — rendering '{Default}' instead (ADR-0112 §2).",
+                bootstrap.Presentation.ColorScheme.Trim(),
+                activeStack.Name,
+                string.Join(", ", activeStack.Themes.Select(t => t.Token)),
+                activeStack.DefaultThemeToken);
         }
 
         builder.Services.AddSingleton(renderStackSettings);
         builder.Services.AddSingleton<IRenderStackSettings>(renderStackSettings);
-        builder.Services.AddSelfMadeRenderStack();
-        builder.Services.AddRadzenRenderStack();
 
         var uiCulture = ResolveUiCulture(bootstrap.Presentation.Language);
         var displayTimeZone = DashboardCultureAmbient.ResolveTimeZone(bootstrap.Presentation.DisplayTimeZone);

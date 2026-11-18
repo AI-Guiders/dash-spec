@@ -23,4 +23,8 @@ public sealed class SelfMadeRenderStack : IRenderStack
 
     public IReadOnlyDictionary<string, string> KindPlugins { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    public Type? HeadComponent => typeof(SelfMadeStackHead);
+
+    public Type? ScriptsComponent => typeof(SelfMadeStackScripts);
 }

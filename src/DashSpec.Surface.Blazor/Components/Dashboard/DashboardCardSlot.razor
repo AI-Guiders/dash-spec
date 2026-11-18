@@ -6,7 +6,8 @@
                        Card="Card"
                        PlacementStyle="@PlacementStyle"
                        GridColumns="@Page.Session.Document.Layout.Columns"
-                       InteriorSlotPlan="@Page.InteriorSlotsFor(Card.Id)"
+                       InteriorSlotPlan="@(Slot?.Inner?.Value?.Slots ?? Page.InteriorSlotsFor(Card.Id))"
+                       FilterChromeSlotPlan="@Page.FilterChromeSlotsFor(Card.Id)"
                        DashboardBoundFilters="Page.DashboardBoundForCard(Card)"
                        FilterIndex="Page.Session.FilterIndex"
                        DateFrom="Page.DateFrom"
@@ -35,6 +36,9 @@
 @code {
     [Parameter, EditorRequired]
     public CardRenderResult Card { get; set; } = default!;
+
+    [Parameter]
+    public DashSpec.Modeling.Parse.Layout.Slot? Slot { get; set; }
 
     [Parameter, EditorRequired]
     public string PlacementStyle { get; set; } = string.Empty;

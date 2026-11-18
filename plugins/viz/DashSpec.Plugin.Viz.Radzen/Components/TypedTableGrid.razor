@@ -21,7 +21,8 @@
                 AllowPaging="true" PageSize="@PageSize" AllowColumnResize="true"
                 AllowColumnPicking="@(Fields.Count > 4)" AllowColumnReorder="true"
                 AllowGrouping="@AllowGrouping" GroupIndent="16"
-                RowClick="@OnRowClicked">
+                RowClick="@OnRowClicked"
+                RowRender="@OnRowRender">
     <GroupHeaderTemplate>
         <span class="rviz-typed-group">
             <strong>@(context.GroupDescriptor?.GetTitle() ?? ""):</strong> @(context.Data.Key?.ToString() ?? Loc["(empty)"])

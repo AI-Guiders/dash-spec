@@ -1,0 +1,47 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Viz
+@using Radzen
+@using Radzen.Blazor
+
+@* ADR-0112 §5: Radzen stack's horizontal tab bar (RadzenTabs). *@
+
+@if (Context.Tabs is { Count: > 0 })
+{
+    <RadzenTabs SelectedIndex="@SelectedTabIndex"
+                SelectedIndexChanged="@HandleTabIndexChanged">
+        <Tabs>
+            @foreach (var tab in Context.Tabs)
+            {
+                <RadzenTabsItem Text="@(Context.ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)" />
+            }
+        </Tabs>
+    </RadzenTabs>
+}
+
+@code {
+    [Parameter, EditorRequired] public StackTabBarContext Context { get; set; } = default!;
+
+    private int SelectedTabIndex
+    {
+        get
+        {
+            for (var i = 0; i < Context.Tabs.Count; i++)
+            {
+                if (string.Equals(Context.Tabs[i].Id, Context.ActiveTabId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return 0;
+        }
+    }
+
+    private async Task HandleTabIndexChanged(int index)
+    {
+        if (index >= 0 && index < Context.Tabs.Count)
+        {
+            await Context.OnSelect.InvokeAsync(Context.Tabs[index].Id);
+        }
+    }
+}

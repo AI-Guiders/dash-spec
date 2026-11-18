@@ -235,7 +235,8 @@
 }
 
 @media (max-width: 1200px) {
-  .filters-grid-layout {
+  .filters-grid-layout,
+  .filters-toolbar-row.filters-grid-layout {
     grid-template-columns: var(--tracks-mid, repeat(6, minmax(0, 1fr)));
   }
   .filters-grid-layout > * {
@@ -245,7 +246,8 @@
 }
 
 @media (max-width: 768px) {
-  .filters-grid-layout {
+  .filters-grid-layout,
+  .filters-toolbar-row.filters-grid-layout {
     grid-template-columns: var(--tracks-narrow, repeat(1, minmax(0, 1fr)));
   }
   .filters-grid-layout > * {
@@ -423,6 +425,12 @@
   margin-top: 0.5rem;
 }
 
+.card-interior-row-break {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 0;
+}
+
 .card-interior-grid > .card-interior-slot {
   flex: var(--fx-grow, 1) 1 0;
   min-width: 0;
@@ -436,6 +444,13 @@
 /* the diagram slot keeps a readable floor: below it, the drill slot wraps underneath */
 .card-interior-grid > .card-diagram-slot {
   min-width: min(100%, 380px);
+}
+
+/* In a multi-slot card (e.g. [ heatmap:3 drill:1 ]), a matrix slot sizes to its own
+   fit-content width so there is no dead gap between the matrix and the drill table. */
+.card-interior-grid > .card-diagram-slot--matrix {
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 
 .card-interior-filter-slot {

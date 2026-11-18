@@ -15,18 +15,24 @@
         <DynamicComponent Type="stackButton"
                           Parameters="@(new Dictionary<string, object?>
                           {
-                              ["Label"] = Loc["Export CSV"].Value,
-                              ["Disabled"] = Card.Loading,
-                              ["Clicked"] = EventCallback.Factory.Create(this, ExportCsvAsync),
-                              ["Icon"] = CsvIcon(),
+                              ["Context"] = new StackButtonContext
+                              {
+                                  Label = Loc["Export CSV"].Value,
+                                  Disabled = Card.Loading,
+                                  Clicked = EventCallback.Factory.Create(this, ExportCsvAsync),
+                                  Icon = CsvIcon(),
+                              },
                           })" />
         <DynamicComponent Type="stackButton"
                           Parameters="@(new Dictionary<string, object?>
                           {
-                              ["Label"] = Loc["Export XLSX"].Value,
-                              ["Disabled"] = Card.Loading,
-                              ["Clicked"] = EventCallback.Factory.Create(this, ExportXlsxAsync),
-                              ["Icon"] = XlsxIcon(),
+                              ["Context"] = new StackButtonContext
+                              {
+                                  Label = Loc["Export XLSX"].Value,
+                                  Disabled = Card.Loading,
+                                  Clicked = EventCallback.Factory.Create(this, ExportXlsxAsync),
+                                  Icon = XlsxIcon(),
+                              },
                           })" />
     }
     else

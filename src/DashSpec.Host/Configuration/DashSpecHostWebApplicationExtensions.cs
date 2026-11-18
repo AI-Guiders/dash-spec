@@ -33,11 +33,19 @@ public static class DashSpecHostWebApplicationExtensions
         app.MapPluginEndpoints();
         app.MapDashboardCommandEndpoints();
 
-        app.MapDashSpecBlazorViewer<App>(
+        var contributorRegistry = app.Services.GetRequiredService<DashSpec.Composition.Plugins.DashSpecContributorRegistry>();
+        var componentAssemblies = new HashSet<System.Reflection.Assembly>
+        {
             typeof(SurfaceAssemblyMarker).Assembly,
             typeof(VizBuiltinsPluginCatalog).Assembly,
-            typeof(DashSpec.Plugin.Viz.RadzenUI.Plugins.RadzenVizDashSpecPlugin).Assembly,
-            typeof(FilterBuiltinsPluginCatalog).Assembly);
+            typeof(FilterBuiltinsPluginCatalog).Assembly,
+        };
+        foreach (var type in contributorRegistry.VizComponents.Values)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
+        app.MapDashSpecBlazorViewer<App>(componentAssemblies.ToArray());
 
         app.MapDevEndpoints();
 

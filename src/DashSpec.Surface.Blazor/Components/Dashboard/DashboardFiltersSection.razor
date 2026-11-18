@@ -5,12 +5,10 @@
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Plugin.Filter.Builtins.Components.Shared
 @using DashSpec.Presentation.Components
-@using DashSpec.Abstractions.Viz
-@inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
 
 @if (ShowDashboardFilters)
 {
-<section class="@(IsRadzenStack ? "dash-toolbar-radzen" : SectionClass)"
+<section class="@SectionClass"
          data-toolbar-layout="@(BarLayout ? "bar" : null)"
          data-toolbar-cells="@(ToolbarLabeledCells ? "labeled" : null)"
          aria-label="Фильтры дашборда">
@@ -26,19 +24,19 @@
         {
             if (BarLayout &&
                 lastPlacementRow > 0 &&
-                slot.Placement.Row > lastPlacementRow)
+                slot.Placement.Wide.Row > lastPlacementRow)
             {
                 <div class="toolbar-filter-row-break" aria-hidden="true"></div>
             }
 
             if (BarLayout)
             {
-                lastPlacementRow = slot.Placement.Row;
+                lastPlacementRow = slot.Placement.Wide.Row;
             }
 
-            var filter = FilterIndex[slot.Token];
-            <PlacementSlot Placement="@PlacementVariantsPlanning.For(slot.Placement, Layout.Columns)">
-                <CommandTargetShell TargetId="@slot.Token"
+            var filter = FilterIndex[slot.Node.Id];
+            <PlacementSlot Placement="@slot.Placement">
+                <CommandTargetShell TargetId="@slot.Node.Id"
                                     Kind="CommandTargetKind.Filter"
                                     CssClass="@FilterCellClass(filter)">
                     @if (ToolbarLabeledCells)
@@ -55,23 +53,33 @@
                         </span>
                     }
                     <FilterWidgetHost @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
-                                      Filter="filter"
-                                      Label="@FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields)"
-                                      Hint="@ScopeHintFor(filter)"
-                                      HintAriaLabel="@ScopeHintAriaFor(filter)"
-                                      ToolbarLabeledCells="@ToolbarLabeledCells"
-                                      Disabled="@Busy"
-                                      Options="GetFieldOptions(filter.Name)"
-                                      Selected="@FilterUiHelpers.SelectedFieldValues(filter, SelectedFields)"
-                                      SelectedChanged="values => OnFieldChanged.InvokeAsync((filter.Name, values))"
-                                      DateFrom="DateFrom"
-                                      DateTo="DateTo"
-                                      FilterIndex="FilterIndex"
-                                      SelectedFields="SelectedFields"
-                                      OnDayChanged="OnDayChanged"
-                                      OnRangeChanged="OnScheduleApply"
-                                      TopValue="@FilterUiHelpers.ResolveTopValue(filter, TopLimits)"
-                                      TopValueChanged="value => OnTopChangedForFilter(filter, value)" />
+                                      Context="@(new DashSpec.Filters.FilterWidgetRenderContext
+                                      {
+                                          Filter = filter,
+                                          Label = FilterUiHelpers.DisplayLabel(filter, FilterIndex, SelectedFields),
+                                          Hint = ScopeHintFor(filter),
+                                          HintAriaLabel = ScopeHintAriaFor(filter),
+                                          Compact = ToolbarLabeledCells,
+                                          ToolbarLabeledCells = ToolbarLabeledCells,
+                                          Disabled = Busy,
+                                          ShowLabel = !ToolbarLabeledCells,
+                                          ShowDateLabel = ToolbarLabeledCells,
+                                          Options = GetFieldOptions(filter.Name),
+                                          Selected = FilterUiHelpers.SelectedFieldValues(filter, SelectedFields),
+                                          SelectedChanged = EventCallback.Factory.Create<HashSet<string>>(
+                                              this,
+                                              values => OnFieldChanged.InvokeAsync((filter.Name, values))),
+                                          DateFrom = DateFrom,
+                                          DateTo = DateTo,
+                                          FilterIndex = FilterIndex,
+                                          SelectedFields = SelectedFields,
+                                          OnDayChanged = OnDayChanged,
+                                          OnRangeChanged = OnScheduleApply,
+                                          TopValue = FilterUiHelpers.ResolveTopValue(filter, TopLimits),
+                                          TopValueChanged = EventCallback.Factory.Create<int>(
+                                              this,
+                                              value => OnTopChangedForFilter(filter, value)),
+                                      })" />
                 </CommandTargetShell>
             </PlacementSlot>
         }
@@ -91,16 +99,13 @@
 }
 
 @code {
-    private bool IsRadzenStack =>
-        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
-
     private bool ShowDashboardFilters =>
         FilterNames.Count > 0 || (AutoApply && Busy);
 
     /// <summary>[ADR-0111] P1: the toolbar slice is precomputed at assembly — the section
     /// places what it is given (the controller projects the plane slice through the
     /// session-visible filter set); no planner call on render.</summary>
-    [Parameter] public IReadOnlyList<LayoutSlotDescriptor> ToolbarSlots { get; set; } = [];
+    [Parameter] public IReadOnlyList<Slot> ToolbarSlots { get; set; } = [];
 
     [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =

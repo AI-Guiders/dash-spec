@@ -10,18 +10,21 @@
     <DynamicComponent Type="StackButton"
                       Parameters="@(new Dictionary<string, object?>
                       {
-                          ["Label"] = Label,
-                          ["Disabled"] = Disabled,
-                          ["Pressed"] = Pressed,
-                          ["Clicked"] = EventCallback.Factory.Create(this, OnClick),
-                          ["TestId"] = TestId,
-                          ["Icon"] = (RenderFragment)(builder =>
+                          ["Context"] = new StackButtonContext
                           {
-                              builder.OpenComponent<MatrixGlyphIcon>(0);
-                              builder.AddAttribute(1, nameof(MatrixGlyphIcon.Glyph), Glyph);
-                              builder.AddAttribute(2, nameof(MatrixGlyphIcon.Filled), Pressed);
-                              builder.CloseComponent();
-                          }),
+                              Label = Label,
+                              Disabled = Disabled,
+                              Pressed = Pressed,
+                              Clicked = EventCallback.Factory.Create(this, OnClick),
+                              TestId = TestId,
+                              Icon = (RenderFragment)(builder =>
+                              {
+                                  builder.OpenComponent<MatrixGlyphIcon>(0);
+                                  builder.AddAttribute(1, nameof(MatrixGlyphIcon.Glyph), Glyph);
+                                  builder.AddAttribute(2, nameof(MatrixGlyphIcon.Filled), Pressed);
+                                  builder.CloseComponent();
+                              }),
+                          },
                       })" />
 }
 else

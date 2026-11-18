@@ -61,24 +61,16 @@ else if (Owner is not null)
             }
             @if (_diagramType is not null)
             {
-                // [ADR-0111] P1: a diagram is a diagram — no primary/secondary in the plane.
-                // The render checks its own payload: if a pre-rendered slot payload exists,
-                // the component receives it; otherwise the card's own chart is the payload.
-                @if (HasSlotPayload)
-                {
+                <div class="card-viz-stack">
                     <div data-testid="viz-@(Owner.Card.Id):@(Slot.Node.Id)" style="display:contents">
                         <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
                     </div>
-                }
-                else
-                {
-                    <div class="card-viz-stack">
-                        <div data-testid="viz-@(Owner.Card.Id):@(Slot.Node.Id)" style="display:contents">
-                            <DynamicComponent Type="_diagramType" Parameters="_diagramParameters" />
-                        </div>
+                    @Owner.RenderSlotLegend(SlotPayload)
+                    @if (IsMatrixOrPrimarySlot)
+                    {
                         @Owner.RenderSelectionDetail()
-                    </div>
-                }
+                    }
+                </div>
             }
         </div>
     }
@@ -92,22 +84,27 @@ else if (Owner is not null)
     private Type? _diagramType;
     private Dictionary<string, object?> _diagramParameters = new();
 
-    /// <summary>A pre-rendered slot payload exists for this slot — the render's own fact.</summary>
-    private bool HasSlotPayload =>
-        Slot.Node.Kind == WiringNodeKind.Slot
-        && Owner?.Card.InteriorSlotRenders is not null
-        && Owner.Card.InteriorSlotRenders.ContainsKey(Slot.Node.Id);
+    private CardSlotRenderResult? SlotPayload =>
+        Slot.Node.Kind == WiringNodeKind.Slot &&
+        Owner?.Card.InteriorSlotRenders is not null &&
+        Owner.Card.InteriorSlotRenders.TryGetValue(Slot.Node.Id, out var slot)
+            ? slot
+            : null;
+
+    private bool HasSlotPayload => SlotPayload is not null;
+
+    private bool IsMatrixOrPrimarySlot =>
+        SlotPayload is { DataFamily: DiagramDataFamily.Matrix } ||
+        (!HasSlotPayload && Owner?.Card.Matrix is not null);
 
     /// <summary>This slot shows a loaded cell-drill table (ADR-0107) — it gets the ✕.
     /// A table payload plus an active cell overlay on the card; awaiting-click and
     /// non-drill tables keep their hint/no chrome.</summary>
     private bool DrillLoaded =>
         Owner is not null
-        && HasSlotPayload
+        && SlotPayload is { DataFamily: DiagramDataFamily.Table, Table: not null }
         && Owner.CellDrillActive
-        && Owner.Card.InteriorSlotRenders!.TryGetValue(Slot.Node.Id, out var payload)
-        && payload.DataFamily == DiagramDataFamily.Table
-        && payload.Table is not null;
+        && Owner.Card.InteriorSlotRenders is { Count: > 1 };
 
     protected override void OnParametersSet()
     {
@@ -119,15 +116,16 @@ else if (Owner is not null)
             return;
         }
 
+        var slot = SlotPayload;
         _diagramParameters = new Dictionary<string, object?>
         {
             ["Request"] = new CardVizHostRequest
             {
                 Card = Owner.Card,
-                Slot = HasSlotPayload ? Owner.Card.InteriorSlotRenders![Slot.Node.Id] : null,
+                Slot = slot,
                 DetailView = DetailView,
-                MatrixMin = Owner.Card.Matrix?.Min ?? 0,
-                MatrixMax = Owner.Card.Matrix?.Max ?? 0,
+                MatrixMin = slot?.Matrix?.Min ?? Owner.Card.Matrix?.Min ?? 0,
+                MatrixMax = slot?.Matrix?.Max ?? Owner.Card.Matrix?.Max ?? 0,
                 OnHeatmapCellSelected = EventCallback.Factory.Create<HeatmapCellContext>(
                     this,
                     Owner.HandleHeatmapCellSelectedAsync),

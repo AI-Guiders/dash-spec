@@ -9,12 +9,11 @@ public partial class Home : IDisposable
     [Inject] private DashboardPageController Page { get; set; } = default!;
     [Inject] private DashboardHostCommandCoordinator CommandCoordinator { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
-    [Inject] private DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings { get; set; } = default!;
+    [Inject] private DashSpec.Viz.ICardChromeControlsOverride ChromeControls { get; set; } = default!;
 
     [Inject] private DashSpec.Abstractions.Viewer.IViewerShellChrome HostShell { get; set; } = default!;
 
-    private bool IsRadzenStack =>
-        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
+    private bool HasSidebarChrome => ChromeControls.ResolveSidebar() is not null;
 
     protected override async Task OnInitializedAsync()
     {

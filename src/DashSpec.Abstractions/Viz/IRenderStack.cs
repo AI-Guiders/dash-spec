@@ -20,6 +20,18 @@ public interface IRenderStack
 
     /// <summary>Kind id → renderer plugin id: the stack delegates this kind to a guest.</summary>
     IReadOnlyDictionary<string, string> KindPlugins { get; }
+
+    /// <summary>Themes this stack can render (ADR-0112 §2).</summary>
+    IReadOnlyList<ViewerTheme> Themes => [];
+
+    /// <summary>Default theme token for this stack.</summary>
+    string DefaultThemeToken => "dark";
+
+    /// <summary>Head component type mounting this stack's CSS assets.</summary>
+    Type? HeadComponent => null;
+
+    /// <summary>Scripts component type mounting this stack's JS assets.</summary>
+    Type? ScriptsComponent => null;
 }
 
 /// <summary>A theme the active stack can render (ADR-0112 §2): the token is the
@@ -30,16 +42,28 @@ public sealed record ViewerTheme(string Token, string Label);
 /// <summary>Host-level render stack selection (ADR-0112 §6): filled from host bootstrap.</summary>
 public interface IRenderStackSettings
 {
+    /// <summary>Viewer-layer cookie name for per-user theme override.</summary>
+    public const string ViewerCookieName = "dashspec_color_scheme";
+
     /// <summary>Effective host stack name; empty/unknown = selfmade.</summary>
     string HostStack { get; }
 
     /// <summary>Color scheme token (existing <c>color_scheme</c>): each stack reads it its own way.</summary>
     string ColorScheme { get; }
 
+    /// <summary>Default theme token for the active stack.</summary>
+    string DefaultThemeToken => "dark";
+
     /// <summary>Themes the active stack can render (empty = the stack does not read the
     /// token; surface chrome hides the picker). The admin sets the host default; each
     /// viewer may override it locally (cookie).</summary>
     IReadOnlyList<ViewerTheme> Themes { get; }
+
+    /// <summary>Head component type for the active stack.</summary>
+    Type? HeadComponent => null;
+
+    /// <summary>Scripts component type for the active stack.</summary>
+    Type? ScriptsComponent => null;
 }
 
 /// <summary>Mutable singleton behind <see cref="IRenderStackSettings"/> — filled once at host bootstrap.</summary>
@@ -49,5 +73,11 @@ public sealed class RenderStackSettings : IRenderStackSettings
 
     public string ColorScheme { get; set; } = "dark";
 
+    public string DefaultThemeToken { get; set; } = "dark";
+
     public IReadOnlyList<ViewerTheme> Themes { get; set; } = [];
+
+    public Type? HeadComponent { get; set; }
+
+    public Type? ScriptsComponent { get; set; }
 }

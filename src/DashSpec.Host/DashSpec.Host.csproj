@@ -64,7 +64,6 @@
     <ProjectReference Include="..\DashSpec.Filters\DashSpec.Filters.csproj" />
     <ProjectReference Include="..\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Builtins\DashSpec.Plugin.Viz.Builtins.csproj" />
-    <ProjectReference Include="..\..\plugins\viz\DashSpec.Plugin.Viz.Radzen\DashSpec.Plugin.Viz.Radzen.csproj" />
     <ProjectReference Include="..\..\plugins\filter\DashSpec.Plugin.Filter.Builtins\DashSpec.Plugin.Filter.Builtins.csproj" />
     <ProjectReference Include="..\..\plugins\stack\DashSpec.Stack.SelfMade\DashSpec.Stack.SelfMade.csproj" />
     <ProjectReference Include="..\..\plugins\stack\DashSpec.Stack.Radzen\DashSpec.Stack.Radzen.csproj" />

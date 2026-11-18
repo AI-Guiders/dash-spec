@@ -163,6 +163,22 @@ public sealed class LayerDependencyTests
         }
     }
 
+    [Fact]
+    public void Surface_Blazor_and_Composition_must_not_reference_Radzen()
+    {
+        var surfaceResult = Types.InAssembly(SurfaceBlazorAssembly)
+            .ShouldNot()
+            .HaveDependencyOnAny("Radzen", "Radzen.Blazor", "DashSpec.Plugin.Viz.RadzenUI", "DashSpec.Stack.Radzen")
+            .GetResult();
+        Assert.True(surfaceResult.IsSuccessful, string.Join("; ", surfaceResult.FailingTypeNames ?? []));
+
+        var compositionResult = Types.InAssembly(CompositionAssembly)
+            .ShouldNot()
+            .HaveDependencyOnAny("Radzen", "Radzen.Blazor", "DashSpec.Plugin.Viz.RadzenUI", "DashSpec.Stack.Radzen")
+            .GetResult();
+        Assert.True(compositionResult.IsSuccessful, string.Join("; ", compositionResult.FailingTypeNames ?? []));
+    }
+
     static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

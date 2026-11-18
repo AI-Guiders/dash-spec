@@ -160,11 +160,6 @@ public sealed class CardRenderService(
             ? CompositionResolution.ResolveTablePresentation(effective, library)
             : null;
         var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
-        var interiorPlacements = DashboardLayoutHelper.ResolveInteriorPlacements(card, document);
-        var localFilterChromePlacements = CardLocalFilterChromeCompactor.Compact(
-            card,
-            document.Filters,
-            document.Layout.Columns);
         var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(card);
 
         var (filterLinkHint, filterLinkCssClass) = CardFilterLinkHints.Resolve(card, document);
@@ -187,13 +182,18 @@ public sealed class CardRenderService(
             // result — components format outside the payload-building async flow.
             result = result with
             {
-                LocalFilterChromePlacements = localFilterChromePlacements,
                 FormatDefaults = document.ResolvedFormatDefaults,
                 FlowPath = flowPath,
             };
-            return interiorSlotRenders.Count == 0
-                ? result
-                : result with { InteriorSlotRenders = interiorSlotRenders };
+
+            var allSlotRenders = new Dictionary<string, CardSlotRenderResult>(
+                interiorSlotRenders,
+                StringComparer.OrdinalIgnoreCase)
+            {
+                [primarySlotRef] = ToPrimarySlotRenderResult(result, primarySlotRef),
+            };
+
+            return result with { InteriorSlotRenders = allSlotRenders };
         }
 
         if (kind.DataFamily is DiagramDataFamily.Scalar)
@@ -235,7 +235,6 @@ public sealed class CardRenderService(
                 NumberDelta: numberDelta,
                 NumberDeltaTone: numberDeltaTone,
                 Placement: card.Placement?.Value,
-                InteriorPlacements: interiorPlacements,
                 BoundFilters: card.BoundFilters,
                 LocalFilters: card.LocalFilters,
                 ClickBehaviour: card.ClickBehaviour?.Value,
@@ -262,7 +261,6 @@ public sealed class CardRenderService(
                         ? null
                         : ChartDataBuilder.BuildChart(rows, effective.Diagram, null, effective, library, document.ColorPalette?.Value),
                     Placement: card.Placement?.Value,
-                    InteriorPlacements: interiorPlacements,
                     ChartPresentation: chartPresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
@@ -286,7 +284,6 @@ public sealed class CardRenderService(
                     renderPluginId,
                     Table: ChartDataBuilder.BuildTable(rows, effective.Diagram, RowsTypeNameOf(effective)),
                     Placement: card.Placement?.Value,
-                    InteriorPlacements: interiorPlacements,
                     TablePresentation: tablePresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
@@ -313,7 +310,6 @@ public sealed class CardRenderService(
                         ? null
                         : ChartDataBuilder.BuildHeatmap(rows, effective.Diagram, null, effective.Tooltip?.Value),
                     Placement: card.Placement?.Value,
-                    InteriorPlacements: interiorPlacements,
                     MatrixPresentation: matrixPresentation,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
@@ -340,7 +336,6 @@ public sealed class CardRenderService(
                         effective,
                         library),
                     Placement: card.Placement?.Value,
-                    InteriorPlacements: interiorPlacements,
                     BoundFilters: card.BoundFilters,
                     LocalFilters: card.LocalFilters,
                     ClickBehaviour: card.ClickBehaviour?.Value,
@@ -357,6 +352,32 @@ public sealed class CardRenderService(
             _ => throw new ArgumentOutOfRangeException(nameof(card)),
         });
     }
+
+    private static CardSlotRenderResult ToPrimarySlotRenderResult(CardRenderResult card, string primarySlotRef) =>
+        new(
+            primarySlotRef,
+            card.DiagramKind,
+            card.DataFamily,
+            card.RenderPluginId,
+            Chart: card.Chart,
+            Table: card.Table,
+            Matrix: card.Matrix,
+            Gantt: card.Gantt,
+            MatrixPresentation: card.MatrixPresentation,
+            TablePresentation: card.TablePresentation,
+            Error: card.Error,
+            FormatDefaults: card.FormatDefaults,
+            FlowPath: card.FlowPath,
+            ChartPresentation: card.ChartPresentation,
+            DetailChart: card.DetailChart,
+            DetailMatrix: card.DetailMatrix,
+            Number: card.Number,
+            NumberScale: card.NumberScale,
+            NumberDelta: card.NumberDelta,
+            NumberDeltaTone: card.NumberDeltaTone,
+            EmptyMessage: card.EmptyMessage,
+            ClickBehaviour: card.ClickBehaviour,
+            ClickHandlers: card.ClickHandlers);
 
     private async Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderSecondarySlotsAsync(
         CardDefinition card,

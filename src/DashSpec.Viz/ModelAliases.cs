@@ -13,3 +13,6 @@ global using CardClickBehaviour = DashSpec.Modeling.Parse.Card.CardClickBehaviou
 global using CardClickEffect = DashSpec.Modeling.Parse.Card.CardClickEffect;
 global using DashboardDocument = DashSpec.Modeling.Parse.Document.DashboardDocument;
 global using ReportFormatDefaults = DashSpec.Modeling.Parse.Document.ReportFormatDefaults;
+global using TabDefinition = DashSpec.Modeling.Parse.Document.TabDefinition;
+global using CatalogEntryDefinition = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
+global using CatalogGroupDefinition = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;

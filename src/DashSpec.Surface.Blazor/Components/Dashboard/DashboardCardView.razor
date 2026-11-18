@@ -10,14 +10,12 @@
 @using DashSpec.Surface.Blazor.Services.Localization
 @using DashSpec.Plugin.Filter.Builtins.Components
 @using DashSpec.Presentation.Components
-@using Radzen
-@using Radzen.Blazor
 @inject DashboardLocalizer Loc
 @inject DashSpec.Viz.ICardChromeControlsOverride ChromeControls
 @inject ICardCellDrillState CellDrill
 @implements IDisposable
 
-<RadzenCard Variant="Variant.Filled" Class="@CardCssClass" Style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
+<article class="@CardCssClass" style="@PlacementStyle" data-testid="@(($"card-{Card.Id}"))">
     <div class="card-head">
         @if (Card.ShowChromeTitle || !string.IsNullOrWhiteSpace(Card.FilterLinkHint))
         {
@@ -33,22 +31,27 @@
                         <DynamicComponent Type="stackFold"
                                           Parameters="@(new Dictionary<string, object?>
                                           {
-                                              ["Label"] = foldLabel,
-                                              ["Disabled"] = false,
-                                              ["Clicked"] = EventCallback.Factory.Create(this, ToggleBodyFoldAsync),
-                                              ["Icon"] = (RenderFragment)(builder =>
+                                              ["Context"] = new StackButtonContext
                                               {
-                                                  builder.OpenComponent<CardIcon>(0);
-                                                  builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.ChevronDown);
-                                                  builder.AddAttribute(2, nameof(CardIcon.Collapsed), BodyFolded);
-                                                  builder.CloseComponent();
-                                              }),
+                                                  Label = foldLabel,
+                                                  Disabled = false,
+                                                  Clicked = EventCallback.Factory.Create(this, ToggleBodyFoldAsync),
+                                                  TestId = $"card-fold-{Card.Id}",
+                                                  Icon = builder =>
+                                                  {
+                                                      builder.OpenComponent<CardIcon>(0);
+                                                      builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.ChevronDown);
+                                                      builder.AddAttribute(2, nameof(CardIcon.Collapsed), BodyFolded);
+                                                      builder.CloseComponent();
+                                                  },
+                                              },
                                           })" />
                     }
                     else
                     {
                         <button type="button"
                                 class="secondary card-icon-btn card-fold-btn"
+                                data-testid="@($"card-fold-{Card.Id}")"
                                 title="@foldLabel"
                                 aria-expanded="@(!BodyFolded)"
                                 aria-label="@foldLabel"
@@ -77,9 +80,11 @@
         @if (HasHeadMeta && !BodyFolded)
         {
             <div class="card-head-meta">
-                @if (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+                @if (!UsesInteriorLayout && HasHeadChromeLocalFilters)
                 {
                     <CardLocalFilterChrome Card="Card"
+                                           ChromeSlotPlan="FilterChromeSlotPlan"
+                                           ExcludedFilters="InteriorPlacedFilters"
                                            GridColumns="GridColumns"
                                            FieldOptionsRevision="FieldOptionsRevision"
                                            HeadMetaLayout="true"
@@ -119,7 +124,7 @@
     {
         @InteriorPlan()
     }
-</RadzenCard>
+</article>
 
 @if (_fullscreen && CanFullscreen)
 {
@@ -132,28 +137,32 @@
              @ref="_fullscreenPanel"
              @onclick:stopPropagation="true"
              @onkeydown="OnFullscreenKeyDown">
-            <header class="card-fullscreen-head">
-                <h2><RichTextView Text="@Card.Title" /></h2>
-                @if (_fullscreenSlotId is not null)
-                {
-                    <span class="muted card-fullscreen-slot-hint">@_fullscreenSlotId</span>
-                }
-                <button type="button"
-                        class="secondary card-icon-btn card-fullscreen-close"
-                        title="@Loc.T("Collapse")"
-                        aria-label="@Loc.T("Collapse")"
-                        @onclick="CloseFullscreen">
-                    <CardIcon Kind="CardIconKind.Collapse" />
-                </button>
-            </header>
-            @* The maximized card IS the card (ADR-0111 P1): toolbar and interior plan
-               ride along — the same fragments the inline card renders, only the frame
-               grows. Slot-maximize (the hover button) still shows that slot alone. *@
+            @* The maximized card IS the card (ADR-0111 P1): one unified .card-head
+               carries the title, toolbar chrome, and close button; only the frame grows. *@
             <CascadingValue Value="this" IsFixed="true">
-                @if (_fullscreenSlotId is null)
-                {
-                    @CardToolbarChrome(showFullscreenToggle: false)
-                }
+                <header class="card-head card-fullscreen-head">
+                    <div class="card-head-title">
+                        <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
+                        @if (_fullscreenSlotId is not null)
+                        {
+                            <span class="muted card-fullscreen-slot-hint">@_fullscreenSlotId</span>
+                        }
+                    </div>
+                    @if (_fullscreenSlotId is null)
+                    {
+                        @CardToolbarChrome(showFullscreenToggle: false, showCloseFullscreen: true)
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="secondary card-icon-btn card-fullscreen-close"
+                                title="@Loc.T("Collapse")"
+                                aria-label="@Loc.T("Collapse")"
+                                @onclick="CloseFullscreen">
+                            <CardIcon Kind="CardIconKind.Collapse" />
+                        </button>
+                    }
+                </header>
                 <div class="card-fullscreen-body">
                     @if (_fullscreenSlotId is { } slotId &&
                         InteriorSlots.FirstOrDefault(slot => slot.Node.Id == slotId) is { } fsSlot)
@@ -191,6 +200,8 @@
     [Parameter] public string? ActiveViewId { get; set; }
     /// <summary>[ADR-0111] P1: the assembled interior slice from the plane's CardInteriors.</summary>
     [Parameter] public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? InteriorSlotPlan { get; set; }
+    /// <summary>[ADR-0111] P1: the assembled local filter chrome slice from the plane's CardFilterChrome.</summary>
+    [Parameter] public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? FilterChromeSlotPlan { get; set; }
     [Parameter] public EventCallback<string> OnApplyCard { get; set; }
     [Parameter] public EventCallback<string> OnScheduleCardApply { get; set; }
     [Parameter] public EventCallback<(string CardId, string FilterName)> OnCardDayChanged { get; set; }
@@ -218,20 +229,17 @@
     /// <summary>The card's action row — local filters, viz toolbar (view switch),
     /// chrome, fullscreen toggle, extension blocks. One fragment, two frames: the
     /// inline card and the fullscreen panel render the same row.</summary>
-    private RenderFragment CardToolbarChrome(bool showFullscreenToggle) => __builder =>
+    private RenderFragment CardToolbarChrome(bool showFullscreenToggle, bool showCloseFullscreen = false) => __builder =>
     {
-        @* Chrome is the stack's (ADR-0112): the action row is a Radzen stack —
-           layout and rhythm from the theme, content stays ours. *@
-        <RadzenStack Orientation="Orientation.Horizontal"
-                     AlignItems="AlignItems.Center"
-                     Wrap="FlexWrap.Wrap"
-                     Gap="0.4rem"
-                     class="card-head-toolbar"
-                     role="toolbar"
-                     aria-label="@Loc.T("Card actions")">
-            @if (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 })
+        <div class="card-head-toolbar"
+             style="display:flex;align-items:center;flex-wrap:wrap;gap:0.4rem;"
+             role="toolbar"
+             aria-label="@Loc.T("Card actions")">
+            @if (UsesInteriorLayout && HasHeadChromeLocalFilters)
             {
                 <CardLocalFilterChrome Card="Card"
+                                       ChromeSlotPlan="FilterChromeSlotPlan"
+                                       ExcludedFilters="InteriorPlacedFilters"
                                        GridColumns="GridColumns"
                                        FieldOptionsRevision="FieldOptionsRevision"
                                        ApplyLabel="@Loc.T("Apply")"
@@ -265,22 +273,27 @@
                     <DynamicComponent Type="stackFullscreen"
                                       Parameters="@(new Dictionary<string, object?>
                                       {
-                                          ["Label"] = Loc.T("Expand diagram"),
-                                          ["Disabled"] = Card.Loading,
-                                          ["Pressed"] = _fullscreen,
-                                          ["Clicked"] = EventCallback.Factory.Create(this, ToggleFullscreen),
-                                          ["Icon"] = (RenderFragment)(builder =>
+                                          ["Context"] = new StackButtonContext
                                           {
-                                              builder.OpenComponent<CardIcon>(0);
-                                              builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Expand);
-                                              builder.CloseComponent();
-                                          }),
+                                              Label = Loc.T("Expand diagram"),
+                                              Disabled = Card.Loading,
+                                              Pressed = _fullscreen,
+                                              Clicked = EventCallback.Factory.Create(this, ToggleFullscreen),
+                                              TestId = $"card-expand-{Card.Id}",
+                                              Icon = builder =>
+                                              {
+                                                  builder.OpenComponent<CardIcon>(0);
+                                                  builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Expand);
+                                                  builder.CloseComponent();
+                                              },
+                                          },
                                       })" />
                 }
                 else
                 {
                     <button type="button"
                             class="secondary card-icon-btn card-fullscreen-btn"
+                            data-testid="@($"card-expand-{Card.Id}")"
                             title="@Loc.T("Expand diagram")"
                             disabled="@Card.Loading"
                             aria-pressed="@_fullscreen"
@@ -302,17 +315,39 @@
             {
                 <span class="card-status card-status-error">@Loc.T("Error")</span>
             }
-        </RadzenStack>
+            @if (showCloseFullscreen)
+            {
+                <button type="button"
+                        class="secondary card-icon-btn card-fullscreen-close"
+                        data-testid="@($"card-collapse-{Card.Id}")"
+                        title="@Loc.T("Collapse")"
+                        aria-label="@Loc.T("Collapse")"
+                        @onclick="CloseFullscreen">
+                    <CardIcon Kind="CardIconKind.Collapse" />
+                </button>
+            }
+        </div>
     };
 
     /// <summary>The interior slot plan — the SSOT render (ADR-0111 P1). The inline
-    /// card and the fullscreen panel render the same grid; only the frame differs.</summary>
+    /// card and the fullscreen panel render the same grid; only the frame differs.
+    /// Explicit row breaks keep authored board rows separate inside the flex-wrap
+    /// interior flow.</summary>
     private RenderFragment InteriorPlan(bool detailView = false) => __builder =>
     {
         <CascadingValue Value="this" IsFixed="true">
             <CardInteriorGrid GridColumns="GridColumns" ExtraStyle="@InteriorGridFillStyle()">
+                @{
+                    var lastInteriorRow = 0;
+                }
                 @foreach (var slot in InteriorSlots)
                 {
+                    if (lastInteriorRow > 0 && slot.Placement.Wide.Row > lastInteriorRow)
+                    {
+                        <div class="card-interior-row-break" aria-hidden="true"></div>
+                    }
+                    lastInteriorRow = slot.Placement.Wide.Row;
+
                     <PlacementSlot Placement="slot.Placement"
                                    CssClass="@InteriorSlotCssClass(slot)"
                                    ExtraStyle="@InteriorSlotExtraStyle(slot)">
@@ -320,60 +355,65 @@
                     </PlacementSlot>
                 }
             </CardInteriorGrid>
-            @if (CardLegendVisible)
-            {
-                @* The card's own legend slot (ADR-0073 chrome): the diagram pane never
-                   shares space with the legend — the legend lives below the interior,
-                   at the card level, and keeps that place whether the matrix scrolls,
-                   folds or fills. *@
-                <div class="card-legend-slot" data-testid="legend-@Card.Id"
-                     data-color-scale="@HeatmapColorScale.Normalize(Card.MatrixPresentation?.ColorScale)">
-                    @if (!string.IsNullOrWhiteSpace(CardLegendMinText))
-                    {
-                        <span><RichTextView Text="@CardLegendMinText" /></span>
-                    }
-                    <span class="card-legend-bar" aria-hidden="true"></span>
-                    @if (!string.IsNullOrWhiteSpace(CardLegendMaxText))
-                    {
-                        <span><RichTextView Text="@CardLegendMaxText" /></span>
-                    }
-                </div>
-            }
         </CascadingValue>
     };
 
-    /// <summary>The card's own legend slot: visible when the matrix declares a
-    /// gradient legend and the viewer has not toggled it off (ADR-0062 state).
-    /// Lives at the card level — the viz component no longer owns legend space.</summary>
-    private MatrixPresentation? LegendPresentation =>
-        Card.Matrix is not null ? Card.MatrixPresentation : null;
+    /// <summary>Renders the matrix gradient legend directly inside the matrix slot
+    /// so it belongs to its own slot and never overlaps the matrix on scroll or
+    /// stretches across sibling drill tables.</summary>
+    internal RenderFragment RenderSlotLegend(CardSlotRenderResult? slotPayload) => __builder =>
+    {
+        var matrix = slotPayload?.Matrix ?? (slotPayload is null ? Card.Matrix : null);
+        var presentation = slotPayload?.MatrixPresentation ?? (slotPayload is null ? Card.MatrixPresentation : null);
+        if (matrix is null || presentation is null)
+        {
+            return;
+        }
 
-    private bool CardLegendVisible =>
-        LegendPresentation is not null &&
-        VizLabelDisplayResolver.EffectiveLegendVisible(
-            LegendPresentation.ShowsGradientLegend,
+        var visible = VizLabelDisplayResolver.EffectiveLegendVisible(
+            presentation.ShowsGradientLegend,
             VizDisplayState.GetLegendOverride(Card.Id));
+        if (!visible)
+        {
+            return;
+        }
 
-    private string? CardLegendMinText =>
-        LegendPresentation is not null
-            ? LegendPresentation.FormatLegendMin(Card.Matrix!.Min, Card.Matrix!.Max)
-            : null;
+        var minText = presentation.FormatLegendMin(matrix.Min, matrix.Max);
+        var maxText = presentation.FormatLegendMax(matrix.Min, matrix.Max);
+        <div class="card-legend-slot" data-testid="legend-@Card.Id"
+             data-color-scale="@HeatmapColorScale.Normalize(presentation.ColorScale)">
+            @if (!string.IsNullOrWhiteSpace(minText))
+            {
+                <span><RichTextView Text="@minText" /></span>
+            }
+            <span class="card-legend-bar" aria-hidden="true"></span>
+            @if (!string.IsNullOrWhiteSpace(maxText))
+            {
+                <span><RichTextView Text="@maxText" /></span>
+            }
+        </div>
+    };
 
-    private string? CardLegendMaxText =>
-        LegendPresentation is not null
-            ? LegendPresentation.FormatLegendMax(Card.Matrix!.Min, Card.Matrix!.Max)
-            : null;
+    private IReadOnlyList<string> InteriorPlacedFilters =>
+        InteriorSlots
+            .Where(s => s.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter)
+            .Select(s => s.Node.Id)
+            .ToList();
+
+    private bool HasHeadChromeLocalFilters =>
+        Card.LocalFilters is { Count: > 0 } locals &&
+        locals.Any(f => !InteriorPlacedFilters.Contains(f, StringComparer.OrdinalIgnoreCase));
 
     private bool HasHeadToolbar =>
         _vizToolbarType is not null ||
         CanFullscreen ||
         Card.ExtensionBlocks is { Count: > 0 } ||
-        (UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
+        (UsesInteriorLayout && HasHeadChromeLocalFilters) ||
         Card.Loading ||
         !string.IsNullOrEmpty(Card.Error);
 
     private bool HasHeadMeta =>
-        (!UsesInteriorLayout && Card.LocalFilters is { Count: > 0 }) ||
+        (!UsesInteriorLayout && HasHeadChromeLocalFilters) ||
         DashboardBoundFilters.Count > 0;
 
 
@@ -567,7 +607,8 @@
             };
     }
 
-    private bool UsesInteriorLayout => Card.InteriorPlacements is { Count: > 0 };
+    private bool UsesInteriorLayout =>
+        InteriorSlotPlan is { Count: > 0 } || Card.InteriorPlacements is { Count: > 0 };
 
     private string CardCssClass
     {
@@ -604,7 +645,8 @@
             : null);
 
     private bool HasInlineDrillTableSlot() =>
-        Card.InteriorSlotRenders?.Values.Any(static slot => slot.DataFamily is DiagramDataFamily.Table) == true;
+        Card.InteriorSlotRenders is { Count: > 1 } slots &&
+        slots.Values.Any(static slot => slot.DataFamily is DiagramDataFamily.Table);
 
     private static readonly ShowSelectionEffect MatrixDefaultShowSelection =
         CardClickEffect.NewShowSelection(
@@ -688,10 +730,16 @@
     /// to the same frame instead of dictating heights to each other (ADR-0116 flex row).</summary>
     private bool IsFillDiagramSlot(DashSpec.Modeling.Parse.Layout.Slot slot)
     {
-        if (slot.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter ||
-            Card.InteriorSlotRenders?.ContainsKey(slot.Node.Id) == true)
+        if (slot.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter)
         {
             return false;
+        }
+
+        if (Card.InteriorSlotRenders is not null &&
+            Card.InteriorSlotRenders.TryGetValue(slot.Node.Id, out var slotRender))
+        {
+            return slotRender.ChartPresentation is { StretchMode: VizStretchMode.Fill } ||
+                   slotRender.MatrixPresentation is { StretchMode: VizStretchMode.Fill };
         }
 
         return Card.ChartPresentation is { StretchMode: VizStretchMode.Fill } ||
@@ -716,16 +764,39 @@
         : Card.MatrixPresentation is { StretchMode: VizStretchMode.Fill } matrix ? matrix.HeightPx
         : 320;
 
+    private bool IsMatrixDiagramSlot(DashSpec.Modeling.Parse.Layout.Slot slot)
+    {
+        if (slot.Node.Kind == DashSpec.Modeling.Core.WiringNodeKind.Filter)
+        {
+            return false;
+        }
+
+        if (Card.InteriorSlotRenders is not null &&
+            Card.InteriorSlotRenders.TryGetValue(slot.Node.Id, out var slotRender))
+        {
+            return slotRender.DataFamily is DiagramDataFamily.Matrix;
+        }
+
+        return Card.DataFamily is DiagramDataFamily.Matrix;
+    }
+
     private string InteriorSlotCssClass(DashSpec.Modeling.Parse.Layout.Slot slot)
     {
         var kindClass = InteriorSlotClass(slot.Node.Kind);
+        if (IsMatrixDiagramSlot(slot) && InteriorSlots.Count > 1)
+        {
+            kindClass += " card-diagram-slot--matrix";
+        }
+
         return IsFillDiagramSlot(slot) ? $"{kindClass} card-diagram-slot--fill" : kindClass;
     }
 
     internal string InteriorSlotStyle(string slotKey) =>
-        Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
-            ? Services.Presentation.DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns)
-            : string.Empty;
+        InteriorSlots.FirstOrDefault(s => string.Equals(s.Node.Id, slotKey, StringComparison.OrdinalIgnoreCase)) is { } slot
+            ? PlacementGridCss.SlotStyle(slot.Placement)
+            : Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
+                ? Services.Presentation.DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns)
+                : string.Empty;
 
     private bool LocalFiltersAutoApply =>
         AutoApply && !Card.LocalFiltersManualApply;
@@ -753,30 +824,34 @@
 
         var filterWidgetParameters = new Dictionary<string, object?>
         {
-            ["Filter"] = filter,
-            ["Label"] = FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields),
-            ["Hint"] = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
-            ["PlacementStyle"] = placementStyle,
-            ["Disabled"] = Card.Loading,
-            ["Options"] = GetFieldOptions(filter.Name),
-            ["Selected"] = FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields),
-            ["SelectedChanged"] = EventCallback.Factory.Create<HashSet<string>>(
-                this,
-                values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))),
-            ["DateFrom"] = CardLocalDateFrom,
-            ["DateTo"] = CardLocalDateTo,
-            ["FilterIndex"] = FilterIndex,
-            ["SelectedFields"] = CardLocalSelectedFields,
-            ["OnDayChanged"] = EventCallback.Factory.Create<string>(
-                this,
-                args => OnCardDayChanged.InvokeAsync((Card.Id, args))),
-            ["OnRangeChanged"] = EventCallback.Factory.Create(
-                this,
-                () => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask),
-            ["TopValue"] = FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits),
-            ["TopValueChanged"] = EventCallback.Factory.Create<int>(
-                this,
-                value => OnLocalTopChanged(filter, value)),
+            ["Context"] = new FilterWidgetRenderContext
+            {
+                Filter = filter,
+                Label = FilterWidgetPresentation.DisplayLabel(filter, FilterIndex, CardLocalSelectedFields),
+                Hint = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
+                HintAriaLabel = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
+                PlacementStyle = placementStyle,
+                Disabled = Card.Loading,
+                Options = GetFieldOptions(filter.Name),
+                Selected = FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields),
+                SelectedChanged = EventCallback.Factory.Create<HashSet<string>>(
+                    this,
+                    values => OnCardFieldChanged.InvokeAsync((Card.Id, filter.Name, values))),
+                DateFrom = CardLocalDateFrom,
+                DateTo = CardLocalDateTo,
+                FilterIndex = FilterIndex,
+                SelectedFields = CardLocalSelectedFields,
+                OnDayChanged = EventCallback.Factory.Create<string>(
+                    this,
+                    args => OnCardDayChanged.InvokeAsync((Card.Id, args))),
+                OnRangeChanged = EventCallback.Factory.Create(
+                    this,
+                    () => LocalFiltersAutoApply ? OnScheduleCardApply.InvokeAsync(Card.Id) : Task.CompletedTask),
+                TopValue = FilterWidgetPresentation.ResolveTopValue(filter, CardLocalTopLimits),
+                TopValueChanged = EventCallback.Factory.Create<int>(
+                    this,
+                    value => OnLocalTopChanged(filter, value)),
+            },
         };
 
         <DynamicComponent @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"

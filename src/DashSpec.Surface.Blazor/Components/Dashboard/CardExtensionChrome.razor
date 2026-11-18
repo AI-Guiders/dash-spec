@@ -77,9 +77,12 @@
                             <DynamicComponent Type="stackButton"
                                               Parameters="@(new Dictionary<string, object?>
                                               {
-                                                  ["Label"] = label,
-                                                  ["Disabled"] = string.IsNullOrWhiteSpace(action) || Card?.Loading == true,
-                                                  ["Clicked"] = EventCallback.Factory.Create(this, () => InvokeActionAsync(action)),
+                                                  ["Context"] = new StackButtonContext
+                                                  {
+                                                      Label = label,
+                                                      Disabled = string.IsNullOrWhiteSpace(action) || Card?.Loading == true,
+                                                      Clicked = EventCallback.Factory.Create(this, () => InvokeActionAsync(action)),
+                                                  },
                                               })" />
                         }
                         else
@@ -111,16 +114,19 @@
     private Dictionary<string, object?> ViewSwitchParameters(ExtensionBlockNode block, string switchActionId) =>
         new()
         {
-            ["Views"] = block.Nested
-                .Select(view => new CardViewOption(
-                    view.Keyword,
-                    view.Properties.GetValueOrDefault("label") ?? view.Keyword))
-                .ToList(),
-            ["Active"] = ActiveViewId ?? string.Empty,
-            ["ActiveChanged"] = EventCallback.Factory.Create<string>(this,
-                id => SwitchViewAsync(id, switchActionId)),
-            ["Disabled"] = Card?.Loading == true,
-            ["AriaLabel"] = Loc.T("View"),
+            ["Context"] = new StackViewSwitchContext
+            {
+                Views = block.Nested
+                    .Select(view => new CardViewOption(
+                        view.Keyword,
+                        view.Properties.GetValueOrDefault("label") ?? view.Keyword))
+                    .ToList(),
+                Active = ActiveViewId ?? string.Empty,
+                ActiveChanged = EventCallback.Factory.Create<string>(this,
+                    id => SwitchViewAsync(id, switchActionId)),
+                Disabled = Card?.Loading == true,
+                AriaLabel = Loc.T("View"),
+            },
         };
 
     private async Task SwitchViewAsync(string viewId, string actionId)

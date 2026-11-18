@@ -2,16 +2,17 @@
    the parts are this stack's copy of the plane projection (tokens read --rz-*),
    the rules below are the stack's own chrome (left menu + board column). Colors
    ride the --rz-* theme variables — the theme file owns the palette. */
-@import url("parts/tokens.css?v=20261106a");
-@import url("parts/layout.css?v=20261106a");
-@import url("parts/filters.css?v=20261106a");
-@import url("parts/cards.css?v=20261106a");
-@import url("parts/charts.css?v=20261106a");
-@import url("parts/viz-misc.css?v=20261106a");
-@import url("parts/gantt-timeline.css?v=20261106a");
-@import url("parts/spec-inspector.css?v=20261106a");
-@import url("parts/command-palette.css?v=20261106a");
+@import url("parts/tokens.css?v=20261116b");
+@import url("parts/layout.css?v=20261116b");
+@import url("parts/filters.css?v=20261116b");
+@import url("parts/cards.css?v=20261116b");
+@import url("parts/charts.css?v=20261116b");
+@import url("parts/viz-misc.css?v=20261116b");
+@import url("parts/gantt-timeline.css?v=20261116b");
+@import url("parts/spec-inspector.css?v=20261116b");
+@import url("parts/command-palette.css?v=20261116b");
 
+.dash-home-flow-sidebar,
 .dash-home-flow-radzen {
   display: flex;
   align-items: flex-start;
@@ -57,7 +58,8 @@
 
 /* Dashboard filter toolbar (radzen stack): a real panel row — surface, wrap,
    themed inputs inside. The placement grid keeps spec-driven cell order. */
-.dash-toolbar-radzen {
+.dash-toolbar-radzen,
+section.filters {
   background: var(--rz-base-background-color, var(--rz-base-800));
   border: 1px solid var(--rz-base-700);
   border-radius: var(--rz-border-radius, 6px);
@@ -65,22 +67,62 @@
 }
 
 .dash-toolbar-radzen .filter-cell,
-.dash-toolbar-radzen [class*=filter] {
+.dash-toolbar-radzen [class*=filter],
+section.filters .filter-cell,
+section.filters [class*=filter] {
   min-width: 0;
 }
 
-/* Responsive: screens narrower than 1100px fold the sidebar above the board;
-   narrower than 800px the toolbar wraps under the board header. */
+.dash-sidebar-toggle {
+  display: none;
+}
+
+/* Responsive: screens narrower than 1100px collapse the sidebar into a compact
+   hamburger bar above the board; clicking opens the menu drawer. */
 @media (max-width: 1100px) {
+  .dash-home-flow-sidebar,
   .dash-home-flow-radzen {
     flex-direction: column;
   }
 
   .dash-sidebar {
     position: static;
+    min-height: 0;
     max-height: none;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     width: 100%;
+    padding: 0;
+  }
+
+  .dash-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    background: transparent;
+    border: none;
+    color: var(--rz-text-color, inherit);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .dash-sidebar-toggle-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: 0 0 auto;
+  }
+
+  .dash-sidebar-body {
+    display: none;
+    border-top: 1px solid var(--rz-base-700, var(--border));
+    padding: 0.25rem 0 0.5rem;
+  }
+
+  .dash-sidebar--open .dash-sidebar-body {
+    display: block;
   }
 
   .dash-sidebar .rz-menu {
@@ -94,8 +136,33 @@
     columns: 1;
   }
 
-  .dash-toolbar-radzen {
+  .dash-toolbar-radzen,
+  section.filters {
     overflow-x: auto;
   }
+}
+
+.rviz-chart-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.rviz-chart-wrap .rz-legend,
+.rviz-chart-wrap .rz-legend-bottom {
+  font-size: 0.72rem;
+  line-height: 1.3;
+  row-gap: 0;
+  max-height: 45% !important;
+  overflow-y: auto !important;
+}
+
+.rviz-row-clickable {
+  cursor: pointer;
+}
+
+.rviz-row--active > td {
+  background-color: color-mix(in srgb, var(--rz-primary, #3b82f6) 22%, transparent) !important;
+  box-shadow: inset 0 1px 0 var(--rz-primary, #3b82f6), inset 0 -1px 0 var(--rz-primary, #3b82f6);
 }
 

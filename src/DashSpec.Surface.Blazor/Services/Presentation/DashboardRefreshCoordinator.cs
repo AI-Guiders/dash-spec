@@ -160,7 +160,16 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                     return Task.CompletedTask;
                 }
 
-                Cards[index] = EnrichCard(cardDef, Cards[index] with { InteriorSlotRenders = slots });
+                var current = Cards[index];
+                var mergedSlots = current.InteriorSlotRenders is { Count: > 0 } existing
+                    ? new Dictionary<string, CardSlotRenderResult>(existing, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, CardSlotRenderResult>(StringComparer.OrdinalIgnoreCase);
+                foreach (var (slotRef, slotRender) in slots)
+                {
+                    mergedSlots[slotRef] = slotRender;
+                }
+
+                Cards[index] = EnrichCard(cardDef, current with { InteriorSlotRenders = mergedSlots });
                 NotifyStateChanged();
                 return Task.CompletedTask;
             }).ConfigureAwait(false);

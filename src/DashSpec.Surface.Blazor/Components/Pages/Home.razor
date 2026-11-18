@@ -48,11 +48,11 @@ else
 {
     var chrome = Page.Session.Document.FiltersChrome;
 
-    <div class="dash-home-flow @(IsRadzenStack ? "dash-home-flow-radzen" : null)">
-        @if (IsRadzenStack)
+    <div class="dash-home-flow @(HasSidebarChrome ? "dash-home-flow-sidebar" : null)">
+        @if (HasSidebarChrome)
         {
-            @* Radzen-stack chrome (ADR-0112 §5): the left menu carries every report and the
-               active report's sections — the top strip and the catalog combobox go away. *@
+            @* Sidebar navigation chrome (ADR-0112 §5): when the active stack binds a sidebar
+               component, the left menu carries every report and the active report's sections. *@
             <DashboardSidebar Entries="Page.CatalogEntries"
                               Groups="Page.CatalogGroups"
                               ActiveEntryId="@Page.ActiveCatalogEntryId"

@@ -3,39 +3,30 @@
 @using DashSpec.Viz
 
 @* ADR-0112: the Radzen stack's card view-switcher — ONE RadzenDropDown over the
-   card's views (Id/Label), the theme paints it. Surface: Views, Active,
-   ActiveChanged<string>, Disabled, AriaLabel. *@
+   card's views (Id/Label), the theme paints it. Surface: StackViewSwitchContext. *@
 
 <RadzenDropDown TValue="string"
-                Data="@Views"
+                Data="@Context.Views"
                 TextProperty="Label"
                 ValueProperty="Id"
-                Value="@Active"
+                Value="@Context.Active"
                 Change="@(v => OnChanged(v as string ?? string.Empty))"
                 AllowClear="false"
-                AllowFiltering="@(Views.Count > 6)"
+                AllowFiltering="@(Context.Views.Count > 6)"
                 FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                Disabled="@Disabled"
-                Name="@AriaLabel"
+                Disabled="@Context.Disabled"
+                Name="@Context.AriaLabel"
                 Style="width:auto;min-width:7.5rem;"
-                AriaLabel="@AriaLabel" />
+                AriaLabel="@Context.AriaLabel" />
 
 @code {
-    [Parameter, EditorRequired] public IReadOnlyList<CardViewOption> Views { get; set; } = [];
-
-    [Parameter, EditorRequired] public string Active { get; set; } = string.Empty;
-
-    [Parameter] public EventCallback<string> ActiveChanged { get; set; }
-
-    [Parameter] public bool Disabled { get; set; }
-
-    [Parameter] public string AriaLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public StackViewSwitchContext Context { get; set; } = default!;
 
     private async Task OnChanged(string id)
     {
-        if (!string.IsNullOrWhiteSpace(id) && ActiveChanged.HasDelegate)
+        if (!string.IsNullOrWhiteSpace(id) && Context.ActiveChanged.HasDelegate)
         {
-            await ActiveChanged.InvokeAsync(id);
+            await Context.ActiveChanged.InvokeAsync(id);
         }
     }
 }

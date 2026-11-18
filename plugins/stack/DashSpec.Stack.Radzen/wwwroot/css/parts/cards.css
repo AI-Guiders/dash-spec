@@ -19,7 +19,9 @@
 }
 
 @media (max-width: 1200px) {
-  .cards {
+  .cards,
+  .card-nest-cards,
+  .card-group-cards {
     grid-template-columns: var(--tracks-mid, repeat(6, minmax(0, 1fr)));
   }
   .cards > *,
@@ -32,7 +34,9 @@
 }
 
 @media (max-width: 768px) {
-  .cards {
+  .cards,
+  .card-nest-cards,
+  .card-group-cards {
     grid-template-columns: var(--tracks-narrow, repeat(1, minmax(0, 1fr)));
   }
   .cards > *,
@@ -89,6 +93,20 @@
   align-items: stretch;
   flex: 1;
   min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .card-group-cards,
+  .card-nest-cards {
+    grid-template-columns: var(--tracks-mid, repeat(6, minmax(0, 1fr)));
+  }
+}
+
+@media (max-width: 768px) {
+  .card-group-cards,
+  .card-nest-cards {
+    grid-template-columns: var(--tracks-narrow, repeat(1, minmax(0, 1fr)));
+  }
 }
 
 .card {
@@ -359,8 +377,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   padding: 0.85rem 1rem;
+  margin-bottom: 0;
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
 }
@@ -379,13 +399,17 @@
   flex-direction: column;
 }
 
-/* the maximized card keeps its interior slot plan; slots share the panel height */
+/* the maximized card keeps its interior slot plan; content-sized diagrams keep their natural height so .card-fullscreen-body scrolls cleanly without squishing; fill diagrams opt into min-height: 0 */
 .card-fullscreen-body .card-interior-grid {
+  flex: 1 0 auto;
+}
+
+.card-fullscreen-body .card-interior-grid:has(> .card-diagram-slot--fill) {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.card-fullscreen-body .card-interior-grid > .card-diagram-slot {
+.card-fullscreen-body .card-interior-grid > .card-diagram-slot:not(.card-diagram-slot--matrix) {
   flex: var(--fx-grow, 1) 1 0;
 }
 

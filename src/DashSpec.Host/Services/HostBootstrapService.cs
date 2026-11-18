@@ -4,7 +4,6 @@ using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Composition.Shell;
 using DashSpec.Host.Configuration;
-using DashSpec.Stack.Radzen;
 using DashSpec.Host.Services.Abstractions;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
@@ -15,8 +14,7 @@ public sealed class HostBootstrapService(
     IDashSpecTomlLoader tomlLoader,
     IHostPathResolver pathResolver,
     IHostSettingsOverlay settingsOverlay,
-    IGitCatalogSynchronizer gitCatalogSynchronizer,
-    Microsoft.Extensions.Logging.ILogger<HostBootstrapService> logger) : IHostBootstrap
+    IGitCatalogSynchronizer gitCatalogSynchronizer) : IHostBootstrap
 {
     public DashSpecTomlRoot LoadBootstrap(IHostEnvironment environment) =>
         LoadBootstrapWithHost(environment).Bootstrap;
@@ -25,6 +23,7 @@ public sealed class HostBootstrapService(
         IHostEnvironment environment)
     {
         var contentRoot = environment.ContentRootPath;
+        var skipLocalConfig = ShouldSkipLocalHostOverlay(environment);
         var bootstrapPath = Path.Combine(contentRoot, "dash-spec.toml");
 
         var bootstrap = File.Exists(bootstrapPath)
@@ -36,7 +35,7 @@ public sealed class HostBootstrapService(
         }
 
         bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.dev.toml"));
-        if (!ShouldSkipLocalHostOverlay(environment))
+        if (!skipLocalConfig)
         {
             bootstrap = OverlayOptionalToml(bootstrap, Path.Combine(contentRoot, "dash-spec.local.toml"));
         }
@@ -50,7 +49,7 @@ public sealed class HostBootstrapService(
             }
             else
             {
-                bootstrap.Host.Dashhost = TryAutoDiscoverHostSpec(contentRoot) ?? string.Empty;
+                bootstrap.Host.Dashhost = TryAutoDiscoverHostSpec(contentRoot, skipLocalConfig) ?? string.Empty;
             }
         }
 
@@ -71,7 +70,6 @@ public sealed class HostBootstrapService(
         DashSpecDefaultShell.RegisterGridDefault();
 
         settingsOverlay.Apply(bootstrap);
-        WarnUnknownColorScheme(bootstrap);
         gitCatalogSynchronizer.PrepareDeferredSync(bootstrap);
 
         return (bootstrap, hostShell);
@@ -184,40 +182,23 @@ public sealed class HostBootstrapService(
         }
     }
 
-    /// <summary>ADR-0112 §2: an unknown theme word is the stack default + a loud
-    /// warning — never a silent wrong theme (the old "High contrast" admin option
-    /// rendered plain dark). The dictionary belongs to the Radzen stack; selfmade
-    /// does not read the token.</summary>
-    private void WarnUnknownColorScheme(DashSpecTomlRoot bootstrap)
+    private static string? TryAutoDiscoverHostSpec(string contentRoot, bool skipLocalConfig)
     {
-        var stack = (bootstrap.Presentation.RenderStack ?? string.Empty).Trim();
-        if (!string.Equals(stack, "radzen", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var scheme = (bootstrap.Presentation.ColorScheme ?? string.Empty).Trim();
-        if (RadzenColorSchemes.Find(scheme) is not null)
-        {
-            return;
-        }
-
-        logger.LogWarning(
-            "color_scheme '{Scheme}' is not in the Radzen stack theme dictionary ({Words}) — rendering '{Default}' instead (ADR-0112 §2).",
-            scheme,
-            string.Join(", ", RadzenColorSchemes.All.Select(t => t.Token)),
-            RadzenColorSchemes.DefaultToken);
-    }
-
-    private static string? TryAutoDiscoverHostSpec(string contentRoot)
-    {
-        var searchDirs = new[]
-        {
-            Path.Combine(contentRoot, "dashspec"),
-            contentRoot,
-            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "ai-landscape")),
-            Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "demo")),
-        };
+        var searchDirs = skipLocalConfig
+            ? new[]
+            {
+                Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "demo")),
+                Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "ai-landscape")),
+                Path.Combine(contentRoot, "dashspec"),
+                contentRoot,
+            }
+            : new[]
+            {
+                Path.Combine(contentRoot, "dashspec"),
+                contentRoot,
+                Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "ai-landscape")),
+                Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "samples", "demo")),
+            };
 
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -230,7 +211,8 @@ public sealed class HostBootstrapService(
             var hostEntry = idx.Entries.FirstOrDefault(e =>
                 e.Kind is not null &&
                 string.Equals(e.Kind.Value, "host", StringComparison.OrdinalIgnoreCase) &&
-                File.Exists(e.Path));
+                File.Exists(e.Path) &&
+                (!skipLocalConfig || !Path.GetFileName(e.Path).Contains(".local.", StringComparison.OrdinalIgnoreCase)));
 
             if (hostEntry is not null)
             {

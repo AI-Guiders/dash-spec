@@ -1,27 +1,26 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
-@using DashSpec.Abstractions.Viz
-@using Radzen
-@using Radzen.Blazor
-@inject IRenderStackSettings RenderStackSettings
+@using DashSpec.Viz
+@inject ICardChromeControlsOverride ChromeControls
 
-@* Tab chrome belongs to the stack (ADR-0112 §5): the Radzen stack speaks RadzenTabs
-   (board lives below the bar, so items carry no content; SelectedIndexChanged is
-   awaited so the controller switch lands before the re-render); the SelfMade stack
-   renders the pre-Radzen dash-tabs exactly as they were. *@
+@* Tab chrome belongs to the stack (ADR-0112 §5): a stack may bind its own tab bar
+   component via ICardChromeControlsOverride; absent an override, native dash-tabs render. *@
 
 @if (Tabs is { Count: > 0 })
 {
-    if (IsRadzenStack)
+    if (ChromeControls.ResolveTabBar() is { } stackTabBar)
     {
-        <RadzenTabs SelectedIndex="@SelectedTabIndex"
-                    SelectedIndexChanged="@HandleTabIndexChanged">
-            <Tabs>
-                @foreach (var tab in Tabs)
-                {
-                    <RadzenTabsItem Text="@(ResolveLabel?.Invoke(tab) ?? tab.Label?.Value ?? tab.Id)" />
-                }
-            </Tabs>
-        </RadzenTabs>
+        <DynamicComponent Type="stackTabBar"
+                          Parameters="@(new Dictionary<string, object?>
+                          {
+                              ["Context"] = new StackTabBarContext
+                              {
+                                  Tabs = Tabs,
+                                  ResolveLabel = ResolveLabel,
+                                  ActiveTabId = ActiveTabId,
+                                  Sticky = Sticky,
+                                  OnSelect = OnSelect,
+                              },
+                          })" />
     }
     else
     {
@@ -46,31 +45,4 @@
     [Parameter] public string? ActiveTabId { get; set; }
     [Parameter] public bool Sticky { get; set; }
     [Parameter] public EventCallback<string> OnSelect { get; set; }
-
-    private bool IsRadzenStack =>
-        string.Equals(RenderStackSettings?.HostStack?.Trim(), "radzen", StringComparison.OrdinalIgnoreCase);
-
-    private int SelectedTabIndex
-    {
-        get
-        {
-            for (var i = 0; i < Tabs.Count; i++)
-            {
-                if (string.Equals(Tabs[i].Id, ActiveTabId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return i;
-                }
-            }
-
-            return 0;
-        }
-    }
-
-    private async Task HandleTabIndexChanged(int index)
-    {
-        if (index >= 0 && index < Tabs.Count)
-        {
-            await OnSelect.InvokeAsync(Tabs[index].Id);
-        }
-    }
 }

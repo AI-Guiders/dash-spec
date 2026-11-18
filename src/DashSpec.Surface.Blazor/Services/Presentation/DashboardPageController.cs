@@ -137,7 +137,7 @@ public sealed class DashboardPageController : IDisposable
     /// tracks against this count.</summary>
     public LayoutDefinition ToolbarLayout { get; private set; } = new(12);
 
-    public Dictionary<string, PlacementDefinition> ToolbarPlacements { get; private set; } =
+    public Dictionary<string, PlacementVariants> ToolbarPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
     public string? ActiveTabId { get; private set; }
 
@@ -629,8 +629,8 @@ public sealed class DashboardPageController : IDisposable
     {
         var visible = VisibleToolbarFilterNames();
         return visible
-            .OrderBy(name => ToolbarPlacements.TryGetValue(name, out var placement) ? placement.Row : int.MaxValue)
-            .ThenBy(name => ToolbarPlacements.TryGetValue(name, out var placement) ? placement.Col : int.MaxValue)
+            .OrderBy(name => ToolbarPlacements.TryGetValue(name, out var placement) ? placement.Wide.Row : int.MaxValue)
+            .ThenBy(name => ToolbarPlacements.TryGetValue(name, out var placement) ? placement.Wide.Col : int.MaxValue)
             .ThenBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -639,15 +639,20 @@ public sealed class DashboardPageController : IDisposable
     /// filter set — placements come from the plane (defaults recorded at assembly); the
     /// section places these as given, no planner call on render. The (0,0,1) fallback
     /// mirrors the old per-render planner for a filter absent from the slice.</summary>
-    public IReadOnlyList<LayoutSlotDescriptor> VisibleToolbarSlots =>
+    public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot> VisibleToolbarSlots =>
         VisibleToolbarFilters()
-            .Select(name => new LayoutSlotDescriptor(
-                name,
-                ToolbarPlacements.TryGetValue(name, out var placement)
+            .Select(name => new DashSpec.Modeling.Parse.Layout.Slot
+            {
+                Node = new DashSpec.Modeling.Core.WiringNode(
+                    name,
+                    DashSpec.Modeling.Core.WiringNodeKind.Filter,
+                    Microsoft.FSharp.Core.FSharpOption<string>.Some("report")),
+                Placement = ToolbarPlacements.TryGetValue(name, out var placement)
                     ? placement
-                    : new PlacementDefinition(0, 0, 1),
-                LayoutSlotScope.HostPageToolbar,
-                LayoutSlotContentKind.Filter))
+                    : PlacementVariantsPlanning.For(new PlacementDefinition(0, 0, 1), ToolbarLayout.Columns),
+                Scope = DashSpec.Modeling.Parse.Layout.LayoutSlotScope.HostPageToolbar,
+                Provenance = DashSpec.Modeling.Parse.Layout.PlacementProvenance.Declared,
+            })
             .ToList();
 
     public async Task SelectCatalogEntryAsync(string entryId)
@@ -724,6 +729,10 @@ public sealed class DashboardPageController : IDisposable
     /// <summary>The assembled interior slice for a card ([ADR-0111] P1); render reads it, no planning.</summary>
     public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? InteriorSlotsFor(string cardId) =>
         _session.SlotPlane?.CardInteriors.TryGetValue(cardId, out var slots) == true ? slots : null;
+
+    /// <summary>The assembled local filter chrome slice for a card ([ADR-0111] P1); render reads it, no planning.</summary>
+    public IReadOnlyList<DashSpec.Modeling.Parse.Layout.Slot>? FilterChromeSlotsFor(string cardId) =>
+        _session.SlotPlane?.CardFilterChrome.TryGetValue(cardId, out var slots) == true ? slots : null;
 
     public string ResolveLayoutCardRef(string token)
     {
@@ -1339,7 +1348,7 @@ public sealed class DashboardPageController : IDisposable
         // [ADR-0111] P1: the toolbar slice is precomputed — the fallback row was recorded
         // at assembly (RecordedDefault), not recomputed here. The visibility overlay
         // (which filters are rendered) stays session-side until the Bound flag (P2).
-        ToolbarPlacements = new Dictionary<string, PlacementDefinition>(StringComparer.OrdinalIgnoreCase);
+        ToolbarPlacements = new Dictionary<string, PlacementVariants>(StringComparer.OrdinalIgnoreCase);
         ToolbarLayout = ResolveToolbarLayout();
         if (_session.SlotPlane is not { } plane)
         {
@@ -1350,7 +1359,7 @@ public sealed class DashboardPageController : IDisposable
         {
             foreach (var slot in slots)
             {
-                ToolbarPlacements[slot.Node.Id] = slot.Placement.Wide;
+                ToolbarPlacements[slot.Node.Id] = slot.Placement;
             }
         }
     }

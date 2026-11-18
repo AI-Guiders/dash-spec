@@ -18,9 +18,6 @@ public static class CardRenderSkeletonFactory
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
-        var interiorPlacements = document is not null
-            ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
-            : null;
         return new CardRenderResult(
             effective.Id,
             effective.Title,
@@ -31,7 +28,6 @@ public static class CardRenderSkeletonFactory
             BoundFilters: effective.BoundFilters,
             LocalFilters: effective.LocalFilters,
             Placement: effective.Placement?.Value,
-            InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
                 ? CompositionResolution.ResolveChartPresentation(effective, library)
                 : null,
@@ -45,9 +41,6 @@ public static class CardRenderSkeletonFactory
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
             LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
-            LocalFilterChromePlacements: document is not null
-                ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
-                : null,
             MatrixLimits: card.MatrixLimits?.Value,
             OversizeMessage: card.OversizeMessage?.Value,
             EmptyMessage: card.EmptyMessage?.Value);
@@ -82,9 +75,6 @@ public static class CardRenderSkeletonFactory
         var effective = resolved.Card;
         var kind = DiagramKindRegistry.Resolve(effective.Diagram.Kind);
         var renderPluginId = vizPlugins.Resolve(kind.DataFamily, kind.Id);
-        var interiorPlacements = document is not null
-            ? DashboardLayoutHelper.ResolveInteriorPlacements(card, document)
-            : null;
         return new CardRenderResult(
             effective.Id,
             effective.Title,
@@ -95,7 +85,6 @@ public static class CardRenderSkeletonFactory
             BoundFilters: effective.BoundFilters,
             LocalFilters: effective.LocalFilters,
             Placement: effective.Placement?.Value,
-            InteriorPlacements: interiorPlacements,
             ChartPresentation: kind.DataFamily is DiagramDataFamily.Chart
                 ? CompositionResolution.ResolveChartPresentation(effective, library)
                 : null,
@@ -109,9 +98,6 @@ public static class CardRenderSkeletonFactory
             ExtensionBlocks: card.ExtensionBlocks,
             LocalFiltersManualApply: card.LocalFiltersManualApply,
             LocalFiltersApplySplitIndex: card.LocalFiltersApplySplitIndex?.Value,
-            LocalFilterChromePlacements: document is not null
-                ? CardLocalFilterChromeCompactor.Compact(card, document.Filters, document.Layout.Columns)
-                : null,
             MatrixLimits: card.MatrixLimits?.Value,
             OversizeMessage: card.OversizeMessage?.Value,
             EmptyMessage: card.EmptyMessage?.Value);
