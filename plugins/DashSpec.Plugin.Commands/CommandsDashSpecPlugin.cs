@@ -25,6 +25,8 @@ public sealed class CommandsDashSpecPlugin : IDashSpecPlugin, IDashSpecEndpointC
 
     public PluginTier Tier => PluginTier.Extended;
 
+    public Type? ScriptsComponent => typeof(CommandsScripts);
+
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<DashSpecCommandPluginRegistry>();

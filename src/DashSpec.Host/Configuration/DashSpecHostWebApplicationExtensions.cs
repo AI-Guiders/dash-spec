@@ -1,8 +1,6 @@
 using DashSpec.Host.Components;
 using DashSpec.Host.Endpoints;
 using DashSpec.Host.Middleware;
-using DashSpec.Plugin.Filter.Builtins;
-using DashSpec.Plugin.Viz.Builtins.Plugins;
 using DashSpec.Surface.Blazor;
 using DashSpec.Surface.Blazor.Configuration;
 
@@ -36,15 +34,33 @@ public static class DashSpecHostWebApplicationExtensions
         var componentAssemblies = new HashSet<System.Reflection.Assembly>
         {
             typeof(SurfaceAssemblyMarker).Assembly,
-            typeof(VizBuiltinsPluginCatalog).Assembly,
-            typeof(FilterBuiltinsPluginCatalog).Assembly,
         };
         foreach (var type in contributorRegistry.VizComponents.Values)
         {
             componentAssemblies.Add(type.Assembly);
         }
 
+        foreach (var type in contributorRegistry.FilterWidgetComponents.Values)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
+        foreach (var type in contributorRegistry.CardChromeComponents.Values)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
         foreach (var type in contributorRegistry.PluginComponents.Values)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
+        foreach (var type in contributorRegistry.HeadComponents)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
+        foreach (var type in contributorRegistry.ScriptsComponents)
         {
             componentAssemblies.Add(type.Assembly);
         }

@@ -25,10 +25,18 @@ public abstract class VizDashSpecPluginBase : IDashSpecPlugin
 
     protected virtual Type? CardToolbarComponentType => null;
 
+    protected virtual Type? PluginHeadComponentType => null;
+
+    protected virtual Type? PluginScriptsComponentType => null;
+
     protected abstract IVizPlugin CreateBackend();
 
     /// <summary>This renderer's presentation knobs (see IDashSpecPlugin.PresentationProperties).</summary>
     public virtual IEnumerable<string> PresentationProperties => [];
+
+    public virtual Type? HeadComponent => PluginHeadComponentType;
+
+    public virtual Type? ScriptsComponent => PluginScriptsComponentType;
 
     public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
         services.AddSingleton(CreateBackend());

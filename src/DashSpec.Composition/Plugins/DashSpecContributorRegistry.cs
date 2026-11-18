@@ -41,10 +41,16 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly Dictionary<string, Type> _cardChromeComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _PluginComponents = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Type> _filterWidgetComponents = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<Type> _headComponents = [];
+    private readonly List<Type> _scriptsComponents = [];
 
     public IReadOnlyList<IDashSpecEndpointContributor> EndpointContributors => _endpointContributors;
 
     public IReadOnlyList<DashSpecCommandDescriptor> CommandDescriptors => _commands;
+
+    public IReadOnlyList<Type> HeadComponents => _headComponents;
+
+    public IReadOnlyList<Type> ScriptsComponents => _scriptsComponents;
 
     public bool ContainsPlugin(string pluginId) =>
         _plugins.Any(x => string.Equals(x.Id, pluginId, StringComparison.OrdinalIgnoreCase));
@@ -63,6 +69,16 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             {
                 _presentationProperties.Add(property.Trim());
             }
+        }
+
+        if (plugin.HeadComponent is { } headType)
+        {
+            RegisterHeadComponent(headType);
+        }
+
+        if (plugin.ScriptsComponent is { } scriptsType)
+        {
+            RegisterScriptsComponent(scriptsType);
         }
 
         plugin.RegisterContributors(this);
@@ -316,6 +332,24 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
         }
 
         _PluginComponents[slotId] = componentType;
+    }
+
+    public void RegisterHeadComponent(Type componentType)
+    {
+        ArgumentNullException.ThrowIfNull(componentType);
+        if (!_headComponents.Contains(componentType))
+        {
+            _headComponents.Add(componentType);
+        }
+    }
+
+    public void RegisterScriptsComponent(Type componentType)
+    {
+        ArgumentNullException.ThrowIfNull(componentType);
+        if (!_scriptsComponents.Contains(componentType))
+        {
+            _scriptsComponents.Add(componentType);
+        }
     }
 
     public IReadOnlyDictionary<string, Type> VizComponents => _vizComponents;

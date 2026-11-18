@@ -16,5 +16,17 @@ public sealed class ChartJsVizDashSpecPlugin : VizDashSpecPluginBase
 
     protected override Type CardVizComponentType => typeof(ChartJsCardViz);
 
+    protected override Type? PluginHeadComponentType => typeof(VizBuiltinsHead);
+
+    protected override Type? PluginScriptsComponentType => typeof(VizBuiltinsScripts);
+
     protected override IVizPlugin CreateBackend() => new ChartJsVizBackend();
+
+    public override void RegisterContributors(IDashSpecContributorRegistry registry)
+    {
+        base.RegisterContributors(registry);
+        registry.RegisterPluginComponent(
+            DashSpecPluginComponents.CardDiagram,
+            typeof(Components.Hosting.CardVizHost));
+    }
 }

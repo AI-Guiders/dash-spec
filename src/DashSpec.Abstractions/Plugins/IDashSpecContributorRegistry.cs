@@ -35,6 +35,10 @@ public interface IDashSpecContributorRegistry
     /// </summary>
     void RegisterCardChromeComponent(string pluginId, Type componentType);
 
+    void RegisterHeadComponent(Type componentType);
+
+    void RegisterScriptsComponent(Type componentType);
+
     void AddCardChrome(CardChromeContributorDescriptor descriptor);
 
     void RegisterCardVizComponent(string rendererId, Type componentType);

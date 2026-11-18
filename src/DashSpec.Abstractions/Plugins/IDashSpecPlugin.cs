@@ -18,6 +18,12 @@ public interface IDashSpecPlugin
     /// keywords. Unknown-to-everyone properties stay loud parse errors.</summary>
     IEnumerable<string> PresentationProperties => [];
 
+    /// <summary>Optional head component type mounting this plugin's CSS assets.</summary>
+    Type? HeadComponent => null;
+
+    /// <summary>Optional scripts component type mounting this plugin's JS assets.</summary>
+    Type? ScriptsComponent => null;
+
     void ConfigureServices(IServiceCollection services, IConfiguration configuration);
 
     void RegisterContributors(IDashSpecContributorRegistry registry);

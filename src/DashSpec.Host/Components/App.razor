@@ -1,5 +1,6 @@
 @inject DashSpec.Abstractions.Viz.IRenderStackSettings RenderStackSettings
 @inject DashSpec.Abstractions.Viewer.IViewerPresentationOptions Bootstrap
+@inject DashSpec.Composition.Plugins.DashSpecContributorRegistry Contributors
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
 <!DOCTYPE html>
 <html lang="ru">
@@ -9,16 +10,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>DashSpec</title>
-    @* ADR-0112 render stacks: the host links nothing itself — the active stack mounts
-       its own head component dynamically, and plugins mount their own assets. *@
+    @* ADR-0112 render stacks & vertical plugins: the host links nothing of stacks or
+       plugins itself — the active stack and every loaded plugin mount their own head
+       and script components dynamically. *@
     @if (RenderStackSettings.HeadComponent is { } headType)
     {
         <DynamicComponent Type="headType"
                           Parameters="@(new Dictionary<string, object?> { ["Theme"] = ViewerTheme })" />
     }
-    <FilterBuiltinsHead />
-    <VizBuiltinsHead />
-    <EChartsHead />
+    @foreach (var pluginHead in Contributors.HeadComponents)
+    {
+        <DynamicComponent Type="pluginHead" />
+    }
     <HeadOutlet />
 </head>
 
@@ -28,10 +31,10 @@
     {
         <DynamicComponent Type="scriptsType" />
     }
-    <FilterBuiltinsScripts />
-    <VizBuiltinsScripts />
-    <EChartsScripts />
-    <script src="/js/aiguiders-input.js?v=4"></script>
+    @foreach (var pluginScripts in Contributors.ScriptsComponents)
+    {
+        <DynamicComponent Type="pluginScripts" />
+    }
     <script src="/js/dashspec-theme.js?v=1"></script>
     <script src="js/dashspec-download.js?v=2"></script>
     <script src="_framework/blazor.web.js"></script>
