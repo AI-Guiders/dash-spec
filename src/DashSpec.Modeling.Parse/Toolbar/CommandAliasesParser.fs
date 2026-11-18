@@ -84,18 +84,21 @@ module CommandAliasesParser =
 
         rows.ToArray()
 
-    let projectFromAst (members: DashSpecAstNode[]) : IReadOnlyDictionary<string, string> =
+    let private parseModuleDeclaration (members: DashSpecAstNode[]) =
         let bindings = projectBindingsFromAst members
-        if bindings.Length = 0 then
-            raise (DashSpecParseException("commands block requires at least one entry."))
-
         let result = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         for row in bindings do
             result.[row.Alias] <- row.Target
         result :> IReadOnlyDictionary<_, _>
 
+    let projectFromAst (members: DashSpecAstNode[]) : IReadOnlyDictionary<string, string> =
+        let result = parseModuleDeclaration members
+        if result.Count = 0 then
+            raise (DashSpecParseException("commands block requires at least one entry."))
+        result
+
     let parseEnvelope (env: UnitGrammar.UnitEnvelope) : IReadOnlyDictionary<string, string> =
-        projectFromAst env.Body
+        parseModuleDeclaration env.Body
 
     let parseModule (text: string) : IReadOnlyDictionary<string, string> =
         UnitGrammar.parseUnit (DashSpecModuleKind.Custom "commands") parseEnvelope text

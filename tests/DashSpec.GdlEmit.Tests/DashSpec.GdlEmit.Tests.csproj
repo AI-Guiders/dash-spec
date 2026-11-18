@@ -18,4 +18,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Commands\DashSpec.Plugin.Commands.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,37 @@
+module commands dash_commands
+namespace DashSpec.Std
+
+planet = dash
+flavor = console
+chord_root = "Ctrl+K"
+
+bindings
+  | gesture | command | role            |
+  | Ctrl+K  | -       | chord-root      |
+  | Ctrl+.  | -       | suggest-dismiss |
+end bindings
+
+phrases
+  | name                 | phrase                      |
+  | filter-by-name       | select filter {filter}      |
+  | pick-report          | select report {report}      |
+  | pick-page            | select page {page}          |
+  | pick-view            | view {card} {view}          |
+  | toggle-matrix-values | toggle matrix values {card} |
+  | toggle-matrix-axis-x | toggle matrix axis-x {card} |
+  | toggle-matrix-axis-y | toggle matrix axis-y {card} |
+  | show-host            | show host {surface}         |
+end phrases
+
+commands
+  | alias             | target                    | shortcut | label                              |
+  | filter.date       | select filter {filter}    | fd       | Установить date-фильтр на toolbar  |
+  | filter.field      | select filter {filter}    | -        | Установить field-фильтр на toolbar |
+  | report.select     | select report {report}    | -        | Выбрать отчёт каталога             |
+  | page.select       | select page {page}        | -        | Выбрать страницу отчёта            |
+  | card.view         | view {card} {view}        | -        | Переключить представление карточки |
+  | card.matrix.values.toggle | toggle matrix values {card} | - | Переключить цифры в ячейках  |
+  | card.matrix.axis_x.toggle | toggle matrix axis-x {card} | - | Переключить подписи оси X    |
+  | card.matrix.axis_y.toggle | toggle matrix axis-y {card} | - | Переключить подписи оси Y    |
+  | host.show         | show host {surface}       | -        | Открыть вкладку хоста              |
+end commands

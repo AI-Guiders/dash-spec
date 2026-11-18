@@ -1,67 +1,28 @@
 #nullable enable
 
-using System.Diagnostics;
+using DashSpec.Generated;
 using Xunit;
 
 namespace DashSpec.GdlEmit.Tests;
 
-/// <summary>W0 — CI drift gate: committed <c>Generated/DashCatalog.g.cs</c> must match <c>gdlc emit</c> (ADR-0052).</summary>
+/// <summary>Verifies that the embedded <c>dash.commands.ds</c> catalog parses cleanly via DashSpec's native AST + Tier 2 Construct.</summary>
 public sealed class DashCatalogEmitDriftTests
 {
     [Fact]
-    public void DashCatalog_g_cs_matches_gdlc_emit_output()
+    public void Embedded_dash_commands_ds_loads_phrases_bindings_and_aliases()
     {
-        var repoRoot = ResolveDashSpecRepoRoot();
-        var commandsPluginProject = Path.Combine(repoRoot, "plugins", "DashSpec.Plugin.Commands", "DashSpec.Plugin.Commands.csproj");
-        var toolchainRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", "authoring-toolchain"));
-        var gdlcProject = Path.Combine(toolchainRoot, "src", "Gdlc.Cli", "Gdlc.Cli.csproj");
+        var text = DashCatalog.ReadEmbeddedCommandsText();
+        Assert.Contains("module commands dash_commands", text);
 
-        Assert.True(File.Exists(commandsPluginProject), $"Commands plugin project not found: {commandsPluginProject}");
-        Assert.True(
-            File.Exists(Path.Combine(toolchainRoot, "build", "Platform.Gdl.Emit.props")),
-            $"authoring-toolchain sibling required for catalog emit gate: {toolchainRoot}");
+        Assert.Equal(8, DashCatalog.Phrases.Count);
+        Assert.Equal(2, DashCatalog.Bindings.Count);
+        Assert.Equal("view", DashCatalog.CardViewPhrase.LiteralPrefix);
+        Assert.Equal("toggle matrix values", DashCatalog.MatrixValuesTogglePhrase.LiteralPrefix);
+        Assert.Equal("toggle matrix axis-x", DashCatalog.MatrixAxisXTogglePhrase.LiteralPrefix);
+        Assert.Equal("toggle matrix axis-y", DashCatalog.MatrixAxisYTogglePhrase.LiteralPrefix);
 
-        RunProcess("dotnet", $"build \"{gdlcProject}\" -c Release", toolchainRoot);
-        RunProcess("dotnet", $"msbuild \"{commandsPluginProject}\" -p:Configuration=Release -t:GdlEmitVerify", repoRoot);
-    }
-
-    private static void RunProcess(string fileName, string arguments, string workingDirectory)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = fileName,
-            Arguments = $"{arguments} -nodeReuse:false",
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        startInfo.Environment["DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER"] = "1";
-        using var process = Process.Start(startInfo);
-
-        Assert.NotNull(process);
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-
-        Assert.True(
-            process.ExitCode == 0,
-            $"{fileName} {arguments} failed ({process.ExitCode}).\nstdout:\n{stdout}\nstderr:\n{stderr}");
-    }
-
-    private static string ResolveDashSpecRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "DashSpec.slnx")))
-            {
-                return dir.FullName;
-            }
-
-            dir = dir.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not resolve dash-spec repo root.");
+        var aliases = DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseModule(text);
+        Assert.Equal("select filter {filter}", aliases["filter.date"]);
+        Assert.Equal("view {card} {view}", aliases["card.view"]);
     }
 }

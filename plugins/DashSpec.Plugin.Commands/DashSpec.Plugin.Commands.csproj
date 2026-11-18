@@ -8,16 +8,7 @@
     <RootNamespace>DashSpec.Plugin.Commands</RootNamespace>
     <Version>0.1.0</Version>
     <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
-    <AuthoringToolchainRoot Condition="'$(AuthoringToolchainRoot)' == ''">..\..\..\authoring-toolchain\</AuthoringToolchainRoot>
     <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
-  </PropertyGroup>
-
-  <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
-
-  <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
-    <GdlEmitProject>$(MSBuildProjectDirectory)\authoring\dashspec.gdlproj</GdlEmitProject>
-    <GdlEmitNamespace>DashSpec.Generated</GdlEmitNamespace>
-    <GdlEmitOutputDir>$(MSBuildProjectDirectory)\Generated</GdlEmitOutputDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +17,10 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\dash.commands.ds" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,15 +47,11 @@
     <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Filters\DashSpec.Filters.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
     <ProjectReference Include="..\..\src\DashSpec.Presentation\DashSpec.Presentation.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
     <ProjectReference Include="..\..\src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Catalog\dash.catalog.gdl">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

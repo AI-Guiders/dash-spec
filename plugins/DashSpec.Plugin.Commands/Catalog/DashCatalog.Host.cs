@@ -1,13 +1,23 @@
 #nullable enable
 
+using System.Reflection;
 using AIGuiders.Platform.Authoring.Command.Catalog;
+using DashSpec.Modeling.Parse;
+using DashSpec.Modeling.Parse.Syntax;
 using DashSpec.Surface.Blazor.Commands;
 
 namespace DashSpec.Generated;
 
-/// <summary>Host accessors over emit SSOT (<c>dash.catalog.gdl</c> → <c>DashCatalog.g.cs</c>, ADR-0051 I2).</summary>
-public static partial class DashCatalog
+/// <summary>
+/// Embedded <c>dash.commands.ds</c> catalog parsed via DashSpec's native AST + Tier 2 <see cref="Construct"/>.
+/// Replaces the external <c>dash.catalog.gdl</c> / <c>gdlc emit</c> codegen while preserving the exact runtime shape.
+/// </summary>
+public static class DashCatalog
 {
+    private const string EmbeddedResourceName = "DashSpec.Plugin.Commands.Resources.dash.commands.ds";
+
+    public const string Planet = "dash";
+
     public const string CardViewCatalogCommand = "card.view";
 
     public const string MatrixValuesToggleCatalogCommand = "card.matrix.values.toggle";
@@ -15,6 +25,58 @@ public static partial class DashCatalog
     public const string MatrixAxisXToggleCatalogCommand = "card.matrix.axis_x.toggle";
 
     public const string MatrixAxisYToggleCatalogCommand = "card.matrix.axis_y.toggle";
+
+    public static readonly string[] FederationSurfaces =
+    [
+        "slash.bar",
+        "palette",
+        "console.filter",
+        "ccl.filter",
+    ];
+
+    public static readonly IReadOnlyDictionary<string, string> WireCommandIds =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["filter.date"] = "dash.filter.date",
+            ["filter.field"] = "dash.filter.field",
+            ["report.select"] = "dash.report.select",
+            ["page.select"] = "dash.page.select",
+            ["card.view"] = "dash.card.view",
+            ["card.matrix.values.toggle"] = "dash.card.matrix.values.toggle",
+            ["card.matrix.axis_x.toggle"] = "dash.card.matrix.axis_x.toggle",
+            ["card.matrix.axis_y.toggle"] = "dash.card.matrix.axis_y.toggle",
+            ["host.show"] = "dash.host.show",
+        };
+
+    public static readonly string[] ExposedMcpCommands =
+    [
+        "dash.filter.date",
+        "dash.host.show",
+    ];
+
+    public static readonly IReadOnlyDictionary<string, string> PhraseSlotLabels =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["filter"] = "Имя фильтра на toolbar",
+        };
+
+    public static readonly CatalogPhraseSlotEmit[] PhraseSlotCommands =
+    [
+        new("filter.date", "dash.filter.date", "select filter", ["filter"]),
+        new("filter.field", "dash.filter.field", "select filter", ["filter"]),
+        new("report.select", "dash.report.select", "select report", ["report"]),
+        new("page.select", "dash.page.select", "select page", ["page"]),
+        new("card.view", "dash.card.view", "view", ["card", "view"]),
+        new("card.matrix.values.toggle", "dash.card.matrix.values.toggle", "toggle matrix values", ["card"]),
+        new("card.matrix.axis_x.toggle", "dash.card.matrix.axis_x.toggle", "toggle matrix axis-x", ["card"]),
+        new("card.matrix.axis_y.toggle", "dash.card.matrix.axis_y.toggle", "toggle matrix axis-y", ["card"]),
+        new("host.show", "dash.host.show", "show host", ["surface"]),
+    ];
+
+    public static CatalogPhraseSlotIndex PhraseSlots =>
+        CatalogPhraseSlotIndex.FromEmitted(PhraseSlotCommands, PhraseSlotLabels);
+
+    public static CatalogDocument Document { get; } = LoadFromEmbeddedDs();
 
     public static IReadOnlyList<CatalogPhrase> Phrases => Document.Phrases;
 
@@ -43,5 +105,140 @@ public static partial class DashCatalog
     static DashCatalog()
     {
         DashboardCatalogFlavor.ValidateAtLoad(Document);
+    }
+
+    public static string ReadEmbeddedCommandsText()
+    {
+        var assembly = typeof(DashCatalog).Assembly;
+        using var stream = assembly.GetManifestResourceStream(EmbeddedResourceName)
+            ?? throw new InvalidOperationException($"Embedded commands resource '{EmbeddedResourceName}' not found.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    private static CatalogDocument LoadFromEmbeddedDs()
+    {
+        var text = ReadEmbeddedCommandsText();
+        var tree = DashSpecSurfaceSyntax.parse(text);
+        var env = UnitGrammar.tryUnwrapAny(tree.Root)?.Value
+            ?? throw new InvalidOperationException("Embedded dash.commands.ds must declare 'module commands <id>'.");
+
+        var phrases = new List<CatalogPhrase>();
+        var bindings = new List<CatalogBindingRow>();
+
+        foreach (var block in env.View.Blocks)
+        {
+            var blockName = block.Tokens.FirstOrDefault()?.Text ?? string.Empty;
+            if (blockName.Equals("phrases", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var row in ReadTableRows(block.Members))
+                {
+                    if (row.TryGetValue("name", out var name) && row.TryGetValue("phrase", out var phrase))
+                    {
+                        phrases.Add(new CatalogPhrase(name, phrase));
+                    }
+                }
+            }
+            else if (blockName.Equals("bindings", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var row in ReadTableRows(block.Members))
+                {
+                    if (row.TryGetValue("gesture", out var gesture) && row.TryGetValue("role", out var role))
+                    {
+                        var cmd = row.GetValueOrDefault("command", "—");
+                        bindings.Add(new CatalogBindingRow(gesture, cmd == "-" ? "—" : cmd, role));
+                    }
+                }
+            }
+        }
+
+        return new CatalogDocument
+        {
+            Planet = Planet,
+            Defaults = new CatalogDefaults
+            {
+                VariableKind = "phrase-slot",
+                CommandScope = "dashboard",
+                CommandSurfaces = FederationSurfaces,
+                GrammarKeyboardBinding = "keyboard-key-gesture",
+                GrammarKeyboardMelody = "keyboard-key-gesture",
+                BindingChordRoot = "Ctrl+K",
+                CommandFlavor = "console",
+            },
+            Channels =
+            [
+                new CatalogChannel
+                {
+                    Surface = "slash",
+                    Sub = "bar",
+                    PlanetId = "toolbar-slash",
+                    CommandGrammar = "command-slash",
+                    ArgumentGrammar = "argument-slash",
+                },
+                new CatalogChannel
+                {
+                    Surface = "console",
+                    Sub = "filter",
+                    PlanetId = "filter-bar",
+                    CommandGrammar = "command-console",
+                    ArgumentGrammar = "argument-kv",
+                },
+                new CatalogChannel
+                {
+                    Surface = "ccl",
+                    Sub = "filter",
+                    PlanetId = "filter-ccl",
+                    CommandGrammar = "command-console",
+                    ArgumentGrammar = "argument-kv",
+                },
+                new CatalogChannel
+                {
+                    Surface = "palette",
+                    PlanetId = "command-palette",
+                },
+            ],
+            Phrases = phrases,
+            Bindings = bindings,
+        };
+    }
+
+    private static List<Dictionary<string, string>> ReadTableRows(DashSpecAstNode[] members)
+    {
+        var rawRows = members
+            .OfType<DashSpecAstNode.TableRowDeclaration>()
+            .Select(r => r.Item.Cells)
+            .ToArray();
+        if (rawRows.Length <= 1)
+        {
+            return [];
+        }
+
+        var headers = rawRows[0].Select(h => h.Trim()).ToArray();
+        var list = new List<Dictionary<string, string>>();
+        foreach (var cells in rawRows.Skip(1))
+        {
+            if (cells.All(c => c.All(ch => ch is '-' or ':')))
+            {
+                continue;
+            }
+
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < Math.Min(headers.Length, cells.Length); i++)
+            {
+                var k = headers[i];
+                var v = Construct.unquote(cells[i].Trim());
+                if (!string.IsNullOrWhiteSpace(k) && !string.IsNullOrWhiteSpace(v))
+                {
+                    map[k] = v;
+                }
+            }
+
+            if (map.Count > 0)
+            {
+                list.Add(map);
+            }
+        }
+
+        return list;
     }
 }

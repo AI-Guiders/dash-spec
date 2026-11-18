@@ -124,6 +124,7 @@ module DashSpecBlockKeyword =
         | "wide" -> Some DashSpecBlockKeyword.Wide
         | "mid" -> Some DashSpecBlockKeyword.Mid
         | "narrow" -> Some DashSpecBlockKeyword.Narrow
+        | "bindings" | "phrases" | "command" -> Some(DashSpecBlockKeyword.Other name)
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None

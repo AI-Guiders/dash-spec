@@ -27,6 +27,12 @@ public sealed class CommandsDashSpecPlugin : IDashSpecPlugin, IDashSpecEndpointC
 
     public Type? ScriptsComponent => typeof(CommandsScripts);
 
+    public CommandsDashSpecPlugin()
+    {
+        DashSpec.Modeling.Parse.Document.UnitSource.registerEmbeddedUnits(
+            [Tuple.Create("stdlib/commands/dash.commands.ds", DashCatalog.ReadEmbeddedCommandsText())]);
+    }
+
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<DashSpecCommandPluginRegistry>();
