@@ -108,8 +108,12 @@ module DocumentWiringGraphBuilder =
             ()
         else
             let scope = Some $"card:{card.Id}"
-            addNode nodes (chromeCard card.Id) WiringNodeKind.Chrome scope
+            let chromeId = chromeCard card.Id
+            addNode nodes chromeId WiringNodeKind.Chrome scope
             addNode nodes card.Id WiringNodeKind.Card scope
+
+            if card.LocalFiltersManualApply then
+                addNode nodes "apply" WiringNodeKind.Chrome scope
 
             for filterName in card.LocalFilters do
                 addNode nodes filterName WiringNodeKind.Filter scope
@@ -118,7 +122,7 @@ module DocumentWiringGraphBuilder =
                     edges
                     { From = filterName
                       FromPort = None
-                      To = chromeCard card.Id
+                      To = chromeId
                       ToPort = Some "toolbar"
                       Kind = WiringEdgeKind.Route
                       Scope = scope }

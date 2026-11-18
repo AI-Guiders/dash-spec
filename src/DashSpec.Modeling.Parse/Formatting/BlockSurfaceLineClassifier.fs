@@ -32,7 +32,13 @@ module BlockSurfaceLineClassifier =
     let private hasEquals (tokens: Token list) =
         tokens |> List.exists (fun t -> t.Kind = TokenKind.Eq)
 
-    /// Classify a line from tokens between newlines (same rules as legacy line trim + classify).
+    let private (|Kw|_|) (token: Token) : DashSpec.Modeling.Parse.Syntax.DashSpecKeyword option =
+        if token.Kind = TokenKind.Ident then
+            DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.tryParse token.Value
+        else
+            None
+
+    /// Classify a line from tokens between newlines using typed `DashSpecKeyword` active patterns.
     let classifyLineTokens (tokens: Token list) : LineKind =
         let tokens = significantTokens tokens
 
@@ -42,23 +48,27 @@ module BlockSurfaceLineClassifier =
             match tokens with
             | [ { Kind = TokenKind.LBrace } ] -> BraceOpen
             | { Kind = TokenKind.RBrace } :: _ -> BraceClose
-            | { Kind = TokenKind.Ident; Value = "end" } :: { Kind = TokenKind.Ident; Value = kind } :: rest ->
+            | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.End :: { Kind = TokenKind.Ident; Value = kind } :: rest ->
                 End(kind, tryReadOptionalId rest)
-            | { Kind = TokenKind.Ident; Value = "module" } :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
+            | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Module :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 ModuleHeader(kind, id)
-            | { Kind = TokenKind.Ident; Value = "layout" } :: { Kind = TokenKind.Ident; Value = "grid" } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Layout)
+              :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Grid) :: _ ->
                 BlockOpener("grid", None)
-            | { Kind = TokenKind.Ident; Value = "toolbar" } :: { Kind = TokenKind.Ident; Value = "chrome" } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Toolbar)
+              :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Chrome) :: _ ->
                 BlockOpener("chrome", None)
-            | { Kind = TokenKind.Ident; Value = "on" } :: { Kind = TokenKind.Ident; Value = "click" } :: _ ->
+            | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.On
+              :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Click) :: _ ->
                 BlockOpener("click", None)
-            | { Kind = TokenKind.Ident; Value = "filters" } :: { Kind = TokenKind.Ident; Value = "chrome" } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Filters)
+              :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Chrome) :: _ ->
                 BlockOpener("chrome", None)
-            | { Kind = TokenKind.Ident; Value = "from" } :: rest when
-                rest |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase)) ->
+            | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.From :: rest when
+                rest |> List.exists (function Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Import -> true | _ -> false) ->
                 let importIdx =
                     rest
-                    |> List.findIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase))
+                    |> List.findIndex (function Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Import -> true | _ -> false)
                 let nsTokens = rest |> List.take importIdx
                 let afterImport = rest |> List.skip (importIdx + 1)
                 let nsName = nsTokens |> List.map (fun t -> t.Value) |> String.concat ""
@@ -71,19 +81,32 @@ module BlockSurfaceLineClassifier =
             | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
                 when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
                 BlockOpener(kw, Some id)
-            | { Kind = TokenKind.Ident; Value = "transform" } :: { Kind = TokenKind.Ident; Value = "use" } :: { Kind = TokenKind.Ident; Value = pluginId } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Transform)
+              :: Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Use :: { Kind = TokenKind.Ident; Value = pluginId } :: _ ->
                 BlockOpener("transform", Some pluginId)
-            | { Kind = TokenKind.Ident; Value = "transform" } :: { Kind = TokenKind.Ident; Value = "series" } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Transform)
+              :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Series) :: _ ->
                 BlockOpener("series", None)
-            | { Kind = TokenKind.Ident; Value = "transform" } :: _ ->
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Transform) :: _ ->
                 Content
             | tokens when hasEquals tokens -> Content
-            | { Kind = TokenKind.Ident; Value = "filter" } :: _ -> Content
-            | { Kind = TokenKind.Ident; Value = "use" } :: _ -> Content
+            | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Filter) :: _ -> Content
+            | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Use :: _ -> Content
             | { Kind = TokenKind.Bang } :: _ -> Content
-            | { Kind = TokenKind.Ident; Value = kw } :: _ when
-                DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.tryOfName kw |> Option.isSome ->
-                BlockOpener(kw, None)
+            | (Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block blk) as tok)
+              :: { Kind = TokenKind.Colon }
+              :: { Kind = TokenKind.Ident; Value = w } :: rest
+              when (blk = DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.VStack
+                    || blk = DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.HStack)
+                   && (Int32.TryParse w |> fst)
+                   && (match rest with [] | [ { Kind = TokenKind.LBrace } ] -> true | _ -> false) ->
+                BlockOpener(tok.Value, None)
+            | _ :: { Kind = TokenKind.Colon } :: _ ->
+                Content
+            | [ Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Diagram) ] ->
+                Content
+            | (Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block _) as tok) :: _ ->
+                BlockOpener(tok.Value, None)
             | _ -> Content
 
     let classifyTrimmedLine (trimmed: string) : LineKind =

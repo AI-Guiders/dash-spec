@@ -21,10 +21,19 @@ internal static class CategoryChartPayloadBuilder
 
         var ordered = new List<(string Label, double? Value, double? Reference, string? Color)>();
         var indexByLabel = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        diagram.Properties.TryGetValue("x_format", out var xFormatRaw);
+        if (string.IsNullOrWhiteSpace(xFormatRaw) &&
+            rows.Schema.FieldOrdinals.TryGetValue(xColumn, out var xOrdinal))
+        {
+            xFormatRaw = rows.Schema.Fields[xOrdinal].Format;
+        }
 
         foreach (var row in rows.Rows)
         {
-            var label = PayloadRowFormatters.FormatValue(row.GetClr(xColumn));
+            var rawX = row.GetClr(xColumn);
+            var label = !string.IsNullOrWhiteSpace(xFormatRaw)
+                ? PayloadRowFormatters.FormatChartAxisLabel(rawX, LabelFormat.ResolveAxisFormat(xFormatRaw))
+                : PayloadRowFormatters.FormatValue(rawX);
             if (string.IsNullOrWhiteSpace(label))
             {
                 continue;

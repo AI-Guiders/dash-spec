@@ -25,18 +25,22 @@ internal static class TablePayloadBuilder
         var fields = columns
             .Select(column =>
             {
-                var optional = rows.Schema.FieldOrdinals.TryGetValue(column, out var ordinal)
-                    ? rows.Schema.Fields[ordinal].IsOptional
-                    : true;
-                var kind = rows.Schema.FieldOrdinals.TryGetValue(column, out ordinal)
-                    ? rows.Schema.Fields[ordinal].Kind
-                    : DashPrimitiveKind.String;
+                var hasSchemaField = rows.Schema.FieldOrdinals.TryGetValue(column, out var ordinal);
+                var schemaField = hasSchemaField ? rows.Schema.Fields[ordinal] : null;
+                var optional = schemaField?.IsOptional ?? true;
+                var kind = schemaField?.Kind ?? DashPrimitiveKind.String;
+                var resolvedLabel = labels.TryGetValue(column, out var label)
+                    ? label
+                    : !string.IsNullOrWhiteSpace(schemaField?.Label) ? schemaField.Label! : column;
+                var resolvedFormat = columnFormats.TryGetValue(column, out var format)
+                    ? format
+                    : schemaField?.Format;
                 return new TableField(
                     column,
-                    labels.TryGetValue(column, out var label) ? label : column,
+                    resolvedLabel,
                     kind,
                     optional,
-                    columnFormats.TryGetValue(column, out var format) ? format : null,
+                    resolvedFormat,
                     columnAlignments.TryGetValue(column, out var alignment) ? alignment : null,
                     headerAlignments.TryGetValue(column, out var headerAlignment) ? headerAlignment : null);
             })

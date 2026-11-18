@@ -246,9 +246,14 @@ module CardDiagramSlotBuilder =
 
             Some(built :> IReadOnlyDictionary<_, _>)
 
-    let private layoutTokenToSlotRef (token: string) =
-        if String.Equals(token, "diagram", StringComparison.OrdinalIgnoreCase) then DiagramSlotId
-        else token
+    let private layoutTokenToSlotRef (builder: Builder) (token: string) =
+        let name =
+            let idx = token.IndexOf(':')
+            if idx > 0 then token.Substring(0, idx) else token
+        if String.Equals(name, "diagram", StringComparison.OrdinalIgnoreCase) then DiagramSlotId
+        elif String.Equals(name, "@primary", StringComparison.OrdinalIgnoreCase) then
+            if builder.Order.Count > 0 then builder.Order.[0] else DiagramSlotId
+        else name
 
     let resolvePrimarySlotKey (builder: Builder) (interior: LayoutBoardDefinition option) =
         let tryFromBoard (board: LayoutBoardDefinition) =
@@ -256,7 +261,7 @@ module CardDiagramSlotBuilder =
             for row in board.Rows do
                 for token in row do
                     if found.IsNone then
-                        let slotRef = layoutTokenToSlotRef token
+                        let slotRef = layoutTokenToSlotRef builder token
                         if builder.Slots.ContainsKey slotRef then
                             let scratch = builder.Slots.[slotRef]
                             if scratch.Diagram.IsSome then

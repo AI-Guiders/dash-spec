@@ -397,7 +397,7 @@ module rec DocumentModuleParser =
         let mutable palette = None
         let mutable diagramLibraryPath = None
         let mutable paletteUse = None
-        let mutable layout = LayoutParser.defaultGrid ()
+        let mutable layout = LayoutModuleParser.defaultGrid ()
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectSymbol = None
@@ -499,7 +499,7 @@ module rec DocumentModuleParser =
         let mutable palette = None
         let mutable diagramLibraryPath = None
         let mutable paletteUse = None
-        let mutable layout = LayoutParser.defaultGrid ()
+        let mutable layout = LayoutModuleParser.defaultGrid ()
         let mutable connectLayoutBoard = None
         let mutable connectToolbarBoard = None
         let mutable flowConnectSymbol = None
@@ -661,7 +661,7 @@ module rec DocumentModuleParser =
 
     let private parseConnectBlock (reader: TokenReader) : string option * LayoutDefinition * LayoutBoardDefinition option * LayoutBoardDefinition option * string option =
         let paletteUse = ref (None: string option)
-        let layout = ref (LayoutParser.defaultGrid ())
+        let layout = ref (LayoutModuleParser.defaultGrid ())
         let layoutBoard = ref (None: LayoutBoardDefinition option)
         let toolbarBoard = ref (None: LayoutBoardDefinition option)
         let flowConnectSymbol = ref (None: string option)
@@ -686,10 +686,10 @@ module rec DocumentModuleParser =
         let onLayout () =
             match reader.TryPeekIdent() with
             | Some kind when String.Equals(kind, "grid", StringComparison.OrdinalIgnoreCase) ->
-                layout.Value <- LayoutParser.parseGrid reader
+                layout.Value <- LayoutModuleParser.parseGrid reader
             | Some kind when String.Equals(kind, "board", StringComparison.OrdinalIgnoreCase) ->
                 reader.ReadIdent() |> ignore
-                layoutBoard.Value <- Some(LayoutParser.parseBoard reader)
+                layoutBoard.Value <- Some(LayoutModuleParser.parseBoard reader)
             | _ -> raise (reader.Unexpected("layout grid or layout board"))
 
         let members: BlockGrammar.ContainerMember list =
@@ -859,7 +859,7 @@ module rec DocumentModuleParser =
 
             if BlockSyntax.isBlockEnd reader "page" (Some pageId) then ()
             elif reader.TryKeyword "layout" then
-                pageLayout.Value <- Some(LayoutParser.parseBoard reader)
+                pageLayout.Value <- Some(LayoutModuleParser.parseBoard reader)
                 reader.SkipNewlines()
             elif BlockGrammar.tryDispatchChild reader members then ()
             elif ReportScopeFlowParser.tryAddQualifiedBlock reader pageFlowBuilder $"Page '{pageId}'" then

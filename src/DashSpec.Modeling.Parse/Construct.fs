@@ -153,13 +153,70 @@ module Construct =
         for m in maps do
             decl.CellsToRow m |> decl.ConstructRow
 
-    /// Extract <see cref="ConstructForm.BlockForm"/> directly from an AST <see cref="BlockDeclarationSyntax"/>.
+    let private isKeyHeader (cell: string) =
+        match cell.Trim().ToLowerInvariant() with
+        | "key" | "property" | "prop" | "name" | "field" -> true
+        | _ -> false
+
+    let private isValueHeader (cell: string) =
+        match cell.Trim().ToLowerInvariant() with
+        | "value" | "val" -> true
+        | _ -> false
+
+    /// Tier 1 (ObjectConstruct): normalize a pipe table representing a single object's properties
+    /// (either a 2-column vertical `| key | value |` table or a 2-row horizontal `| k1 | k2 | ... |` record table)
+    /// into `(key, value)` pairs.
+    let normalizeObjectTableCells (rawRows: string[][]) (isKnownKey: string -> bool) : (string * string) list =
+        let dataRows =
+            rawRows
+            |> Array.filter (fun cells -> cells.Length > 0 && not (TableLiteral.isSeparator cells))
+
+        if dataRows.Length = 0 then
+            []
+        else
+            let pairs = ResizeArray<string * string>()
+            let addPair (rawK: string) (rawV: string) =
+                let k = unquote (rawK.Trim())
+                let v = rawV.Trim()
+                if not (String.IsNullOrWhiteSpace k) && not (isUnset v) then
+                    pairs.Add(k, v)
+
+            let row0 = dataRows.[0]
+            if dataRows.Length >= 2 && row0.Length = 2 && isKeyHeader row0.[0] && isValueHeader row0.[1] then
+                for r in dataRows.[1..] do
+                    if r.Length >= 2 then
+                        addPair r.[0] r.[1]
+            elif dataRows.Length = 2
+                 && row0.Length >= 2
+                 && (row0.Length > 2
+                     || (isKnownKey (row0.[0].Trim()) && isKnownKey (row0.[1].Trim()))) then
+                let valRow = dataRows.[1]
+                for i in 0 .. (min (row0.Length - 1) (valRow.Length - 1)) do
+                    addPair row0.[i] valRow.[i]
+            else
+                for r in dataRows do
+                    if r.Length >= 2 then
+                        addPair r.[0] r.[1]
+
+            List.ofSeq pairs
+
+    /// Extract <see cref="ConstructForm.BlockForm"/> directly from an AST <see cref="BlockDeclarationSyntax"/>,
+    /// combining `key = value` PropertyAssignment members and any inner single-object pipe table (Tier 1 ObjectConstruct).
     let fromAstBlock (headerBindings: (string * string) seq) (block: BlockDeclarationSyntax) : ConstructForm =
-        let props =
-            block.Members
-            |> Array.choose (function
-                | DashSpecAstNode.PropertyAssignment p -> Some(KeyValuePair(p.Key, p.ValueText))
-                | _ -> None)
+        let props = ResizeArray<KeyValuePair<string, string>>()
+        let tableRows = ResizeArray<string[]>()
+
+        for m in block.Members do
+            match m with
+            | DashSpecAstNode.PropertyAssignment p ->
+                props.Add(KeyValuePair(p.Key, p.ValueText))
+            | DashSpecAstNode.TableRowDeclaration r ->
+                tableRows.Add(r.Cells)
+            | _ -> ()
+
+        if tableRows.Count > 0 then
+            for k, v in normalizeObjectTableCells (tableRows.ToArray()) (fun _ -> true) do
+                props.Add(KeyValuePair(k, v))
 
         ConstructForm.BlockForm(headerBindings, props)
 
@@ -220,14 +277,16 @@ module Construct =
                 [ for objId in order -> objId, (byId.[objId] |> Seq.toList) ]
             Some(ConstructForm.DottedForm instances)
 
-    /// Unified AST construct projection: applies <paramref name="decl"/> across
+    /// Unified AST construct projection (Tier 2 CollectionConstruct): applies <paramref name="decl"/> across
     /// <see cref="ConstructForm.TableForm"/> (`| col1 | col2 |`),
     /// <see cref="ConstructForm.BlockForm"/> (`<blockKeyword> [<id>] ... end <blockKeyword>`),
-    /// and <see cref="ConstructForm.DottedForm"/> (`<id>.<prop> = <value>`) in a single call.
-    let projectAst
+    /// <see cref="ConstructForm.DottedForm"/> (`<id>.<prop> = <value>`),
+    /// and optional <see cref="ConstructForm.LineForm"/> (`tryProjectLine`) in a single call.
+    let projectAstWithLines
         (decl: Declaration<'Row>)
         (blockKeyword: DashSpecBlockKeyword option)
         (idAttribute: string)
+        (tryProjectLine: (DashSpecAstNode -> (string * string) seq option) option)
         (members: DashSpecAstNode[])
         : unit
         =
@@ -255,6 +314,23 @@ module Construct =
         match tryFromAstDotted decl kindPrefix idAttribute members with
         | Some dottedForm -> apply decl dottedForm
         | None -> ()
+
+        match tryProjectLine with
+        | None -> ()
+        | Some lineProjector ->
+            for m in members do
+                match lineProjector m with
+                | Some bindings -> apply decl (ConstructForm.LineForm bindings)
+                | None -> ()
+
+    let projectAst
+        (decl: Declaration<'Row>)
+        (blockKeyword: DashSpecBlockKeyword option)
+        (idAttribute: string)
+        (members: DashSpecAstNode[])
+        : unit
+        =
+        projectAstWithLines decl blockKeyword idAttribute None members
 
     /// Convert raw pipe-table lines into <see cref="ConstructForm.TableForm"/> and apply the declaration.
     let applyTableRows (decl: Declaration<'Row>) (rows: string list) : unit =

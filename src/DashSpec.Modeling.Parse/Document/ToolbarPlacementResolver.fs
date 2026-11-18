@@ -11,7 +11,9 @@ module ToolbarPlacementResolver =
     let private boardFromCardRows (rows: IReadOnlyList<IReadOnlyList<string>>) =
         { Entries = rows |> Seq.map LayoutBoardEntry.CardRow |> Seq.toList :> IReadOnlyList<_>
           ModuleScope = None
-          GridColumns = 0 }
+          GridColumns = 0
+          MidEntries = None
+          NarrowEntries = None }
 
     let resolveFilterNames
         (filters: IReadOnlyList<FilterDefinition>)

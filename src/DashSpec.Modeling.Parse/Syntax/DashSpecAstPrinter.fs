@@ -15,6 +15,7 @@ module DashSpecAstPrinter =
     let private mkToken (kind: DashSpecSyntaxKind) (text: string) : SyntaxToken =
         { Kind = kind
           LexKind = TokenKind.Ident
+          Keyword = DashSpecKeyword.tryParse text
           Text = text
           Span = emptySpan }
 

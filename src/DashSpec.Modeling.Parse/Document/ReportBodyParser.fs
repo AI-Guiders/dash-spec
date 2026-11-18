@@ -86,7 +86,7 @@ module ReportBodyParser =
             reader.ReadIdent() |> ignore
             raise (DashSpecParseException("Data provider belongs on dashflow source nodes (use provider <id> inside source { }), not on the report module."))
         elif reader.TryKeyword "layout" then
-            let grid = LayoutParser.parseGrid reader
+            let grid = LayoutModuleParser.parseGrid reader
             if ctx.Mode = ReportCompileMode.Dashboard || ctx.Mode = ReportCompileMode.TabStandalone then
                 ctx.Layout <- grid
             reader.SkipNewlines()

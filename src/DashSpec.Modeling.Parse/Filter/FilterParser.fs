@@ -326,7 +326,7 @@ module FilterParser =
                 if placement.IsSome then
                     raise (DashSpecParseException($"Filter '{name}': duplicate place block."))
 
-                placement <- Some(LayoutParser.parsePlacement reader)
+                placement <- Some(LayoutModuleParser.parsePlacement reader)
             else
                 raise (reader.Unexpected "bind, show, or place")
 
@@ -534,14 +534,14 @@ module FilterParser =
     let private tryParseFilterPlacement (reader: TokenReader) =
         let saved = reader.SavePosition()
         if reader.TryKeywordSameLine "place" then
-            Some(LayoutParser.parsePlacement reader)
+            Some(LayoutModuleParser.parsePlacement reader)
         elif not (reader.IsOnNewline()) then
             reader.RestorePosition saved
             None
         else
             reader.SkipNewlines()
             if reader.TryKeywordSameLine "place" then
-                Some(LayoutParser.parsePlacement reader)
+                Some(LayoutModuleParser.parsePlacement reader)
             else
                 reader.RestorePosition saved
                 None

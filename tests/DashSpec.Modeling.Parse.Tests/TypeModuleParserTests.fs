@@ -109,3 +109,48 @@ end dashboard
 
         Assert.Single(props) |> ignore
         Assert.Equal("title", props.[0].Key)
+
+    [<Fact>]
+    let ``parse type block supports table form, property form, and inline field format and label metadata`` () =
+        let text =
+            """
+module types multi_form_rows
+namespace Demo.Types
+
+type TableFormRow
+  | type | name       | optional | format | label     |
+  | time | hour_label | true     | HH:mm  | Час суток |
+  | int  | launches   | false    | N0     | Запусков  |
+end type
+
+type PropertyAndFieldRow
+  hour_label = optional time as "Час суток" format = "HH:mm"
+  int launches as "Запусков" format = "N0"
+end type
+"""
+
+        let defs = TypeModuleParser.parseTypesModule text
+        Assert.Equal(2, defs.Length)
+
+        for def in defs do
+            Assert.Equal(2, def.Fields.Length)
+            let f0 = def.Fields.[0]
+            let f1 = def.Fields.[1]
+            Assert.Equal("hour_label", f0.Name)
+            Assert.True(f0.Optional)
+            Assert.Equal(DashType.Primitive DashPrimitive.Time, f0.Type)
+            Assert.Equal(Some "HH:mm", f0.Format)
+            Assert.Equal(Some "Час суток", f0.Label)
+
+            Assert.Equal("launches", f1.Name)
+            Assert.False(f1.Optional)
+            Assert.Equal(DashType.Primitive DashPrimitive.Int, f1.Type)
+            Assert.Equal(Some "N0", f1.Format)
+            Assert.Equal(Some "Запусков", f1.Label)
+
+        let schemas = RowTypeSchemaBridge.toCatalog defs
+        let schema = schemas.["TableFormRow"]
+        Assert.Equal("HH:mm", schema.Fields.[0].Format)
+        Assert.Equal("Час суток", schema.Fields.[0].Label)
+        Assert.Equal("N0", schema.Fields.[1].Format)
+        Assert.Equal("Запусков", schema.Fields.[1].Label)

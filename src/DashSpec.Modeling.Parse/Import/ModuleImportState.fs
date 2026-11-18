@@ -27,6 +27,7 @@ type ModuleImportState() =
 
     let mutable layoutBoard: LayoutBoardDefinition option = None
     let mutable toolbarBoard: LayoutBoardDefinition option = None
+    let cardLayoutBoards = Dictionary<string, LayoutBoardDefinition>(StringComparer.OrdinalIgnoreCase)
     let aliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let palettes = Dictionary<string, PaletteDocument>(StringComparer.OrdinalIgnoreCase)
     let tabModules = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -179,6 +180,15 @@ type ModuleImportState() =
             raise (DashSpecParseException($"{context} declares more than one toolbar layout board."))
         LayoutModuleScopeValidator.ensureMatchesImportSite board LayoutScope.Toolbar context
         toolbarBoard <- Some board
+
+    member _.RegisterCardLayoutBoard(id: string, board: LayoutBoardDefinition) =
+        if not (String.IsNullOrWhiteSpace id) then
+            cardLayoutBoards.[id] <- board
+
+    member _.TryGetCardLayoutBoard(id: string) : LayoutBoardDefinition option =
+        match cardLayoutBoards.TryGetValue id with
+        | true, board -> Some board
+        | false, _ -> None
 
     member this.RegisterRowType(definition: RowTypeDef) =
         if String.IsNullOrWhiteSpace definition.Name then invalidArg "definition" "Row type name is required."

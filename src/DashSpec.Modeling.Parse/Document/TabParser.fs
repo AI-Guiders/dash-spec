@@ -43,7 +43,7 @@ module TabParser =
                     cardIds <- PropertyBlockParser.parseIdentListBlock reader "cards" $"tab {id} cards"
                     reader.SkipNewlines()
                 elif reader.TryKeyword "layout" then
-                    layoutBoard <- Some(LayoutParser.parseBoard reader)
+                    layoutBoard <- Some(LayoutModuleParser.parseBoard reader)
                     reader.SkipNewlines()
                 else
                     let key = reader.ReadIdent()
@@ -83,7 +83,7 @@ module TabParser =
                 reader.SkipNewlines()
                 if BlockSyntax.isBlockEnd reader moduleWord (Some expectedTabId) then ()
                 elif reader.TryKeyword "layout" then
-                    layoutBoard <- Some(LayoutParser.parseBoard reader)
+                    layoutBoard <- Some(LayoutModuleParser.parseBoard reader)
                     reader.SkipNewlines()
                 elif allowFilters && reader.TryKeyword "defaults" then
                     raise (DashSpecParseException($"Tab block does not support defaults; declare defaults in report or tab module."))

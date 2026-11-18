@@ -29,10 +29,20 @@ public static class PlacementVariantsPlanning
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(wideColumns, 1);
         var midColumns = MidColumns(wideColumns);
+        if (wide.Span >= wideColumns)
+        {
+            return new PlacementVariants
+            {
+                Wide = wide,
+                Mid = new PlacementDefinition(0, 0, midColumns),
+                Narrow = new PlacementDefinition(0, 0, 1),
+            };
+        }
+
         return new PlacementVariants
         {
             Wide = wide,
-            Mid = new PlacementDefinition(0, 0, ScaleSpan(wide.Span, wideColumns, midColumns)),
+            Mid = new PlacementDefinition(0, 0, ScaleMidSpan(wide.Span, wideColumns, midColumns)),
             Narrow = new PlacementDefinition(0, 0, 1),
         };
     }
@@ -44,6 +54,28 @@ public static class PlacementVariantsPlanning
         ArgumentOutOfRangeException.ThrowIfLessThan(classColumns, 1);
         var scaled = (int)Math.Round(wideSpan * (double)classColumns / wideColumns, MidpointRounding.AwayFromZero);
         return Math.Clamp(scaled, 1, classColumns);
+    }
+
+    /// <summary>
+    /// Mid-class scaling for 12-column boards: 4-across cards (span 3) step down to 2-across
+    /// (span 3 of 6) instead of 3-across with 2 empty columns, and half-width charts (span 6)
+    /// stack full width (span 6 of 6) on ≤1200px viewports.
+    /// </summary>
+    static int ScaleMidSpan(int wideSpan, int wideColumns, int midColumns)
+    {
+        if (wideColumns == 12 && midColumns == 6)
+        {
+            return wideSpan switch
+            {
+                >= 6 => 6,
+                4 => 2,
+                3 => 3,
+                2 => 2,
+                _ => 1,
+            };
+        }
+
+        return ScaleSpan(wideSpan, wideColumns, midColumns);
     }
 
     /// <summary>

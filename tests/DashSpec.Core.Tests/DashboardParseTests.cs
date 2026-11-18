@@ -1003,17 +1003,17 @@ public class DashboardParseTests
         Assert.Equal(expected, LabelFormat.Format(raw, format));
 
     [Fact]
-    public void LabelFormat_FormatObject_converts_utc_to_display_time_zone()
+    public void LabelFormat_FormatObject_formats_datetime_as_is_without_implicit_timezone_shift()
     {
         LabelFormat.DisplayTimeZone = TimeZoneInfo.FindSystemTimeZoneById(
             OperatingSystem.IsWindows() ? "Russian Standard Time" : "Europe/Moscow");
         try
         {
-            var utc = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc);
-            Assert.Equal("15.06 14:05", LabelFormat.FormatObject(utc, "datetime.short"));
+            var dt = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Utc);
+            Assert.Equal("15.06 11:05", LabelFormat.FormatObject(dt, "datetime.short"));
 
             var sqlUnspecified = new DateTime(2024, 6, 15, 11, 5, 0, DateTimeKind.Unspecified);
-            Assert.Equal("15.06 14:05", LabelFormat.FormatObject(sqlUnspecified, "datetime.short"));
+            Assert.Equal("15.06 11:05", LabelFormat.FormatObject(sqlUnspecified, "datetime.short"));
         }
         finally
         {

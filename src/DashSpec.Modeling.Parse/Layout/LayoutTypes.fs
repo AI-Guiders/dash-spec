@@ -46,7 +46,11 @@ type LayoutBoardDefinition =
     { Entries: IReadOnlyList<LayoutBoardEntry>
       ModuleScope: LayoutScope option
       /// <summary>Grid drawing columns ([ADR-0111] §2): the <c>grid [] [] …</c> block of a layout module — 0 = not drawn.</summary>
-      GridColumns: int }
+      GridColumns: int
+      /// <summary>Explicit mid-viewport board (`mid … end mid`); None = auto-planned from Wide.</summary>
+      MidEntries: IReadOnlyList<LayoutBoardEntry> option
+      /// <summary>Explicit narrow-viewport board (`narrow … end narrow`); None = auto-planned from Wide.</summary>
+      NarrowEntries: IReadOnlyList<LayoutBoardEntry> option }
 
     /// <summary>Top-level card rows only (toolbar/host compat).</summary>
     member this.Rows =
@@ -72,9 +76,13 @@ type LayoutBoardDefinition =
     static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>) =
         { Entries = rows |> Seq.map CardRow |> Seq.toList
           ModuleScope = None
-          GridColumns = 0 }
+          GridColumns = 0
+          MidEntries = None
+          NarrowEntries = None }
 
     static member FromCardRows(rows: IReadOnlyList<IReadOnlyList<string>>, moduleScope: LayoutScope) =
         { Entries = rows |> Seq.map CardRow |> Seq.toList
           ModuleScope = Some moduleScope
-          GridColumns = 0 }
+          GridColumns = 0
+          MidEntries = None
+          NarrowEntries = None }

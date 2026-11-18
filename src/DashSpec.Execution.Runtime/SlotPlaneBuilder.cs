@@ -26,11 +26,19 @@ public static class SlotPlaneBuilder
         var nestedBoards = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
         var toolbars = new Dictionary<BoardRoute, IReadOnlyList<Slot>>(BoardRouteComparer.Instance);
 
+        var interiors = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
+        var chrome = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var card in document.Cards)
+        {
+            interiors[card.Id] = PlanInterior(document, card, nodes);
+            chrome[card.Id] = PlanChrome(document, card, nodes);
+        }
+
         if (document.Tabs.Count == 0)
         {
             // Tabless document: one implicit route; the fallback planning over all cards.
             var route = new BoardRoute { TabId = null, PageId = null };
-            boards[route] = PlanTablessBoard(document, library, nodes);
+            boards[route] = PlanTablessBoard(document, library, nodes, interiors);
             toolbars[route] = PlanToolbar(document, tabId: null, pageId: null, nodes);
         }
         else
@@ -41,7 +49,7 @@ public static class SlotPlaneBuilder
                 if (pages.Count == 0)
                 {
                     var route = new BoardRoute { TabId = Some(tab.Id), PageId = null };
-                    boards[route] = PlanBoard(document, library, tab.Id, pageId: null, nodes, nestedBoards);
+                    boards[route] = PlanBoard(document, library, tab.Id, pageId: null, nodes, nestedBoards, interiors);
                     toolbars[route] = PlanToolbar(document, tab.Id, pageId: null, nodes);
                     continue;
                 }
@@ -49,18 +57,10 @@ public static class SlotPlaneBuilder
                 foreach (var page in pages)
                 {
                     var route = new BoardRoute { TabId = Some(tab.Id), PageId = Some(page.Id) };
-                    boards[route] = PlanBoard(document, library, tab.Id, page.Id, nodes, nestedBoards);
+                    boards[route] = PlanBoard(document, library, tab.Id, page.Id, nodes, nestedBoards, interiors);
                     toolbars[route] = PlanToolbar(document, tab.Id, page.Id, nodes);
                 }
             }
-        }
-
-        var interiors = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
-        var chrome = new Dictionary<string, IReadOnlyList<Slot>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var card in document.Cards)
-        {
-            interiors[card.Id] = PlanInterior(document, card, nodes);
-            chrome[card.Id] = PlanChrome(document, card, nodes);
         }
 
         // 4. Shell ([ADR-0111] §2 revision): the shell grid is NOT part of the dashboard plane —
@@ -89,7 +89,8 @@ public static class SlotPlaneBuilder
         TabLayoutContext context,
         int columns,
         IReadOnlyDictionary<string, WiringNode> nodes,
-        Dictionary<string, IReadOnlyList<Slot>> nestedBoards)
+        Dictionary<string, IReadOnlyList<Slot>> nestedBoards,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors)
     {
         var board = context.Board;
         if (board is null)
@@ -103,11 +104,11 @@ public static class SlotPlaneBuilder
             {
                 case LayoutBoardEntry.NestRow nest:
                     nestedBoards[nest.Item.Id] = PlanInnerBoard(
-                        document, context, columns, nest.Item.Id, nest.Item.Rows, nodes);
+                        document, context, columns, nest.Item.Id, nest.Item.Rows, nodes, interiors);
                     break;
                 case LayoutBoardEntry.GroupRow group:
                     nestedBoards[group.Item.Id] = PlanInnerBoard(
-                        document, context, columns, group.Item.Id, group.Item.Rows, nodes);
+                        document, context, columns, group.Item.Id, group.Item.Rows, nodes, interiors);
                     break;
             }
         }
@@ -119,7 +120,8 @@ public static class SlotPlaneBuilder
         int columns,
         string containerId,
         IReadOnlyList<IReadOnlyList<string>> rows,
-        IReadOnlyDictionary<string, WiringNode> nodes)
+        IReadOnlyDictionary<string, WiringNode> nodes,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors)
     {
         var slots = new List<Slot>();
         var row = 0;
@@ -162,6 +164,7 @@ public static class SlotPlaneBuilder
                     Placement = PlacementVariantsPlanning.For(new PlacementDefinition(row, col, span), columns),
                     Scope = LayoutSlotScope.HostTabBoard,
                     Provenance = PlacementProvenance.Declared,
+                    Inner = ResolveInnerContainer(node, columns, nestedBoards: null, interiors, context.Board),
                 });
                 col += span;
                 allocated += span;
@@ -178,7 +181,8 @@ public static class SlotPlaneBuilder
         string tabId,
         string? pageId,
         IReadOnlyDictionary<string, WiringNode> nodes,
-        Dictionary<string, IReadOnlyList<Slot>> nestedBoards)
+        Dictionary<string, IReadOnlyList<Slot>> nestedBoards,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors)
     {
         var columns = document.Layout.Columns;
         var context = TabLayoutCompactor.ResolveContext(document, tabId, pageId);
@@ -186,15 +190,27 @@ public static class SlotPlaneBuilder
         var declared = new HashSet<string>(compact.Keys, StringComparer.OrdinalIgnoreCase);
 
         // The nested boards of this route's board ([ADR-0111]): nests/groups inner grids.
-        PlanNestedBoards(document, context, columns, nodes, nestedBoards);
+        PlanNestedBoards(document, context, columns, nodes, nestedBoards, interiors);
 
         IReadOnlyList<LayoutSlotDescriptor> descriptors;
+        IReadOnlyDictionary<string, PlacementDefinition>? midOverrides = null;
+        IReadOnlyDictionary<string, PlacementDefinition>? narrowOverrides = null;
         if (TabLayoutCompactor.TryBuildLayoutPlan(context) is { } plan)
         {
             descriptors = LayoutSlotEngine.PlanHostTabBoard(
                 plan,
                 columns,
                 token => TabLayoutCompactor.ResolveCardRef(context, token));
+            if (context.Board?.MidEntries?.Value is { Count: > 0 } midEntries)
+            {
+                var midBoard = new LayoutBoardDefinition(midEntries, context.Board.ModuleScope, context.Board.GridColumns, null, null);
+                midOverrides = TabLayoutPlanner.Plan(midBoard, context.TabCards, PlacementVariantsPlanning.MidColumns(columns), tabId).AllCardPlacements;
+            }
+            if (context.Board?.NarrowEntries?.Value is { Count: > 0 } narrowEntries)
+            {
+                var narrowBoard = new LayoutBoardDefinition(narrowEntries, context.Board.ModuleScope, context.Board.GridColumns, null, null);
+                narrowOverrides = TabLayoutPlanner.Plan(narrowBoard, context.TabCards, PlacementVariantsPlanning.NarrowColumns(columns), tabId).AllCardPlacements;
+            }
         }
         else
         {
@@ -211,7 +227,10 @@ public static class SlotPlaneBuilder
                 nodes,
                 provenance: declared.Contains(descriptor.Token)
                     ? PlacementProvenance.Declared
-                    : PlacementProvenance.RecordedDefault))
+                    : PlacementProvenance.RecordedDefault,
+                inner: ResolveDescriptorInner(descriptor, columns, nodes, nestedBoards, interiors, context.Board),
+                midOverrides: midOverrides,
+                narrowOverrides: narrowOverrides))
             .ToList();
     }
 
@@ -219,7 +238,8 @@ public static class SlotPlaneBuilder
     static IReadOnlyList<Slot> PlanTablessBoard(
         DashboardDocument document,
         SpecLibrary? library,
-        IReadOnlyDictionary<string, WiringNode> nodes)
+        IReadOnlyDictionary<string, WiringNode> nodes,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors)
     {
         var columns = document.Layout.Columns;
         var cards = document.Cards
@@ -242,7 +262,8 @@ public static class SlotPlaneBuilder
                 nodes,
                 provenance: declared.Contains(descriptor.Token)
                     ? PlacementProvenance.Declared
-                    : PlacementProvenance.RecordedDefault))
+                    : PlacementProvenance.RecordedDefault,
+                inner: ResolveDescriptorInner(descriptor, columns, nodes, nestedBoards: null, interiors, board: null)))
             .ToList();
     }
 
@@ -324,10 +345,41 @@ public static class SlotPlaneBuilder
             .Where(slotRef => !string.Equals(slotRef, primarySlotRef, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        var declaredTokens = card.InteriorBoard?.Value is { } interiorBoard
+        var primaryToken = string.Equals(primarySlotRef, CardInteriorSlots.Diagram, StringComparison.Ordinal)
+            ? "diagram"
+            : primarySlotRef;
+        var expandedInteriorBoard = card.InteriorBoard?.Value is { } rawIb
+            ? DashSpec.Modeling.Parse.Layout.LayoutModuleParser.expandCardRoleTokens(card.LocalFilters, primaryToken, rawIb)
+            : null;
+
+        var declaredTokens = expandedInteriorBoard is { } interiorBoard
             ? InteriorDeclaredTokens(interiorBoard, card)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var synthesized = card.InteriorBoard is null;
+
+        IReadOnlyDictionary<string, PlacementDefinition>? midOverrides = null;
+        IReadOnlyDictionary<string, PlacementDefinition>? narrowOverrides = null;
+        if (expandedInteriorBoard is { } ib)
+        {
+            if (ib.MidEntries?.Value is { Count: > 0 } midEntries)
+            {
+                var midBoard = new LayoutBoardDefinition(midEntries, ib.ModuleScope, ib.GridColumns, null, null);
+                midOverrides = LayoutBoardPlacer.Resolve(
+                    midBoard,
+                    PlacementVariantsPlanning.MidColumns(columns),
+                    $"Card '{card.Id}' interior mid",
+                    token => CardInteriorSlotResolver.Resolve(token, card, document.Filters));
+            }
+            if (ib.NarrowEntries?.Value is { Count: > 0 } narrowEntries)
+            {
+                var narrowBoard = new LayoutBoardDefinition(narrowEntries, ib.ModuleScope, ib.GridColumns, null, null);
+                narrowOverrides = LayoutBoardPlacer.Resolve(
+                    narrowBoard,
+                    PlacementVariantsPlanning.NarrowColumns(columns),
+                    $"Card '{card.Id}' interior narrow",
+                    token => CardInteriorSlotResolver.Resolve(token, card, document.Filters));
+            }
+        }
 
         var cardId = card.Id;
         return LayoutSlotEngine.PlanCardInterior(placements, card.LocalFilters, secondaryRefs)
@@ -339,7 +391,14 @@ public static class SlotPlaneBuilder
                 var provenance = synthesized || !declaredTokens.Contains(descriptor.Token)
                     ? PlacementProvenance.RecordedDefault
                     : PlacementProvenance.Declared;
-                return ToSlot(descriptor, columns, nodes, provenance, nodeId);
+                return ToSlot(
+                    descriptor,
+                    columns,
+                    nodes,
+                    provenance,
+                    nodeId,
+                    midOverrides: midOverrides,
+                    narrowOverrides: narrowOverrides);
             })
             .ToList();
     }
@@ -360,14 +419,36 @@ public static class SlotPlaneBuilder
                 LayoutSlotScope.CardFilterChrome,
                 placements,
                 token => LayoutSlotContentKind.Filter)
-            .Select(descriptor => ToSlot(
-                descriptor,
-                document.Layout.Columns,
-                nodes,
-                provenance: recorded.Contains(descriptor.Token)
-                    ? PlacementProvenance.RecordedDefault
-                    : PlacementProvenance.Declared,
-                fixedMid: true))
+            .Select(descriptor =>
+            {
+                var nodeId = descriptor.Token;
+                if (!nodes.TryGetValue(nodeId, out var node))
+                {
+                    if (string.Equals(nodeId, CardLocalFilterChromeCompactor.ApplySlotId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        node = new WiringNode(
+                            nodeId,
+                            WiringNodeKind.Chrome,
+                            Some($"card:{card.Id}"));
+                    }
+                    else
+                    {
+                        throw new DashSpecParseException(
+                            $"Slot plane correspondence failed: no document-graph node for '{nodeId}' " +
+                            $"(scope {descriptor.Scope}, kind {descriptor.ContentKind}).");
+                    }
+                }
+
+                return new Slot
+                {
+                    Node = node,
+                    Placement = PlacementVariantsPlanning.ForFixedMid(descriptor.Placement),
+                    Scope = descriptor.Scope,
+                    Provenance = recorded.Contains(descriptor.Token)
+                        ? PlacementProvenance.RecordedDefault
+                        : PlacementProvenance.Declared,
+                };
+            })
             .ToList();
     }
 
@@ -426,7 +507,10 @@ public static class SlotPlaneBuilder
         IReadOnlyDictionary<string, WiringNode> nodes,
         PlacementProvenance provenance,
         string? nodeId = null,
-        bool fixedMid = false)
+        bool fixedMid = false,
+        Microsoft.FSharp.Core.FSharpOption<SlotContainer>? inner = null,
+        IReadOnlyDictionary<string, PlacementDefinition>? midOverrides = null,
+        IReadOnlyDictionary<string, PlacementDefinition>? narrowOverrides = null)
     {
         var id = nodeId ?? descriptor.Token;
         if (!nodes.TryGetValue(id, out var node))
@@ -436,15 +520,89 @@ public static class SlotPlaneBuilder
                 $"(scope {descriptor.Scope}, kind {descriptor.ContentKind}).");
         }
 
+        var variants = fixedMid
+            ? PlacementVariantsPlanning.ForFixedMid(descriptor.Placement)
+            : PlacementVariantsPlanning.For(descriptor.Placement, wideColumns);
+
+        if (midOverrides is not null && midOverrides.TryGetValue(id, out var midOverride))
+        {
+            variants = new PlacementVariants(variants.Wide, midOverride, variants.Narrow);
+        }
+
+        if (narrowOverrides is not null && narrowOverrides.TryGetValue(id, out var narrowOverride))
+        {
+            variants = new PlacementVariants(variants.Wide, variants.Mid, narrowOverride);
+        }
+
         return new Slot
         {
             Node = node,
-            Placement = fixedMid
-                ? PlacementVariantsPlanning.ForFixedMid(descriptor.Placement)
-                : PlacementVariantsPlanning.For(descriptor.Placement, wideColumns),
+            Placement = variants,
             Scope = descriptor.Scope,
             Provenance = provenance,
+            Inner = inner,
         };
+    }
+
+    static Microsoft.FSharp.Core.FSharpOption<SlotContainer>? ResolveDescriptorInner(
+        LayoutSlotDescriptor descriptor,
+        int columns,
+        IReadOnlyDictionary<string, WiringNode> nodes,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>>? nestedBoards,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors,
+        LayoutBoardDefinition? board)
+    {
+        if (!nodes.TryGetValue(descriptor.Token, out var node))
+        {
+            return null;
+        }
+
+        return ResolveInnerContainer(node, columns, nestedBoards, interiors, board);
+    }
+
+    static Microsoft.FSharp.Core.FSharpOption<SlotContainer>? ResolveInnerContainer(
+        WiringNode node,
+        int columns,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>>? nestedBoards,
+        IReadOnlyDictionary<string, IReadOnlyList<Slot>> interiors,
+        LayoutBoardDefinition? board)
+    {
+        if (node.Kind == WiringNodeKind.Card &&
+            interiors.TryGetValue(node.Id, out var interiorSlots))
+        {
+            var rows = interiorSlots.Count == 0 ? 1 : interiorSlots.Max(s => Math.Max(s.Placement.Wide.Row, 1));
+            return Microsoft.FSharp.Core.FSharpOption<SlotContainer>.Some(new SlotContainer
+            {
+                Scope = LayoutSlotScope.CardInterior,
+                Rows = rows,
+                Columns = columns,
+                Title = null,
+                Slots = interiorSlots,
+            });
+        }
+
+        if ((node.Kind == WiringNodeKind.Nest || node.Kind == WiringNodeKind.Group) &&
+            nestedBoards is not null &&
+            nestedBoards.TryGetValue(node.Id, out var innerSlots))
+        {
+            var groupTitle = node.Kind == WiringNodeKind.Group
+                ? board?.Entries
+                    .OfType<LayoutBoardEntry.GroupRow>()
+                    .FirstOrDefault(g => string.Equals(g.Item.Id, node.Id, StringComparison.OrdinalIgnoreCase))
+                    ?.Item.Title
+                : null;
+            var rows = innerSlots.Count == 0 ? 1 : innerSlots.Max(s => Math.Max(s.Placement.Wide.Row, 1));
+            return Microsoft.FSharp.Core.FSharpOption<SlotContainer>.Some(new SlotContainer
+            {
+                Scope = LayoutSlotScope.HostTabBoard,
+                Rows = rows,
+                Columns = columns,
+                Title = groupTitle,
+                Slots = innerSlots,
+            });
+        }
+
+        return null;
     }
 
     static Microsoft.FSharp.Core.FSharpOption<string> Some(string value) =>

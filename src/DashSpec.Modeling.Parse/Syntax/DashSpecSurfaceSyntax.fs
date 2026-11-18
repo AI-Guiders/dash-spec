@@ -87,6 +87,28 @@ module DashSpecSurfaceSyntax =
         | NodePayload.Block(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _), _, _) -> true
         | _ -> false
 
+    let private isLayoutParent (frame: MutableNode) =
+        match frame.Payload with
+        | NodePayload.Module(DashSpecModuleDirective.Module(DashSpecModuleKind.Layout, _)) -> true
+        | NodePayload.Block(DashSpecBlockOpener.Anonymous kw, _, _)
+        | NodePayload.Block(DashSpecBlockOpener.Named(kw, _), _, _) ->
+            match kw with
+            | DashSpecBlockKeyword.Layout
+            | DashSpecBlockKeyword.VStack
+            | DashSpecBlockKeyword.HStack
+            | DashSpecBlockKeyword.Wide
+            | DashSpecBlockKeyword.Mid
+            | DashSpecBlockKeyword.Narrow
+            | DashSpecBlockKeyword.Group
+            | DashSpecBlockKeyword.Nest -> true
+            | _ -> false
+        | _ -> false
+
+    let private isLayoutSubBlock (kind: string) =
+        match kind.Trim().ToLowerInvariant() with
+        | "grid" | "wide" | "mid" | "narrow" | "vstack" | "hstack" | "group" | "nest" | "place" | "import" -> true
+        | _ -> false
+
     let rec private toImmutable (node: MutableNode) : DashSpecAstNode =
         let children = node.Children |> Seq.map toImmutable |> Array.ofSeq
 
@@ -442,6 +464,26 @@ module DashSpecSurfaceSyntax =
     let private tryParseDottedName (tokens: Token list) =
         tryParseDotSyntax tokens |> Option.map (fun d -> d.Text)
 
+    let private splitTypeFieldTrailing (tokens: Token list) : Token list * bool =
+        let nameTokens =
+            tokens
+            |> List.takeWhile (fun t ->
+                (t.Kind = TokenKind.Ident || t.Kind = TokenKind.Dot)
+                && not (t.Kind = TokenKind.Ident && (String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase) || String.Equals(t.Value, "format", StringComparison.OrdinalIgnoreCase))))
+        let trailing = tokens |> List.skip nameTokens.Length
+        let rec checkTrailing (rest: Token list) =
+            match rest with
+            | [] -> true
+            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.String } :: tail
+                when String.Equals(kw, "as", StringComparison.OrdinalIgnoreCase) ->
+                checkTrailing tail
+            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Eq } :: { Kind = TokenKind.String | TokenKind.Ident } :: tail
+                when String.Equals(kw, "format", StringComparison.OrdinalIgnoreCase)
+                     || String.Equals(kw, "label", StringComparison.OrdinalIgnoreCase) ->
+                checkTrailing tail
+            | _ -> false
+        nameTokens, checkTrailing trailing
+
     let private tryParseTypeFieldLine (tokens: Token list) : (bool * DashType * string) option =
         let sigTokens = significantTokens tokens
 
@@ -453,21 +495,23 @@ module DashSpecSurfaceSyntax =
             | _ -> false, sigTokens
 
         match afterOpt with
-        | { Kind = TokenKind.Ident; Value = arrKw } :: { Kind = TokenKind.Ident; Value = elemName } :: { Kind = TokenKind.Ident; Value = lenText } :: nameTokens
+        | { Kind = TokenKind.Ident; Value = arrKw } :: { Kind = TokenKind.Ident; Value = elemName } :: { Kind = TokenKind.Ident; Value = lenText } :: restTokens
             when String.Equals(arrKw, "array", StringComparison.OrdinalIgnoreCase) ->
+            let nameTokens, trailingOk = splitTypeFieldTrailing restTokens
             match DashPrimitive.tryParseFieldKeyword elemName, Int32.TryParse lenText, tryParseDottedName nameTokens with
-            | Some elem, (true, len), Some fieldName when len > 0 ->
+            | Some elem, (true, len), Some fieldName when len > 0 && trailingOk ->
                 Some(optional, DashType.FixedArray(elem, len), fieldName)
             | _ -> None
-        | { Kind = TokenKind.Ident; Value = typeName } :: nameTokens when not nameTokens.IsEmpty ->
+        | { Kind = TokenKind.Ident; Value = typeName } :: restTokens when not restTokens.IsEmpty ->
+            let nameTokens, trailingOk = splitTypeFieldTrailing restTokens
             match tryParseDottedName nameTokens with
-            | Some fieldName ->
+            | Some fieldName when trailingOk ->
                 let dashType =
                     match DashPrimitive.tryParseFieldKeyword typeName with
                     | Some prim -> DashType.Primitive prim
                     | None -> DashType.Named typeName
                 Some(optional, dashType, fieldName)
-            | None -> None
+            | _ -> None
         | _ -> None
 
     /// Strip trailing `}` on a single-line brace-closed property line (e.g. `transform use to_zone { zone = UTC+3 }`).
@@ -894,6 +938,10 @@ module DashSpecSurfaceSyntax =
                         | { Kind = TokenKind.EmptyCell; Value = empty } ->
                             index <- index + 1
                             readWeightAndAppend GridCellTarget.EmptySlot empty
+                        | { Kind = TokenKind.At } when index + 1 < sigTokens.Length && sigTokens.[index + 1].Kind = TokenKind.Ident ->
+                            let name = "@" + sigTokens.[index + 1].Value
+                            index <- index + 2
+                            readWeightAndAppend (GridCellTarget.Slot(DotSyntax.parse name)) name
                         | { Kind = TokenKind.Ident; Value = name } ->
                             index <- index + 1
                             readWeightAndAppend (GridCellTarget.Slot(DotSyntax.parse name)) name
@@ -1163,8 +1211,6 @@ module DashSpecSurfaceSyntax =
             container.Children.Add(mkNode (NodePayload.CustomNode customNode) (DashSpecAst.id customNode) line.Span syntaxTokens)
         | None ->
             match containerOpener with
-            | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Type)
-            | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Type, _))
             | Some(DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports)
             | Some(DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _)) ->
                 container.Children.Add(mkNode NodePayload.Line candidateId line.Span syntaxTokens)
@@ -1404,7 +1450,7 @@ module DashSpecSurfaceSyntax =
                             let moduleNode = appendModule container id text allTokens line kind moduleId
                             container.Children.Add moduleNode
                             parseContainerBody moduleNode id text allTokens reader true false
-                        | BlockSurfaceLineClassifier.BlockOpener(kind, blockId) ->
+                        | BlockSurfaceLineClassifier.BlockOpener(kind, blockId) when not (isLayoutParent container) || isLayoutSubBlock kind ->
                             let blockNode = appendBlock container id text allTokens line kind blockId
                             container.Children.Add blockNode
 
@@ -1432,6 +1478,7 @@ module DashSpecSurfaceSyntax =
                         | BlockSurfaceLineClassifier.Blank -> ()
                         | BlockSurfaceLineClassifier.BraceOpen
                         | BlockSurfaceLineClassifier.BraceClose -> ()
+                        | BlockSurfaceLineClassifier.BlockOpener _
                         | BlockSurfaceLineClassifier.Content ->
                             match tryParseImportLine line.Tokens with
                             | Some(keyword, kindOpt, target, aliasName) ->

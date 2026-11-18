@@ -53,15 +53,28 @@ type PlacementVariants =
 
 /// <summary>
 /// One assembled slot ([ADR-0111]): the occupant is literally a node of the document wiring graph
-/// ([ADR-0091]) — placed as is, nothing resolved, no copies; placement variants/scope are the
-/// existing records.
+/// ([ADR-0091]) — placed as is, nothing resolved, no copies; when the slot is itself a composite
+/// container (Card, Group, Nest), <c>Inner</c> carries its recursive <see cref="SlotContainer"/> matrix.
 /// </summary>
 [<CLIMutable>]
 type Slot =
     { Node: WiringNode
       Placement: PlacementVariants
       Scope: LayoutSlotScope
-      Provenance: PlacementProvenance }
+      Provenance: PlacementProvenance
+      Inner: SlotContainer option }
+
+/// <summary>
+/// Recursive layout matrix (R × C): any scope (HostTabBoard, HostPageToolbar, CardInterior,
+/// CardFilterChrome, Group, Nest) is expressed by the same matrix record.
+/// 1 × C is a horizontal row ([] [] []); R × 1 is a vertical column ([] / [] / []).
+/// </summary>
+and [<CLIMutable>] SlotContainer =
+    { Scope: LayoutSlotScope
+      Rows: int
+      Columns: int
+      Title: string option
+      Slots: IReadOnlyList<Slot> }
 
 /// <summary>Recorded initial route ([ADR-0111]): a default, recorded at assembly ([ADR-0109]).</summary>
 [<CLIMutable>]

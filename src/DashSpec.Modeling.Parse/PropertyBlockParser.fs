@@ -60,9 +60,12 @@ module PropertyBlockParser =
             specs.[s.Name] <- s
 
         let values = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        let tableRows = ResizeArray<string[] * int>()
 
         for memberNode in members do
             match memberNode with
+            | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.TableRowDeclaration r ->
+                tableRows.Add(r.Cells, r.Span.Start)
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.PropertyAssignment p ->
                 match specs.TryGetValue p.Key with
                 | true, spec ->
@@ -84,7 +87,12 @@ module PropertyBlockParser =
                     | PropertyValueType.QualifiedName ->
                         values.[p.Key] <- unwrapQuotes p.ValueText
                     | PropertyValueType.ColumnBinding ->
-                        values.[p.Key] <- unwrapQuotes p.ValueText
+                        match p.Value with
+                        | DashSpec.Modeling.Parse.Syntax.PropertyValueSyntax.Aliased(inner, title) ->
+                            values.[p.Key] <- unwrapQuotes inner.Text
+                            values.[p.Key + "_as"] <- title
+                        | _ ->
+                            values.[p.Key] <- unwrapQuotes p.ValueText
                 | false, _ ->
                     if allowExtensionProperties && not (p.Key.EndsWith("_as", StringComparison.OrdinalIgnoreCase)) then
                         values.[p.Key] <- unwrapQuotes p.ValueText
@@ -105,6 +113,11 @@ module PropertyBlockParser =
             | other ->
                 let lineText = DashSpec.Modeling.Parse.Syntax.DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
                 raise (DashSpecUnexpectedStatementException($"Unexpected statement '{lineText}' in {blockName} block.", (DashSpec.Modeling.Parse.Syntax.DashSpecAst.span other).Start))
+
+        if tableRows.Count > 0 then
+            let rawRows = tableRows |> Seq.map fst |> Seq.toArray
+            let spanStart = fst tableRows.[0] |> ignore; snd tableRows.[0]
+            BlockGrammar.applySchemaTableRows rawRows specs allowExtensionProperties blockName values spanStart
 
         values
 

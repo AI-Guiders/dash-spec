@@ -17,7 +17,15 @@ public static class CardInteriorLayoutCompactor
             throw new ArgumentOutOfRangeException(nameof(columns));
         }
 
-        var board = card.InteriorBoard?.Value ?? CardInteriorLayoutDefaults.Synthesize(card);
+        var rawBoard = card.InteriorBoard?.Value ?? CardInteriorLayoutDefaults.Synthesize(card);
+        var primarySlotRef = CardDiagramSlotCatalog.ResolvePrimarySlotRef(card);
+        var primaryToken = string.Equals(primarySlotRef, CardInteriorSlots.Diagram, StringComparison.Ordinal)
+            ? "diagram"
+            : primarySlotRef;
+        var board = DashSpec.Modeling.Parse.Layout.LayoutModuleParser.expandCardRoleTokens(
+            card.LocalFilters,
+            primaryToken,
+            rawBoard);
 
         var context = $"Card '{card.Id}' interior";
         var placements = LayoutBoardPlacer.Resolve(

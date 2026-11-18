@@ -198,7 +198,7 @@ type ReportCompileContext(mode: ReportCompileMode) =
 
     member val FlowConnectSymbol: string option = None with get, set
     member val ColorPalette: string option = None with get, set
-    member val Layout = LayoutParser.defaultGrid () with get, set
+    member val Layout = LayoutModuleParser.defaultGrid () with get, set
     member val FiltersChrome = FiltersChromeDefinition.Default with get, set
     member val CardsChrome: CardsChromeDefinition option = None with get, set
     member val LayoutBoard: LayoutBoardDefinition option = None with get, set

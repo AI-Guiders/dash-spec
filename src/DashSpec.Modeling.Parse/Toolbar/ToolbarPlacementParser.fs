@@ -49,13 +49,13 @@ module ToolbarPlacementParser =
             reader.SkipNewlines()
             if reader.IsAt TokenKind.LBracket then
                 BlockSyntax.beginBlock reader
-                onBoard(LayoutParser.parseBoardRows reader (Some endKind) endId)
+                onBoard(LayoutModuleParser.parseBoardRows reader (Some endKind) endId)
                 BlockSyntax.expectBlockEnd reader endKind endId
             else
                 BlockSyntax.beginBlock reader
                 onFlatNames(parseNameListUntilEnd reader endKind endId blockName)
         elif reader.IsAt TokenKind.LBracket then
-            onBoard(LayoutParser.parseBoardRows reader (Some endKind) endId)
+            onBoard(LayoutModuleParser.parseBoardRows reader (Some endKind) endId)
         else
             onFlatNames(reader.ReadCommaListInline())
 

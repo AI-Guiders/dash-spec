@@ -106,12 +106,12 @@ public static partial class LabelFormat
 
         if (raw is DateTime dt)
         {
-            return ToDisplayTime(dt);
+            return dt;
         }
 
         if (raw is DateTimeOffset dto)
         {
-            return ToDisplayTime(dto.UtcDateTime);
+            return dto.UtcDateTime;
         }
 
         var format = string.IsNullOrWhiteSpace(resolvedFormat)
@@ -127,7 +127,7 @@ public static partial class LabelFormat
 
         if (TimeSeriesGrid.TryParseBucket(raw) is DateTime bucket)
         {
-            return ToDisplayTime(bucket);
+            return bucket;
         }
 
         return null;
@@ -195,7 +195,7 @@ public static partial class LabelFormat
 
         if (DateValueCodec.TryParseStoredDateTime(label, out var wireDateTime))
         {
-            return ToDisplayTime(wireDateTime);
+            return wireDateTime;
         }
 
         if (TryParseTimeLabel(label, out var fallbackTime))
@@ -261,6 +261,7 @@ public static partial class LabelFormat
             DateTime dt => FormatStoredDateTime(dt, format),
             DateTimeOffset dto => FormatStoredDateTime(dto.UtcDateTime, format),
             DateOnly d => FormatDateOnly(d, format ?? ResolveDateFormat(null)),
+            TimeOnly t => FormatTimeOnly(t, format ?? ResolveTimeFormat(null)),
             _ => FormatScalar(value, format),
         };
     }
@@ -291,7 +292,7 @@ public static partial class LabelFormat
 
         if (TryParseDateTime(raw, out var dt))
         {
-            return FormatDisplayDateTime(ToDisplayTime(dt), format ?? ResolveDateTimeFormat(null));
+            return FormatDisplayDateTime(dt, format ?? ResolveDateTimeFormat(null));
         }
 
         if (TryParseDateOnly(raw, out var date))
@@ -337,21 +338,21 @@ public static partial class LabelFormat
         return TimeZoneInfo.ConvertTimeFromUtc(utc, DisplayTimeZone);
     }
 
-    private static string FormatStoredDateTime(DateTime stored, string? format)
+        private static string FormatStoredDateTime(DateTime stored, string? format)
     {
-        var display = ToDisplayTime(stored);
         var resolved = string.IsNullOrWhiteSpace(format)
-            ? ResolveDefaultForDateTime(display)
+            ? ResolveDefaultForDateTime(stored)
             : format.Trim();
-        return FormatDisplayDateTime(display, resolved);
+        return FormatDisplayDateTime(stored, resolved);
     }
 
     public static string ResolveChartAxisFormat(object? value) =>
         value switch
         {
             DateOnly => ResolveDateFormat(null),
-            DateTime dt => ResolveChartAxisDateTimeFormat(ToDisplayTime(dt)),
-            DateTimeOffset dto => ResolveChartAxisDateTimeFormat(ToDisplayTime(dto.UtcDateTime)),
+            TimeOnly => ResolveTimeFormat(null),
+            DateTime dt => ResolveChartAxisDateTimeFormat(dt),
+            DateTimeOffset dto => ResolveChartAxisDateTimeFormat(dto.UtcDateTime),
             _ => ResolveDateFormat(null),
         };
 
@@ -372,37 +373,31 @@ public static partial class LabelFormat
                 ? reportDefault.Trim()
                 : fallback;
 
-    private static string FormatDisplayDateTime(DateTime display, string format)
-    {
-        if (format.Equals("system", StringComparison.OrdinalIgnoreCase))
-        {
-            return display.ToString("G", ResolveCulture(forSystem: true));
-        }
+    public static string FormatValue(DashValue value, string? format = null, ReportFormatDefaults? defaults = null) =>
+        value.IsNull
+            ? string.Empty
+            : FormatObject(value.ToClr(), format, defaults);
 
-        if (FormatCulturePresets.IsNamedPreset(format))
-        {
-            var culture = ReportCulture;
-            var pattern = FormatCulturePresets.ResolvePresetPattern(format, culture);
-            var formatCulture = format.Equals("date.iso", StringComparison.OrdinalIgnoreCase)
-                || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
-                    ? CultureInfo.InvariantCulture
-                    : culture;
-            return display.ToString(pattern, formatCulture);
-        }
-
-        if (IsNamedPreset(format))
-        {
-            return display.ToString("G", ResolveCulture(forSystem: true));
-        }
-
-        return ApplyCustomFormat(display, format);
-    }
+    private static string FormatDisplayDateTime(DateTime display, string format) =>
+        FormatTemporal(display, format, "G");
 
     private static string FormatDateOnly(DateOnly date, string format)
     {
+        var effectiveFormat = format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
+            || format.Equals("time.short", StringComparison.OrdinalIgnoreCase)
+                ? "date.short"
+                : format;
+        return FormatTemporal(date, effectiveFormat, "d");
+    }
+
+    private static string FormatTimeOnly(TimeOnly time, string format) =>
+        FormatTemporal(time, format, "t");
+
+    private static string FormatTemporal(IFormattable temporal, string format, string systemSpecifier)
+    {
         if (format.Equals("system", StringComparison.OrdinalIgnoreCase))
         {
-            return date.ToString("d", ResolveCulture(forSystem: true));
+            return temporal.ToString(systemSpecifier, ResolveCulture(forSystem: true));
         }
 
         if (FormatCulturePresets.IsNamedPreset(format))
@@ -413,44 +408,21 @@ public static partial class LabelFormat
                 || format.Equals("datetime.iso", StringComparison.OrdinalIgnoreCase)
                     ? CultureInfo.InvariantCulture
                     : culture;
-            if (format.Equals("datetime.short", StringComparison.OrdinalIgnoreCase)
-                || format.Equals("time.short", StringComparison.OrdinalIgnoreCase))
-            {
-                return date.ToString(FormatCulturePresets.ResolvePresetPattern("date.short", culture), culture);
-            }
-
-            return date.ToString(pattern, formatCulture);
+            return temporal.ToString(pattern, formatCulture);
         }
 
         if (IsNamedPreset(format))
         {
-            return date.ToString("d", ResolveCulture(forSystem: true));
+            return temporal.ToString(systemSpecifier, ResolveCulture(forSystem: true));
         }
 
-        return ApplyCustomFormat(date, format);
-    }
-
-    private static string ApplyCustomFormat(DateTime display, string format)
-    {
         try
         {
-            return display.ToString(format, ResolveCulture(forSystem: false));
+            return temporal.ToString(format, ResolveCulture(forSystem: false));
         }
         catch (FormatException)
         {
-            return display.ToString("G", ResolveCulture(forSystem: true));
-        }
-    }
-
-    private static string ApplyCustomFormat(DateOnly date, string format)
-    {
-        try
-        {
-            return date.ToString(format, ResolveCulture(forSystem: false));
-        }
-        catch (FormatException)
-        {
-            return date.ToString("d", ResolveCulture(forSystem: true));
+            return temporal.ToString(systemSpecifier, ResolveCulture(forSystem: true));
         }
     }
 

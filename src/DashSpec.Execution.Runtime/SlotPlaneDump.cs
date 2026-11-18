@@ -52,13 +52,24 @@ public static class SlotPlaneDump
         }
 
         builder.AppendLine(label);
+        DumpSlots(builder, slots, indent: 4);
+    }
+
+    static void DumpSlots(StringBuilder builder, IReadOnlyList<Slot> slots, int indent)
+    {
+        var pad = new string(' ', indent);
         foreach (var slot in slots)
         {
             var variants = slot.Placement;
+            var innerTag = slot.Inner?.Value is { } inner ? $" -> [{inner.Rows}x{inner.Columns}]({inner.Slots.Count})" : "";
             builder.AppendLine(
-                $"    {slot.Node.Kind} '{slot.Node.Id}' @ (row {variants.Wide.Row}, col {variants.Wide.Col}, span {variants.Wide.Span}" +
+                $"{pad}{slot.Node.Kind} '{slot.Node.Id}' @ (row {variants.Wide.Row}, col {variants.Wide.Col}, span {variants.Wide.Span}" +
                 $" | mid span {variants.Mid.Span} | narrow span {variants.Narrow.Span}) " +
-                $"scope {slot.Scope} {ProvenanceLabel(slot.Provenance)}");
+                $"scope {slot.Scope} {ProvenanceLabel(slot.Provenance)}{innerTag}");
+            if (slot.Inner?.Value is { } childContainer && childContainer.Slots.Count > 0)
+            {
+                DumpSlots(builder, childContainer.Slots, indent + 2);
+            }
         }
     }
 

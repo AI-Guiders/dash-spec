@@ -244,7 +244,17 @@ module ReportScopeFlowApplicator =
             |> Option.defaultValue false
 
         for i in 0 .. shell.Cards.Count - 1 do
-            let card = shell.Cards.[i]
+            let mutable card = shell.Cards.[i]
+
+            if card.InteriorBoard.IsSome then
+                let primaryToken = card.DiagramSlotRef |> Option.defaultValue "diagram"
+                let expandedBoard =
+                    DashSpec.Modeling.Parse.Layout.LayoutModuleParser.expandCardRoleTokens
+                        card.LocalFilters
+                        primaryToken
+                        card.InteriorBoard.Value
+                card <- { card with InteriorBoard = Some expandedBoard }
+                shell.Cards.[i] <- card
 
             if card.LocalFilters.Count > 0 then
                 let flags = card.LocalFilters |> Seq.map isManual |> Seq.toList

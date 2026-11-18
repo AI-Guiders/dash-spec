@@ -24,7 +24,13 @@ module RowTypeSchemaBridge =
         | Result.Ok fields ->
             let rowFields =
                 fields
-                |> List.map (fun field -> RowFieldSchema(field.Path, toKind field.Kind, field.Optional))
+                |> List.map (fun field ->
+                    RowFieldSchema(
+                        field.Path,
+                        toKind field.Kind,
+                        field.Optional,
+                        Option.toObj field.Format,
+                        Option.toObj field.Label))
                 :> IReadOnlyList<_>
 
             RowTypeSchema(def.Name, rowFields)

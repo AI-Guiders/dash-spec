@@ -13,7 +13,9 @@ type TypePathSegment = Field of name: string
 type FlatRowField =
     { Path: string
       Kind: DashPrimitive
-      Optional: bool }
+      Optional: bool
+      Format: string option
+      Label: string option }
 
 module TypeCatalog =
 
@@ -72,7 +74,8 @@ module TypeCatalog =
                 raise (
                     DashSpecParseException(
                         $"{sourceLabel}: inferred row type '{def.Name}' collides with a declared type of a different structure."))
-            | _ -> map.[def.Name] <- def
+            | true, _ -> ()
+            | false, _ -> map.[def.Name] <- def
 
         { Definitions = map :> IReadOnlyDictionary<string, RowTypeDef> }
 
@@ -82,12 +85,18 @@ module TypeCatalog =
         (typeName: string)
         (fieldPath: string)
         (optional: bool)
+        (format: string option)
+        (label: string option)
         (dashType: DashType)
         (acc: FlatRowField list)
         =
         match dashType with
         | DashType.Primitive kind ->
-            { Path = fieldPath; Kind = kind; Optional = optional } :: acc
+            { Path = fieldPath
+              Kind = kind
+              Optional = optional
+              Format = format
+              Label = label } :: acc
 
         | DashType.FixedArray(element, length) ->
             let mutable fields = acc
@@ -98,7 +107,9 @@ module TypeCatalog =
                 fields <-
                     { Path = segment
                       Kind = element
-                      Optional = optional }
+                      Optional = optional
+                      Format = format
+                      Label = label }
                     :: fields
 
             fields
@@ -120,7 +131,7 @@ module TypeCatalog =
                         else $"{fieldPath}.{field.Name}"
 
                     fields <-
-                        visitType catalog visiting nested childPath field.Optional field.Type fields
+                        visitType catalog visiting nested childPath field.Optional field.Format field.Label field.Type fields
 
                 visiting.Remove nested |> ignore
                 fields
@@ -135,7 +146,7 @@ module TypeCatalog =
             let fields = List<FlatRowField>()
 
             for field in def.Fields do
-                visitType catalog visiting def.Name field.Name field.Optional field.Type []
+                visitType catalog visiting def.Name field.Name field.Optional field.Format field.Label field.Type []
                 |> List.iter (fun flat -> fields.Add flat)
 
             if fields.Count = 0 then

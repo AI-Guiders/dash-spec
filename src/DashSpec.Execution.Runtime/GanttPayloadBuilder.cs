@@ -218,16 +218,16 @@ internal static class GanttPayloadBuilder
                 value = display.Civil;
                 return true;
             case DateTime dt:
-                value = LabelFormat.ToDisplayTime(dt);
+                value = dt;
                 return true;
             case DateTimeOffset dto:
-                value = LabelFormat.ToDisplayTime(dto.UtcDateTime);
+                value = dto.UtcDateTime;
                 return true;
             case DateOnly date:
                 value = date.ToDateTime(TimeOnly.MinValue);
                 return true;
             case string text when DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed):
-                value = LabelFormat.ToDisplayTime(parsed);
+                value = parsed;
                 return true;
             default:
                 value = default;

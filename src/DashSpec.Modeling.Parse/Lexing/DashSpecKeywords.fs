@@ -28,9 +28,6 @@ module DashSpecKeywords =
     let isDiagramKind (kind: string) =
         not (String.IsNullOrWhiteSpace kind) && activeDiagramKinds.ContainsKey(kind.Trim())
 
-    /// Typed SSOT for block vocabulary is `DashSpecBlockKeyword.tryOfName`; this table is only
-    /// syntax-coloring vocabulary (ADR-0130): control words plus every block keyword so the
-    /// highlighter marks block openers (grid, filters, cards, …) as keywords.
     let isControlKeyword (value: string) =
         match value.ToLowerInvariant() with
         | "section" | "sections" | "as" | "card" | "cards" | "dashspec" | "filter" | "show" | "use"
@@ -43,7 +40,7 @@ module DashSpecKeywords =
         | "overrides" | "variables" | "commands" | "standalone" | "toolbar"
         | "diagramlibrary" | "menu"
         | "type" | "source" | "transformer" | "ports" | "tooltip" | "host" | "defaults"
-        | "flow" | "nest" -> true
+        | "flow" | "nest" | "vstack" | "hstack" | "wide" | "mid" | "narrow" -> true
         | _ -> isDiagramKind value
 
     /// `module <kind> <id>` roots: resolved from the declarative `stdlib/units/units.ds` manifest.

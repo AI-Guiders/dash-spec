@@ -87,6 +87,89 @@ module TypeModuleParser =
         reader.ExpectKeyword "type"
         parseTypeBlockAfterKeyword reader
 
+    let private parseTypeString (typeName: string) (rawType: string) : bool * DashType =
+        let parts = rawType.Split(' ', StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
+        if parts.Length = 0 then
+            raise (DashSpecParseException($"type '{typeName}': field type is required."))
+        let optional, rem =
+            if String.Equals(parts.[0], "optional", StringComparison.OrdinalIgnoreCase) then
+                true, parts.[1..]
+            elif parts.[0].StartsWith('?') && parts.[0].Length > 1 then
+                true, Array.append [| parts.[0].Substring(1) |] parts.[1..]
+            else
+                false, parts
+        if rem.Length = 0 then
+            raise (DashSpecParseException($"type '{typeName}': field type is required."))
+        elif String.Equals(rem.[0], "array", StringComparison.OrdinalIgnoreCase) then
+            if rem.Length < 3 then
+                raise (DashSpecParseException($"type '{typeName}': array requires element type and length."))
+            match DashPrimitive.tryParseFieldKeyword rem.[1], Int32.TryParse rem.[2] with
+            | Some elem, (true, len) when len > 0 ->
+                optional, DashType.FixedArray(elem, len)
+            | None, _ ->
+                raise (DashSpecParseException($"array element must be a primitive, not '{rem.[1]}'."))
+            | _ ->
+                raise (DashSpecParseException("array requires a fixed positive integer length."))
+        else
+            let tName = rem.[0]
+            let dt =
+                match DashPrimitive.tryParseFieldKeyword tName with
+                | Some prim -> DashType.Primitive prim
+                | None -> DashType.Named tName
+            optional, dt
+
+    let private extractTrailingFieldMetadata (tokens: SyntaxToken[]) : string option * string option =
+        let mutable format: string option = None
+        let mutable label: string option = None
+        let mutable i = 0
+        while i < tokens.Length do
+            if i + 1 < tokens.Length
+               && tokens.[i].LexKind = TokenKind.Ident
+               && String.Equals(tokens.[i].Text, "as", StringComparison.OrdinalIgnoreCase)
+               && tokens.[i + 1].LexKind = TokenKind.String then
+                label <- Some(Construct.unquote tokens.[i + 1].Text)
+                i <- i + 2
+            elif i + 2 < tokens.Length
+                 && tokens.[i].LexKind = TokenKind.Ident
+                 && tokens.[i + 1].LexKind = TokenKind.Eq then
+                let k = tokens.[i].Text
+                let v = Construct.unquote tokens.[i + 2].Text
+                if String.Equals(k, "format", StringComparison.OrdinalIgnoreCase) then
+                    format <- Some v
+                elif String.Equals(k, "label", StringComparison.OrdinalIgnoreCase) then
+                    label <- Some v
+                i <- i + 3
+            else
+                i <- i + 1
+        format, label
+
+    let private typeTableDeclaration (typeName: string) (addField: RowFieldDef -> unit) : Construct.Declaration<RowFieldDef> =
+        { Name = $"type '{typeName}'"
+          Vocabulary = [ "name"; "id"; "field"; "type"; "optional"; "format"; "label"; "title" ]
+          CellsToRow = fun m ->
+              let fieldName =
+                  Construct.tryCell m "name"
+                  |> Option.orElse (Construct.tryCell m "id")
+                  |> Option.orElse (Construct.tryCell m "field")
+                  |> Option.defaultWith (fun () ->
+                      raise (DashSpecMissingMemberException("name", $"type '{typeName}' table row requires a 'name' (or 'id'/'field') cell.")))
+              let rawType =
+                  Construct.tryCell m "type"
+                  |> Option.defaultWith (fun () ->
+                      raise (DashSpecMissingMemberException("type", $"type '{typeName}' field '{fieldName}' requires a 'type' cell.")))
+              let optFromType, dashType = parseTypeString typeName rawType
+              let optFromCol = Construct.tryCell m "optional" |> Construct.tryParseBool |> Option.defaultValue false
+              let fmt = Construct.tryCell m "format" |> Option.map Construct.unquote
+              let lbl =
+                  Construct.tryCell m "label"
+                  |> Option.orElse (Construct.tryCell m "title")
+                  |> Option.map Construct.unquote
+              { Name = fieldName
+                Type = dashType
+                Optional = optFromType || optFromCol }
+              |> RowFieldDef.withMetadata fmt lbl
+          ConstructRow = addField }
+
     /// Project RowTypeDef[] from a parsed syntax tree (`DashSpecAstNode`), raising
     /// `DashSpecParseException` on any malformed member, missing `end type`, or empty type block.
     let projectTypesFromAst (root: DashSpecAstNode) : RowTypeDef[] =
@@ -126,19 +209,66 @@ module TypeModuleParser =
 
                     let fields = ResizeArray<RowFieldDef>()
 
-                    for m in block.Members do
+                    let tryProjectFieldLine (m: DashSpecAstNode) : (string * string) seq option =
+                        let appendMeta (fmt: string option) (lbl: string option) (basePairs: (string * string) list) =
+                            seq {
+                                yield! basePairs
+                                match fmt with Some f -> yield "format", f | None -> ()
+                                match lbl with Some l -> yield "label", l | None -> ()
+                            }
+
                         match m with
                         | DashSpecAstNode.TypeFieldDeclaration f ->
-                            fields.Add
-                                { Name = f.FieldName
-                                  Type = f.FieldType
-                                  Optional = f.Optional }
+                            let fmt, lbl = extractTrailingFieldMetadata f.Tokens
+                            Some(
+                                appendMeta fmt lbl
+                                    [ "name", f.FieldName
+                                      "type", DashType.describe f.FieldType
+                                      "optional", (if f.Optional then "true" else "false") ])
+                        | DashSpecAstNode.PropertyAssignment p ->
+                            let rawVal, lblFromAlias =
+                                match p.Value with
+                                | PropertyValueSyntax.Aliased(inner, title) -> inner.Text, Some title
+                                | _ -> p.ValueText, None
+                            let fmt, lblFromToks = extractTrailingFieldMetadata p.ValueTokens
+                            Some(
+                                appendMeta fmt (lblFromAlias |> Option.orElse lblFromToks)
+                                    [ "name", p.Key
+                                      "type", rawVal ])
+                        | DashSpecAstNode.TableRowDeclaration _
                         | DashSpecAstNode.BlankLine _
-                        | DashSpecAstNode.EndBlock _ -> ()
-                        | m when DashSpecAst.isTrivia m -> ()
+                        | DashSpecAstNode.EndBlock _ -> None
+                        | m when DashSpecAst.isTrivia m -> None
                         | other ->
-                            let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                            raise (DashSpecParseException($"type '{typeName}': invalid field declaration '{lineText}'."))
+                            let toks = DashSpecAst.tokens other
+                            if toks.Length >= 3
+                               && toks.[0].LexKind = TokenKind.Ident
+                               && toks.[1].LexKind = TokenKind.Eq then
+                                let fieldName = toks.[0].Text
+                                let valueToks = toks.[2..]
+                                let typeToks =
+                                    valueToks
+                                    |> Array.takeWhile (fun t ->
+                                        not (t.LexKind = TokenKind.Ident
+                                             && (String.Equals(t.Text, "as", StringComparison.OrdinalIgnoreCase)
+                                                 || String.Equals(t.Text, "format", StringComparison.OrdinalIgnoreCase)
+                                                 || String.Equals(t.Text, "label", StringComparison.OrdinalIgnoreCase))))
+                                let rawType = typeToks |> Array.map (fun t -> t.Text) |> String.concat " "
+                                let fmt, lbl = extractTrailingFieldMetadata valueToks
+                                Some(
+                                    appendMeta fmt lbl
+                                        [ "name", fieldName
+                                          "type", rawType ])
+                            else
+                                let lineText = toks |> Array.map (fun t -> t.Text) |> String.concat " "
+                                raise (DashSpecParseException($"type '{typeName}': invalid field declaration '{lineText}'."))
+
+                    Construct.projectAstWithLines
+                        (typeTableDeclaration typeName fields.Add)
+                        None
+                        "name"
+                        (Some tryProjectFieldLine)
+                        block.Members
 
                     if fields.Count = 0 then
                         raise (DashSpecParseException($"type '{typeName}' must declare at least one field."))

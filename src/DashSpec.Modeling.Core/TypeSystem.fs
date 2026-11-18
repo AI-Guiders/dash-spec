@@ -28,10 +28,34 @@ type DashPortType =
     static member Rows name = DashPortType.Stream name
 
 [<CLIMutable>]
+type RowFieldMetadata =
+    { Format: string option
+      Label: string option }
+
+module private RowFieldMetadataTable =
+    let table = System.Runtime.CompilerServices.ConditionalWeakTable<obj, RowFieldMetadata>()
+
+[<CLIMutable>]
 type RowFieldDef =
     { Name: string
       Type: DashType
       Optional: bool }
+
+    member this.Format : string option =
+        match RowFieldMetadataTable.table.TryGetValue(box this) with
+        | true, m -> m.Format
+        | false, _ -> None
+
+    member this.Label : string option =
+        match RowFieldMetadataTable.table.TryGetValue(box this) with
+        | true, m -> m.Label
+        | false, _ -> None
+
+module RowFieldDef =
+    let withMetadata (format: string option) (label: string option) (field: RowFieldDef) : RowFieldDef =
+        if format.IsSome || label.IsSome then
+            RowFieldMetadataTable.table.AddOrUpdate(box field, { Format = format; Label = label })
+        field
 
 /// <summary>UDT / aggregate <c>type … end type</c> (ADR-0079).</summary>
 [<CLIMutable>]

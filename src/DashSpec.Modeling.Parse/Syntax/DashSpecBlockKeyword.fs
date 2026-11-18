@@ -57,6 +57,11 @@ type DashSpecBlockKeyword =
     | Flow
     | Nest
     | Provider
+    | VStack
+    | HStack
+    | Wide
+    | Mid
+    | Narrow
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -114,6 +119,11 @@ module DashSpecBlockKeyword =
         | "flow" -> Some DashSpecBlockKeyword.Flow
         | "nest" -> Some DashSpecBlockKeyword.Nest
         | "provider" -> Some DashSpecBlockKeyword.Provider
+        | "vstack" -> Some DashSpecBlockKeyword.VStack
+        | "hstack" -> Some DashSpecBlockKeyword.HStack
+        | "wide" -> Some DashSpecBlockKeyword.Wide
+        | "mid" -> Some DashSpecBlockKeyword.Mid
+        | "narrow" -> Some DashSpecBlockKeyword.Narrow
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
@@ -142,7 +152,12 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Source
         | DashSpecBlockKeyword.Transformer
         | DashSpecBlockKeyword.Flow
-        | DashSpecBlockKeyword.Nest -> true
+        | DashSpecBlockKeyword.Nest
+        | DashSpecBlockKeyword.VStack
+        | DashSpecBlockKeyword.HStack
+        | DashSpecBlockKeyword.Wide
+        | DashSpecBlockKeyword.Mid
+        | DashSpecBlockKeyword.Narrow -> true
         | _ -> false
 
     let isFormField (keyword: DashSpecBlockKeyword) =
@@ -227,4 +242,67 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Flow -> "flow"
         | DashSpecBlockKeyword.Nest -> "nest"
         | DashSpecBlockKeyword.Provider -> "provider"
+        | DashSpecBlockKeyword.VStack -> "vstack"
+        | DashSpecBlockKeyword.HStack -> "hstack"
+        | DashSpecBlockKeyword.Wide -> "wide"
+        | DashSpecBlockKeyword.Mid -> "mid"
+        | DashSpecBlockKeyword.Narrow -> "narrow"
         | DashSpecBlockKeyword.Other name -> name
+
+/// First-class Roslyn-style keyword kind in DashSpec syntax (SSOT for control words,
+/// block openers, and clause directives).
+[<RequireQualifiedAccess>]
+type DashSpecKeyword =
+    | Module
+    | End
+    | From
+    | Import
+    | As
+    | Scope
+    | Namespace
+    | Use
+    | Default
+    | Optional
+    | Array
+    | Input
+    | Output
+    | Stream
+    | Scalar
+    | Param
+    | On
+    | Goto
+    | Place
+    | Block of DashSpecBlockKeyword
+
+module DashSpecKeyword =
+
+    let tryParse (raw: string) : DashSpecKeyword option =
+        if System.String.IsNullOrWhiteSpace raw then
+            None
+        else
+            match raw.Trim().ToLowerInvariant() with
+            | "module" -> Some DashSpecKeyword.Module
+            | "end" -> Some DashSpecKeyword.End
+            | "from" -> Some DashSpecKeyword.From
+            | "import" -> Some DashSpecKeyword.Import
+            | "as" -> Some DashSpecKeyword.As
+            | "scope" -> Some DashSpecKeyword.Scope
+            | "namespace" -> Some DashSpecKeyword.Namespace
+            | "use" -> Some DashSpecKeyword.Use
+            | "default" -> Some DashSpecKeyword.Default
+            | "optional" -> Some DashSpecKeyword.Optional
+            | "array" -> Some DashSpecKeyword.Array
+            | "input" -> Some DashSpecKeyword.Input
+            | "output" -> Some DashSpecKeyword.Output
+            | "stream" -> Some DashSpecKeyword.Stream
+            | "scalar" -> Some DashSpecKeyword.Scalar
+            | "param" -> Some DashSpecKeyword.Param
+            | "on" -> Some DashSpecKeyword.On
+            | "goto" -> Some DashSpecKeyword.Goto
+            | "place" -> Some DashSpecKeyword.Place
+            | _ ->
+                DashSpecBlockKeyword.tryOfName raw
+                |> Option.map DashSpecKeyword.Block
+
+    let isKeyword (raw: string) : bool =
+        tryParse raw |> Option.isSome

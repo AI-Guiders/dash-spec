@@ -21,11 +21,6 @@ module BlockGrammar =
         | ChildKeyword of keyword: string * parse: (TokenReader -> unit)
         | KeywordScalarOrBlock of
             keyword: string * endKind: string * blockName: string * onScalar: (TokenReader -> Dictionary<string, string> -> unit) * onBlock: (TokenReader -> Dictionary<string, string> -> unit)
-        | RepeatingBracketRows of
-            rows: ResizeArray<IReadOnlyList<string>> * parseRow: (TokenReader -> IReadOnlyList<string>)
-        /// Bare `[] [] []` empty-cell rows at container level ([ADR-0111] §2: the grid is drawn with empty cells).
-        /// Each row collects its length — how many `[]` tokens before the line ends.
-        | RepeatingEmptyCellRows of rows: ResizeArray<int>
         /// Typed table construct consumer: projects each table row directly into its domain object (`'Row`) as it is read.
         | TableConstruct of consumer: Construct.TableConsumer
 
@@ -68,16 +63,6 @@ module BlockGrammar =
 
     let rec private tryParseMember (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
-        | RepeatingBracketRows(rows, parseRow) when reader.IsAt TokenKind.LBracket ->
-            rows.Add(parseRow reader)
-            true
-        | RepeatingEmptyCellRows rows when reader.IsAt TokenKind.EmptyCell ->
-            let mutable count = 0
-            while reader.IsAt TokenKind.EmptyCell do
-                reader.Advance()
-                count <- count + 1
-            rows.Add(count)
-            true
         | TableConstruct consumer when reader.CurrentKind = TokenKind.TableRow ->
             consumer.ConsumeRow(reader.CurrentTableRow())
             reader.Advance()
@@ -86,8 +71,6 @@ module BlockGrammar =
 
     and private tryParseChild (reader: TokenReader) (memberDef: ContainerMember) (values: Dictionary<string, string>) =
         match memberDef with
-        | RepeatingBracketRows _ -> false
-        | RepeatingEmptyCellRows _ -> false
         | TableConstruct _ -> false
         | ChildKeywordMerge(keyword, endKind, blockName, readValue, merge) ->
             if reader.TryKeyword keyword then
@@ -121,6 +104,43 @@ module BlockGrammar =
             true
         | None -> false
 
+    let applySchemaTableRows
+        (rawRows: string[][])
+        (specs: IDictionary<string, PropertySchemas.PropertySpec>)
+        (allowExtension: bool)
+        (blockName: string)
+        (values: Dictionary<string, string>)
+        (spanStart: int)
+        =
+        let splitColumnAlias (text: string) =
+            let idx = text.IndexOf(" as ", StringComparison.OrdinalIgnoreCase)
+            if idx > 0 then
+                let colPart = text.Substring(0, idx).Trim()
+                let lblPart = Construct.unquote (text.Substring(idx + 4).Trim())
+                colPart, Some lblPart
+            else
+                Construct.unquote text, None
+
+        for key, vTrim in Construct.normalizeObjectTableCells rawRows specs.ContainsKey do
+            match specs.TryGetValue key with
+            | true, spec ->
+                match spec.ValueType with
+                | PropertySchemas.PropertyValueType.ColumnBinding ->
+                    let col, aliasOpt = splitColumnAlias vTrim
+                    values.[key] <- col
+                    match aliasOpt with
+                    | Some lbl -> values.[key + "_as"] <- lbl
+                    | None -> ()
+                | PropertySchemas.PropertyValueType.CommaList ->
+                    values.[key] <- (Construct.unquote vTrim).Replace(" , ", ", ", StringComparison.Ordinal)
+                | _ ->
+                    values.[key] <- Construct.unquote vTrim
+            | false, _ ->
+                if allowExtension && not (key.EndsWith("_as", StringComparison.OrdinalIgnoreCase)) then
+                    values.[key] <- Construct.unquote vTrim
+                else
+                    raise (DashSpecUnknownPropertyException(key, $"Unknown property '{key}' in {blockName} block.", spanStart))
+
     let private parseBody
         (reader: TokenReader)
         endKind
@@ -145,6 +165,16 @@ module BlockGrammar =
                 for memberDef in members do
                     if not handled && tryParseMember reader memberDef values then
                         handled <- true
+                if not handled && hasSchema && reader.CurrentKind = TokenKind.TableRow then
+                    let tableRows = ResizeArray<string[]>()
+                    while not (BlockSyntax.isBlockEnd reader endKind endId)
+                          && not reader.IsEof
+                          && reader.CurrentKind = TokenKind.TableRow do
+                        tableRows.Add(TableLiteral.splitCells (reader.CurrentTableRow()))
+                        reader.Advance()
+                        reader.SkipNewlines()
+                    applySchemaTableRows (tableRows.ToArray()) specs allowExtension blockName values 0
+                    handled <- true
                 if not handled then
                     while not (reader.IsOnNewline()) && not (BlockSyntax.isBlockEnd reader endKind endId) && not reader.IsEof do
                         let mutable innerHandled = false

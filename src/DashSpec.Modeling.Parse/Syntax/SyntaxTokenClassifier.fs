@@ -40,14 +40,14 @@ module SyntaxTokenClassifier =
             if DashSpecKeywords.isModuleDirective value then DashSpecSyntaxKind.ModuleHeader
             else DashSpecSyntaxKind.Identifier
         | Some prev when identAt tokens prev "end" -> DashSpecSyntaxKind.Keyword
-        | _ when DashSpecKeywords.identEquals value "module" -> DashSpecSyntaxKind.ModuleHeader
-        | _ when DashSpecKeywords.identEquals value "end" -> DashSpecSyntaxKind.EndKeyword
-        | _ when matchesPhrase tokens index "layout" "grid" -> DashSpecSyntaxKind.Keyword
-        | _ when matchesPhrase tokens index "toolbar" "chrome" -> DashSpecSyntaxKind.Keyword
-        | _ when matchesPhrase tokens index "on" "click" -> DashSpecSyntaxKind.Keyword
-        | _ when matchesPhrase tokens index "filters" "chrome" -> DashSpecSyntaxKind.Keyword
-        | _ when DashSpecKeywords.isControlKeyword value -> DashSpecSyntaxKind.Keyword
-        | _ -> DashSpecSyntaxKind.Identifier
+        | _ ->
+            match DashSpecKeyword.tryParse value with
+            | Some DashSpecKeyword.Module -> DashSpecSyntaxKind.ModuleHeader
+            | Some DashSpecKeyword.End -> DashSpecSyntaxKind.EndKeyword
+            | Some _ -> DashSpecSyntaxKind.Keyword
+            | None ->
+                if DashSpecKeywords.isControlKeyword value then DashSpecSyntaxKind.Keyword
+                else DashSpecSyntaxKind.Identifier
 
     let classifyToken (tokens: Token[]) index (token: Token) =
         match token.Kind with
@@ -70,9 +70,14 @@ module SyntaxTokenClassifier =
             token.Value
 
     let toSyntaxToken (source: string) (tokens: Token[]) index (token: Token) =
+        let text = tokenText source token
+        let kw =
+            if token.Kind = TokenKind.Ident then DashSpecKeyword.tryParse text
+            else None
         { Kind = classifyToken tokens index token
           LexKind = token.Kind
-          Text = tokenText source token
+          Keyword = kw
+          Text = text
           Span = TextSpan.Create token.Start (max 1 token.Length) }
 
 

@@ -5,7 +5,17 @@ open System.Collections.Generic
 
 module DashSpecBlockFormatter =
 
-    type private BlockFrame = { EndIndent: int; ContentIndent: int }
+    type private BlockFrame = { Kind: string; EndIndent: int; ContentIndent: int }
+
+    let private isLayoutFrameKind (kind: string) =
+        match kind.Trim().ToLowerInvariant() with
+        | "layout" | "vstack" | "hstack" | "wide" | "mid" | "narrow" | "group" | "nest" -> true
+        | _ -> false
+
+    let private isLayoutSubBlock (kind: string) =
+        match kind.Trim().ToLowerInvariant() with
+        | "grid" | "wide" | "mid" | "narrow" | "vstack" | "hstack" | "group" | "nest" | "place" | "import" -> true
+        | _ -> false
 
     let private normalizeNewlines (text: string) =
         text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n')
@@ -103,19 +113,22 @@ module DashSpecBlockFormatter =
                                 else 0
 
                             emitClosedLine closeIndent trimmed
-                        | BlockSurfaceLineClassifier.ModuleHeader _ ->
+                        | BlockSurfaceLineClassifier.ModuleHeader(kind, _) ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
                             moduleStarted <- true
-                            stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
-                        | BlockSurfaceLineClassifier.BlockOpener _ ->
+                            stack.Push({ Kind = kind; EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
+                        | BlockSurfaceLineClassifier.BlockOpener(kind, _) when
+                            stack.Count = 0 || not (isLayoutFrameKind (stack.Peek().Kind)) || isLayoutSubBlock kind ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
-                            stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
+                            stack.Push({ Kind = kind; EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
                         | BlockSurfaceLineClassifier.BraceOpen ->
+                            let parentKind = if stack.Count > 0 then stack.Peek().Kind else ""
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed
-                            stack.Push({ EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
+                            stack.Push({ Kind = parentKind; EndIndent = indentUnits; ContentIndent = indentUnits + 1 })
+                        | BlockSurfaceLineClassifier.BlockOpener _
                         | BlockSurfaceLineClassifier.Content ->
                             let indentUnits = resolveContentIndent stack moduleStarted
                             emitOpenedLine indentUnits trimmed

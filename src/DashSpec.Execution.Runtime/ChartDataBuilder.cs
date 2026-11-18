@@ -58,6 +58,15 @@ public static class ChartDataBuilder
         }
 
         var xColumn = DiagramBindings.Column(diagram, "x");
+        if (rows.Schema.FieldOrdinals.TryGetValue(xColumn, out var fieldIdx))
+        {
+            var kind = rows.Schema.Fields[fieldIdx].Kind;
+            if (kind is not (DashPrimitiveKind.Date or DashPrimitiveKind.DateTime))
+            {
+                return true;
+            }
+        }
+
         return TimeSeriesGrid.TryParseBucket(rows[0].GetClr(xColumn)) is null;
     }
 

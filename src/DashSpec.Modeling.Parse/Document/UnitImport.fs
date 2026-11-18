@@ -272,7 +272,11 @@ module UnitImport =
             let doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parseEnvelope env
             state.RegisterRuntime(doc.Id, path, doc)
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Layout ->
-            assignLayoutBoard (LayoutModuleParser.parseEnvelope env) moduleKind state
+            let board = LayoutModuleParser.parseEnvelope env
+            if board.ModuleScope = Some LayoutScope.Card then
+                withQualifier env.Id (fun k -> state.RegisterCardLayoutBoard(k, board))
+            else
+                assignLayoutBoard board moduleKind state
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram ->
             let id, fragment = UnitFragmentResolver.foldDiagramModuleWithId text
             let resolved = resolveDiagramFragmentPresets path fragment state

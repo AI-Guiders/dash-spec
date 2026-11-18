@@ -97,7 +97,7 @@ module CardParser =
             elif reader.TryKeyword "layout" then
                 if chromeBoard.Value.IsSome then
                     raise (DashSpecParseException($"Card '{cardId}': duplicate filters layout block."))
-                chromeBoard.Value <- Some(LayoutParser.parseBoard reader)
+                chromeBoard.Value <- Some(LayoutModuleParser.parseBoard reader)
             elif reader.TryKeyword "apply" then
                 reader.Expect TokenKind.Eq
                 let mode = reader.ReadIdent()
@@ -303,7 +303,16 @@ module CardParser =
                 raise (reader.Unexpected "diagram or legend")
         BlockSyntax.expectBlockEnd reader "view" None
 
-    let private parseCardLayoutContainer (reader: TokenReader) (cardId: string) =
+    let private resolveCardLayoutPreset (cardId: string) (presetId: string) (includes: ModuleImportState option) =
+        match includes |> Option.bind (fun inc -> inc.TryGetCardLayoutBoard presetId) with
+        | Some b -> b
+        | None ->
+            raise (
+                DashSpecParseException(
+                    $"Card '{cardId}': card layout preset '{presetId}' is not declared — import its layout module (module layout {presetId} with scope card).")
+            )
+
+    let private parseCardLayoutContainer (reader: TokenReader) (cardId: string) (includes: ModuleImportState option) =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
         let mutable placement: PlacementDefinition option = None
@@ -312,12 +321,16 @@ module CardParser =
             reader.SkipNewlines()
             if BlockSyntax.isBlockEnd reader "layout" None then ()
             elif reader.TryKeyword "place" then
-                placement <- Some(LayoutParser.parsePlacement reader)
+                placement <- Some(LayoutModuleParser.parsePlacement reader)
                 reader.SkipNewlines()
-            elif reader.IsAt TokenKind.LBracket then
-                board <- Some(LayoutParser.parseBoardRows reader (Some "layout") None)
+            elif reader.TryKeyword "use" then
+                if reader.RawKind = TokenKind.Eq then reader.Advance()
+                let presetId = reader.ReadDottedPropertyKey()
+                board <- Some(resolveCardLayoutPreset cardId presetId includes)
+                reader.SkipNewlines()
             else
-                raise (reader.Unexpected "place or [")
+                board <- Some(LayoutModuleParser.parseBoardRows reader (Some "layout") None)
+                reader.SkipNewlines()
         BlockSyntax.expectBlockEnd reader "layout" None
         placement, board
 
@@ -590,16 +603,22 @@ module CardParser =
             reader.SkipNewlines()
 
         let onPlace () =
-            placement.Value <- Some(LayoutParser.parsePlacement reader)
+            placement.Value <- Some(LayoutModuleParser.parsePlacement reader)
             reader.SkipNewlines()
 
         let onLayout () =
             if reader.TryPeekIdent().IsSome && String.Equals(reader.TryPeekIdent().Value, "grid", StringComparison.OrdinalIgnoreCase) then
                 raise (DashSpecParseException($"Card '{id}': use module connect block for layout grid; card layout is a bracket board only."))
-            let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id
-            if placement.Value.IsNone then placement.Value <- parsedPlacement
-            if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
-            reader.SkipNewlines()
+            elif reader.RawKind = TokenKind.Eq || reader.TryKeywordSameLine "use" then
+                if reader.RawKind = TokenKind.Eq then reader.Advance()
+                let presetId = reader.ReadDottedPropertyKey()
+                interiorBoard.Value <- Some(resolveCardLayoutPreset id presetId includes)
+                reader.SkipNewlines()
+            else
+                let parsedPlacement, parsedBoard = parseCardLayoutContainer reader id includes
+                if placement.Value.IsNone then placement.Value <- parsedPlacement
+                if interiorBoard.Value.IsNone then interiorBoard.Value <- parsedBoard
+                reader.SkipNewlines()
 
         let onLegend () =
             legend.Value <- Some(parseLegend reader)
