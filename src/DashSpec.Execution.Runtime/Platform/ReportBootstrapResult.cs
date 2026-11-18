@@ -11,7 +11,7 @@ public sealed record ReportBootstrapResult(
     IDataSourceConnector Connector,
     IReadOnlyDictionary<string, FilterDefinition> FilterIndex,
     FilterState Filters,
-    IReadOnlyDictionary<string, IReadOnlyList<string>> FieldOptions,
+    FieldOptionsCatalog FieldOptions,
     string SourceLabel,
     string? SpecDirectory,
     string RuntimeConfigPath,

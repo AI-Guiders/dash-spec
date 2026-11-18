@@ -157,16 +157,17 @@ module TypeInference =
 
                         let aggregateField =
                             if agg = "count" then
-                                { Name = "value"; Type = DashType.Primitive DashPrimitive.Int; Optional = false }
+                                RowFieldDef.create "value" (DashType.Primitive DashPrimitive.Int) false
                             else
                                 match paramValue "value" with
                                 | None ->
-                                    { Name = "value"; Type = DashType.Primitive DashPrimitive.Int; Optional = false }
+                                    RowFieldDef.create "value" (DashType.Primitive DashPrimitive.Int) false
                                 | Some valueColumn ->
                                     match tryField inputDef valueColumn with
                                     | None ->
-                                        { Name = "value"; Type = DashType.Primitive DashPrimitive.Decimal; Optional = false }
-                                    | Some valueField -> { Name = "value"; Type = valueField.Type; Optional = false }
+                                        RowFieldDef.create "value" (DashType.Primitive DashPrimitive.Decimal) false
+                                    | Some valueField ->
+                                        { valueField with Name = "value"; Optional = false }
 
                         let candidate =
                             { Name = ""

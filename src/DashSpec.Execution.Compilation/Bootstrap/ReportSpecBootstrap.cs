@@ -61,7 +61,7 @@ public sealed class ReportSpecBootstrap(
             ? await fieldOptionsLoader
                 .LoadAsync(document, connector, configPath, cancellationToken, options.FieldOptionsTimeout)
                 .ConfigureAwait(false)
-            : new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+            : FieldOptionsCatalog.Empty;
 
         return new ReportBootstrapResult(
             document,
@@ -76,7 +76,7 @@ public sealed class ReportSpecBootstrap(
             slotPlane);
     }
 
-    public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
+    public Task<FieldOptionsCatalog> LoadFieldOptionsAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
         string runtimeConfigPath,

@@ -12,7 +12,7 @@ public static class FilterBinding
             card => ResolveBoundFilters(card, document, library),
             StringComparer.OrdinalIgnoreCase);
 
-    public static IReadOnlyDictionary<string, IReadOnlyList<string>> MapFiltersToCards(
+    public static FilterCardBindings MapFiltersToCards(
         DashboardDocument document,
         SpecLibrary? library = null)
     {
@@ -35,10 +35,10 @@ public static class FilterBinding
             }
         }
 
-        return result.ToDictionary(
+        return new FilterCardBindings(result.ToDictionary(
             x => x.Key,
             x => (IReadOnlyList<string>)x.Value,
-            StringComparer.OrdinalIgnoreCase);
+            StringComparer.OrdinalIgnoreCase));
     }
 
     private static IReadOnlyList<string> ResolveBoundFilters(

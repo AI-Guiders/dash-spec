@@ -20,7 +20,6 @@ public sealed record CardRenderResult(
     IReadOnlyList<string>? BoundFilters = null,
     IReadOnlyList<string>? LocalFilters = null,
     PlacementDefinition? Placement = null,
-    IReadOnlyDictionary<string, PlacementDefinition>? InteriorPlacements = null,
     ChartPresentation? ChartPresentation = null,
     MatrixPayload? Matrix = null,
     MatrixPayload? DetailMatrix = null,
@@ -32,7 +31,6 @@ public sealed record CardRenderResult(
     IReadOnlyList<ExtensionBlockNode> ExtensionBlocks = null!,
     bool LocalFiltersManualApply = false,
     int? LocalFiltersApplySplitIndex = null,
-    IReadOnlyDictionary<string, PlacementDefinition>? LocalFilterChromePlacements = null,
     bool IsVisibilityPlaceholder = false,
     string? VisibilityMessage = null,
     MatrixRenderLimitsDefinition? MatrixLimits = null,
@@ -50,8 +48,24 @@ public sealed record CardRenderResult(
     IReadOnlyDictionary<string, CardSlotRenderResult>? InteriorSlotRenders = null,
     IReadOnlyList<DashSpec.Modeling.Parse.Card.CardClickHandler>? ClickHandlers = null,
     /// <summary>Граф (G), которым получены данные карточки: клик-значения конвертируются его инверсией.</summary>
-    DashflowExecutionPath? FlowPath = null)
+    DashflowExecutionPath? FlowPath = null,
+    /// <summary>ADR-0119/0120: card-scoped field option domains resolved from the card's own stream/period.</summary>
+    FieldOptionsCatalog? LocalFieldOptions = null)
 {
+    public IReadOnlyList<string> ResolveFieldOptions(
+        string filterName,
+        Func<string, IReadOnlyList<string>> fallbackGlobalOptions)
+    {
+        if (LocalFieldOptions is not null &&
+            LocalFieldOptions.TryGetValue(filterName, out var localValues) &&
+            localValues.Count > 0)
+        {
+            return localValues;
+        }
+
+        return fallbackGlobalOptions(filterName);
+    }
+
     public bool HasExpandedPayload => DetailChart is not null || DetailMatrix is not null;
 
     public CardRenderResult ForView(bool detailView) =>

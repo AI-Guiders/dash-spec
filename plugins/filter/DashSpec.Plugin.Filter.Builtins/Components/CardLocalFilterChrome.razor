@@ -53,7 +53,7 @@
     private IReadOnlyDictionary<string, PlacementDefinition>? EffectiveChromePlacements =>
         ChromeSlotPlan is { Count: > 0 } plan
             ? plan.ToDictionary(s => s.Node.Id, s => s.Placement.Wide, StringComparer.OrdinalIgnoreCase)
-            : Card.LocalFilterChromePlacements;
+            : null;
 
     private IReadOnlyList<string> EffectiveLocalFilters =>
         ExcludedFilters is { Count: > 0 } excluded && Card.LocalFilters is { Count: > 0 } locals

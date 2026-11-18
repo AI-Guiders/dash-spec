@@ -2,7 +2,10 @@ namespace DashSpec.Core.Tests;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using DashSpec.Execution.Compilation;
+using DashSpec.Execution.Runtime;
 using Xunit;
 
 public class DistinctFieldOptionsDependsTests
@@ -70,5 +73,39 @@ public class DistinctFieldOptionsDependsTests
         var ex = Assert.Throws<ArgumentException>(
             () => QueryCompiler.BuildDistinctFieldSql(withDate["by_date"], withDate));
         Assert.Contains("not a field filter", ex.Message);
+    }
+
+    [Fact]
+    public void card_field_domain_query_scopes_by_card_period_and_excludes_self_selection()
+    {
+        var soakPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..", "..", "..", "..", "..",
+            "samples", "demo",
+            "demo-soak.ds"));
+        var specDir = Path.GetDirectoryName(soakPath)!;
+        var doc = DashSpecTestRowTypes.ParseDashboard(File.ReadAllText(soakPath), specDir);
+        var filterIndex = DashboardBootstrap.IndexFilters(doc);
+        var filters = DashboardBootstrap.CreateInitialFilters(doc, new DateOnly(2026, 11, 18));
+        filters.SetField("app_name", ["ONLY_THIS_APP"]);
+
+        var rawCard = doc.Cards.Single(c => c.Id == "peak_concurrent_proxy");
+        var resolved = CardResolver.Resolve(rawCard, null, doc.DashboardFilters).Card;
+        var effective = DocumentFlowBinder.MaterializeCard(resolved, doc);
+
+        var domainQuery = QueryCompiler.TryCompileCardFieldDomainQuery(
+            effective,
+            "app_name",
+            filters,
+            filterIndex,
+            doc,
+            doc.SqlDialect,
+            specDir);
+
+        Assert.NotNull(domainQuery);
+        Assert.Contains("SELECT DISTINCT app_name AS app_name", domainQuery!.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("usage_date =", domainQuery.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("app_name =", domainQuery.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("app_name IN", domainQuery.Sql, StringComparison.OrdinalIgnoreCase);
     }
 }

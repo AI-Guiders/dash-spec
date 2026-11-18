@@ -94,7 +94,7 @@
                                            DateTo="CardLocalDateTo"
                                            SelectedFields="CardLocalSelectedFields"
                                            TopLimits="CardLocalTopLimits"
-                                           GetFieldOptions="GetFieldOptions"
+                                           GetFieldOptions="ResolveCardFieldOptions"
                                            AutoApply="AutoApply"
                                            OnApplyCard="OnApplyCard"
                                            OnScheduleCardApply="OnScheduleCardApply"
@@ -248,7 +248,7 @@
                                        DateTo="CardLocalDateTo"
                                        SelectedFields="CardLocalSelectedFields"
                                        TopLimits="CardLocalTopLimits"
-                                       GetFieldOptions="GetFieldOptions"
+                                       GetFieldOptions="ResolveCardFieldOptions"
                                        AutoApply="AutoApply"
                                        OnApplyCard="OnApplyCard"
                                        OnScheduleCardApply="OnScheduleCardApply"
@@ -479,6 +479,9 @@
         }
     }
 
+    private IReadOnlyList<string> ResolveCardFieldOptions(string filterName) =>
+        Card.ResolveFieldOptions(filterName, GetFieldOptions);
+
     private int LocalFieldOptionsToken()
     {
         if (Card.LocalFilters is not { Count: > 0 })
@@ -489,7 +492,8 @@
         var token = 0;
         foreach (var name in Card.LocalFilters)
         {
-            token = HashCode.Combine(token, GetFieldOptions(name).Count);
+            var opts = ResolveCardFieldOptions(name);
+            token = HashCode.Combine(token, opts.Count);
         }
 
         return token;
@@ -607,8 +611,7 @@
             };
     }
 
-    private bool UsesInteriorLayout =>
-        InteriorSlotPlan is { Count: > 0 } || Card.InteriorPlacements is { Count: > 0 };
+    private bool UsesInteriorLayout => InteriorSlotPlan is { Count: > 0 };
 
     private string CardCssClass
     {
@@ -794,9 +797,7 @@
     internal string InteriorSlotStyle(string slotKey) =>
         InteriorSlots.FirstOrDefault(s => string.Equals(s.Node.Id, slotKey, StringComparison.OrdinalIgnoreCase)) is { } slot
             ? PlacementGridCss.SlotStyle(slot.Placement)
-            : Card.InteriorPlacements?.TryGetValue(slotKey, out var placement) == true
-                ? Services.Presentation.DashboardLayoutHelper.CardInteriorSlotStyle(placement!, GridColumns)
-                : string.Empty;
+            : string.Empty;
 
     private bool LocalFiltersAutoApply =>
         AutoApply && !Card.LocalFiltersManualApply;
@@ -832,7 +833,7 @@
                 HintAriaLabel = filter.Kind is FilterKind.Top ? Card.TopFilterScopeHint : null,
                 PlacementStyle = placementStyle,
                 Disabled = Card.Loading,
-                Options = GetFieldOptions(filter.Name),
+                Options = ResolveCardFieldOptions(filter.Name),
                 Selected = FilterWidgetPresentation.SelectedFieldValues(filter, CardLocalSelectedFields),
                 SelectedChanged = EventCallback.Factory.Create<HashSet<string>>(
                     this,
@@ -854,7 +855,7 @@
             },
         };
 
-        <DynamicComponent @key="@($"{filter.Name}:{FieldOptionsRevision}:{GetFieldOptions(filter.Name).Count}")"
+        <DynamicComponent @key="@($"{filter.Name}:{FieldOptionsRevision}:{ResolveCardFieldOptions(filter.Name).Count}")"
                           Type="_filterWidgetType"
                           Parameters="filterWidgetParameters" />
     };

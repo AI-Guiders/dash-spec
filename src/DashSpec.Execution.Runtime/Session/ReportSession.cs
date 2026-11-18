@@ -9,8 +9,7 @@ public sealed class ReportSession(IReportSpecBootstrap bootstrap)
     private DashboardDocument? _document;
     private FilterState? _filters;
     private IReadOnlyDictionary<string, FilterDefinition>? _filterIndex;
-    private IReadOnlyDictionary<string, IReadOnlyList<string>> _fieldOptions =
-        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+    private FieldOptionsCatalog _fieldOptions = FieldOptionsCatalog.Empty;
 
     public DashboardDocument Document => _document ?? throw new InvalidOperationException("Report not loaded.");
     public FilterState Filters => _filters ?? throw new InvalidOperationException("Report not loaded.");
@@ -35,5 +34,5 @@ public sealed class ReportSession(IReportSpecBootstrap bootstrap)
     public void ApplyDateFilter(string name, DateOnly from, DateOnly to) => Filters.SetDate(name, from, to);
 
     public IReadOnlyList<string> GetFieldOptions(string filterName) =>
-        _fieldOptions.TryGetValue(filterName, out var values) ? values : [];
+        _fieldOptions.ForFilter(filterName);
 }

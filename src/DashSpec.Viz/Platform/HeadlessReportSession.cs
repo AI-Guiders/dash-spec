@@ -17,7 +17,7 @@ public sealed class HeadlessReportSession(
     private SpecLibrary? _specLibrary;
     private string? _specDirectory;
     private string? _runtimeConfigPath;
-    private Dictionary<string, IReadOnlyList<string>> _fieldOptions = new(StringComparer.OrdinalIgnoreCase);
+    private FieldOptionsCatalog _fieldOptions = FieldOptionsCatalog.Empty;
 
     /// <summary>Assembled slot plane ([ADR-0111]): the render reads it and places.</summary>
     public SlotPlane? SlotPlane { get; private set; }
@@ -89,11 +89,11 @@ public sealed class HeadlessReportSession(
         var loaded = await bootstrap
             .LoadFieldOptionsAsync(_document, _connector, _runtimeConfigPath, cancellationToken)
             .ConfigureAwait(false);
-        _fieldOptions = loaded.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        _fieldOptions = loaded;
     }
 
     public IReadOnlyList<string> GetFieldOptions(string filterName) =>
-        _fieldOptions.TryGetValue(filterName, out var values) ? values : [];
+        _fieldOptions.ForFilter(filterName);
 
     public void ApplyDateFilter(string name, DateOnly from, DateOnly to) => Filters.SetDate(name, from, to);
 
@@ -153,7 +153,7 @@ public sealed class HeadlessReportSession(
         _connector = loaded.Connector;
         _filterIndex = loaded.FilterIndex;
         _filters = loaded.Filters;
-        _fieldOptions = loaded.FieldOptions.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        _fieldOptions = loaded.FieldOptions;
         _specDirectory = loaded.SpecDirectory;
         _runtimeConfigPath = loaded.RuntimeConfigPath;
         SlotPlane = loaded.SlotPlane;

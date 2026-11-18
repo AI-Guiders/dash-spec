@@ -19,9 +19,10 @@ internal static class FilterUiHelpers
 
     public static string ScopeHint(
         string filterName,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> filtersToCards)
+        FilterCardBindings filtersToCards)
     {
-        if (!filtersToCards.TryGetValue(filterName, out var cards) || cards.Count == 0)
+        var cards = filtersToCards.CardsForFilter(filterName);
+        if (cards.Count == 0)
         {
             return "ни одна карточка";
         }
@@ -31,9 +32,10 @@ internal static class FilterUiHelpers
 
     public static string ScopeHintAriaLabel(
         string filterName,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> filtersToCards)
+        FilterCardBindings filtersToCards)
     {
-        if (!filtersToCards.TryGetValue(filterName, out var cards) || cards.Count == 0)
+        var cards = filtersToCards.CardsForFilter(filterName);
+        if (cards.Count == 0)
         {
             return "Область фильтра: ни одна карточка";
         }

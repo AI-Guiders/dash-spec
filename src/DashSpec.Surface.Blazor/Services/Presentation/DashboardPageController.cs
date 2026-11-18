@@ -127,8 +127,7 @@ public sealed class DashboardPageController : IDisposable
 
     public Dictionary<string, int> CardLocalTopLimits(string cardId) => _cardLocalFilters.TopLimitsBinding(cardId);
     public Dictionary<string, int> TopLimits => _filters.TopLimits;
-    public Dictionary<string, IReadOnlyList<string>> FiltersToCards { get; private set; } =
-        new(StringComparer.OrdinalIgnoreCase);
+    public FilterCardBindings FiltersToCards { get; private set; } = FilterCardBindings.Empty;
     public Dictionary<string, PlacementDefinition> TabPlacements { get; private set; } =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -745,44 +744,6 @@ public sealed class DashboardPageController : IDisposable
         return TabLayoutCompactor.ResolveCardRef(context, token);
     }
 
-    /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
-    public IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForNest(string nestId) =>
-        CardsForNested(nestId);
-
-    /// <summary>[ADR-0111] P1: the nested board slice — precomputed at assembly, read here.</summary>
-    public IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForGroup(string groupId) =>
-        CardsForNested(groupId);
-
-    IEnumerable<(CardRenderResult Card, PlacementVariants Placement)> CardsForNested(string containerId)
-    {
-        if (_session.SlotPlane?.NestedBoards.TryGetValue(containerId, out var slots) != true || slots is null)
-        {
-            yield break;
-        }
-
-        foreach (var slot in slots)
-        {
-            var card = FindVisibleCard(slot.Node.Id);
-            if (card is not null)
-            {
-                yield return (card, slot.Placement);
-            }
-        }
-    }
-
-    public LayoutBoardGroupDefinition? FindLayoutGroup(string groupId)
-    {
-        if (string.IsNullOrWhiteSpace(groupId))
-        {
-            return null;
-        }
-
-        return ActiveRouteBoard()?.Entries
-            .OfType<LayoutBoardEntry.GroupRow>()
-            .Select(static row => row.Item)
-            .FirstOrDefault(group => string.Equals(group.Id, groupId, StringComparison.OrdinalIgnoreCase));
-    }
-
     /// <summary>The active route's board: the page board overrides the tab board ([ADR-0111]).</summary>
     LayoutBoardDefinition? ActiveRouteBoard()
     {
@@ -1233,8 +1194,7 @@ public sealed class DashboardPageController : IDisposable
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
         ApplyReportFormatDefaults();
-        FiltersToCards = FilterBinding.MapFiltersToCards(_session.Document, _session.SpecLibrary)
-            .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        FiltersToCards = FilterBinding.MapFiltersToCards(_session.Document, _session.SpecLibrary);
         _refresh.FiltersToCards = FiltersToCards;
 
         _cardViewState.ClearAll();

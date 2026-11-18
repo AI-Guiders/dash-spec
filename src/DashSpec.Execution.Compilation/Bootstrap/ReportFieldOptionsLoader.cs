@@ -12,7 +12,7 @@ public sealed class ReportFieldOptionsLoader(
     IReportFieldOptionsCache fieldOptionsCache,
     ILogger<ReportFieldOptionsLoader> logger)
 {
-    public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadAsync(
+    public async Task<FieldOptionsCatalog> LoadAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
         string runtimeConfigPath,
@@ -23,7 +23,7 @@ public sealed class ReportFieldOptionsLoader(
         var fieldFilters = document.Filters.Where(x => x.Kind is FilterKind.Field).ToList();
         if (fieldFilters.Count == 0)
         {
-            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+            return FieldOptionsCatalog.Empty;
         }
 
         var definitions = document.Filters.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
@@ -31,7 +31,7 @@ public sealed class ReportFieldOptionsLoader(
         var tasks = fieldFilters.Select(filter =>
             LoadOneAsync(filter, definitions, currentSelections, connector, runtimeConfigPath, timeout, cancellationToken));
         var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-        return results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase);
+        return new FieldOptionsCatalog(results.ToDictionary(x => x.Name, x => x.Values, StringComparer.OrdinalIgnoreCase));
     }
 
     private async Task<(string Name, IReadOnlyList<string> Values)> LoadOneAsync(

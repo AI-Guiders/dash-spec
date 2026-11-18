@@ -352,9 +352,9 @@ end type
     let ``AST printer synthesizes, merges member changes in place, and round-trips`` () =
         let initial =
             [| { Name = "FirstRow"
-                 Fields = [| { Name = "domain"; Type = DashType.Primitive DashPrimitive.String; Optional = true } |] }
+                 Fields = [| RowFieldDef.create "domain" (DashType.Primitive DashPrimitive.String) true |] }
                { Name = "SecondRow"
-                 Fields = [| { Name = "count"; Type = DashType.Primitive DashPrimitive.Int; Optional = false } |] } |]
+                 Fields = [| RowFieldDef.create "count" (DashType.Primitive DashPrimitive.Int) false |] } |]
 
         let unitAst =
             DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.synthesizeTypesUnit
@@ -365,8 +365,8 @@ end type
         let mutatedCandidate =
             { Name = "FirstRow"
               Fields =
-                [| { Name = "domain"; Type = DashType.Primitive DashPrimitive.String; Optional = true }
-                   { Name = "value"; Type = DashType.Primitive DashPrimitive.Decimal; Optional = false } |] }
+                [| RowFieldDef.create "domain" (DashType.Primitive DashPrimitive.String) true
+                   RowFieldDef.create "value" (DashType.Primitive DashPrimitive.Decimal) false |] }
 
         let mergedAst =
             DashSpec.Modeling.Parse.Syntax.DashSpecAstPrinter.mergeTypeIntoUnit unitAst mutatedCandidate

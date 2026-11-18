@@ -46,8 +46,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
 
     public Func<FilterDisplayContext>? FilterDisplayFactory { get; set; }
 
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
-        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+    public FilterCardBindings FiltersToCards { get; set; } = FilterCardBindings.Empty;
 
     public void SeedAllCardSkeletons()
     {
@@ -359,6 +358,7 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                         continue;
                     }
 
+                    var prior = Cards[index];
                     var card = _session.Document.Cards[index];
                     Cards[index] = EnrichCard(
                         card,
@@ -367,7 +367,10 @@ public sealed class DashboardRefreshCoordinator : IDisposable
                             _session.SpecLibrary,
                             _vizPlugins,
                             dashboardFilters,
-                            _session.Document));
+                            _session.Document) with
+                        {
+                            LocalFieldOptions = prior.LocalFieldOptions,
+                        });
                 }
             }
 

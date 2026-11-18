@@ -70,7 +70,6 @@ public static class SlotPlaneBuilder
         return new SlotPlane
         {
             Boards = boards,
-            NestedBoards = nestedBoards,
             Toolbars = toolbars,
             CardInteriors = interiors,
             CardFilterChrome = chrome,

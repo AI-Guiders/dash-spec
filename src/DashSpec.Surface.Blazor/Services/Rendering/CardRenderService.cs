@@ -176,6 +176,17 @@ public sealed class CardRenderService(
             flowPath,
             cancellationToken).ConfigureAwait(false);
 
+        var localFieldOptions = await ResolveCardLocalFieldOptionsAsync(
+            effective,
+            document,
+            filters,
+            filterIndex,
+            rows,
+            connector,
+            specDirectory,
+            reportTime,
+            cancellationToken).ConfigureAwait(false);
+
         CardRenderResult AttachSlots(CardRenderResult result)
         {
             // Present-layer formatting (ADR-0079 §3): the report defaults ride the render
@@ -184,6 +195,7 @@ public sealed class CardRenderService(
             {
                 FormatDefaults = document.ResolvedFormatDefaults,
                 FlowPath = flowPath,
+                LocalFieldOptions = localFieldOptions,
             };
 
             var allSlotRenders = new Dictionary<string, CardSlotRenderResult>(
@@ -378,6 +390,100 @@ public sealed class CardRenderService(
             EmptyMessage: card.EmptyMessage,
             ClickBehaviour: card.ClickBehaviour,
             ClickHandlers: card.ClickHandlers);
+
+    private static async Task<FieldOptionsCatalog> ResolveCardLocalFieldOptionsAsync(
+        CardDefinition card,
+        DashboardDocument document,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterIndex,
+        DashSpec.Abstractions.Data.TypedRowBatch cardRows,
+        IDataSourceConnector connector,
+        string? specDirectory,
+        ReportTimePolicy? reportTimePolicy,
+        CancellationToken cancellationToken)
+    {
+        if (card.LocalFilters is not { Count: > 0 })
+        {
+            return FieldOptionsCatalog.Empty;
+        }
+
+        var localOptions = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var filterName in card.LocalFilters)
+        {
+            if (!filterIndex.TryGetValue(filterName, out var filterDef) ||
+                filterDef.Kind is not FilterKind.Field)
+            {
+                continue;
+            }
+
+            var columnRef = filterDef.ColumnReference?.Value;
+            var columnName = string.IsNullOrWhiteSpace(columnRef)
+                ? filterDef.Name
+                : columnRef.Contains('.')
+                    ? columnRef[(columnRef.LastIndexOf('.') + 1)..]
+                    : columnRef;
+
+            var hasSelection = filters.GetField(filterName) is { HasSelection: true };
+
+            if (!hasSelection && cardRows.Schema.FieldOrdinals.ContainsKey(columnName))
+            {
+                var values = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var row in cardRows.Rows)
+                {
+                    var text = row.GetClr(columnName)?.ToString();
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        values.Add(text.Trim());
+                    }
+                }
+
+                localOptions[filterName] = values
+                    .OrderBy(v => v, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                continue;
+            }
+
+            try
+            {
+                var domainQuery = QueryCompiler.TryCompileCardFieldDomainQuery(
+                    card,
+                    filterName,
+                    filters,
+                    filterIndex,
+                    document,
+                    document.SqlDialect,
+                    specDirectory,
+                    reportTimePolicy);
+
+                if (domainQuery is not null)
+                {
+                    var domainRows = await connector.QueryAsync(domainQuery, cancellationToken).ConfigureAwait(false);
+                    var values = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var row in domainRows.Rows)
+                    {
+                        var text = row.GetClr(columnName)?.ToString();
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            values.Add(text.Trim());
+                        }
+                    }
+
+                    localOptions[filterName] = values
+                        .OrderBy(v => v, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+            }
+            catch
+            {
+                // Best-effort: fallback to report-scope dictionary options if domain query fails.
+            }
+        }
+
+        return localOptions.Count == 0
+            ? FieldOptionsCatalog.Empty
+            : new FieldOptionsCatalog(localOptions);
+    }
 
     private async Task<IReadOnlyDictionary<string, CardSlotRenderResult>> RenderSecondarySlotsAsync(
         CardDefinition card,

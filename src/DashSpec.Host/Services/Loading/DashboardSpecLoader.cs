@@ -26,7 +26,7 @@ public sealed class DashboardSpecLoader(
         ReportLoadOptions? options) =>
         bootstrap.LoadFromTextAsync(text, specFullPath, sourceLabel, cancellationToken, options);
 
-    public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
+    public Task<FieldOptionsCatalog> LoadFieldOptionsAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
         CancellationToken cancellationToken = default,
@@ -38,7 +38,7 @@ public sealed class DashboardSpecLoader(
             cancellationToken,
             timeout);
 
-    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> IReportSpecBootstrap.LoadFieldOptionsAsync(
+    Task<FieldOptionsCatalog> IReportSpecBootstrap.LoadFieldOptionsAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
         string runtimeConfigPath,

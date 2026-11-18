@@ -33,17 +33,9 @@ internal static class DashboardLayoutHelper
         return card.Placement ?? PlacementDefaults.ForFamily(card.DataFamily, layoutColumns);
     }
 
-    public static bool UsesInteriorLayout(CardRenderResult card) =>
-        card.InteriorPlacements is { Count: > 0 };
-
     public static string CardInteriorGridStyle(LayoutDefinition layout) =>
         PlacementGridCss.InteriorGridVariables(layout.Columns);
 
     public static string CardInteriorSlotStyle(PlacementDefinition placement, int columns) =>
         PlacementGridCss.SlotStyle(PlacementVariantsPlanning.For(placement, columns));
-
-    public static IReadOnlyDictionary<string, PlacementDefinition> ResolveInteriorPlacements(
-        CardDefinition card,
-        DashboardDocument document) =>
-        CardInteriorLayoutCompactor.Compact(card, document.Filters, document.Layout.Columns);
 }

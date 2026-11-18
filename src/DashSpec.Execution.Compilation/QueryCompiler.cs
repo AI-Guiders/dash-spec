@@ -193,7 +193,7 @@ public static class QueryCompiler
 
         return new CompiledQuery(
             BuildSelectSql(
-                ResolveSelectColumns(card),
+                ResolveSelectColumns(card, rowSchema, filterDefinitions),
                 fromClause,
                 whereBuilder.ToString(),
                 groupBy: null,
@@ -202,7 +202,80 @@ public static class QueryCompiler
                 dialect),
             parameters,
             rowSchema,
-                dateTimeFrame);
+            dateTimeFrame);
+    }
+
+    /// <summary>
+    /// Compiles a lightweight distinct domain query (`SELECT DISTINCT col AS col`) for a card-scoped
+    /// field filter over the card's own data source and active period/sibling filters (excluding
+    /// <paramref name="targetFieldFilterName"/> itself so selecting one item does not hide its siblings).
+    /// </summary>
+    public static CompiledQuery? TryCompileCardFieldDomainQuery(
+        CardDefinition card,
+        string targetFieldFilterName,
+        FilterState filters,
+        IReadOnlyDictionary<string, FilterDefinition> filterDefinitions,
+        DashboardDocument document,
+        SqlDialect? sqlDialect = null,
+        string? specDirectory = null,
+        ReportTimePolicy? reportTimePolicy = null)
+    {
+        if (!filterDefinitions.TryGetValue(targetFieldFilterName, out var targetDef) ||
+            targetDef.Kind is not FilterKind.Field)
+        {
+            return null;
+        }
+
+        var rowTypes = RowTypeCatalog.FromDocument(document);
+        var rowSchema = rowTypes.GetRequired(card.DataSource.RowsType);
+        var column = ResolveColumnName(targetDef.ColumnReference?.Value, targetDef.Name);
+        if (!SchemaContainsColumn(rowSchema, column))
+        {
+            return null;
+        }
+
+        var fieldSchema = rowSchema.Fields.First(f =>
+            string.Equals(f.Name, column, StringComparison.OrdinalIgnoreCase));
+        var singleFieldSchema = new RowTypeSchema($"{card.DataSource.RowsType}__{column}", [fieldSchema]);
+
+        var dialect = SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql);
+        var dateTimeFrame = string.IsNullOrWhiteSpace(card.DataSource.TimeZone) ? null : card.DataSource.TimeZone;
+        var fromClause = card.DataSource.Kind switch
+        {
+            DataSourceKind.View => card.DataSource.Value,
+            DataSourceKind.Sql => WrapSqlDataSource(
+                SqlDataSourceResolver.ResolveSqlBody(card.DataSource, specDirectory)),
+            DataSourceKind.Xlsx => BuildXlsxOpenRowSet(card.DataSource, specDirectory, dialect),
+            _ => throw new ArgumentOutOfRangeException(nameof(card)),
+        };
+
+        var filtersWithoutTarget = filters.Clone();
+        filtersWithoutTarget.SetField(targetFieldFilterName, []);
+
+        var parameters = new List<QueryParameter>();
+        var whereBuilder = new StringBuilder($"WHERE {column} IS NOT NULL");
+        AppendBoundFilters(
+            whereBuilder,
+            card,
+            filtersWithoutTarget,
+            filterDefinitions,
+            parameters,
+            dialect,
+            cellDrillOverlay: null,
+            rowSchema,
+            ResolveFilterDerives(document));
+        AppendWorkWindowClip(whereBuilder, reportTimePolicy, dialect);
+
+        var sql = BuildSelectSql(
+            $"DISTINCT {column} AS {column}",
+            fromClause,
+            whereBuilder.ToString(),
+            groupBy: null,
+            orderBy: $"ORDER BY {column}",
+            tableLimit: 0,
+            dialect);
+
+        return new CompiledQuery(sql, parameters, singleFieldSchema, dateTimeFrame);
     }
 
     private static string BuildSelectSql(
@@ -584,7 +657,10 @@ public static class QueryCompiler
         return $"{targetColumn} IN ({values})";
     }
 
-    private static string ResolveSelectColumns(CardDefinition card)
+    private static string ResolveSelectColumns(
+        CardDefinition card,
+        RowTypeSchema? rowSchema = null,
+        IReadOnlyDictionary<string, FilterDefinition>? filterDefinitions = null)
     {
         if (string.Equals(card.Diagram.Kind, "table", StringComparison.OrdinalIgnoreCase))
         {
@@ -600,6 +676,24 @@ public static class QueryCompiler
         foreach (var column in DiagramBindings.SelectedSqlColumns(card.Diagram, card.Tooltip?.Value))
         {
             names.Add(column);
+        }
+
+        if (card.LocalFilters is { Count: > 0 } &&
+            rowSchema is not null &&
+            filterDefinitions is not null)
+        {
+            foreach (var localName in card.LocalFilters)
+            {
+                if (filterDefinitions.TryGetValue(localName, out var def) &&
+                    def.Kind is FilterKind.Field)
+                {
+                    var col = ResolveColumnName(def.ColumnReference?.Value, def.Name);
+                    if (SchemaContainsColumn(rowSchema, col))
+                    {
+                        names.Add(col);
+                    }
+                }
+            }
         }
 
         if (names.Count == 0)

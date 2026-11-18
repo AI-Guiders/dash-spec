@@ -8,7 +8,7 @@ public static class ToolbarFilterVisibility
         DashboardDocument document,
         string? activeTabId,
         string? activePageId,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> filtersToCards)
+        FilterCardBindings filtersToCards)
     {
         var activeCardIds = ResolveActiveCardIds(document, activeTabId, activePageId);
         var pageToolbar = PageToolbarResolver.ResolveActiveToolbarBoard(
@@ -48,9 +48,7 @@ public static class ToolbarFilterVisibility
         }
 
         return candidates
-            .Where(filterName =>
-                filtersToCards.TryGetValue(filterName, out var cards) &&
-                cards.Any(cardId => activeCardIds.Contains(cardId)))
+            .Where(filterName => filtersToCards.IsBoundToAnyCard(filterName, activeCardIds))
             .ToList();
     }
 

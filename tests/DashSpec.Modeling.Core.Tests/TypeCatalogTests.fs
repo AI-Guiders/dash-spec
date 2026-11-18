@@ -10,17 +10,17 @@ module TypeCatalogTests =
         let defs =
             [ { Name = "UtcOffset"
                 Fields =
-                  [| { Name = "TotalMinutes"; Type = DashType.Primitive DashPrimitive.Int; Optional = false } |] }
+                  [| RowFieldDef.create "TotalMinutes" (DashType.Primitive DashPrimitive.Int) false |] }
               { Name = "Date"
                 Fields =
-                  [| { Name = "Year"; Type = DashType.Primitive DashPrimitive.Int; Optional = false }
-                     { Name = "Month"; Type = DashType.Primitive DashPrimitive.Int; Optional = false }
-                     { Name = "Day"; Type = DashType.Primitive DashPrimitive.Int; Optional = false }
-                     { Name = "Offset"; Type = DashType.Named "UtcOffset"; Optional = false } |] }
+                  [| RowFieldDef.create "Year" (DashType.Primitive DashPrimitive.Int) false
+                     RowFieldDef.create "Month" (DashType.Primitive DashPrimitive.Int) false
+                     RowFieldDef.create "Day" (DashType.Primitive DashPrimitive.Int) false
+                     RowFieldDef.create "Offset" (DashType.Named "UtcOffset") false |] }
               { Name = "UsageDayRow"
                 Fields =
-                  [| { Name = "UsageDay"; Type = DashType.Named "Date"; Optional = false }
-                     { Name = "PeakConcurrentApps"; Type = DashType.Primitive DashPrimitive.Int; Optional = false } |] } ]
+                  [| RowFieldDef.create "UsageDay" (DashType.Named "Date") false
+                     RowFieldDef.create "PeakConcurrentApps" (DashType.Primitive DashPrimitive.Int) false |] } ]
 
         let catalog = TypeCatalog.ofDefinitions defs
 
@@ -36,9 +36,9 @@ module TypeCatalogTests =
         let catalog =
             TypeCatalog.ofDefinitions
                 [ { Name = "A"
-                    Fields = [| { Name = "X"; Type = DashType.Primitive DashPrimitive.Int; Optional = false } |] }
+                    Fields = [| RowFieldDef.create "X" (DashType.Primitive DashPrimitive.Int) false |] }
                   { Name = "B"
-                    Fields = [| { Name = "Y"; Type = DashType.Primitive DashPrimitive.String; Optional = false } |] } ]
+                    Fields = [| RowFieldDef.create "Y" (DashType.Primitive DashPrimitive.String) false |] } ]
 
         let graph =
             FlowGraph.ofNodes

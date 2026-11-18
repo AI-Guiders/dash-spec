@@ -12,7 +12,7 @@ public interface IReportSpecBootstrap
         CancellationToken cancellationToken = default,
         ReportLoadOptions? options = null);
 
-    Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadFieldOptionsAsync(
+    Task<FieldOptionsCatalog> LoadFieldOptionsAsync(
         DashboardDocument document,
         IDataSourceConnector connector,
         string runtimeConfigPath,

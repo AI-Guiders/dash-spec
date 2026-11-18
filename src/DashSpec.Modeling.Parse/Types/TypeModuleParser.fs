@@ -59,7 +59,7 @@ module TypeModuleParser =
             optional <- true
 
         let dashType, fieldName = parseFieldType reader
-        { Name = fieldName; Type = dashType; Optional = optional }
+        RowFieldDef.create fieldName dashType optional
 
     let parseTypeBlockAfterKeyword (reader: TokenReader) =
         let typeName = reader.ReadIdent()
@@ -166,8 +166,9 @@ module TypeModuleParser =
                   |> Option.map Construct.unquote
               { Name = fieldName
                 Type = dashType
-                Optional = optFromType || optFromCol }
-              |> RowFieldDef.withMetadata fmt lbl
+                Optional = optFromType || optFromCol
+                Format = fmt
+                Label = lbl }
           ConstructRow = addField }
 
     /// Project RowTypeDef[] from a parsed syntax tree (`DashSpecAstNode`), raising

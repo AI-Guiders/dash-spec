@@ -22,6 +22,20 @@ module DashSpecAstPrinter =
     let private keyword text = mkToken DashSpecSyntaxKind.Keyword text
     let private ident text = mkToken DashSpecSyntaxKind.Identifier text
 
+    let private stringLit text : SyntaxToken =
+        { Kind = DashSpecSyntaxKind.String
+          LexKind = TokenKind.String
+          Keyword = None
+          Text = $"\"{text}\""
+          Span = emptySpan }
+
+    let private eqTok () : SyntaxToken =
+        { Kind = DashSpecSyntaxKind.Operator
+          LexKind = TokenKind.Eq
+          Keyword = None
+          Text = "="
+          Span = emptySpan }
+
     let private fieldTokens (field: RowFieldDef) : SyntaxToken[] =
         let typeTokens =
             match field.Type with
@@ -38,7 +52,19 @@ module DashSpecAstPrinter =
             else
                 [||]
 
-        Array.concat [ prefix; typeTokens; [| ident field.Name |] ]
+        let labelSuffix =
+            match field.Label with
+            | Some lbl when not (String.IsNullOrWhiteSpace lbl) ->
+                [| keyword "as"; stringLit lbl |]
+            | _ -> [||]
+
+        let formatSuffix =
+            match field.Format with
+            | Some fmt when not (String.IsNullOrWhiteSpace fmt) ->
+                [| ident "format"; eqTok (); stringLit fmt |]
+            | _ -> [||]
+
+        Array.concat [ prefix; typeTokens; [| ident field.Name |]; labelSuffix; formatSuffix ]
 
     let private synthesizeFieldNode (nextId: unit -> NodeId) (field: RowFieldDef) : DashSpecAstNode =
         DashSpecAstNode.TypeFieldDeclaration

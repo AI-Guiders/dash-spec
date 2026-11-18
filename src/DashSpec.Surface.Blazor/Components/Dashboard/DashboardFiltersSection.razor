@@ -110,8 +110,7 @@
     [Parameter] public IReadOnlyList<string> FilterNames { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<string, FilterDefinition> FilterIndex { get; set; } =
         new Dictionary<string, FilterDefinition>();
-    [Parameter] public IReadOnlyDictionary<string, IReadOnlyList<string>> FiltersToCards { get; set; } =
-        new Dictionary<string, IReadOnlyList<string>>();
+    [Parameter] public FilterCardBindings FiltersToCards { get; set; } = FilterCardBindings.Empty;
     [Parameter] public Dictionary<string, DateOnly> DateFrom { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, DateOnly> DateTo { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     [Parameter] public Dictionary<string, HashSet<string>> SelectedFields { get; set; } = new(StringComparer.OrdinalIgnoreCase);

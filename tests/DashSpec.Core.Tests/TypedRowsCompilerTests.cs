@@ -13,7 +13,7 @@ public class TypedRowsCompilerTests
     private static RowTypeDef Def(string name, params (string Field, DashPrimitive Kind)[] fields) =>
         new(
             name,
-            fields.Select(f => new RowFieldDef(f.Field, DashType.NewPrimitive(f.Kind), true)).ToArray());
+            fields.Select(f => RowFieldDefModule.create(f.Field, DashType.NewPrimitive(f.Kind), true)).ToArray());
 
     private static (string Dll, object Instance) BuildAndLoad()
     {
