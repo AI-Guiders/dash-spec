@@ -31,7 +31,6 @@ public sealed class DashboardPageController : IDisposable
     private readonly CatalogSourceState _catalogState;
     private readonly DashboardFilterUiState _filters;
     private readonly DashboardRefreshCoordinator _refresh;
-    private readonly DashboardFilterCommandService _filterCommands;
     private readonly IDashboardCultureAmbient _cultureAmbient;
     private readonly IDevSpecReloadSignal? _reloadNotifier;
     private readonly LoadTrace _loadTrace;
@@ -53,7 +52,6 @@ public sealed class DashboardPageController : IDisposable
         CatalogSourceState catalogState,
         DashboardFilterUiState filters,
         DashboardRefreshCoordinator refresh,
-        DashboardFilterCommandService filterCommands,
         IDashboardCultureAmbient cultureAmbient,
         IWebHostEnvironment environment,
         IDevSpecReloadSignal reloadNotifier,
@@ -75,7 +73,6 @@ public sealed class DashboardPageController : IDisposable
         _catalogState = catalogState;
         _filters = filters;
         _refresh = refresh;
-        _filterCommands = filterCommands;
         _cultureAmbient = cultureAmbient;
         _loadTrace = loadTrace;
         _logger = logger;
@@ -916,56 +913,86 @@ public sealed class DashboardPageController : IDisposable
 
     public void ScheduleCardApplyAsync(string cardId) => _refresh.ScheduleCardApply(cardId);
 
-    public async Task OnFilterCommandCommittedAsync(string line)
+    public IReadOnlyList<string> VisibleToolbarFilterNamesForCommands() => VisibleToolbarFilterNames();
+
+    public IReadOnlyList<ReportPageDefinition> ActiveTabPagesForCommands() => ActiveTabPages();
+
+    public System.Globalization.CultureInfo ResolveCommandCulture() =>
+        FormatCulturePresets.ResolveCulture(
+            _session.Document.ResolvedFormatDefaults,
+            _cultureAmbient.Culture);
+
+    public IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
+        DashboardCardCommandTargetsBuilder.Build(
+            VisibleCards()
+                .Select(card => FindCardDefinition(card.Id))
+                .Where(definition => definition is not null)
+                .Cast<CardDefinition>());
+
+    public IReadOnlyList<DashboardCardCommandTarget> BuildVizToolbarCards() =>
+        VisibleCards()
+            .Where(CardVizDisplayToggle.CanToggle)
+            .Select(card => new DashboardCardCommandTarget(card.Id, card.Title, []))
+            .ToList();
+
+    public async Task ApplyCommandDirectivesAsync(
+        string? pendingCatalogEntryId,
+        string? pendingPageId,
+        string? pendingCardId,
+        string? pendingViewId,
+        string? pendingCardActionId,
+        string? pendingHostRoute,
+        string? error = null)
     {
-        CommandError = null;
-        var run = _filterCommands.TryExecute(line, BuildCommandContext());
-        if (!run.Outcome.Success)
+        if (!string.IsNullOrEmpty(error))
         {
-            _logger.LogWarning("Filter command failed: {Error}", run.Outcome.Error);
-            CommandError = run.Outcome.Error;
+            _logger.LogWarning("Filter command failed: {Error}", error);
+            CommandError = error;
             Notify();
             return;
         }
 
-        if (run.PendingCatalogEntryId is not null)
+        CommandError = null;
+
+        if (pendingCatalogEntryId is not null)
         {
-            await SelectCatalogEntryAsync(run.PendingCatalogEntryId).ConfigureAwait(false);
+            await SelectCatalogEntryAsync(pendingCatalogEntryId).ConfigureAwait(false);
             return;
         }
 
-        if (run.PendingPageId is not null)
+        if (pendingPageId is not null)
         {
-            await SelectPageAsync(run.PendingPageId).ConfigureAwait(false);
+            await SelectPageAsync(pendingPageId).ConfigureAwait(false);
             return;
         }
 
-        if (run.PendingHostRoute is not null)
+        if (pendingHostRoute is not null)
         {
-            _navigation.NavigateTo(run.PendingHostRoute);
+            _navigation.NavigateTo(pendingHostRoute);
             return;
         }
 
-        if (run.PendingCardId is not null && run.PendingViewId is not null)
+        if (pendingCardId is not null && pendingViewId is not null)
         {
-            _cardViewState.SetActiveView(run.PendingCardId, run.PendingViewId);
+            _cardViewState.SetActiveView(pendingCardId, pendingViewId);
             CommandError = null;
             Notify();
-            await _refresh.RefreshSingleCardAsync(run.PendingCardId, CancellationToken.None).ConfigureAwait(false);
+            await _refresh.RefreshSingleCardAsync(pendingCardId, CancellationToken.None).ConfigureAwait(false);
             return;
         }
 
-        if (run.PendingCardId is not null && run.PendingCardActionId is not null)
+        if (pendingCardId is not null && pendingCardActionId is not null)
         {
             var card = _refresh.Cards.FirstOrDefault(c =>
-                string.Equals(c.Id, run.PendingCardId, StringComparison.OrdinalIgnoreCase));
+                string.Equals(c.Id, pendingCardId, StringComparison.OrdinalIgnoreCase));
             if (card is not null &&
                 CardVizDisplayToggle.TryApply(
-                    new CardActionRequest(run.PendingCardId, run.PendingCardActionId, new Dictionary<string, string>()),
+                    new CardActionRequest(pendingCardId, pendingCardActionId, new Dictionary<string, string>()),
                     card,
                     _vizDisplayState))
             {
                 CommandError = null;
+                Notify();
                 return;
             }
         }
@@ -976,41 +1003,6 @@ public sealed class DashboardPageController : IDisposable
         Notify();
         await ApplyFiltersAsync().ConfigureAwait(false);
     }
-
-    public DashboardFilterContext BuildCommandContext() =>
-        new()
-        {
-            ReportId = _session.Document.Id,
-            ActiveScope = [DashSpecCommandScope.Dashboard],
-            FilterIndex = _session.FilterIndex,
-            ToolbarFilterNames = VisibleToolbarFilterNames(),
-            CommandAliases = _session.Document.ResolvedCommandAliases,
-            UiState = _filters,
-            GetFieldOptions = _session.GetFieldOptions,
-            CatalogEntries = CatalogEntries,
-            ReportPages = ActiveTabPages(),
-            ActiveCatalogEntryId = _session.ActiveCatalogEntryId,
-            ActivePageId = ActivePageId,
-            SwitchableCards = BuildSwitchableCards(),
-            VizToolbarCards = BuildVizToolbarCards(),
-            Culture = FormatCulturePresets.ResolveCulture(
-                _session.Document.ResolvedFormatDefaults,
-                _cultureAmbient.Culture),
-        };
-
-    IReadOnlyList<DashboardCardCommandTarget> BuildSwitchableCards() =>
-        DashboardCardCommandTargetsBuilder.Build(
-            VisibleCards()
-                .Select(card => FindCardDefinition(card.Id))
-                .Where(definition => definition is not null)
-                .Cast<CardDefinition>());
-
-    IReadOnlyList<DashboardCardCommandTarget> BuildVizToolbarCards() =>
-        DashboardCardCommandTargetsBuilder.BuildVizToolbar(
-            VisibleCards()
-                .Select(card => FindCardDefinition(card.Id))
-                .Where(definition => definition is not null)
-                .Cast<CardDefinition>());
 
     public Task ApplyFiltersAsync() => ApplyFiltersAsync(CancellationToken.None);
 

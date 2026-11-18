@@ -7,49 +7,16 @@
     <LangVersion>15</LangVersion>
     <RootNamespace>DashSpec.Host</RootNamespace>
     <Version>0.4.1</Version>
-    <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
-    <AuthoringToolchainRoot Condition="'$(AuthoringToolchainRoot)' == ''">..\..\..\authoring-toolchain\</AuthoringToolchainRoot>
-    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
   </PropertyGroup>
 
-  <!-- Catalog emit: GdlEmitProject → authoring/dashspec.gdlproj (Wave 2.5; requires authoring-toolchain main 3b8cd8b+) -->
-  <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
   <Import Project="..\..\build\ValidateJavaScriptSyntax.targets" />
-
-  <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
-    <GdlEmitProject>$(MSBuildProjectDirectory)\authoring\dashspec.gdlproj</GdlEmitProject>
-    <GdlEmitNamespace>DashSpec.Generated</GdlEmitNamespace>
-    <GdlEmitOutputDir>$(MSBuildProjectDirectory)\Generated</GdlEmitOutputDir>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="Generated\DashCatalog.g.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="DashSpec.Host.Tests" />
     <InternalsVisibleTo Include="DashSpec.Host.E2E" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(UseLocalGuidersPlatform)' == 'true'">
-    <Using Include="AIGuiders.Platform.Authoring.Command.Catalog" />
-    <Using Include="AIGuiders.Platform.Modeling.Gdl.Command" />
-  </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
-    <PackageReference Include="AIGuiders.Platform.CommandPlane.Slash" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
-    <PackageReference Include="AIGuiders.Platform.CommandPlane.Catalog.Sources" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane\AIGuiders.Platform.Execution.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Slash\AIGuiders.Platform.Execution.CommandPlane.Slash.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Constructors\AIGuiders.Platform.Execution.CommandPlane.Constructors.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions\AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.Sources\AIGuiders.Platform.Execution.CommandPlane.Catalog.Sources.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <PackageReference Include="AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Catalog\AIGuiders.Platform.Authoring.Command.Catalog.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Bundles\AIGuiders.Platform.Authoring.Command.Bundles.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
-    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
@@ -76,12 +43,7 @@
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Catalog\dash.catalog.gdl">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Commands\DashSpec.Plugin.Commands.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <Target Name="StageConnectorPlugins" AfterTargets="Build;Publish">
@@ -94,13 +56,20 @@
       <_ExportPluginDll>$(_ExportOutDir)DashSpec.Plugin.Export.dll</_ExportPluginDll>
       <_ViewSwitchOutDir>..\..\plugins\DashSpec.Plugin.ViewSwitch\bin\$(Configuration)\$(TargetFramework)\</_ViewSwitchOutDir>
       <_ViewSwitchPluginDll>$(_ViewSwitchOutDir)DashSpec.Plugin.ViewSwitch.dll</_ViewSwitchPluginDll>
+      <_CommandsOutDir>..\..\plugins\DashSpec.Plugin.Commands\bin\$(Configuration)\$(TargetFramework)\</_CommandsOutDir>
     </PropertyGroup>
+    <ItemGroup>
+      <_CommandsPluginFiles Include="$(_CommandsOutDir)DashSpec.Plugin.Commands.dll" Condition="Exists('$(_CommandsOutDir)DashSpec.Plugin.Commands.dll')" />
+      <_CommandsPluginFiles Include="$(_CommandsOutDir)AIGuiders.*.dll" />
+      <_CommandsPluginFiles Include="$(_CommandsOutDir)DotNetWorkspace.*.dll" />
+    </ItemGroup>
     <MakeDir Directories="$(OutputPath)connectors" />
     <MakeDir Directories="$(OutputPath)plugins" />
     <Copy SourceFiles="$(_ConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_ConnectorPluginDll)')" />
     <Copy SourceFiles="$(_PostgresConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_PostgresConnectorPluginDll)')" />
     <Copy SourceFiles="$(_ExportPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportPluginDll)')" />
     <Copy SourceFiles="$(_ViewSwitchPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchPluginDll)')" />
+    <Copy SourceFiles="@(_CommandsPluginFiles)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" />
     <!-- Plugins are vertical slices: copy their satellite assemblies (ADR-0077). -->
     <MakeDir Directories="$(OutputPath)plugins\ru" />
     <MakeDir Directories="$(OutputPath)connectors\ru" />
@@ -119,4 +88,3 @@
   </Target>
 
 </Project>
-

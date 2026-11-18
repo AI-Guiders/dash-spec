@@ -12,4 +12,7 @@ public static class DashSpecPluginComponents
 
     /// <summary>Filter widget component (supplied by a filter plugin).</summary>
     public const string FilterWidget = "filter.widget";
+
+    /// <summary>Host command bar + palette component (supplied by the commands plugin).</summary>
+    public const string HostCommandBar = "host.command_bar";
 }

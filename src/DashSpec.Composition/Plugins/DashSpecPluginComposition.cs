@@ -51,7 +51,7 @@ public static class DashSpecPluginComposition
 
         if (pluginsDirectory is not null)
         {
-            EnsureSharedAssemblyResolution(logger);
+            EnsureSharedAssemblyResolution(pluginsDirectory, logger);
 
             foreach (var entry in manifest.Plugins.Where(x => pluginIds.Contains(x.Id, StringComparer.OrdinalIgnoreCase)))
             {
@@ -162,7 +162,7 @@ public static class DashSpecPluginComposition
 
     private static bool _sharedAssemblyResolutionRegistered;
 
-    private static void EnsureSharedAssemblyResolution(ILogger logger)
+    private static void EnsureSharedAssemblyResolution(string? pluginsDirectory, ILogger logger)
     {
         if (_sharedAssemblyResolutionRegistered)
         {
@@ -173,13 +173,23 @@ public static class DashSpecPluginComposition
         AssemblyLoadContext.Default.Resolving += (_, name) =>
         {
             var sharedPath = Path.Combine(AppContext.BaseDirectory, $"{name.Name}.dll");
-            if (!File.Exists(sharedPath))
+            if (File.Exists(sharedPath))
             {
-                return null;
+                logger.LogDebug("Resolving plugin dependency {AssemblyName} from {AssemblyPath}", name.Name, sharedPath);
+                return AssemblyLoadContext.Default.LoadFromAssemblyPath(sharedPath);
             }
 
-            logger.LogDebug("Resolving plugin dependency {AssemblyName} from {AssemblyPath}", name.Name, sharedPath);
-            return AssemblyLoadContext.Default.LoadFromAssemblyPath(sharedPath);
+            if (pluginsDirectory is not null)
+            {
+                var pluginDepPath = Path.Combine(pluginsDirectory, $"{name.Name}.dll");
+                if (File.Exists(pluginDepPath))
+                {
+                    logger.LogDebug("Resolving plugin dependency {AssemblyName} from {AssemblyPath}", name.Name, pluginDepPath);
+                    return AssemblyLoadContext.Default.LoadFromAssemblyPath(pluginDepPath);
+                }
+            }
+
+            return null;
         };
     }
 
@@ -229,6 +239,7 @@ public static class DashSpecPluginComposition
             "viz_gantt_html",
             "viz_gantt_timeline",
             "filter_widgets_builtin",
+            "command_bar",
         };
 
         var bundle = manifest.Bundles.FirstOrDefault(x =>

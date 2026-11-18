@@ -1,0 +1,99 @@
+# DashSpec federation command catalog (SSOT) — GUIDERS-ADR-0047 grammar v0
+
+catalog dash
+
+import <grain/date-filter>
+
+channels
+  slash
+    bar = toolbar-slash
+    grammar
+      command = command-slash
+      argument = argument-slash
+    end grammar
+  console
+    filter = filter-bar
+    grammar
+      command = command-console
+      argument = argument-kv
+    end grammar
+  ccl
+    filter = filter-ccl
+    grammar
+      command = command-console
+      argument = argument-kv
+    end grammar
+  palette = command-palette
+end channels
+
+defaults
+  variable.kind              = phrase-slot
+  command.scope              = dashboard
+  command.surfaces           = slash.bar, palette, console.filter, ccl.filter
+  grammar.keyboard.binding   = keyboard-key-gesture
+  grammar.keyboard.melody    = keyboard-key-gesture
+  binding.chord-root         = Ctrl+K
+  command.flavor             = console
+end defaults
+
+variables
+  filter
+  report
+  page
+  card
+  view
+  surface
+end variables
+
+phrases table
+  | name           | phrase                   |
+  | filter-by-name | select filter {filter}   |
+  | pick-report    | select report {report}   |
+  | pick-page      | select page {page}       |
+  | pick-view      | view {card} {view}       |
+  | toggle-matrix-values | toggle matrix values {card} |
+  | toggle-matrix-axis-x | toggle matrix axis-x {card} |
+  | toggle-matrix-axis-y | toggle matrix axis-y {card} |
+  | show-host      | show host {surface}      |
+end phrases
+
+helps table
+  | target              | field   | text                                        |
+  | command filter.date | summary | Установить date-фильтр на toolbar           |
+  | variable filter     | label   | Имя фильтра на toolbar                      |
+end helps
+
+profiles
+  date-value = bundle date-filter
+  field-value.value.picker-for-slot = filter
+end profiles
+
+commands table
+  | command       | phrase         | profile     | expand                 | fills          |
+  | filter.date   | filter-by-name | date-value  | toolbar-filters date   | filter         |
+  | filter.field  | filter-by-name | field-value | toolbar-filters field  | filter         |
+  | report.select | pick-report    |             | report-catalog         | report         |
+  | page.select   | pick-page      |             | report-pages           | page           |
+  | card.view     | pick-view      |             | card-views             | card, view     |
+  | card.matrix.values.toggle | toggle-matrix-values | | matrix-cards | card |
+  | card.matrix.axis_x.toggle | toggle-matrix-axis-x | | matrix-cards | card |
+  | card.matrix.axis_y.toggle | toggle-matrix-axis-y | | matrix-cards | card |
+  | host.show     | show-host      |             | host-surfaces  | surface        |
+end commands
+
+bindings table
+  | gesture      | command | role            |
+  | Ctrl+K       | —       | chord-root      |
+  | Ctrl+.       | —       | suggest-dismiss |
+end bindings
+
+melodies table
+  | slug | command     |
+  | fd   | filter.date |
+end melodies
+
+mcp table
+  | command     | expose |
+  | filter.date | yes    |
+  | host.show   | yes    |
+end mcp

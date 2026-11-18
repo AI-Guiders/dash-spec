@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>15</LangVersion>
+    <RootNamespace>DashSpec.Plugin.Commands</RootNamespace>
+    <Version>0.1.0</Version>
+    <GuidersPlatformRoot Condition="'$(GuidersPlatformRoot)' == ''">..\..\..\guiders-platform</GuidersPlatformRoot>
+    <AuthoringToolchainRoot Condition="'$(AuthoringToolchainRoot)' == ''">..\..\..\authoring-toolchain\</AuthoringToolchainRoot>
+    <UseLocalGuidersPlatform Condition="'$(UseLocalGuidersPlatform)' == '' AND (Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.slnx') OR Exists('$(GuidersPlatformRoot)\AIGuiders.Platform.sln'))">true</UseLocalGuidersPlatform>
+  </PropertyGroup>
+
+  <Import Project="$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props" Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')" />
+
+  <PropertyGroup Condition="Exists('$(AuthoringToolchainRoot)\build\Platform.Gdl.Emit.props')">
+    <GdlEmitProject>$(MSBuildProjectDirectory)\authoring\dashspec.gdlproj</GdlEmitProject>
+    <GdlEmitNamespace>DashSpec.Generated</GdlEmitNamespace>
+    <GdlEmitOutputDir>$(MSBuildProjectDirectory)\Generated</GdlEmitOutputDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AIGuiders.Platform.CommandPlane" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane.Slash" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.CommandPlane.Catalog.Sources" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <PackageReference Include="AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale" Version="0.31.0" Condition="'$(UseLocalGuidersPlatform)' != 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane\AIGuiders.Platform.Execution.CommandPlane.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Slash\AIGuiders.Platform.Execution.CommandPlane.Slash.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.Sources\AIGuiders.Platform.Execution.CommandPlane.Catalog.Sources.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Constructors\AIGuiders.Platform.Execution.CommandPlane.Constructors.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions\AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale\AIGuiders.Platform.Execution.CommandPlane.PrefixArmed.Locale.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Catalog\AIGuiders.Platform.Authoring.Command.Catalog.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\..\guiders-fsharp\src\AIGuiders.Platform.Modeling.Gdl.Command\AIGuiders.Platform.Modeling.Gdl.Command.fsproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Authoring.Command.Bundles\AIGuiders.Platform.Authoring.Command.Bundles.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+    <ProjectReference Include="$(GuidersPlatformRoot)\src\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen\AIGuiders.Platform.Execution.CommandPlane.Catalog.CodeGen.csproj" Condition="'$(UseLocalGuidersPlatform)' == 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Composition\DashSpec.Composition.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Filters\DashSpec.Filters.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Presentation\DashSpec.Presentation.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Viz\DashSpec.Viz.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Catalog\dash.catalog.gdl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

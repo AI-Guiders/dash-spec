@@ -179,6 +179,30 @@ public sealed class LayerDependencyTests
         Assert.True(compositionResult.IsSuccessful, string.Join("; ", compositionResult.FailingTypeNames ?? []));
     }
 
+    [Fact]
+    public void Surface_Blazor_and_Host_must_not_reference_CommandPlane()
+    {
+        var surfaceResult = Types.InAssembly(SurfaceBlazorAssembly)
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "AIGuiders.Platform.Execution.CommandPlane",
+                "AIGuiders.Platform.Authoring.Command.Catalog",
+                "AIGuiders.Platform.Modeling.Gdl.Command",
+                "DashSpec.Plugin.Commands")
+            .GetResult();
+        Assert.True(surfaceResult.IsSuccessful, string.Join("; ", surfaceResult.FailingTypeNames ?? []));
+
+        var hostResult = Types.InAssembly(HostAssembly)
+            .ShouldNot()
+            .HaveDependencyOnAny(
+                "AIGuiders.Platform.Execution.CommandPlane",
+                "AIGuiders.Platform.Authoring.Command.Catalog",
+                "AIGuiders.Platform.Modeling.Gdl.Command",
+                "DashSpec.Plugin.Commands")
+            .GetResult();
+        Assert.True(hostResult.IsSuccessful, string.Join("; ", hostResult.FailingTypeNames ?? []));
+    }
+
     static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

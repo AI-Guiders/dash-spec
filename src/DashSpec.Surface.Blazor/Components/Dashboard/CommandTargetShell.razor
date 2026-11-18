@@ -1,6 +1,6 @@
 @namespace DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Surface.Blazor.Commands
-@inject DashboardCommandSession CommandSession
+@inject ICommandTargetHighlighter CommandSession
 @implements IDisposable
 
 <div class="@ShellClass" style="@Style">

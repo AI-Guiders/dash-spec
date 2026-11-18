@@ -1,17 +1,13 @@
 #nullable enable
-using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Execution.Parsing;
 using Microsoft.AspNetCore.Components;
 
 namespace DashSpec.Surface.Blazor.Services.Presentation;
 
-/// <summary>Layout-level CCL bridge — dashboard context when loaded, host-only on Control Center.</summary>
+/// <summary>Layout-level coordinator between the shell chrome and the active <see cref="DashboardPageController"/>.</summary>
 public sealed class DashboardHostCommandCoordinator
 {
     readonly NavigationManager _navigation;
-    readonly DashboardFilterCommandService _commands;
-    readonly DashboardFilterUiState _uiState;
-    readonly IDashboardCultureAmbient _culture;
     readonly CatalogSourceState _catalogState;
 
     DashboardPageController? _dashboard;
@@ -19,21 +15,17 @@ public sealed class DashboardHostCommandCoordinator
 
     public DashboardHostCommandCoordinator(
         NavigationManager navigation,
-        DashboardFilterCommandService commands,
-        DashboardFilterUiState uiState,
-        IDashboardCultureAmbient culture,
         CatalogSourceState catalogState)
     {
         _navigation = navigation;
-        _commands = commands;
-        _uiState = uiState;
-        _culture = culture;
         _catalogState = catalogState;
     }
 
     public event Action? Changed;
 
-    public string? CommandError { get; private set; }
+    public string? CommandError { get; set; }
+
+    public DashboardPageController? ActiveDashboard => _dashboard;
 
     public bool HasCatalog => _catalogState.Current.Document.Entries.Count > 1;
 
@@ -103,41 +95,6 @@ public sealed class DashboardHostCommandCoordinator
 
     void OnDashboardChanged() => Notify();
 
-    public DashboardFilterContext BuildContext() =>
-        _dashboard is { Loaded: true }
-            ? _dashboard.BuildCommandContext()
-            : HostCommandContextFactory.CreateHostOnly(_uiState, _culture);
-
-    public async Task CommitAsync(string line)
-    {
-        CommandError = null;
-        if (_dashboard is { Loaded: true })
-        {
-            await _dashboard.OnFilterCommandCommittedAsync(line).ConfigureAwait(false);
-            CommandError = _dashboard.CommandError;
-            Notify();
-            return;
-        }
-
-        var context = BuildContext();
-        var run = _commands.TryExecute(line, context);
-        if (!run.Outcome.Success)
-        {
-            CommandError = run.Outcome.Error;
-            Notify();
-            return;
-        }
-
-        if (run.PendingHostRoute is not null)
-        {
-            _navigation.NavigateTo(run.PendingHostRoute);
-            return;
-        }
-
-        CommandError = "Команда доступна на Dashboard.";
-        Notify();
-    }
-
     string ResolveActiveCatalogEntryId()
     {
         if (!string.IsNullOrWhiteSpace(_pendingCatalogEntryId))
@@ -195,5 +152,5 @@ public sealed class DashboardHostCommandCoordinator
         _navigation.NavigateTo(rebuilt, replace);
     }
 
-    void Notify() => Changed?.Invoke();
+    public void Notify() => Changed?.Invoke();
 }

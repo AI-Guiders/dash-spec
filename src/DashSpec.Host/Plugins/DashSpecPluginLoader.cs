@@ -3,7 +3,6 @@ using DashSpec.Composition.Plugins;
 using DashSpec.Viz;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Plugins.Builtins;
-using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Surface.Blazor.Composition;
 using DashSpec.Surface.Blazor.Services.Presentation;
 using Microsoft.Extensions.Configuration;
@@ -56,8 +55,6 @@ public static class DashSpecPluginLoader
         DashSpecPluginManifest manifest,
         ILogger? logger = null)
     {
-        var commandRegistry = new DashSpecCommandPluginRegistry();
-
         var kernel = DashSpecPluginComposition.Compose(
             services,
             configuration,
@@ -72,24 +69,21 @@ public static class DashSpecPluginLoader
                     registry,
                     svc,
                     configuration,
-                    plugin => RegisterCommandPlugin(plugin, commandRegistry));
+                    _ => { });
                 svc.AddSingleton<OnClickInteractionService>();
                 svc.AddSingleton<IOnClickInteractionService>(sp => sp.GetRequiredService<OnClickInteractionService>());
                 svc.AddScoped<ICardViewState, CardViewStateService>();
                 svc.AddScoped<ICardVizDisplayState, CardVizDisplayStateService>();
-            },
-            onPluginRegistered: plugin => RegisterCommandPlugin(plugin, commandRegistry));
+            });
 
         if (kernel.ActivePluginIds.Contains("dashspec_diagnostics") &&
             !kernel.Registry.ContainsPlugin("dashspec_diagnostics"))
         {
-            RegisterBuiltIn(new DiagnosticsBuiltinPlugin(), kernel.Registry, services, configuration, commandRegistry);
+            RegisterBuiltIn(new DiagnosticsBuiltinPlugin(), kernel.Registry, services, configuration);
         }
 
         // Surface registries snapshot the kernel's component maps AFTER all plugin loads (external plugins included).
         SurfaceCompositionServices.RegisterComponentRegistries(services, kernel.Registry);
-
-        services.AddSingleton(commandRegistry);
 
         return kernel.Registry;
     }
@@ -98,22 +92,10 @@ public static class DashSpecPluginLoader
         IDashSpecPlugin plugin,
         DashSpecContributorRegistry registry,
         IServiceCollection services,
-        IConfiguration configuration,
-        DashSpecCommandPluginRegistry commandRegistry)
+        IConfiguration configuration)
     {
         plugin.ConfigureServices(services, configuration);
         registry.RegisterPlugin(plugin);
-        RegisterCommandPlugin(plugin, commandRegistry);
-    }
-
-    private static void RegisterCommandPlugin(
-        IDashSpecPlugin plugin,
-        DashSpecCommandPluginRegistry commandRegistry)
-    {
-        if (plugin is IDashSpecCommandPlugin commandPlugin)
-        {
-            commandPlugin.RegisterCommands(commandRegistry);
-        }
     }
 
     private static string ResolvePluginsDirectory(IHostEnvironment environment)

@@ -110,6 +110,14 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
             IsProvider = false,
         });
 
+        root.Plugins.Load.Add(new PluginLoadTomlEntry
+        {
+            Id = "command_bar",
+            Assembly = "DashSpec.Plugin.Commands.dll",
+            Tier = "extended",
+            IsProvider = false,
+        });
+
         var dir = Path.GetDirectoryName(path);
         var baseName = Path.GetFileNameWithoutExtension(path);
         var skipLocal = string.Equals(

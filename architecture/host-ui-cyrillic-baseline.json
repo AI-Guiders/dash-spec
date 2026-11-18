@@ -9,9 +9,6 @@
   "files": {
     "src/DashSpec.Surface.Blazor/Components/Dashboard/CardSelectionDetail.razor": 1,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCatalogPicker.razor": 2,
-    "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCommandPalette.razor": 2,
-    "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardCommandSuggestionList.razor": 2,
-    "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardFilterCommandBar.razor": 2,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardFiltersSection.razor": 6,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardPagePicker.razor": 1,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardTabBar.razor": 1,

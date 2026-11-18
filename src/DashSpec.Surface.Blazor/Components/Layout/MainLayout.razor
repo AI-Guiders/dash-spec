@@ -1,11 +1,14 @@
 @inherits LayoutComponentBase
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Abstractions.Viewer
+@using DashSpec.Composition.Plugins
 @using DashSpec.Presentation.Filters
 @using DashSpec.Surface.Blazor.Services.Presentation
 @inject IViewerPresentationOptions Bootstrap
 @inject IViewerShellChrome HostShell
 @inject HostPresentationSignals PresentationSignals
 @inject NavigationManager Navigation
+@inject DashSpecContributorRegistry Contributors
 @implements IDisposable
 
 @* Shell ([ADR-0111] §2 experiment): the host renders its own ds shell first. Chrome rows
@@ -13,8 +16,13 @@
    space by weight, the content slot is greedy — it takes the row entirely. *@
 
 @code {
+    private Type? CommandBarType =>
+        Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.HostCommandBar, out var type)
+            ? type
+            : null;
+
     private bool ShowCommandBar =>
-        HostShell.ShowsSurface("command_bar") && IsDashboardRoute();
+        CommandBarType is not null && HostShell.ShowsSurface("command_bar") && IsDashboardRoute();
 
     private bool IsDashboardRoute()
     {
@@ -75,9 +83,9 @@
     @if (contentSlot is not null)
     {
         <main class="shell-content" data-testid="scroll-page">
-            @if (ShowCommandBar)
+            @if (ShowCommandBar && CommandBarType is { } commandBarType)
             {
-                <HostCommandBar />
+                <DynamicComponent Type="commandBarType" />
             }
             <ErrorBoundary>
                 @Body

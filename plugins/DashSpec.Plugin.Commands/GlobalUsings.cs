@@ -1,0 +1,18 @@
+global using DashCatalog = DashSpec.Generated.DashCatalog;
+global using CatalogReader = DashSpec.Execution.Parsing.CatalogReader;
+global using InvocationLinePhase = AIGuiders.Platform.Modeling.Notations.Command.InvocationLinePhase;
+global using AIGuiders.Platform.IntermediateRepresentation.Command;
+global using AIGuiders.Platform.IntermediateRepresentation.Invocation;
+global using Microsoft.Extensions.Hosting;
+global using AIGuiders.Platform.Execution.CommandPlane.ArgSuggestions;
+global using ArgConstructorBinding = AIGuiders.Platform.Modeling.Gdl.Command.ArgConstructorBinding;
+global using CommandPickerChoice = AIGuiders.Platform.Modeling.Gdl.Command.CommandPickerChoice;
+global using CommandArgTailKind = AIGuiders.Platform.Modeling.Gdl.Command.CommandArgTailKind;
+global using Microsoft.AspNetCore.Hosting;
+global using Microsoft.AspNetCore.Http;
+global using Microsoft.Extensions.Logging;
+global using FilterKind = DashSpec.Modeling.Parse.Filter.FilterKind;
+global using FilterDefinition = DashSpec.Modeling.Parse.Filter.FilterDefinition;
+global using CatalogEntryDefinition = DashSpec.Modeling.Parse.Catalog.CatalogEntryDefinition;
+global using CatalogGroupDefinition = DashSpec.Modeling.Parse.Catalog.CatalogGroupDefinition;
+global using ReportPageDefinition = DashSpec.Modeling.Parse.Document.ReportPageDefinition;

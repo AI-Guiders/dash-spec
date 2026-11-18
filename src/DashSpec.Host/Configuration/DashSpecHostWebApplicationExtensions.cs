@@ -31,7 +31,6 @@ public static class DashSpecHostWebApplicationExtensions
         app.MapAccessEndpoints();
         app.MapCatalogSyncEndpoints();
         app.MapPluginEndpoints();
-        app.MapDashboardCommandEndpoints();
 
         var contributorRegistry = app.Services.GetRequiredService<DashSpec.Composition.Plugins.DashSpecContributorRegistry>();
         var componentAssemblies = new HashSet<System.Reflection.Assembly>
@@ -41,6 +40,11 @@ public static class DashSpecHostWebApplicationExtensions
             typeof(FilterBuiltinsPluginCatalog).Assembly,
         };
         foreach (var type in contributorRegistry.VizComponents.Values)
+        {
+            componentAssemblies.Add(type.Assembly);
+        }
+
+        foreach (var type in contributorRegistry.PluginComponents.Values)
         {
             componentAssemblies.Add(type.Assembly);
         }

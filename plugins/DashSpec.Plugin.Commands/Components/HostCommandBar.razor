@@ -1,0 +1,143 @@
+@using DashSpec.Surface.Blazor.Commands
+@using DashSpec.Surface.Blazor.Components.Dashboard
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject DashboardHostCommandCoordinator Coordinator
+@inject DashboardFilterCommandService Commands
+@inject DashboardFilterUiState UiState
+@inject IDashboardCultureAmbient Culture
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+<div class="dash-host-command-shell">
+    <DashboardFilterCommandBar @ref="_bar"
+                               CommandContext="@BuildContext()"
+                               CommandError="@Coordinator.CommandError"
+                               OnCommit="CommitAsync" />
+</div>
+
+@code {
+    DashboardFilterCommandBar? _bar;
+    DotNetObjectReference<HostCommandBar>? _selfRef;
+    bool _bindingsBound;
+
+    protected override void OnInitialized() => Coordinator.Changed += OnCoordinatorChanged;
+
+    DashboardFilterContext BuildContext()
+    {
+        if (Coordinator.ActiveDashboard is { Loaded: true } page)
+        {
+            return new DashboardFilterContext
+            {
+                ReportId = page.Session.Document.Id,
+                ActiveScope = [DashSpecCommandScope.Dashboard],
+                FilterIndex = page.Session.FilterIndex,
+                ToolbarFilterNames = page.VisibleToolbarFilterNamesForCommands(),
+                CommandAliases = page.Session.Document.ResolvedCommandAliases,
+                UiState = page.FilterState,
+                GetFieldOptions = page.Session.GetFieldOptions,
+                CatalogEntries = page.CatalogEntries,
+                ReportPages = page.ActiveTabPagesForCommands(),
+                ActiveCatalogEntryId = page.ActiveCatalogEntryId,
+                ActivePageId = page.ActivePageId,
+                SwitchableCards = page.BuildSwitchableCards(),
+                VizToolbarCards = page.BuildVizToolbarCards(),
+                Culture = page.ResolveCommandCulture(),
+            };
+        }
+
+        return HostCommandContextFactory.CreateHostOnly(UiState, Culture);
+    }
+
+    async Task CommitAsync(string line)
+    {
+        Coordinator.CommandError = null;
+        var context = BuildContext();
+        var run = Commands.TryExecute(line, context);
+
+        if (Coordinator.ActiveDashboard is { Loaded: true } page)
+        {
+            await page.ApplyCommandDirectivesAsync(
+                run.PendingCatalogEntryId,
+                run.PendingPageId,
+                run.PendingCardId,
+                run.PendingViewId,
+                run.PendingCardActionId,
+                run.PendingHostRoute,
+                run.Outcome.Success ? null : run.Outcome.Error).ConfigureAwait(false);
+            Coordinator.CommandError = page.CommandError;
+            Coordinator.Notify();
+            return;
+        }
+
+        if (!run.Outcome.Success)
+        {
+            Coordinator.CommandError = run.Outcome.Error;
+            Coordinator.Notify();
+            return;
+        }
+
+        if (run.PendingHostRoute is not null)
+        {
+            Navigation.NavigateTo(run.PendingHostRoute);
+            return;
+        }
+
+        Coordinator.CommandError = "Команда доступна на Dashboard.";
+        Coordinator.Notify();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_bindingsBound)
+        {
+            return;
+        }
+
+        _bindingsBound = true;
+        _selfRef = DotNetObjectReference.Create(this);
+        var bindings = DashboardCatalogBindings.HostBindings()
+            .Select(binding => new { gesture = binding.Gesture, methodName = binding.MethodName })
+            .ToArray();
+        try
+        {
+            await Js.InvokeVoidAsync("aiguidersInput.keyboard.bindHostBindings", _selfRef, bindings);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    void OnCoordinatorChanged() => _ = InvokeAsync(StateHasChanged);
+
+    [JSInvokable]
+    public void OnChordRoot() => _bar?.OpenPaletteFromHost();
+
+    [JSInvokable]
+    public void OnSuggestDismiss() => _bar?.DismissSuggestionsFromHost();
+
+    public async ValueTask DisposeAsync()
+    {
+        Coordinator.Changed -= OnCoordinatorChanged;
+        if (_bindingsBound)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("aiguidersInput.keyboard.unbindHostBindings");
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        }
+
+        _selfRef?.Dispose();
+    }
+}

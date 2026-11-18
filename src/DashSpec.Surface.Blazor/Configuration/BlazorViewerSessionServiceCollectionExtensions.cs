@@ -1,7 +1,6 @@
 using System.Globalization;
 using DashSpec.Abstractions.Viz;
 using DashSpec.Surface.Blazor.Commands;
-using DashSpec.Surface.Blazor.Commands.Constructors;
 using DashSpec.Surface.Blazor.Services;
 using DashSpec.Surface.Blazor.Services.Localization;
 using DashSpec.Surface.Blazor.Services.Presentation;
@@ -9,6 +8,7 @@ using DashSpec.Surface.Blazor.Services.Diagnostics;
 using DashSpec.Surface.Blazor.Services.Rendering;
 using DashSpec.Viz.Platform;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DashSpec.Surface.Blazor.Configuration;
 
@@ -31,11 +31,8 @@ public static class BlazorViewerSessionServiceCollectionExtensions
         services.AddScoped<IDashboardCultureAmbient>(_ =>
             new DashboardCultureAmbient(uiCulture, displayTimeZone));
         services.AddScoped<DashboardLocalizer>();
-        services.AddScoped<DashboardSlashConstructorHost>();
-        services.AddScoped<DashboardCommandSession>();
+        services.TryAddScoped<ICommandTargetHighlighter, NullCommandTargetHighlighter>();
         services.AddScoped<DashboardRefreshCoordinator>();
-        services.AddScoped<DashboardFilterCommandService>();
-        services.AddScoped<DashboardCommandExecutor>();
         services.AddScoped<DashboardHostCommandCoordinator>();
         services.AddScoped<DashboardPageController>();
         return services;

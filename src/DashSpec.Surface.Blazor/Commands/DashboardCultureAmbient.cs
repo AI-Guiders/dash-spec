@@ -1,13 +1,14 @@
 #nullable enable
 
 using System.Globalization;
-using AIGuiders.Platform.Execution.CommandPlane;
 
 namespace DashSpec.Surface.Blazor.Commands;
 
-/// <summary>Ambient culture for CCL — from request localization, not hardcoded by Platform.</summary>
-public interface IDashboardCultureAmbient : ICultureAmbient
+/// <summary>Ambient culture and display time zone for the Blazor viewer surface.</summary>
+public interface IDashboardCultureAmbient
 {
+    CultureInfo Culture { get; }
+
     /// <summary>Display time zone for report/table output (remark №25: stored UTC → display TZ). Default Europe/Moscow.</summary>
     TimeZoneInfo DisplayTimeZone { get; }
 }

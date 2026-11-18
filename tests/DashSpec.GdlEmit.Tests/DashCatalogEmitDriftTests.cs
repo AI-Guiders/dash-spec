@@ -12,17 +12,17 @@ public sealed class DashCatalogEmitDriftTests
     public void DashCatalog_g_cs_matches_gdlc_emit_output()
     {
         var repoRoot = ResolveDashSpecRepoRoot();
-        var hostProject = Path.Combine(repoRoot, "src", "DashSpec.Host", "DashSpec.Host.csproj");
+        var commandsPluginProject = Path.Combine(repoRoot, "plugins", "DashSpec.Plugin.Commands", "DashSpec.Plugin.Commands.csproj");
         var toolchainRoot = Path.GetFullPath(Path.Combine(repoRoot, "..", "authoring-toolchain"));
         var gdlcProject = Path.Combine(toolchainRoot, "src", "Gdlc.Cli", "Gdlc.Cli.csproj");
 
-        Assert.True(File.Exists(hostProject), $"Host project not found: {hostProject}");
+        Assert.True(File.Exists(commandsPluginProject), $"Commands plugin project not found: {commandsPluginProject}");
         Assert.True(
             File.Exists(Path.Combine(toolchainRoot, "build", "Platform.Gdl.Emit.props")),
             $"authoring-toolchain sibling required for catalog emit gate: {toolchainRoot}");
 
         RunProcess("dotnet", $"build \"{gdlcProject}\" -c Release", toolchainRoot);
-        RunProcess("dotnet", $"msbuild \"{hostProject}\" -p:Configuration=Release -t:GdlEmitVerify", repoRoot);
+        RunProcess("dotnet", $"msbuild \"{commandsPluginProject}\" -p:Configuration=Release -t:GdlEmitVerify", repoRoot);
     }
 
     private static void RunProcess(string fileName, string arguments, string workingDirectory)
