@@ -1232,6 +1232,9 @@ module rec DocumentModuleParser =
             for fd in d.FilterDefaults do
                 FilterScopeDefaults.set shell.FilterDefaults fd.FilterId fd.Property.WireName fd.Value.Text
 
+        for kv in includes.CommandAliases do
+            shell.CommandAliases.[kv.Key] <- kv.Value
+
         shell
 
     let private restrictExtensionBlocksForModule (options: DashSpecParseOptions) (moduleExtensions: ModuleExtensionsDefinition) =

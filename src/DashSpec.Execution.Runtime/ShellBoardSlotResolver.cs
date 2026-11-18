@@ -23,6 +23,7 @@ public static class ShellBoardSlotResolver
         ViewerShellSlotIds.Help,
         ViewerShellSlotIds.Settings,
         ViewerShellSlotIds.SpecDev,
+        ViewerShellSlotIds.CommandBar,
         ViewerShellSlotIds.Content,
     };
 
@@ -106,6 +107,11 @@ public static class ShellBoardSlotResolver
         if (value.Equals(ViewerShellSlotIds.Dashboard, StringComparison.OrdinalIgnoreCase))
         {
             return ViewerShellSlotIds.Nav;
+        }
+
+        if (value.Equals(ViewerShellSlotIds.Commands, StringComparison.OrdinalIgnoreCase))
+        {
+            return ViewerShellSlotIds.CommandBar;
         }
 
         return value.ToLowerInvariant();

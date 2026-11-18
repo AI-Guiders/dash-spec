@@ -22,6 +22,7 @@ type ImportKind =
     | Tabs
     | Dashboards
     | Catalogs
+    | Commands
 
 [<RequireQualifiedAccess>]
 type UnitManifestRole =
@@ -62,6 +63,7 @@ module ImportKindRegistry =
         | "section" -> Some ImportKind.Tabs
         | "dashboard" -> Some ImportKind.Dashboards
         | "catalog" -> Some ImportKind.Catalogs
+        | "commands" -> Some ImportKind.Commands
         | _ -> None
 
     let private parseRole (raw: string) =

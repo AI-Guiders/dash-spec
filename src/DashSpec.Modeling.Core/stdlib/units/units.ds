@@ -17,4 +17,5 @@ namespace DashSpec.Stdlib.Units
 | section      | sections      | consumer    |
 | dashboard    | dashboards    | consumer    |
 | catalog      | catalogs      | consumer    |
+| commands     | commands      | declaration |
 | host         | -             | root        |

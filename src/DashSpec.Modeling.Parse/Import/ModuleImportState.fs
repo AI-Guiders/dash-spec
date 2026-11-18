@@ -35,6 +35,13 @@ type ModuleImportState() =
     let runtimePaths = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let defaultsDocs = Dictionary<string, DefaultsDocument>(StringComparer.OrdinalIgnoreCase)
     let textBindings = ResizeArray<TextBinding>()
+    let commandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+    member _.RegisterCommandAliases(entries: IReadOnlyDictionary<string, string>) =
+        for kv in entries do
+            commandAliases.[kv.Key] <- kv.Value
+
+    member _.CommandAliases = commandAliases :> IReadOnlyDictionary<string, string>
 
     member _.RegisterDefaults(id: string, doc: DefaultsDocument) =
         defaultsDocs.[id] <- doc

@@ -21,8 +21,14 @@
             ? type
             : null;
 
+    private bool HasExplicitCommandBarSlot =>
+        HostShell.ShellSlots.Any(slot => slot.SlotId == ViewerShellSlotIds.CommandBar);
+
     private bool ShowCommandBar =>
-        CommandBarType is not null && HostShell.ShowsSurface("command_bar") && IsDashboardRoute();
+        !HasExplicitCommandBarSlot &&
+        CommandBarType is not null &&
+        HostShell.ShowsSurface("command_bar") &&
+        IsDashboardRoute();
 
     private bool IsDashboardRoute()
     {

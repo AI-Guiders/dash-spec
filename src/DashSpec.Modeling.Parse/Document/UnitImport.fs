@@ -185,7 +185,11 @@ module UnitImport =
                   { KindKeyword = "diagram"
                     ImportKind = Some ImportKind.Diagrams
                     Role = UnitCompileRole.Consumer
-                    Project = fun ctx -> box (UnitFragmentResolver.foldDiagramModuleWithId ctx.Text) } ]
+                    Project = fun ctx -> box (UnitFragmentResolver.foldDiagramModuleWithId ctx.Text) }
+                  { KindKeyword = "commands"
+                    ImportKind = Some ImportKind.Commands
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope ctx.Envelope) } ]
             for d in descriptors do
                 UnitProjector.register d
 
@@ -306,6 +310,9 @@ module UnitImport =
                 TransformDeclarations.register decl
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section ->
             withQualifier env.Id (fun k -> state.RegisterTabModule(k, path))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw when String.Equals(kw, "commands", StringComparison.OrdinalIgnoreCase) ->
+            let map = DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope env
+            state.RegisterCommandAliases map
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
             match UnitProjector.tryResolve kw with
             | Some d ->

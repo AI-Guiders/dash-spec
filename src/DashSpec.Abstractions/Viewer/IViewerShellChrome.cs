@@ -12,6 +12,8 @@ public static class ViewerShellSlotIds
     public const string Help = "help";
     public const string Settings = "settings";
     public const string SpecDev = "spec_dev";
+    public const string CommandBar = "command_bar";
+    public const string Commands = "commands";
     public const string Content = "content";
 }
 

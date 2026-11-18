@@ -1,4 +1,6 @@
+@using DashSpec.Abstractions.Plugins
 @using DashSpec.Abstractions.Viewer
+@using DashSpec.Composition.Plugins
 @using DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Modeling.Parse.Layout
@@ -10,6 +12,7 @@
 @inject IViewerExternalLinksProvider ExternalLinks
 @inject IViewerShellChrome HostShell
 @inject ICardChromeControlsOverride ChromeControls
+@inject DashSpecContributorRegistry Contributors
 @implements IDisposable
 
 @* One shell chrome cell's content ([ADR-0111] §2 experiment): rendered inside the cell
@@ -61,6 +64,11 @@ else if (Slot.SlotId == ViewerShellSlotIds.Settings && ShowsSurface("settings"))
 else if (Slot.SlotId == ViewerShellSlotIds.SpecDev && Environment.IsDevelopment() && ShowsSurface("spec_dev"))
 {
     <a href="/dev/spec" class="rz-link">@Loc.T("Spec")</a>
+}
+else if (Slot.SlotId == ViewerShellSlotIds.CommandBar &&
+         Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.HostCommandBar, out var commandBarType))
+{
+    <DynamicComponent Type="commandBarType" />
 }
 
 @code {
