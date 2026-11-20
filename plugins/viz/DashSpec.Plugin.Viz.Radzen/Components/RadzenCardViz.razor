@@ -139,10 +139,16 @@ else if (IsChartFamily)
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
                                           Title="@SeriesTitle(series)"
-                                          Stroke="@SeriesColor(series)" />
+                                          Stroke="@SeriesColor(series)">
+                            <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                        </RadzenLineSeries>
                     }
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
-                    <RadzenValueAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto">
+                        <RadzenGridLines Visible="true" />
+                    </RadzenCategoryAxis>
+                    <RadzenValueAxis>
+                        <RadzenGridLines Visible="true" />
+                    </RadzenValueAxis>
                     break;
             }
         </RadzenChart>
@@ -255,9 +261,10 @@ else
     /// builtin chartjs renderer — gated on the card declaring effects for its click.</summary>
     private bool CategoryClickEnabled =>
         Context.OnHeatmapCellSelected.HasDelegate &&
-        Context.EffectiveCard.ClickBehaviour is not null &&
-        (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
-         Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null);
+        (Context.EffectiveCard.ClickHandlers is { Count: > 0 } ||
+         (Context.EffectiveCard.ClickBehaviour is not null &&
+          (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
+           Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null)));
 
     private async Task OnSeriesClick(SeriesClickEventArgs args)
     {
