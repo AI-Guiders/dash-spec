@@ -128,8 +128,12 @@ else if (IsChartFamily)
                                           Title="@SeriesTitle(series)"
                                           Fill="@SeriesColor(series)" />
                     }
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
-                    <RadzenValueAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto">
+                        <RadzenGridLines Visible="@GridLinesX" />
+                    </RadzenCategoryAxis>
+                    <RadzenValueAxis>
+                        <RadzenGridLines Visible="@GridLinesY" />
+                    </RadzenValueAxis>
                     break;
                 default:
                     @foreach (var series in Chart.Series)
@@ -140,14 +144,14 @@ else if (IsChartFamily)
                                           ValueProperty="Value"
                                           Title="@SeriesTitle(series)"
                                           Stroke="@SeriesColor(series)">
-                            <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                            <RadzenMarkers Visible="@MarkersVisible" MarkerType="MarkerType.Circle" />
                         </RadzenLineSeries>
                     }
                     <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto">
-                        <RadzenGridLines Visible="true" />
+                        <RadzenGridLines Visible="@GridLinesX" />
                     </RadzenCategoryAxis>
                     <RadzenValueAxis>
-                        <RadzenGridLines Visible="true" />
+                        <RadzenGridLines Visible="@GridLinesY" />
                     </RadzenValueAxis>
                     break;
             }
@@ -233,6 +237,12 @@ else
     /// <summary>Horizontal bars (bar/histogram): RadzenBarSeries vs the default vertical columns.</summary>
     private bool IsHorizontal =>
         Context.EffectiveCard.ChartPresentation?.Orientation == ChartOrientation.Horizontal;
+
+    private bool GridLinesX => Context.EffectiveCard.ChartPresentation?.GridLinesX ?? true;
+
+    private bool GridLinesY => Context.EffectiveCard.ChartPresentation?.GridLinesY ?? true;
+
+    private bool MarkersVisible => Context.EffectiveCard.ChartPresentation?.Markers ?? true;
 
     /// <summary>Pie/donut: the bottom legend carries the category labels — the only label
     /// surface Radzen gives a pie series. Other families: real multi-series splits only.</summary>

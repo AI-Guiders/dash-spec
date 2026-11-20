@@ -16,6 +16,7 @@ public static class ChartChromeProperties
             "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
             "y_max", "value_axis_max", "color_mode", "default", "colors",
             "width", "density", "column_filters", "grouping",
+            "grid_lines", "markers",
         })
         {
             if (!merged.ContainsKey(legacyKey) &&

@@ -14,7 +14,10 @@ public sealed record ChartPresentation(
     bool FillArea = false,
     bool Sparkline = false,
     VizStretchMode StretchMode = VizStretchMode.None,
-    VizStretchDirection StretchDirection = VizStretchDirection.UpOnly)
+    VizStretchDirection StretchDirection = VizStretchDirection.UpOnly,
+    bool GridLinesX = true,
+    bool GridLinesY = true,
+    bool Markers = true)
 {
     public bool IsHorizontal => Orientation is ChartOrientation.Horizontal;
 
@@ -71,6 +74,9 @@ public sealed record ChartPresentation(
             valueAxisMax = 100;
         }
 
+        var (gridLinesX, gridLinesY) = ResolveGridLines(properties, sparkline);
+        var markers = ResolveMarkers(properties, sparkline);
+
         return new ChartPresentation(
             legend,
             height,
@@ -82,7 +88,50 @@ public sealed record ChartPresentation(
             FillArea: fillArea,
             Sparkline: sparkline,
             StretchMode: VizStretch.ResolveMode(properties),
-            StretchDirection: VizStretch.ResolveDirection(properties));
+            StretchDirection: VizStretch.ResolveDirection(properties),
+            GridLinesX: gridLinesX,
+            GridLinesY: gridLinesY,
+            Markers: markers);
+    }
+
+    private static (bool X, bool Y) ResolveGridLines(
+        IReadOnlyDictionary<string, string> properties,
+        bool sparkline)
+    {
+        if (sparkline)
+        {
+            return (false, false);
+        }
+
+        if (!properties.TryGetValue("grid_lines", out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return (true, true);
+        }
+
+        return raw.Trim().ToLowerInvariant() switch
+        {
+            "none" or "off" or "false" or "0" => (false, false),
+            "x" or "vertical" => (true, false),
+            "y" or "horizontal" => (false, true),
+            _ => (true, true),
+        };
+    }
+
+    private static bool ResolveMarkers(
+        IReadOnlyDictionary<string, string> properties,
+        bool sparkline)
+    {
+        if (sparkline)
+        {
+            return false;
+        }
+
+        if (!properties.TryGetValue("markers", out var raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return true;
+        }
+
+        return raw.Trim().ToLowerInvariant() is not ("none" or "off" or "false" or "0");
     }
 
     private static bool TryReadAxisMax(
