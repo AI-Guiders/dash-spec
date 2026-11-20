@@ -1,19 +1,14 @@
-using DashSpec.LanguageServer;
-using MediatR;
+using DashSpec.Execution.Compilation;
+using DashSpec.Modeling.Language.Adapters.DashSpec;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace DashSpec.LanguageServer.Handlers;
 
-internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
+internal sealed class DashSpecDefinitionHandler(DashSpecServerState state) : IDefinitionHandler
 {
-    private readonly DashSpecServerState _state;
-
-    public DashSpecDefinitionHandler(DashSpecServerState state) => _state = state;
-
     public DefinitionRegistrationOptions GetRegistrationOptions(
         DefinitionCapability capability,
         ClientCapabilities clientCapabilities) =>
@@ -27,7 +22,7 @@ internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
         CancellationToken cancellationToken)
     {
         var path = DashSpecLspHelpers.ToPath(request.TextDocument.Uri);
-        var text = _state.GetDocumentText(path);
+        var text = state.GetDocumentText(path);
         if (text is null && File.Exists(path))
         {
             text = File.ReadAllText(path);
@@ -38,66 +33,42 @@ internal sealed class DashSpecDefinitionHandler : IDefinitionHandler
             return Task.FromResult<LocationOrLocationLinks?>(null);
         }
 
-        var lines = text.Split('\n');
-        if (request.Position.Line < 0 || request.Position.Line >= lines.Length)
+        var line = request.Position.Line + 1;
+        var col = request.Position.Character + 1;
+
+        var workspaceTarget = DashSpecEditorIntelligence.TryGetDefinition(
+            path,
+            text,
+            line,
+            col,
+            state.Index);
+
+        if (workspaceTarget is not null && File.Exists(workspaceTarget.FilePath))
         {
-            return Task.FromResult<LocationOrLocationLinks?>(null);
+            var targetLine = Math.Max(0, workspaceTarget.Line - 1);
+            var targetCol = Math.Max(0, workspaceTarget.Column - 1);
+            var location = new Location
+            {
+                Uri = DashSpecLspHelpers.ToUri(workspaceTarget.FilePath),
+                Range = new LspRange(new Position(targetLine, targetCol), new Position(targetLine, targetCol)),
+            };
+            return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
         }
 
-        var line = lines[request.Position.Line].TrimEnd('\r');
-        var word = GetWordAt(line, request.Position.Character);
-        if (string.IsNullOrWhiteSpace(word))
+        var localSpanOpt = DashSpecSymbolIndex.goToDefinition(path, text, line, col);
+        if (Microsoft.FSharp.Core.FSharpOption<AIGuiders.Platform.Modeling.Language.SourceSpan>.get_IsSome(localSpanOpt))
         {
-            return Task.FromResult<LocationOrLocationLinks?>(null);
+            var span = localSpanOpt.Value;
+            var location = new Location
+            {
+                Uri = DashSpecLspHelpers.ToUri(path),
+                Range = new LspRange(
+                    new Position(Math.Max(0, span.Line - 1), Math.Max(0, span.Column - 1)),
+                    new Position(Math.Max(0, span.EndLine - 1), Math.Max(0, span.EndColumn - 1))),
+            };
+            return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
         }
 
-        var kind = DashSpecLspHelpers.GetDefinitionKind(line, word);
-        string? targetPath = kind switch
-        {
-            DashSpecLspHelpers.DefinitionKind.Diagram when _state.Index.Diagrams.TryGetValue(word, out var diagramPath)
-                => diagramPath,
-            DashSpecLspHelpers.DefinitionKind.Presentation when _state.Index.Presentations.TryGetValue(word, out var presentationPath)
-                => presentationPath,
-            _ => null,
-        };
-
-        if (string.IsNullOrWhiteSpace(targetPath) || !File.Exists(targetPath))
-        {
-            return Task.FromResult<LocationOrLocationLinks?>(null);
-        }
-
-        var location = new Location
-        {
-            Uri = DashSpecLspHelpers.ToUri(targetPath),
-            Range = new LspRange(new Position(0, 0), new Position(0, 0)),
-        };
-
-        return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
+        return Task.FromResult<LocationOrLocationLinks?>(null);
     }
-
-    private static string GetWordAt(string line, int character)
-    {
-        if (string.IsNullOrEmpty(line))
-        {
-            return string.Empty;
-        }
-
-        var index = Math.Clamp(character, 0, line.Length);
-        var start = index;
-        while (start > 0 && IsIdentChar(line[start - 1]))
-        {
-            start--;
-        }
-
-        var end = index;
-        while (end < line.Length && IsIdentChar(line[end]))
-        {
-            end++;
-        }
-
-        return line[start..end];
-    }
-
-    private static bool IsIdentChar(char ch) =>
-        char.IsLetterOrDigit(ch) || ch is '_' or '-' or '.';
 }

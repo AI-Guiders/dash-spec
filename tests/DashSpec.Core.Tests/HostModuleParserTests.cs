@@ -46,7 +46,7 @@ public sealed class HostModuleParserTests
             end host
             """;
 
-        var host = HostModuleParser.Parse(text, @"D:\planet\dashspec");
+        var host = DashSpecParser.ParseHost(text, @"D:\planet\dashspec");
 
         Assert.Equal("demo", host.Id);
         Assert.Equal("catalogs/demo.dashcatalog", host.CatalogPath);
@@ -75,7 +75,7 @@ public sealed class HostModuleParserTests
             end host
             """;
 
-        var host = HostModuleParser.Parse(text, @"D:\planet\dashspec");
+        var host = DashSpecParser.ParseHost(text, @"D:\planet\dashspec");
 
         Assert.Equal(2, host.Links.Count);
         Assert.Equal("portal", host.Links[0].Id);
@@ -112,7 +112,7 @@ public sealed class HostModuleParserTests
 
         try
         {
-            var host = HostModuleParser.Parse(text, dir);
+            var host = DashSpecParser.ParseHost(text, dir);
             Assert.NotNull(host.ShellLayout);
             Assert.Equal(LayoutScope.Host, host.ShellLayout!.Value.ModuleScope.Value);
             Assert.Equal(["catalog", "nav"], host.ShellLayout!.Value.Rows[0]);
@@ -141,7 +141,7 @@ public sealed class HostModuleParserTests
             end host
             """;
 
-        var host = HostModuleParser.Parse(text, @"D:\planet\dashspec");
+        var host = DashSpecParser.ParseHost(text, @"D:\planet\dashspec");
 
         Assert.Equal("demo", host.Id);
         Assert.Equal("catalogs/demo.ds", host.CatalogPath);
@@ -159,7 +159,7 @@ public sealed class HostModuleParserTests
             end host
             """;
 
-        var ex = Assert.Throws<DashSpecParseException>(() => HostModuleParser.Parse(text, null));
+        var ex = Assert.Throws<DashSpecParseException>(() => DashSpecParser.ParseHost(text, null));
         Assert.Contains("catalog", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

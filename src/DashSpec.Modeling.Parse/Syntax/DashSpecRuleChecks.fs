@@ -159,6 +159,8 @@ module DashSpecRuleChecks =
 
                 if cards then
                     cardsDepth.Value <- cardsDepth.Value - 1
+            | DashSpecAstNode.EndBlock n when n.EndKeyword = DashSpecBlockKeyword.Other "}" ->
+                ()
             | DashSpecAstNode.EndBlock n ->
                 if blockStack.Count = 0 then
                     signal DashSpecRule.ExtraEndBlock "unexpected end block" n.Span

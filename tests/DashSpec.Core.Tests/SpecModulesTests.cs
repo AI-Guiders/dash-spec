@@ -509,7 +509,7 @@ public class SpecModulesTests
     /// <summary>Parses a palette unit file into a library: the product resolves palettes in the parser, so the composition lives here.</summary>
     private static SpecLibrary LoadPaletteFromFile(string path)
     {
-        var (id, properties) = PaletteModuleParser.ParsePaletteFile(File.ReadAllText(path));
+        var (id, properties) = DashSpecParser.ParsePaletteFile(File.ReadAllText(path));
         return SpecLibrary.FromPalette(id, properties);
     }
 

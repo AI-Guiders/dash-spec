@@ -9,7 +9,7 @@ namespace DashSpec.Execution.Runtime;
 /// timeshift metadata steps). Branch, not mutation: the raw sibling slot keeps its
 /// own ungrouped query.
 /// </summary>
-public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
+public sealed record GroupByStepSpec(string By, string? Agg, string? Value, bool Distinct = false)
 {
     public const string PluginIdName = "summarize";
 
@@ -46,6 +46,7 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
     public static GroupByStepSpec Parse(Modeling.Parse.DataFlow.DashflowTransformParam[] parameters)
     {
         string? by = null, agg = null, value = null;
+        var distinct = false;
 
         foreach (var parameter in parameters)
         {
@@ -60,6 +61,12 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
             else if (string.Equals(parameter.Key, "value", StringComparison.OrdinalIgnoreCase))
             {
                 value = parameter.Value;
+            }
+            else if (string.Equals(parameter.Key, "distinct", StringComparison.OrdinalIgnoreCase))
+            {
+                var raw = parameter.Value?.Trim();
+                distinct = string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(raw, "on", StringComparison.OrdinalIgnoreCase);
             }
         }
 
@@ -83,23 +90,26 @@ public sealed record GroupByStepSpec(string By, string? Agg, string? Value)
                 $"summarize: unknown agg '{agg}' — expected one of {string.Join("|", KnownAggregates)}.");
         }
 
-        var needsValue = agg != "count";
+        var needsValue = agg != "count" || distinct;
 
         if (needsValue && string.IsNullOrWhiteSpace(value))
         {
             throw new DashSpecParseException(
-                $"summarize: the 'value' parameter (the aggregate's argument column) is required for agg = {agg}.");
+                $"summarize: the 'value' parameter (the aggregate's argument column) is required for agg = {agg}" +
+                (distinct ? " with distinct = true." : "."));
         }
 
-        return new GroupByStepSpec(by.Trim(), agg, string.IsNullOrWhiteSpace(value) ? null : value.Trim());
+        return new GroupByStepSpec(by.Trim(), agg, string.IsNullOrWhiteSpace(value) ? null : value.Trim(), distinct);
     }
 
     /// <summary>The aggregate expression; the result column is always <c>value</c> —
     /// the grouped slot's row type declares it (e.g. <c>long value</c>).</summary>
     public string SqlAggregate =>
-        Agg == "count"
-            ? $"COUNT({Value ?? "*"})"
-            : $"{Agg!.ToUpperInvariant()}({Value})";
+        Distinct
+            ? $"{Agg!.ToUpperInvariant()}(DISTINCT {Value})"
+            : Agg == "count"
+                ? $"COUNT({Value ?? "*"})"
+                : $"{Agg!.ToUpperInvariant()}({Value})";
 
     public string SelectList => $"{By} AS {By}, {SqlAggregate} AS {AggregateColumn}";
 

@@ -16,7 +16,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Layout_unit_from_the_demo_parses()
     {
-        var board = LayoutModuleParser.ParseLayoutFile(ReadUnit("samples/demo/layouts/host-topbar.ds"));
+        var board = DashSpecParser.ParseLayoutFile(ReadUnit("samples/demo/layouts/host-topbar.ds"));
 
         Assert.NotNull(board);
     }
@@ -24,7 +24,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Palette_unit_from_the_demo_parses()
     {
-        var (id, properties) = PaletteModuleParser.ParsePaletteFile(ReadUnit("samples/demo/palettes/demo-apps.ds"));
+        var (id, properties) = DashSpecParser.ParsePaletteFile(ReadUnit("samples/demo/palettes/demo-apps.ds"));
 
         Assert.Equal("demo_apps", id);
         Assert.Equal("#94a3b8", properties["default"]);
@@ -33,7 +33,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Diagram_unit_from_the_demo_parses()
     {
-        var (id, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
+        var (id, fragment) = DashSpecParser.ParseDiagramFileWithId(
             ReadUnit("samples/demo/diagrams/dau-bar.ds"),
             Repo("samples/demo/diagrams"));
 
@@ -44,7 +44,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Tooltip_unit_from_the_demo_parses()
     {
-        var (id, definition) = TooltipModuleParser.ParseTooltipFileWithId(
+        var (id, definition) = DashSpecParser.ParseTooltipFileWithId(
             ReadUnit("samples/demo/tooltips/peak-apps.ds"));
 
         Assert.False(string.IsNullOrWhiteSpace(id));
@@ -62,7 +62,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Presentation_unit_with_header_parses()
     {
-        var (id, block) = PresentationModuleParser.ParsePresentationFileWithId(
+        var (id, block) = DashSpecParser.ParsePresentationFileWithId(
             ReadUnit("src/DashSpec.Execution.Core/stdlib/presentation/bar_stacked_360.ds"),
             null);
 
@@ -73,7 +73,7 @@ public sealed class UnitBridgeHeaderTests
     [Fact]
     public void Host_unit_from_the_demo_parses()
     {
-        var host = HostModuleParser.Parse(ReadUnit("samples/demo/demo.ds"), Repo("samples/demo"));
+        var host = DashSpecParser.ParseHost(ReadUnit("samples/demo/demo.ds"), Repo("samples/demo"));
 
         Assert.NotNull(host);
     }

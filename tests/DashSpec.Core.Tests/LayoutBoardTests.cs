@@ -697,7 +697,7 @@ end section
     public void Parse_layout_module_requires_scope()
     {
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            LayoutModuleParser.ParseLayoutFile("""
+            DashSpecParser.ParseLayoutFile("""
                 module layout g
                 
                 [ Q ]

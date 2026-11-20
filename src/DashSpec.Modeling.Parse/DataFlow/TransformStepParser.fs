@@ -59,7 +59,7 @@ module TransformStepParser =
                         || (isSlashChain && kinds |> List.exists (fun declared -> declared = "ident" || declared = "iana"))
 
                     if not (accepts kind) then
-                        raise (DashSpecParseException(hint))
+                        raise (DashSpecParseException(hint, prop.Span.Start))
                 | None -> ()
 
                 if isSlashChain then
@@ -83,7 +83,8 @@ module TransformStepParser =
 
             raise (
                 DashSpecParseException(
-                    $"transformer '{transformerId}': unknown transform '{pluginId}' — declared: {known}"))
+                    $"transformer '{transformerId}': unknown transform '{pluginId}' — declared: {known}",
+                    block.Span.Start))
 
         let hasBrace =
             block.Tokens
@@ -94,7 +95,8 @@ module TransformStepParser =
             | Some decl when decl.RequiresParameterBlock ->
                 raise (
                     DashSpecParseException(
-                        $"transformer '{transformerId}': transform use {pluginId} requires a parameter block."))
+                        $"transformer '{transformerId}': transform use {pluginId} requires a parameter block.",
+                        block.Span.Start))
             | _ -> { PluginId = pluginId; Parameters = [||] }
         else
             let parameters = ResizeArray<string * string>()
@@ -105,13 +107,13 @@ module TransformStepParser =
                     match validateAndExtractParamValue pluginId prop with
                     | Some value -> parameters.Add(prop.Key, value)
                     | None ->
-                        raise (DashSpecParseException($"transformer '{transformerId}': invalid parameter '{prop.Key} = {prop.ValueText}' in transform '{pluginId}'."))
+                        raise (DashSpecParseException($"transformer '{transformerId}': invalid parameter '{prop.Key} = {prop.ValueText}' in transform '{pluginId}'.", prop.Span.Start))
                 | DashSpecAstNode.BlankLine _
                 | DashSpecAstNode.EndBlock _ -> ()
                 | memberNode when DashSpecAst.isTrivia memberNode -> ()
                 | other ->
                     let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"transformer '{transformerId}': unexpected statement '{lineText}' in transform '{pluginId}'."))
+                    raise (DashSpecParseException($"transformer '{transformerId}': unexpected statement '{lineText}' in transform '{pluginId}'.", (DashSpecAst.span other).Start))
 
             let normalized =
                 BuiltinScalarTransforms.normalizeStep transformerId pluginId (parameters.ToArray())

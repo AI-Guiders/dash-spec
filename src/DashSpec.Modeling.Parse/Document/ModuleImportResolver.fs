@@ -55,18 +55,22 @@ module ModuleImportResolver =
                     |> HashSet<string>
 
                 cfg.ImplicitImports
-                |> Seq.choose (fun line ->
-                    // "presentations from DashSpec.Std" → directive
-                    let parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    match parts with
-                    | [| kindKeyword; "from"; ns |] ->
-                        match ImportKindRegistry.tryFindByKeyword kindKeyword with
-                        | Some kind ->
-                            let key = $"{ImportKindRegistry.keyword kind}|{ns}"
-                            if not (headerKeys.Contains key) then
-                                Some { Kind = kind; Namespace = ns; Alias = None; SourceOffset = 0 }
-                            else None
-                        | None -> None
+                |> Seq.choose (fun imp ->
+                    let kindOpt =
+                        imp.ImportKind
+                        |> Option.orElseWith (fun () -> imp.Kind |> Option.bind ImportKindRegistry.tryFindByKeyword)
+                    let ns = imp.TargetPath.Text
+                    match kindOpt with
+                    | Some kind when not (String.IsNullOrWhiteSpace ns) ->
+                        let key = $"{ImportKindRegistry.keyword kind}|{ns}"
+                        if headerKeys.Add key then
+                            Some
+                                { Kind = kind
+                                  Namespace = ns
+                                  Alias = imp.Alias
+                                  SourceOffset = imp.Span.Start }
+                        else
+                            None
                     | _ -> None)
                 |> Seq.toList
             | _ -> []

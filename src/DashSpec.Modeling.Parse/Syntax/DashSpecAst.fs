@@ -188,3 +188,22 @@ module DashSpecAst =
             for child in members node do
                 yield! descendants child
         }
+
+    /// Deepest <see cref="DashSpecAstNode"/> in <paramref name="root"/> whose span contains <paramref name="offset"/>.
+    let rec tryFindNodeAt (offset: int) (root: DashSpecAstNode) : DashSpecAstNode option =
+        let s = span root
+        if offset < s.Start || offset > s.End then
+            None
+        else
+            let childMatch =
+                members root
+                |> Array.tryPick (tryFindNodeAt offset)
+            match childMatch with
+            | Some deeper -> Some deeper
+            | None -> Some root
+
+    /// Canonical outline label of the deepest AST node at <paramref name="offset"/>.
+    let outlineLabelAt (offset: int) (root: DashSpecAstNode) : string =
+        match tryFindNodeAt offset root with
+        | Some node -> outlineLabel node
+        | None -> "reference"

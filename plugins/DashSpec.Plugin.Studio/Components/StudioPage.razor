@@ -1,0 +1,898 @@
+@page "/studio"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Text.Json
+@using AIGuiders.Platform.Modeling.Language
+@using DashSpec.Execution.Compilation
+@using Microsoft.JSInterop
+@inject StudioWorkspaceService Workspace
+@inject StudioPresenceTracker Presence
+@inject StudioGitService GitService
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>DashSpec Studio — Monaco LSP, ECharts Graph &amp; Git</PageTitle>
+
+<style>
+    .studio-shell {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 52px);
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        background: #090d16;
+    }
+
+    .studio-topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        height: 36px;
+        padding: 0 0.65rem;
+        border-bottom: 1px solid rgba(140, 155, 180, 0.18);
+        background: #090d16;
+        flex-shrink: 0;
+    }
+
+    .studio-topbar-group {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .studio-icon-btn {
+        border: 1px solid rgba(140, 155, 180, 0.22);
+        background: rgba(30, 41, 59, 0.45);
+        color: #94a3b8;
+        border-radius: 4px;
+        padding: 0.14rem 0.42rem;
+        font-size: 0.78rem;
+        cursor: pointer;
+    }
+
+    .studio-icon-btn:hover {
+        color: #f8fafc;
+        border-color: rgba(96, 165, 250, 0.45);
+    }
+
+    .studio-icon-btn.active {
+        background: rgba(37, 99, 235, 0.32);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.55);
+    }
+
+    .studio-pill-btn {
+        border: 1px solid rgba(140, 155, 180, 0.22);
+        background: rgba(30, 41, 59, 0.45);
+        color: #cbd5e1;
+        border-radius: 5px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .studio-pill-btn:hover {
+        background: rgba(51, 65, 85, 0.65);
+        color: #ffffff;
+    }
+
+    .studio-pill-btn.active,
+    .studio-pill-btn.primary {
+        background: rgba(37, 99, 235, 0.38);
+        color: #93c5fd;
+        border-color: rgba(59, 130, 246, 0.65);
+    }
+
+    .studio-pill-btn.warn {
+        background: rgba(245, 158, 11, 0.25);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .studio-pill-btn.danger {
+        background: rgba(239, 68, 68, 0.22);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .studio-compact-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.22rem 0.45rem;
+        border-radius: 4px;
+        border: 1px solid rgba(140, 155, 180, 0.2);
+        background: rgba(15, 23, 42, 0.85);
+        color: #e2e8f0;
+        font-size: 0.75rem;
+        outline: none;
+    }
+
+    .studio-compact-input:focus {
+        border-color: rgba(59, 130, 246, 0.6);
+    }
+
+    .studio-file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        text-align: left;
+        padding: 0.22rem 0.4rem;
+        margin-bottom: 1px;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.78rem;
+    }
+
+    .studio-file-item:hover {
+        background: rgba(59, 130, 246, 0.14);
+    }
+
+    .studio-file-item.active {
+        background: rgba(37, 99, 235, 0.28);
+        border-color: rgba(59, 130, 246, 0.55);
+    }
+
+    .studio-badge {
+        display: inline-block;
+        padding: 0.06rem 0.36rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        background: rgba(100, 116, 139, 0.26);
+    }
+
+    .studio-badge.draft {
+        background: rgba(245, 158, 11, 0.25);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+
+    .studio-badge.conflict {
+        background: rgba(239, 68, 68, 0.28);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.55);
+    }
+
+    .studio-badge.presence {
+        background: rgba(16, 185, 129, 0.24);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+
+    .studio-badge.ok {
+        background: rgba(16, 185, 129, 0.22);
+        color: #6ee7b7;
+    }
+
+    .studio-diag-row {
+        cursor: pointer;
+        font-size: 0.78rem;
+    }
+
+    .studio-diag-row:hover {
+        background: rgba(59, 130, 246, 0.12);
+    }
+
+    .studio-diag-error {
+        color: #f87171;
+    }
+
+    .studio-diag-warning {
+        color: #fbbf24;
+    }
+
+    .studio-publish-popover {
+        position: absolute;
+        top: 40px;
+        right: 12px;
+        z-index: 1200;
+        width: 340px;
+        padding: 0.8rem;
+        border-radius: 8px;
+        border: 1px solid rgba(59, 130, 246, 0.45);
+        background: #0f172a;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+    }
+
+    .studio-mode-switch {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+        padding: 2px;
+        border-radius: 5px;
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(140, 155, 180, 0.18);
+    }
+
+    .studio-mode-btn {
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 0.71rem;
+        font-weight: 600;
+        padding: 0.18rem 0.25rem;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .studio-mode-btn:hover {
+        color: #e2e8f0;
+    }
+
+    .studio-mode-btn.active {
+        background: rgba(37, 99, 235, 0.35);
+        color: #60a5fa;
+    }
+
+    .studio-tree-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0.18rem 0.35rem;
+        margin-top: 2px;
+        border: none;
+        border-radius: 4px;
+        background: rgba(30, 41, 59, 0.38);
+        color: #cbd5e1;
+        font-size: 0.74rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .studio-tree-group:hover {
+        background: rgba(51, 65, 85, 0.58);
+    }
+</style>
+
+<div class="studio-shell" data-testid="dashspec-studio" style="position:relative;">
+    <!-- TOPBAR (36px single header bar) -->
+    <StudioTopBar Inspection="@_inspection"
+                  GitOverview="@_gitOverview"
+                  WorkspaceRoot="@_workspaceRoot"
+                  ActiveAuthors="@(Presence.GetActiveAuthors(_authorId))"
+                  AuthorDrafts="@(Workspace.GetAuthorDrafts(_authorId))"
+                  AuthorName="@_authorName"
+                  CommitToGitOnPublish="@_commitToGitOnPublish"
+                  CommitMessage="@_commitMessage"
+                  ShowLeftExplorer="@_showLeftExplorer"
+                  ShowRightInspector="@_showRightInspector"
+                  ShowDiffMode="@_showDiffMode"
+                  OnToggleLeftExplorer="@ToggleLeftExplorerAsync"
+                  OnToggleRightInspector="@ToggleRightInspectorAsync"
+                  OnToggleDiffMode="@ToggleDiffModeAsync"
+                  OnFormat="@FormatCurrentDraftAsync"
+                  OnRebase="@RebaseCurrentDraftAsync"
+                  OnRevertFile="@DiscardCurrentFileDraftAsync"
+                  OnPublish="@PublishDraftsAsync"
+                  OnDiscardAll="@DiscardAllDraftsAsync"
+                  OnAuthorNameChanged="@OnAuthorNameChangedAsync"
+                  OnCommitToGitChanged="@(v => _commitToGitOnPublish = v)"
+                  OnCommitMessageChanged="@(v => _commitMessage = v)" />
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <div class="studio-topbar" style="height:28px;border-color:@(_statusIsError ? "rgba(239,68,68,0.6)" : "rgba(16,185,129,0.5)");">
+            <span style="font-size:0.78rem;">@_statusMessage</span>
+            <button type="button" class="studio-icon-btn" @onclick="@(() => _statusMessage = null)">✕</button>
+        </div>
+    }
+
+    <!-- 3 HORIZONTAL ZONES: LEFT (Project Explorer) | CENTER (Code / Diff) | RIGHT (Structure + Symbol Graph) -->
+    <RadzenSplitter Style="flex:1;min-height:0;border:none;">
+        <!-- LEFT ZONE: Project Explorer only -->
+        <RadzenSplitterPane Size="225px"
+                            Min="175px"
+                            Max="380px"
+                            Collapsible="true"
+                            Resizable="true"
+                            Visible="@_showLeftExplorer">
+            <StudioLeftSidebar Workspace="@Workspace"
+                               Presence="@Presence"
+                               AuthorId="@_authorId"
+                               Units="@_units"
+                               SelectedPath="@_selectedPath"
+                               GitOverview="@_gitOverview"
+                               AuthorDrafts="@(Workspace.GetAuthorDrafts(_authorId))"
+                               OnRefreshWorkspace="@RefreshWorkspaceAsync"
+                               OnSelectFile="@SelectFileAsync" />
+        </RadzenSplitterPane>
+
+        <!-- CENTER ZONE: Code Editor (or Diff Mode) + Bottom Diagnostics/References Zone -->
+        <RadzenSplitterPane Size="@(_showRightInspector ? "58%" : "84%")"
+                            Min="320px"
+                            Collapsible="false"
+                            Resizable="true">
+            <div style="display:flex;flex-direction:column;height:100%;background:#0b0f19;">
+                <div style="flex:1;min-height:0;position:relative;">
+                    @if (_showDiffMode)
+                    {
+                        <div id="studio-monaco-diff"
+                             data-testid="studio-monaco-diff"
+                             style="width:100%;height:100%;"></div>
+                    }
+                    else
+                    {
+                        <div id="studio-monaco-container"
+                             data-testid="studio-monaco-editor"
+                             style="width:100%;height:100%;"></div>
+                    }
+                </div>
+
+                <!-- BOTTOM ZONE: Diagnostics & References Drawer + 26px Status Bar -->
+                <StudioBottomBar Inspection="@_inspection"
+                                 ShowBottomDrawer="@_showBottomDrawer"
+                                 ActiveMode="@_bottomDrawerMode"
+                                 ReferencesTargetSymbol="@_referencesTargetSymbol"
+                                 FoundReferences="@_foundReferences"
+                                 ActiveCursorSymbolDisplay="@_activeCursorSymbolDisplay"
+                                 CursorLine="@_cursorLine"
+                                 CursorColumn="@_cursorColumn"
+                                 OnModeChanged="@OnBottomModeChangedAsync"
+                                 OnToggleDrawerWithMode="@ToggleBottomDrawerWithModeAsync"
+                                 OnCloseDrawer="@(() => _showBottomDrawer = false)"
+                                 OnNavigateToReference="@(r => OnNavigateToDefinitionAsync(r.RelativePath, r.LineNumber, r.Column))"
+                                 OnRevealLine="@(pos => RevealLineInMonacoAsync(pos.Line, pos.Column))" />
+            </div>
+        </RadzenSplitterPane>
+
+        <!-- RIGHT ZONE: Full-Height Graph OR Full-Height Document Tree -->
+        <RadzenSplitterPane Size="30%"
+                            Min="230px"
+                            Max="55%"
+                            Collapsible="true"
+                            Resizable="true"
+                            Visible="@_showRightInspector">
+            <StudioRightInspector Inspection="@_inspection"
+                                  ActiveMode="@_rightInspectorMode"
+                                  CursorLine="@_cursorLine"
+                                  GraphBadgeCount="@GraphBadgeCount"
+                                  GraphFollowsCursor="@_graphFollowsCursor"
+                                  FocusedGraphSymbol="@_focusedGraphSymbol"
+                                  OnModeChanged="@OnRightInspectorModeChangedAsync"
+                                  OnOutlineRowClick="@OnOutlineRowClickedAsync"
+                                  OnGraphFollowsCursorChanged="@(v => _graphFollowsCursor = v)"
+                                  OnFocusedGraphSymbolChanged="@OnFocusedGraphSymbolChangedAsync" />
+        </RadzenSplitterPane>
+    </RadzenSplitter>
+</div>
+
+@code {
+    private string _authorName = Environment.UserName;
+    private string _authorId = string.IsNullOrWhiteSpace(Environment.UserName) ? "author-default" : Environment.UserName.Trim();
+    private string _workspaceRoot = string.Empty;
+    private IReadOnlyList<DashSpecUnitDeclaration> _units = [];
+    private StudioGitOverview _gitOverview = new(false, "—", [], []);
+    private string? _selectedPath;
+    private StudioDocumentInspection? _inspection;
+    private string _commitMessage = string.Empty;
+    private bool _commitToGitOnPublish = true;
+    private bool _showLeftExplorer = true;
+    private bool _showRightInspector = true;
+    private string _rightInspectorMode = "tree";
+    private bool _showDiffMode;
+    private bool _showBottomDrawer;
+    private string _bottomDrawerMode = "problems";
+    private string? _focusedGraphSymbol;
+    private string? _referencesTargetSymbol;
+    private string? _activeCursorSymbolDisplay;
+    private bool _graphFollowsCursor = true;
+    private int _cursorLine = 1;
+    private int _cursorColumn = 1;
+    private IReadOnlyList<StudioReferenceItemDto> _foundReferences = [];
+    private string? _statusMessage;
+    private bool _statusIsError;
+    private DotNetObjectReference<StudioPage>? _dotNetRef;
+    private bool _needsJsRender;
+
+    private int GraphBadgeCount =>
+        _inspection?.FlowGraph is { } fg ? fg.Nodes.Count
+        : _inspection?.WiringGraph is { } wg ? wg.Nodes.Count
+        : _inspection?.Snapshot.Nodes.Count ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+        Presence.Changed += OnPresenceChanged;
+        await RefreshWorkspaceAsync();
+
+        var initial = _units.FirstOrDefault(u => u.Kind.Equals("flow", StringComparison.OrdinalIgnoreCase))
+            ?? _units.FirstOrDefault(u => u.Kind.Equals("section", StringComparison.OrdinalIgnoreCase))
+            ?? _units.FirstOrDefault(u => u.Kind.Equals("dashboard", StringComparison.OrdinalIgnoreCase))
+            ?? _units.FirstOrDefault();
+
+        if (initial is not null)
+        {
+            await SelectFileAsync(Workspace.ToRelativePath(initial.Path));
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_inspection is null || _dotNetRef is null)
+        {
+            return;
+        }
+
+        if (firstRender || _needsJsRender)
+        {
+            _needsJsRender = false;
+            await MountActiveJsWidgetsAsync();
+        }
+    }
+
+    private async Task MountActiveJsWidgetsAsync()
+    {
+        if (_inspection is null || _dotNetRef is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_showDiffMode)
+            {
+                await JS.InvokeVoidAsync(
+                    "dashspecStudio.mountDiffEditor",
+                    "studio-monaco-diff",
+                    _inspection.DiskText,
+                    _inspection.Text);
+            }
+            else
+            {
+                var markersJson = JsonSerializer.Serialize(StudioGraphAndLspBuilder.BuildMonacoMarkers(_inspection));
+                await JS.InvokeVoidAsync(
+                    "dashspecStudio.mountEditor",
+                    "studio-monaco-container",
+                    _inspection.RelativePath,
+                    _inspection.Text,
+                    markersJson,
+                    _dotNetRef);
+            }
+
+            if (_showRightInspector && _rightInspectorMode == "graph")
+            {
+                var optionJson = StudioGraphAndLspBuilder.BuildEChartsGraphOptionJson(_inspection, _focusedGraphSymbol);
+                await JS.InvokeVoidAsync("dashspecStudio.renderGraph", "studio-echarts-graph", optionJson);
+            }
+        }
+        catch
+        {
+            // Circuit may have disconnected
+        }
+    }
+
+    private async Task ToggleLeftExplorerAsync()
+    {
+        _showLeftExplorer = !_showLeftExplorer;
+        _needsJsRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnRightInspectorModeChangedAsync(string mode)
+    {
+        _rightInspectorMode = mode;
+        _needsJsRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleRightInspectorAsync()
+    {
+        _showRightInspector = !_showRightInspector;
+        _needsJsRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleDiffModeAsync()
+    {
+        _showDiffMode = !_showDiffMode;
+        _needsJsRender = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnBottomModeChangedAsync(string mode)
+    {
+        _bottomDrawerMode = mode;
+        _showBottomDrawer = true;
+        if (mode == "references" && _inspection is not null)
+        {
+            await RefreshReferencesAtAsync(_cursorLine, _cursorColumn);
+        }
+    }
+
+    private async Task ToggleBottomDrawerWithModeAsync(string mode)
+    {
+        if (_showBottomDrawer && _bottomDrawerMode == mode)
+        {
+            _showBottomDrawer = false;
+        }
+        else
+        {
+            _bottomDrawerMode = mode;
+            _showBottomDrawer = true;
+            if (mode == "references" && _inspection is not null)
+            {
+                await RefreshReferencesAtAsync(_cursorLine, _cursorColumn);
+            }
+        }
+    }
+
+    private async Task OnFocusedGraphSymbolChangedAsync(string? symbol)
+    {
+        _focusedGraphSymbol = symbol;
+        await RefreshGraphFocusAsync();
+    }
+
+    private async Task FocusSymbolInGraphAsync(string symbolName)
+    {
+        _focusedGraphSymbol = symbolName;
+        if (!_showRightInspector || _rightInspectorMode != "graph")
+        {
+            _showRightInspector = true;
+            _rightInspectorMode = "graph";
+            _needsJsRender = true;
+        }
+        else
+        {
+            await RefreshGraphFocusAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshWorkspaceAsync()
+    {
+        _workspaceRoot = Workspace.ResolveWorkspaceRoot();
+        _units = Workspace.GetWorkspaceIndex().Units;
+        _gitOverview = GitService.GetOverview(_workspaceRoot);
+        if (_selectedPath is not null)
+        {
+            _inspection = await Workspace.InspectDocumentAsync(_authorId, _authorName, _selectedPath);
+            _needsJsRender = true;
+        }
+    }
+
+    private async Task SelectFileAsync(string relativePath)
+    {
+        _selectedPath = relativePath;
+        _focusedGraphSymbol = null;
+        _inspection = await Workspace.InspectDocumentAsync(_authorId, _authorName, relativePath);
+        await RefreshReferencesAtAsync(1, 1);
+        _needsJsRender = true;
+        try
+        {
+            if (!_showDiffMode)
+            {
+                var markersJson = JsonSerializer.Serialize(StudioGraphAndLspBuilder.BuildMonacoMarkers(_inspection));
+                await JS.InvokeVoidAsync("dashspecStudio.setValue", _inspection.Text, markersJson, _inspection.RelativePath);
+            }
+        }
+        catch
+        {
+            // Editor may not be mounted yet on first render
+        }
+    }
+
+    private async Task RefreshGraphFocusAsync()
+    {
+        if (_inspection is null || !_showRightInspector || _rightInspectorMode != "graph")
+        {
+            return;
+        }
+
+        try
+        {
+            var optionJson = StudioGraphAndLspBuilder.BuildEChartsGraphOptionJson(_inspection, _focusedGraphSymbol);
+            await JS.InvokeVoidAsync("dashspecStudio.renderGraph", "studio-echarts-graph", optionJson);
+        }
+        catch
+        {
+            // Circuit may have disconnected
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnFocusSymbolGraphAtCursorAsync(int lineNumber, int column)
+    {
+        if (_inspection is null)
+        {
+            return;
+        }
+
+        var root = Workspace.ResolveWorkspaceRoot();
+        var fullPath = Path.GetFullPath(Path.Combine(root, _inspection.RelativePath));
+        var req = new LanguageRequest(fullPath, lineNumber, column, _inspection.Text, root, LanguageIds.Dashspec);
+        var sym = await Workspace.LanguageBackend.GetSymbolAtPositionAsync(req, CancellationToken.None);
+        if (sym is not null && !string.IsNullOrWhiteSpace(sym.Name))
+        {
+            await FocusSymbolInGraphAsync(sym.Name);
+        }
+    }
+
+    private async Task RefreshReferencesAtAsync(int lineNumber, int column)
+    {
+        if (_inspection is null)
+        {
+            return;
+        }
+
+        var refs = await StudioGraphAndLspBuilder.FindRichReferencesAsync(
+            Workspace,
+            _inspection.RelativePath,
+            _inspection.Text,
+            lineNumber,
+            column);
+
+        if (refs.Count == 0 && lineNumber == 1 && column == 1 && _inspection.Unit is { } u)
+        {
+            refs = await StudioGraphAndLspBuilder.FindRichReferencesAsync(
+                Workspace,
+                _inspection.RelativePath,
+                _inspection.Text,
+                Math.Max(1, u.Line),
+                16);
+        }
+
+        _foundReferences = refs;
+        _referencesTargetSymbol = _foundReferences.FirstOrDefault()?.SymbolName;
+    }
+
+    private async Task OnOutlineRowClickedAsync(StudioOutlineRow row)
+    {
+        await RevealLineInMonacoAsync(row.Line, row.Column);
+        if (!string.IsNullOrEmpty(row.SymbolId) && _showRightInspector && _graphFollowsCursor)
+        {
+            _focusedGraphSymbol = row.SymbolId;
+            await RefreshGraphFocusAsync();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMonacoCursorChangedAsync(int lineNumber, int column)
+    {
+        _cursorLine = lineNumber;
+        _cursorColumn = column;
+        if (_inspection is null)
+        {
+            return;
+        }
+
+        var root = Workspace.ResolveWorkspaceRoot();
+        var fullPath = Path.GetFullPath(Path.Combine(root, _inspection.RelativePath));
+        var req = new LanguageRequest(fullPath, lineNumber, column, _inspection.Text, root, LanguageIds.Dashspec);
+        var sym = await Workspace.LanguageBackend.GetSymbolAtPositionAsync(req, CancellationToken.None);
+        if (sym is not null && !string.IsNullOrWhiteSpace(sym.Name))
+        {
+            _activeCursorSymbolDisplay = $"{sym.Kind} {sym.Name}";
+
+            if (_graphFollowsCursor && _showRightInspector)
+            {
+                var graphNodes = StudioGraphAndLspBuilder.GetGraphNodeIds(_inspection);
+                var matchedNode = graphNodes.FirstOrDefault(n => n.Equals(sym.Name, StringComparison.OrdinalIgnoreCase));
+                if (matchedNode is not null && !string.Equals(_focusedGraphSymbol, matchedNode, StringComparison.OrdinalIgnoreCase))
+                {
+                    _focusedGraphSymbol = matchedNode;
+                    await RefreshGraphFocusAsync();
+                }
+            }
+        }
+        else
+        {
+            _activeCursorSymbolDisplay = null;
+        }
+
+        await RefreshReferencesAtAsync(lineNumber, column);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnFindReferencesAtCursorAsync(int lineNumber, int column)
+    {
+        _cursorLine = lineNumber;
+        _cursorColumn = column;
+        _bottomDrawerMode = "references";
+        _showBottomDrawer = true;
+        await RefreshReferencesAtAsync(lineNumber, column);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnMonacoTextChangedAsync(string newText)
+    {
+        if (_selectedPath is null)
+        {
+            return;
+        }
+
+        _inspection = await Workspace.UpdateDraftAsync(_authorId, _authorName, _selectedPath, newText);
+        var markersJson = JsonSerializer.Serialize(StudioGraphAndLspBuilder.BuildMonacoMarkers(_inspection));
+        try
+        {
+            await JS.InvokeVoidAsync("dashspecStudio.setMarkers", markersJson);
+            if (_showRightInspector)
+            {
+                await RefreshGraphFocusAsync();
+            }
+        }
+        catch
+        {
+            // Circuit may have disconnected
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnNavigateToDefinitionAsync(string targetRelativePath, int lineNumber, int column)
+    {
+        await SelectFileAsync(targetRelativePath);
+        if (_showDiffMode)
+        {
+            _showDiffMode = false;
+            _needsJsRender = true;
+        }
+
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(90);
+        await RevealLineInMonacoAsync(lineNumber, column);
+    }
+
+    [JSInvokable]
+    public async Task OnGraphNodeClickedAsync(string nodeName)
+    {
+        _focusedGraphSymbol = string.Equals(_focusedGraphSymbol, nodeName, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : nodeName;
+        await RefreshGraphFocusAsync();
+        await JumpToSymbolByNameAsync(nodeName);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task JumpToSymbolByNameAsync(string symbolName)
+    {
+        if (_inspection is null)
+        {
+            return;
+        }
+
+        var cleanName = symbolName.Split(' ', '.')[0];
+        var outlineRows = StudioUiHelpers.BuildSnapshotOutlineRows(_inspection);
+        var match = outlineRows.FirstOrDefault(r =>
+            string.Equals(r.SymbolId, cleanName, StringComparison.OrdinalIgnoreCase));
+        if (match is not null)
+        {
+            if (_showDiffMode)
+            {
+                _showDiffMode = false;
+                _needsJsRender = true;
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(90);
+            }
+
+            await RevealLineInMonacoAsync(match.Line, match.Column);
+            return;
+        }
+
+        var targetUnit = _units.FirstOrDefault(u => u.Id.Equals(cleanName, StringComparison.OrdinalIgnoreCase));
+        if (targetUnit is not null)
+        {
+            await OnNavigateToDefinitionAsync(Workspace.ToRelativePath(targetUnit.Path), targetUnit.Line, 1);
+        }
+    }
+
+    private async Task RevealLineInMonacoAsync(int lineNumber, int column)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("dashspecStudio.revealLine", lineNumber, column);
+        }
+        catch
+        {
+            // Circuit may have disconnected
+        }
+    }
+
+    private async Task OnAuthorNameChangedAsync(string newName)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(newName) ? Environment.UserName : newName.Trim();
+        if (!string.Equals(_authorId, trimmed, StringComparison.OrdinalIgnoreCase))
+        {
+            Presence.RemoveAuthor(_authorId);
+            _authorId = trimmed;
+        }
+
+        _authorName = trimmed;
+        if (_selectedPath is not null)
+        {
+            _inspection = await Workspace.InspectDocumentAsync(_authorId, _authorName, _selectedPath);
+        }
+    }
+
+    private async Task FormatCurrentDraftAsync()
+    {
+        if (_selectedPath is null || _inspection is null)
+        {
+            return;
+        }
+
+        _inspection = await Workspace.FormatDraftAsync(_authorId, _authorName, _selectedPath, _inspection.Text);
+        _needsJsRender = true;
+    }
+
+    private async Task DiscardCurrentFileDraftAsync()
+    {
+        if (_selectedPath is null)
+        {
+            return;
+        }
+
+        _inspection = await Workspace.DiscardDraftAsync(_authorId, _authorName, _selectedPath);
+        _needsJsRender = true;
+        _statusMessage = $"Черновик файла '{_selectedPath}' сброшен к опубликованной версии.";
+        _statusIsError = false;
+    }
+
+    private async Task RebaseCurrentDraftAsync()
+    {
+        if (_selectedPath is null)
+        {
+            return;
+        }
+
+        _inspection = await Workspace.RebaseDraftOntoDiskAsync(_authorId, _authorName, _selectedPath);
+        _statusMessage = $"Базовый хэш '{_selectedPath}' обновлён до текущей версии на диске.";
+        _statusIsError = false;
+    }
+
+    private async Task DiscardAllDraftsAsync()
+    {
+        Workspace.DiscardAllDrafts(_authorId, _authorName, _selectedPath);
+        if (_selectedPath is not null)
+        {
+            _inspection = await Workspace.InspectDocumentAsync(_authorId, _authorName, _selectedPath);
+            _needsJsRender = true;
+        }
+
+        _statusMessage = "Все черновики текущего автора сброшены.";
+        _statusIsError = false;
+    }
+
+    private async Task PublishDraftsAsync()
+    {
+        var outcome = await Workspace.PublishAuthorDraftsAsync(
+            _authorId,
+            _authorName,
+            _commitToGitOnPublish,
+            _commitMessage);
+
+        _statusMessage = outcome.Message;
+        _statusIsError = !outcome.Success;
+        if (outcome.Success)
+        {
+            _commitMessage = string.Empty;
+        }
+
+        await RefreshWorkspaceAsync();
+    }
+
+    private void OnPresenceChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Presence.Changed -= OnPresenceChanged;
+        _dotNetRef?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

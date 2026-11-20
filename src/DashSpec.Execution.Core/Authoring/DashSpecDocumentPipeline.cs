@@ -1,3 +1,5 @@
+using DashSpec.Modeling.Parse.Formatting;
+
 namespace DashSpec.Execution.Authoring;
 
 public static class DashSpecDocumentPipeline
@@ -38,16 +40,22 @@ public static class DashSpecDocumentPipeline
         return working;
     }
 
-    static string FormatDashSpec(string text, EditorConfig.EditorConfigOptions options)
-    {
-        if (DocumentFormatBridge.FormatDashSpec is { } format)
-        {
-            return format(text, options);
-        }
-
-        throw new InvalidOperationException(
-            "DashSpec format bridge not registered. Reference DashSpec.Execution.Core or call ModuleParseRegistration.EnsureRegistered().");
-    }
+    static string FormatDashSpec(string text, EditorConfig.EditorConfigOptions options) =>
+        DashSpecBlockFormatter.format(
+            text,
+            new DashSpecFormatOptions
+            {
+                IndentStyle = options.IndentStyle,
+                IndentSize = options.IndentSize,
+                EndOfLine = options.EndOfLine,
+                TrimTrailingWhitespace = options.TrimTrailingWhitespace,
+                InsertFinalNewline = options.InsertFinalNewline,
+                DashSpecFormatOnSave = options.DashSpecFormatOnSave,
+                DashSpecMaxConsecutiveBlankLines = options.DashSpecMaxConsecutiveBlankLines,
+                DashSpecIndentBlockBody = options.DashSpecIndentBlockBody,
+                DashSpecPreserveBlankLineBeforeEnd = options.DashSpecPreserveBlankLineBeforeEnd,
+                DashSpecBlankLineBetweenBlocks = options.DashSpecBlankLineBetweenBlocks,
+            });
 
     static bool IsDashSpecSurface(string absoluteFilePath)
     {

@@ -5,17 +5,23 @@ open System.Collections.Generic
 open System.IO
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
+open DashSpec.Modeling.Parse.Syntax
 
-/// <summary>Project marker (<c>dashspec.toml</c>) shared by LSP and compile (ADR-0098).</summary>
+/// <summary>Typed project configuration (<c>*.dsproj</c>, <c>module project &lt;id&gt;</c>) shared by LSP, host bootstrap, and compiler (ADR-0098 / ADR-0101).</summary>
 type DashSpecProjectConfig =
     { ProjectRoot: string
       RootNamespace: string option
+      /// <summary>Typed entry-point <c>module host &lt;id&gt;</c> reference (<c>host = &lt;id&gt;</c> or <c>use host &lt;id&gt;</c>).</summary>
+      Host: DotSyntax option
       SourceRoots: IReadOnlyList<string>
       Files: IReadOnlyList<string>
       Exclude: IReadOnlyList<string>
-      /// <summary>Implicit imports (DSL block, raw strings like "presentations from DashSpec.Std"):
+      /// <summary>Typed implicit imports (<c>from &lt;Namespace&gt; import &lt;kind&gt;</c> or <c>from &lt;Namespace&gt; import { … }</c>):
       /// every module in the project sees these namespaces without a per-module import.</summary>
-      ImplicitImports: IReadOnlyList<string> }
+      ImplicitImports: IReadOnlyList<ImportDeclarationSyntax> }
+
+    member this.HostId : string option =
+        this.Host |> Option.map (fun h -> h.Text)
 
 module DashSpecProjectConfig =
 
@@ -24,91 +30,126 @@ module DashSpecProjectConfig =
         if v.Length >= 2 && v.[0] = '"' && v.[v.Length - 1] = '"' then v.Substring(1, v.Length - 2)
         else v
 
-    let private parseBool (value: string) =
-        match value.Trim().ToLowerInvariant() with
-        | "true" | "yes" | "1" -> true
-        | "false" | "no" | "0" -> false
-        | _ -> raise (DashSpecParseException($"Invalid boolean in dashspec.toml: '{value}'."))
+    let private extractStringItems (prop: PropertySyntax) : string list =
+        match prop.Value with
+        | PropertyValueSyntax.BracketList items
+        | PropertyValueSyntax.CommaList items ->
+            items
+            |> Array.map (fun item -> trimQuotes item.Text)
+            |> Array.filter (fun s -> not (String.IsNullOrWhiteSpace s))
+            |> Array.toList
+        | PropertyValueSyntax.StringLiteral s when not (String.IsNullOrWhiteSpace s) ->
+            [ s.Trim() ]
+        | _ ->
+            let inner =
+                prop.ValueText.Trim()
+                |> fun v ->
+                    if v.StartsWith("[") && v.EndsWith("]") then v.Substring(1, v.Length - 2)
+                    else v
 
-    let private parseStringList (value: string) =
-        let inner =
-            value.Trim()
-            |> fun v ->
-                if v.StartsWith("[") && v.EndsWith("]") then v.Substring(1, v.Length - 2)
-                else v
+            inner.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            |> Array.map (fun part -> trimQuotes (part.Trim()))
+            |> Array.filter (fun s -> not (String.IsNullOrWhiteSpace s))
+            |> Array.toList
 
-        inner.Split(',', StringSplitOptions.RemoveEmptyEntries)
-        |> Array.map (fun part -> trimQuotes (part.Trim()))
-        |> Array.toList
-
-    /// <summary>DSL reader for <c>module project</c>: namespace + global import + optional files/exclude.</summary>
-    let load (path: string) =
-        if String.IsNullOrWhiteSpace path then invalidArg "path" "Path is required."
-        if not (File.Exists path) then raise (FileNotFoundException($"dashspec.toml not found: '{path}'.", path))
-
-        let projectRoot = Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue ""
+    /// <summary>AST-backed reader for <c>module project &lt;id&gt;</c> (<c>*.dsproj</c>).</summary>
+    let parseText (projectRoot: string) (text: string) : DashSpecProjectConfig =
+        let tree = SyntaxTree.parse text
 
         let mutable rootNamespace: string option = None
+        let mutable hostModule: DotSyntax option = None
         let mutable sourceRoots = [ "." ]
         let files = ResizeArray<string>()
         let exclude = ResizeArray<string>()
-        let implicitImports = ResizeArray<string>()
+        let implicitImports = ResizeArray<ImportDeclarationSyntax>()
 
-        let inProjectBlock = ref false
-
-        for line in File.ReadAllLines path do
-            let trimmed = line.Trim()
-
-            if trimmed.StartsWith("#") || trimmed.Length = 0 then ()
-            elif trimmed.StartsWith("module project ", StringComparison.OrdinalIgnoreCase) then
-                inProjectBlock := true
-            elif trimmed.Equals("end project", StringComparison.OrdinalIgnoreCase) then
-                inProjectBlock := false
-            elif not !inProjectBlock && trimmed.Contains('=') then
-                // Legacy TOML keys outside the block (backward compat)
-                let parts = trimmed.Split('=', 2)
-                let key = parts.[0].Trim().ToLowerInvariant()
-                let value = trimQuotes (parts.[1].Trim())
-
-                match key with
-                | "root_namespace" -> rootNamespace <- Some value
-                | "source_roots" -> sourceRoots <- parseStringList parts.[1]
-                | "files" -> files.AddRange(parseStringList parts.[1])
-                | "exclude" -> exclude.AddRange(parseStringList parts.[1])
-                | "global_import" -> implicitImports.AddRange(parseStringList parts.[1])
+        let applyContainer (view: UnitGrammar.ContainerView) (rawMembers: DashSpecAstNode[]) =
+            for node in rawMembers do
+                match node with
+                | DashSpecAstNode.ImportDeclaration imp ->
+                    implicitImports.Add imp
                 | _ -> ()
-            elif !inProjectBlock then
-                // DSL body
-                if trimmed.StartsWith("namespace ", StringComparison.OrdinalIgnoreCase) then
-                    rootNamespace <- Some (trimmed.["namespace ".Length..].Trim())
-                elif trimmed.StartsWith("global import ", StringComparison.OrdinalIgnoreCase) then
-                    implicitImports.Add(trimmed.["global import ".Length..].Trim())
-                elif trimmed.StartsWith("files ", StringComparison.OrdinalIgnoreCase) ||
-                     (trimmed.StartsWith("files") && trimmed.Contains("=")) then
-                    let value = trimmed.Substring(trimmed.IndexOf('=') + 1).Trim()
-                    files.AddRange(parseStringList value)
-                elif trimmed.StartsWith("exclude ", StringComparison.OrdinalIgnoreCase) ||
-                     (trimmed.StartsWith("exclude") && trimmed.Contains("=")) then
-                    let value = trimmed.Substring(trimmed.IndexOf('=') + 1).Trim()
-                    exclude.AddRange(parseStringList value)
-                elif trimmed.StartsWith("source_roots") && trimmed.Contains("=") then
-                    let value = trimmed.Substring(trimmed.IndexOf('=') + 1).Trim()
-                    sourceRoots <- parseStringList value
+
+            for clause in view.Clauses do
+                match clause.Kind with
+                | ClauseKind.NamespaceClause ns when rootNamespace.IsNone ->
+                    rootNamespace <- Some ns
+                | ClauseKind.UseClause(kind, target) when String.Equals(kind, "host", StringComparison.OrdinalIgnoreCase) ->
+                    hostModule <- Some(DotSyntax.parse (trimQuotes target))
+                | ClauseKind.DirectiveClause(kw, args)
+                    when String.Equals(kw, "host", StringComparison.OrdinalIgnoreCase) && args.Length >= 1 ->
+                    hostModule <- Some(DotSyntax.parse (trimQuotes args.[0]))
+                | _ -> ()
+
+            for prop in view.Properties do
+                match prop.Key.Trim().ToLowerInvariant() with
+                | "namespace"
+                | "root_namespace" ->
+                    rootNamespace <- Some(trimQuotes prop.ValueText)
+                | "host" ->
+                    let dot =
+                        match prop.Value with
+                        | PropertyValueSyntax.Member d -> d
+                        | _ -> DotSyntax.parse (trimQuotes prop.ValueText)
+                    if not (String.IsNullOrWhiteSpace dot.Text) then
+                        hostModule <- Some dot
+                | "source_roots" ->
+                    let roots = extractStringItems prop
+                    if not roots.IsEmpty then
+                        sourceRoots <- roots
+                | "files" ->
+                    files.AddRange(extractStringItems prop)
+                | "exclude" ->
+                    exclude.AddRange(extractStringItems prop)
+                | _ -> ()
+
+        match UnitGrammar.tryUnwrap DashSpecModuleKind.Project tree.Root with
+        | Some env ->
+            rootNamespace <- env.Namespace
+            implicitImports.AddRange env.Imports
+            applyContainer env.View [||]
+        | None ->
+            let rootMembers = DashSpecAst.members tree.Root
+            applyContainer (UnitGrammar.view rootMembers) rootMembers
 
         { ProjectRoot = projectRoot
           RootNamespace = rootNamespace
+          Host = hostModule
           SourceRoots = sourceRoots :> IReadOnlyList<_>
           Files = files :> IReadOnlyList<_>
           Exclude = exclude :> IReadOnlyList<_>
           ImplicitImports = implicitImports :> IReadOnlyList<_> }
 
+    let load (path: string) =
+        if String.IsNullOrWhiteSpace path then invalidArg "path" "Path is required."
+        if not (File.Exists path) then raise (FileNotFoundException($"Project file not found: '{path}'.", path))
+
+        let projectRoot = Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue ""
+        parseText projectRoot (File.ReadAllText path)
+
 module DashSpecProjectLocator =
 
-    /// <summary>Project file = `*.dsproj` (ADR-0101). One per package directory; no legacy fallback.</summary>
-    let private findProjectFile (full: string) =
-        Directory.EnumerateFiles(full, "*.dsproj")
-        |> Seq.sort
-        |> Seq.tryHead
+    /// <summary>Project file = `*.dsproj` (ADR-0101). Walks up parent directories from <paramref name="full"/> until a `.dsproj` is found.</summary>
+    let rec private findProjectFile (full: string) =
+        if String.IsNullOrWhiteSpace full || not (Directory.Exists full) then
+            None
+        else
+            let direct =
+                Directory.EnumerateFiles(full, "*.dsproj")
+                |> Seq.sort
+                |> Seq.tryHead
+
+            match direct with
+            | Some found -> Some found
+            | None ->
+                let parent = Path.GetDirectoryName full
+                let root = Path.GetPathRoot full
+                if String.IsNullOrWhiteSpace parent
+                   || String.Equals(parent, full, StringComparison.OrdinalIgnoreCase)
+                   || String.Equals(parent, root, StringComparison.OrdinalIgnoreCase) then
+                    None
+                else
+                    findProjectFile parent
 
     let tryFindConfig (specDirectory: string option) =
         match specDirectory with
@@ -116,6 +157,25 @@ module DashSpecProjectLocator =
         | Some dir ->
             let full = Path.GetFullPath dir
             findProjectFile full |> Option.map DashSpecProjectConfig.load
+
+    /// <summary>Resolve the `.dsproj` project root directory for a file or folder path (falls back to the directory itself when no `.dsproj` exists above it).</summary>
+    let resolveProjectRoot (fileOrDirectoryPath: string) : string =
+        if String.IsNullOrWhiteSpace fileOrDirectoryPath then
+            "."
+        else
+            let full = Path.GetFullPath fileOrDirectoryPath
+            let startDir =
+                if Directory.Exists full then full
+                else
+                    let dir = Path.GetDirectoryName full
+                    if String.IsNullOrWhiteSpace dir then "." else dir
+
+            match findProjectFile startDir with
+            | Some projFile ->
+                Path.GetDirectoryName projFile
+                |> Option.ofObj
+                |> Option.defaultValue startDir
+            | None -> startDir
 
 /// <summary>Phase 2 project membership (ADR-0089): `files` positives minus `exclude` — the linkable universe, lex-sorted and deterministic.</summary>
 module DashSpecProjectMembership =

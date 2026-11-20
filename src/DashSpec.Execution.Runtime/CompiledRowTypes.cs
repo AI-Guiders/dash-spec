@@ -24,17 +24,32 @@ public static class CompiledRowTypes
     /// <summary>Loads a TypedRows.dll (idempotent per path). The generated RowTypeRegistry's
     /// Create is bound to a compiled delegate once; the load context stays alive for the host's
     /// lifetime.</summary>
-    public static void Load(string assemblyPath)
+    public static void Load(string assemblyPath) =>
+        LoadCore(
+            Path.GetFullPath(assemblyPath ?? throw new ArgumentNullException(nameof(assemblyPath))),
+            ctx => ctx.LoadFromAssemblyPath(Path.GetFullPath(assemblyPath)));
+
+    public static void Load(string assemblyPath, byte[] assemblyBytes)
     {
         ArgumentNullException.ThrowIfNull(assemblyPath);
+        ArgumentNullException.ThrowIfNull(assemblyBytes);
         var fullPath = Path.GetFullPath(assemblyPath);
+        LoadCore(fullPath, ctx =>
+        {
+            using var stream = new MemoryStream(assemblyBytes, writable: false);
+            return ctx.LoadFromStream(stream);
+        });
+    }
+
+    private static void LoadCore(string fullPath, Func<AssemblyLoadContext, Assembly> loader)
+    {
         if (string.Equals(LoadedFrom, fullPath, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         var context = new AssemblyLoadContext("DashSpec.TypedRows", isCollectible: false);
-        var assembly = context.LoadFromAssemblyPath(fullPath);
+        var assembly = loader(context);
         var registry = assembly.GetType("DashSpec.TypedRows.RowTypeRegistry")
             ?? throw new InvalidOperationException(
                 $"{fullPath}: RowTypeRegistry not found — is this a DashSpec.TypedRows assembly?");

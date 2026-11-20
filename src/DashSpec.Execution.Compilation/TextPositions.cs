@@ -46,9 +46,21 @@ public static partial class TextPositions
         var offset = sourceOffset ?? TryParseOffsetFromMessage(message) ?? 0;
         offset = Math.Clamp(offset, 0, string.IsNullOrEmpty(text) ? 0 : text.Length - 1);
         var (line, character) = GetLineColumn(text, offset);
-        var tokenEnd = Math.Min(text.Length, offset + 1);
+
+        // Expand end span to the full identifier/line segment so squiggles are clearly visible
+        var tokenEnd = offset;
+        while (tokenEnd < text.Length && text[tokenEnd] is not ('\r' or '\n'))
+        {
+            tokenEnd++;
+        }
+
+        if (tokenEnd <= offset)
+        {
+            tokenEnd = Math.Min(text.Length, offset + 1);
+        }
+
         var (endLine, endChar) = GetLineColumn(text, tokenEnd);
-        return new DashSpecDiagnostic(line, character, endLine, endChar + 1, message);
+        return new DashSpecDiagnostic(line, character, endLine, Math.Max(character + 1, endChar), message);
     }
 
     [GeneratedRegex(@"at position\s+(\d+)", RegexOptions.IgnoreCase)]

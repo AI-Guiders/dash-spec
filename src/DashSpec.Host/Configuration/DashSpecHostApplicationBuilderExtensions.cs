@@ -219,9 +219,7 @@ public static class DashSpecHostApplicationBuilderExtensions
         }
 
         builder.Services.AddSingleton<IDevSpecReloadSignal>(sp =>
-            builder.Environment.IsDevelopment()
-                ? new DevSpecReloadSignalAdapter(sp.GetRequiredService<DevSpecReloadNotifier>())
-                : new NullDevSpecReloadSignal());
+            new DevSpecReloadSignalAdapter(sp.GetRequiredService<DevSpecReloadNotifier>()));
 
         builder.Services.AddSingleton<GitCatalogSyncService>();
         builder.Services.AddHostedService<GitCatalogSyncBackgroundService>();

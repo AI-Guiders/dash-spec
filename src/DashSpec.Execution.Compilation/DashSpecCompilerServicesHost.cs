@@ -47,7 +47,8 @@ public static class DashSpecCompilerServicesHost
     public static DashSpecAssembledCorpus GetCorpus(string specDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
-        var root = Path.GetFullPath(specDirectory.Trim());
+        var resolvedProjectRoot = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.resolveProjectRoot(specDirectory.Trim());
+        var root = Path.GetFullPath(resolvedProjectRoot);
 
         // Bounded retry: a member changing mid-materialization (or a transiently
         // unreadable member) can make the fresh pass keep failing — serving the
@@ -125,12 +126,79 @@ public sealed partial class DashSpecAssembledCorpus(
     readonly Lock _gate = new();
     readonly Dictionary<string, (FsharpDocument.DashboardDocument? Document, string? Error, int? ErrorOffset)> _assembled =
         new(StringComparer.OrdinalIgnoreCase);
+    DashSpec.Modeling.Core.TypeCatalog? _typeCatalog;
+    DashSpecWorkspaceIndex? _workspaceIndex;
 
     public string CorpusRoot { get; } = corpusRoot;
 
     public IReadOnlyList<string> RootFiles { get; } = rootFiles;
 
     public DashSpecParseOptions AssembledOptions { get; } = assembledOptions;
+
+    /// <summary>
+    /// Cached <see cref="DashSpecWorkspaceIndex"/> built once per corpus revision from the already-read <c>memberTexts</c>.
+    /// </summary>
+    public DashSpecWorkspaceIndex GetWorkspaceIndex()
+    {
+        lock (_gate)
+        {
+            if (_workspaceIndex is not null)
+            {
+                return _workspaceIndex;
+            }
+        }
+
+        var index = DashSpecWorkspaceIndex.BuildFromCorpusTexts(memberTexts);
+        lock (_gate)
+        {
+            _workspaceIndex ??= index;
+            return _workspaceIndex;
+        }
+    }
+
+    /// <summary>
+    /// Compiled <see cref="DashSpec.Modeling.Core.TypeCatalog"/> materialized once per corpus revision
+    /// from the corpus's <c>module types</c> members.
+    /// </summary>
+    public DashSpec.Modeling.Core.TypeCatalog GetTypeCatalog()
+    {
+        lock (_gate)
+        {
+            if (_typeCatalog is not null)
+            {
+                return _typeCatalog;
+            }
+        }
+
+        var defs = new Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(StringComparer.OrdinalIgnoreCase);
+        foreach (var pair in memberTexts)
+        {
+            var (moduleKind, _) = FsharpDocument.UnitSource.tryKindAndId(pair.Value);
+            if (!string.Equals(moduleKind, "types", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                foreach (var def in DashSpec.Modeling.Parse.Types.TypeModuleParser.parseTypesModule(pair.Value))
+                {
+                    defs.TryAdd(def.Name, def);
+                }
+            }
+            catch
+            {
+                // Broken types member is reported on its own file; keep valid types in the corpus catalog.
+            }
+        }
+
+        var catalog = DashSpec.Modeling.Core.TypeCatalogModule.ofDefinitions(defs.Values);
+        lock (_gate)
+        {
+            _typeCatalog ??= catalog;
+            return _typeCatalog;
+        }
+    }
 
     /// <summary>The corpus member text as materialized (the saved state of the corpus).</summary>
     public bool TryGetMemberText(string path, [NotNullWhen(true)] out string? text)

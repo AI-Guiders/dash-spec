@@ -13,5 +13,5 @@ namespace DashSpec.Execution.Parsing;
 internal static class StdlibEmbeddedInitializer
 {
     [ModuleInitializer]
-    internal static void Register() => ModuleParseRegistration.EnsureStdlibRegistered();
+    internal static void Register() => DashSpecParser.EnsureStdlibRegistered();
 }

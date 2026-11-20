@@ -23,10 +23,11 @@ public class ProjectMembershipTests
         new(
             root,
             null,
+            null,
             new[] { "." },
             files ?? new[] { "diagrams/*.dashdiagram", "rows.dashtype" },
             exclude ?? new[] { "diagrams/_scratch/*" },
-            Array.Empty<string>());
+            Array.Empty<DashSpec.Modeling.Parse.Syntax.ImportDeclarationSyntax>());
 
     [Fact]
     public void Expand_is_lex_sorted_and_excludes_apply_after_positives()

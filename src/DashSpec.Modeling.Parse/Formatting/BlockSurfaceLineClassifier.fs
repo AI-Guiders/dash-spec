@@ -45,6 +45,11 @@ module BlockSurfaceLineClassifier =
         if tokens.IsEmpty then
             Blank
         else
+            let tokens =
+                match tokens with
+                | { Kind = TokenKind.Ident; Value = g } :: (Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.From :: _ as rest)
+                    when String.Equals(g, "global", StringComparison.OrdinalIgnoreCase) -> rest
+                | other -> other
             match tokens with
             | [ { Kind = TokenKind.LBrace } ] -> BraceOpen
             | { Kind = TokenKind.RBrace } :: _ -> BraceClose

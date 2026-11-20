@@ -109,7 +109,7 @@ public sealed class DashSpecEditorIntelligenceTests
     {
         var text = "module dashboard demo\nend dashboard\n";
         var items = DashSpecEditorIntelligence.GetCompletions("demo.dashspec", text, line: 1, column: 2);
-        Assert.Contains(items, item => item.Label.Equals("module dashboard", StringComparison.Ordinal));
+        Assert.Contains(items, item => item.Label.Equals("module", StringComparison.Ordinal) && item.InsertText.Equals("module", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -246,6 +246,128 @@ public sealed class DashSpecEditorIntelligenceTests
         Assert.Equal(2, usages.Count);
         Assert.Contains(usages, u => u.Path.Replace('\\', '/').EndsWith("diagrams/app-list.ds", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(usages, u => u.Path.Replace('\\', '/').EndsWith("demo-users.ds", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void GetCompletions_inside_typed_ast_containers_returns_scope_specific_suggestions()
+    {
+        var text = """
+            module flow LicenseFlow
+            namespace Demo.Flows
+
+            transformer by_hour {
+              
+            }
+            end flow
+            """;
+
+        // Inside `transformer by_hour { ... }` (line 5) -> suggests single-token statement starters (`ports`, `transform`, `end`)
+        var inTransformer = DashSpecEditorIntelligence.GetCompletions("flow.ds", text, line: 5, column: 3);
+        Assert.Contains(inTransformer, i => i.Label == "ports" && i.InsertText == "ports");
+        Assert.Contains(inTransformer, i => i.Label == "transform" && i.InsertText == "transform");
+        Assert.All(inTransformer, i => Assert.Equal(i.Label, i.InsertText));
+
+        // Inside `ports` block after `default ` -> suggests ONLY `input` and `output` (single tokens!)
+        var portsText = """
+            module flow LicenseFlow
+            transformer by_hour {
+              ports {
+                input stream raw_events: EventRow
+                output stream hourly_rows: HourlyRow
+                default 
+              }
+            }
+            end flow
+            """;
+        var afterDefault = DashSpecEditorIntelligence.GetCompletions("flow.ds", portsText, line: 6, column: 13);
+        Assert.Equal(2, afterDefault.Count);
+        Assert.Contains(afterDefault, i => i.Label == "input" && i.InsertText == "input");
+        Assert.Contains(afterDefault, i => i.Label == "output" && i.InsertText == "output");
+
+        // After `default input ` -> suggests ONLY declared input port names (`raw_events`)
+        var portsAfterInput = """
+            module flow LicenseFlow
+            transformer by_hour {
+              ports {
+                input stream raw_events: EventRow
+                output stream hourly_rows: HourlyRow
+                default input 
+              }
+            }
+            end flow
+            """;
+        var afterDefaultInput = DashSpecEditorIntelligence.GetCompletions("flow.ds", portsAfterInput, line: 6, column: 19);
+        Assert.Single(afterDefaultInput);
+        Assert.Equal("raw_events", afterDefaultInput[0].Label);
+        Assert.Equal("raw_events", afterDefaultInput[0].InsertText);
+
+        var diagText = """
+            module diagram sample_bar
+            namespace Demo.Diagrams
+
+            bar
+              
+            end bar
+            end diagram
+            """;
+
+        // Inside `bar ... end bar` (line 5) -> suggests chartDiagram PropertySchemas keys as single tokens
+        var inBar = DashSpecEditorIntelligence.GetCompletions("bar.ds", diagText, line: 5, column: 3);
+        Assert.Contains(inBar, i => i.Label == "category" && i.InsertText == "category");
+        Assert.Contains(inBar, i => i.Label == "value" && i.InsertText == "value");
+        Assert.All(inBar, i => Assert.Equal(i.Label, i.InsertText));
+    }
+
+    [Fact]
+    public void ValidateText_ReportsExactLine_ForMalformedDefaultPortInFlowModule()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"dashspec-flowdiag-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        try
+        {
+            var flowPath = Path.Combine(tempRoot, "activity.ds");
+            var brokenFlowText = """
+                module flow DemoActivity
+                namespace Demo.Flows
+
+                transformer five_minute_bucket_tz {
+                  ports {
+                    input stream raw: ActivityRow
+                    output stream rows: ActivityRow
+                    default raw
+                  }
+                }
+
+                end flow
+                """;
+
+            var diagnostics = DashSpecDiagnosticService.ValidateText(
+                brokenFlowText,
+                flowPath,
+                tempRoot);
+
+            Assert.NotEmpty(diagnostics);
+            var first = diagnostics[0];
+            // 0-based line 7 is `    default raw` (1-based line 8)
+            Assert.Equal(7, first.Line);
+            Assert.Contains("Unexpected 'raw' after 'default' (expected 'input' or 'output')", first.Message, StringComparison.OrdinalIgnoreCase);
+
+            var demoFlow = Path.Combine(
+                AppContext.BaseDirectory,
+                "..", "..", "..", "..", "..",
+                "samples", "demo", "flows", "demo-report.ds");
+            if (File.Exists(demoFlow))
+            {
+                var fullFlowPath = Path.GetFullPath(demoFlow);
+                var validDiags = DashSpecDiagnosticService.ValidateFile(fullFlowPath);
+                Assert.True(validDiags.Count == 0, $"Expected 0 diagnostics on demo-report.ds, got: {string.Join(" | ", validDiags.Select(d => d.Message))}");
+            }
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
     }
 }
 

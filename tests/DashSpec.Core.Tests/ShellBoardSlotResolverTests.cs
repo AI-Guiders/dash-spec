@@ -4,7 +4,6 @@ using DashSpec.Modeling.Parse.Layout;
 using Microsoft.FSharp.Core;
 using Xunit;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
-using ExecutionLayoutModuleParser = DashSpec.Execution.Parsing.LayoutModuleParser;
 
 namespace DashSpec.Core.Tests;
 
@@ -22,7 +21,7 @@ public sealed class ShellBoardSlotResolverTests
     static LayoutBoardDefinition ParseBoard(params string[] rows)
     {
         var body = string.Join("\n", rows.Select(static row => $"    {row}"));
-        return ExecutionLayoutModuleParser.ParseLayoutFile($"""
+        return DashSpecParser.ParseLayoutFile($"""
             module layout test_shell
             namespace Test.Shell
             scope host
@@ -125,7 +124,7 @@ public sealed class ShellBoardSlotResolverTests
     {
         // The shipped default (host.ds as EmbeddedResource in DashSpec.Host) is a regular
         // ds layout module — this pins its shape: brand + spacer + nav topbar, content below.
-        var board = ExecutionLayoutModuleParser.ParseLayoutFile("""
+        var board = DashSpecParser.ParseLayoutFile("""
             module layout dashspec_default_shell
             namespace DashSpec.Default.Shell
             scope host

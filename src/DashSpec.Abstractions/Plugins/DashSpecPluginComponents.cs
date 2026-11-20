@@ -15,4 +15,7 @@ public static class DashSpecPluginComponents
 
     /// <summary>Host command bar + palette component (supplied by the commands plugin).</summary>
     public const string HostCommandBar = "host.command_bar";
+
+    /// <summary>Topbar link/launcher for DashSpec Studio (supplied by the studio plugin).</summary>
+    public const string HostStudioLink = "host.studio_link";
 }

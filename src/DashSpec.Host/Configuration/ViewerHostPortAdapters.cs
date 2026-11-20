@@ -22,6 +22,8 @@ internal sealed class DevSpecReloadSignalAdapter(DevSpecReloadNotifier inner) : 
         add => inner.Changed += value;
         remove => inner.Changed -= value;
     }
+
+    public void Notify() => inner.Notify();
 }
 
 internal sealed class ViewerExternalLinksProviderAdapter(HostExternalLinksProvider inner) : IViewerExternalLinksProvider

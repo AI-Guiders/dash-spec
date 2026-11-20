@@ -23,6 +23,7 @@ public static class ShellBoardSlotResolver
         ViewerShellSlotIds.Help,
         ViewerShellSlotIds.Settings,
         ViewerShellSlotIds.SpecDev,
+        ViewerShellSlotIds.Studio,
         ViewerShellSlotIds.CommandBar,
         ViewerShellSlotIds.Content,
     };

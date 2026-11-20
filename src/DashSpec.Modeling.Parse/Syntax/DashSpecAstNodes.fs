@@ -299,6 +299,7 @@ type ClauseKind =
 /// kinds of the language are explicit DU cases.</summary>
 [<RequireQualifiedAccess>]
 type DashSpecModuleKind =
+    | Project
     | Registry
     | Defaults
     | Texts
@@ -321,6 +322,7 @@ module DashSpecModuleKind =
 
     let ofKeyword (keyword: string) (emitViews: bool) =
         match keyword.Trim().ToLowerInvariant() with
+        | "project" -> DashSpecModuleKind.Project
         | "registry" -> DashSpecModuleKind.Registry
         | "defaults" -> DashSpecModuleKind.Defaults
         | "texts" -> DashSpecModuleKind.Texts
@@ -341,6 +343,7 @@ module DashSpecModuleKind =
 
     let toKeyword (kind: DashSpecModuleKind) =
         match kind with
+        | DashSpecModuleKind.Project -> "project"
         | DashSpecModuleKind.Registry -> "registry"
         | DashSpecModuleKind.Defaults -> "defaults"
         | DashSpecModuleKind.Texts -> "texts"

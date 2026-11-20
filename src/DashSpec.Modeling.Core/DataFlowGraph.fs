@@ -79,6 +79,49 @@ module FlowGraph =
         { Nodes = map :> IReadOnlyDictionary<_, _>
           Edges = edges |> Seq.toArray }
 
+    /// <summary>
+    /// Slice the <see cref="FlowGraph"/> to the <paramref name="maxHops"/>-hop neighborhood around <paramref name="focusId"/>.
+    /// Returns the full graph unchanged if <paramref name="focusId"/> is empty or not found.
+    /// </summary>
+    let sliceNeighborhood (focusId: string) (maxHops: int) (graph: FlowGraph) : FlowGraph =
+        if String.IsNullOrWhiteSpace focusId then
+            graph
+        else
+            let needle = focusId.Trim()
+            let centerOpt =
+                graph.Nodes.Keys
+                |> Seq.tryFind (fun k -> String.Equals(k, needle, StringComparison.OrdinalIgnoreCase))
+                |> Option.orElseWith (fun () ->
+                    graph.Nodes.Keys
+                    |> Seq.tryFind (fun k -> k.Contains(needle, StringComparison.OrdinalIgnoreCase)))
+
+            match centerOpt with
+            | None -> graph
+            | Some center ->
+                let visited = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                visited.Add center |> ignore
+                let mutable frontier = [ center ]
+
+                for _ in 1 .. (max 1 maxHops) do
+                    let next = ResizeArray<string>()
+                    for cur in frontier do
+                        for edge in graph.Edges do
+                            if String.Equals(edge.From.NodeId, cur, StringComparison.OrdinalIgnoreCase) && visited.Add edge.To.NodeId then
+                                next.Add edge.To.NodeId
+                            if String.Equals(edge.To.NodeId, cur, StringComparison.OrdinalIgnoreCase) && visited.Add edge.From.NodeId then
+                                next.Add edge.From.NodeId
+                    frontier <- List.ofSeq next
+
+                let nodes =
+                    graph.Nodes.Values
+                    |> Seq.filter (fun n -> visited.Contains n.Id)
+
+                let edges =
+                    graph.Edges
+                    |> Array.filter (fun e -> visited.Contains e.From.NodeId && visited.Contains e.To.NodeId)
+
+                ofNodes nodes edges
+
     let private tryFindPort (node: FlowNode) (portName: string) (ports: FlowPort[]) =
         ports |> Array.tryFind (fun port -> String.Equals(port.Name, portName, StringComparison.OrdinalIgnoreCase))
 

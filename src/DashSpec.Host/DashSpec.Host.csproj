@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>15</LangVersion>
     <RootNamespace>DashSpec.Host</RootNamespace>
-    <Version>0.4.1</Version>
+    <Version>0.5.0</Version>
   </PropertyGroup>
 
   <Import Project="..\..\build\ValidateJavaScriptSyntax.targets" />
@@ -44,6 +44,7 @@
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Commands\DashSpec.Plugin.Commands.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Studio\DashSpec.Plugin.Studio.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <Target Name="StageConnectorPlugins" AfterTargets="Build;Publish">
@@ -57,11 +58,16 @@
       <_ViewSwitchOutDir>..\..\plugins\DashSpec.Plugin.ViewSwitch\bin\$(Configuration)\$(TargetFramework)\</_ViewSwitchOutDir>
       <_ViewSwitchPluginDll>$(_ViewSwitchOutDir)DashSpec.Plugin.ViewSwitch.dll</_ViewSwitchPluginDll>
       <_CommandsOutDir>..\..\plugins\DashSpec.Plugin.Commands\bin\$(Configuration)\$(TargetFramework)\</_CommandsOutDir>
+      <_StudioOutDir>..\..\plugins\DashSpec.Plugin.Studio\bin\$(Configuration)\$(TargetFramework)\</_StudioOutDir>
     </PropertyGroup>
     <ItemGroup>
       <_CommandsPluginFiles Include="$(_CommandsOutDir)DashSpec.Plugin.Commands.dll" Condition="Exists('$(_CommandsOutDir)DashSpec.Plugin.Commands.dll')" />
       <_CommandsPluginFiles Include="$(_CommandsOutDir)AIGuiders.*.dll" />
       <_CommandsPluginFiles Include="$(_CommandsOutDir)DotNetWorkspace.*.dll" />
+      <_StudioPluginFiles Include="$(_StudioOutDir)DashSpec.Plugin.Studio.dll" Condition="Exists('$(_StudioOutDir)DashSpec.Plugin.Studio.dll')" />
+      <_StudioPluginFiles Include="$(_StudioOutDir)DashSpec.CodeCenter.dll" Condition="Exists('$(_StudioOutDir)DashSpec.CodeCenter.dll')" />
+      <_StudioPluginFiles Include="$(_StudioOutDir)DashSpec.Modeling.Language.Adapters.DashSpec.dll" Condition="Exists('$(_StudioOutDir)DashSpec.Modeling.Language.Adapters.DashSpec.dll')" />
+      <_StudioPluginFiles Include="$(_StudioOutDir)AIGuiders.*.dll" />
     </ItemGroup>
     <MakeDir Directories="$(OutputPath)connectors" />
     <MakeDir Directories="$(OutputPath)plugins" />
@@ -70,13 +76,27 @@
     <Copy SourceFiles="$(_ExportPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportPluginDll)')" />
     <Copy SourceFiles="$(_ViewSwitchPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchPluginDll)')" />
     <Copy SourceFiles="@(_CommandsPluginFiles)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_StudioPluginFiles)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" />
     <!-- Plugins are vertical slices: copy their satellite assemblies (ADR-0077). -->
     <MakeDir Directories="$(OutputPath)plugins\ru" />
     <MakeDir Directories="$(OutputPath)connectors\ru" />
     <Copy SourceFiles="$(_ExportOutDir)ru\DashSpec.Plugin.Export.resources.dll" DestinationFolder="$(OutputPath)plugins\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportOutDir)ru\DashSpec.Plugin.Export.resources.dll')" />
     <Copy SourceFiles="$(_ViewSwitchOutDir)ru\DashSpec.Plugin.ViewSwitch.resources.dll" DestinationFolder="$(OutputPath)plugins\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchOutDir)ru\DashSpec.Plugin.ViewSwitch.resources.dll')" />
     <Copy SourceFiles="$(_ConnectorOutDir)ru\DashSpec.Connector.SqlServer.resources.dll" DestinationFolder="$(OutputPath)connectors\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ConnectorOutDir)ru\DashSpec.Connector.SqlServer.resources.dll')" />
-    <Copy SourceFiles="$(_PostgresConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll" DestinationFolder="$(OutputPath)connectors\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_PostgresConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll')" />
+    <Copy SourceFiles="$(_PostgresConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll" DestinationFolder="$(OutputPath)connectors\ru\" SkipUnchangedFiles="true" Condition="Exists('$(_ConnectorOutDir)ru\DashSpec.Connector.Postgres.resources.dll')" />
+  </Target>
+
+  <Target Name="StagePublishedConnectorPlugins" AfterTargets="Publish" Condition="'$(PublishDir)' != '' and '$(PublishDir)' != '$(OutputPath)'">
+    <ItemGroup>
+      <_PublishedConnectors Include="$(OutputPath)connectors\**\*" />
+      <_PublishedPlugins Include="$(OutputPath)plugins\**\*" />
+      <_StudioWwwRoot Include="..\..\plugins\DashSpec.Plugin.Studio\wwwroot\**\*" />
+      <_CommandsWwwRoot Include="..\..\plugins\DashSpec.Plugin.Commands\wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PublishedConnectors)" DestinationFiles="@(_PublishedConnectors->'$(PublishDir)connectors\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_PublishedPlugins)" DestinationFiles="@(_PublishedPlugins->'$(PublishDir)plugins\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_StudioWwwRoot)" DestinationFiles="@(_StudioWwwRoot->'$(PublishDir)wwwroot\_content\DashSpec.Plugin.Studio\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_CommandsWwwRoot)" DestinationFiles="@(_CommandsWwwRoot->'$(PublishDir)wwwroot\_content\DashSpec.Plugin.Commands\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
   <!-- A rebuild while a host instance from THIS output dir is running fails on

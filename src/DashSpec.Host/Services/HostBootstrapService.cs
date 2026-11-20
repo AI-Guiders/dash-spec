@@ -64,7 +64,7 @@ public sealed class HostBootstrapService(
                 $"Host dashhost not found: '{bootstrap.Host.Dashhost}' (content root: {contentRoot}).");
 
         DashSpecParser.EnsureModuleParsersRegistered();
-        var document = HostModuleParser.ParseFile(dashhostPath);
+        var document = DashSpecParser.ParseHostFile(dashhostPath);
         var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
         ApplyHostShell(bootstrap, hostShell);
         DashSpecDefaultShell.RegisterGridDefault();
@@ -87,7 +87,7 @@ public sealed class HostBootstrapService(
         var typedRowsPath = Path.Combine(catalogDir, "DashSpec.TypedRows.dll");
         if (File.Exists(typedRowsPath))
         {
-            DashSpec.Execution.Runtime.CompiledRowTypes.Load(typedRowsPath);
+            DashSpec.Execution.Runtime.CompiledRowTypes.Load(typedRowsPath, File.ReadAllBytes(typedRowsPath));
         }
         return new CatalogBootstrap(CatalogReader.ParseFile(catalogPath), catalogPath);
     }
@@ -208,6 +208,19 @@ public sealed class HostBootstrapService(
             }
 
             var idx = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir);
+            var cfgOpt = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.tryFindConfig(
+                Microsoft.FSharp.Core.FSharpOption<string>.Some(dir));
+            if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Project.DashSpecProjectConfig>.get_IsSome(cfgOpt) &&
+                Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(cfgOpt.Value.HostId))
+            {
+                var explicitHostOpt = idx.TryFindUnit("host", cfgOpt.Value.HostId.Value);
+                if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.UnitIndexEntry>.get_IsSome(explicitHostOpt) &&
+                    File.Exists(explicitHostOpt.Value.Path))
+                {
+                    return Path.GetFullPath(explicitHostOpt.Value.Path);
+                }
+            }
+
             var hostEntry = idx.Entries.FirstOrDefault(e =>
                 e.Kind is not null &&
                 string.Equals(e.Kind.Value, "host", StringComparison.OrdinalIgnoreCase) &&

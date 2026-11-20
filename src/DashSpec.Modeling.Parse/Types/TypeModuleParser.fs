@@ -199,14 +199,14 @@ module TypeModuleParser =
                             | DashSpecAstNode.EndBlock e when e.EndKeyword = DashSpecBlockKeyword.Type ->
                                 match e.EndId with
                                 | Some endId when not (String.Equals(endId, typeName, StringComparison.Ordinal)) ->
-                                    raise (DashSpecParseException($"end type '{endId}' does not match type '{typeName}'."))
+                                    raise (DashSpecParseException($"end type '{endId}' does not match type '{typeName}'.", e.Span.Start))
                                 | _ -> true
                             | DashSpecAstNode.EndBlock e ->
-                                raise (DashSpecParseException($"type '{typeName}': unexpected 'end {DashSpecBlockKeyword.toEndName e.EndKeyword}'."))
+                                raise (DashSpecParseException($"type '{typeName}': unexpected 'end {DashSpecBlockKeyword.toEndName e.EndKeyword}'.", e.Span.Start))
                             | _ -> false)
 
                     if not hasEnd then
-                        raise (DashSpecParseException($"type '{typeName}' requires 'end type'."))
+                        raise (DashSpecParseException($"type '{typeName}' requires 'end type'.", block.Span.Start))
 
                     let fields = ResizeArray<RowFieldDef>()
 
@@ -262,7 +262,7 @@ module TypeModuleParser =
                                           "type", rawType ])
                             else
                                 let lineText = toks |> Array.map (fun t -> t.Text) |> String.concat " "
-                                raise (DashSpecParseException($"type '{typeName}': invalid field declaration '{lineText}'."))
+                                raise (DashSpecParseException($"type '{typeName}': invalid field declaration '{lineText}'.", (DashSpecAst.span other).Start))
 
                     Construct.projectAstWithLines
                         (typeTableDeclaration typeName fields.Add)
@@ -272,25 +272,25 @@ module TypeModuleParser =
                         block.Members
 
                     if fields.Count = 0 then
-                        raise (DashSpecParseException($"type '{typeName}' must declare at least one field."))
+                        raise (DashSpecParseException($"type '{typeName}' must declare at least one field.", block.Span.Start))
 
                     defs.Add { Name = typeName; Fields = fields.ToArray() }
                 | _ ->
                     let headerText = block.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected block '{headerText}' in types module."))
+                    raise (DashSpecParseException($"Unexpected block '{headerText}' in types module.", block.Span.Start))
             | DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | ClauseKind.NamespaceClause _ -> ()
                 | _ ->
                     let lineText = c.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected directive '{lineText}' in types module."))
+                    raise (DashSpecParseException($"Unexpected directive '{lineText}' in types module.", c.Span.Start))
             | DashSpecAstNode.ImportDeclaration _
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | n when DashSpecAst.isTrivia n -> ()
             | other ->
                 let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"Unexpected statement '{lineText}' in types module."))
+                raise (DashSpecParseException($"Unexpected statement '{lineText}' in types module.", (DashSpecAst.span other).Start))
 
         defs.ToArray()
 

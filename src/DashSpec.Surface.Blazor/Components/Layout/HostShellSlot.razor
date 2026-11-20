@@ -42,6 +42,16 @@ else if (Slot.SlotId == ViewerShellSlotIds.Catalog && Coordinator.HasCatalog)
 else if (Slot.SlotId == ViewerShellSlotIds.Nav)
 {
     <a href="/" class="rz-link">@Loc.T("Dashboard")</a>
+    @if (Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.HostStudioLink, out var studioLinkType) &&
+         !HostShell.ShellSlots.Any(s => s.SlotId == ViewerShellSlotIds.Studio))
+    {
+        <DynamicComponent Type="studioLinkType" />
+    }
+}
+else if (Slot.SlotId == ViewerShellSlotIds.Studio &&
+         Contributors.PluginComponents.TryGetValue(DashSpecPluginComponents.HostStudioLink, out var explicitStudioLinkType))
+{
+    <DynamicComponent Type="explicitStudioLinkType" />
 }
 else if (Slot.SlotId == ViewerShellSlotIds.ExternalLinks)
 {

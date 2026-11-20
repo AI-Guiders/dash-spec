@@ -232,7 +232,7 @@ public sealed class ReportPagesAndCatalogTests
     [Fact]
     public void Parse_layout_module_accepts_scope_page()
     {
-        var board = LayoutModuleParser.ParseLayoutFile("""
+        var board = DashSpecParser.ParseLayoutFile("""
             module layout page_grid
             scope page
             [ a b ]

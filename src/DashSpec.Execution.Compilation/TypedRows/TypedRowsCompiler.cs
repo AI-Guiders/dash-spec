@@ -200,12 +200,13 @@ public static class TypedRowsCompiler
             }
         }
 
-        var marker = Path.Combine(directory, Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar)) + ".dsproj");
-        var markerText = derived is null
-            ? "root_namespace = \"Generated\"\n"
-            : $"root_namespace = \"{derived}\"\n";
+        var dirLeaf = Path.GetFileName(directory.TrimEnd(Path.DirectorySeparatorChar));
+        var projId = string.IsNullOrWhiteSpace(dirLeaf) ? "generated" : dirLeaf.Replace('-', '_');
+        var marker = Path.Combine(directory, dirLeaf + ".dsproj");
+        var nsName = derived ?? "Generated";
+        var markerText = $"module project {projId}\nnamespace {nsName}\nend project\n";
         File.WriteAllText(marker, markerText);
-        Console.WriteLine($"project: created {marker}" + (derived is null ? "" : $" (root_namespace = \"{derived}\")"));
+        Console.WriteLine($"project: created {marker} (namespace {nsName})");
 
         var created = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.tryFindConfig(
             Microsoft.FSharp.Core.FSharpOption<string>.Some(directory));

@@ -1,44 +1,12 @@
-using DashSpec.LanguageServer;
-using MediatR;
+using DashSpec.Execution.Compilation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace DashSpec.LanguageServer.Handlers;
 
-internal sealed class DashSpecCompletionHandler : ICompletionHandler
+internal sealed class DashSpecCompletionHandler(DashSpecServerState state) : ICompletionHandler
 {
-    private static readonly string[] Keywords =
-    [
-        "module dashboard",
-        "module tab",
-        "module diagram",
-        "module presentation",
-        "module palette",
-        "card",
-        "diagram",
-        "filter",
-        "chrome",
-        "use",
-        "end",
-        "heatmap",
-        "gantt",
-        "bar",
-        "line",
-        "table",
-        "toolbar",
-        "filters",
-        "datasource",
-        "phase",
-        "page",
-        "catalog",
-    ];
-
-    private readonly DashSpecServerState _state;
-
-    public DashSpecCompletionHandler(DashSpecServerState state) => _state = state;
-
     public CompletionRegistrationOptions GetRegistrationOptions(
         CompletionCapability capability,
         ClientCapabilities clientCapabilities) =>
@@ -50,10 +18,8 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
 
     public Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
     {
-        var document = request.TextDocument;
-        var position = request.Position;
-        var path = DashSpecLspHelpers.ToPath(document.Uri);
-        var text = _state.GetDocumentText(path);
+        var path = DashSpecLspHelpers.ToPath(request.TextDocument.Uri);
+        var text = state.GetDocumentText(path);
         if (text is null && File.Exists(path))
         {
             text = File.ReadAllText(path);
@@ -64,70 +30,35 @@ internal sealed class DashSpecCompletionHandler : ICompletionHandler
             return Task.FromResult(new CompletionList());
         }
 
-        var lines = text.Split('\n');
-        if (position.Line < 0 || position.Line >= lines.Length)
-        {
-            return Task.FromResult(new CompletionList());
-        }
+        var suggestions = DashSpecEditorIntelligence.GetCompletions(
+            path,
+            text,
+            request.Position.Line + 1,
+            request.Position.Character,
+            state.Index);
 
-        var line = lines[position.Line].TrimEnd('\r');
-        var context = DashSpecLspHelpers.GetCompletionContext(line, position.Character);
-        var items = context?.Kind switch
-        {
-            DashSpecLspHelpers.CompletionKind.Diagram => BuildIdItems(
-                _state.Index.Diagrams.Keys,
-                context.Value.Prefix,
-                CompletionItemKind.Reference),
-            DashSpecLspHelpers.CompletionKind.Presentation => BuildIdItems(
-                _state.Index.Presentations.Keys,
-                context.Value.Prefix,
-                CompletionItemKind.Color),
-            _ => BuildKeywordItems(line, position.Character),
-        };
+        var items = suggestions
+            .Select(s => new CompletionItem
+            {
+                Label = s.Label,
+                InsertText = s.InsertText,
+                Detail = s.Detail,
+                Kind = s.Kind switch
+                {
+                    "diagram" or "flow" or "layout" => CompletionItemKind.Reference,
+                    "presentation" or "palette" => CompletionItemKind.Color,
+                    "namespace" => CompletionItemKind.Module,
+                    "class" => CompletionItemKind.Class,
+                    _ => CompletionItemKind.Keyword,
+                },
+            })
+            .ToList();
 
         return Task.FromResult(new CompletionList(items));
     }
 
-#pragma warning disable VSTHRD200 // IRequestHandler<CompletionItem, CompletionItem> contract uses Handle
+#pragma warning disable VSTHRD200
     public Task<CompletionItem> Handle(CompletionItem item, CancellationToken cancellationToken) =>
         Task.FromResult(item);
 #pragma warning restore VSTHRD200
-
-    private static List<CompletionItem> BuildIdItems(
-        IEnumerable<string> ids,
-        string prefix,
-        CompletionItemKind kind)
-    {
-        return ids
-            .Where(id => id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-            .Select(id => new CompletionItem
-            {
-                Label = id,
-                Kind = kind,
-                InsertText = id,
-            })
-            .ToList();
-    }
-
-    private static List<CompletionItem> BuildKeywordItems(string line, int character)
-    {
-        var before = line[..Math.Clamp(character, 0, line.Length)];
-        var wordStart = before.Length;
-        while (wordStart > 0 && (char.IsLetterOrDigit(before[wordStart - 1]) || before[wordStart - 1] is '_' or '@' or '!'))
-        {
-            wordStart--;
-        }
-
-        var prefix = before[wordStart..];
-        return Keywords
-            .Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .Select(k => new CompletionItem
-            {
-                Label = k,
-                Kind = k.StartsWith('@') ? CompletionItemKind.Class : CompletionItemKind.Keyword,
-                InsertText = k,
-            })
-            .ToList();
-    }
 }

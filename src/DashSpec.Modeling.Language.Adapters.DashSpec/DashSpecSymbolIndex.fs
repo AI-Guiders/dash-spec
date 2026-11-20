@@ -3,8 +3,9 @@ namespace DashSpec.Modeling.Language.Adapters.DashSpec
 open System
 open AIGuiders.Platform.Modeling.Language
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
-/// Text/token index for DashSpec LRC navigation (ADR-0048 M8 v2).
+/// AST & typed-token symbol index for DashSpec LRC navigation (ADR-0048 M8 / ADR-0130).
 module DashSpecSymbolIndex =
 
     type SymbolDefinition =
@@ -24,19 +25,20 @@ module DashSpecSymbolIndex =
         starts.ToArray()
 
     let private lineColumn (lineStarts: int[]) (offset: int) =
+        let clamped = max 0 (min offset (if lineStarts.Length > 0 then Int32.MaxValue else 0))
         let lineIndex =
-            Array.BinarySearch(lineStarts, offset)
+            Array.BinarySearch(lineStarts, clamped)
             |> fun idx ->
                 if idx >= 0 then idx
-                else ~~~idx - 1
+                else max 0 (~~~idx - 1)
 
         let line = lineIndex + 1
-        let column = offset - lineStarts.[lineIndex] + 1
+        let column = max 1 (clamped - lineStarts.[lineIndex] + 1)
         line, column
 
-    let private toSpan path (lineStarts: int[]) (token: Token) =
-        let line, column = lineColumn lineStarts token.Start
-        let endOffset = max token.Start (token.Start + token.Length - 1)
+    let private toSpan path (lineStarts: int[]) (span: TextSpan) =
+        let line, column = lineColumn lineStarts span.Start
+        let endOffset = max span.Start (span.End - 1)
         let endLine, endColumn = lineColumn lineStarts endOffset
 
         { Path = path
@@ -45,116 +47,87 @@ module DashSpecSymbolIndex =
           EndLine = endLine
           EndColumn = endColumn + 1 }
 
-    let private isIdentToken (token: Token) =
-        token.Kind = TokenKind.Ident || token.Kind = TokenKind.Raw
+    let private isIdentLexKind (kind: TokenKind) =
+        kind = TokenKind.Ident || kind = TokenKind.Raw
 
     let private identEquals (left: string) (right: string) =
         String.Equals(left, right, StringComparison.OrdinalIgnoreCase)
 
-    let private skipToIndex (tokens: Token[]) index =
-        let mutable i = index
-
-        while i < tokens.Length && (tokens.[i].Kind = TokenKind.Newline || tokens.[i].Kind = TokenKind.LineComment || tokens.[i].Kind = TokenKind.BlockComment) do
-            i <- i + 1
-
-        i
-
-    let private tryReadIdent (tokens: Token[]) index =
-        let i = skipToIndex tokens index
-
-        if i >= tokens.Length || not (isIdentToken tokens.[i]) then
-            None
-        else
-            Some(tokens.[i], i + 1)
-
-    let private prevNonNewlineIndex (tokens: Token[]) index =
-        let mutable i = index - 1
-
-        while i >= 0 && (tokens.[i].Kind = TokenKind.Newline || tokens.[i].Kind = TokenKind.LineComment || tokens.[i].Kind = TokenKind.BlockComment) do
-            i <- i - 1
-
-        if i >= 0 then Some i else None
-
-    let private isEndKeyword (tokens: Token[]) index keyword =
-        match prevNonNewlineIndex tokens index with
-        | None -> false
-        | Some prev ->
-            tokens.[prev].Kind = TokenKind.Ident
-            && identEquals tokens.[prev].Value "end"
-            && tokens.[index].Kind = TokenKind.Ident
-            && identEquals tokens.[index].Value keyword
-
-    let private addDefinition
-        (defs: ResizeArray<SymbolDefinition>)
-        path
-        lineStarts
-        kind
-        name
-        (token: Token)
-        =
-        defs.Add(
-            { Name = name
-              Kind = kind
-              QualifiedName = name
-              Span = toSpan path lineStarts token }
-        )
+    let private tryDefinitionFromAstNode (path: string) (lineStarts: int[]) (node: DashSpecAstNode) : SymbolDefinition option =
+        match node with
+        | DashSpecAstNode.ModuleDeclaration m ->
+            let kind, id =
+                match m.Directive with
+                | DashSpecModuleDirective.Dashboard id -> "dashboard", id
+                | DashSpecModuleDirective.Tab id -> "tab", id
+                | DashSpecModuleDirective.Module(k, id) -> DashSpecModuleKind.toKeyword k, id
+            let span =
+                m.Tokens
+                |> Array.tryFind (fun t -> isIdentLexKind t.LexKind && identEquals t.Text id)
+                |> Option.map (fun t -> t.Span)
+                |> Option.defaultValue m.HeaderSpan
+            Some
+                { Name = id
+                  Kind = kind
+                  QualifiedName = id
+                  Span = toSpan path lineStarts span }
+        | DashSpecAstNode.BlockDeclaration b ->
+            match b.Opener with
+            | DashSpecBlockOpener.Named(kw, id) ->
+                let kind = DashSpecBlockKeyword.toEndName kw
+                let span =
+                    b.Tokens
+                    |> Array.tryFind (fun t -> isIdentLexKind t.LexKind && identEquals t.Text id)
+                    |> Option.map (fun t -> t.Span)
+                    |> Option.defaultValue b.HeaderSpan
+                Some
+                    { Name = id
+                      Kind = kind
+                      QualifiedName = id
+                      Span = toSpan path lineStarts span }
+            | DashSpecBlockOpener.Anonymous _ -> None
+        | DashSpecAstNode.CardReference c ->
+            Some
+                { Name = c.CardId
+                  Kind = "card"
+                  QualifiedName = c.CardId
+                  Span = toSpan path lineStarts c.Span }
+        | DashSpecAstNode.TypeFieldDeclaration f ->
+            Some
+                { Name = f.FieldName
+                  Kind = "field"
+                  QualifiedName = f.FieldName
+                  Span = toSpan path lineStarts f.Span }
+        | DashSpecAstNode.PortDeclaration p ->
+            Some
+                { Name = p.PortName
+                  Kind = "port"
+                  QualifiedName = p.PortName
+                  Span = toSpan path lineStarts p.Span }
+        | DashSpecAstNode.TableRowDeclaration { Kind = TableRowKind.Filter f } when not (String.IsNullOrWhiteSpace f.Id) ->
+            Some
+                { Name = f.Id
+                  Kind = "filter"
+                  QualifiedName = f.Id
+                  Span = toSpan path lineStarts (DashSpecAst.span node) }
+        | DashSpecAstNode.Line l ->
+            match l.Tokens with
+            | [| { Keyword = Some(DashSpecKeyword.Block DashSpecBlockKeyword.Filter) }; idTok |]
+                when isIdentLexKind idTok.LexKind ->
+                Some
+                    { Name = idTok.Text
+                      Kind = "filter"
+                      QualifiedName = idTok.Text
+                      Span = toSpan path lineStarts idTok.Span }
+            | _ -> None
+        | _ -> None
 
     let collectDefinitions path text =
-        let tokens = DashSpecLexer.tokenize text |> Array.ofSeq
+        let tree = SyntaxTree.parse text
         let lineStarts = buildLineStarts text
-        let defs = ResizeArray<SymbolDefinition>()
-        let mutable i = 0
-
-        while i < tokens.Length do
-            let token = tokens.[i]
-
-            match token.Kind with
-            | TokenKind.At ->
-                match tryReadIdent tokens (i + 1) with
-                | Some(directive, next) ->
-                    match directive.Value.ToLowerInvariant() with
-                    | "tab" ->
-                        match tryReadIdent tokens next with
-                        | Some(idTok, _) ->
-                            addDefinition defs path lineStarts "tab" idTok.Value idTok
-                        | None -> ()
-                    | "dashboard" ->
-                        match tryReadIdent tokens next with
-                        | Some(idTok, _) ->
-                            addDefinition defs path lineStarts "dashboard" idTok.Value idTok
-                        | None -> ()
-                    | _ -> ()
-                | None -> ()
-            | _ when isIdentToken token && identEquals token.Value "module" ->
-                // Living header form: `module <kind> <id>` (tab / dashboard / diagram /
-                // flow / presentation / layout / types / palette …).
-                match tryReadIdent tokens (i + 1) with
-                | Some(kindTok, next) ->
-                    match tryReadIdent tokens next with
-                    | Some(idTok, _) ->
-                        addDefinition defs path lineStarts (kindTok.Value.ToLowerInvariant()) idTok.Value idTok
-                    | None -> ()
-                | None -> ()
-            | _ when isIdentToken token && identEquals token.Value "card" && not (isEndKeyword tokens i "card") ->
-                match tryReadIdent tokens (i + 1) with
-                | Some(idTok, _) when idTok.Kind = TokenKind.Ident ->
-                    addDefinition defs path lineStarts "card" idTok.Value idTok
-                | _ -> ()
-            | _ when isIdentToken token && identEquals token.Value "filter" && not (isEndKeyword tokens i "filter") ->
-                match tryReadIdent tokens (i + 1) with
-                | Some(nameTok, _) when nameTok.Kind = TokenKind.Ident ->
-                    addDefinition defs path lineStarts "filter" nameTok.Value nameTok
-                | _ -> ()
-            | _ when isIdentToken token && identEquals token.Value "diagram" ->
-                match tryReadIdent tokens (i + 1) with
-                | Some(idTok, _) when idTok.Kind = TokenKind.Ident ->
-                    addDefinition defs path lineStarts "diagram" idTok.Value idTok
-                | _ -> ()
-            | _ -> ()
-
-            i <- i + 1
-
-        defs.ToArray()
+        DashSpecAst.descendants tree.Root
+        |> Seq.choose (tryDefinitionFromAstNode path lineStarts)
+        |> Array.ofSeq
 
     let findIdentTokenAt text line column =
         if line < 1 || column < 1 then
@@ -171,42 +144,42 @@ module DashSpecSymbolIndex =
                     else lineStarts.[line] - 1
 
                 let targetOffset = lineStart + column - 1
-                let tokens = DashSpecLexer.tokenize text
+                let tree = SyntaxTree.parse text
 
-                tokens
-                |> Seq.tryFind (fun token ->
-                    isIdentToken token
-                    && token.Start <= targetOffset
-                    && token.Start + token.Length > targetOffset
-                    && token.Start >= lineStart
-                    && token.Start <= lineEnd)
-                |> Option.map (fun token -> token, toSpan "" lineStarts token)
+                tree.Tokens
+                |> Array.tryFind (fun token ->
+                    isIdentLexKind token.LexKind
+                    && token.Span.Start <= targetOffset
+                    && token.Span.End > targetOffset
+                    && token.Span.Start >= lineStart
+                    && token.Span.Start <= lineEnd)
+                |> Option.map (fun token -> token, toSpan "" lineStarts token.Span)
 
     let resolveSymbolAt path text line column =
         match findIdentTokenAt text line column with
         | None -> None
         | Some(token, span) ->
-            let lineStarts = buildLineStarts text
             let span = { span with Path = path }
             let defs = collectDefinitions path text
 
-            match Array.tryFind (fun def -> identEquals def.Name token.Value) defs with
+            match Array.tryFind (fun def -> identEquals def.Name token.Text) defs with
             | Some def -> Some def
             | None ->
                 Some
-                    { Name = token.Value
+                    { Name = token.Text
                       Kind = "reference"
-                      QualifiedName = token.Value
+                      QualifiedName = token.Text
                       Span = span }
 
     let findIdentReferences path text symbolName =
         let lineStarts = buildLineStarts text
-        let tokens = DashSpecLexer.tokenize text
+        let tree = SyntaxTree.parse text
 
-        tokens
-        |> Seq.filter (fun token -> isIdentToken token && identEquals token.Value symbolName)
-        |> Seq.map (fun token -> toSpan path lineStarts token)
-        |> Array.ofSeq
+        tree.Tokens
+        |> Array.filter (fun token -> isIdentLexKind token.LexKind && identEquals token.Text symbolName)
+        |> Array.map (fun token ->
+            let role = DashSpecAst.outlineLabelAt token.Span.Start tree.Root
+            toSpan path lineStarts token.Span, role)
 
     let findReferences path text line column =
         match resolveSymbolAt path text line column with
@@ -220,10 +193,10 @@ module DashSpecSymbolIndex =
                 | None -> symbol.Span
 
             findIdentReferences path text symbol.Name
-            |> Array.map (fun span ->
+            |> Array.map (fun (span, role) ->
                 { Span = span
                   Target = target
-                  Kind = symbol.Kind })
+                  Kind = role })
 
     let goToDefinition path text line column =
         match resolveSymbolAt path text line column with
@@ -234,3 +207,25 @@ module DashSpecSymbolIndex =
             match Array.tryFind (fun def -> identEquals def.Name symbol.Name) defs with
             | Some def -> Some def.Span
             | None -> Some symbol.Span
+
+    /// Replace every typed identifier token matching <paramref name="oldName"/> with <paramref name="newName"/>
+    /// using the parsed <see cref="SyntaxTree.Tokens"/> spans (no regex).
+    let renameIdentTokens (text: string) (oldName: string) (newName: string) : string =
+        if String.IsNullOrEmpty text || String.IsNullOrWhiteSpace oldName || String.IsNullOrWhiteSpace newName then
+            text
+        else
+            let tree = SyntaxTree.parse text
+            let matching =
+                tree.Tokens
+                |> Array.filter (fun t -> isIdentLexKind t.LexKind && identEquals t.Text oldName)
+                |> Array.sortByDescending (fun t -> t.Span.Start)
+
+            if matching.Length = 0 then
+                text
+            else
+                let sb = System.Text.StringBuilder(text)
+                for tok in matching do
+                    if tok.Span.Start >= 0 && tok.Span.End <= sb.Length then
+                        sb.Remove(tok.Span.Start, tok.Span.Length) |> ignore
+                        sb.Insert(tok.Span.Start, newName) |> ignore
+                sb.ToString()

@@ -1,0 +1,177 @@
+@namespace DashSpec.Plugin.Studio.Components
+@using AIGuiders.Platform.Modeling.Language
+
+@{
+    var diagList = Inspection?.FileDiagnostics ?? [];
+    var isDrawerOpen = ShowBottomDrawer || diagList.Count > 0;
+}
+
+<!-- BOTTOM DRAWER: Diagnostics & Cross-Project Symbol References -->
+@if (isDrawerOpen && Inspection is not null)
+{
+    <div style="height:175px;min-height:110px;max-height:34vh;display:flex;flex-direction:column;border-top:1px solid rgba(140,155,180,0.22);background:#0c111b;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.22rem 0.65rem;border-bottom:1px solid rgba(140,155,180,0.14);font-size:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.85rem;">
+                <button type="button"
+                        style="background:transparent;border:none;color:@(ActiveMode == "problems" ? "#60a5fa" : "#94a3b8");font-weight:@(ActiveMode == "problems" ? "700" : "500");cursor:pointer;padding:0;"
+                        @onclick="@(() => OnModeChanged.InvokeAsync("problems"))">
+                    ОШИБКИ (@diagList.Count)
+                </button>
+                <button type="button"
+                        style="background:transparent;border:none;color:@(ActiveMode == "references" ? "#60a5fa" : "#94a3b8");font-weight:@(ActiveMode == "references" ? "700" : "500");cursor:pointer;padding:0;"
+                        @onclick="@(() => OnModeChanged.InvokeAsync("references"))">
+                    ССЫЛКИ ПО ПРОЕКТУ (@FoundReferences.Count) @(!string.IsNullOrEmpty(ReferencesTargetSymbol) ? $"— {ReferencesTargetSymbol}" : "")
+                </button>
+            </div>
+            <button type="button"
+                    class="studio-icon-btn"
+                    title="Свернуть нижнюю панель"
+                    @onclick="@(() => OnCloseDrawer.InvokeAsync())">
+                ✕
+            </button>
+        </div>
+
+        <div style="flex:1;overflow:auto;">
+            @if (ActiveMode == "references")
+            {
+                @if (FoundReferences.Count == 0)
+                {
+                    <div style="padding:0.6rem;font-size:0.78rem;opacity:0.7;">
+                        Поставьте курсор на любой символ в коде — его использования по проекту появятся здесь автоматически.
+                    </div>
+                }
+                else
+                {
+                    <table style="width:100%;border-collapse:collapse;font-size:0.77rem;">
+                        <thead>
+                            <tr style="text-align:left;border-bottom:1px solid rgba(140,155,180,0.14);opacity:0.65;">
+                                <th style="padding:0.22rem 0.6rem;width:230px;">Файл</th>
+                                <th style="padding:0.22rem 0.4rem;width:95px;">Позиция</th>
+                                <th style="padding:0.22rem 0.6rem;">Узел AST</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in FoundReferences)
+                            {
+                                var isDecl = r.LinePreview.StartsWith("module ", StringComparison.OrdinalIgnoreCase) ||
+                                             r.LinePreview.StartsWith("source ", StringComparison.OrdinalIgnoreCase) ||
+                                             r.LinePreview.StartsWith("transformer ", StringComparison.OrdinalIgnoreCase) ||
+                                             r.LinePreview.StartsWith("type ", StringComparison.OrdinalIgnoreCase);
+                                <tr class="studio-diag-row"
+                                    style="display:table-row;border-bottom:1px solid rgba(140,155,180,0.07);"
+                                    @onclick="() => OnNavigateToReference.InvokeAsync(r)">
+                                    <td style="padding:0.24rem 0.6rem;white-space:nowrap;">
+                                        <code style="color:#60a5fa;">@r.RelativePath</code>
+                                    </td>
+                                    <td style="padding:0.24rem 0.4rem;white-space:nowrap;">
+                                        <code>Ln @r.LineNumber, Col @r.Column</code>
+                                    </td>
+                                    <td style="padding:0.24rem 0.6rem;">
+                                        <span class="studio-badge @(isDecl ? "ok" : "")">@r.LinePreview</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+            else
+            {
+                @if (diagList.Count == 0)
+                {
+                    <div style="padding:0.6rem;font-size:0.78rem;opacity:0.7;">
+                        ✓ Ошибок и предупреждений в текущем модуле нет.
+                    </div>
+                }
+                else
+                {
+                    <table style="width:100%;border-collapse:collapse;font-size:0.77rem;">
+                        <thead>
+                            <tr style="text-align:left;border-bottom:1px solid rgba(140,155,180,0.14);opacity:0.65;">
+                                <th style="padding:0.22rem 0.6rem;width:85px;">Тип</th>
+                                <th style="padding:0.22rem 0.4rem;width:90px;">Позиция</th>
+                                <th style="padding:0.22rem 0.6rem;">Описание</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var diag in diagList)
+                            {
+                                var isErr = diag.Severity == Severity.Error;
+                                <tr class="studio-diag-row @(isErr ? "studio-diag-error" : "studio-diag-warning")"
+                                    style="display:table-row;border-bottom:1px solid rgba(140,155,180,0.07);"
+                                    @onclick="() => OnRevealLine.InvokeAsync((diag.Span.Line, diag.Span.Column))">
+                                    <td style="padding:0.24rem 0.6rem;white-space:nowrap;">
+                                        <span class="studio-badge @(isErr ? "conflict" : "draft")">
+                                            @(isErr ? "✕ Error" : "⚠ Warn")
+                                        </span>
+                                    </td>
+                                    <td style="padding:0.24rem 0.4rem;white-space:nowrap;">
+                                        <code>Ln @diag.Span.Line, Col @diag.Span.Column</code>
+                                    </td>
+                                    <td style="padding:0.24rem 0.6rem;">
+                                        @diag.Message
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+        </div>
+    </div>
+}
+
+<!-- COMPACT 26px STATUS BAR -->
+<footer style="height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 0.65rem;border-top:1px solid rgba(140,155,180,0.16);background:#090d16;font-size:0.74rem;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button type="button"
+                style="background:transparent;border:none;color:inherit;cursor:pointer;padding:0;display:flex;align-items:center;gap:0.35rem;"
+                @onclick="@(() => OnToggleDrawerWithMode.InvokeAsync("problems"))">
+            @if (diagList.Count == 0)
+            {
+                <span style="color:#34d399;font-weight:600;">✓ 0 ошибок</span>
+            }
+            else
+            {
+                <span style="color:#f87171;font-weight:600;">✕ Ошибок: @diagList.Count</span>
+            }
+        </button>
+
+        <span style="opacity:0.35;">|</span>
+
+        <button type="button"
+                style="background:transparent;border:none;color:#93c5fd;cursor:pointer;padding:0;display:flex;align-items:center;gap:0.3rem;"
+                title="Открыть ссылки на текущий символ по проекту (Shift+F12)"
+                @onclick="@(() => OnToggleDrawerWithMode.InvokeAsync("references"))">
+            <span>Ссылки: <strong>@FoundReferences.Count</strong> @(!string.IsNullOrEmpty(ReferencesTargetSymbol) ? $"({ReferencesTargetSymbol})" : "")</span>
+        </button>
+
+        <span style="opacity:0.35;">|</span>
+        <span style="opacity:0.65;">Ctrl+Space · F12 · Shift+F12 · F2 · Alt+G</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:0.55rem;overflow:hidden;">
+        @if (!string.IsNullOrWhiteSpace(ActiveCursorSymbolDisplay))
+        {
+            <span class="studio-badge" style="color:#93c5fd;">@ActiveCursorSymbolDisplay</span>
+        }
+        <code style="opacity:0.75;">Ln @CursorLine, Col @CursorColumn</code>
+    </div>
+</footer>
+
+@code {
+    [Parameter] public StudioDocumentInspection? Inspection { get; set; }
+    [Parameter] public bool ShowBottomDrawer { get; set; }
+    [Parameter] public string ActiveMode { get; set; } = "problems";
+    [Parameter] public string? ReferencesTargetSymbol { get; set; }
+    [Parameter] public IReadOnlyList<StudioReferenceItemDto> FoundReferences { get; set; } = [];
+    [Parameter] public string? ActiveCursorSymbolDisplay { get; set; }
+    [Parameter] public int CursorLine { get; set; } = 1;
+    [Parameter] public int CursorColumn { get; set; } = 1;
+
+    [Parameter] public EventCallback<string> OnModeChanged { get; set; }
+    [Parameter] public EventCallback<string> OnToggleDrawerWithMode { get; set; }
+    [Parameter] public EventCallback OnCloseDrawer { get; set; }
+    [Parameter] public EventCallback<StudioReferenceItemDto> OnNavigateToReference { get; set; }
+    [Parameter] public EventCallback<(int Line, int Column)> OnRevealLine { get; set; }
+}

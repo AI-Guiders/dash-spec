@@ -1,0 +1,255 @@
+@namespace DashSpec.Plugin.Studio.Components
+
+<div style="display:flex;flex-direction:column;height:100%;background:#0b101b;">
+    <!-- Single Right Inspector Header with Mode Switcher (Дерево документа ↔ Граф связей) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.4rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(140,155,180,0.16);">
+        <div class="studio-mode-switch" style="grid-template-columns:repeat(2, 1fr);flex:1;">
+            <button type="button"
+                    class="studio-mode-btn @(ActiveMode == "graph" ? "active" : "")"
+                    @onclick="@(() => SwitchModeAsync("graph"))">
+                Граф связей (@GraphBadgeCount)
+            </button>
+            <button type="button"
+                    class="studio-mode-btn @(ActiveMode == "tree" ? "active" : "")"
+                    @onclick="@(() => SwitchModeAsync("tree"))">
+                Дерево документа
+            </button>
+        </div>
+
+        @if (ActiveMode == "tree")
+        {
+            <button type="button"
+                    class="studio-icon-btn"
+                    style="padding:0.12rem 0.35rem;font-size:0.72rem;"
+                    title="Развернуть / свернуть все узлы"
+                    @onclick="ToggleExpandAll">
+                @(_defaultExpanded ? "⊟" : "⊞")
+            </button>
+        }
+    </div>
+
+    @if (ActiveMode == "graph")
+    {
+        <!-- FULL-HEIGHT GRAPH MODE -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.35rem;padding:0.28rem 0.5rem;border-bottom:1px solid rgba(140,155,180,0.12);font-size:0.74rem;background:#090d16;">
+            <label style="display:flex;align-items:center;gap:0.28rem;cursor:pointer;white-space:nowrap;"
+                   title="Автоматически фокусировать граф на узле под курсором">
+                <input type="checkbox"
+                       checked="@GraphFollowsCursor"
+                       @onchange="@(e => OnGraphFollowsCursorChanged.InvokeAsync(e.Value is true))" />
+                <strong>Авто-фокус по курсору</strong>
+            </label>
+
+            @if (!string.IsNullOrWhiteSpace(FocusedGraphSymbol))
+            {
+                <span class="studio-badge" style="color:#fbbf24;display:flex;align-items:center;gap:0.25rem;">
+                    <span>@FocusedGraphSymbol</span>
+                    <button type="button"
+                            style="background:transparent;border:none;color:inherit;cursor:pointer;padding:0;font-size:0.72rem;"
+                            title="Показать весь граф модуля"
+                            @onclick="@(() => OnFocusedGraphSymbolChanged.InvokeAsync(null))">
+                        ✕
+                    </button>
+                </span>
+            }
+            else
+            {
+                <span style="opacity:0.55;font-size:0.71rem;">Весь граф (@GraphBadgeCount)</span>
+            }
+        </div>
+        <div id="studio-echarts-graph"
+             data-testid="studio-echarts-graph"
+             style="flex:1;width:100%;min-height:0;background:#090d16;"></div>
+    }
+    else
+    {
+        <!-- FULL-HEIGHT HIERARCHICAL DOCUMENT TREE MODE -->
+        <div style="padding:0.3rem 0.45rem;border-bottom:1px solid rgba(140,155,180,0.12);">
+            <input type="text"
+                   class="studio-compact-input"
+                   placeholder="Фильтр по дереву документа…"
+                   value="@_outlineFilter"
+                   @oninput="@(e => _outlineFilter = e.Value?.ToString() ?? string.Empty)" />
+        </div>
+        <div style="flex:1;overflow:auto;padding:0.28rem 0.4rem;">
+            @if (Inspection is null)
+            {
+                <p style="font-size:0.76rem;opacity:0.65;padding:0.4rem;">Нет открытого модуля.</p>
+            }
+            else if (_cachedTreeRoots.Count == 0)
+            {
+                <p style="font-size:0.76rem;opacity:0.65;padding:0.4rem;">Дерево пусто.</p>
+            }
+            else
+            {
+                @foreach (var rootNode in _cachedTreeRoots)
+                {
+                    @RenderOutlineTreeNode(rootNode, 0)
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string _outlineFilter = string.Empty;
+    private bool _defaultExpanded = true;
+    private bool _autoExpandCursor = true;
+    private readonly Dictionary<string, bool> _expandedNodes = new(StringComparer.OrdinalIgnoreCase);
+    private StudioDocumentInspection? _lastInspection;
+    private string? _lastRelativePath;
+    private IReadOnlyList<StudioOutlineRow> _cachedTreeRoots = [];
+
+    [Parameter] public StudioDocumentInspection? Inspection { get; set; }
+    [Parameter] public string ActiveMode { get; set; } = "graph";
+    [Parameter] public int CursorLine { get; set; } = 1;
+    [Parameter] public int GraphBadgeCount { get; set; }
+    [Parameter] public bool GraphFollowsCursor { get; set; } = true;
+    [Parameter] public string? FocusedGraphSymbol { get; set; }
+
+    [Parameter] public EventCallback<string> OnModeChanged { get; set; }
+    [Parameter] public EventCallback<StudioOutlineRow> OnOutlineRowClick { get; set; }
+    [Parameter] public EventCallback<bool> OnGraphFollowsCursorChanged { get; set; }
+    [Parameter] public EventCallback<string?> OnFocusedGraphSymbolChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_lastInspection, Inspection))
+        {
+            var pathChanged = !string.Equals(_lastRelativePath, Inspection?.RelativePath, StringComparison.OrdinalIgnoreCase);
+            _lastInspection = Inspection;
+            _lastRelativePath = Inspection?.RelativePath;
+            _cachedTreeRoots = StudioUiHelpers.BuildOutlineTree(Inspection);
+
+            if (pathChanged)
+            {
+                _expandedNodes.Clear();
+                _autoExpandCursor = true;
+            }
+        }
+    }
+
+    private Task SwitchModeAsync(string mode) =>
+        OnModeChanged.InvokeAsync(mode);
+
+    private void ToggleExpandAll()
+    {
+        _defaultExpanded = !_defaultExpanded;
+        _autoExpandCursor = _defaultExpanded;
+        _expandedNodes.Clear();
+    }
+
+    private bool MatchesFilterOrDescendant(StudioOutlineRow node)
+    {
+        if (string.IsNullOrWhiteSpace(_outlineFilter))
+        {
+            return true;
+        }
+
+        if (node.Caption.Contains(_outlineFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return node.Children.Any(MatchesFilterOrDescendant);
+    }
+
+    private bool IsNodeExpanded(StudioOutlineRow node, int level)
+    {
+        if (!string.IsNullOrWhiteSpace(_outlineFilter))
+        {
+            return true;
+        }
+
+        if (_expandedNodes.TryGetValue(node.NodeKey, out var explicitState))
+        {
+            return explicitState;
+        }
+
+        if (_autoExpandCursor && node.Line <= CursorLine && CursorLine <= node.EndLine)
+        {
+            return true;
+        }
+
+        return _defaultExpanded && level == 0;
+    }
+
+    private void ToggleNode(string key, bool currentlyExpanded)
+    {
+        _expandedNodes[key] = !currentlyExpanded;
+    }
+
+    private Task OnNodeRowClickedAsync(StudioOutlineRow node, bool hasChildren, bool currentlyExpanded)
+    {
+        if (hasChildren)
+        {
+            var nextExpanded = !currentlyExpanded;
+            _expandedNodes[node.NodeKey] = nextExpanded;
+            if (!nextExpanded)
+            {
+                // Local collapse only: zero parent/JS/Monaco round-trip for instant collapse
+                return Task.CompletedTask;
+            }
+        }
+
+        return OnOutlineRowClick.InvokeAsync(node);
+    }
+
+    private RenderFragment RenderOutlineTreeNode(StudioOutlineRow node, int level) => __builder =>
+    {
+        if (!MatchesFilterOrDescendant(node))
+        {
+            return;
+        }
+
+        var hasChildren = node.Children.Count > 0;
+        var isExpanded = hasChildren && IsNodeExpanded(node, level);
+        var (symIcon, symColor) = StudioUiHelpers.GetUnitIconAndColor(node.KindTag);
+        var isCursorInside = node.Line <= CursorLine && CursorLine <= node.EndLine;
+        var isExactCursorLeaf = isCursorInside && (!hasChildren || !node.Children.Any(c => c.Line <= CursorLine && CursorLine <= c.EndLine));
+
+        <div style="margin-bottom:1px;" @key="node.NodeKey">
+            <div class="studio-file-item @(isExactCursorLeaf ? "active" : "")"
+                 style="padding:0.16rem 0.32rem;font-size:0.76rem;display:flex;align-items:center;justify-content:space-between;user-select:none;"
+                 @onclick="() => OnNodeRowClickedAsync(node, hasChildren, isExpanded)">
+                <span style="display:flex;align-items:center;gap:0.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    @if (hasChildren)
+                    {
+                        <button type="button"
+                                style="background:transparent;border:none;color:#94a3b8;cursor:pointer;padding:0;width:18px;height:18px;line-height:18px;text-align:center;flex-shrink:0;"
+                                title="@(isExpanded ? "Свернуть узел" : "Развернуть узел")"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => ToggleNode(node.NodeKey, isExpanded)">
+                            @(isExpanded ? "▾" : "▸")
+                        </button>
+                    }
+                    else
+                    {
+                        <span style="width:18px;display:inline-block;flex-shrink:0;"></span>
+                    }
+                    <span style="color:@symColor;width:13px;text-align:center;flex-shrink:0;">@symIcon</span>
+                    <span style="font-weight:@(hasChildren || isExactCursorLeaf ? "600" : "400");color:@(isCursorInside && !isExactCursorLeaf ? "#93c5fd" : "inherit");">
+                        @node.Caption
+                    </span>
+                </span>
+                <span style="display:flex;align-items:center;gap:0.25rem;flex-shrink:0;">
+                    @if (hasChildren && !isExpanded)
+                    {
+                        <span class="studio-badge" style="font-size:0.63rem;padding:0.01rem 0.25rem;">@node.Children.Count</span>
+                    }
+                    <code style="opacity:0.45;font-size:0.67rem;">:@node.Line</code>
+                </span>
+            </div>
+
+            @if (hasChildren && isExpanded)
+            {
+                <div style="margin-left:0.65rem;padding-left:0.45rem;border-left:1px solid @(isCursorInside ? "rgba(96,165,250,0.45)" : "rgba(148,163,184,0.14)");">
+                    @foreach (var child in node.Children)
+                    {
+                        @RenderOutlineTreeNode(child, level + 1)
+                    }
+                </div>
+            }
+        </div>
+    };
+}

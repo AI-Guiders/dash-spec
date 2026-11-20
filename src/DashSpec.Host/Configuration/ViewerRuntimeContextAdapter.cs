@@ -8,6 +8,10 @@ internal sealed class ViewerRuntimeContextAdapter(
 {
     public string StartupRuntimeConfigPath => hostContext.StartupRuntimeConfigPath;
 
+    public string CatalogFullPath => hostContext.Catalog.FullPath;
+
+    public string DefaultSpecDirectory => hostContext.DefaultSpecDirectory;
+
     public IReadOnlyDictionary<string, string> ReportTimeSettings =>
         bootstrap.ReportTime.ToSettingsDictionary();
 }

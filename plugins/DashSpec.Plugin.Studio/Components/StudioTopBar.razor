@@ -1,0 +1,185 @@
+@namespace DashSpec.Plugin.Studio.Components
+
+<header class="studio-topbar">
+    <!-- Left: Breadcrumb & Unit Identity -->
+    <div class="studio-topbar-group">
+        <button type="button"
+                class="studio-icon-btn @(ShowLeftExplorer ? "active" : "")"
+                title="Показать / скрыть проводник проекта (Левая зона)"
+                @onclick="@(() => OnToggleLeftExplorer.InvokeAsync())">
+            ◧
+        </button>
+
+        @if (Inspection is not null)
+        {
+            <code style="font-size:0.8rem;color:#e2e8f0;">@Inspection.RelativePath</code>
+            @if (Inspection.Unit is { } activeUnit)
+            {
+                var (icon, color) = StudioUiHelpers.GetUnitIconAndColor(activeUnit.Kind);
+                <span class="studio-badge" style="color:@color;">@icon module @activeUnit.Kind @activeUnit.Id</span>
+            }
+            @if (Inspection.IsDraftModified)
+            {
+                <span class="studio-badge draft">● Draft</span>
+            }
+            @if (Inspection.HasUpstreamConflict)
+            {
+                <span class="studio-badge conflict">Конфликт!</span>
+            }
+        }
+        @if (GitOverview.IsGitRepository)
+        {
+            <span class="studio-badge ok" title="@WorkspaceRoot">git: @GitOverview.Branch</span>
+        }
+        @foreach (var peer in ActiveAuthors)
+        {
+            <span class="studio-badge presence" title="@($"Активен: {peer.ActiveRelativePath ?? "—"}")">
+                ● @peer.AuthorName @(peer.DraftPaths.Count > 0 ? $"({peer.DraftPaths.Count})" : "")
+            </span>
+        }
+    </div>
+
+    <!-- Right: Editor Actions & Zone Toggles -->
+    <div class="studio-topbar-group">
+        <button type="button"
+                class="studio-pill-btn @(ShowDiffMode ? "active" : "")"
+                title="Переключить Центр: Редактор кода ↔ Сравнение с диском (Diff)"
+                @onclick="@(() => OnToggleDiffMode.InvokeAsync())">
+            @(ShowDiffMode ? "← К коду" : "Diff")
+        </button>
+
+        <button type="button"
+                class="studio-pill-btn"
+                title="Форматировать текущий модуль"
+                @onclick="@(() => OnFormat.InvokeAsync())">
+            Format
+        </button>
+
+        @if (Inspection is { HasUpstreamConflict: true })
+        {
+            <button type="button"
+                    class="studio-pill-btn warn"
+                    @onclick="@(() => OnRebase.InvokeAsync())">
+                Rebase
+            </button>
+        }
+        @if (Inspection is { IsDraftModified: true })
+        {
+            <button type="button"
+                    class="studio-pill-btn danger"
+                    @onclick="@(() => OnRevertFile.InvokeAsync())">
+                Revert
+            </button>
+        }
+
+        <button type="button"
+                class="studio-pill-btn @(AuthorDrafts.Count > 0 ? "primary" : "")"
+                @onclick="@(() => _showPublishPopover = !_showPublishPopover)">
+            Publish (@AuthorDrafts.Count) ▾
+        </button>
+
+        <button type="button"
+                class="studio-icon-btn @(ShowRightInspector ? "active" : "")"
+                title="Показать / скрыть инспектор связей и структуры (Правая зона)"
+                @onclick="@(() => OnToggleRightInspector.InvokeAsync())">
+            ◨
+        </button>
+    </div>
+</header>
+
+@if (_showPublishPopover)
+{
+    <div class="studio-publish-popover">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.55rem;">
+            <strong>Публикация черновика (@AuthorDrafts.Count)</strong>
+            <RadzenButton Text="✕" Size="ButtonSize.ExtraSmall" ButtonStyle="ButtonStyle.Light" Click="@(() => _showPublishPopover = false)" />
+        </div>
+
+        <div style="margin-bottom:0.5rem;">
+            <label style="font-size:0.78rem;display:block;margin-bottom:0.2rem;opacity:0.8;">Имя автора (Presence &amp; Git):</label>
+            <RadzenTextBox Style="width:100%;" Value="@AuthorName" Change="@(val => OnAuthorNameChanged.InvokeAsync(val?.ToString() ?? ""))" />
+        </div>
+
+        @if (AuthorDrafts.Count > 0)
+        {
+            <div style="max-height:95px;overflow:auto;margin-bottom:0.55rem;padding:0.35rem;border-radius:5px;background:rgba(15,23,42,0.9);font-size:0.78rem;">
+                @foreach (var d in AuthorDrafts.Keys.OrderBy(k => k))
+                {
+                    <div><code>@d</code></div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="font-size:0.8rem;opacity:0.7;margin:0.3rem 0 0.6rem 0;">Нет изменённых файлов в черновике.</p>
+        }
+
+        <div style="margin-bottom:0.55rem;">
+            <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;cursor:pointer;margin-bottom:0.35rem;">
+                <input type="checkbox" checked="@CommitToGitOnPublish" @onchange="@(e => OnCommitToGitChanged.InvokeAsync(e.Value is true))" />
+                Сделать Git Commit при публикации
+            </label>
+            <RadzenTextBox Style="width:100%;"
+                           Placeholder="Сообщение коммита…"
+                           Value="@CommitMessage"
+                           Change="@(val => OnCommitMessageChanged.InvokeAsync(val?.ToString() ?? ""))" />
+        </div>
+
+        <div style="display:flex;justify-content:space-between;gap:0.45rem;">
+            <RadzenButton Text="Publish"
+                          Size="ButtonSize.Small"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Disabled="@(AuthorDrafts.Count == 0)"
+                          Style="flex:1;"
+                          Click="@PublishClickedAsync" />
+            @if (AuthorDrafts.Count > 0)
+            {
+                <RadzenButton Text="Сбросить всё"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Variant="Variant.Outlined"
+                              Click="@DiscardAllClickedAsync" />
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool _showPublishPopover;
+
+    [Parameter] public StudioDocumentInspection? Inspection { get; set; }
+    [Parameter] public StudioGitOverview GitOverview { get; set; } = new(false, "—", [], []);
+    [Parameter] public string WorkspaceRoot { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyList<StudioPresenceEntry> ActiveAuthors { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<string, StudioDraftDocument> AuthorDrafts { get; set; } = new Dictionary<string, StudioDraftDocument>();
+    [Parameter] public string AuthorName { get; set; } = string.Empty;
+    [Parameter] public bool CommitToGitOnPublish { get; set; } = true;
+    [Parameter] public string CommitMessage { get; set; } = string.Empty;
+    [Parameter] public bool ShowLeftExplorer { get; set; } = true;
+    [Parameter] public bool ShowRightInspector { get; set; } = true;
+    [Parameter] public bool ShowDiffMode { get; set; }
+
+    [Parameter] public EventCallback OnToggleLeftExplorer { get; set; }
+    [Parameter] public EventCallback OnToggleRightInspector { get; set; }
+    [Parameter] public EventCallback OnToggleDiffMode { get; set; }
+    [Parameter] public EventCallback OnFormat { get; set; }
+    [Parameter] public EventCallback OnRebase { get; set; }
+    [Parameter] public EventCallback OnRevertFile { get; set; }
+    [Parameter] public EventCallback OnPublish { get; set; }
+    [Parameter] public EventCallback OnDiscardAll { get; set; }
+    [Parameter] public EventCallback<string> OnAuthorNameChanged { get; set; }
+    [Parameter] public EventCallback<bool> OnCommitToGitChanged { get; set; }
+    [Parameter] public EventCallback<string> OnCommitMessageChanged { get; set; }
+
+    private async Task PublishClickedAsync()
+    {
+        _showPublishPopover = false;
+        await OnPublish.InvokeAsync();
+    }
+
+    private async Task DiscardAllClickedAsync()
+    {
+        _showPublishPopover = false;
+        await OnDiscardAll.InvokeAsync();
+    }
+}

@@ -33,12 +33,12 @@ type DashSpecLanguageBackend() =
         )
 
     static let specDirectory (req: LanguageRequest) =
-        let dir = Path.GetDirectoryName req.FilePath
-
-        if String.IsNullOrWhiteSpace dir then
-            "."
+        if not (String.IsNullOrWhiteSpace req.SolutionOrProjectPath) && Directory.Exists req.SolutionOrProjectPath then
+            DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.resolveProjectRoot req.SolutionOrProjectPath
+        elif not (String.IsNullOrWhiteSpace req.FilePath) then
+            DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.resolveProjectRoot req.FilePath
         else
-            dir
+            "."
 
     static let toSpan path line character endLine endCharacter =
         { Path = path
@@ -58,7 +58,7 @@ type DashSpecLanguageBackend() =
         { Id = "DSPEC"
           Severity = severity
           Message = diag.Message
-          Span = toSpan path diag.Line diag.Character diag.EndLine diag.EndCharacter
+          Span = toSpan path (diag.Line + 1) (diag.Character + 1) (diag.EndLine + 1) (diag.EndCharacter + 1)
           Tags = [||]
           Language = languageId }
 
@@ -255,7 +255,7 @@ type DashSpecLanguageBackend() =
                             |> Seq.map (fun u ->
                                 { Span = toSpan u.Path u.Line u.Column u.EndLine u.EndColumn
                                   Target = toSpan path symbol.Span.Line symbol.Span.Column symbol.Span.Line symbol.Span.Column
-                                  Kind = kind })
+                                  Kind = if String.IsNullOrWhiteSpace u.Role then kind else u.Role })
                             |> Array.ofSeq
 
                         Task.FromResult { References = references }
@@ -345,23 +345,9 @@ type DashSpecLanguageBackend() =
                           Message = "No symbol at position."
                           Files = [||]
                           Changes = [||] }
-                | Some symbol when symbol.Kind = "reference" ->
-                    Task.FromResult
-                        { OldName = symbol.Name
-                          NewName = renameReq.NewName
-                          SymbolKind = symbol.Kind
-                          Applied = false
-                          Message = "Rename is only supported for declared card, filter, tab, dashboard, and diagram ids."
-                          Files = [||]
-                          Changes = [||] }
                 | Some symbol ->
                     let newText =
-                        System.Text.RegularExpressions.Regex.Replace(
-                            text,
-                            $"\\b{System.Text.RegularExpressions.Regex.Escape symbol.Name}\\b",
-                            renameReq.NewName,
-                            System.Text.RegularExpressions.RegexOptions.IgnoreCase
-                        )
+                        DashSpecSymbolIndex.renameIdentTokens text symbol.Name (renameReq.NewName.Trim())
 
                     let changes =
                         if renameReq.Apply && not (String.Equals(text, newText, StringComparison.Ordinal)) then

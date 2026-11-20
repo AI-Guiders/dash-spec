@@ -24,8 +24,6 @@
 
   <Project Path="src\DashSpec.CodeCenter\DashSpec.CodeCenter.fsproj" />
 
-  <Project Path="src\DashSpec.CodeCenter.Plugin\DashSpec.CodeCenter.Plugin.csproj" />
-
   <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
 
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
@@ -51,6 +49,7 @@
   <Project Path="src\DashSpec.Cli\DashSpec.Cli.csproj" />
 
   <Project Path="plugins\DashSpec.Plugin.Commands\DashSpec.Plugin.Commands.csproj" />
+  <Project Path="plugins\DashSpec.Plugin.Studio\DashSpec.Plugin.Studio.csproj" />
   <Project Path="plugins\viz\DashSpec.Plugin.Viz.ECharts\DashSpec.Plugin.Viz.ECharts.csproj" />
 
   <Project Path="tests\DashSpec.Analyzers.Tests\DashSpec.Analyzers.Tests.csproj" />

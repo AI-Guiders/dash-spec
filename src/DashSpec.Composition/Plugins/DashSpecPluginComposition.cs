@@ -240,6 +240,7 @@ public static class DashSpecPluginComposition
             "viz_gantt_timeline",
             "filter_widgets_builtin",
             "command_bar",
+            "studio",
         };
 
         var bundle = manifest.Bundles.FirstOrDefault(x =>

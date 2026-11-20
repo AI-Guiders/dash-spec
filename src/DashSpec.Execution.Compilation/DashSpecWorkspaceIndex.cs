@@ -1,5 +1,7 @@
-using System.Text.RegularExpressions;
-using FsharpDocument = DashSpec.Modeling.Parse.Document;
+using DashSpec.Modeling.Parse;
+using DashSpec.Modeling.Parse.Document;
+using DashSpec.Modeling.Parse.Syntax;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Execution.Compilation;
 
@@ -10,8 +12,8 @@ public sealed record DashSpecUnitDeclaration(string Kind, string Id, string Path
 
 /// <summary>
 /// Workspace unit index for LSP completion, go-to-definition and find-usages:
-/// every `module &lt;kind&gt; &lt;id&gt;` header (tab / dashboard / diagram / flow /
-/// presentation / layout / palette / types / …) plus `namespace &lt;Ns&gt;` → file + line.
+/// built over <see cref="UnitIndexModule.build"/> (<c>.dsproj</c> membership + embedded <c>stdlib/</c>)
+/// and typed <see cref="UnitGrammar.tryUnwrapAny"/> AST envelopes.
 /// </summary>
 public sealed class DashSpecWorkspaceIndex
 {
@@ -29,17 +31,29 @@ public sealed class DashSpecWorkspaceIndex
     private readonly Dictionary<string, List<DashSpecUnitDeclaration>> _unitsByNamespace =
         new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly Dictionary<string, (string Path, int Line, int Column)> _rowTypes =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly Dictionary<string, (string Text, ParseTree Tree)> _unitSources =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public IReadOnlyDictionary<string, string> Diagrams => _diagrams;
 
     public IReadOnlyDictionary<string, string> Presentations => _presentations;
 
     public IReadOnlyList<DashSpecUnitDeclaration> Units => _units;
 
-    /// <summary>Unit declarations by module id (`module &lt;kind&gt; &lt;id&gt;`).</summary>
+    /// <summary>Unit declarations by module id (<c>module &lt;kind&gt; &lt;id&gt;</c>).</summary>
     public IReadOnlyDictionary<string, DashSpecUnitDeclaration> UnitsById => _unitsById;
 
-    /// <summary>Unit declarations grouped by the declared `namespace &lt;Ns&gt;`.</summary>
+    /// <summary>Unit declarations grouped by the declared <c>namespace &lt;Ns&gt;</c>.</summary>
     public IReadOnlyDictionary<string, List<DashSpecUnitDeclaration>> UnitsByNamespace => _unitsByNamespace;
+
+    /// <summary>Declared <c>type &lt;RowType&gt;</c> definitions mapped to their source file, 1-based line, and column.</summary>
+    public IReadOnlyDictionary<string, (string Path, int Line, int Column)> RowTypes => _rowTypes;
+
+    /// <summary>Cached raw text and parsed syntax tree per full path for zero-disk workspace queries.</summary>
+    public IReadOnlyDictionary<string, (string Text, ParseTree Tree)> UnitSources => _unitSources;
 
     public void RegisterDiagram(string id, string path)
     {
@@ -91,7 +105,10 @@ public sealed class DashSpecWorkspaceIndex
         }
     }
 
-    /// <summary>Scans the `.ds` units of a workspace (ADR-0101) and registers every module kind.</summary>
+    /// <summary>
+    /// Builds the workspace index via <see cref="UnitIndexModule.corpusFiles"/> (<c>.dsproj</c> aware)
+    /// and unwraps each unit's typed <see cref="UnitGrammar.UnitEnvelope"/> from its AST.
+    /// </summary>
     public static DashSpecWorkspaceIndex Scan(string rootDirectory)
     {
         var index = new DashSpecWorkspaceIndex();
@@ -100,14 +117,20 @@ public sealed class DashSpecWorkspaceIndex
             return index;
         }
 
-        foreach (var path in Directory.EnumerateFiles(rootDirectory, "*.*", SearchOption.AllDirectories))
+        foreach (var path in UnitIndexModule.corpusFiles(rootDirectory))
         {
-            var ext = Path.GetExtension(path);
-            if (ext.Equals(".ds", StringComparison.OrdinalIgnoreCase) ||
-                ext.Equals(".dashspec", StringComparison.OrdinalIgnoreCase))
-            {
-                index.RegisterUnitFile(path);
-            }
+            index.RegisterUnitFile(path);
+        }
+
+        return index;
+    }
+
+    public static DashSpecWorkspaceIndex BuildFromCorpusTexts(IReadOnlyDictionary<string, string> memberTexts)
+    {
+        var index = new DashSpecWorkspaceIndex();
+        foreach (var (path, text) in memberTexts)
+        {
+            index.RegisterUnitText(path, text);
         }
 
         return index;
@@ -117,56 +140,62 @@ public sealed class DashSpecWorkspaceIndex
 
     public static string? TryReadPresentationId(string text) => TryReadHeaderId(text, "presentation");
 
-    /// <summary>Reads `module &lt;kind&gt; &lt;id&gt;` (ADR-0101) through the language's own header reader.</summary>
     private static string? TryReadHeaderId(string text, string kindKeyword)
     {
-        var (kind, id) = FsharpDocument.UnitSource.tryKindAndId(text);
-
+        var (kind, id) = UnitSource.tryKindAndId(text);
         return !string.IsNullOrWhiteSpace(id) && kind.Equals(kindKeyword, StringComparison.OrdinalIgnoreCase)
             ? id
             : null;
     }
 
-    private static readonly Regex ModuleHeaderRegex = new(
-        @"^\s*module\s+(?<kind>[A-Za-z_][A-Za-z0-9_]*)\s+(?<id>[A-Za-z_][A-Za-z0-9_.]*)",
-        RegexOptions.Compiled);
-
-    private static readonly Regex NamespaceRegex = new(
-        @"^\s*namespace\s+(?<ns>[A-Za-z_][A-Za-z0-9_.]*)",
-        RegexOptions.Compiled);
-
     private void RegisterUnitFile(string path)
     {
-        string text;
-        try
-        {
-            text = File.ReadAllText(path);
-        }
-        catch
+        var rawOpt = UnitSource.tryReadRaw(path);
+        if (!FSharpOption<string>.get_IsSome(rawOpt))
         {
             return;
         }
 
-        var lines = text.Split('\n');
-        var headerLine = Array.FindIndex(lines, l => ModuleHeaderRegex.IsMatch(l.TrimEnd('\r')));
-        if (headerLine < 0)
+        RegisterUnitText(path, rawOpt.Value);
+    }
+
+    private void RegisterUnitText(string path, string text)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var tree = SyntaxTree.parse(text);
+        _unitSources[fullPath] = (text, tree);
+        var envOpt = UnitGrammar.tryUnwrapAny(tree.Root);
+        if (!FSharpOption<UnitGrammar.UnitEnvelope>.get_IsSome(envOpt))
         {
             return;
         }
 
-        var match = ModuleHeaderRegex.Match(lines[headerLine].TrimEnd('\r'));
-        var kind = match.Groups["kind"].Value;
-        var id = match.Groups["id"].Value;
+        var env = envOpt.Value;
+        var kind = DashSpecModuleKindModule.toKeyword(env.Kind);
+        var id = env.Id;
         if (string.IsNullOrWhiteSpace(kind) || string.IsNullOrWhiteSpace(id))
         {
             return;
         }
 
-        var nsLine = Array.FindIndex(lines, l => NamespaceRegex.IsMatch(l.TrimEnd('\r')));
-        var ns = nsLine >= 0
-            ? NamespaceRegex.Match(lines[nsLine].TrimEnd('\r')).Groups["ns"].Value
-            : "";
+        var ns = FSharpOption<string>.get_IsSome(env.Namespace) ? env.Namespace.Value : "";
+        var (headerLine, _) = TextPositions.GetLineColumn(text, env.ModuleNode.HeaderSpan.Start);
 
-        RegisterUnit(new DashSpecUnitDeclaration(kind, id, path, headerLine + 1) { Namespace = ns });
+        RegisterUnit(new DashSpecUnitDeclaration(kind, id, fullPath, headerLine + 1) { Namespace = ns });
+
+        if (kind.Equals("types", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var member in env.Body)
+            {
+                if (member is DashSpecAstNode.BlockDeclaration b &&
+                    b.Item.Opener is DashSpecBlockOpener.Named named &&
+                    named.keyword.IsType &&
+                    !string.IsNullOrWhiteSpace(named.identifier))
+                {
+                    var (typeLine, typeCol) = TextPositions.GetLineColumn(text, b.Item.HeaderSpan.Start);
+                    _rowTypes.TryAdd(named.identifier, (fullPath, typeLine + 1, typeCol + 1));
+                }
+            }
+        }
     }
 }

@@ -1046,9 +1046,13 @@ module DashSpecSurfaceSyntax =
             | _ ->
                 TableRowKind.Generic attrs
 
-    /// <summary>Module-header import line: `import &lt;kind&gt; from &lt;namespace&gt; [= &lt;alias&gt;]` or `from &lt;namespace&gt; import &lt;kind&gt; [= &lt;alias&gt;]`.</summary>
+    /// <summary>Module-header import line: `[global] import &lt;kind&gt; from &lt;namespace&gt; [= &lt;alias&gt;]` or `[global] from &lt;namespace&gt; import &lt;kind&gt; [= &lt;alias&gt;]`.</summary>
     let private tryParseImportLine (tokens: Token list) =
-        let sigTokens = significantTokens tokens
+        let sigTokens =
+            match significantTokens tokens with
+            | { Kind = TokenKind.Ident; Value = g } :: rest
+                when String.Equals(g, "global", StringComparison.OrdinalIgnoreCase) -> rest
+            | other -> other
         match sigTokens with
         | { Kind = TokenKind.Ident; Value = "from" } :: rest when
             rest |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase)) ->
@@ -1490,6 +1494,7 @@ module DashSpecSurfaceSyntax =
                     pendingInnerBraces <- max 0 (pendingInnerBraces + braceOpens - braceCloses)
 
                 if closesThisContainer then
+                    appendEndBlock container id text allTokens line "}" None
                     continueParsing <- false
 
     let parse (text: string) : ParseTree =

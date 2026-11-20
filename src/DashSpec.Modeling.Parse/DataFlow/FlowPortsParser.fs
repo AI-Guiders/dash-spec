@@ -37,12 +37,12 @@ module FlowPortsParser =
         | PortShape.Stream -> DashPortType.Stream decl.ValueType
         | PortShape.Scalar -> DashPortType.Scalar decl.ValueType
 
-    let private validateDefaultPort (role: string) (name: string) (decls: ParsedPortDecl[]) =
+    let private validateDefaultPort (role: string) (name: string) (decls: ParsedPortDecl[]) (spanOffset: int option) =
         if String.IsNullOrWhiteSpace name then
-            raise (DashSpecParseException($"default {role} requires a port name."))
+            raise (DashSpecParseException($"default {role} requires a port name.", ?sourceOffset = spanOffset))
 
         if not (decls |> Array.exists (fun d -> String.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase))) then
-            raise (DashSpecParseException($"default {role} '{name}' is not declared in this ports block."))
+            raise (DashSpecParseException($"default {role} '{name}' is not declared in this ports block.", ?sourceOffset = spanOffset))
 
     /// <summary>ADR-0130: project <see cref="ParsedPorts"/> directly from a typed
     /// ports-block AST (<c>DashSpecAstNode</c> members), raising <see cref="DashSpecParseException"/>
@@ -52,7 +52,9 @@ module FlowPortsParser =
         let outputs = ResizeArray<ParsedPortDecl>()
         let paramsDecls = ResizeArray<ParsedParamDecl>()
         let mutable defaultInput = None
+        let mutable defaultInputOffset = None
         let mutable defaultOutput = None
+        let mutable defaultOutputOffset = None
 
         for memberNode in members do
             match memberNode with
@@ -67,7 +69,7 @@ module FlowPortsParser =
                     inputs.Add { Name = decl.PortName; ValueType = decl.ValueType |> Option.defaultValue ""; Shape = shape }
                 | PortDeclRole.PortOutput ->
                     if shape = PortShape.Scalar then
-                        raise (DashSpecParseException("output ports must be stream (row batch)."))
+                        raise (DashSpecParseException("output ports must be stream (row batch).", decl.Span.Start))
                     outputs.Add { Name = decl.PortName; ValueType = decl.ValueType |> Option.defaultValue ""; Shape = shape }
                 | PortDeclRole.PortParam ->
                     paramsDecls.Add
@@ -79,23 +81,28 @@ module FlowPortsParser =
                 match clause.Kind with
                 | ClauseKind.DefaultPortClause(direction, portName) ->
                     match direction with
-                    | PortDirection.Input -> defaultInput <- Some portName
-                    | PortDirection.Output -> defaultOutput <- Some portName
+                    | PortDirection.Input ->
+                        defaultInput <- Some portName
+                        defaultInputOffset <- Some clause.Span.Start
+                    | PortDirection.Output ->
+                        defaultOutput <- Some portName
+                        defaultOutputOffset <- Some clause.Span.Start
                 | _ ->
                     let lineText = clause.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected clause '{lineText}' in ports block."))
+                    raise (DashSpecParseException($"Unexpected clause '{lineText}' in ports block.", clause.Span.Start))
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | memberNode when DashSpecAst.isTrivia memberNode -> ()
             | other ->
-                let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"Unexpected statement '{lineText}' in ports block (expected default, input, param, or output)."))
+                let portScope = DashSpecGrammarGraph.GrammarScope.Block(DashSpecBlockKeyword.Ports, None, DashSpecGrammarGraph.GrammarScope.Root)
+                let offendingSpan, message = DashSpecGrammarGraph.diagnoseStatementTokens portScope other
+                raise (DashSpecParseException(message, offendingSpan.Start))
 
         let inputsArr = inputs.ToArray()
         let outputsArr = outputs.ToArray()
 
-        defaultInput |> Option.iter (fun name -> validateDefaultPort "input" name inputsArr)
-        defaultOutput |> Option.iter (fun name -> validateDefaultPort "output" name outputsArr)
+        defaultInput |> Option.iter (fun name -> validateDefaultPort "input" name inputsArr defaultInputOffset)
+        defaultOutput |> Option.iter (fun name -> validateDefaultPort "output" name outputsArr defaultOutputOffset)
 
         { Inputs = inputsArr
           Outputs = outputsArr

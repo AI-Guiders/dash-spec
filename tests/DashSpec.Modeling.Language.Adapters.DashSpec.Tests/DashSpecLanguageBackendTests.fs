@@ -37,7 +37,7 @@ end section
 
     let private backend () = DashSpecLanguageBackend() :> ILanguageBackend
 
-    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
+    [<Fact>]
     let ``Get symbol at position resolves card declaration`` () =
         let symbol =
             backend().GetSymbolAtPositionAsync(request 8 10, CancellationToken.None)
@@ -47,7 +47,7 @@ end section
         Assert.Equal("period_peak_by_app", symbol.Name)
         Assert.Equal("card", symbol.Kind)
 
-    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
+    [<Fact>]
     let ``Find usages returns filter declaration and card reference`` () =
         let usages =
             backend().FindUsagesAsync(request 10 9, CancellationToken.None)
@@ -58,7 +58,7 @@ end section
         Assert.Contains(usages.References, fun ref -> ref.Span.Line = 4)
         Assert.Contains(usages.References, fun ref -> ref.Span.Line = 10)
 
-    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
+    [<Fact>]
     let ``Go to definition resolves filter from card bind block`` () =
         let nav =
             backend().GoToDefinitionAsync(request 10 9, CancellationToken.None)
@@ -68,7 +68,7 @@ end section
         Assert.Equal(samplePath, nav.Definition.Path)
         Assert.Equal(4, nav.Definition.Line)
 
-    [<Fact(Skip = "ADR-0102 units are .ds; LRC navigation still gates on .dashspec - product decision")>]
+    [<Fact>]
     let ``Rename symbol previews card rename without apply`` () =
         let renameReq =
             { Request = request 8 10

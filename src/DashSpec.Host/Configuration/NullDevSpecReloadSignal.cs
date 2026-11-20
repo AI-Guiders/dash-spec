@@ -9,4 +9,8 @@ internal sealed class NullDevSpecReloadSignal : IDevSpecReloadSignal
         add { }
         remove { }
     }
+
+    public void Notify()
+    {
+    }
 }

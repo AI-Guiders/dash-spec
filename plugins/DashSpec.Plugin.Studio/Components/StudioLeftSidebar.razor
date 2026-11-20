@@ -1,0 +1,207 @@
+@namespace DashSpec.Plugin.Studio.Components
+@using DashSpec.Execution.Compilation
+
+<div style="display:flex;flex-direction:column;height:100%;background:#0b101b;">
+    <!-- Single Compact Header Row: Group Mode + Filter -->
+    <div style="padding:0.35rem 0.45rem;border-bottom:1px solid rgba(140,155,180,0.14);display:flex;flex-direction:column;gap:0.3rem;">
+        <div style="display:flex;align-items:center;gap:0.3rem;">
+            <div class="studio-mode-switch" style="flex:1;">
+                <button type="button"
+                        class="studio-mode-btn @(_explorerMode == "folders" ? "active" : "")"
+                        @onclick="@(() => _explorerMode = "folders")">
+                    Папки
+                </button>
+                <button type="button"
+                        class="studio-mode-btn @(_explorerMode == "namespaces" ? "active" : "")"
+                        @onclick="@(() => _explorerMode = "namespaces")">
+                    Namespace
+                </button>
+                <button type="button"
+                        class="studio-mode-btn @(_explorerMode == "kinds" ? "active" : "")"
+                        @onclick="@(() => _explorerMode = "kinds")">
+                    Модули
+                </button>
+            </div>
+            <button type="button"
+                    class="studio-icon-btn"
+                    title="Обновить индекс проекта"
+                    @onclick="@(() => OnRefreshWorkspace.InvokeAsync())">
+                ↻
+            </button>
+        </div>
+        <input type="text"
+               class="studio-compact-input"
+               placeholder="@($"Поиск среди {Units.Count} модулей…")"
+               value="@_fileFilter"
+               @oninput="@(e => _fileFilter = e.Value?.ToString() ?? string.Empty)" />
+    </div>
+
+    <!-- Full-Height Project Tree -->
+    <div style="flex:1;overflow:auto;padding:0.25rem 0.35rem;">
+        @foreach (var grp in GetExplorerGroups())
+        {
+            var isExpanded = IsExplorerGroupExpanded(grp.Key, grp.DefaultOpen, grp.Items);
+            <button type="button"
+                    class="studio-tree-group"
+                    @onclick="() => ToggleExplorerGroup(grp.Key, isExpanded)">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <span style="display:inline-block;width:12px;opacity:0.7;">@(isExpanded ? "▾" : "▸")</span>
+                    @grp.Title
+                </span>
+                <span style="opacity:0.5;font-size:0.68rem;">@grp.Items.Count</span>
+            </button>
+
+            @if (isExpanded)
+            {
+                <div style="padding-left:0.5rem;margin-bottom:0.18rem;border-left:1px solid rgba(148,163,184,0.12);">
+                    @foreach (var unit in grp.Items)
+                    {
+                        var relPath = Workspace.ToRelativePath(unit.Path);
+                        var isSelected = string.Equals(relPath, SelectedPath, StringComparison.OrdinalIgnoreCase);
+                        var hasDraft = AuthorDrafts.ContainsKey(relPath);
+                        var peerAuthors = Presence.GetAuthorsOnFile(relPath, AuthorId);
+                        var gitChanged = GitOverview.ChangedFiles.FirstOrDefault(g =>
+                            string.Equals(g.RelativePath, relPath, StringComparison.OrdinalIgnoreCase));
+                        var (unitIcon, unitColor) = StudioUiHelpers.GetUnitIconAndColor(unit.Kind);
+
+                        <button type="button"
+                                class="studio-file-item @(isSelected ? "active" : "")"
+                                style="padding:0.18rem 0.35rem;font-size:0.77rem;"
+                                data-testid="@($"studio-unit-{unit.Id}")"
+                                title="@($"module {unit.Kind} {unit.Id}\nФайл: {relPath}\nNamespace: {(string.IsNullOrWhiteSpace(unit.Namespace) ? "—" : unit.Namespace)}")"
+                                @onclick="() => OnSelectFile.InvokeAsync(relPath)">
+                            <span style="display:flex;align-items:center;gap:0.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <span style="color:@unitColor;font-size:0.82rem;width:13px;text-align:center;flex-shrink:0;" title="@($"module {unit.Kind}")">@unitIcon</span>
+                                <span style="color:@(hasDraft ? "#fbbf24" : gitChanged is not null ? "#93c5fd" : "inherit");font-weight:@(isSelected ? "700" : "400");">@unit.Id</span>
+                            </span>
+                            <span style="display:flex;gap:0.25rem;align-items:center;flex-shrink:0;">
+                                @if (hasDraft)
+                                {
+                                    <span style="color:#fbbf24;font-size:0.7rem;font-weight:700;" title="Неопубликованный черновик (Draft)">●</span>
+                                }
+                                @if (gitChanged is not null)
+                                {
+                                    var gitCode = gitChanged.StatusCode.Contains('?') ? "U" : gitChanged.StatusCode.Trim();
+                                    var gitColor = gitCode switch
+                                    {
+                                        "A" or "U" => "#34d399",
+                                        "D" => "#f87171",
+                                        _ => "#fbbf24",
+                                    };
+                                    <span style="color:@gitColor;font-size:0.7rem;font-weight:700;font-family:ui-monospace,Consolas,monospace;"
+                                          title="@($"Изменён в Git ({gitChanged.StatusCode})")">@gitCode</span>
+                                }
+                                @if (peerAuthors.Count > 0)
+                                {
+                                    <span class="studio-badge presence" title="@($"Редактируют: {string.Join(", ", peerAuthors.Select(a => a.AuthorName))}")">👤@peerAuthors.Count</span>
+                                }
+                            </span>
+                        </button>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private string _explorerMode = "folders";
+    private string _fileFilter = string.Empty;
+    private readonly Dictionary<string, bool> _explorerGroupStates = new(StringComparer.OrdinalIgnoreCase);
+
+    [Parameter, EditorRequired] public StudioWorkspaceService Workspace { get; set; } = default!;
+    [Parameter, EditorRequired] public StudioPresenceTracker Presence { get; set; } = default!;
+    [Parameter] public string AuthorId { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyList<DashSpecUnitDeclaration> Units { get; set; } = [];
+    [Parameter] public string? SelectedPath { get; set; }
+    [Parameter] public StudioGitOverview GitOverview { get; set; } = new(false, "—", [], []);
+    [Parameter] public IReadOnlyDictionary<string, StudioDraftDocument> AuthorDrafts { get; set; } = new Dictionary<string, StudioDraftDocument>();
+
+    [Parameter] public EventCallback OnRefreshWorkspace { get; set; }
+    [Parameter] public EventCallback<string> OnSelectFile { get; set; }
+
+    private IEnumerable<DashSpecUnitDeclaration> FilteredUnits =>
+        string.IsNullOrWhiteSpace(_fileFilter)
+            ? Units
+            : Units.Where(u =>
+                u.Id.Contains(_fileFilter, StringComparison.OrdinalIgnoreCase) ||
+                u.Kind.Contains(_fileFilter, StringComparison.OrdinalIgnoreCase) ||
+                u.Namespace.Contains(_fileFilter, StringComparison.OrdinalIgnoreCase) ||
+                u.Path.Contains(_fileFilter, StringComparison.OrdinalIgnoreCase));
+
+    private IReadOnlyList<StudioExplorerGroup> GetExplorerGroups()
+    {
+        var items = FilteredUnits.ToList();
+
+        if (_explorerMode == "namespaces")
+        {
+            return items
+                .GroupBy(u => string.IsNullOrWhiteSpace(u.Namespace) ? "(без namespace)" : u.Namespace)
+                .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new StudioExplorerGroup(
+                    $"ns:{g.Key}",
+                    g.Key,
+                    g.Any(u => u.Kind is "dashboard" or "section" or "flow"),
+                    g.OrderBy(u => StudioUiHelpers.GetKindSortOrder(u.Kind)).ThenBy(u => u.Id).ToList()))
+                .ToList();
+        }
+
+        if (_explorerMode == "kinds")
+        {
+            return items
+                .GroupBy(u => u.Kind)
+                .OrderBy(g => StudioUiHelpers.GetKindSortOrder(g.Key))
+                .Select(g => new StudioExplorerGroup(
+                    $"kind:{g.Key}",
+                    $"module {g.Key}",
+                    g.Key.Equals("dashboard", StringComparison.OrdinalIgnoreCase) ||
+                    g.Key.Equals("section", StringComparison.OrdinalIgnoreCase) ||
+                    g.Key.Equals("flow", StringComparison.OrdinalIgnoreCase),
+                    g.OrderBy(u => u.Id).ToList()))
+                .ToList();
+        }
+
+        return items
+            .GroupBy(u =>
+            {
+                var rel = Workspace.ToRelativePath(u.Path);
+                var slash = rel.LastIndexOf('/');
+                return slash > 0 ? rel[..slash] : "/ (корень проекта)";
+            })
+            .OrderBy(g => g.Key == "/ (корень проекта)" ? "0" : g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new StudioExplorerGroup(
+                $"dir:{g.Key}",
+                g.Key,
+                g.Key == "/ (корень проекта)" ||
+                g.Key.Equals("flows", StringComparison.OrdinalIgnoreCase) ||
+                g.Key.Equals("types", StringComparison.OrdinalIgnoreCase),
+                g.OrderBy(u => StudioUiHelpers.GetKindSortOrder(u.Kind)).ThenBy(u => u.Id).ToList()))
+            .ToList();
+    }
+
+    private bool IsExplorerGroupExpanded(string key, bool defaultOpen, IReadOnlyList<DashSpecUnitDeclaration> groupItems)
+    {
+        if (!string.IsNullOrWhiteSpace(_fileFilter))
+        {
+            return true;
+        }
+
+        if (_explorerGroupStates.TryGetValue(key, out var explicitState))
+        {
+            return explicitState;
+        }
+
+        if (SelectedPath is not null &&
+            groupItems.Any(u => string.Equals(Workspace.ToRelativePath(u.Path), SelectedPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return defaultOpen;
+    }
+
+    private void ToggleExplorerGroup(string key, bool currentlyExpanded)
+    {
+        _explorerGroupStates[key] = !currentlyExpanded;
+    }
+}

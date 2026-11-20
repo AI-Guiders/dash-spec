@@ -18,6 +18,11 @@ internal sealed class DashSpecServerState
         foreach (var root in roots.Where(Directory.Exists).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var scanned = DashSpecWorkspaceIndex.Scan(root);
+            foreach (var unit in scanned.Units)
+            {
+                merged.RegisterUnit(unit);
+            }
+
             foreach (var (id, path) in scanned.Diagrams)
             {
                 merged.RegisterDiagram(id, path);
@@ -40,7 +45,11 @@ internal sealed class DashSpecServerState
         RegisterFromOpenDocument(path, text);
     }
 
-    public void ChangeDocument(string path, string text) => _documents[path] = text;
+    public void ChangeDocument(string path, string text)
+    {
+        _documents[path] = text;
+        RegisterFromOpenDocument(path, text);
+    }
 
     public void CloseDocument(string path) => _documents.Remove(path, out _);
 
@@ -54,17 +63,12 @@ internal sealed class DashSpecServerState
             return;
         }
 
-        var diagramId = DashSpecWorkspaceIndex.TryReadDiagramId(text);
-        if (!string.IsNullOrWhiteSpace(diagramId))
+        var (kind, id) = DashSpec.Modeling.Parse.Document.UnitSource.tryKindAndId(text);
+        if (!string.IsNullOrWhiteSpace(kind) && !string.IsNullOrWhiteSpace(id))
         {
-            _index.RegisterDiagram(diagramId, path);
-            return;
-        }
-
-        var presentationId = DashSpecWorkspaceIndex.TryReadPresentationId(text);
-        if (!string.IsNullOrWhiteSpace(presentationId))
-        {
-            _index.RegisterPresentation(presentationId, path);
+            var nsOpt = DashSpec.Modeling.Parse.Document.UnitSource.namespaceOf(text);
+            var ns = Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(nsOpt) ? nsOpt.Value : "";
+            _index.RegisterUnit(new DashSpecUnitDeclaration(kind, id, path, 1) { Namespace = ns });
         }
     }
 }

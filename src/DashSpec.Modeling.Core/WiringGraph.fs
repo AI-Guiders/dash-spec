@@ -58,3 +58,46 @@ module WiringGraph =
     let create (nodes: seq<WiringNode>) (edges: seq<WiringEdge>) =
         { Nodes = mergeNodes nodes
           Edges = edges |> Seq.toArray }
+
+    /// <summary>
+    /// Slice the <see cref="WiringGraph"/> to the <paramref name="maxHops"/>-hop neighborhood around <paramref name="focusId"/>.
+    /// Returns the full graph unchanged if <paramref name="focusId"/> is empty or not found.
+    /// </summary>
+    let sliceNeighborhood (focusId: string) (maxHops: int) (graph: WiringGraph) : WiringGraph =
+        if String.IsNullOrWhiteSpace focusId then
+            graph
+        else
+            let needle = focusId.Trim()
+            let centerOpt =
+                graph.Nodes.Keys
+                |> Seq.tryFind (fun k -> String.Equals(k, needle, StringComparison.OrdinalIgnoreCase))
+                |> Option.orElseWith (fun () ->
+                    graph.Nodes.Keys
+                    |> Seq.tryFind (fun k -> k.Contains(needle, StringComparison.OrdinalIgnoreCase)))
+
+            match centerOpt with
+            | None -> graph
+            | Some center ->
+                let visited = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                visited.Add center |> ignore
+                let mutable frontier = [ center ]
+
+                for _ in 1 .. (max 1 maxHops) do
+                    let next = ResizeArray<string>()
+                    for cur in frontier do
+                        for edge in graph.Edges do
+                            if String.Equals(edge.From, cur, StringComparison.OrdinalIgnoreCase) && visited.Add edge.To then
+                                next.Add edge.To
+                            if String.Equals(edge.To, cur, StringComparison.OrdinalIgnoreCase) && visited.Add edge.From then
+                                next.Add edge.From
+                    frontier <- List.ofSeq next
+
+                let nodes =
+                    graph.Nodes.Values
+                    |> Seq.filter (fun n -> visited.Contains n.Id)
+
+                let edges =
+                    graph.Edges
+                    |> Array.filter (fun e -> visited.Contains e.From && visited.Contains e.To)
+
+                create nodes edges

@@ -707,7 +707,7 @@ module DashflowModuleParser =
         if not hasBraceOnHeader then
             match headerOrigin with
             | Some _ when block.Members.Length = 0 -> ()
-            | _ -> raise (DashSpecParseException($"source '{sourceId}': expected '{{' after source header."))
+            | _ -> raise (DashSpecParseException($"source '{sourceId}': expected '{{' after source header.", block.Span.Start))
 
         let mutable providerBinding: DashflowProviderBinding option = defaultProvider
         let mutable from: SourceFrom option = None
@@ -732,7 +732,7 @@ module DashflowModuleParser =
 
                     let value = raw.Trim().ToLowerInvariant()
                     if value <> "utc" && value <> "local" then
-                        raise (DashSpecParseException($"source '{sourceId}': time_zone supports utc or local (got '{raw}')."))
+                        raise (DashSpecParseException($"source '{sourceId}': time_zone supports utc or local (got '{raw}').", prop.Span.Start))
                     timeZone <- value
                 elif String.Equals(prop.Key, "provider", StringComparison.OrdinalIgnoreCase) then
                     let raw = prop.ValueText.Trim().Trim('"')
@@ -747,13 +747,13 @@ module DashflowModuleParser =
                 elif String.Equals(prop.Key, "right_key", StringComparison.OrdinalIgnoreCase) then
                     rightKeys <- readIdentListFromProperty sourceId prop
                 else
-                    raise (DashSpecParseException($"source '{sourceId}': unknown property '{prop.Key}'."))
+                    raise (DashSpecParseException($"source '{sourceId}': unknown property '{prop.Key}'.", prop.Span.Start))
             | DashSpecAstNode.ClauseDeclaration clause ->
                 match clause.Kind with
                 | ClauseKind.UseProviderClause providerSyntax ->
                     match headerOrigin with
                     | Some(PComposite _) ->
-                        raise (DashSpecParseException($"source '{sourceId}': a composite source inherits use provider from its constituents — declare it on them, not here."))
+                        raise (DashSpecParseException($"source '{sourceId}': a composite source inherits use provider from its constituents — declare it on them, not here.", clause.Span.Start))
                     | _ -> ()
 
                     providerBinding <-
@@ -762,27 +762,27 @@ module DashflowModuleParser =
                         | ProviderBindingSyntax.Named id -> Some(DashflowProviderBinding.Named id)
                 | ClauseKind.UseClause(useKind, _) ->
                     if String.Equals(useKind, "connector", StringComparison.OrdinalIgnoreCase) then
-                        raise (DashSpecParseException($"source '{sourceId}': use 'provider <id>', not 'connector' (connector is the runtime plugin; provider selects the manifest entry)."))
-                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id|infer>' before from/ports."))
+                        raise (DashSpecParseException($"source '{sourceId}': use 'provider <id>', not 'connector' (connector is the runtime plugin; provider selects the manifest entry).", clause.Span.Start))
+                    raise (DashSpecParseException($"source '{sourceId}' supports only 'use provider <id|infer>' before from/ports.", clause.Span.Start))
                 | ClauseKind.FromClause originSyntax ->
                     if headerOrigin.IsSome then
-                        raise (DashSpecParseException($"source '{sourceId}': origin already declared in the header (`= …`) — 'from' cannot be declared twice."))
+                        raise (DashSpecParseException($"source '{sourceId}': origin already declared in the header (`= …`) — 'from' cannot be declared twice.", clause.Span.Start))
 
                     match originSyntax with
                     | SourceOriginSyntax.Leaf(k, value, sheet) ->
                         from <- Some { Kind = mapLeafKind k; Value = value; Sheet = sheet }
                     | _ ->
-                        raise (DashSpecParseException($"source '{sourceId}': 'from' clause requires a leaf origin (view, sql, or xlsx)."))
+                        raise (DashSpecParseException($"source '{sourceId}': 'from' clause requires a leaf origin (view, sql, or xlsx).", clause.Span.Start))
                 | _ ->
                     let lineText = clause.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"source '{sourceId}': unexpected clause '{lineText}'."))
+                    raise (DashSpecParseException($"source '{sourceId}': unexpected clause '{lineText}'.", clause.Span.Start))
             | DashSpecAstNode.BlockDeclaration childBlock ->
                 match childBlock.Opener with
                 | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Ports
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Ports, _) ->
                     match headerOrigin with
                     | Some(PComposite _) ->
-                        raise (DashSpecParseException($"source '{sourceId}': a composite source has no ports block — annotate the row type in the header (`source {sourceId}: Type = …`) or leave it for synthesis."))
+                        raise (DashSpecParseException($"source '{sourceId}': a composite source has no ports block — annotate the row type in the header (`source {sourceId}: Type = …`) or leave it for synthesis.", childBlock.Span.Start))
                     | _ -> ()
 
                     let ports = FlowPortsParser.projectPortsFromAst childBlock.Members
@@ -792,21 +792,22 @@ module DashflowModuleParser =
                     defaultOutputPort <- defOut
                 | _ ->
                     let headerText = childBlock.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"source '{sourceId}': unexpected block '{headerText}'."))
+                    raise (DashSpecParseException($"source '{sourceId}': unexpected block '{headerText}'.", childBlock.Span.Start))
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | memberNode when DashSpecAst.isTrivia memberNode -> ()
             | other ->
                 let toks = DashSpecAst.tokens other
+                let otherStart = (DashSpecAst.span other).Start
                 if toks.Length >= 2 && String.Equals(toks.[0].Text, "from", StringComparison.OrdinalIgnoreCase) then
                     if String.Equals(toks.[1].Text, "sql", StringComparison.OrdinalIgnoreCase) then
-                        raise (DashSpecParseException("from sql requires query or file."))
+                        raise (DashSpecParseException("from sql requires query or file.", otherStart))
                     elif String.Equals(toks.[1].Text, "xlsx", StringComparison.OrdinalIgnoreCase) then
-                        raise (DashSpecParseException("from xlsx requires file."))
+                        raise (DashSpecParseException("from xlsx requires file.", otherStart))
                     else
-                        raise (DashSpecParseException("source from requires view, sql, or xlsx."))
+                        raise (DashSpecParseException("source from requires view, sql, or xlsx.", otherStart))
                 let lineText = toks |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"source '{sourceId}': unexpected statement '{lineText}'."))
+                raise (DashSpecParseException($"source '{sourceId}': unexpected statement '{lineText}'.", otherStart))
 
         let origin: SourceOrigin option =
             match headerOrigin, from with
@@ -887,11 +888,11 @@ module DashflowModuleParser =
 
             match providerBinding with
             | None when not isComposite ->
-                raise (DashSpecParseException($"source '{sourceId}' requires use provider <id> or use provider infer (manifest default_provider_id; same as card datasource infer)."))
+                raise (DashSpecParseException($"source '{sourceId}' requires use provider <id> or use provider infer (manifest default_provider_id; same as card datasource infer).", block.Span.Start))
             | _ -> ()
 
             if not isComposite && String.IsNullOrWhiteSpace finalPort then
-                raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port."))
+                raise (DashSpecParseException($"source '{sourceId}' requires a ports block with an output port.", block.Span.Start))
 
             { Id = sourceId
               Provider = match providerBinding with Some b -> b | None -> DashflowProviderBinding.Infer
@@ -938,13 +939,14 @@ module DashflowModuleParser =
                     steps.Add(TransformStepParser.projectStepFromAst transformerId pluginId childBlock)
                 | _ ->
                     let headerText = childBlock.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"transformer '{transformerId}': unexpected block '{headerText}'."))
+                    raise (DashSpecParseException($"transformer '{transformerId}': unexpected block '{headerText}'.", childBlock.Span.Start))
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | memberNode when DashSpecAst.isTrivia memberNode -> ()
             | other ->
-                let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"transformer '{transformerId}': unexpected statement '{lineText}' (expected ports or transform)."))
+                let trScope = DashSpecGrammarGraph.GrammarScope.Block(DashSpecBlockKeyword.Transformer, Some transformerId, DashSpecGrammarGraph.GrammarScope.Module(DashSpecModuleKind.Flow false))
+                let offendingSpan, message = DashSpecGrammarGraph.diagnoseStatementTokens trScope other
+                raise (DashSpecParseException($"transformer '{transformerId}': {message}", offendingSpan.Start))
 
         { Id = transformerId
           Inputs = inputs.ToArray()
@@ -971,7 +973,7 @@ module DashflowModuleParser =
         let mutable scopeProvider = initialProvider
         let mutable scopeTimeZone = initialTimeZone
 
-        let applyDefaultProperty (key: string) (rawVal: string) =
+        let applyDefaultProperty (key: string) (rawVal: string) (spanOffset: int) =
             let v = rawVal.Trim().Trim('"')
             if String.Equals(key, "provider", StringComparison.OrdinalIgnoreCase) then
                 if String.Equals(v, "infer", StringComparison.OrdinalIgnoreCase) then
@@ -981,20 +983,20 @@ module DashflowModuleParser =
             elif String.Equals(key, "time_zone", StringComparison.OrdinalIgnoreCase) then
                 let tz = v.ToLowerInvariant()
                 if tz <> "utc" && tz <> "local" then
-                    raise (DashSpecParseException($"flow defaults: time_zone supports utc or local (got '{rawVal}')."))
+                    raise (DashSpecParseException($"flow defaults: time_zone supports utc or local (got '{rawVal}').", spanOffset))
                 scopeTimeZone <- tz
 
         for memberNode in members do
             match memberNode with
             | DashSpecAstNode.PropertyAssignment prop ->
-                applyDefaultProperty prop.Key prop.ValueText
+                applyDefaultProperty prop.Key prop.ValueText prop.Span.Start
             | DashSpecAstNode.BlockDeclaration block ->
                 match block.Opener with
                 | DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Defaults
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Defaults, _) ->
                     for child in block.Members do
                         match child with
-                        | DashSpecAstNode.PropertyAssignment p -> applyDefaultProperty p.Key p.ValueText
+                        | DashSpecAstNode.PropertyAssignment p -> applyDefaultProperty p.Key p.ValueText p.Span.Start
                         | _ -> ()
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Source, sourceId) ->
                     ensureUniqueNodeId "source" sourceId seenIds
@@ -1008,7 +1010,7 @@ module DashflowModuleParser =
                     nestedFlows.Add(finishNestedFlow nestedId s t n l typeCatalog)
                 | _ ->
                     let headerText = block.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected block '{headerText}' in flow scope."))
+                    raise (DashSpecParseException($"Unexpected block '{headerText}' in flow scope.", block.Span.Start))
             | DashSpecAstNode.FlowLinkDeclaration link ->
                 links.Add
                     { FromNode = link.FromNode
@@ -1025,14 +1027,15 @@ module DashflowModuleParser =
                         | ProviderBindingSyntax.Named id -> Some(DashflowProviderBinding.Named id)
                 | _ ->
                     let lineText = clause.Tokens |> Array.map (fun t -> t.Text) |> String.concat " "
-                    raise (DashSpecParseException($"Unexpected clause '{lineText}' in flow scope."))
+                    raise (DashSpecParseException($"Unexpected clause '{lineText}' in flow scope.", clause.Span.Start))
             | DashSpecAstNode.ImportDeclaration _
             | DashSpecAstNode.BlankLine _
             | DashSpecAstNode.EndBlock _ -> ()
             | memberNode when DashSpecAst.isTrivia memberNode -> ()
             | other ->
-                let lineText = DashSpecAst.tokens other |> Array.map (fun t -> t.Text) |> String.concat " "
-                raise (DashSpecParseException($"Unexpected statement '{lineText}' in flow scope (expected source, transformer, nested flow, or flow link)."))
+                let flowScope = DashSpecGrammarGraph.GrammarScope.Module(DashSpecModuleKind.Flow false)
+                let offendingSpan, message = DashSpecGrammarGraph.diagnoseStatementTokens flowScope other
+                raise (DashSpecParseException(message, offendingSpan.Start))
 
         sources.ToArray(), transformers.ToArray(), nestedFlows.ToArray(), links.ToArray()
 

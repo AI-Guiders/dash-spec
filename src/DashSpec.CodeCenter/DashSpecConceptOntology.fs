@@ -152,3 +152,33 @@ module DashSpecConceptOntology =
         match tier.Title with
         | Some title -> title
         | None -> outlineCaption tier.Kind
+
+    let tryIdentifier (kind: DashSpecConceptKind) : string option =
+        match kind with
+        | DashSpecConceptKind.DashboardModule id
+        | DashSpecConceptKind.TabModule id
+        | DashSpecConceptKind.UnitModule(_, id) -> Some id
+        | DashSpecConceptKind.Block(_, Some id) -> Some id
+        | DashSpecConceptKind.CardReference id -> Some id
+        | DashSpecConceptKind.TypeField id -> Some id
+        | DashSpecConceptKind.Port id -> Some id
+        | DashSpecConceptKind.TableRow(TableRowKind.Filter f) -> Some f.Id
+        | _ -> None
+
+    let kindKeyword (kind: DashSpecConceptKind) : string =
+        match kind with
+        | DashSpecConceptKind.CompilationUnit -> "unit"
+        | DashSpecConceptKind.DashboardModule _ -> "dashboard"
+        | DashSpecConceptKind.TabModule _ -> "section"
+        | DashSpecConceptKind.UnitModule(k, _) -> DashSpecModuleKind.toKeyword k
+        | DashSpecConceptKind.ImportDeclaration(kw, _) -> kw
+        | DashSpecConceptKind.Block(kw, _) -> DashSpecBlockKeyword.toEndName kw
+        | DashSpecConceptKind.CardReference _ -> "card"
+        | DashSpecConceptKind.TypeField _ -> "field"
+        | DashSpecConceptKind.Property _ -> "property"
+        | DashSpecConceptKind.Port _ -> "port"
+        | DashSpecConceptKind.FlowLink _ -> "flow"
+        | DashSpecConceptKind.Clause _ -> "clause"
+        | DashSpecConceptKind.GridRow -> "layout"
+        | DashSpecConceptKind.TableRow(TableRowKind.Filter _) -> "filter"
+        | DashSpecConceptKind.TableRow _ -> "table"

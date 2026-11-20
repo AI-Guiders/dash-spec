@@ -4,4 +4,6 @@ namespace DashSpec.Abstractions.Viewer;
 public interface IDevSpecReloadSignal
 {
     event Action? Changed;
+
+    void Notify();
 }

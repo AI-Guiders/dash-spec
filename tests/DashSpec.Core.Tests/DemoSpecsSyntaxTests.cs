@@ -62,7 +62,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("table", fragment.Diagram!.Kind);
     }
 
@@ -87,7 +87,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["sort"]);
     }
 
@@ -112,7 +112,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("occurred_at_utc", fragment.Diagram!.Properties["sort"]);
     }
 
@@ -127,7 +127,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("table", fragment.Diagram!.Kind);
         Assert.Equal("occurred_at_utc DESC", fragment.Diagram.Properties["sort"]);
     }
@@ -145,7 +145,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("bucket_start_utc:datetime.short", fragment.Diagram!.Properties["column_formats"]);
     }
 
@@ -161,7 +161,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("column_formats", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -180,7 +180,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         var props = fragment.Diagram!.Properties;
         Assert.Equal("host_name, user_sam, peak_bucket_start_utc", props["columns"]);
         Assert.Equal("peak_bucket_start_utc:datetime.short", props["column_formats"]);
@@ -204,7 +204,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         var props = fragment.Diagram!.Properties;
         Assert.Equal("table", fragment.Diagram.Kind);
         Assert.Equal("Запуски: {app_name}", props["title"]);
@@ -227,7 +227,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         var props = fragment.Diagram!.Properties;
         Assert.Equal("usage_date, launches", props["columns"]);
         Assert.Equal("usage_date:center, launches:right", props["column_alignments"]);
@@ -248,7 +248,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("alignment", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("middle", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -268,7 +268,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         var props = fragment.Diagram!.Properties;
         Assert.Equal("host_name, bucket_start_utc", props["columns"]);
         Assert.Equal("host_name = Хост", props["column_labels"]);
@@ -291,7 +291,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("columns", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -310,7 +310,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("sort", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -331,7 +331,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("format", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -349,7 +349,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("width", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -367,7 +367,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("ASC", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -385,7 +385,7 @@ public class DemoSpecsSyntaxTests
             """;
 
         var ex = Assert.Throws<DashSpecParseException>(() =>
-            DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!));
+            DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!));
         Assert.Contains("id", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -400,7 +400,7 @@ public class DemoSpecsSyntaxTests
             end table
             """;
 
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(text, baseDirectory: null!);
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(text, baseDirectory: null!);
         Assert.Equal("host_name ASC, user_sam ASC", fragment.Diagram!.Properties["sort"]);
     }
 
@@ -412,7 +412,7 @@ public class DemoSpecsSyntaxTests
         // The bridge must blank the ADR-0098 module header too, exactly like the import path does — a real
         // `.ds` diagram unit carries `namespace` on its second line.
         var text = File.ReadAllText(path);
-        var (_, fragment) = DiagramModuleParser.ParseDiagramFileWithId(
+        var (_, fragment) = DashSpecParser.ParseDiagramFileWithId(
             text,
             Path.GetDirectoryName(path)!);
         Assert.Equal("table", fragment.Diagram!.Kind);

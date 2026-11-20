@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>15</LangVersion>
+    <RootNamespace>DashSpec.Plugin.Studio</RootNamespace>
+    <Version>0.1.0</Version>
+    <GuidersFSharpRoot Condition="'$(GuidersFSharpRoot)' == ''">..\..\..\guiders-fsharp</GuidersFSharpRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Radzen.Blazor" Version="12.1.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DashSpec.Abstractions\DashSpec.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.CodeCenter\DashSpec.CodeCenter.fsproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Compiler.Contract\DashSpec.Compiler.Contract.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Composition\DashSpec.Composition.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Core\DashSpec.Execution.Core.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Execution.Runtime\DashSpec.Execution.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Core\DashSpec.Modeling.Core.fsproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Modeling.Parse\DashSpec.Modeling.Parse.fsproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Presentation\DashSpec.Presentation.csproj" />
+    <ProjectReference Include="..\..\src\DashSpec.Surface.Blazor\DashSpec.Surface.Blazor.csproj" />
+    <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.CodeCenter\AIGuiders.Platform.Modeling.CodeCenter.fsproj" />
+    <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Core\AIGuiders.Platform.Modeling.Core.fsproj" />
+    <ProjectReference Include="$(GuidersFSharpRoot)\src\AIGuiders.Platform.Modeling.Language\AIGuiders.Platform.Modeling.Language.fsproj" />
+  </ItemGroup>
+
+</Project>

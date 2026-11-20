@@ -12,6 +12,10 @@ var server = await LanguageServer.From(options =>
         .WithHandler<DashSpecTextDocumentHandler>()
         .WithHandler<DashSpecCompletionHandler>()
         .WithHandler<DashSpecDefinitionHandler>()
+        .WithHandler<DashSpecDocumentSymbolHandler>()
+        .WithHandler<DashSpecReferencesHandler>()
+        .WithHandler<DashSpecFormattingHandler>()
+        .WithHandler<DashSpecRenameHandler>()
         .OnInitialize((server, request, _) =>
         {
             var state = server.Services.GetRequiredService<DashSpecServerState>();

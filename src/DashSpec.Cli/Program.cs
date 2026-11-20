@@ -7,7 +7,6 @@ using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using HostModuleParser = DashSpec.Execution.Parsing.HostModuleParser;
 using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Cli;
@@ -307,7 +306,7 @@ public static class Program
             switch (Classify(fullPath))
             {
                 case UnitKind.HostModule:
-                    var hostDoc = HostModuleParser.ParseFile(fullPath);
+                    var hostDoc = DashSpecParser.ParseHostFile(fullPath);
                     var hostDir = Path.GetDirectoryName(fullPath)!;
                     var catalogPath = Path.GetFullPath(Path.Combine(hostDir, hostDoc.CatalogPath));
                     DashSpecValidator.ValidateCatalog(catalogPath, BuildParseOptions(tomlPath));

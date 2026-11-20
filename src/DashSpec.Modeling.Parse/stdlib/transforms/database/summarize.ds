@@ -6,3 +6,4 @@ locality = database
 param by = ident
 param agg = ident
 param value = ident
+param distinct = ident

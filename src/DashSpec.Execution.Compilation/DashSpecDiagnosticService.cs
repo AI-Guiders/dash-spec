@@ -25,7 +25,7 @@ public static class DashSpecDiagnosticService
         }
 
         var text = File.ReadAllText(path);
-        var directory = specDirectory ?? Path.GetDirectoryName(path)!;
+        var directory = specDirectory ?? DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.resolveProjectRoot(path);
         return ValidateText(text, path, directory, parseOptions);
     }
 
@@ -39,12 +39,17 @@ public static class DashSpecDiagnosticService
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(specDirectory);
         parseOptions ??= DashSpecParseOptions.Editor;
+        specDirectory = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.resolveProjectRoot(specDirectory);
 
         try
         {
             return ValidateByFileKind(text, filePath, specDirectory, parseOptions);
         }
         catch (DashSpecParseException ex)
+        {
+            return [TextPositions.ToDiagnostic(text, ex.Message, ex.SourceOffset)];
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
             return [TextPositions.ToDiagnostic(text, ex.Message, ex.SourceOffset)];
         }
@@ -95,8 +100,8 @@ public static class DashSpecDiagnosticService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, UnitValidatorContributor> UnitValidators =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["types"] = (_, _, _, _) => [],
-            ["flow"] = (_, _, _, _) => [],
+            ["types"] = ValidateTypesUnit,
+            ["flow"] = ValidateFlowUnit,
             ["catalog"] = LintCatalog,
             ["dashboard"] = ValidateAssembledRoot,
             ["section"] = ValidateTabAssembled,
@@ -107,6 +112,92 @@ public static class DashSpecDiagnosticService
         ArgumentException.ThrowIfNullOrWhiteSpace(unitKind);
         ArgumentNullException.ThrowIfNull(validator);
         UnitValidators[unitKind.Trim()] = validator;
+    }
+
+    private static IReadOnlyList<DashSpecDiagnostic> CollectSurfaceRuleDiagnostics(string text)
+    {
+        var tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse(text);
+        var findings = DashSpec.Modeling.Parse.Syntax.DashSpecRuleChecks.evaluateAll(tree.Root);
+        if (findings.Length == 0)
+        {
+            return [];
+        }
+
+        var result = new List<DashSpecDiagnostic>(findings.Length);
+        foreach (var finding in findings)
+        {
+            var diag = TextPositions.ToDiagnostic(text, finding.Message, finding.Span.Start);
+            var sev = finding.Severity == DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Warning
+                ? DashSpecDiagnosticSeverity.Warning
+                : finding.Severity == DashSpec.Modeling.Core.DashSpecDiagnosticSeverity.Information
+                    ? DashSpecDiagnosticSeverity.Information
+                    : DashSpecDiagnosticSeverity.Error;
+            result.Add(diag with { Severity = sev });
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<DashSpecDiagnostic> ValidateTypesUnit(
+        string text,
+        string filePath,
+        string specDirectory,
+        DashSpecParseOptions parseOptions)
+    {
+        var surfaceDiags = CollectSurfaceRuleDiagnostics(text);
+        if (surfaceDiags.Any(d => d.Severity == DashSpecDiagnosticSeverity.Error))
+        {
+            return surfaceDiags;
+        }
+
+        _ = DashSpec.Modeling.Parse.Types.TypeModuleParser.parseTypesModule(text);
+        return surfaceDiags;
+    }
+
+    private static IReadOnlyList<DashSpecDiagnostic> ValidateFlowUnit(
+        string text,
+        string filePath,
+        string specDirectory,
+        DashSpecParseOptions parseOptions)
+    {
+        var surfaceDiags = CollectSurfaceRuleDiagnostics(text);
+        if (surfaceDiags.Any(d => d.Severity == DashSpecDiagnosticSeverity.Error))
+        {
+            return surfaceDiags;
+        }
+
+        var corpus = DashSpecCompilerServicesHost.GetCorpus(specDirectory);
+        var typeCatalog = corpus.GetTypeCatalog();
+        var flowModule = DashSpec.Modeling.Parse.DataFlow.DashflowModuleParser.parseModuleWithDefaults(
+            text,
+            typeCatalog,
+            Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding>.Some(
+                DashSpec.Modeling.Parse.DataFlow.DashflowProviderBinding.Infer),
+            "utc");
+
+        if (flowModule.Diagnostics.Length == 0)
+        {
+            return surfaceDiags;
+        }
+
+        var result = new List<DashSpecDiagnostic>(surfaceDiags);
+        foreach (var flowDiag in flowModule.Diagnostics)
+        {
+            int? offset = null;
+            if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Core.FlowEdge>.get_IsSome(flowDiag.Edge))
+            {
+                var edge = flowDiag.Edge.Value;
+                var idx = text.IndexOf(edge.To.NodeId, StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    offset = idx;
+                }
+            }
+
+            result.Add(TextPositions.ToDiagnostic(text, $"[{flowDiag.Code}] {flowDiag.Message}", offset));
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -142,11 +233,17 @@ public static class DashSpecDiagnosticService
             if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.UnitPluginDescriptor>.get_IsSome(
                     DashSpec.Modeling.Parse.UnitProjector.tryResolve(trimmedKind)))
             {
+                var surfaceDiags = CollectSurfaceRuleDiagnostics(text);
+                if (surfaceDiags.Any(d => d.Severity == DashSpecDiagnosticSeverity.Error))
+                {
+                    return surfaceDiags;
+                }
+
                 var specDirOpt = string.IsNullOrWhiteSpace(specDirectory)
                     ? Microsoft.FSharp.Core.FSharpOption<string>.None
                     : Microsoft.FSharp.Core.FSharpOption<string>.Some(specDirectory);
                 _ = DashSpec.Modeling.Parse.UnitProjector.project(text, specDirOpt);
-                return [];
+                return surfaceDiags;
             }
         }
 
@@ -322,6 +419,10 @@ public static class DashSpecDiagnosticService
             return ToDiagnostics(ResolutionLint.Analyze(document));
         }
         catch (DashSpecParseException ex)
+        {
+            return [TextPositions.ToDiagnostic(text, ex.Message, ex.SourceOffset)];
+        }
+        catch (DashSpec.Modeling.Core.DashSpecParseException ex)
         {
             return [TextPositions.ToDiagnostic(text, ex.Message, ex.SourceOffset)];
         }

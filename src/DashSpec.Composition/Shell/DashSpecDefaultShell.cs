@@ -1,6 +1,6 @@
+using DashSpec.Execution.Parsing;
 using DashSpec.Modeling.Parse.Layout;
 using Microsoft.FSharp.Core;
-using LayoutModuleParser = DashSpec.Execution.Parsing.LayoutModuleParser;
 
 namespace DashSpec.Composition.Shell;
 
@@ -32,7 +32,7 @@ public static class DashSpecDefaultShell
                 string.Join(", ", typeof(DashSpecDefaultShell).Assembly.GetManifestResourceNames()));
 
         using var reader = new StreamReader(stream);
-        return _board = LayoutModuleParser.ParseLayoutFile(reader.ReadToEnd());
+        return _board = DashSpecParser.ParseLayoutFile(reader.ReadToEnd());
     }
 
     /// <summary>The host default grid ([ADR-0111] §2) — from the embedded board, never code.</summary>

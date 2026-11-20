@@ -6,7 +6,7 @@ public static class CatalogReader
     public static CatalogDocument Parse(string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        return ModuleParseRegistration.ParseCatalog(text);
+        return DashSpecParser.ParseCatalog(text);
     }
 
     public static CatalogDocument ParseFile(string path)
