@@ -14,6 +14,7 @@ public sealed class HostSettingsService(
     DashSpecAccessOptions accessOptions,
     HostPresentationSignals presentationSignals)
 {
+    private static readonly Lock WriteGate = new();
     public IReadOnlyDictionary<string, string> GetSection(string section) =>
         db.HostSettings.AsNoTracking()
             .Where(x => x.Section == section)
@@ -34,26 +35,29 @@ public sealed class HostSettingsService(
             value = DashSpecCultures.NormalizeStoredLanguage(value);
         }
 
-        var row = db.HostSettings.FirstOrDefault(x => x.Section == section && x.Key == key);
-        if (row is null)
+        lock (WriteGate)
         {
-            db.HostSettings.Add(new HostSettingEntity
+            var row = db.HostSettings.FirstOrDefault(x => x.Section == section && x.Key == key);
+            if (row is null)
             {
-                Section = section,
-                Key = key,
-                Value = value,
-                UpdatedAt = DateTimeOffset.UtcNow,
-                UpdatedBy = updatedBy,
-            });
-        }
-        else
-        {
-            row.Value = value;
-            row.UpdatedAt = DateTimeOffset.UtcNow;
-            row.UpdatedBy = updatedBy;
-        }
+                db.HostSettings.Add(new HostSettingEntity
+                {
+                    Section = section,
+                    Key = key,
+                    Value = value,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    UpdatedBy = updatedBy,
+                });
+            }
+            else
+            {
+                row.Value = value;
+                row.UpdatedAt = DateTimeOffset.UtcNow;
+                row.UpdatedBy = updatedBy;
+            }
 
-        db.SaveChanges();
+            db.SaveChanges();
+        }
         ApplyLive(section, key, value);
     }
 

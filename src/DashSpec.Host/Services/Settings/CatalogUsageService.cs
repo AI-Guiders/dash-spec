@@ -9,6 +9,7 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
     public const string ClientCookieName = "dashspec_client_id";
 
     private const string SessionItemsKey = "__dashspec_client_id";
+    private static readonly Lock WriteGate = new();
 
     public string GetOrCreateClientId(HttpContext? httpContext)
     {
@@ -105,23 +106,26 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
             return;
         }
 
-        var row = db.CatalogUsage.FirstOrDefault(x => x.ClientId == clientId && x.EntryId == entryId);
-        if (row is null)
+        lock (WriteGate)
         {
-            db.CatalogUsage.Add(new CatalogUsageEntity
+            var row = db.CatalogUsage.FirstOrDefault(x => x.ClientId == clientId && x.EntryId == entryId);
+            if (row is null)
             {
-                ClientId = clientId,
-                EntryId = entryId,
-                HitCount = 1,
-                LastUsedAt = DateTimeOffset.UtcNow,
-            });
-        }
-        else
-        {
-            row.HitCount++;
-            row.LastUsedAt = DateTimeOffset.UtcNow;
-        }
+                db.CatalogUsage.Add(new CatalogUsageEntity
+                {
+                    ClientId = clientId,
+                    EntryId = entryId,
+                    HitCount = 1,
+                    LastUsedAt = DateTimeOffset.UtcNow,
+                });
+            }
+            else
+            {
+                row.HitCount++;
+                row.LastUsedAt = DateTimeOffset.UtcNow;
+            }
 
-        db.SaveChanges();
+            db.SaveChanges();
+        }
     }
 }
