@@ -143,7 +143,7 @@ module DashSpecBlockKeyword =
     let isNamedBlockKeyword (name: string) =
         match name.ToLowerInvariant() with
         | "card" | "section" | "page" | "phase" | "group" | "type" | "nest"
-        | "source" | "transformer" | "flow" | "link" | "provider" | "entry" | "command" -> true
+        | "source" | "transformer" | "flow" | "link" | "provider" | "command" -> true
         | _ -> false
 
     let isDiagramContainer (keyword: DashSpecBlockKeyword) =
