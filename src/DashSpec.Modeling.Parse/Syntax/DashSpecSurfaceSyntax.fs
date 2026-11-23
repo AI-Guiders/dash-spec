@@ -783,10 +783,10 @@ module DashSpecSurfaceSyntax =
         | _ -> None
 
     /// <summary>Positional clause line (ADR-0130): dispatches `namespace`, `scope`, `use`,
-    /// `from`, `default input|output`, and positional directives (`rows`, `catalog`, `entry`, `layout`)
+    /// `from`, `default input|output`, and positional directives (`rows`, `catalog`, `entry`, `layout`, `use`)
     /// into structured <see cref="ClauseKind"/> variants.</summary>
     let private positionalDirectives =
-        set [ "rows"; "catalog"; "entry"; "layout" ]
+        set [ "rows"; "catalog"; "entry"; "layout"; "use" ]
 
     let private tryParseClauseLine (tokens: Token list) : ClauseKind option =
         let sigTokens = significantTokens tokens
