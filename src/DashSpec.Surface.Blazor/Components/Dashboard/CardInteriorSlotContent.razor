@@ -11,6 +11,7 @@
 @inject ILayoutSlotRendererRegistry SlotRegistry
 @inject DashSpecContributorRegistry Contributors
 @inject DashboardLocalizer Loc
+@inject DashSpec.Viz.ICardChromeControlsOverride ChromeControls
 
 @if (Owner is not null && !SlotRegistry.Supports(Slot.Scope, Slot.Node.Kind))
 {
@@ -29,35 +30,92 @@ else if (Owner is not null)
         @* Per-slot maximize is author intent (chrome slot_expand = on|off; default on):
            the hover button opens this slot alone in the card's fullscreen panel. *@
         <div class="card-slot-shell">
-            @if (Owner.Card.Chrome?.SlotExpand is not CardSlotExpand.Off)
+            @if (ShowSlotHeader)
             {
-                <button type="button"
-                        class="secondary card-icon-btn slot-maximize-btn"
-                        title="@Loc.T("Expand diagram")"
-                        aria-label="@(Loc.T("Expand diagram") + ": " + Slot.Node.Id)"
-                        @onclick="() => Owner.OpenSlotFullscreen(Slot.Node.Id)"
-                        @onclick:stopPropagation="true">
-                    <CardIcon Kind="CardIconKind.Expand" />
-                </button>
+                <div class="card-slot-head">
+                    @if (!string.IsNullOrWhiteSpace(SlotTitle))
+                    {
+                        <div class="card-slot-title">@SlotTitle</div>
+                    }
+                    <div class="card-slot-actions">
+                        @if (DrillLoaded)
+                        {
+                            @* Drill UX (ADR-0107): the ✕ dismisses the loaded drill table — the
+                               slot returns to its awaiting-click hint; without it a drill could
+                               only be replaced by another click, never closed. *@
+                            var stackClear = ChromeControls.ResolveButton();
+                            if (stackClear is not null)
+                            {
+                                <DynamicComponent Type="stackClear"
+                                                  Parameters="@(new Dictionary<string, object?>
+                                                  {
+                                                      ["Context"] = new StackButtonContext
+                                                      {
+                                                          Label = Loc.T("Close drill table"),
+                                                          Disabled = false,
+                                                          Clicked = EventCallback.Factory.Create(this, () => Owner.CloseCellDrillAsync()),
+                                                          TestId = $"drill-clear-{Owner.Card.Id}",
+                                                          Icon = CloseDrillIcon(),
+                                                      },
+                                                  })" />
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="secondary card-icon-btn slot-drill-clear-btn"
+                                        title="@Loc.T("Close drill table")"
+                                        aria-label="@(Loc.T("Close drill table") + ": " + Slot.Node.Id)"
+                                        data-testid="drill-clear-@(Owner.Card.Id)"
+                                        @onclick="() => Owner.CloseCellDrillAsync()"
+                                        @onclick:stopPropagation="true">
+                                    @CloseDrillIcon()
+                                </button>
+                            }
+                        }
+                        @if (CanExpandSlot)
+                        {
+                            var stackExpand = ChromeControls.ResolveButton();
+                            if (stackExpand is not null)
+                            {
+                                <DynamicComponent Type="stackExpand"
+                                                  Parameters="@(new Dictionary<string, object?>
+                                                  {
+                                                      ["Context"] = new StackButtonContext
+                                                      {
+                                                          Label = Loc.T("Expand diagram"),
+                                                          Disabled = false,
+                                                          Clicked = EventCallback.Factory.Create(this, () => Owner.OpenSlotFullscreen(Slot.Node.Id)),
+                                                          Icon = ExpandSlotIcon(),
+                                                      },
+                                                  })" />
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="secondary card-icon-btn slot-maximize-btn"
+                                        title="@Loc.T("Expand diagram")"
+                                        aria-label="@(Loc.T("Expand diagram") + ": " + Slot.Node.Id)"
+                                        @onclick="() => Owner.OpenSlotFullscreen(Slot.Node.Id)"
+                                        @onclick:stopPropagation="true">
+                                    <CardIcon Kind="CardIconKind.Expand" />
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
             }
-            @if (DrillLoaded)
+            else if (CanExpandSlot)
             {
-                @* Drill UX (ADR-0107): the ✕ dismisses the loaded drill table — the
-                   slot returns to its awaiting-click hint; without it a drill could
-                   only be replaced by another click, never closed. *@
-                <button type="button"
-                        class="secondary card-icon-btn slot-drill-clear-btn"
-                        title="@Loc.T("Close drill table")"
-                        aria-label="@(Loc.T("Close drill table") + ": " + Slot.Node.Id)"
-                        data-testid="drill-clear-@(Owner.Card.Id)"
-                        @onclick="() => Owner.CloseCellDrillAsync()"
-                        @onclick:stopPropagation="true">
-                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                        <path d="M18 6 6 18" />
-                        <path d="m6 6 12 12" />
-                    </svg>
-                </button>
+                <div class="card-slot-floating-actions">
+                    <button type="button"
+                            class="secondary card-icon-btn slot-maximize-btn"
+                            title="@Loc.T("Expand diagram")"
+                            aria-label="@(Loc.T("Expand diagram") + ": " + Slot.Node.Id)"
+                            @onclick="() => Owner.OpenSlotFullscreen(Slot.Node.Id)"
+                            @onclick:stopPropagation="true">
+                        <CardIcon Kind="CardIconKind.Expand" />
+                    </button>
+                </div>
             }
             @if (_diagramType is not null)
             {
@@ -105,6 +163,31 @@ else if (Owner is not null)
         && SlotPayload is { DataFamily: DiagramDataFamily.Table, Table: not null }
         && Owner.CellDrillActive
         && Owner.Card.InteriorSlotRenders is { Count: > 1 };
+
+    private bool CanExpandSlot =>
+        Owner is not null && Owner.Card.Chrome?.SlotExpand is not CardSlotExpand.Off;
+
+    private string? SlotTitle =>
+        SlotPayload is { AwaitingClick: false } slot && !string.IsNullOrWhiteSpace(slot.SlotTitle)
+            ? slot.SlotTitle
+            : null;
+
+    private bool ShowSlotHeader =>
+        !string.IsNullOrWhiteSpace(SlotTitle) || DrillLoaded;
+
+    private RenderFragment CloseDrillIcon() => __builder =>
+    {
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+        </svg>
+    };
+
+    private RenderFragment ExpandSlotIcon() => __builder =>
+    {
+        <CardIcon Kind="CardIconKind.Expand" />
+    };
 
     protected override void OnParametersSet()
     {

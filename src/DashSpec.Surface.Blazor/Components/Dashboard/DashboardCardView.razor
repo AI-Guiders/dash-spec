@@ -154,13 +154,36 @@
                     }
                     else
                     {
-                        <button type="button"
-                                class="secondary card-icon-btn card-fullscreen-close"
-                                title="@Loc.T("Collapse")"
-                                aria-label="@Loc.T("Collapse")"
-                                @onclick="CloseFullscreen">
-                            <CardIcon Kind="CardIconKind.Collapse" />
-                        </button>
+                        var stackCollapseSlot = ChromeControls.ResolveButton();
+                        if (stackCollapseSlot is not null)
+                        {
+                            <DynamicComponent Type="stackCollapseSlot"
+                                              Parameters="@(new Dictionary<string, object?>
+                                              {
+                                                  ["Context"] = new StackButtonContext
+                                                  {
+                                                      Label = Loc.T("Collapse"),
+                                                      Disabled = false,
+                                                      Clicked = EventCallback.Factory.Create(this, CloseFullscreen),
+                                                      Icon = builder =>
+                                                      {
+                                                          builder.OpenComponent<CardIcon>(0);
+                                                          builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Collapse);
+                                                          builder.CloseComponent();
+                                                      },
+                                                  },
+                                              })" />
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="secondary card-icon-btn card-fullscreen-close"
+                                    title="@Loc.T("Collapse")"
+                                    aria-label="@Loc.T("Collapse")"
+                                    @onclick="CloseFullscreen">
+                                <CardIcon Kind="CardIconKind.Collapse" />
+                            </button>
+                        }
                     }
                 </header>
                 <div class="card-fullscreen-body">
@@ -317,14 +340,38 @@
             }
             @if (showCloseFullscreen)
             {
-                <button type="button"
-                        class="secondary card-icon-btn card-fullscreen-close"
-                        data-testid="@($"card-collapse-{Card.Id}")"
-                        title="@Loc.T("Collapse")"
-                        aria-label="@Loc.T("Collapse")"
-                        @onclick="CloseFullscreen">
-                    <CardIcon Kind="CardIconKind.Collapse" />
-                </button>
+                var stackCloseFs = ChromeControls.ResolveButton();
+                if (stackCloseFs is not null)
+                {
+                    <DynamicComponent Type="stackCloseFs"
+                                      Parameters="@(new Dictionary<string, object?>
+                                      {
+                                          ["Context"] = new StackButtonContext
+                                          {
+                                              Label = Loc.T("Collapse"),
+                                              Disabled = false,
+                                              Clicked = EventCallback.Factory.Create(this, CloseFullscreen),
+                                              TestId = $"card-collapse-{Card.Id}",
+                                              Icon = builder =>
+                                              {
+                                                  builder.OpenComponent<CardIcon>(0);
+                                                  builder.AddAttribute(1, nameof(CardIcon.Kind), CardIconKind.Collapse);
+                                                  builder.CloseComponent();
+                                              },
+                                          },
+                                      })" />
+                }
+                else
+                {
+                    <button type="button"
+                            class="secondary card-icon-btn card-fullscreen-close"
+                            data-testid="@($"card-collapse-{Card.Id}")"
+                            title="@Loc.T("Collapse")"
+                            aria-label="@Loc.T("Collapse")"
+                            @onclick="CloseFullscreen">
+                        <CardIcon Kind="CardIconKind.Collapse" />
+                    </button>
+                }
             }
         </div>
     };

@@ -384,7 +384,7 @@
   flex: var(--fx-grow, 1) 1 0;
 }
 
-/* per-slot maximize (hover): the shell pins the button to the slot's corner */
+/* per-slot header & maximize: slot title left, compact actions (close drill ✕ / expand ⤢) right */
 .card-slot-shell {
   position: relative;
   display: flex;
@@ -393,7 +393,46 @@
   min-height: 0;
 }
 
-.slot-maximize-btn {
+.card-slot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-height: 1.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.card-slot-head .card-slot-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-slot-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.card-slot-actions .card-icon-btn {
+  min-width: 1.55rem;
+  min-height: 1.55rem;
+  padding: 0.15rem;
+}
+
+.card-slot-actions .card-icon-btn .card-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.card-slot-floating-actions {
   position: absolute;
   top: 0.2rem;
   right: 0.2rem;
@@ -402,18 +441,9 @@
   transition: opacity 0.12s ease;
 }
 
-.card-slot-shell:hover .slot-maximize-btn,
-.slot-maximize-btn:focus-visible {
+.card-slot-shell:hover .card-slot-floating-actions,
+.card-slot-floating-actions:focus-within {
   opacity: 1;
-}
-
-/* Drill ✕ (ADR-0107): the loaded drill table's close affordance — always visible
-   (not hover-gated like maximize): dismissal must be discoverable. */
-.slot-drill-clear-btn {
-  position: absolute;
-  top: 0.2rem;
-  right: 2.3rem;
-  z-index: 30;
 }
 
 
