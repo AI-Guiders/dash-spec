@@ -66,6 +66,7 @@ public sealed class DevSpecFileWatcherService(
         }
 
         logger.LogInformation("Dev file watcher: {File} changed, requesting reload", Path.GetFileName(fullPath));
+        DashSpec.Execution.Compilation.PrecompiledReportBundle.InvalidateAll();
         reloadNotifier.Notify();
     }
 }

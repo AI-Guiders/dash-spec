@@ -39,19 +39,21 @@ public sealed class ReportSpecBootstrap(
             environment.DefaultSpecDirectory);
 
         var specDirectory = Path.GetDirectoryName(specFullPath);
-        var compile = reportCompiler.Compile(text, specDirectory, parseOptionsSource.CreateOptions());
-        var document = compile.Document;
-        var library = SpecLibraryComposer.Load(
-            specFullPath,
-            document.DiagramLibraryPath?.Value,
-            environment.DefaultSpecDirectory,
-            document);
-        _ = SpecResolver.Resolve(document, library);
+        if (!DashSpec.Execution.Compilation.PrecompiledReportBundle.TryGetOrCompile(
+                text,
+                specFullPath,
+                environment.DefaultSpecDirectory,
+                reportCompiler,
+                parseOptionsSource.CreateOptions,
+                out var cached))
+        {
+            throw new InvalidOperationException(
+                "В модуле нет runtime — укажите runtime { manifest = \"...\" } рядом с report.");
+        }
 
-        // Assembled slot plane ([ADR-0111]): every visual slice precomputed once per document
-        // revision — the render reads it and places. Correspondence failures are loud ([ADR-0109]):
-        // a slot whose occupant has no document-graph node fails the load with the exact node id.
-        var slotPlane = SlotPlaneBuilder.Build(document, library);
+        var document = cached.Document;
+        var library = cached.Library;
+        var slotPlane = cached.SlotPlane;
 
         var connector = connectorResolver.Resolve(configPath, document.ConnectorId?.Value);
         var filterIndex = DashboardBootstrap.IndexFilters(document);

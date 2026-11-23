@@ -85,6 +85,7 @@ public static class Program
         if (rest.Length is 0 || rest[0] is "--help" or "-h")
         {
             Console.Error.WriteLine("usage: dsc build types <corpus-dir> [--out <dir>]");
+            Console.Error.WriteLine("       dsc build bundle <corpus-dir> [--out <dir>]");
             Console.Error.WriteLine("       dsc build views <corpus-dir> [--dialect tsql|postgres] [--project-uid <id>] [--connection <conn-str>]");
             return 2;
         }
@@ -92,6 +93,7 @@ public static class Program
         return rest[0].ToLowerInvariant() switch
         {
             "types" => BuildTypes(rest.Skip(1).ToArray()),
+            "bundle" => BuildBundle(rest.Skip(1).ToArray()),
             "views" => BuildViews(rest.Skip(1).ToArray()),
             var unknown => UnknownBuildTarget(unknown),
         };
@@ -99,8 +101,31 @@ public static class Program
 
     private static int UnknownBuildTarget(string target)
     {
-        Console.Error.WriteLine($"unknown build target '{target}' — expected: types | views");
+        Console.Error.WriteLine($"unknown build target '{target}' — expected: types | bundle | views");
         return 2;
+    }
+
+    private static int BuildBundle(string[] rest)
+    {
+        var dir = rest.Length > 0 ? rest[0] : ".";
+        string? outDir = rest.Length > 2 && rest[1] is "--out" ? rest[2] : null;
+        var fullPath = Path.GetFullPath(dir);
+        if (!Directory.Exists(fullPath))
+        {
+            Console.Error.WriteLine($"Directory not found: {fullPath}");
+            return 2;
+        }
+
+        DashSpecParser.EnsureModuleParsersRegistered();
+        DashSpec.Composition.Shell.DashSpecDefaultShell.RegisterGridDefault();
+
+        var result = PrecompiledReportBundle.BuildCorpusBundle(
+            fullPath,
+            outDir,
+            parseOptions: BuildParseOptions(tomlPath: null));
+        Console.WriteLine(
+            $"OK: {result.BundlePath} (hash: {result.CorpusHash[..12]}, {result.FileCount} files, {result.ReportCount} reports: {string.Join(", ", result.ReportEntryIds)})");
+        return 0;
     }
 
     private static int BuildTypes(string[] rest)

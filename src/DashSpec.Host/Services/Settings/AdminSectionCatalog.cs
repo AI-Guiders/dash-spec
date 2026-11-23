@@ -11,6 +11,7 @@ public static class AdminSectionCatalog
         new("catalog", "Catalog", "Git catalog clone / poll"),
         new("sync", "Sync webhook", "Inbound push URL + HMAC secret"),
         new("presentation", "Presentation", "Display time zone (remark 25)"),
+        new("monitoring", "Monitoring & Logs", "Self-monitoring WitDB telemetry, query latency, memory, and logs (ADR-0137)"),
         new("links", "Links", "External URLs from .dashhost (read-only in Control Center)"),
         new("export", "Export", "TOML fragment for air-gap backup"),
     ];

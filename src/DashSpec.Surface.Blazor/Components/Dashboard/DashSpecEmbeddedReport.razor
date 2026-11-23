@@ -1,0 +1,164 @@
+@namespace DashSpec.Surface.Blazor.Components.Dashboard
+@implements IDisposable
+@using DashSpec.Execution.Runtime
+@using DashSpec.Surface.Blazor.Services.Localization
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceScopeFactory ScopeFactory
+@inject DashboardLocalizer Loc
+
+<div class="dash-embedded-report">
+    @if (_page is null)
+    {
+        <div class="page-loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <span>@Loc.T("Loading specification…")</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(_page.Error))
+    {
+        <div class="alert" role="alert">
+            <strong>@Loc.T("Failed to load dashboard")</strong>
+            <p>@_page.Error</p>
+        </div>
+    }
+    else if (!_page.Loaded)
+    {
+        <div class="page-loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <span>@Loc.T("Loading specification…")</span>
+        </div>
+    }
+    else
+    {
+        var chrome = _page.Session.Document.FiltersChrome;
+
+        <DashboardTabBar Tabs="_page.Session.Document.Tabs"
+                         ActiveTabId="_page.ActiveTabId"
+                         ResolveLabel="_page.ResolveTabLabel"
+                         Sticky="chrome.IsSticky"
+                         OnSelect="_page.SelectTab" />
+
+        @if (_page.HasPages)
+        {
+            <DashboardPagePicker Pages="_page.ActiveTabPages()"
+                                 ActivePageId="_page.ActivePageId"
+                                 ResolveLabel="_page.ResolvePageNavTitle"
+                                 OnSelect="_page.SelectPageAsync" />
+        }
+
+        @if (!string.IsNullOrEmpty(_page.CommandError))
+        {
+            <div class="dash-command-error" role="alert">@_page.CommandError</div>
+        }
+
+        <DashboardFiltersSection FilterNames="_page.VisibleToolbarFilters()"
+                                 ToolbarSlots="_page.VisibleToolbarSlots"
+                                 FilterIndex="_page.Session.FilterIndex"
+                                 FiltersToCards="_page.FiltersToCards"
+                                 DateFrom="_page.DateFrom"
+                                 DateTo="_page.DateTo"
+                                 SelectedFields="_page.SelectedFields"
+                                 TopLimits="_page.TopLimits"
+                                 GetFieldOptions="_page.Session.GetFieldOptions"
+                                 FieldOptionsRevision="_page.FieldOptionsRevision"
+                                 Layout="_page.ToolbarLayout"
+                                 BarLayout="chrome.IsBarLayout"
+                                 ToolbarLabeledCells="chrome.IsToolbarLabeledCells"
+                                 AutoApply="chrome.IsAutoApply"
+                                 ApplyIconControl="chrome.IsApplyIconControl"
+                                 Busy="_page.Busy"
+                                 SectionClass="@_page.FiltersSectionClass()"
+                                 GridClass="@_page.FiltersGridClass()"
+                                 GridStyle="@_page.FiltersGridStyle()"
+                                 OnApply="_page.ApplyFiltersAsync"
+                                 OnScheduleApply="_page.OnDashboardRangeChanged"
+                                 OnDayChanged="_page.OnDashboardDayChanged"
+                                 OnFieldChanged="_page.OnDashboardFieldChanged"
+                                 OnTopChanged="_page.OnDashboardTopChanged" />
+
+        <DashboardTabBoard Slots="_page.HostTabBoardSlots()"
+                           Page="_page"
+                           Layout="_page.Session.Document.Layout"
+                           AutoApply="chrome.IsAutoApply" />
+    }
+</div>
+
+@code {
+    private IServiceScope? _scope;
+    private DashboardPageController? _page;
+    private string? _loadedSpecKey;
+
+    /// <summary>Optional catalog entry ID to load in the isolated embedded session.</summary>
+    [Parameter] public string? CatalogEntryId { get; set; }
+
+    /// <summary>Optional raw .ds spec text to compile and render in the isolated embedded session.</summary>
+    [Parameter] public string? SpecText { get; set; }
+
+    /// <summary>Virtual or physical full path used to resolve imports and runtime for <see cref="SpecText"/>.</summary>
+    [Parameter] public string? SpecFullPath { get; set; }
+
+    /// <summary>Human-readable label for trace diagnostics.</summary>
+    [Parameter] public string SourceLabel { get; set; } = "embedded";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var key = !string.IsNullOrWhiteSpace(SpecText)
+            ? $"text:{SpecFullPath}:{SpecText.GetHashCode()}"
+            : $"entry:{CatalogEntryId}";
+
+        if (string.Equals(_loadedSpecKey, key, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _loadedSpecKey = key;
+        EnsureIsolatedController();
+
+        if (!string.IsNullOrWhiteSpace(SpecText) && !string.IsNullOrWhiteSpace(SpecFullPath))
+        {
+            await _page!.LoadSpecTextAsync(SpecText, SpecFullPath, SourceLabel);
+        }
+        else
+        {
+            await _page!.InitializeAsync(requestedCatalogEntryId: CatalogEntryId);
+        }
+    }
+
+    private void EnsureIsolatedController()
+    {
+        if (_page is not null)
+        {
+            return;
+        }
+
+        _scope = ScopeFactory.CreateScope();
+        _page = _scope.ServiceProvider.GetRequiredService<DashboardPageController>();
+        _page.UiDispatcher = InvokeAsync;
+        _page.Changed += OnPageStateChanged;
+    }
+
+    private void OnPageStateChanged() =>
+        _ = InvokeAsync(StateHasChanged);
+
+    public async Task RefreshAsync()
+    {
+        if (_page is not null)
+        {
+            await _page.ApplyFiltersAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_page is not null)
+        {
+            _page.Changed -= OnPageStateChanged;
+            _page.Dispose();
+            _page = null;
+        }
+
+        _scope?.Dispose();
+        _scope = null;
+    }
+}

@@ -252,6 +252,47 @@ public sealed class DashboardPageController : IDisposable
         }
     }
 
+    public async Task LoadSpecTextAsync(
+        string specText,
+        string specFullPath,
+        string sourceLabel = "embedded",
+        CancellationToken cancellationToken = default)
+    {
+        using var trace = _loadTrace.Begin($"ui:embedded:{sourceLabel}");
+        var fastLoad = new SpecLoadOptions { LoadFieldOptions = false };
+        Switching = true;
+        Loaded = false;
+        Error = null;
+        _refresh.CancelPendingApplies();
+        Notify();
+
+        try
+        {
+            await _session.LoadFromTextAsync(specText, specFullPath, sourceLabel, cancellationToken, fastLoad).ConfigureAwait(false);
+            LoadedSpecSource = _session.LoadedSpecSource;
+            await InitializeDashboardStateAsync().ConfigureAwait(false);
+            Loaded = true;
+            Notify();
+
+            _ = RefreshCardsInBackgroundAsync();
+            trace.Succeed();
+            _ = RefreshFieldOptionsInBackgroundAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Embedded dashboard load failed ({SourceLabel})", sourceLabel);
+            trace.Fail(ex.Message);
+            Error = BuildLoadErrorMessage(ex);
+            Loaded = false;
+            Notify();
+        }
+        finally
+        {
+            Switching = false;
+            Notify();
+        }
+    }
+
     private async Task RefreshCardsInBackgroundAsync()
     {
         using var trace = _loadTrace.Begin("ui:refresh_cards");

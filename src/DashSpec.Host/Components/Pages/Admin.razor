@@ -5,8 +5,11 @@
 @using DashSpec.Host.Configuration
 @using DashSpec.Host.Services.Git
 @using DashSpec.Surface.Blazor.Services.Presentation
+@using DashSpec.Surface.Blazor.Components.Dashboard
 @using DashSpec.Host.Services.Settings
+@using DashSpec.Host.Services.Telemetry
 @inject HostSettingsService Settings
+@inject HostTelemetryStore TelemetryStore
 @inject DashSpecTomlRoot Bootstrap
 @inject GitCatalogSyncService SyncService
 @inject NavigationManager Nav
@@ -181,6 +184,46 @@
                     </div>
                     <button type="submit" class="btn">Save presentation</button>
                 </EditForm>
+            }
+            else if (IsSection("monitoring"))
+            {
+                var latestMetric = TelemetryStore.GetRecentMetrics(1).FirstOrDefault() ?? TelemetryStore.CaptureMetricSample();
+                <div class="row" style="gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">Working Set</div>
+                        <strong style="font-size: 1.15rem;">@latestMetric.WorkingSetMb.ToString("0.0") MB</strong>
+                    </div>
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">Managed Heap</div>
+                        <strong style="font-size: 1.15rem;">@latestMetric.ManagedHeapMb.ToString("0.0") MB</strong>
+                    </div>
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">GC (Gen0 / Gen1 / Gen2)</div>
+                        <strong style="font-size: 1.15rem;">@latestMetric.GcGen0 / @latestMetric.GcGen1 / @latestMetric.GcGen2</strong>
+                    </div>
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">Total SQL Queries</div>
+                        <strong style="font-size: 1.15rem;">@TelemetryStore.TotalQueries</strong>
+                    </div>
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">Avg Query Latency</div>
+                        <strong style="font-size: 1.15rem;">@TelemetryStore.AverageQueryMs.ToString("0.0") ms</strong>
+                    </div>
+                    <div style="padding: 0.65rem 0.9rem; border-radius: 6px; border: 1px solid rgba(140,155,180,0.22);">
+                        <div class="muted" style="font-size: 0.75rem;">Failed Queries</div>
+                        <strong style="font-size: 1.15rem;">@TelemetryStore.FailedQueries</strong>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(TelemetryStore.SelfMonitoringSpecText)
+                     && !string.IsNullOrWhiteSpace(TelemetryStore.SelfMonitoringSpecPath))
+                {
+                    <div style="margin-bottom: 1.25rem;">
+                        <DashSpecEmbeddedReport SpecText="@TelemetryStore.SelfMonitoringSpecText"
+                                                SpecFullPath="@TelemetryStore.SelfMonitoringSpecPath"
+                                                SourceLabel="self-monitoring-witdb" />
+                    </div>
+                }
             }
             else if (IsSection("links"))
             {

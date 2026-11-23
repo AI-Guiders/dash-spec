@@ -24,7 +24,11 @@ internal static class ConnectorInstanceFactory
                 CommandTimeoutSeconds = section.CommandTimeoutSeconds,
                 MaxRows = section.MaxRows,
             })),
+            "witdb" => new WitDbConnector(
+                section.ConnectionString,
+                section.CommandTimeoutSeconds > 0 ? section.CommandTimeoutSeconds : 30,
+                section.MaxRows > 0 ? section.MaxRows : 100_000),
             _ => throw new InvalidOperationException(
-                $"Per-entry runtime binding supports provider ids: sqlserver, postgres (got '{providerId}')."),
+                $"Per-entry runtime binding supports provider ids: sqlserver, postgres, witdb (got '{providerId}')."),
         };
 }

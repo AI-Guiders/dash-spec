@@ -34,6 +34,13 @@ public interface IReportSession
         CancellationToken cancellationToken = default,
         ReportLoadOptions? options = null);
 
+    Task LoadFromTextAsync(
+        string text,
+        string specFullPath,
+        string sourceLabel,
+        CancellationToken cancellationToken = default,
+        ReportLoadOptions? options = null);
+
     Task RefreshFieldOptionsAsync(CancellationToken cancellationToken = default);
 
     IReadOnlyList<string> GetFieldOptions(string filterName);

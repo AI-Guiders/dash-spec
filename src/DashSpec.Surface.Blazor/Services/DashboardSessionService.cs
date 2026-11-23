@@ -199,11 +199,11 @@ public sealed class DashboardSessionService(
         return CardViewSwitchApplier.Apply(card, activeView);
     }
 
-    private async Task LoadFromTextAsync(
+    public async Task LoadFromTextAsync(
         string text,
         string specFullPath,
         string sourceLabel,
-        CancellationToken cancellationToken,
+        CancellationToken cancellationToken = default,
         ReportLoadOptions? options = null)
     {
         var loaded = await specLoader

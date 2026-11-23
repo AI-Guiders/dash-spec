@@ -230,6 +230,13 @@ public static class DashSpecHostApplicationBuilderExtensions
         builder.Services.AddDashSpecHostInfrastructure();
         var hostDbPath = hostDatabase.ResolveDatabasePath(bootstrap);
         hostDatabase.EnsureDatabase(hostDbPath);
+
+        var telemetryStore = new DashSpec.Host.Services.Telemetry.HostTelemetryStore();
+        telemetryStore.InitializeDatabase(hostDbPath);
+        builder.Services.AddSingleton(telemetryStore);
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<DashSpec.Host.Services.Telemetry.HostTelemetryStore>());
+        builder.Logging.AddProvider(new DashSpec.Host.Services.Telemetry.HostTelemetryLoggerProvider(telemetryStore));
+
         builder.Services.AddDbContext<DashSpecHostDbContext>(options =>
             options.UseWitDb($"Data Source={hostDbPath}"));
         builder.Services.AddScoped<HostSettingsService>();

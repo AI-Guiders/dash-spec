@@ -27,7 +27,11 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
         };
         foreach (var parameter in query.Parameters)
         {
-            command.Parameters.AddWithValue(NormalizeParameterName(parameter.Name), CoerceValue(parameter.Value));
+            var npgsqlParam = command.CreateParameter();
+            npgsqlParam.ParameterName = NormalizeParameterName(parameter.Name);
+            npgsqlParam.DbType = parameter.ResolvedDbType;
+            npgsqlParam.Value = parameter.Value;
+            command.Parameters.Add(npgsqlParam);
         }
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -76,13 +80,6 @@ public sealed class PostgresConnector(IOptions<PostgresConnectorOptions> options
 
     private static string NormalizeParameterName(string name) =>
         name.StartsWith('@') ? name : "@" + name;
-
-    private static object CoerceValue(object value) =>
-        value switch
-        {
-            DateOnly date => date.ToDateTime(TimeOnly.MinValue),
-            _ => value,
-        };
 
     private int ResolveCommandTimeout() =>
         options.Value.CommandTimeoutSeconds > 0
